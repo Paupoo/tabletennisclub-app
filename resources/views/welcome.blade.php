@@ -23,10 +23,10 @@
                     <li class="hidden mr-4 xl:flex"><a href="">Résultats</a></li>
                     <li class="hidden mr-4 xl:flex"><a href="">Contact</a></li>
                     <button
-                        class="items-center hidden h-8 px-2 py-2 ml-8 font-normal text-justify text-blue-900 bg-yellow-400 border-0 rounded-md lg:flex hover:bg-yellow-200">Nous
+                        class="items-center hidden h-8 px-2 py-2 ml-8 font-normal text-justify text-blue-900 duration-200 bg-yellow-400 border-0 rounded-md lg:flex hover:opacity-75">Nous
                         rejoindre</button>
                     <button
-                        class="items-center hidden h-8 px-2 py-2 mx-4 font-normal text-justify text-yellow-400 bg-blue-500 border-0 rounded-md lg:flex hover:bg-blue-300">Login</button>
+                        class="items-center hidden h-8 px-2 py-2 mx-4 font-normal text-justify text-yellow-400 duration-200 bg-blue-500 border-0 rounded-md lg:flex hover:opacity-75">Login</button>
                 </ul>
                 {{-- Hamburger menu --}}
                 <div class="flex items-center mx-4 xl:hidden">
@@ -65,7 +65,7 @@
         </div>
 
         {{-- Section 1 --}}
-        <div class="w-screen pt-12 bg-gradient-to-b from-slate-800 to-indigo-900">
+        <div class="w-screen pt-12 pb-10 bg-gradient-to-b from-slate-800 to-indigo-900">
             <div class="flex flex-row m-auto max-w-7xl">
                 <div class="relative w-5/12 max-w-lg m-auto leading-normal text-gray-300">
                     {{-- <hr class="mb-4"> --}}
@@ -76,7 +76,7 @@
                     <hr class="mt-6">
                     <div class="flex flex-row justify-around w-full mt-10">
                         <button
-                            class="flex flex-row px-6 py-2 font-semibold duration-200 ease-in bg-yellow-400 rounded-full text-slate-900 hover:bg-indigo-600 hover:text-white hover:scale-125">
+                            class="flex flex-row px-6 py-2 font-semibold duration-200 ease-in bg-yellow-400 rounded-full text-slate-900 hover:scale-105">
                             <div class="mr-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                                     stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
@@ -90,7 +90,7 @@
                             </div>
                         </button>
                         <button
-                            class="flex flex-row px-6 py-2 font-semibold duration-200 ease-in bg-yellow-400 rounded-full text-slate-900 hover:bg-indigo-600 hover:text-white hover:scale-125">
+                            class="flex flex-row px-6 py-2 font-semibold duration-200 ease-in bg-yellow-400 rounded-full text-slate-900 hover:scale-105">
                             <div class="mr-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                                     stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
@@ -105,7 +105,7 @@
                         </button>
                     </div>
                 </div>
-                <div class="hidden transition-all xl:block xl:m-auto xl:bottom-0">
+                <div class="hidden transition-all xl:mb-16 xl:block xl:m-auto xl:bottom-0">
                     <img src="{{ asset('images/Groupe-1.jpg') }}" alt=""
                         class="object-cover translate-y-28 rotate-6 rounded-3xl">
                 </div>
@@ -113,22 +113,122 @@
         </div>
 
         {{-- Section 2 --}}
-        <div class="mt-44">
-            <div class="container flex flex-col">
+        <div class="grid w-screen pt-10 pb-16 mx-auto bg-yellow-100">
 
-                <h2 class="justify-center text-3xl font-semibold align-middle">Où sommes-nous ?</h2>
-                <div class="flex items-center justify-center gap-9">
-                    <div class="p-4 bg-yellow-100 rounded-2xl w-96">
-                        <p class="text-xl font-medium underline decoration-dotted">Centre sportif Jean-Demeester</p>
-                        <p><br>Rue de l'Invasion 80<br>1340 Ottignies-Louvain-la-Neuve</p>
-                    </div>
-                    <div class="p-4 bg-yellow-100 rounded-2xl w-96">
-                        <p class="text-xl font-medium underline decoration-dotted">Centre sportif Blocry</p>
-                        <p><br>Place des Sports 1<br>1348 Ottignies-Louvain-la-Neuve</p>
-                    </div>
+            <h2 class="my-10 text-3xl font-semibold text-center text-gray-700 align-middle">Les infrastructures</h2>
+            <div class="flex flex-wrap items-center justify-center mx-auto mb-5 gap-9 px-14">
+                <div class="px-4 py-2 border-slate-800 w-96">
+                    <p class="py-2 text-xl font-medium text-left w-fit">Centre sportif
+                        Jean-Demeester</p>
+                    <p class="mt-4">Rue de l'Invasion 80<br>1340 Ottignies-Louvain-la-Neuve</p>
+                </div>
+                
+                <div class="px-4 py-2 w-96">
+                    <p class="py-2 text-xl font-medium text-left w-fit">Centre sportif
+                        Blocry</p>
+                    <p class="mt-4">Place des Sports 1<br>1348 Ottignies-Louvain-la-Neuve</p>
                 </div>
             </div>
+
+            <h2 class="mt-5 mb-10 text-3xl font-semibold text-center text-gray-700 align-middle">Les entraînements</h2>
+            <div class="flex justify-center">
+                <table class="border-collapse table-auto lg:w-1/2 border-spacing-4 w-fit">
+                    <caption class="my-4 text-md caption-bottom font-extralight">
+                        Légende : <span class="px-1 text-sm font-semibold bg-green-300 rounded-full">L</span> Entraînement libre <span class="px-1 mx-2 text-sm bg-orange-300 rounded-full font-extralight">E</span> Entraînement encadré <span class="px-1 text-sm font-semibold bg-blue-300 rounded-full">D</span> Entraînement dirigé.
+                    </caption>
+                    <thead class="text-left">
+                        <th>
+                            <tr>
+                                <th>Jours</th>
+                                <th>Horaires</th>
+                                <th>Niveau</th>
+                                <th>Salle</th>
+                                <th></th>
+                            </tr>
+                        </th>
+                    </thead>
+                    <tbody>
+                        <tr class="border-b">
+                            <td>Lundi</td>
+                            <td><span>20:00-23:00</span>
+                            <td><span class="px-1 text-sm font-extralight">Tous</span></td>
+                            <td><span class="p-1 text-sm rounded-sm font-extralight">Demeester / 0</span></td>
+                            <td><span class="px-1 text-sm font-semibold bg-green-300 rounded-full">L</span></td>
+                        </tr>
+                        <tr class="border-t">
+                            <td>Lundi</td>
+                            <td><span>20:30-22:00</span>
+                            <td><span class="px-1 text-sm 0 font-extralight">Tous</span></td>
+                            <td><span class="p-1 text-sm rounded-sm font-extralight">Demeester / -1</span></td>
+                            <td><span class="px-1 text-sm font-semibold bg-green-300 rounded-full">L</span></td>
+                        </tr>
+                        <tr class="border-t">
+                            <td>Lundi</td>
+                            <td><span>18:00-20:00</span>
+                            <td><span class="px-1 text-sm 0 font-extralight">Tous</span></td>
+                            <td><span class="p-1 text-sm rounded-sm font-extralight">Blocry / G3</span></td>
+                            <td><span class="px-1 text-sm bg-orange-300 rounded-full font-extralight">E</span>
+                        </tr>
+                        <tr class="border-t">
+                            <td>Lundi</td>
+                            <td><span>20:00-22:00</span>
+                            <td><span class="px-1 text-sm 0 font-extralight">Tous</span></td>
+                            <td><span class="p-1 text-sm rounded-sm font-extralight">Blocry / G3</span></td>
+                            <td><span class="px-1 text-sm font-semibold bg-green-300 rounded-full">L</span></td>
+                        </tr>
+                        <tr class="border-t">
+                            <td>Mardi</td>
+                            <td><span>20:00-22:00</span>
+                            <td><span class="px-1 text-sm ll font-extralight">Séries E-D</span>
+                            </td>
+                            <td><span class="p-1 text-sm rounded-sm font-extralight">Demeester / -1</span></td>
+                            <td><span class="px-1 text-sm font-semibold bg-blue-300 rounded-full">D</span></td>
+                        </tr>
+                        <tr class="border-t">
+                            <td>Samedi</td>
+                            <td><span>09:00-10:30</span>
+                            <td><span class="px-1 text-sm font-extralight">Débutants 1</span>
+                            </td>
+                            <td><span class="p-1 text-sm rounded-sm font-extralight">Blocry / G3</span></td>
+                            <td><span class="px-1 text-sm font-semibold bg-blue-300 rounded-full">D</span></td>
+                        </tr>
+                        <tr class="border-t">
+                            <td>Samedi</td>
+                            <td><span>10:30-12:00</span>
+                            <td><span class="px-1 text-sm font-extralight">Débutants 2</span>
+                            </td>
+                            <td><span class="p-1 text-sm rounded-sm font-extralight">Blocry / G3</span></td>
+                            <td><span class="px-1 text-sm font-semibold bg-blue-300 rounded-full">D</span></td>
+                        </tr>
+                    </tbody>
+
+                </table>
+            </div>
         </div>
-</body>
+
+
+        {{-- Section 3 --}}
+        <div class="w-screen p-10 pt-12 text-yellow-500 bg-gradient-to-b from-indigo-900 to-slate-800">
+            <div>Copyright &copy; 2023 </div>
+            <div></div>
+            <div>
+                <h2 class="my-10 text-3xl font-semibold text-center text-gray-700 align-middle">Les infrastructures</h2>
+            <div class="flex flex-wrap items-center justify-center mx-auto mb-5 gap-9 px-14">
+                <div class="px-4 py-2 border-slate-800 w-96">
+                    <p class="py-2 text-xl font-medium text-left w-fit">Centre sportif
+                        Jean-Demeester</p>
+                    <p class="mt-4">Rue de l'Invasion 80<br>1340 Ottignies-Louvain-la-Neuve</p>
+                </div>
+                
+                <div class="px-4 py-2 w-96">
+                    <p class="py-2 text-xl font-medium text-left w-fit">Centre sportif
+                        Blocry</p>
+                    <p class="mt-4">Place des Sports 1<br>1348 Ottignies-Louvain-la-Neuve</p>
+                </div>
+            </div>
+            </div>
+        </div>
+    </div>
+    </body>
 
 </html>

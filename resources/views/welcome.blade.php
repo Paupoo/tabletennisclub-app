@@ -22,11 +22,9 @@
                     <li class="hidden mr-4 xl:flex"><a href="">Calendrier</a></li>
                     <li class="hidden mr-4 xl:flex"><a href="">Résultats</a></li>
                     <li class="hidden mr-4 xl:flex"><a href="">Contact</a></li>
-                    <button
-                        class="items-center hidden h-8 px-2 py-2 ml-8 font-normal text-justify text-blue-900 duration-200 bg-yellow-400 border-0 rounded-md lg:flex hover:opacity-75">Nous
-                        rejoindre</button>
-                    <button
-                        class="items-center hidden h-8 px-2 py-2 mx-4 font-normal text-justify text-yellow-400 duration-200 bg-blue-500 border-0 rounded-md lg:flex hover:opacity-75">Login</button>
+                    
+                    <a href="{{ route('dashboard')}}"><button
+                        class="items-center hidden h-8 px-2 py-2 mx-4 font-normal text-justify text-yellow-400 duration-200 bg-blue-500 border-0 rounded-md lg:flex hover:opacity-75">Login</button></a>
                 </ul>
                 {{-- Hamburger menu --}}
                 <div class="flex items-center mx-4 xl:hidden">

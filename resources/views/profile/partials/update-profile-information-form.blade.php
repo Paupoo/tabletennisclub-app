@@ -30,6 +30,13 @@
             <x-text-input id="first_name" name="first_name" type="text" class="block w-full mt-1" :value="old('first_name', $user->first_name)" required autofocus autocomplete="first_name" />
             <x-input-error class="mt-2" :messages="$errors->get('first_name')" />
         </div>
+        
+        {{-- Role --}}
+        <div>
+            <x-input-label for="role" :value="__('Role')" />
+            <x-text-input id="role" name="role" type="text" class="block w-full mt-1" :value="old('role', $user->role)" disabled autofocus autocomplete="role" />
+            <x-input-error class="mt-2" :messages="$errors->get('role')" />
+        </div>
 
         {{-- Licence --}}
         <div>

@@ -20,7 +20,6 @@ class DatabaseSeeder extends Seeder
             'ranking' => 'E4',
             'licence' => '114399',
             'email' => 'aurelien.paulus@gmail.com',
-            'role' => 'admin',
             'password' => 'test1234',
         ]);
 

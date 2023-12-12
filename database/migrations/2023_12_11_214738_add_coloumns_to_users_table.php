@@ -15,7 +15,6 @@ return new class extends Migration
             //
             $table->string('first_name')->after('name');
             $table->renameColumn('name', 'last_name');
-            $table->string('role')->default('member')->after('password');
             $table->unsignedMediumInteger('licence')->unique()->after('role')->nullable();
             $table->string('ranking')->nullable()->after('licence');
             $table->unsignedTinyInteger('force_index')->nullable()->after('ranking');

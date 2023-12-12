@@ -17,16 +17,39 @@
         @csrf
         @method('patch')
 
+        {{-- Last Name --}}
         <div>
             <x-input-label for="last_name" :value="__('Last Name')" />
             <x-text-input id="last_name" name="last_name" type="text" class="block w-full mt-1" :value="old('last_name', $user->last_name)" required autofocus autocomplete="last_name" />
             <x-input-error class="mt-2" :messages="$errors->get('last_name')" />
         </div>
 
+        {{-- First Name --}}
         <div>
             <x-input-label for="first_name" :value="__('First Name')" />
-            <x-text-input id="first_name" name="first_name" type="text" class="block w-full mt-1" :value="old('first_name', $user->first_name)" required autofucs autocomplte="first_name" />
+            <x-text-input id="first_name" name="first_name" type="text" class="block w-full mt-1" :value="old('first_name', $user->first_name)" required autofocus autocomplete="first_name" />
             <x-input-error class="mt-2" :messages="$errors->get('first_name')" />
+        </div>
+
+        {{-- Licence --}}
+        <div>
+            <x-input-label for="licence" :value="__('Licence')" />
+            <x-text-input id="licence" name="licence" type="text" class="block w-20 mt-1" :value="old('licence', $user->licence)" disabled autofocus />
+            <x-input-error class="mt-2" :messages="$errors->get('licence')" />
+        </div>
+
+        {{-- Ranking --}}
+        <div>
+            <x-input-label for="ranking" :value="__('Ranking')" />
+            <x-text-input id="ranking" name="ranking" type="text" class="block mt-1 w-14" :value="old('ranking', $user->ranking)" disabled autofocus />
+            <x-input-error class="mt-2" :messages="$errors->get('ranking')" />
+        </div>
+
+        {{-- Team --}}
+        <div>
+            <x-input-label for="team" :value="__('Team')" />
+            <x-text-input id="team" name="team" type="text" class="block mt-1 w-14" :value="old('team', $user->team)" autofocus />
+            <x-input-error class="mt-2" :messages="$errors->get('team')" />
         </div>
 
         <div>

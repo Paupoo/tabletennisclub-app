@@ -15,10 +15,13 @@ class DatabaseSeeder extends Seeder
     {
         // Create 1 admin
         User::factory(1)->create([
-            'last_name' => 'admin',
-            'first_name' => 'admin',
+            'last_name' => 'Paulus',
+            'first_name' => 'Aurélien',
+            'ranking' => 'E4',
+            'licence' => '114399',
             'email' => 'aurelien.paulus@gmail.com',
             'role' => 'admin',
+            'password' => 'test1234',
         ]);
 
         // Create 35 members

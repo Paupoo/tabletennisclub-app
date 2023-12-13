@@ -24,6 +24,7 @@ class UserController extends Controller
     public function create()
     {
         //
+        return view('members.create');
     }
 
     /**
@@ -32,6 +33,20 @@ class UserController extends Controller
     public function store(Request $request)
     {
         //
+        $request->validate([
+            'last_name' => ['required','string'],
+            'first_name' => ['required','string'],
+            'licence' => ['nullage', 'integer', 'min:1', 'max:999999'],
+            'ranking' => ['string'],
+            'team' => ['string']
+        ]);
+
+        User::create($request);
+
+        event(New Registered($user));
+        
+        return redirect('members.index');
+
     }
 
     /**

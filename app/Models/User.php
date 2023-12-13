@@ -26,7 +26,6 @@ class User extends Authenticatable
         'ranking',
         'force_index',
         'team',
-        'role',
     ];
 
     /**

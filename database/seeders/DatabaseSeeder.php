@@ -28,8 +28,8 @@ class DatabaseSeeder extends Seeder
 
 
         // Create 4 comittee members
-        User::factory(4)->create([
-            'role' => 'comittee',
-        ]);
+        // User::factory(4)->create([
+        //     'role' => 'comittee',
+        // ]);
     }
 }

@@ -35,7 +35,6 @@ return new class extends Migration
             $table->dropColumn('ranking');
             $table->dropColumn('force_index');
             $table->dropColumn('team');
-            $table->dropColumn('role');
         });
     }
 };

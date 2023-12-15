@@ -23,6 +23,17 @@ Route::get('/admin/dashboard', function () {
     return view('admin.dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
+//Force List
+Route::post('/admin/members/setForceIndex', [
+    UserController::class,
+    'setForceIndex',
+])->name('setForceIndex');
+
+Route::post('/admin/members/deleteForceIndex', [
+    UserController::class,
+    'deleteForceIndex',
+])->name('deleteForceIndex');
+
 Route::resource('admin/members', UserController::class);
 
 Route::middleware('auth')->group(function () {
@@ -31,4 +42,4 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

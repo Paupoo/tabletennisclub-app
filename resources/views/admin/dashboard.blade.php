@@ -95,16 +95,16 @@
         </div>
     </div>
 
-    {{-- Users management --}}
+    {{-- Members management --}}
     <div class="pt-6">
         <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
             <div class="overflow-hidden bg-white shadow-sm dark:bg-gray-800 sm:rounded-lg">
                 <div class="p-6 text-gray-900 dark:text-gray-100">
-                    <h2 class="text-lg font-semibold pb-2">Users</h2>
-                    <p>There are currently <var class="font-semibold">xx</var> users.</p>
+                    <h2 class="text-lg font-semibold pb-2">Members</h2>
+                    <p>There are currently <var class="font-semibold">xx</var> members.</p>
 
                     <table class="table table-auto border border-collapse mt-4 w-96 text-left">
-                        <caption class="caption-top font-thin text-right">5 latest users</caption>
+                        <caption class="caption-top font-thin text-right">5 latest members</caption>
                         <thead>
                             <tr>
                                 <th>#</th>
@@ -122,11 +122,11 @@
                     </table>
 
                     <div class="flex gap-4 mt-4 w-96">
-                        <form action="">
-                            <x-primary-button>Create new user</x-primary-button>
+                        <form action="{{ route('members.create') }}" method="GET">
+                            <x-primary-button>Create new member</x-primary-button>
                         </form>
-                        <form action="">
-                            <x-primary-button>Manage users</x-primary-button>
+                        <form action="{{ route('members.index') }}" method="GET">
+                            <x-primary-button>Manage members</x-primary-button>
                         </form>
                     </div>
                 </div>
@@ -243,7 +243,10 @@
                                 <td>PROV-1</td>
                                 <td>A</td>
                                 <td>Jean Dupont</td>
-                                <td>Pending</td>
+                                <td class="flex align-middle flex-row gap-2">
+                                    <p>Pending</p>
+                                    <img src="{{ asset('images/icons/hourglass.svg')}}" alt="pending" class="h-5">
+                                </td>
                             </tr>
                         </tbody>
                     </table>

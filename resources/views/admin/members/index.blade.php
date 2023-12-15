@@ -8,11 +8,16 @@
     <div class="pt-6">
         <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
             <div class="flex flex-row gap-4">
-                <form action="">
+                <form action="{{ route('members.create') }}">
                     <x-primary-button>Create new user</x-primary-button>
                 </form>
-                <form action="">
-                    <x-primary-button>Set force list</x-primary-button>
+                <form action="{{ route('setForceIndex') }}" method="POST">
+                    @csrf
+                    <x-primary-button>Set force index</x-primary-button>
+                </form>
+                <form action="{{ route('deleteForceIndex') }}" method="POST">
+                    @csrf
+                    <x-danger-button>Delete force index</x-danger-button>
                 </form>
 
             </div>
@@ -24,7 +29,7 @@
             <div class="overflow-hidden bg-white shadow-sm dark:bg-gray-800 sm:rounded-lg">
 
 
-                <table class="min-w-full text-sm font-light text-left">
+                <table class="min-w-full text-sm font-light text-left dark:bg-neutral-300">
                     <thead class="font-medium border-b dark:border-neutral-500">
                         <tr>
                             <th scope="col" class="px-4 py-2">#</th>

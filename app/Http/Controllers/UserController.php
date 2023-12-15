@@ -37,27 +37,11 @@ class UserController extends Controller
     {
         //
         $request->validate([
-<<<<<<< HEAD
             'last_name' => ['required','string','unique:users']
         ]);
 
         return redirect()->route('members.create')
             ->with('success', '__(Member added)');
-=======
-            'last_name' => ['required','string'],
-            'first_name' => ['required','string'],
-            'licence' => ['nullage', 'integer', 'min:1', 'max:999999'],
-            'ranking' => ['string'],
-            'team' => ['string']
-        ]);
-
-        User::create($request);
-
-        event(New Registered($user));
-        
-        return redirect('members.index');
-
->>>>>>> 4efe05f453431e0b032a3b3c4f2cfd63270f9545
     }
 
     /**

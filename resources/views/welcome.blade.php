@@ -22,9 +22,11 @@
                     <li class="hidden mr-4 xl:flex"><a href="">Calendrier</a></li>
                     <li class="hidden mr-4 xl:flex"><a href="">Résultats</a></li>
                     <li class="hidden mr-4 xl:flex"><a href="">Contact</a></li>
-                    
-                    <a href="{{ route('dashboard')}}"><button
-                        class="items-center hidden h-8 px-2 py-2 mx-4 font-normal text-justify text-yellow-400 duration-200 bg-blue-500 border-0 rounded-md lg:flex hover:opacity-75">Login</button></a>
+
+                    <form action="{{ route('dashboard') }}">
+                        <button
+                            class="items-center hidden h-8 px-2 py-2 mx-4 font-normal text-justify text-yellow-400 duration-200 bg-blue-500 border-0 rounded-md lg:flex hover:opacity-75">Login</button>
+                    </form>
                 </ul>
                 {{-- Hamburger menu --}}
                 <div class="flex items-center mx-4 xl:hidden">
@@ -120,7 +122,7 @@
                         Jean-Demeester</p>
                     <p class="mt-4">Rue de l'Invasion 80<br>1340 Ottignies-Louvain-la-Neuve</p>
                 </div>
-                
+
                 <div class="px-4 py-2 w-96">
                     <p class="py-2 text-xl font-medium text-left w-fit">Centre sportif
                         Blocry</p>
@@ -132,7 +134,11 @@
             <div class="flex justify-center">
                 <table class="border-collapse table-auto lg:w-1/2 border-spacing-4 w-fit">
                     <caption class="my-4 text-md caption-bottom font-extralight">
-                        Légende : <span class="px-1 text-sm font-semibold bg-green-300 rounded-full">L</span> Entraînement libre <span class="px-1 mx-2 text-sm bg-orange-300 rounded-full font-extralight">E</span> Entraînement encadré <span class="px-1 text-sm font-semibold bg-blue-300 rounded-full">D</span> Entraînement dirigé.
+                        Légende : <span class="px-1 text-sm font-semibold bg-green-300 rounded-full">L</span>
+                        Entraînement libre <span
+                            class="px-1 mx-2 text-sm bg-orange-300 rounded-full font-extralight">E</span> Entraînement
+                        encadré <span class="px-1 text-sm font-semibold bg-blue-300 rounded-full">D</span> Entraînement
+                        dirigé.
                     </caption>
                     <thead class="text-left">
                         <th>
@@ -210,23 +216,24 @@
             <div>Copyright &copy; 2023 </div>
             <div></div>
             <div>
-                <h2 class="my-10 text-3xl font-semibold text-center text-gray-700 align-middle">Les infrastructures</h2>
-            <div class="flex flex-wrap items-center justify-center mx-auto mb-5 gap-9 px-14">
-                <div class="px-4 py-2 border-slate-800 w-96">
-                    <p class="py-2 text-xl font-medium text-left w-fit">Centre sportif
-                        Jean-Demeester</p>
-                    <p class="mt-4">Rue de l'Invasion 80<br>1340 Ottignies-Louvain-la-Neuve</p>
+                <h2 class="my-10 text-3xl font-semibold text-center text-gray-700 align-middle">Les infrastructures
+                </h2>
+                <div class="flex flex-wrap items-center justify-center mx-auto mb-5 gap-9 px-14">
+                    <div class="px-4 py-2 border-slate-800 w-96">
+                        <p class="py-2 text-xl font-medium text-left w-fit">Centre sportif
+                            Jean-Demeester</p>
+                        <p class="mt-4">Rue de l'Invasion 80<br>1340 Ottignies-Louvain-la-Neuve</p>
+                    </div>
+
+                    <div class="px-4 py-2 w-96">
+                        <p class="py-2 text-xl font-medium text-left w-fit">Centre sportif
+                            Blocry</p>
+                        <p class="mt-4">Place des Sports 1<br>1348 Ottignies-Louvain-la-Neuve</p>
+                    </div>
                 </div>
-                
-                <div class="px-4 py-2 w-96">
-                    <p class="py-2 text-xl font-medium text-left w-fit">Centre sportif
-                        Blocry</p>
-                    <p class="mt-4">Place des Sports 1<br>1348 Ottignies-Louvain-la-Neuve</p>
-                </div>
-            </div>
             </div>
         </div>
     </div>
-    </body>
+</body>
 
 </html>

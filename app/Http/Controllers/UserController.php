@@ -13,7 +13,7 @@ class UserController extends Controller
     public function index()
     {
         //
-        return View('members.index', [
+        return View('admin/members.index', [
             'members' => User::orderby('ranking')->get(),
         ]);
     }

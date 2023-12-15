@@ -15,7 +15,7 @@ return new class extends Migration
             //
             $table->string('first_name')->after('name');
             $table->renameColumn('name', 'last_name');
-            $table->unsignedMediumInteger('licence')->unique()->after('role')->nullable();
+            $table->unsignedMediumInteger('licence')->unique()->after('first_name')->nullable();
             $table->string('ranking')->nullable()->after('licence');
             $table->unsignedTinyInteger('force_index')->nullable()->after('ranking');
             $table->string('team')->nullable()->after('force_index');

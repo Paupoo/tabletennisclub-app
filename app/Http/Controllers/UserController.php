@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
@@ -37,11 +39,61 @@ class UserController extends Controller
     {
         //
         $request->validate([
-            'last_name' => ['required','string','unique:users']
+            'last_name' => ['required', 'string', 'max:255'],
+            'last_name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'lowercase', 'max:255', 'unique:users,email'],
+            'password' => ['required', 'confirmed', 'min:8', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
+            'licence' => ['nullable', 'unique:users,licence', 'size:6'],
+            'ranking' => ['nullable', Rule::in([
+                'B0',
+                'B2',
+                'B4',
+                'B6',
+                'C0',
+                'C2',
+                'C4',
+                'C6',
+                'D0',
+                'D2',
+                'D4',
+                'D6',
+                'E0',
+                'E2',
+                'E4',
+                'E6',
+                'NC',
+                'NA',
+            ])],
+            'force_index' => ['nullable', 'integer'],
+            'team' => ['nullable', Rule::in([
+                'A',
+                'B',
+                'C',
+                'D',
+                'E',
+                'F',
+                'G',
+                'H',
+                'I',
+                'J',
+                'K',
+                'L',
+
+            ])]
+        ]);
+
+        $request = User::create([
+            'first_name' => $request->first_name,
+            'last_name' => $request->last_name,
+            'email' => $request->email,
+            'password' => $request->password,
+            'licence' => $request->licence,
+            'ranking' => $request->ranking,
+            'team' => $request->team,
         ]);
 
         return redirect()->route('members.create')
-            ->with('success', '__(Member added)');
+            ->with('success', __('New member '. $request->first_name . ' ' . $request->last_name . ' created'));
     }
 
     /**
@@ -83,9 +135,9 @@ class UserController extends Controller
     {
         // Get aggregated counts by ranking [B6]=>1, [NC]=>10...)
         $members = DB::table('users')
-        ->select('ranking', DB::raw('count(1) as total'))
-        ->groupby('ranking')
-        ->get();
+            ->select('ranking', DB::raw('count(1) as total'))
+            ->groupby('ranking')
+            ->get();
 
         // read the whole table, calculate force index for each ranking and update members in the db.
         $i = 0;

@@ -17,8 +17,7 @@ class UserController extends Controller
     {
         //
         return View('admin/members.index', [
-            'members_ranked' => User::orderby('ranking')->get(),
-            'members_unranked' => User::orderby('last_name')->get(),
+            'members' => User::orderby('last_name')->orderby('first_name')->get(),
         ]);
     }
 

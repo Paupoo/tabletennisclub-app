@@ -43,8 +43,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($members_ranked as $member)
-                            @if ($member->ranking !== null)
+                        @foreach ($members as $member)
                                 <tr class="border-b dark:border-neutral-500">
                                     <td class="px-4 font-medium whitespace-nowrap">
                                         {{ $loop->iteration }}
@@ -64,36 +63,7 @@
                                             alt="Delete">
                                     </td>
                                 </tr>
-                            @endif
-                            @php
-                                $last_iteration = $loop->iteration
-                            @endphp
                         @endforeach
-                        @foreach ($members_unranked as $member)
-                            @if ($member->ranking == null)
-                                <tr class="border-b dark:border-neutral-500">
-                                    <td class="px-4 font-medium whitespace-nowrap">
-                                        {{ $last_iteration + $loop->iteration }}
-                                    </td>
-                                    <td class="px-4 whitespace-nowrap">{{ $member->last_name }}</td>
-                                    <td class="px-4 whitespace-nowrap">{{ $member->first_name }}</td>
-                                    <td class="px-4 whitespace-nowrap">{{ $member->role }}</td>
-                                    <td class="px-4 whitespace-nowrap">{{ $member->force_index }}</td>
-                                    <td class="px-4 whitespace-nowrap">{{ $member->ranking }}</td>
-                                    <td class="px-4 whitespace-nowrap">{{ $member->team }}</td>
-                                    <td class="flex items-center gap-2 px-4 whitespace-nowrap">
-                                        <img class="h-4 cursor-pointer" src="{{ asset('images/icons/contact.svg') }}"
-                                            alt="Contact">
-                                        <img class="h-4 cursor-pointer" src="{{ asset('images/icons/edit.svg') }}"
-                                            alt="Edit">
-                                        <img class="h-4 cursor-pointer" src="{{ asset('images/icons/delete.svg') }}"
-                                            alt="Delete">
-                                    </td>
-                                </tr>
-                            @endif
-                        @endforeach
-
-
                     </tbody>
                 </table>
 

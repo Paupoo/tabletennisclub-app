@@ -17,7 +17,8 @@ class UserController extends Controller
     {
         //
         return View('admin/members.index', [
-            'members' => User::orderby('ranking')->get(),
+            'members_ranked' => User::orderby('ranking')->get(),
+            'members_unranked' => User::orderby('last_name')->get(),
         ]);
     }
 
@@ -62,7 +63,6 @@ class UserController extends Controller
                 'E4',
                 'E6',
                 'NC',
-                'NA',
             ])],
             'force_index' => ['nullable', 'integer'],
             'team' => ['nullable', Rule::in([
@@ -136,6 +136,7 @@ class UserController extends Controller
         // Get aggregated counts by ranking [B6]=>1, [NC]=>10...)
         $members = DB::table('users')
             ->select('ranking', DB::raw('count(1) as total'))
+            ->whereNot('ranking','=', ['NA',null])
             ->groupby('ranking')
             ->get();
 

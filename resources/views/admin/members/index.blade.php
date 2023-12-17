@@ -9,15 +9,15 @@
         <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
             <div class="flex flex-row gap-4">
                 <form action="{{ route('members.create') }}">
-                    <x-primary-button>Create new user</x-primary-button>
+                    <x-primary-button>{{ __('Create new user') }}</x-primary-button>
                 </form>
                 <form action="{{ route('setForceIndex') }}" method="POST">
                     @csrf
-                    <x-primary-button>Set force index</x-primary-button>
+                    <x-primary-button>{{ __('Set force index') }}</x-primary-button>
                 </form>
                 <form action="{{ route('deleteForceIndex') }}" method="POST">
                     @csrf
-                    <x-danger-button>Delete force index</x-danger-button>
+                    <x-danger-button>{{ __('Delete force index') }}</x-danger-button>
                 </form>
 
             </div>
@@ -44,25 +44,29 @@
                     </thead>
                     <tbody>
                         @foreach ($members as $member)
-                                <tr class="border-b dark:border-neutral-500">
-                                    <td class="px-4 font-medium whitespace-nowrap">
-                                        {{ $loop->iteration }}
-                                    </td>
-                                    <td class="px-4 whitespace-nowrap">{{ $member->last_name }}</td>
-                                    <td class="px-4 whitespace-nowrap">{{ $member->first_name }}</td>
-                                    <td class="px-4 whitespace-nowrap">{{ $member->role }}</td>
-                                    <td class="px-4 whitespace-nowrap">{{ $member->force_index }}</td>
-                                    <td class="px-4 whitespace-nowrap">{{ $member->ranking }}</td>
-                                    <td class="px-4 whitespace-nowrap">{{ $member->team }}</td>
-                                    <td class="flex items-center gap-2 px-4 whitespace-nowrap">
-                                        <img class="h-4 cursor-pointer" src="{{ asset('images/icons/contact.svg') }}"
-                                            alt="Contact">
-                                        <img class="h-4 cursor-pointer" src="{{ asset('images/icons/edit.svg') }}"
-                                            alt="Edit">
-                                        <img class="h-4 cursor-pointer" src="{{ asset('images/icons/delete.svg') }}"
-                                            alt="Delete">
-                                    </td>
-                                </tr>
+                            <tr class="border-b dark:border-neutral-500">
+                                <td class="px-4 font-medium whitespace-nowrap">
+                                    {{ $loop->iteration }}
+                                </td>
+                                <td class="px-4 whitespace-nowrap">{{ $member->last_name }}</td>
+                                <td class="px-4 whitespace-nowrap">{{ $member->first_name }}</td>
+                                <td class="px-4 whitespace-nowrap">{{ $member->role }}</td>
+                                <td class="px-4 whitespace-nowrap">{{ $member->force_index }}</td>
+                                <td class="px-4 whitespace-nowrap">{{ $member->ranking }}</td>
+                                <td class="px-4 whitespace-nowrap">{{ $member->team }}</td>
+                                <td class="flex items-center gap-2 px-4 whitespace-nowrap">
+                                    <img class="h-4 cursor-pointer" src="{{ asset('images/icons/contact.svg') }}"
+                                        alt="Contact">
+                                    <form action="{{ route('members.edit', $member->id) }}" method="GET">
+                                        <button type="submit">
+                                            <img class="h-4 cursor-pointer" src="{{ asset('images/icons/edit.svg') }}"
+                                                alt="Edit">
+                                                            </button>
+                                    </form>
+                                    <img class="h-4 cursor-pointer" src="{{ asset('images/icons/delete.svg') }}"
+                                        alt="Delete">
+                                </td>
+                            </tr>
                         @endforeach
                     </tbody>
                 </table>

@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\Rule;
+use Laravel\Jetstream\Http\Controllers\Inertia\TeamMemberController;
 
 class UserController extends Controller
 {
@@ -27,9 +28,7 @@ class UserController extends Controller
     public function create()
     {
         //
-        return View('admin/members.create', [
-            'members' => User::all(),
-        ]);
+        return View('admin/members.create');
     }
 
     /**
@@ -91,6 +90,8 @@ class UserController extends Controller
             'team' => $request->team,
         ]);
 
+        $this->setForceIndex();
+
         return redirect()->route('members.create')
             ->with('success', __('New member '. $request->first_name . ' ' . $request->last_name . ' created'));
     }
@@ -109,6 +110,9 @@ class UserController extends Controller
     public function edit(string $id)
     {
         //
+        return view ('admin.members.edit', [
+            'member' => User::find($id),
+        ]);
     }
 
     /**
@@ -117,7 +121,68 @@ class UserController extends Controller
     public function update(Request $request, string $id)
     {
         //
+        $request->validate([
+            'last_name' => ['required', 'string', 'max:255'],
+            'last_name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'lowercase', 'max:255', 'unique:users,email,'.$id,],
+            'password' => ['nullable', 'confirmed', 'min:8', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
+            'licence' => ['nullable', 'unique:users,licence,'.$id, 'size:6'],
+            'ranking' => ['nullable', Rule::in([
+                'B0',
+                'B2',
+                'B4',
+                'B6',
+                'C0',
+                'C2',
+                'C4',
+                'C6',
+                'D0',
+                'D2',
+                'D4',
+                'D6',
+                'E0',
+                'E2',
+                'E4',
+                'E6',
+                'NC',
+            ])],
+            'force_index' => ['nullable', 'integer'],
+            'team' => ['nullable', Rule::in([
+                'A',
+                'B',
+                'C',
+                'D',
+                'E',
+                'F',
+                'G',
+                'H',
+                'I',
+                'J',
+                'K',
+                'L',
+
+            ])]
+        ]);
+
+        $user = User::find($id);
+
+        $user->first_name = $request->first_name;
+        $user->last_name = $request->last_name;
+        $user->email = $request->email;
+        if($user->password != null) {
+            $user->password = $request->password;
+        }
+        $user->licence = $request->licence;
+        $user->ranking = $request->ranking;
+        $user->force_index = $request->force_index;
+        $user->team = $request->team;
+
+        $user->save();
+
+        return redirect()->route('members.index');
     }
+
+
 
     /**
      * Remove the specified resource from storage.

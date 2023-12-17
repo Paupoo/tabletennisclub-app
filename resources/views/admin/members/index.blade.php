@@ -8,18 +8,12 @@
     <div class="pt-6">
         <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
             <div class="flex flex-row gap-4">
+                <form action="{{ route('dashboard') }}">
+                    <x-primary-button>{{ __('Dashboard') }}</x-primary-button>
+                </form>
                 <form action="{{ route('members.create') }}">
                     <x-primary-button>{{ __('Create new user') }}</x-primary-button>
                 </form>
-                <form action="{{ route('setForceIndex') }}" method="POST">
-                    @csrf
-                    <x-primary-button>{{ __('Set force index') }}</x-primary-button>
-                </form>
-                <form action="{{ route('deleteForceIndex') }}" method="POST">
-                    @csrf
-                    <x-danger-button>{{ __('Delete force index') }}</x-danger-button>
-                </form>
-
             </div>
             
             @if(session('success'))

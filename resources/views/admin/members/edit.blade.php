@@ -79,6 +79,7 @@
                             <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
                         </div>
 
+                        {{-- Licence --}}
                         <div>
                             <x-input-label for="licence" :value="__('Licence')" />
                             <x-text-input id="licence" name="licence" type="number" class="block w-full mt-1"
@@ -87,6 +88,7 @@
                             <x-input-error class="mt-2" :messages="$errors->get('licence')" />
                         </div>
 
+                        {{-- Ranking --}}
                         <div>
                             <x-input-label for="ranking" :value="__('Ranking')" />
                             <x-text-input id="ranking" name="ranking" type="text" class="block w-full mt-1"
@@ -94,6 +96,34 @@
                             <x-input-error class="mt-2" :messages="$errors->get('ranking')" />
                         </div>
 
+                        {{-- Role --}}
+                        <div>
+                            <x-input-label for="role" :value="__('Role')" />
+                            <x-select-input id="role" name="role" type="text" class="block w-full mt-1"
+                                 autofocus autocomplete="role">
+                                @foreach ($roles as $role)
+
+                                    @if(old('role') !== null && old('role') == $role->id)
+
+                                        <option value="{{ $role->id }}" selected>{{ $role->name }}</option>
+
+                                    @elseif (old('role') === null && $role->id == $member->role->id)
+
+                                        <option value="{{ $role->id }}" selected>{{ $role->name }}</option>
+
+                                    @else
+
+                                        <option value="{{ $role->id }}">{{ $role->name }}</option>
+
+                                    @endif
+
+                                @endforeach
+
+                            </x-select-input>
+                            <x-input-error class="mt-2" :messages="$errors->get('role')" />
+                        </div>
+
+                        {{-- Team --}}
                         <div>
                             <x-input-label for="team" :value="__('Team')" />
                             <x-text-input id="team" name="team" type="text" class="block w-full mt-1"
@@ -104,7 +134,7 @@
                         <div>
                             <x-primary-button>{{ __('Save change') }}</x-primary-button>
                         </div>
-
+                        
                     </form>
                 </div>
             </div>

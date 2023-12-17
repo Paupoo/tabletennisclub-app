@@ -8,7 +8,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\Rule;
-use Laravel\Jetstream\Http\Controllers\Inertia\TeamMemberController;
 
 class UserController extends Controller
 {
@@ -18,7 +17,7 @@ class UserController extends Controller
     public function index()
     {
         //
-        return View('admin/members.index', [
+        return View('admin.members.index', [
             'members' => User::orderby('last_name')->orderby('first_name')->get(),
         ]);
     }
@@ -29,7 +28,9 @@ class UserController extends Controller
     public function create()
     {
         //
-        return View('admin/members.create');
+        return View('admin.members.create', [
+            'roles' => Role::orderby('name')->get(),
+        ]);
     }
 
     /**
@@ -63,7 +64,6 @@ class UserController extends Controller
                 'E6',
                 'NC',
             ])],
-            'force_index' => ['nullable', 'integer'],
             'team' => ['nullable', Rule::in([
                 'A',
                 'B',
@@ -79,7 +79,7 @@ class UserController extends Controller
                 'L',
 
             ])],
-            'role_id' => ['nullable'],
+            'role' => ['nullable'],
         ]);
 
         $request = User::create([
@@ -90,7 +90,7 @@ class UserController extends Controller
             'licence' => $request->licence,
             'ranking' => $request->ranking,
             'team' => $request->team,
-            'role_id' => 1,
+            'role_id' => $request->role,
         ]);
 
         $this->setForceIndex();
@@ -115,6 +115,7 @@ class UserController extends Controller
         //
         return view ('admin.members.edit', [
             'member' => User::find($id),
+            'roles' => Role::orderby('name')->get(),
         ]);
     }
 
@@ -149,7 +150,6 @@ class UserController extends Controller
                 'E6',
                 'NC',
             ])],
-            'force_index' => ['nullable', 'integer'],
             'team' => ['nullable', Rule::in([
                 'A',
                 'B',
@@ -164,7 +164,8 @@ class UserController extends Controller
                 'K',
                 'L',
 
-            ])]
+            ])],
+            'role' => ['integer'],
         ]);
 
         $user = User::find($id);
@@ -172,15 +173,17 @@ class UserController extends Controller
         $user->first_name = $request->first_name;
         $user->last_name = $request->last_name;
         $user->email = $request->email;
-        if($user->password != null) {
+        if($request->password != null) {
             $user->password = $request->password;
         }
         $user->licence = $request->licence;
         $user->ranking = $request->ranking;
-        $user->force_index = $request->force_index;
         $user->team = $request->team;
+        $user->role_id = $request->role;
 
         $user->save();
+
+        $this->setForceIndex();
 
         return redirect()->route('members.index');
     }

@@ -35,9 +35,9 @@
                         <tbody>
                             @foreach ($roles as $role)
                                 <tr>
-                                    <td>1</td>
-                                    <td>{{ $role->name }}</td>
-                                    <td>{{ $role->description }}</td>
+                                    <td>{{ $loop->iteration }}</td>
+                                    <td>{{ \Illuminate\Support\Str::of($role->name)->limit(30) }}</td>
+                                    <td>{{ \Illuminate\Support\Str::of($role->description)->limit(60) }}</td>
                                     <td>{{ $role->user->count() }}</td>
                                 </tr>
                             @endforeach

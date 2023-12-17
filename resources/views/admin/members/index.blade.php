@@ -21,6 +21,12 @@
                 </form>
 
             </div>
+            
+            @if(session('success'))
+            <div class="mt-4 bg-red-500">
+                {{ session('success') }}
+            </div>
+            @endif
         </div>
     </div>
 
@@ -59,12 +65,16 @@
                                         alt="Contact">
                                     <form action="{{ route('members.edit', $member->id) }}" method="GET">
                                         <button type="submit">
-                                            <img class="h-4 cursor-pointer" src="{{ asset('images/icons/edit.svg') }}"
-                                                alt="Edit">
-                                                            </button>
+                                            <img class="h-4 cursor-pointer" src="{{ asset('images/icons/edit.svg') }}" alt="Edit">
+                                        </button>
                                     </form>
-                                    <img class="h-4 cursor-pointer" src="{{ asset('images/icons/delete.svg') }}"
-                                        alt="Delete">
+                                    <form action="{{ route('members.destroy', $member->id) }}" method="POST">
+                                        @csrf
+                                        @method('delete')
+                                        <button>
+                                            <img class="h-4 cursor-pointer" src="{{ asset('images/icons/delete.svg') }}" alt="Delete">
+                                        </button>
+                                    </form>
                                 </td>
                             </tr>
                         @endforeach

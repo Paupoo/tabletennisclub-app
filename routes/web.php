@@ -1,8 +1,11 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
+use App\Models\User;
+use App\Models\Role;
 
 /*
 |--------------------------------------------------------------------------
@@ -20,10 +23,16 @@ Route::get('/', function () {
 });
 
 Route::get('/admin/dashboard', function () {
-    return view('admin.dashboard');
+    return view('admin.dashboard', [
+        'roles' => Role::orderby('name')->get(),
+        'members' => User::latest()->take(5)->get(),
+        'members_total' => User::count(),
+    ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-//Force List
+/**
+ * Users
+ */
 Route::post('/admin/members/setForceIndex', [
     UserController::class,
     'setForceIndex',
@@ -35,6 +44,13 @@ Route::post('/admin/members/deleteForceIndex', [
 ])->name('deleteForceIndex');
 
 Route::resource('admin/members', UserController::class);
+
+/**
+ * Roles management
+ */
+
+Route::resource('admin/roles', RoleController::class);
+
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

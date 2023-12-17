@@ -22,29 +22,33 @@
                 <div class="p-6 text-gray-900 dark:text-gray-100">
                     <h2 class="text-lg font-semibold pb-2">Roles</h2>
 
-                    <table class="table table-auto border border-collapse mt-4 w-96 text-left">
+                    <table class="table table-auto border border-collapse mt-4 lg:w-3/4 w-full text-left">
                         <caption class="caption-top font-thin text-right">Current roles</caption>
                         <thead>
                             <tr>
                                 <th>#</th>
                                 <th>Name</th>
                                 <th>Description</th>
+                                <th>Members</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>1</td>
-                                <td>Name</td>
-                                <td>Description</td>
-                            </tr>
+                            @foreach ($roles as $role)
+                                <tr>
+                                    <td>1</td>
+                                    <td>{{ $role->name }}</td>
+                                    <td>{{ $role->description }}</td>
+                                    <td>{{ $role->user->count() }}</td>
+                                </tr>
+                            @endforeach
                         </tbody>
                     </table>
 
                     <div class="flex gap-4 mt-4 w-96">
-                        <form action="">
+                        <form action="{{ route('roles.create') }}">
                             <x-primary-button>Create new role</x-primary-button>
                         </form>
-                        <form action="">
+                        <form action="{{ route('roles.index') }}">
                             <x-primary-button>Manage roles</x-primary-button>
                         </form>
                     </div>
@@ -75,7 +79,9 @@
                             <tr>
                                 <td>1</td>
                                 <td>Demeester/-1</td>
-                                <td><address>Rue de l'Invasion 80 - 1340 Ottignies-Louvain-la-Neuve</address></td>
+                                <td>
+                                    <address>Rue de l'Invasion 80 - 1340 Ottignies-Louvain-la-Neuve</address>
+                                </td>
                                 <td>T 6 / M 4</td>
                                 <td>La salle se trouve au -1</td>
                             </tr>
@@ -101,25 +107,56 @@
             <div class="overflow-hidden bg-white shadow-sm dark:bg-gray-800 sm:rounded-lg">
                 <div class="p-6 text-gray-900 dark:text-gray-100">
                     <h2 class="text-lg font-semibold pb-2">Members</h2>
-                    <p>There are currently <var class="font-semibold">xx</var> members.</p>
+                    <div class="w-full flex gap-4 justify-around">
+                        <table class="table-auto table-collapse border w-96">
+                            <caption class="caption-top font-extralight text-right">Members overview</caption>
+                            <thead class="text-left border-b">
+                                <tr>
+                                    <th></th>
+                                    <th class=""">Active</th>
+                                    <th class="">Inactive</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="">
+                                    <th class="text-right">Total</th>
+                                    <td class="hover:bg-blue-200 rounded-lg hover:font-bold text-center">
+                                        {{ $members_total }}</td>
+                                    <td class="hover:bg-blue-200 rounded-lg hover:font-bold text-center">x</td>
+                                </tr>
+                                <tr>
+                                    <th class="text-right">Training</th>
+                                    <td class="hover:bg-blue-200 rounded-lg hover:font-bold text-center">y</td>
+                                    <td class="hover:bg-blue-200 rounded-lg hover:font-bold text-center">z</td>
+                                </tr>
+                                <tr>
+                                    <th class="text-right">Competition</th>
+                                    <td class="hover:bg-blue-200 rounded-lg hover:font-bold text-center">a</td>
+                                    <td class="hover:bg-blue-200 rounded-lg hover:font-bold text-center">b</td>
+                                </tr>
+                            </tbody>
+                        </table>
 
-                    <table class="table table-auto border border-collapse mt-4 w-96 text-left">
-                        <caption class="caption-top font-thin text-right">5 latest members</caption>
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Last Name</th>
-                                <th>First Name</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>1</td>
-                                <td>Jean</td>
-                                <td>Dupont</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                        <table class="table table-auto border border-collapse mt-4 w-96 text-left">
+                            <caption class="caption-top font-thin text-right">5 latest members</caption>
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Last Name</th>
+                                    <th>First Name</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($members as $member)
+                                    <tr>
+                                        <td>{{ $loop->iteration }}</td>
+                                        <td>{{ $member->first_name }}</td>
+                                        <td>{{ $member->last_name }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
 
                     <div class="flex gap-4 mt-4 w-96">
                         <form action="{{ route('members.create') }}" method="GET">
@@ -245,7 +282,7 @@
                                 <td>Jean Dupont</td>
                                 <td class="flex align-middle flex-row gap-2">
                                     <p>Pending</p>
-                                    <img src="{{ asset('images/icons/hourglass.svg')}}" alt="pending" class="h-5">
+                                    <img src="{{ asset('images/icons/hourglass.svg') }}" alt="pending" class="h-5">
                                 </td>
                             </tr>
                         </tbody>
@@ -264,6 +301,6 @@
         </div>
     </div>
 
-    
+
 
 </x-app-layout>

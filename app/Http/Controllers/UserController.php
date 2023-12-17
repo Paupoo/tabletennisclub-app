@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rules\Password;
@@ -77,7 +78,8 @@ class UserController extends Controller
                 'K',
                 'L',
 
-            ])]
+            ])],
+            'role_id' => ['nullable'],
         ]);
 
         $request = User::create([
@@ -88,6 +90,7 @@ class UserController extends Controller
             'licence' => $request->licence,
             'ranking' => $request->ranking,
             'team' => $request->team,
+            'role_id' => 1,
         ]);
 
         $this->setForceIndex();

@@ -11,7 +11,7 @@
                 <x-primary-button>{{ __('Dashboard') }}</x-primary-button>
             </form>
             <form action="{{ route('members.index') }}" method="GET">
-                <x-primary-button>{{ __('Manage roles') }}</x-primary-button>
+                <x-primary-button>{{ __('Manage users') }}</x-primary-button>
             </form>
         </div>
     </x-admin-block>

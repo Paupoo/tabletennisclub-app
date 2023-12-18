@@ -18,7 +18,7 @@ class UserController extends Controller
     {
         //
         return View('admin.members.index', [
-            'members' => User::orderby('last_name')->orderby('first_name')->get(),
+            'members' => User::orderby('last_name')->orderby('first_name')->paginate(20),
         ]);
     }
 

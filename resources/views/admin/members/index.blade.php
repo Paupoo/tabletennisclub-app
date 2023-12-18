@@ -35,10 +35,13 @@
                             <th scope="col" class="px-4 py-2">#</th>
                             <th scope="col" class="px-4 py-2">{{ __('Last Name') }}</th>
                             <th scope="col" class="px-4 py-2">{{ __('First Name') }}</th>
-                            <th scope="col" class="px-4 py-2">{{ __('Role') }}</th>
                             <th scope="col" class="px-4 py-2">{{ __('Force Index') }}</th>
                             <th scope="col" class="px-4 py-2">{{ __('Ranking') }}</th>
                             <th scope="col" class="px-4 py-2">{{ __('Team') }}</th>
+                            <th scope="col" class="px-4 py-2">{{ __('Role') }}</th>
+                            <th scope="col" class="px-4 py-2">{{ __('Active') }}</th>
+                            <th scope="col" class="px-4 py-2">{{ __('Competitor') }}</th>
+                            <th scope="col" class="px-4 py-2">{{ __('Has Debts') }}</th>
                             <th scope="col" class="px-4 py-2">{{ __('Actions') }}</th>
                         </tr>
                     </thead>
@@ -50,10 +53,31 @@
                                 </td>
                                 <td class="px-4 whitespace-nowrap">{{ $member->last_name }}</td>
                                 <td class="px-4 whitespace-nowrap">{{ $member->first_name }}</td>
-                                <td class="px-4 whitespace-nowrap">{{ $member->role->name }}</td>
                                 <td class="px-4 whitespace-nowrap">{{ $member->force_index }}</td>
                                 <td class="px-4 whitespace-nowrap">{{ $member->ranking }}</td>
                                 <td class="px-4 whitespace-nowrap">{{ $member->team }}</td>
+                                <td class="px-4 whitespace-nowrap">{{ $member->role->name }}</td>
+                                <td class="px-4 whitespace-nowrap">
+                                    @if($member->is_active == false)
+                                    {{ __('Inactive') }}
+                                    @else
+                                    {{ __('Active') }}
+                                    @endif
+                                </td>
+                                <td class="px-4 whitespace-nowrap">
+                                    @if($member->is_competitor == false)
+                                    {{ __('Casual') }}
+                                    @else
+                                    {{ __('Competitor') }}
+                                    @endif
+                                </td>
+                                <td class="px-4 whitespace-nowrap">
+                                    @if ($member->has_debt == false)
+                                        {{ __('No') }}
+                                    @else
+                                        {{ __('Yes') }}
+                                    @endif    
+                                </td>
                                 <td class="flex items-center gap-2 px-4 whitespace-nowrap">
                                     <img class="h-4 cursor-pointer" src="{{ asset('images/icons/contact.svg') }}"
                                         alt="Contact">
@@ -74,6 +98,10 @@
                         @endforeach
                     </tbody>
                 </table>
+                
+                <x-admin-block>
+                    {{ $members->onEachSide(0)->links() }}
+                </x-admin-block>
 
             </div>
         </div>

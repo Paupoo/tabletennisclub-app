@@ -28,6 +28,14 @@ class User extends Authenticatable
         'force_index',
         'team',
         'role_id',
+        'is_active',
+        'is_competitor',
+        'has_debt',
+        'birthday',
+        'phone_number',
+        'street',
+        'city',
+        'city_code',
     ];
 
     /**
@@ -50,7 +58,7 @@ class User extends Authenticatable
         'password' => 'hashed',
     ];
 
-    public function role() :BelongsTo
+    public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class);
     }

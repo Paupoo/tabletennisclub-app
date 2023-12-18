@@ -16,7 +16,20 @@ class DatabaseSeeder extends Seeder
     {
 
         // Create roles
-        Role::factory(3)->create();
+        Role::factory()->create([
+            'name' => 'Member',
+            'description' => 'Members can subscribe to trainings, matches and events. They also see contact info of other member and invite guests to join the club.'
+        ]);
+
+        Role::factory()->create([
+            'name' => 'Admin',
+            'description' => 'Admins are building and maintaining the website. They have access to all the features of the applications to manage roles for example.'
+        ]);
+
+        Role::factory()->create([
+            'name' => 'Committee Member',
+            'description' => 'Committe Members have various administrative privileges, such as team, rooms, trainings, match and members management.'
+        ]);
 
         // Create 1 admin
         User::factory(1)->create([
@@ -28,12 +41,8 @@ class DatabaseSeeder extends Seeder
             'password' => 'test1234',
         ]);
 
-        // Create 35 members
-        User::factory(35)->create();
+        // Create 75 members
+        User::factory(75)->create();
 
-
-        // Create 4 comittee members
-        // User::factory(4)->create([
-        // ]);
     }
 }

@@ -39,6 +39,7 @@ class DatabaseSeeder extends Seeder
             'licence' => '114399',
             'email' => 'aurelien.paulus@gmail.com',
             'password' => 'test1234',
+            'role_id' => 2,
         ]);
 
         // Create 75 members

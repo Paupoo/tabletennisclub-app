@@ -4,236 +4,383 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+
     <title>{{ config('app.name') }}</title>
+
     @vite('resources/css/app.css')
+
 </head>
 
-<body class="bg-white">
-    <div class="container">
-        <div class="flex flex-row items-center justify-end w-screen h-20 px-4 text-yellow-400 bg-slate-800">
-            <div class="flex flex-row items-center justify-between w-64 mr-auto">
-                <div><img src="{{ asset('images/logo.svg') }}" alt="" width="50"></div>
-                <div class="text-3xl font-bold">CTT Ottignies</div>
-            </div>
-            <nav class="flex flex-row">
-                {{-- Big screen menu --}}
-                <ul class="flex flex-row items-center justify-around text-lg font-bold h-11">
-                    <li class="hidden mr-4 xl:flex"><a href="">Le club</a></li>
-                    <li class="hidden mr-4 xl:flex"><a href="">Calendrier</a></li>
-                    <li class="hidden mr-4 xl:flex"><a href="">Résultats</a></li>
-                    <li class="hidden mr-4 xl:flex"><a href="">Contact</a></li>
+<body class="w-screen bg-neutral-100 dark:bg-neutral-900">
+    <div class="mx-auto max-w-7xl max-sm:w-full">
 
-                    <form action="{{ route('dashboard') }}">
-                        <button
-                            class="items-center hidden h-8 px-2 py-2 mx-4 font-normal text-justify text-yellow-400 duration-200 bg-blue-500 border-0 rounded-md lg:flex hover:opacity-75">Login</button>
-                    </form>
+        {{-- HEADER --}}
+        <header
+            class="sticky top-0 z-10 flex flex-row items-center justify-between h-24 px-12 py-8 mt-4 text-blue-800 bg-yellow-400 border-b border-blue-600 border-dotted shadow-sm max-sm:py-2 max-sm:px-4">
+
+            <div class="grid h-12 grid-cols-3 mx-4 w-fit">
+                <div class="col-span-1 w-36 max-sm:w-fit">
+                    <x-logo />
+                </div>
+                <div class="flex flex-row items-center justify-start col-span-2">
+                    <p class="text-3xl font-bold max-sm:text-base max-sm:h-8">{{ config('app.name') }}</p>
+                </div>
+            </div>
+
+
+            <nav class="flex items-center w-auto h-12 mx-4">
+
+                {{-- Normal Menu --}}
+                <ul class="flex flex-row gap-8 max-lg:hidden">
+                    <li>
+                        <x-button class="text-lg font-semibold ">{{ __('Sport Offer') }}</x-button>
+                    </li>
+                    <li>
+                        <x-button class="text-lg font-semibold">{{ __('Our Club') }}</x-button>
+                    </li>
+                    <li>
+                        <x-button class="text-lg font-semibold"> {{ __('Contact') }}</x-button>
+                    </li>
+                    <li>
+                        <x-button class="text-lg font-semibold text-yellow-400 bg-indigo-800">
+                            {{ __('Login') }}</x-button>
+                    </li>
                 </ul>
-                {{-- Hamburger menu --}}
-                <div class="flex items-center mx-4 xl:hidden">
-                    <button>
-                        <?xml version="1.0" encoding="UTF-8"?><svg width="24px" height="24px" stroke-width="1.5"
-                            viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="#facc15">
-                            <path d="M3 5H21" stroke="#facc15" stroke-width="1.5" stroke-linecap="round"
-                                stroke-linejoin="round"></path>
-                            <path d="M3 12H21" stroke="#facc15" stroke-width="1.5" stroke-linecap="round"
-                                stroke-linejoin="round"></path>
-                            <path d="M3 19H21" stroke="#facc15" stroke-width="1.5" stroke-linecap="round"
-                                stroke-linejoin="round"></path>
-                        </svg>
-                    </button>
-                </div>
-                {{-- Search box --}}
-                <div
-                    class="items-center justify-end hidden w-64 h-10 bg-yellow-100 border-0 sm:flex align-center rounded-xl">
-                    {{-- <label for="search" class="inline-flex items-center h-full pl-2 text-gray-800 bg-yellow-500 rounded-l-xl w-fit">Recherche : </label> --}}
-                    <input type="search" aria-label="Recherche" id="search" placeholder="Recherche"
-                        class="w-full text-gray-900 bg-yellow-100 border-0 rounded-l-xl">
-                    <button class="w-10 mx-2"><img src="{{ asset('images/search.svg') }}" alt="Recherche"></button>
-                </div>
-                <div class="w-10 sm:hidden">
-                    <?xml version="1.0" encoding="UTF-8"?><svg width="24px" height="24px" viewBox="0 0 24 24"
-                        stroke-width="1.5" fill="none" xmlns="http://www.w3.org/2000/svg" color="#000000">
-                        <path d="M17 17L21 21" stroke="#facc15" stroke-width="1.5" stroke-linecap="round"
-                            stroke-linejoin="round"></path>
-                        <path
-                            d="M3 11C3 15.4183 6.58172 19 11 19C13.213 19 15.2161 18.1015 16.6644 16.6493C18.1077 15.2022 19 13.2053 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11Z"
-                            stroke="#facc15" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-                    </svg>
-                </div>
+
+                {{-- Hamburger Menu --}}
+                <x-icons.hamburger class="lg:hidden" />
             </nav>
+        </header>
 
-        </div>
+        {{-- MAIN --}}
+        <main class="grid grid-flow-row z-1 top-24 bg-neutral-100 dark:bg-neutral-900 dark:text-slate-400">
 
-        {{-- Section 1 --}}
-        <div class="w-screen pt-12 pb-10 bg-gradient-to-b from-slate-800 to-indigo-900">
-            <div class="flex flex-row m-auto max-w-7xl">
-                <div class="relative w-5/12 max-w-lg m-auto leading-normal text-gray-300">
-                    {{-- <hr class="mb-4"> --}}
-                    <h1 class="text-6xl leading-snug text-left">Bienvenue</h1>
-                    <p class="text-3xl leading-snug text-right">dans notre club a taille <span
-                            class="font-semibold text-yellow-400">humaine</span>
-                    <p class="text-2xl leading-snug text-left">à Ottignies-Louvain-La-Neuve</p>
-                    <hr class="mt-6">
-                    <div class="flex flex-row justify-around w-full mt-10">
-                        <button
-                            class="flex flex-row px-6 py-2 font-semibold duration-200 ease-in bg-yellow-400 rounded-full text-slate-900 hover:scale-105">
-                            <div class="mr-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                    stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" />
-                                </svg>
+            {{-- Kiosk --}}
+            <section
+                class="relative grid grid-cols-2 gap-4 px-12 py-8 bg-yellow-400 rounded-b-sm max-lg:grid-cols-1 max-sm:px-8 mx-0min-lg:w-lg h-fix">
 
-                            </div>
-                            <div>
-                                Nous rejoindre
-                            </div>
-                        </button>
-                        <button
-                            class="flex flex-row px-6 py-2 font-semibold duration-200 ease-in bg-yellow-400 rounded-full text-slate-900 hover:scale-105">
-                            <div class="mr-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                    stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                        d="M21.75 9v.906a2.25 2.25 0 01-1.183 1.981l-6.478 3.488M2.25 9v.906a2.25 2.25 0 001.183 1.981l6.478 3.488m8.839 2.51l-4.66-2.51m0 0l-1.023-.55a2.25 2.25 0 00-2.134 0l-1.022.55m0 0l-4.661 2.51m16.5 1.615a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V8.844a2.25 2.25 0 011.183-1.98l7.5-4.04a2.25 2.25 0 012.134 0l7.5 4.04a2.25 2.25 0 011.183 1.98V19.5z" />
-                                </svg>
+                <div class="absolute left-0 p-1 mx-2 top-1/2">
+                    <x-button class="h-8 rounded-md hover:bg-opacity-50" type="button"> <img
+                            src="{{ asset('images/icons/arrow_left.png') }}" alt="Previous" class="h-full">
+                    </x-button>
+                </div>
 
-                            </div>
-                            <div>
-                                Nous contacter
-                            </div>
-                        </button>
+                {{-- Image --}}
+                <div class="px-4 max-lg:row-start-2 ">
+                    <img src="{{ asset('images/table-tennis-background2.jpg') }}" alt=""
+                        class="w-full rounded-lg shadow-lg">
+                </div>
+
+                {{-- Call to action --}}
+                <div class="flex flex-col justify-around gap-4 px-4 mb-2 max-lg:row-start-1">
+                    <h1 class="text-3xl font-bold text-left">{{ __('Welcome') }}</h1>
+                    <p>{{ __('Lorem ipsum dolor sit amet consectetur, adipisicing elit. Dicta, voluptatum consectetur? Ut,
+                        delectus
+                        quod eveniet autem laborum ullam reiciendis deserunt a consequuntur dolor quis cumque quibusdam
+                        esse
+                        nulla odit dolorum.') }}</p>
+                    <div class="flex flex-row items-center self-center">
+                        <x-button
+                            class="py-2 mr-4 font-semibold text-yellow-400 bg-blue-800 shadow-2xl w-36 shadow-blue-800"
+                            type="button">{{ __('Join us') }}</x-button>
+                        <a class="ml-4 text-lg font-semibold" href="">
+                            {{ ('Learn more') }}
+                            <span class="text-3xl font-extrabold">&rarr;</span>
+                        </a>
                     </div>
                 </div>
-                <div class="hidden transition-all xl:mb-16 xl:block xl:m-auto xl:bottom-0">
-                    <img src="{{ asset('images/Groupe-1.jpg') }}" alt=""
-                        class="object-cover translate-y-28 rotate-6 rounded-3xl">
-                </div>
-            </div>
-        </div>
-
-        {{-- Section 2 --}}
-        <div class="grid w-screen pt-10 pb-16 mx-auto bg-yellow-100">
-
-            <h2 class="my-10 text-3xl font-semibold text-center text-gray-700 align-middle">Les infrastructures</h2>
-            <div class="flex flex-wrap items-center justify-center mx-auto mb-5 gap-9 px-14">
-                <div class="px-4 py-2 border-slate-800 w-96">
-                    <p class="py-2 text-xl font-medium text-left w-fit">Centre sportif
-                        Jean-Demeester</p>
-                    <p class="mt-4">Rue de l'Invasion 80<br>1340 Ottignies-Louvain-la-Neuve</p>
+                <div class="absolute right-0 p-1 mx-2 top-1/2">
+                    <x-button class="h-8 rounded-md hover:bg-opacity-50" type="button">
+                        <img src="{{ asset('images/icons/arrow_right.png') }}" alt="Next" class="h-full">
+                    </x-button>
                 </div>
 
-                <div class="px-4 py-2 w-96">
-                    <p class="py-2 text-xl font-medium text-left w-fit">Centre sportif
-                        Blocry</p>
-                    <p class="mt-4">Place des Sports 1<br>1348 Ottignies-Louvain-la-Neuve</p>
-                </div>
-            </div>
+            </section>
 
-            <h2 class="mt-5 mb-10 text-3xl font-semibold text-center text-gray-700 align-middle">Les entraînements</h2>
-            <div class="flex justify-center">
-                <table class="border-collapse table-auto lg:w-1/2 border-spacing-4 w-fit">
-                    <caption class="my-4 text-md caption-bottom font-extralight">
-                        Légende : <span class="px-1 text-sm font-semibold bg-green-300 rounded-full">L</span>
-                        Entraînement libre <span
-                            class="px-1 mx-2 text-sm bg-orange-300 rounded-full font-extralight">E</span> Entraînement
-                        encadré <span class="px-1 text-sm font-semibold bg-blue-300 rounded-full">D</span> Entraînement
-                        dirigé.
-                    </caption>
-                    <thead class="text-left">
-                        <th>
-                            <tr>
-                                <th>Jours</th>
-                                <th>Horaires</th>
-                                <th>Niveau</th>
-                                <th>Salle</th>
-                                <th></th>
-                            </tr>
-                        </th>
-                    </thead>
-                    <tbody>
-                        <tr class="border-b">
-                            <td>Lundi</td>
-                            <td><span>20:00-23:00</span>
-                            <td><span class="px-1 text-sm font-extralight">Tous</span></td>
-                            <td><span class="p-1 text-sm rounded-sm font-extralight">Demeester / 0</span></td>
-                            <td><span class="px-1 text-sm font-semibold bg-green-300 rounded-full">L</span></td>
-                        </tr>
-                        <tr class="border-t">
-                            <td>Lundi</td>
-                            <td><span>20:30-22:00</span>
-                            <td><span class="px-1 text-sm 0 font-extralight">Tous</span></td>
-                            <td><span class="p-1 text-sm rounded-sm font-extralight">Demeester / -1</span></td>
-                            <td><span class="px-1 text-sm font-semibold bg-green-300 rounded-full">L</span></td>
-                        </tr>
-                        <tr class="border-t">
-                            <td>Lundi</td>
-                            <td><span>18:00-20:00</span>
-                            <td><span class="px-1 text-sm 0 font-extralight">Tous</span></td>
-                            <td><span class="p-1 text-sm rounded-sm font-extralight">Blocry / G3</span></td>
-                            <td><span class="px-1 text-sm bg-orange-300 rounded-full font-extralight">E</span>
-                        </tr>
-                        <tr class="border-t">
-                            <td>Lundi</td>
-                            <td><span>20:00-22:00</span>
-                            <td><span class="px-1 text-sm 0 font-extralight">Tous</span></td>
-                            <td><span class="p-1 text-sm rounded-sm font-extralight">Blocry / G3</span></td>
-                            <td><span class="px-1 text-sm font-semibold bg-green-300 rounded-full">L</span></td>
-                        </tr>
-                        <tr class="border-t">
-                            <td>Mardi</td>
-                            <td><span>20:00-22:00</span>
-                            <td><span class="px-1 text-sm ll font-extralight">Séries E-D</span>
-                            </td>
-                            <td><span class="p-1 text-sm rounded-sm font-extralight">Demeester / -1</span></td>
-                            <td><span class="px-1 text-sm font-semibold bg-blue-300 rounded-full">D</span></td>
-                        </tr>
-                        <tr class="border-t">
-                            <td>Samedi</td>
-                            <td><span>09:00-10:30</span>
-                            <td><span class="px-1 text-sm font-extralight">Débutants 1</span>
-                            </td>
-                            <td><span class="p-1 text-sm rounded-sm font-extralight">Blocry / G3</span></td>
-                            <td><span class="px-1 text-sm font-semibold bg-blue-300 rounded-full">D</span></td>
-                        </tr>
-                        <tr class="border-t">
-                            <td>Samedi</td>
-                            <td><span>10:30-12:00</span>
-                            <td><span class="px-1 text-sm font-extralight">Débutants 2</span>
-                            </td>
-                            <td><span class="p-1 text-sm rounded-sm font-extralight">Blocry / G3</span></td>
-                            <td><span class="px-1 text-sm font-semibold bg-blue-300 rounded-full">D</span></td>
-                        </tr>
-                    </tbody>
+            {{-- Events & results --}}
+            <section class="flex flex-row flex-wrap justify-around gap-4 px-8 bg-opacity-30">
 
-                </table>
-            </div>
-        </div>
+                {{-- Upcoming events --}}
+                <div>
+                    <h1 class="mt-4 text-2xl font-bold indent-4">{{ __('Upcoming events') }}</h1>
+                    <div class="container">
+                        <div class="relative p-4 my-4 bg-white rounded-lg pb-14 max-sm:w-fit w-96">
+
+                            <div class="flex flex-row items-start gap-2 p-2 bg-gray-100 rounded-md hover:bg-gray-200">
+                                <div
+                                    class="w-3 h-3 my-auto bg-yellow-600 rounded-full shadow-xl ring-2 ring-yellow-500 ring-opacity-50">
+                                </div>
+                                <div class="w-full">
+                                    <div class="flex flex-row justify-between">
+                                        <div class="text-sm text-left font-base">Lundi 08 janvier 2024</div>
+                                        <div class="text-sm text-right font-extralight">18:00 - 20:00 </div>
+                                    </div>
+                                    <div class="flex flex-row justify-between">
+                                        <div class="text-sm italic text-left font-base">Entraînement jeunes</div>
+                                        <div class="text-sm text-right font-extralight">Blocry /G3</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div
+                                class="flex flex-row items-start gap-2 p-2 mt-2 bg-gray-100 rounded-md hover:bg-gray-200">
+                                <div
+                                    class="w-3 h-3 my-auto bg-blue-800 rounded-full shadow-xl ring-2 ring-blue-500 ring-opacity-50">
+                                </div>
+                                <div class="w-full">
+                                    <div class="flex flex-row justify-between">
+                                        <div class="text-sm text-left font-base">Lundi 08 janvier 2024</div>
+                                        <div class="text-sm text-right font-extralight">18:00 - 22:00</div>
+                                    </div>
+                                    <div class="flex flex-row justify-between">
+                                        <div class="text-sm italic text-left font-base">Entraînement libre</div>
+                                        <div class="text-sm text-right font-extralight">Demeester /0</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div
+                                class="flex flex-row items-start gap-2 p-2 mt-2 bg-gray-100 rounded-md hover:bg-gray-200">
+                                <div
+                                    class="w-3 h-3 my-auto bg-blue-800 rounded-full shadow-xl ring-2 ring-blue-500 ring-opacity-50">
+                                </div>
+                                <div class="w-full">
+                                    <div class="flex flex-row justify-between">
+                                        <div class="text-sm text-left font-base">Lundi 08 janvier 2024</div>
+                                        <div class="text-sm text-right font-extralight">20:30 - 22:00</div>
+                                    </div>
+                                    <div class="flex flex-row justify-between">
+                                        <div class="text-sm italic text-left font-base">Entraînement Libre</div>
+                                        <div class="text-sm text-right font-extralight">Demeester /-1</div>
+                                    </div>
+                                </div>
+                            </div>
 
 
-        {{-- Section 3 --}}
-        <div class="w-screen p-10 pt-12 text-yellow-500 bg-gradient-to-b from-indigo-900 to-slate-800">
-            <div>Copyright &copy; 2023 </div>
-            <div></div>
-            <div>
-                <h2 class="my-10 text-3xl font-semibold text-center text-gray-700 align-middle">Les infrastructures
-                </h2>
-                <div class="flex flex-wrap items-center justify-center mx-auto mb-5 gap-9 px-14">
-                    <div class="px-4 py-2 border-slate-800 w-96">
-                        <p class="py-2 text-xl font-medium text-left w-fit">Centre sportif
-                            Jean-Demeester</p>
-                        <p class="mt-4">Rue de l'Invasion 80<br>1340 Ottignies-Louvain-la-Neuve</p>
-                    </div>
+                            <div
+                                class="flex flex-row items-start gap-2 p-2 mt-2 bg-gray-100 rounded-md hover:bg-gray-200">
+                                <div
+                                    class="w-3 h-3 my-auto bg-green-600 rounded-full shadow-xl ring-2 ring-greend-500 ring-opacity-50">
+                                </div>
+                                <div class="w-full">
+                                    <div class="flex flex-row justify-between">
+                                        <div class="text-sm text-left font-base">Lundi 08 janvier 2024</div>
+                                        <div class="text-sm text-right font-extralight">20:00 - 22:00 </div>
+                                    </div>
+                                    <div class="flex flex-row justify-between">
+                                        <div class="text-sm italic text-left font-base">Entraînement libre</div>
+                                        <div class="text-sm text-right font-extralight">Demeester /-1</div>
+                                    </div>
+                                </div>
+                            </div>
 
-                    <div class="px-4 py-2 w-96">
-                        <p class="py-2 text-xl font-medium text-left w-fit">Centre sportif
-                            Blocry</p>
-                        <p class="mt-4">Place des Sports 1<br>1348 Ottignies-Louvain-la-Neuve</p>
+                            <div
+                                class="flex flex-row items-start gap-2 p-2 mt-2 bg-gray-100 rounded-md hover:bg-gray-200">
+                                <div
+                                    class="w-3 h-3 my-auto bg-red-800 rounded-full shadow-xl ring-2 ring-red-500 ring-opacity-50">
+                                </div>
+                                <div class="w-full">
+                                    <div class="flex flex-row justify-between">
+                                        <div class="text-sm text-left font-base">Mardi 09 janvier 2024</div>
+                                        <div class="text-sm text-right font-extralight">20:30 - 22:00 </div>
+                                    </div>
+                                    <div class="flex flex-row justify-between">
+                                        <div class="text-sm italic text-left font-base">Entraînement adultes</div>
+                                        <div class="text-sm text-right font-extralight">Demeester /-1</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <x-button
+                                class="absolute py-2 text-sm font-medium text-blue-900 -translate-x-1/2 bg-indigo-300 w-36 bottom-2 left-1/2">
+                                More
+                            </x-button>
+                        </div>
                     </div>
                 </div>
+
+                {{-- Results --}}
+                <div>
+                    <h1 class="mt-4 text-2xl font-bold indent-4">{{ __('Lastest results') }}</h1>
+                    <div class="container">
+                        <div class="relative p-4 pb-12 my-4 bg-white rounded-lg w-96 max-sm:w-fit">
+                            <div
+                                class="flex flex-row items-start gap-2 p-2 my-2 bg-green-100 rounded-md hover:bg-gray-200">
+
+                                <div class="w-full">
+                                    <div class="relative flex flex-row justify-between">
+                                        <div class="text-sm text-left font-base">Ottignies A</div>
+                                        <div class="absolute text-lg font-semibold -translate-x-1/2 -top-1 left-1/2">VS
+                                        </div>
+                                        <div class="text-sm text-left font-base">Auderghem E</div>
+                                    </div>
+                                    <div class="flex flex-row items-center justify-center gap-2">
+                                        <div class="text-sm font-medium text-right">9</div>
+                                        <div class="text-lg font-semibold"> - </div>
+                                        <div class="text-sm font-medium text-right">7</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div
+                                class="flex flex-row items-start gap-2 p-2 my-2 bg-red-200 rounded-md hover:bg-gray-200">
+
+                                <div class="w-full">
+                                    <div class="relative flex flex-row justify-between">
+                                        <div class="text-sm text-left font-base">Limal D</div>
+                                        <div class="absolute text-lg font-semibold -translate-x-1/2 -top-1 left-1/2">VS
+                                        </div>
+                                        <div class="text-sm text-left font-base">Ottignies B</div>
+                                    </div>
+                                    <div class="flex flex-row items-center justify-center gap-2">
+                                        <div class="text-sm font-medium text-right">11</div>
+                                        <div class="text-lg font-semibold"> - </div>
+                                        <div class="text-sm font-medium text-right">5</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div
+                                class="flex flex-row items-start gap-2 p-2 my-2 rounded-md bg-neutral-100 hover:bg-gray-200">
+
+                                <div class="w-full">
+                                    <div class="relative flex flex-row justify-between">
+                                        <div class="text-sm text-left font-base">Ottignies D</div>
+                                        <div class="absolute text-lg font-semibold -translate-x-1/2 -top-1 left-1/2">VS
+                                        </div>
+                                        <div class="text-sm text-left font-base">Alpa Schaerb. Woluwe A</div>
+                                    </div>
+                                    <div class="flex flex-row items-center justify-center gap-2">
+                                        <div class="text-sm font-medium text-right">8</div>
+                                        <div class="text-lg font-semibold"> - </div>
+                                        <div class="text-sm font-medium text-right">8</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div
+                                class="flex flex-row items-start gap-2 p-2 my-2 bg-green-100 rounded-md hover:bg-gray-200">
+
+                                <div class="w-full">
+                                    <div class="relative flex flex-row justify-between">
+                                        <div class="text-sm text-left font-base">Ottignies E</div>
+                                        <div class="absolute text-lg font-semibold -translate-x-1/2 -top-1 left-1/2">VS
+                                        </div>
+                                        <div class="text-sm text-left font-base">Clabecq F E</div>
+                                    </div>
+                                    <div class="flex flex-row items-center justify-center gap-2">
+                                        <div class="text-sm font-medium text-right">14</div>
+                                        <div class="text-lg font-semibold"> - </div>
+                                        <div class="text-sm font-medium text-right">2</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div
+                                class="flex flex-row items-start gap-2 p-2 my-2 bg-green-100 rounded-md hover:bg-gray-200">
+
+                                <div class="w-full">
+                                    <div class="relative flex flex-row justify-between">
+                                        <div class="text-sm text-left font-base">Ottignies F</div>
+                                        <div class="absolute text-lg font-semibold -translate-x-1/2 -top-1 left-1/2">VS
+                                        </div>
+                                        <div class="text-sm text-left font-base">Braine-l'Alleud E</div>
+                                    </div>
+                                    <div class="flex flex-row items-center justify-center gap-2">
+                                        <div class="text-sm font-medium text-right">9</div>
+                                        <div class="text-lg font-semibold"> - </div>
+                                        <div class="text-sm font-medium text-right">7</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <x-button
+                                class="absolute py-2 text-sm font-medium text-blue-900 -translate-x-1/2 bg-indigo-300 w-36 bottom-2 left-1/2">
+                                More
+                            </x-button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {{-- News --}}
+            <section class="px-8">
+                <h1 class="mt-4 text-2xl font-bold indent-4">{{ __('News of the club') }}</h1>
+                <div class="grid grid-flow-row grid-cols-3 gap-6 my-4 max-lg:grid-cols-2 max-sm:grid-cols-1">
+
+                    @for ($i = 0; $i < 6; $i++)
+                        <x-article>
+                            <h2 class="text-lg font-semibold text-center">{{ fake()->words(4, true) }}</h2>
+                            <p class="mt-2 text-justify indent-3">{{ fake()->realText() }} </p>
+                            <div class="grid items-end grid-cols-4 gap-2">
+                                <x-published-date-indicator class="col-start-1 col-end-3">Published :
+                                    {{ fake()->date() }}</x-published-date-indicator>
+                                <x-button type="button"
+                                    class="col-start-4 col-end-5 px-4 py-2 mt-2 text-sm font-medium text-blue-900 bg-indigo-300 place-self-end w-36">Read
+                                    more</x-button>
+                            </div>
+                        </x-article>
+                    @endfor
+
+                    <x-button>Older news</x-button>
+
+
+                </div>
+            </section>
+
+
+
+        </main>
+
+
+        {{-- Footer --}}
+        <footer class="px-12 py-8 text-yellow-500 bg-blue-900 rounded-t-sm max-sm:px-8 dark:bg-neutral-400">
+
+            <div class="flex flex-wrap justify-around">
+
+                <div class="block my-4 text-sm italic font-thin">Copyright &copy; 2024 CTT Ottignies-Blocy. Alls rights
+                    reserved.</div>
+                <div class="flex flex-col justify-between gap-3 mx-8 w-fit">
+                    <div class="flex flex-row items-center justify-start gap-4">
+                        <x-icons.email class="h-6 my-auto mt-4 fill-yellow-500" />
+                        <p>{{ __('Send us an email') }}</p>
+                    </div>
+
+                    {{-- <div>
+                    <hr class="w-1/2 mx-auto border-0.5 border-yellow-500 border-dashed">
+                </div> --}}
+
+                    <div class="flex justify-start gap-4">
+                        <x-icons.phone class="h-6 my-auto mt-4 fill-yellow-500" />
+                        <ul class="">
+                            <li>Manon Patigny : 0474 123 456</li>
+                            <li>Augstin Docquier : 0471 654 321</li>
+                        </ul>
+                    </div>
+                    {{-- <div>
+                    <hr class="w-1/2 mx-auto border-0.5 border-yellow-500 border-dashed">
+                </div> --}}
+                    <div class="flex justify-start gap-4">
+                        <x-icons.map class="h-6 my-auto mt-4 fill-yellow-500" />
+                        <div>
+                            <p>Centre Sportif Jean Demeester</p>
+                            <address>Rue de l'Invasion 80, 1340 Ottignies-Louvain-la-Neuve</address>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
+
+            <div class="container mx-auto mt-12">
+                <hr class="border-yellow-500 border-dashed">
+                <h2 class="mx-auto my-4 text-xl font-bold w-fit">{{ __('They are proudly supporting us :') }}</h2>
+                <div class="flex flex-row flex-wrap justify-around w-full p-4">
+                    <img class="h-24" src="{{ asset('images/sponsors/malou.png') }}" alt="">
+                    <img class="h-24" src="{{ asset('images/sponsors/gd_tax_account.png') }}" alt="">
+                    <img class="h-24" src="{{ asset('images/sponsors/ericfilee.png') }}" alt="">
+                </div>
+            </div>
+
+        </footer>
     </div>
-</body>
 
-</html>
+</body>

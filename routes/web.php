@@ -19,7 +19,7 @@ use App\Models\Role;
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('/public/welcome');
 });
 
 Route::get('/admin/dashboard', function () {

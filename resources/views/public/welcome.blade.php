@@ -12,7 +12,7 @@
 </head>
 
 <body class="w-screen bg-neutral-100 dark:bg-neutral-900">
-    <div class="mx-auto max-w-7xl max-sm:w-full">
+    <div class="mx-auto max-w-7xl max-sm:w-full scroll-smooth">
 
         {{-- HEADER --}}
         <header
@@ -20,7 +20,7 @@
 
             <div class="grid h-12 grid-cols-3 mx-4 w-fit">
                 <div class="col-span-1 w-36 max-sm:w-fit">
-                    <x-logo />
+                    <x-logo class="h-16" />
                 </div>
                 <div class="flex flex-row items-center justify-start col-span-2">
                     <p class="text-3xl font-bold max-sm:text-base max-sm:h-8">{{ config('app.name') }}</p>
@@ -57,7 +57,7 @@
 
             {{-- Kiosk --}}
             <section
-                class="relative grid grid-cols-2 gap-4 px-12 py-8 bg-yellow-400 rounded-b-sm max-lg:grid-cols-1 max-sm:px-8 mx-0min-lg:w-lg h-fix">
+                class="relative grid grid-cols-2 gap-4 px-12 py-8 mx-0 bg-yellow-400 rounded-b-sm max-lg:grid-cols-1 h-fix">
 
                 <div class="absolute left-0 p-1 mx-2 top-1/2">
                     <x-button class="h-8 rounded-md hover:bg-opacity-50" type="button"> <img
@@ -75,16 +75,18 @@
                 <div class="flex flex-col justify-around gap-4 px-4 mb-2 max-lg:row-start-1">
                     <h1 class="text-3xl font-bold text-left">{{ __('Welcome') }}</h1>
                     <p>{{ __('Lorem ipsum dolor sit amet consectetur, adipisicing elit. Dicta, voluptatum consectetur? Ut,
-                        delectus
-                        quod eveniet autem laborum ullam reiciendis deserunt a consequuntur dolor quis cumque quibusdam
-                        esse
-                        nulla odit dolorum.') }}</p>
+                                            delectus
+                                            quod eveniet autem laborum ullam reiciendis deserunt a consequuntur dolor quis cumque quibusdam
+                                            esse
+                                            nulla odit dolorum.') }}
+                    </p>
                     <div class="flex flex-row items-center self-center">
                         <x-button
                             class="py-2 mr-4 font-semibold text-yellow-400 bg-blue-800 shadow-2xl w-36 shadow-blue-800"
                             type="button">{{ __('Join us') }}</x-button>
-                        <a class="ml-4 text-lg font-semibold" href="">
-                            {{ ('Learn more') }}
+                        <a class="flex items-baseline ml-4 text-lg font-semibold duration-300 ease-in-out transform hover:scale-110"
+                            href="">
+                            <p>{{ 'Learn more' }}</p>
                             <span class="text-3xl font-extrabold">&rarr;</span>
                         </a>
                     </div>
@@ -94,6 +96,24 @@
                         <img src="{{ asset('images/icons/arrow_right.png') }}" alt="Next" class="h-full">
                     </x-button>
                 </div>
+                <div class="absolute bottom-0 flex gap-2 p-1 mx-2 -translate-x-1/2 left-1/2">
+
+
+                    <input type="radio" name="test" id="1">
+                    <input type="radio" name="test" id="2">
+
+                </div>
+
+
+
+
+            </section>
+
+            {{-- trial/errors --}}
+            {{-- <section class="flex flex-row w-full overflow-auto scroll-smooth snap-x snap-mandatory">
+                    <img src="{{ asset('images/table-tennis-background1.jpg')}}" alt="" class="snap-always snap-center">
+                    <img src="{{ asset('images/table-tennis-background3.jpg')}}" alt="" class="snap-always snap-center">
+                </div> --}}
 
             </section>
 

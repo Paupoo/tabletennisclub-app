@@ -42,8 +42,11 @@
                         <x-button class="text-lg font-semibold"> {{ __('Contact') }}</x-button>
                     </li>
                     <li>
-                        <x-button class="text-lg font-semibold text-yellow-400 bg-indigo-800">
-                            {{ __('Login') }}</x-button>
+                        <form action="{{ route('dashboard') }}" method="GET">
+                            <x-button class="text-lg font-semibold text-yellow-400 bg-indigo-800">
+                                {{ __('Login') }}</x-button>
+                        </form>
+
                     </li>
                 </ul>
 
@@ -75,16 +78,17 @@
                 <div class="flex flex-col justify-around gap-4 px-4 mb-2 max-lg:row-start-1">
                     <h1 class="text-3xl font-bold text-left">{{ __('Welcome') }}</h1>
                     <p>{{ __('Lorem ipsum dolor sit amet consectetur, adipisicing elit. Dicta, voluptatum consectetur? Ut,
-                        delectus
-                        quod eveniet autem laborum ullam reiciendis deserunt a consequuntur dolor quis cumque quibusdam
-                        esse
-                        nulla odit dolorum.') }}</p>
+                                                                delectus
+                                                                quod eveniet autem laborum ullam reiciendis deserunt a consequuntur dolor quis cumque quibusdam
+                                                                esse
+                                                                nulla odit dolorum.') }}
+                    </p>
                     <div class="flex flex-row items-center self-center">
                         <x-button
                             class="py-2 mr-4 font-semibold text-yellow-400 bg-blue-800 shadow-2xl w-36 shadow-blue-800"
                             type="button">{{ __('Join us') }}</x-button>
                         <a class="ml-4 text-lg font-semibold" href="">
-                            {{ ('Learn more') }}
+                            {{ 'Learn more' }}
                             <span class="text-3xl font-extrabold">&rarr;</span>
                         </a>
                     </div>

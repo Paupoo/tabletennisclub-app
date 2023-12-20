@@ -42,8 +42,11 @@
                         <x-button class="text-lg font-semibold"> {{ __('Contact') }}</x-button>
                     </li>
                     <li>
-                        <x-button class="text-lg font-semibold text-yellow-400 bg-indigo-800">
-                            {{ __('Login') }}</x-button>
+                        <form action="{{ route('dashboard') }}" method="GET">
+                            <x-button class="text-lg font-semibold text-yellow-400 bg-indigo-800">
+                                {{ __('Login') }}</x-button>
+                        </form>
+
                     </li>
                 </ul>
 

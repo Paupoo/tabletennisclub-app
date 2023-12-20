@@ -8,11 +8,15 @@
     <div class="pt-6">
         <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
             <div class="flex flex-row gap-4">
-                <form action="{{ route('dashboard') }}">
+                <form action="{{ route('dashboard') }}" method="GET">
                     <x-primary-button>{{ __('Dashboard') }}</x-primary-button>
                 </form>
-                <form action="{{ route('members.create') }}">
+                <form action="{{ route('members.create') }}" method="GET">
                     <x-primary-button>{{ __('Create new user') }}</x-primary-button>
+                </form>
+                <form action="{{ route('setForceIndex') }}" method="POST">
+                    @csrf
+                    <x-primary-button>{{ __('Set Force Index') }}</x-primary-button>
                 </form>
             </div>
             
@@ -32,28 +36,48 @@
                 <table class="min-w-full text-sm font-light text-left dark:bg-neutral-300">
                     <thead class="font-medium border-b dark:border-neutral-500">
                         <tr>
-                            <th scope="col" class="px-4 py-2">#</th>
                             <th scope="col" class="px-4 py-2">{{ __('Last Name') }}</th>
                             <th scope="col" class="px-4 py-2">{{ __('First Name') }}</th>
-                            <th scope="col" class="px-4 py-2">{{ __('Role') }}</th>
                             <th scope="col" class="px-4 py-2">{{ __('Force Index') }}</th>
                             <th scope="col" class="px-4 py-2">{{ __('Ranking') }}</th>
                             <th scope="col" class="px-4 py-2">{{ __('Team') }}</th>
+                            <th scope="col" class="px-4 py-2">{{ __('Role') }}</th>
+                            <th scope="col" class="px-4 py-2">{{ __('Active') }}</th>
+                            <th scope="col" class="px-4 py-2">{{ __('Competitor') }}</th>
+                            <th scope="col" class="px-4 py-2">{{ __('Has Debts') }}</th>
                             <th scope="col" class="px-4 py-2">{{ __('Actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach ($members as $member)
                             <tr class="border-b dark:border-neutral-500">
-                                <td class="px-4 font-medium whitespace-nowrap">
-                                    {{ $loop->iteration }}
-                                </td>
                                 <td class="px-4 whitespace-nowrap">{{ $member->last_name }}</td>
                                 <td class="px-4 whitespace-nowrap">{{ $member->first_name }}</td>
-                                <td class="px-4 whitespace-nowrap">{{ $member->role->name }}</td>
                                 <td class="px-4 whitespace-nowrap">{{ $member->force_index }}</td>
                                 <td class="px-4 whitespace-nowrap">{{ $member->ranking }}</td>
                                 <td class="px-4 whitespace-nowrap">{{ $member->team }}</td>
+                                <td class="px-4 whitespace-nowrap">{{ $member->role->name }}</td>
+                                <td class="px-4 whitespace-nowrap">
+                                    @if($member->is_active == false)
+                                    {{ __('Inactive') }}
+                                    @else
+                                    {{ __('Active') }}
+                                    @endif
+                                </td>
+                                <td class="px-4 whitespace-nowrap">
+                                    @if($member->is_competitor == false)
+                                    {{ __('Casual') }}
+                                    @else
+                                    {{ __('Competitor') }}
+                                    @endif
+                                </td>
+                                <td class="px-4 whitespace-nowrap">
+                                    @if ($member->has_debt == false)
+                                        {{ __('No') }}
+                                    @else
+                                        {{ __('Yes') }}
+                                    @endif    
+                                </td>
                                 <td class="flex items-center gap-2 px-4 whitespace-nowrap">
                                     <img class="h-4 cursor-pointer" src="{{ asset('images/icons/contact.svg') }}"
                                         alt="Contact">
@@ -74,6 +98,10 @@
                         @endforeach
                     </tbody>
                 </table>
+                
+                <x-admin-block>
+                    {{ $members->links() }}
+                </x-admin-block>
 
             </div>
         </div>

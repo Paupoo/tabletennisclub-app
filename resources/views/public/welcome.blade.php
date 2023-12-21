@@ -59,18 +59,47 @@
         <main class="grid grid-flow-row z-1 top-24 bg-neutral-100 dark:bg-neutral-900 dark:text-slate-400">
 
             {{-- Kiosk --}}
-            <section
-                class="relative grid grid-cols-2 gap-4 px-12 py-8 mx-0 bg-yellow-400 rounded-b-sm max-lg:grid-cols-1 h-fix">
+            <section class="w-full flex overflow-x-auto snap-mandatory">
 
-                <div class="absolute left-0 p-1 mx-2 top-1/2">
-                    <x-button class="h-8 rounded-md hover:bg-opacity-50" type="button"> <img
-                            src="{{ asset('images/icons/arrow_left.png') }}" alt="Previous" class="h-full">
-                    </x-button>
+                <div id="slide1 "
+                    class="relative min-w-full snap-center snap-y grid grid-cols-2 gap-4 px-12 py-8 mx-0 bg-yellow-400 rounded-b-sm max-lg:grid-cols-1 h-fix">
+
+                    {{-- Image --}}
+                    <div class="px-4 max-lg:row-start-2 ">
+                        <img src="{{ asset('images/table-tennis-background2.jpg') }}" alt=""
+                            class="w-full rounded-lg shadow-lg">
+                    </div>
+
+                    {{-- Call to action --}}
+                    <div class="flex flex-col justify-around gap-4 px-4 mb-2 max-lg:row-start-1">
+                        <h1 class="text-3xl font-bold text-left">{{ __('Welcome') }}</h1>
+                        <p>{{ __('Lorem ipsum dolor sit amet consectetur, adipisicing elit. Dicta, voluptatum consectetur? Ut,
+                                                                                            delectus
+                                                                                            quod eveniet autem laborum ullam reiciendis deserunt a consequuntur dolor quis cumque quibusdam
+                                                                                            esse
+                                                                                            nulla odit dolorum.') }}
+                        </p>
+                        <div class="flex flex-row items-center self-center">
+                            <x-button
+                                class="py-2 mr-4 font-semibold text-yellow-400 bg-blue-800 shadow-2xl w-36 shadow-blue-800"
+                                type="button">{{ __('Join us') }}</x-button>
+                            <a class="flex items-baseline ml-4 text-lg font-semibold duration-300 ease-in-out transform hover:scale-110"
+                                href="">
+                                <p>{{ 'Learn more' }}</p>
+                                <span class="text-3xl font-extrabold">&rarr;</span>
+                            </a>
+                        </div>
+                    </div>
+
                 </div>
+
+                <div id="slide2"
+                class="relative min-w-full snap-center snap-y grid grid-cols-2 gap-4 px-12 py-8 mx-0 bg-yellow-400 rounded-b-sm max-lg:grid-cols-1 h-fix">
+
 
                 {{-- Image --}}
                 <div class="px-4 max-lg:row-start-2 ">
-                    <img src="{{ asset('images/table-tennis-background2.jpg') }}" alt=""
+                    <img src="{{ asset('images/table-tennis-background1.jpg') }}" alt=""
                         class="w-full rounded-lg shadow-lg">
                 </div>
 
@@ -78,10 +107,10 @@
                 <div class="flex flex-col justify-around gap-4 px-4 mb-2 max-lg:row-start-1">
                     <h1 class="text-3xl font-bold text-left">{{ __('Welcome') }}</h1>
                     <p>{{ __('Lorem ipsum dolor sit amet consectetur, adipisicing elit. Dicta, voluptatum consectetur? Ut,
-                                            delectus
-                                            quod eveniet autem laborum ullam reiciendis deserunt a consequuntur dolor quis cumque quibusdam
-                                            esse
-                                            nulla odit dolorum.') }}
+                                                                                        delectus
+                                                                                        quod eveniet autem laborum ullam reiciendis deserunt a consequuntur dolor quis cumque quibusdam
+                                                                                        esse
+                                                                                        nulla odit dolorum.') }}
                     </p>
                     <div class="flex flex-row items-center self-center">
                         <x-button
@@ -94,22 +123,7 @@
                         </a>
                     </div>
                 </div>
-                <div class="absolute right-0 p-1 mx-2 top-1/2">
-                    <x-button class="h-8 rounded-md hover:bg-opacity-50" type="button">
-                        <img src="{{ asset('images/icons/arrow_right.png') }}" alt="Next" class="h-full">
-                    </x-button>
-                </div>
-                <div class="absolute bottom-0 flex gap-2 p-1 mx-2 -translate-x-1/2 left-1/2">
-
-
-                    <input type="radio" name="test" id="1">
-                    <input type="radio" name="test" id="2">
-
-                </div>
-
-
-
-
+            </div>
             </section>
 
             {{-- trial/errors --}}

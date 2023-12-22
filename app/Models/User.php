@@ -36,6 +36,8 @@ class User extends Authenticatable
         'street',
         'city',
         'city_code',
+        'team_id',
+        'is_captain'
     ];
 
     /**
@@ -61,5 +63,10 @@ class User extends Authenticatable
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class);
+    }
+
+    public function team(): BelongsTo
+    {
+        return $this->belongsTo(Team::class);
     }
 }

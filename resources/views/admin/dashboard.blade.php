@@ -94,10 +94,10 @@
 
                     <div class="flex gap-4 mt-4 w-96">
                         <form action="">
-                            <x-primary-button>Create new role</x-primary-button>
+                            <x-primary-button>Create new room</x-primary-button>
                         </form>
                         <form action="">
-                            <x-primary-button>Manage roles</x-primary-button>
+                            <x-primary-button>Manage rooms</x-primary-button>
                         </form>
                     </div>
                 </div>
@@ -125,18 +125,18 @@
                                 <tr class="">
                                     <th class="text-right">Total</th>
                                     <td class="hover:bg-blue-200 rounded-lg hover:font-bold text-center">
-                                        {{ $members_total }}</td>
-                                    <td class="hover:bg-blue-200 rounded-lg hover:font-bold text-center">x</td>
+                                        {{ $members_total_active }}</td>
+                                    <td class="hover:bg-blue-200 rounded-lg hover:font-bold text-center">{{ $members_total_inactive }}</td>
                                 </tr>
                                 <tr>
                                     <th class="text-right">Training</th>
-                                    <td class="hover:bg-blue-200 rounded-lg hover:font-bold text-center">y</td>
-                                    <td class="hover:bg-blue-200 rounded-lg hover:font-bold text-center">z</td>
+                                    <td class="hover:bg-blue-200 rounded-lg hover:font-bold text-center"></td>
+                                    <td class="hover:bg-blue-200 rounded-lg hover:font-bold text-center"></td>
                                 </tr>
                                 <tr>
                                     <th class="text-right">Competition</th>
-                                    <td class="hover:bg-blue-200 rounded-lg hover:font-bold text-center">a</td>
-                                    <td class="hover:bg-blue-200 rounded-lg hover:font-bold text-center">b</td>
+                                    <td class="hover:bg-blue-200 rounded-lg hover:font-bold text-center">{{ $members_total_competitors }}</td>
+                                    <td class="hover:bg-blue-200 rounded-lg hover:font-bold text-center">{{ $members_total_casuals }}</td>
                                 </tr>
                             </tbody>
                         </table>

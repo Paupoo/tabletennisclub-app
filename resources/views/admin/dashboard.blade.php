@@ -57,56 +57,8 @@
         </div>
     </div>
 
-    {{-- Rooms management --}}
-    <div class="pt-6">
-        <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
-            <div class="overflow-hidden bg-white shadow-sm dark:bg-gray-800 sm:rounded-lg">
-                <div class="p-6 text-gray-900 dark:text-gray-100">
-                    <h2 class="text-lg font-semibold pb-2">Rooms</h2>
-
-                    <table class="table table-auto border border-collapse mt-4 lg:w-3/4 w-full text-left">
-                        <caption class="caption-top font-thin text-right">Current rooms</caption>
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Adress</th>
-                                <th>Capacity</th>
-                                <th>Description</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($rooms as $room)
-                            <tr>
-                                <td>{{ $room->name }}</td>
-                                <td>
-                                    <address>{{ $room->street }}, {{ $room->city_code}}, {{ $room->city_name }}</address>
-                                </td>
-                                <td class="flex flex-row justify-around">
-                                    <span>T{{ $room->capacity_trainings }}</span>
-                                    <span>-</span>
-                                    <span>M{{ $room->capacity_matches}}</span></td>
-                                <td>{{ $room->access_description}}</td>
-                            </tr>
-                            @endforeach
-
-                        </tbody>
-                    </table>
-
-                    <div class="flex gap-4 mt-4 w-96">
-                        <form action="">
-                            <x-primary-button>Create new room</x-primary-button>
-                        </form>
-                        <form action="">
-                            <x-primary-button>Manage rooms</x-primary-button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- Members management --}}
-    <div class="pt-6">
+     {{-- Members management --}}
+     <div class="pt-6">
         <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
             <div class="overflow-hidden bg-white shadow-sm dark:bg-gray-800 sm:rounded-lg">
                 <div class="p-6 text-gray-900 dark:text-gray-100">
@@ -168,6 +120,54 @@
                         </form>
                         <form action="{{ route('members.index') }}" method="GET">
                             <x-primary-button>Manage members</x-primary-button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Rooms management --}}
+    <div class="pt-6">
+        <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
+            <div class="overflow-hidden bg-white shadow-sm dark:bg-gray-800 sm:rounded-lg">
+                <div class="p-6 text-gray-900 dark:text-gray-100">
+                    <h2 class="text-lg font-semibold pb-2">Rooms</h2>
+
+                    <table class="table table-auto border border-collapse mt-4 lg:w-3/4 w-full text-left">
+                        <caption class="caption-top font-thin text-right">Current rooms</caption>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Adress</th>
+                                <th>Capacity</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($rooms as $room)
+                            <tr>
+                                <td>{{ $room->name }}</td>
+                                <td>
+                                    <address>{{ $room->street }}, {{ $room->city_code}}, {{ $room->city_name }}</address>
+                                </td>
+                                <td class="flex flex-row justify-around">
+                                    <span>T{{ $room->capacity_trainings }}</span>
+                                    <span>-</span>
+                                    <span>M{{ $room->capacity_matches}}</span></td>
+                                <td>{{ $room->access_description}}</td>
+                            </tr>
+                            @endforeach
+
+                        </tbody>
+                    </table>
+
+                    <div class="flex gap-4 mt-4 w-96">
+                        <form action="">
+                            <x-primary-button>Create new room</x-primary-button>
+                        </form>
+                        <form action="">
+                            <x-primary-button>Manage rooms</x-primary-button>
                         </form>
                     </div>
                 </div>
@@ -250,6 +250,14 @@
                         </form>
                         <form action="">
                             <x-primary-button>Manage teams</x-primary-button>
+                        </form>
+                        <form action="{{ route('proposeTeamsAmount') }}" method="POST">
+                            @csrf
+                            <x-danger-button>TEST BUTTON GET TEAMS AMOUNT PROPOSAL</x-primary-button>
+                        </form>
+                        <form action="{{ route('proposeTeamsCompositions') }}" method="POST">
+                            @csrf
+                            <x-danger-button>TEST BUTTON proposeTeamsCompositions</x-primary-button>
                         </form>
                     </div>
                 </div>

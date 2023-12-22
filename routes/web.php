@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\TeamController;
 use App\Http\Controllers\UserController;
 use App\Http\Resources\RoomController;
 use Illuminate\Support\Facades\Route;
@@ -61,7 +62,7 @@ Route::resource('admin/members', UserController::class);
 Route::resource('admin/roles', RoleController::class);
 
 /**
- *  Rooms managements
+ * Rooms managements
  */
 Route::resource('/admin/rooms', RoomController::class);
 
@@ -70,5 +71,18 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+
+/**
+ * Teams management
+ */
+Route::post('/admin/teams/proposeTeamsAmount', [
+    TeamController::class, 
+    'proposeTeamsAmount',
+])->name('proposeTeamsAmount');
+
+Route::post('/admin/teams/proposeTeamsCompositions', [
+    TeamController::class, 
+    'proposeTeamsCompositions',
+])->name('proposeTeamsCompositions');
 
 require __DIR__ . '/auth.php';

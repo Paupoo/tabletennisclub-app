@@ -68,7 +68,6 @@
                         <caption class="caption-top font-thin text-right">Current rooms</caption>
                         <thead>
                             <tr>
-                                <th>#</th>
                                 <th>Name</th>
                                 <th>Adress</th>
                                 <th>Capacity</th>
@@ -76,15 +75,20 @@
                             </tr>
                         </thead>
                         <tbody>
+                            @foreach ($rooms as $room)
                             <tr>
-                                <td>1</td>
-                                <td>Demeester/-1</td>
+                                <td>{{ $room->name }}</td>
                                 <td>
-                                    <address>Rue de l'Invasion 80 - 1340 Ottignies-Louvain-la-Neuve</address>
+                                    <address>{{ $room->street }}, {{ $room->city_code}}, {{ $room->city_name }}</address>
                                 </td>
-                                <td>T 6 / M 4</td>
-                                <td>La salle se trouve au -1</td>
+                                <td class="flex flex-row justify-around">
+                                    <span>T{{ $room->capacity_trainings }}</span>
+                                    <span>-</span>
+                                    <span>M{{ $room->capacity_matches}}</span></td>
+                                <td>{{ $room->access_description}}</td>
                             </tr>
+                            @endforeach
+
                         </tbody>
                     </table>
 
@@ -203,10 +207,10 @@
 
                     <div class="flex gap-4 mt-4 w-96">
                         <form action="">
-                            <x-primary-button>Create new team</x-primary-button>
+                            <x-primary-button>Create new training</x-primary-button>
                         </form>
                         <form action="">
-                            <x-primary-button>Manage teams</x-primary-button>
+                            <x-primary-button>Manage trainings</x-primary-button>
                         </form>
                     </div>
                 </div>

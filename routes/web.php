@@ -3,9 +3,11 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
+use App\Http\Resources\RoomController;
 use Illuminate\Support\Facades\Route;
 use App\Models\User;
 use App\Models\Role;
+use App\Models\Room;
 
 /*
 |--------------------------------------------------------------------------
@@ -22,11 +24,15 @@ Route::get('/', function () {
     return view('/public/welcome');
 })->name('welcome');
 
+/**
+ * Dashboard with sample of most data
+ */
 Route::get('/admin/dashboard', function () {
     return view('admin.dashboard', [
         'roles' => Role::orderby('name')->get(),
         'members' => User::latest()->take(5)->get(),
         'members_total' => User::count(),
+        'rooms' => Room::orderby('name')->get(),
     ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
@@ -51,6 +57,10 @@ Route::resource('admin/members', UserController::class);
 
 Route::resource('admin/roles', RoleController::class);
 
+/**
+ *  Rooms managements
+ */
+Route::resource('/admin/rooms', RoomController::class);
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

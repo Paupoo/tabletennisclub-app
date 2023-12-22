@@ -255,8 +255,9 @@
                             @csrf
                             <x-danger-button>TEST BUTTON GET TEAMS AMOUNT PROPOSAL</x-primary-button>
                         </form>
-                        <form action="{{ route('proposeTeamsCompositions') }}" method="POST">
-                            @csrf
+                        <form action="{{ route('proposeTeamsCompositions') }}" method="GET">
+                            {{-- @csrf --}}
+                            <input type="hidden" name="kern_size" value="4">
                             <x-danger-button>TEST BUTTON proposeTeamsCompositions</x-primary-button>
                         </form>
                     </div>

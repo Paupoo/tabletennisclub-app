@@ -80,7 +80,7 @@ Route::post('/admin/teams/proposeTeamsAmount', [
     'proposeTeamsAmount',
 ])->name('proposeTeamsAmount');
 
-Route::post('/admin/teams/proposeTeamsCompositions', [
+Route::get('/admin/teams/proposeTeamsCompositions', [
     TeamController::class, 
     'proposeTeamsCompositions',
 ])->name('proposeTeamsCompositions');

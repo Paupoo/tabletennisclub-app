@@ -17,6 +17,9 @@
                 <form action="{{ route('setForceIndex') }}" method="POST">
                     @csrf
                     <x-primary-button>{{ __('Set Force Index') }}</x-primary-button>
+                </form> <form action="{{ route('deleteForceIndex') }}" method="POST">
+                    @csrf
+                    <x-danger-button>{{ __('Delete Force Index') }}</x-primary-button>
                 </form>
             </div>
             

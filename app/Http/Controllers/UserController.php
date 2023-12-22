@@ -208,21 +208,31 @@ class UserController extends Controller
     /**
      * Calculate force index for every registered players and store into the DB.
      */
-    public function setForceIndex()
-    {
-        // Get aggregated counts by ranking [B6]=>1, [NC]=>10...)
+    public function setForceIndex() 
+    {      
+        // Get aggregated counts by ranking (i.e. [B6]=>1, [D4]=>5, ...) but exclude E6 and NC players
         $members = DB::table('users')
             ->select('ranking', DB::raw('count(1) as total'))
-            ->whereNot('ranking','=', ['NA',null])
+            ->whereNot('ranking', '=', 'NA')
+            ->whereNot('ranking', '=', null)
             ->groupby('ranking')
+            ->orderBy('ranking', 'asc')
             ->get();
 
-        // read the whole table, calculate force index for each ranking and update members in the db.
+        // Get count of total E6 & NC players
+        $totalE6_and_NC_users = User::whereIn('ranking', ['E6','NC'])->count();
+
+        // read the whole table, calculate force index for each ranking and update members in the db except for E6/NC.
         $i = 0;
         foreach ($members as $member) {
-            User::where('ranking', '=', $member->ranking)->update(['force_index' => ($member->total + $i)]);
-            $i = $member->total + $i;
+            if($member->ranking !== 'E6' || $member->ranking !== 'E6') {
+                User::where('ranking', '=', $member->ranking)->update(['force_index' => ($member->total + $i)]);
+                $i = $member->total + $i;
+            }
         }
+
+        // For E6 and NC players, simply mass update their count
+        User::whereIn('ranking', ['E6','NC'])->update(['force_index' => $totalE6_and_NC_users]);
 
         return redirect()->route('members.index');
     }

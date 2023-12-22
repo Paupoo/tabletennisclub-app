@@ -65,7 +65,7 @@
                         <div>
                             <x-input-label for="password" :value="__('Password')" />
                             <x-text-input id="password" name="password" type="password" class="block w-full mt-1"
-                                :value="old('password')" autofocus autocomplete="password"></x-text-input>
+                                :value="old('password')" autofocus autocomplete="false"></x-text-input>
                             <x-input-error class="mt-2" :messages="$errors->get('password')" />
                         </div>
 
@@ -77,6 +77,14 @@
                                 name="password_confirmation" autocomplete="new-password" />
 
                             <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
+                        </div>
+
+                        {{-- Competition --}}
+                        <div>
+                            <x-input-label for="is_competitor" :value="__('Plays in competiton')" />
+                            <input id="is_competitor" name="is_competitor" type="checkbox" class="block mt-1"
+                                @checked(old('is_competitor', $member->is_competitor)) autofocus></input>
+                            <x-input-error class="mt-2" :messages="$errors->get('is_competitor')" />
                         </div>
 
                         {{-- Licence --}}

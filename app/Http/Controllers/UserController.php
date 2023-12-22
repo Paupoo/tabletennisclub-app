@@ -18,7 +18,7 @@ class UserController extends Controller
     {
         //
         return View('admin.members.index', [
-            'members' => User::orderby('ranking')->orderby('first_name')->paginate(20),
+            'members' => User::orderby('last_name')->orderby('first_name')->paginate(20),
         ]);
     }
 
@@ -44,6 +44,7 @@ class UserController extends Controller
             'last_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'lowercase', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', 'min:8', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
+            'is_competitor' => ['boolean'],
             'licence' => ['nullable', 'unique:users,licence', 'size:6'],
             'ranking' => ['nullable', Rule::in([
                 'B0',
@@ -87,6 +88,7 @@ class UserController extends Controller
             'last_name' => $request->last_name,
             'email' => $request->email,
             'password' => $request->password,
+            'is_competitor' => $request->is_competitor,
             'licence' => $request->licence,
             'ranking' => $request->ranking,
             'team' => $request->team,
@@ -124,12 +126,13 @@ class UserController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        //validation
         $request->validate([
             'last_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'lowercase', 'max:255', 'unique:users,email,'.$id,],
             'password' => ['nullable', 'confirmed', 'min:8', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
+            'is_competitor' => ['nullable'],
             'licence' => ['nullable', 'unique:users,licence,'.$id, 'size:6'],
             'ranking' => ['nullable', Rule::in([
                 'B0',
@@ -176,6 +179,11 @@ class UserController extends Controller
         if($request->password != null) {
             $user->password = $request->password;
         }
+        if($request->is_competitor != null) {
+            $user->is_competitor = true;
+        } else {
+            $user->is_competitor = false;
+        };
         $user->licence = $request->licence;
         $user->ranking = $request->ranking;
         $user->team = $request->team;

@@ -79,6 +79,14 @@
                             <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
                         </div>
 
+                        {{-- Competition --}}
+                        <div>
+                            <x-input-label for="is_competitor" :value="__('Plays in competiton')" />
+                            <input id="is_competitor" name="is_competitor" type="checkbox" class="block mt-1"
+                                :value="old('is_competitor', $member->is_competitor)" @checked(old('is_competitor', $member->is_competitor)) autofocus></input>
+                            <x-input-error class="mt-2" :messages="$errors->get('is_competitor')" />
+                        </div>
+
                         {{-- Licence --}}
                         <div>
                             <x-input-label for="licence" :value="__('Licence')" />

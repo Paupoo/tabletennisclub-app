@@ -59,7 +59,7 @@
         <main class="grid grid-flow-row z-1 top-24 bg-neutral-100 dark:bg-neutral-900 dark:text-slate-400">
 
             {{-- Kiosk --}}
-            w <section class="w-full flex overflow-x-auto snap-mandatory">
+            <section class="w-full flex overflow-x-auto snap-mandatory">
 
                 <div id="slide1 "
                     class="relative min-w-full snap-center snap-y grid grid-cols-2 gap-4 px-12 py-8 mx-0 bg-yellow-400 rounded-b-sm max-lg:grid-cols-1 h-fix">

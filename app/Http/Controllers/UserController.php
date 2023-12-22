@@ -18,7 +18,7 @@ class UserController extends Controller
     {
         //
         return View('admin.members.index', [
-            'members' => User::orderby('last_name')->orderby('first_name')->paginate(20),
+            'members' => User::orderby('ranking')->orderby('first_name')->paginate(20),
         ]);
     }
 
@@ -225,14 +225,18 @@ class UserController extends Controller
         // read the whole table, calculate force index for each ranking and update members in the db except for E6/NC.
         $i = 0;
         foreach ($members as $member) {
-            if($member->ranking !== 'E6' || $member->ranking !== 'E6') {
+            if ($member->ranking == 'E6' || $member->ranking == 'NC') {
+                null;
+            } elseif ($member->ranking != 'E6' || $member->ranking != 'NC') {
                 User::where('ranking', '=', $member->ranking)->update(['force_index' => ($member->total + $i)]);
                 $i = $member->total + $i;
             }
         }
 
-        // For E6 and NC players, simply mass update their count
-        User::whereIn('ranking', ['E6','NC'])->update(['force_index' => $totalE6_and_NC_users]);
+        // For E6 and NC players, simply mass update their count + last value of $i
+        User::whereIn('ranking', ['E6','NC'])->update(['force_index' => $totalE6_and_NC_users + $i]);
+        
+        unset($i);
 
         return redirect()->route('members.index');
     }

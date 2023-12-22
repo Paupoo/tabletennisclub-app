@@ -66,19 +66,26 @@ class TeamController extends Controller
     /**
      *  Define team functions
      */
+    private function countCompetitors(): int
+    {
+        return User::where('is_competitor', '=', true)->count();
+    }
+    
+    private function getCompetitors(): array
+    {
+        ;
+    }
 
     public function proposeTeamsAmount(): array
     {
-
-        $total_competitors = User::where('is_competitor', '=', true)->count();
 
         $kerns = [7, 6, 5, 4];
 
         $resuts = [];
 
         foreach ($kerns as $kern) {
-            $total_teams = round($total_competitors / $kern, 0);
-            $remaining_players = $total_competitors % $kern;
+            $total_teams = round($this->countCompetitors() / $kern, 0);
+            $remaining_players = $this->countCompetitors() % $kern;
             $results['Kern with ' . $kern . ' players'] = [
                 'Total teams' => $total_teams,
                 'Remaining players' => $remaining_players,
@@ -90,9 +97,7 @@ class TeamController extends Controller
 
     private  function calculateTeamsAmount(int $kern_size): int
     {
-
-        $total_competitors = User::where('is_competitor', '=', true)->count();
-        $total_teams = round($total_competitors / $kern_size, 0);
+        $total_teams = round($this->countCompetitors() / $kern_size, 0);
 
         return $total_teams;
     }

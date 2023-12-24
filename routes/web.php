@@ -4,7 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\UserController;
-use App\Http\Resources\RoomController;
+use App\Http\Controllers\RoomController;
 use Illuminate\Support\Facades\Route;
 use App\Models\User;
 use App\Models\Role;
@@ -46,14 +46,14 @@ Route::get('/admin/dashboard', function () {
 Route::post('/admin/members/setForceIndex', [
     UserController::class,
     'setForceIndex',
-])->name('setForceIndex');
+])->middleware(['auth', 'verified'])->name('setForceIndex');
 
 Route::post('/admin/members/deleteForceIndex', [
     UserController::class,
     'deleteForceIndex',
-])->name('deleteForceIndex');
+])->middleware(['auth', 'verified'])->name('deleteForceIndex');
 
-Route::resource('admin/members', UserController::class);
+Route::resource('admin/members', UserController::class)->middleware(['auth', 'verified']);
 
 /**
  * Roles management
@@ -64,7 +64,7 @@ Route::resource('admin/roles', RoleController::class);
 /**
  * Rooms managements
  */
-Route::resource('/admin/rooms', RoomController::class);
+Route::resource('/admin/rooms', RoomController::class)->middleware(['auth', 'verified']);
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -78,11 +78,17 @@ Route::middleware('auth')->group(function () {
 Route::post('/admin/teams/proposeTeamsAmount', [
     TeamController::class, 
     'proposeTeamsAmount',
-])->name('proposeTeamsAmount');
+])->middleware(['auth', 'verified'])->name('proposeTeamsAmount');
 
 Route::get('/admin/teams/proposeTeamsCompositions', [
     TeamController::class, 
     'proposeTeamsCompositions',
-])->name('proposeTeamsCompositions');
+])->middleware(['auth', 'verified'])->name('proposeTeamsCompositions');
+
+Route::get('/admin/teams/bulkComposer', function () {
+    return view ('/admin/teams/bulk-composer');
+})->middleware(['auth', 'verified'])->name('teamBulkComposer');
+
+Route::resource('/admin/teams', TeamController::class)->middleware(['auth', 'verified']);
 
 require __DIR__ . '/auth.php';

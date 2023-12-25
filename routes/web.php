@@ -91,4 +91,11 @@ Route::get('/admin/teams/bulkComposer', function () {
 
 Route::resource('/admin/teams', TeamController::class)->middleware(['auth', 'verified']);
 
+/**
+ * Testing/temporary
+ */
+Route::get('/test', [
+    RoomController::class, 'checkCapacity',
+]);
+
 require __DIR__ . '/auth.php';

@@ -19,8 +19,12 @@
             </div>
             
             @if(session('success'))
-            <div class="mt-4 bg-red-500">
+            <div class="mt-4 bg-green-500">
                 {{ session('success') }}
+            </div>
+            @elseif(session('deleted'))
+            <div class="bg-red-500 mt-4 rounded-lg pl-3">
+                {{ session('deleted') }}
             </div>
             @endif
         </div>
@@ -46,8 +50,8 @@
                             <tr class="border-b dark:border-neutral-500">
                                 <td class="px-4 whitespace-nowrap">{{ $team->name }}</td>
                                 <td class="px-4 whitespace-nowrap">{{ $team->season }}</td>
-                                <td class="px-4 whitespace-nowrap">{{ $member->division }}</td>
-                                <td class="px-4 whitespace-nowrap">{{ $member->captain }}</td>
+                                <td class="px-4 whitespace-nowrap">{{ $team->division }}</td>
+                                <td class="px-4 whitespace-nowrap"></td>
                                 <td class="flex items-center gap-2 px-4 whitespace-nowrap">
                                     <img class="h-4 cursor-pointer" src="{{ asset('images/icons/contact.svg') }}"
                                         alt="Contact">
@@ -56,7 +60,7 @@
                                             <img class="h-4 cursor-pointer" src="{{ asset('images/icons/edit.svg') }}" alt="Edit">
                                         </button>
                                     </form>
-                                    <form action="" method="POST">
+                                    <form action="{{ route('teams.destroy', $team->id) }}" method="POST">
                                         @csrf
                                         @method('delete')
                                         <button>

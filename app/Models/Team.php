@@ -12,7 +12,8 @@ class Team extends Model
 
     protected $fillable = [
         'name',
-        'captain',
+        'season',
+        'division',
     ];
 
     public function user() :HasMany

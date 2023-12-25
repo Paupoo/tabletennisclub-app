@@ -27,6 +27,10 @@
             <div class="mt-4 bg-red-500">
                 {{ session('success') }}
             </div>
+            @elseif(session('deleted'))
+            <div class="bg-red-500 mt-4 rounded-lg pl-3">
+                {{ session('deleted') }}
+            </div>
             @endif
         </div>
     </div>

@@ -40,9 +40,14 @@
                         {{-- Season --}}
                         <div>
                             <x-input-label for="season" :value="__('Season')" />
-                            <x-text-input id="season" name="season" type="text" class="block w-full mt-1"
-                                :value="old('season')" required placeholder="{{ __('2024-2025') }}" autofocus
-                                autocomplete="season"></x-text-input>
+                            <x-text-input id="season" name="season" list="seasons" type="text"
+                                class="block w-full mt-1" :value="old('season')" required autofocus></x-text-input>
+                            <datalist id="seasons">
+                                @for ($i = -1; $i < 5; $i++)
+                                    <option value="{{ date('Y')+$i . ' - ' . date('Y')+$i+1 }}">
+                                @endfor
+
+                            </datalist>
                             <x-input-error class="mt-2" :messages="$errors->get('season')" />
                         </div>
 
@@ -70,7 +75,8 @@
                                 :value="old('player1')" autofocus></x-text-input>
                             <datalist id="players">
                                 @foreach ($users as $user)
-                                    <option value="{{ $user->last_name . ' ' . $user->first_name }}"">
+                                    <option
+                                        value="{{ $user->last_name . ' ' . $user->first_name . ' - ' . $user->ranking . ' - ' . $user->force_index }}">
                                 @endforeach
                             </datalist>
                             <x-input-error class="mt-2" :messages="$errors->get('division')" />

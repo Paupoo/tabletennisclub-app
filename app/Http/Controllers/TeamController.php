@@ -40,6 +40,19 @@ class TeamController extends Controller
     public function store(Request $request)
     {
         //
+        $request->validate([
+            'season' => 'string',
+            'name' => 'string',
+            'division' => 'string',            
+        ]);
+
+        Team::create([
+            'season' => $request->season,
+            'name' => $request->name,
+            'division' => $request->division,
+        ]);
+
+        return redirect()->route('teams.index')->with('success', 'The team ' . $request->name . ' has been created.');
     }
 
     /**
@@ -72,6 +85,10 @@ class TeamController extends Controller
     public function destroy(string $id)
     {
         //
+        $team = Team::find($id);
+        $team->delete();
+
+        return redirect()->route('teams.index')->with('deleted','The team has been '. $team->name . ' deleted.');
     }
 
     /**

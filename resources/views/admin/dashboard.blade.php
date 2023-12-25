@@ -166,8 +166,24 @@
                         <form action="">
                             <x-primary-button>Create new room</x-primary-button>
                         </form>
-                        <form action="">
+                        <form action="{{ route('rooms.index')}}" method="GET">
                             <x-primary-button>Manage rooms</x-primary-button>
+                        </form>
+                        <form action="/test" method="GET">
+                            Room capacity checker
+                            <input type="number" name="people" id="">
+                            <select name="activity" id="activity">
+                                <option value="training">Training</option>
+                                <option value="match">Match</option>
+                                <option value="unknown">Unknown</option>
+                            </select>
+                            <select name="room_id" id="room">
+                                @foreach ($rooms as $room)
+                                    
+                                <option value="{{ $room->id }}">{{ $room->name }}</option>
+                                @endforeach
+                            </select>
+                            <x-danger-button>Test</x-primary-button>
                         </form>
                     </div>
                 </div>
@@ -205,10 +221,9 @@
                         </tbody>
                     </table>
 
+                    {{-- Quick Actions --}}
                     <div class="flex gap-4 mt-4 w-96">
-                        <form action="">
-                            <x-primary-button>Create new training</x-primary-button>
-                        </form>
+                        
                         <form action="">
                             <x-primary-button>Manage trainings</x-primary-button>
                         </form>
@@ -248,17 +263,8 @@
                         <form action="">
                             <x-primary-button>Create new team</x-primary-button>
                         </form>
-                        <form action="">
+                        <form action="{{ route('teams.index') }}">
                             <x-primary-button>Manage teams</x-primary-button>
-                        </form>
-                        <form action="{{ route('proposeTeamsAmount') }}" method="POST">
-                            @csrf
-                            <x-danger-button>TEST BUTTON GET TEAMS AMOUNT PROPOSAL</x-primary-button>
-                        </form>
-                        <form action="{{ route('proposeTeamsCompositions') }}" method="GET">
-                            {{-- @csrf --}}
-                            <input type="hidden" name="kern_size" value="4">
-                            <x-danger-button>TEST BUTTON proposeTeamsCompositions</x-primary-button>
                         </form>
                     </div>
                 </div>

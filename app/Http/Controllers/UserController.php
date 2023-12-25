@@ -44,7 +44,7 @@ class UserController extends Controller
             'last_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'lowercase', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', 'min:8', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
-            'is_competitor' => ['boolean'],
+            'is_competitor' => ['nullable'],
             'licence' => ['nullable', 'unique:users,licence', 'size:6'],
             'ranking' => ['nullable', Rule::in([
                 'B0',
@@ -88,7 +88,7 @@ class UserController extends Controller
             'last_name' => $request->last_name,
             'email' => $request->email,
             'password' => $request->password,
-            'is_competitor' => $request->is_competitor,
+            'is_competitor' => ($request->is_competitor != null) ? true : false,
             'licence' => $request->licence,
             'ranking' => $request->ranking,
             'team' => $request->team,

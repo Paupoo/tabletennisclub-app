@@ -2,8 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Team;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Redirect;
+use Illuminate\View\View;
 
 class TeamController extends Controller
 {
@@ -13,6 +18,9 @@ class TeamController extends Controller
     public function index()
     {
         //
+        return view ('admin.teams.index', [
+            'teams' => Team::orderby('name')->paginate(10),
+        ]);
     }
 
     /**
@@ -21,6 +29,9 @@ class TeamController extends Controller
     public function create()
     {
         //
+        return view ('.admin.teams.create', [
+            'users' => User::orderby('last_name')->get(),
+        ]);
     }
 
     /**
@@ -66,78 +77,104 @@ class TeamController extends Controller
     /**
      *  Define team functions
      */
-    private function countCompetitors(): int
+    private function countTotalCompetitors(): int
     {
         return User::where('is_competitor', '=', true)->count();
     }
-    
-    private function getCompetitors(): array
+
+    private function countTotalTeams(int $kern_size): int
     {
-        ;
+        // Divide total competitors by wished kern size, return euclydian division (with a rest)
+        $total_teams = intdiv($this->countTotalCompetitors(), $kern_size);
+
+        return $total_teams;
+    }
+
+    private function countPlayersWithoutTeam(int $kern_size): int
+    {
+        // Count the rest of total competitors divided kern size.
+        return $this->countTotalCompetitors() % $kern_size;
+    }
+
+    private function getCompetitors(): Collection
+    {
+        return User::where('is_competitor', '=', true)->orderby('force_index', 'asc')->orderby('ranking')->orderby('last_name')->get();
     }
 
     public function proposeTeamsAmount(): array
     {
 
-        $kerns = [7, 6, 5, 4];
-
-        $resuts = [];
+        $kerns = [8, 7, 6, 5];
 
         foreach ($kerns as $kern) {
-            $total_teams = round($this->countCompetitors() / $kern, 0);
-            $remaining_players = $this->countCompetitors() % $kern;
-            $results['Kern with ' . $kern . ' players'] = [
-                'Total teams' => $total_teams,
-                'Remaining players' => $remaining_players,
+            $results['Kern with ' . $kern . ' team_players'] = [
+                'Total teams' => $this->countTotalTeams($kern),
+                'Remaining team_players' => $this->countPlayersWithoutTeam($kern),
             ];
         }
 
         return $results;
     }
 
-    private  function calculateTeamsAmount(int $kern_size): int
+    public function proposeTeamsCompositions(Request $request): View
     {
-        $total_teams = round($this->countCompetitors() / $kern_size, 0);
 
-        return $total_teams;
-    }
-
-    public function proposeTeamsCompositions(Request $request)
-    {
+        // Validate and store wished kern size
         $request->validate([
             'kern_size' => ['integer'],
         ]);
-        // Store results
-        $results = [];
+
+        $kern = $request->kern_size;
 
         // Get competitors
-        $competitors = User::where('is_competitor', '=', true)->orderby('force_index', 'asc')->orderby('last_name')->get();
+        $competitors = $this->getCompetitors();
 
-        // Calculates team kerns size
-        $kern = $request->kern_size; 
-    
+        // Count total team
+        $total_teams = $this->countTotalTeams($kern);
 
-        $total_teams = $this->calculateTeamsAmount($kern);
+        // Count team_players without team
+        $total_players_without_team = $this->countPlayersWithoutTeam($kern);
 
-        // For each team, get amount of kern players
-        $letter = 'A';
-        
+        // Teams should be named by a letter alphabetically
+        $team_name = 'A';
+
+        // Start variable will be use to determine the starting slices of competitors table for each team
         $start = 0;
-        //Loop for each teach
-        for ($i = 0; $i < $total_teams; $i++) {
-            $players_count = 0;
-            $results[$letter] = [];
-            $players = array_slice($competitors->all(), $start,$kern);
-            //Loop for each player
-            foreach($players as $player) {
-                $results[$letter]['player' . $players_count+1] = [];
-                $results[$letter]['player' . $players_count+1] = ['name' => $player['last_name'], 'ranking' => $player['ranking']];
 
-                $players_count++;
+        //Create the expected amount of teams and fill them with expected amount of players
+        for ($i = 0; $i < $total_teams; $i++) {
+            $team_players_count = 0;
+            $team_players = array_slice($competitors->all(), $start, $kern);
+
+            //Loop for each player
+            foreach ($team_players as $player) {
+                $results[$team_name]['Player ' . $team_players_count + 1] = [
+                    trans(__('Last Name')) => $player['last_name'] . ' ' . $player['first_name'],
+                    trans(__('Ranking')) => $player['ranking'],
+                ];
+                $team_players_count++;
             }
+
             $start = $start + $kern;
-            $letter++;
+            $team_name++;
         }
-        return $results;
+
+        unset($player);
+
+        // Add remaining players without teams
+        $players_witout_teams = array_slice($competitors->all(), - $total_players_without_team, $total_players_without_team);
+
+        $count = 0;
+        foreach($players_witout_teams as $player) {
+            $count++;
+            $results['Players withtout a team']['Player ' . $count] = [
+                trans(__('Name')) => $player['last_name'] . ' ' . $player['first_name'],
+                trans(__('Ranking')) => $player['ranking'],
+            ];
+        }
+
+        return view('admin/teams/bulk-composer', [
+            'results' => collect($results),
+        ]);
     }
 }

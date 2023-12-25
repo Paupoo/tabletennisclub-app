@@ -9,7 +9,12 @@ class Room extends Model
 {
     use HasFactory;
 
-    protected $fillabe = [
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
+    protected $fillable = [
         'name',
         'street',
         'city_code',

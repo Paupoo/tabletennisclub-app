@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Team;
 use App\Models\User;
+use Exception;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -69,6 +70,10 @@ class TeamController extends Controller
     public function edit(string $id)
     {
         //
+        return view ('admin.teams.edit', [
+            'team' => Team::find($id),
+            'users' => User::all(),
+        ]);
     }
 
     /**
@@ -77,6 +82,21 @@ class TeamController extends Controller
     public function update(Request $request, string $id)
     {
         //
+        $request->validate([
+            'season' => 'string',
+            'name' => 'string',
+            'division' => 'string',
+        ]);
+
+        $team = Team::find($id);
+
+        $team->season = $request->season;
+        $team->name = $request->name;
+        $team->division = $request->division;
+
+        $team->save();
+
+        return redirect()->route('teams.index')->with('success', 'The team ' . $team->name . ' has been added.');
     }
 
     /**
@@ -145,6 +165,15 @@ class TeamController extends Controller
 
         // Get competitors
         $competitors = $this->getCompetitors();
+
+        // Make sure every competitors has a force index
+        foreach ($competitors as $competitor) {
+            if ($competitor->force_index == null) {
+                throw new Exception(__('At least one competitor is missing a force index. Please run the "set force index" from members admin'), 851);
+            } else {
+
+            }
+        }
 
         // Count total team
         $total_teams = $this->countTotalTeams($kern);

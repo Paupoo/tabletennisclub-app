@@ -10,8 +10,8 @@
             <form action="{{ route('dashboard') }}" method="GET">
                 <x-primary-button>{{ __('Dashboard') }}</x-primary-button>
             </form>
-            <form action="{{ route('members.index') }}" method="GET">
-                <x-primary-button>{{ __('Manage users') }}</x-primary-button>
+            <form action="{{ route('teams.index') }}" method="GET">
+                <x-primary-button>{{ __('Manage Teams') }}</x-primary-button>
             </form>
         </div>
     </x-admin-block>
@@ -34,109 +34,52 @@
                         </p>
                     </header>
 
-                    <form action="{{ route('members.update', $member->id) }}" method="POST" class="mt-6 space-y-6">
+                    <form action="{{ route('teams.update', $team->id) }}" method="POST" class="mt-6 space-y-6">
                         @csrf
                         @method('PUT')
-                        {{-- First Name --}}
+                        {{-- Season --}}
                         <div>
-                            <x-input-label for="first_name" :value="__('First Name')" />
-                            <x-text-input id="first_name" name="first_name" type="text" class="block w-full mt-1"
-                                :value="old('first_name', $member->first_name)" required autofocus autocomplete="first_name"></x-text-input>
-                            <x-input-error class="mt-2" :messages="$errors->get('first_name')" />
+                            <x-input-label for="season" :value="__('Season')" />
+                            <x-text-input id="season" name="season" list="seasons" type="text"
+                                class="block w-full mt-1" :value="old('season', $team->season)" required autofocus></x-text-input>
+                            <datalist id="seasons">
+                                @for ($i = -1; $i < 5; $i++)
+                                    <option value="{{ date('Y')+$i . ' - ' . date('Y')+$i+1 }}">
+                                @endfor
+
+                            </datalist>
+                            <x-input-error class="mt-2" :messages="$errors->get('season')" />
                         </div>
 
-                        {{-- Last Name --}}
+                        {{-- Name --}}
                         <div>
-                            <x-input-label for="last_name" :value="__('Last Name')" />
-                            <x-text-input id="last_name" name="last_name" type="text" class="block w-full mt-1"
-                                :value="old('last_name', $member->last_name)" required autofocus autocomplete="last_name"></x-text-input>
-                            <x-input-error class="mt-2" :messages="$errors->get('last_name')" />
+                            <x-input-label for="name" :value="__('Name')" />
+                            <x-text-input id="name" name="name" type="text" class="block w-full mt-1"
+                                :value="old('name', $team->name)" required autofocus autocomplete="name"></x-text-input>
+                            <x-input-error class="mt-2" :messages="$errors->get('name')" />
                         </div>
 
-                        {{-- Email --}}
+                        {{-- Division --}}
                         <div>
-                            <x-input-label for="email" :value="__('Email')" />
-                            <x-text-input id="email" name="email" type="email" class="block w-full mt-1"
-                                :value="old('email', $member->email)" required autofocus autocomplete="email"></x-text-input>
-                            <x-input-error class="mt-2" :messages="$errors->get('email')" />
+                            <x-input-label for="division" :value="__('Division')" />
+                            <x-text-input id="division" name="division" type="text" class="block w-full mt-1"
+                                :value="old('division', $team->division)" required autofocus autocomplete="division"></x-text-input>
+                            <x-input-error class="mt-2" :messages="$errors->get('division')" />
                         </div>
 
-                        {{-- Password --}}
+                        {{-- Players --}}
                         <div>
-                            <x-input-label for="password" :value="__('Password')" />
-                            <x-text-input id="password" name="password" type="password" class="block w-full mt-1"
-                                :value="old('password')" autofocus autocomplete="false"></x-text-input>
-                            <x-input-error class="mt-2" :messages="$errors->get('password')" />
-                        </div>
+                            <x-input-label for="player1" :value="__('Choose a player from the list')" />
 
-                        {{-- Confirm Password --}}
-                        <div class="mt-4">
-                            <x-input-label for="password_confirmation" :value="__('Confirm Password')" />
-
-                            <x-text-input id="password_confirmation" class="block w-full mt-1" type="password"
-                                name="password_confirmation" autocomplete="new-password" />
-
-                            <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
-                        </div>
-
-                        {{-- Competition --}}
-                        <div>
-                            <x-input-label for="is_competitor" :value="__('Plays in competiton')" />
-                            <input id="is_competitor" name="is_competitor" type="checkbox" class="block mt-1"
-                                @checked(old('is_competitor', $member->is_competitor)) autofocus></input>
-                            <x-input-error class="mt-2" :messages="$errors->get('is_competitor')" />
-                        </div>
-
-                        {{-- Licence --}}
-                        <div>
-                            <x-input-label for="licence" :value="__('Licence')" />
-                            <x-text-input id="licence" name="licence" type="number" class="block w-full mt-1"
-                                :min="1" :max="999999" :value="old('licence', $member->licence)" autofocus
-                                autocomplete="licence"></x-text-input>
-                            <x-input-error class="mt-2" :messages="$errors->get('licence')" />
-                        </div>
-
-                        {{-- Ranking --}}
-                        <div>
-                            <x-input-label for="ranking" :value="__('Ranking')" />
-                            <x-text-input id="ranking" name="ranking" type="text" class="block w-full mt-1"
-                                :value="old('ranking', $member->ranking)" autofocus autocomplete="ranking"></x-text-input>
-                            <x-input-error class="mt-2" :messages="$errors->get('ranking')" />
-                        </div>
-
-                        {{-- Role --}}
-                        <div>
-                            <x-input-label for="role" :value="__('Role')" />
-                            <x-select-input id="role" name="role" type="text" class="block w-full mt-1"
-                                 autofocus autocomplete="role">
-                                @foreach ($roles as $role)
-
-                                    @if(old('role') !== null && old('role') == $role->id)
-
-                                        <option value="{{ $role->id }}" selected>{{ $role->name }}</option>
-
-                                    @elseif (old('role') === null && $role->id == $member->role->id)
-
-                                        <option value="{{ $role->id }}" selected>{{ $role->name }}</option>
-
-                                    @else
-
-                                        <option value="{{ $role->id }}">{{ $role->name }}</option>
-
-                                    @endif
-
+                            <x-text-input id="player1" name="player1" list="players" class="block w-full mt-1"
+                                :value="old('player1')" autofocus></x-text-input>
+                            <datalist id="players">
+                                @foreach ($users as $user)
+                                    <option
+                                        value="{{ $user->last_name . ' ' . $user->first_name . ' - ' . $user->ranking . ' - ' . $user->force_index }}">
                                 @endforeach
-
-                            </x-select-input>
-                            <x-input-error class="mt-2" :messages="$errors->get('role')" />
-                        </div>
-
-                        {{-- Team --}}
-                        <div>
-                            <x-input-label for="team" :value="__('Team')" />
-                            <x-text-input id="team" name="team" type="text" class="block w-full mt-1"
-                                :value="old('team', $member->team)" autofocus autocomplete="team"></x-text-input>
-                            <x-input-error class="mt-2" :messages="$errors->get('team')" />
+                            </datalist>
+                            <x-input-error class="mt-2" :messages="$errors->get('division')" />
                         </div>
 
                         <div>

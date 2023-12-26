@@ -23,7 +23,7 @@
                 {{ session('success') }}
             </div>
             @elseif(session('deleted'))
-            <div class="bg-red-500 mt-4 rounded-lg pl-3">
+            <div class="pl-3 mt-4 bg-red-500 rounded-lg">
                 {{ session('deleted') }}
             </div>
             @endif
@@ -54,8 +54,8 @@
                                 <td class="px-4 whitespace-nowrap"></td>
                                 <td class="flex items-center gap-2 px-4 whitespace-nowrap">
                                     <img class="h-4 cursor-pointer" src="{{ asset('images/icons/contact.svg') }}"
-                                        alt="Contact">
-                                    <form action="" method="GET">
+                                        alt="Check details">
+                                    <form action="{{ route('teams.edit', $team->id) }}" method="GET">
                                         <button type="submit">
                                             <img class="h-4 cursor-pointer" src="{{ asset('images/icons/edit.svg') }}" alt="Edit">
                                         </button>

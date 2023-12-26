@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Route;
 use App\Models\User;
 use App\Models\Role;
 use App\Models\Room;
+use App\Models\Team;
+use App\Models\Training;
 
 /*
 |--------------------------------------------------------------------------
@@ -37,6 +39,8 @@ Route::get('/admin/dashboard', function () {
         'members_total_competitors' => User::where('is_competitor', '=', true)->count(),
         'members_total_casuals' => User::where('is_competitor', '=', false)->count(),
         'rooms' => Room::orderby('name')->get(),
+        'trainings' => Training::latest()->take(5)->get(),
+        'teams' => Team::all(),
     ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 

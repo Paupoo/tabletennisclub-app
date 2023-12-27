@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
-            {{ __('Create a member') }}
+            {{ __('Create a room') }}
         </h2>
     </x-slot>
 
@@ -10,7 +10,7 @@
             <form action="{{ route('dashboard') }}" method="GET">
                 <x-primary-button>{{ __('Dashboard') }}</x-primary-button>
             </form>
-            <form action="{{ route('roles.index') }}" method="GET">
+            <form action="{{ route('rooms.index') }}" method="GET">
                 <x-primary-button>{{ __('Manage Rooms') }}</x-primary-button>
             </form>
         </div>

@@ -235,6 +235,9 @@
                     {{-- Quick Actions --}}
                     <div class="flex gap-4 mt-4 w-96">
 
+                        <form action="{{ route('trainings.create')}}" method="GET">
+                            <x-danger-button>Create a new training</x-primary-button>
+                        </form>
                         <form action="{{ route('trainings.index')}}" method="GET">
                             <x-danger-button>Manage trainings</x-primary-button>
                         </form>
@@ -334,10 +337,10 @@
 
                     <div class="flex gap-4 mt-4 w-96">
                         <form action="">
-                            <x-primary-button>Create new match</x-primary-button>
+                            <x-danger-button>Create new match</x-primary-button>
                         </form>
                         <form action="">
-                            <x-primary-button>Manage matches</x-primary-button>
+                            <x-danger-button>Manage matches</x-primary-button>
                         </form>
                     </div>
                 </div>

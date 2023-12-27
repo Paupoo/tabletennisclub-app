@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
-            {{ __('Members') }}
+            {{ __('Rooms') }}
         </h2>
     </x-slot>
 
@@ -23,7 +23,7 @@
                 {{ session('success') }}
             </div>
             @elseif(session('deleted'))
-            <div class="bg-red-500 mt-4 rounded-lg pl-3">
+            <div class="pl-3 mt-4 bg-red-500 rounded-lg">
                 {{ session('deleted') }}
             </div>
             @endif
@@ -35,7 +35,7 @@
             <div class="overflow-hidden bg-white shadow-sm dark:bg-gray-800 sm:rounded-lg">
 
 
-                <table class="table-auto border-collapse min-w-full text-sm font-light text-left dark:bg-neutral-300">
+                <table class="min-w-full text-sm font-light text-left border-collapse table-auto dark:bg-neutral-300">
                     <thead class="font-medium border-b dark:border-neutral-500">
                         <tr>
                             <th scope="col" class="px-4 py-2">{{ __('Name') }}</th>

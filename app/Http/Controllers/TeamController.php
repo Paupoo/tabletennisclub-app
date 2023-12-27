@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Classes\SeasonsSelector;
+use App\Classes\HtmlFactory;
 use App\Models\Team;
 use App\Models\User;
 use Exception;
@@ -33,7 +33,8 @@ class TeamController extends Controller
         //
         return view ('.admin.teams.create', [
             'users' => User::orderby('last_name')->get(),
-            'seasons' => SeasonsSelector::GetSeasonsHTMLDropdown(),
+            'seasons' => HtmlFactory::GetSeasonsHTMLDropdown(),
+            'team_names' => HtmlFactory::GetTeamNames(),
         ]);
     }
 
@@ -81,7 +82,7 @@ class TeamController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, string $id): RedirectResponse
     {
         //
         $request->validate([

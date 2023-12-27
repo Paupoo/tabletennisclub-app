@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
-            {{ __('Create a member') }}
+            {{ __('Create a team') }}
         </h2>
     </x-slot>
 
@@ -54,8 +54,10 @@
                         {{-- Name --}}
                         <div>
                             <x-input-label for="name" :value="__('Name')" />
-                            <x-text-input id="name" name="name" type="text" class="block w-full mt-1"
-                                :value="old('name')" required autofocus autocomplete="name"></x-text-input>
+                            <x-select-input id="name" name="name" type="text" class="block w-full mt-1"
+                                :value="old('name')" required autofocus autocomplete="name">
+                                {!! $team_names !!}
+                            </x-select-input>
                             <x-input-error class="mt-2" :messages="$errors->get('name')" />
                         </div>
 

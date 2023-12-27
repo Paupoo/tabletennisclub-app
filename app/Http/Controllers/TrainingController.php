@@ -6,6 +6,8 @@ use App\Models\Room;
 use App\Models\Training;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Redirect;
 
 class TrainingController extends Controller
@@ -16,8 +18,8 @@ class TrainingController extends Controller
     public function index()
     {
         //
-        return view ('admin.trainings.index', [
-            'trainings' => Training::all(),
+        return view('admin.trainings.index', [
+            'trainings' => Training::orderBy('start')->get(),
         ]);
     }
 
@@ -28,7 +30,7 @@ class TrainingController extends Controller
     {
         //
 
-        return view ('admin.trainings.create', [
+        return view('admin.trainings.create', [
             'rooms' => Room::all(),
         ]);
     }
@@ -39,14 +41,13 @@ class TrainingController extends Controller
     public function store(Request $request): RedirectResponse
     {
         //
-        // dd($request);
         $request->validate([
-            'start' => 'date',
-            'end' => 'date','gt:start',
+            'start' => 'required|date|before:end',
+            'end' => 'required|date|after:start',
             'room_id' => 'integer',
             'type' => 'string',
             'level' => 'string',
-            'trainer_name' => 'string',
+            'trainer_name' => 'string|nullable',
         ]);
 
         $training = Training::create([
@@ -92,5 +93,35 @@ class TrainingController extends Controller
     public function destroy(Training $training)
     {
         //
+    }
+
+    public function test2 (Request $request)
+    {
+        $result = $this->daysBetweenTwoDate($request->start, $request->end, $request->day);
+
+        return $result;
+    }
+
+    /**
+     * Get all dates for a specific weekday between 2 dates
+     *
+     * @return array
+     */
+    public function daysBetweenTwoDate(string $start_date, string $end_date, int $week_day): array
+    {
+        $dates = [];
+        $start_date = new Date($start_date);
+        $end_date = new Date($end_date);
+
+        for ($i = $start_date; $i <= $end_date; $i++) {
+            if ($start_date->dayOfWeek() == $week_day) {
+                $dates[] = $start_date;
+            } else {
+            }
+            $i++;
+        }
+
+        dd($dates);
+        return $dates;
     }
 }

@@ -34,6 +34,13 @@
                         </p>
                     </header>
 
+                    <form action="/test2" method="GET">
+                    <input type="date" name="start">
+                    <input type="date" name="end">
+                    <input type="number" name="day">
+                    <input type="submit">
+                    </form>
+
                     <form action="{{ route('trainings.store') }}" method="POST" class="mt-6 space-y-6">
                         @csrf
 
@@ -89,12 +96,12 @@
                         <div>
                             <x-input-label for="trainer_name" :value="__('Trainer Name')" />
                             <x-text-input id="trainer_name" name="trainer_name" type="text" class="block w-full mt-1"
-                                :value="old('trainer_name')" required autofocus autocomplete="trainer_name"></x-text-input>
+                                :value="old('trainer_name')" autofocus autocomplete="trainer_name"></x-text-input>
                             <x-input-error class="mt-2" :messages="$errors->get('trainer_name')" />
                         </div>
 
                         <div>
-                            <x-primary-button>{{ __('Create new user') }}</x-primary-button>
+                            <x-primary-button>{{ __('Create new team') }}</x-primary-button>
                         </div>
 
                     </form>

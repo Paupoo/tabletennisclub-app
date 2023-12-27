@@ -18,4 +18,9 @@ class Training extends Model
         'trainer_name',
         'price',
     ];
+
+    protected $casts = [
+        'start' => 'datetime',
+        'end' => 'datetime',
+    ];
 }

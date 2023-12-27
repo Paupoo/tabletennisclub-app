@@ -106,5 +106,9 @@ Route::resource('/admin/trainings', TrainingController::class)->middleware(['aut
 Route::get('/test', [
     RoomController::class, 'checkCapacity',
 ]);
+Route::get('/test2', [
+    TrainingController::class, 'test2',
+]);
+
 
 require __DIR__ . '/auth.php';

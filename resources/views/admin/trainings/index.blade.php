@@ -41,7 +41,8 @@
                         class="min-w-full text-sm font-light text-left border-collapse table-auto dark:bg-neutral-300">
                         <thead class="font-medium border-b dark:border-neutral-500">
                             <tr>
-                                <th scope="col" class="px-4 py-2">#</th>
+                                <th scope="col" class="px-4 py-2">{{ __('Day') }}</th>
+                                <th scope="col" class="px-4 py-2">{{ __('Date') }}</th>
                                 <th scope="col" class="px-4 py-2">{{ __('Start') }}</th>
                                 <th scope="col" class="px-4 py-2">{{ __('End') }}</th>
                                 <th scope="col" class="px-4 py-2">{{ __('Room name') }}</th>
@@ -53,14 +54,13 @@
                         <tbody>
                             @foreach ($trainings as $training)
                                 <tr class="border-b dark:border-neutral-500">
-                                    <td class="px-4 font-medium whitespace-nowrap">
-                                        {{ $loop->iteration }}
-                                    </td>
-                                    <td class="px-4 whitespace-wrap">{{ $training->start }}</td>
-                                    <td class="px-4 whitespace-wrap">{{ $training->end }}</td>
+                                    <td class="px-4 whitespace-wrap">{{ $training->start->format('l') }}</td>
+                                    <td class="px-4 whitespace-wrap">{{ $training->start->format('d-m-Y') }}</td>
+                                    <td class="px-4 whitespace-wrap">{{ $training->start->format('h:m') }}</td>
+                                    <td class="px-4 whitespace-wrap">{{ $training->end->format('h:m') }}</td>
                                     <td class="px-4 whitespace-wrap"> $training->room->name </td>
                                     <td class="px-4 whitespace-wrap">{{ $training->type }}</td>
-                                    <td class="px-4 whitespace-wrap">{{ $training->trainer }}</td>
+                                    <td class="px-4 whitespace-wrap">{{ $training->trainer_name }}</td>
                                     <td class="px-4 whitespace-wrap">{{ $training->level }}</td>
                                     <td class="flex items-center gap-2 px-4 whitespace-nowrap">
                                         <form action="{{ route('trainings.edit', $training->id) }}" method="GET">

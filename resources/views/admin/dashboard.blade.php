@@ -235,7 +235,7 @@
                     {{-- Quick Actions --}}
                     <div class="flex gap-4 mt-4 w-96">
 
-                        <form action="">
+                        <form action="{{ route('trainings.index')}}" method="GET">
                             <x-danger-button>Manage trainings</x-primary-button>
                         </form>
                     </div>

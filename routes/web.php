@@ -5,6 +5,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\RoomController;
+use App\Http\Controllers\TrainingController;
 use Illuminate\Support\Facades\Route;
 use App\Models\User;
 use App\Models\Role;
@@ -95,6 +96,10 @@ Route::get('/admin/teams/bulkComposer', function () {
 
 Route::resource('/admin/teams', TeamController::class)->middleware(['auth', 'verified']);
 
+/**
+ * Training management
+ */
+Route::resource('/admin/trainings', TrainingController::class)->middleware(['auth', 'verified']);
 /**
  * Testing/temporary
  */

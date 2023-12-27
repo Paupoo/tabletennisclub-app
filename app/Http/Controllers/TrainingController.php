@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Room;
 use App\Models\Training;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Redirect;
 
 class TrainingController extends Controller
 {
@@ -13,6 +16,9 @@ class TrainingController extends Controller
     public function index()
     {
         //
+        return view ('admin.trainings.index', [
+            'trainings' => Training::all(),
+        ]);
     }
 
     /**
@@ -21,14 +27,39 @@ class TrainingController extends Controller
     public function create()
     {
         //
+
+        return view ('admin.trainings.create', [
+            'rooms' => Room::all(),
+        ]);
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         //
+        // dd($request);
+        $request->validate([
+            'start' => 'date',
+            'end' => 'date','gt:start',
+            'room_id' => 'integer',
+            'type' => 'string',
+            'level' => 'string',
+            'trainer_name' => 'string',
+        ]);
+
+        $training = Training::create([
+            'start' => $request->start,
+            'end' => $request->end,
+            'room_id' => $request->room_id,
+            'type' => $request->type,
+            'level' => $request->level,
+            'trainer_name' => $request->trainer_name,
+            'price' => 0,
+        ]);
+
+        return redirect()->route('trainings.index')->with('success', 'The training has been created.');
     }
 
     /**

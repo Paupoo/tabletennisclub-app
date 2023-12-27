@@ -40,16 +40,16 @@
                         {{-- Season --}}
                         <div>
                             <x-input-label for="season" :value="__('Season')" />
-                            <x-text-input id="season" name="season" list="seasons" type="text"
-                                class="block w-full mt-1" :value="old('season')" required autofocus></x-text-input>
-                            <datalist id="seasons">
-                                @for ($i = -1; $i < 5; $i++)
-                                    <option value="{{ date('Y')+$i . ' - ' . date('Y')+$i+1 }}">
-                                @endfor
+                            <x-select-input id="season" name="season" class="block w-full mt-1" :value="old('season')"
+                                required autofocus>
+                                
+                                {!! $seasons !!}
 
-                            </datalist>
+                            </x-select-input>
                             <x-input-error class="mt-2" :messages="$errors->get('season')" />
                         </div>
+
+
 
                         {{-- Name --}}
                         <div>

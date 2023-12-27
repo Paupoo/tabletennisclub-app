@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Classes\SeasonsSelector;
 use App\Models\Team;
 use App\Models\User;
 use Exception;
@@ -32,6 +33,7 @@ class TeamController extends Controller
         //
         return view ('.admin.teams.create', [
             'users' => User::orderby('last_name')->get(),
+            'seasons' => SeasonsSelector::GetSeasonsHTMLDropdown(),
         ]);
     }
 

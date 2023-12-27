@@ -6,7 +6,7 @@
                 <!-- Logo -->
                 <div class="flex items-center shrink-0">
                     <a href="{{ route('welcome') }}">
-                        <x-application-logo class="block w-auto text-gray-800 fill-current h-9 dark:text-gray-200" />
+                        <x-logo class="block w-auto text-gray-800 fill-current h-9 dark:text-gray-200" />
                     </a>
                 </div>
 
@@ -37,7 +37,7 @@
                     </x-nav-link>
                 </div>
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('members.index')" :active="request()->routeIs('members.index')">
+                    <x-nav-link :href="route('trainings.index')" :active="request()->routeIs('trainings.index')">
                         {{ __('Trainings') }}
                     </x-nav-link>
                 </div>

@@ -56,9 +56,9 @@
                                 <tr class="border-b dark:border-neutral-500">
                                     <td class="px-4 whitespace-wrap">{{ $training->start->format('l') }}</td>
                                     <td class="px-4 whitespace-wrap">{{ $training->start->format('d-m-Y') }}</td>
-                                    <td class="px-4 whitespace-wrap">{{ $training->start->format('h:m') }}</td>
-                                    <td class="px-4 whitespace-wrap">{{ $training->end->format('h:m') }}</td>
-                                    <td class="px-4 whitespace-wrap"> $training->room->name </td>
+                                    <td class="px-4 whitespace-wrap">{{ $training->start->format('H:i') }}</td>
+                                    <td class="px-4 whitespace-wrap">{{ $training->end->format('H:i') }}</td>
+                                    <td class="px-4 whitespace-wrap">{{ $training->room->name }}</td>
                                     <td class="px-4 whitespace-wrap">{{ $training->type }}</td>
                                     <td class="px-4 whitespace-wrap">{{ $training->trainer_name }}</td>
                                     <td class="px-4 whitespace-wrap">{{ $training->level }}</td>
@@ -69,7 +69,7 @@
                                                     src="{{ asset('images/icons/edit.svg') }}" alt="Edit">
                                             </button>
                                         </form>
-                                        <form action="{{ route('roles.destroy', $training->id) }}" method="POST">
+                                        <form action="{{ route('trainings.destroy', $training->id) }}" method="POST">
                                             @csrf
                                             @method('delete')
                                             <button>

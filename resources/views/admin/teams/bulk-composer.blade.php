@@ -6,8 +6,8 @@
     </x-slot>
 
     <div class="pt-6">
-        <div class="mx-auto max-w-7xl sm:px-6 lg:px-8 relative">
-            <div class="flex flex-row gap-4 justify-start">
+        <div class="relative mx-auto max-w-7xl sm:px-6 lg:px-8">
+            <div class="flex flex-row justify-start gap-4">
                 <form action="{{ route('dashboard') }}" method="GET">
                     <x-primary-button>{{ __('Dashboard') }}</x-primary-button>
                 </form>
@@ -17,7 +17,7 @@
                 
                 <form class="absolute right-0"
                     action="{{ route('proposeTeamsCompositions') }}" method="GET">
-                    <input class="h-8 w-20" type="number" name="kern_size" id="kern_selector" min="5"
+                    <input class="w-20 h-8" type="number" name="kern_size" id="kern_selector" min="5"
                         step="1" value="{{ old('kern_size') }}">
                     <x-primary-button class="w-36">{{ __('Build teams') }}</x-primary-button>
                 </form>
@@ -29,15 +29,14 @@
 
 
         @isset($results)
-            <div class="grid grid-cols-3 gap-8 w-3/4 m-auto">
+            <div class="grid grid-cols-3 gap-8 px-8 m-auto max-xl:grid-cols-2 max-w-7xl">
 
                 @foreach ($results as $team_name => $team)
-                    <div class="bg-white rounded-xl w-96 shadow-lg">
+                    <div class="bg-white shadow-lg rounded-xl w-96">
                         <h2 class="mt-2 mb-4 text-center">{{ $team_name }}</h2>
                         <ol>
-
                             @foreach ($team as $players)
-                                <li class="even:bg-gray-200 rounded-lg flex justify-between px-4">
+                                <li class="flex justify-between px-4 rounded-lg even:bg-gray-200">
                                     @foreach ($players as $key => $value)
                                         <span>
                                             {{ $value }}
@@ -48,7 +47,7 @@
                         </ol>
                     </div>
                 @endforeach
-                <div class="mt-6 flex gap-4 w-1/2 mx-auto">
+                <div class="flex w-1/2 gap-4 mx-auto mt-6">
                 <x-danger-button>Validate</x-primary-button></div>
             </div>
         @endisset

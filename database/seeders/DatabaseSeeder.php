@@ -7,6 +7,7 @@ use Illuminate\Database\Seeder;
 use App\Models\User;
 use App\Models\Role;
 use App\Models\Room;
+use Illuminate\Support\Facades\DB;
 
 class DatabaseSeeder extends Seeder
 {
@@ -15,7 +16,6 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-
         // Create roles
         Role::create([
             'name' => 'Member',
@@ -44,7 +44,16 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // Create 75 members
-        User::factory(75)->create();
+        User::factory(96)->create();
+
+        // If a player is competitor and has no ranking, get one.
+        $affected = DB::table('users')
+        ->where('ranking', '=', null)
+        ->where('is_competitor',
+            '=',
+            true
+        )
+        ->update(['ranking' => 'NC']);
 
         // Create the rooms
         Room::create([

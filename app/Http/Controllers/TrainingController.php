@@ -20,7 +20,7 @@ class TrainingController extends Controller
     {
         //
         return view('admin.trainings.index', [
-            'trainings' => Training::orderBy('start')->get(),
+            'trainings' => Training::orderBy('start')->paginate(10),
         ]);
     }
 

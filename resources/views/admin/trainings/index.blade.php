@@ -49,6 +49,7 @@
                                 <th scope="col" class="px-4 py-2">{{ __('Type') }}</th>
                                 <th scope="col" class="px-4 py-2">{{ __('Trainer') }}</th>
                                 <th scope="col" class="px-4 py-2">{{ __('Level') }}</th>
+                                <th scope="col" class="px-4 py-2">{{ __('Action') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -87,4 +88,10 @@
             </div>
         </div>
     </div>
+
+    <x-admin-block>
+        {{ $trainings->links() }}
+    </x-admin-block>
+    
 </x-app-layout>
+

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PublicSiteController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\UserController;
@@ -12,6 +13,7 @@ use App\Models\Role;
 use App\Models\Room;
 use App\Models\Team;
 use App\Models\Training;
+use Illuminate\Support\Carbon;
 
 /*
 |--------------------------------------------------------------------------
@@ -24,9 +26,9 @@ use App\Models\Training;
 |
 */
 
-Route::get('/', function () {
-    return view('/public/welcome');
-})->name('welcome');
+Route::get('/', [
+    PublicSiteController::class, 'homePage',
+])->name('welcome');
 
 /**
  * Dashboard with sample of most data
@@ -81,17 +83,17 @@ Route::middleware('auth')->group(function () {
  * Teams management
  */
 Route::post('/admin/teams/proposeTeamsAmount', [
-    TeamController::class, 
+    TeamController::class,
     'proposeTeamsAmount',
 ])->middleware(['auth', 'verified'])->name('proposeTeamsAmount');
 
 Route::get('/admin/teams/proposeTeamsCompositions', [
-    TeamController::class, 
+    TeamController::class,
     'proposeTeamsCompositions',
 ])->middleware(['auth', 'verified'])->name('proposeTeamsCompositions');
 
 Route::get('/admin/teams/bulkComposer', function () {
-    return view ('/admin/teams/bulk-composer');
+    return view('/admin/teams/bulk-composer');
 })->middleware(['auth', 'verified'])->name('teamBulkComposer');
 
 Route::resource('/admin/teams', TeamController::class)->middleware(['auth', 'verified']);
@@ -106,9 +108,5 @@ Route::resource('/admin/trainings', TrainingController::class)->middleware(['aut
 Route::get('/test', [
     RoomController::class, 'checkCapacity',
 ]);
-Route::get('/test2', [
-    TrainingController::class, 'test2',
-]);
-
 
 require __DIR__ . '/auth.php';

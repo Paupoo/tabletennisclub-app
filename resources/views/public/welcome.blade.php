@@ -59,10 +59,10 @@
         <main class="grid grid-flow-row z-1 top-24 bg-neutral-100 dark:bg-neutral-900 dark:text-slate-400">
 
             {{-- Kiosk --}}
-            <section class="w-full flex overflow-x-auto snap-mandatory">
+            <section class="flex w-full overflow-x-auto snap-mandatory">
 
                 <div id="slide1 "
-                    class="relative min-w-full snap-center snap-y grid grid-cols-2 gap-4 px-12 py-8 mx-0 bg-yellow-400 rounded-b-sm max-lg:grid-cols-1 h-fix">
+                    class="relative grid min-w-full grid-cols-2 gap-4 px-12 py-8 mx-0 bg-yellow-400 rounded-b-sm snap-center snap-y max-lg:grid-cols-1 h-fix">
 
                     {{-- Image --}}
                     <div class="px-4 max-lg:row-start-2 ">
@@ -73,18 +73,14 @@
                     {{-- Call to action --}}
                     <div class="flex flex-col justify-around gap-4 px-4 mb-2 max-lg:row-start-1">
                         <h1 class="text-3xl font-bold text-left">{{ __('Welcome') }}</h1>
-                        <p>{{ __('Lorem ipsum dolor sit amet consectetur, adipisicing elit. Dicta, voluptatum consectetur? Ut,
-                                                                                                                    delectus
-                                                                                                                    quod eveniet autem laborum ullam reiciendis deserunt a consequuntur dolor quis cumque quibusdam
-                                                                                                                    esse
-                                                                                                                    nulla odit dolorum.') }}
+                        <p>{{ __('Lorem ipsum dolor sit amet consectetur, adipisicing elit. Dicta, voluptatum consectetur? Ut, delectus quod eveniet autem laborum ullam reiciendis deserunt a consequuntur dolor quis cumque quibusdam esse nulla odit dolorum.') }}
                         </p>
                         <div class="flex flex-row items-center self-center">
                             <x-button
                                 class="py-2 mr-4 font-semibold text-yellow-400 bg-blue-800 shadow-2xl w-36 shadow-blue-800"
                                 type="button">{{ __('Join us') }}</x-button>
                             <a class="flex items-baseline ml-4 text-lg font-semibold duration-300 ease-in-out transform hover:scale-110"
-                                href="">
+                                href="/">
                                 <p>{{ 'Learn more' }}</p>
                                 <span class="text-3xl font-extrabold">&rarr;</span>
                             </a>
@@ -94,7 +90,7 @@
                 </div>
 
                 <div id="slide2"
-                    class="relative min-w-full snap-center snap-y grid grid-cols-2 gap-4 px-12 py-8 mx-0 bg-yellow-400 rounded-b-sm max-lg:grid-cols-1 h-fix">
+                    class="relative grid min-w-full grid-cols-2 gap-4 px-12 py-8 mx-0 bg-yellow-400 rounded-b-sm snap-center snap-y max-lg:grid-cols-1 h-fix">
 
 
                     {{-- Image --}}
@@ -107,10 +103,10 @@
                     <div class="flex flex-col justify-around gap-4 px-4 mb-2 max-lg:row-start-1">
                         <h1 class="text-3xl font-bold text-left">{{ __('Welcome') }}</h1>
                         <p>{{ __('Lorem ipsum dolor sit amet consectetur, adipisicing elit. Dicta, voluptatum consectetur? Ut,
-                            delectus
-                            quod eveniet autem laborum ullam reiciendis deserunt a consequuntur dolor quis cumque quibusdam
-                            esse
-                            nulla odit dolorum.') }}
+                                                                                                                                                                            delectus
+                                                                                                                                                                            quod eveniet autem laborum ullam reiciendis deserunt a consequuntur dolor quis cumque quibusdam
+                                                                                                                                                                            esse
+                                                                                                                                                                            nulla odit dolorum.') }}
                         </p>
                         <div class="flex flex-row items-center self-center">
                             <x-button
@@ -133,94 +129,52 @@
 
                 {{-- Upcoming events --}}
                 <div>
-                    <h1 class="mt-4 text-2xl font-bold indent-4">{{ __('Upcoming events') }}</h1>
+                    <h1 class="mt-4 text-2xl font-bold indent-4">{{ __('Upcoming trainings') }}</h1>
                     <div class="container">
                         <div class="relative p-4 my-4 bg-white rounded-lg pb-14 max-sm:w-fit w-96">
 
-                            <div class="flex flex-row items-start gap-2 p-2 bg-gray-100 rounded-md hover:bg-gray-200">
+                            @if ($trainings->count() > 0)
+                            @foreach ($trainings as $training)
                                 <div
-                                    class="w-3 h-3 my-auto bg-yellow-600 rounded-full shadow-xl ring-2 ring-yellow-500 ring-opacity-50">
-                                </div>
-                                <div class="w-full">
-                                    <div class="flex flex-row justify-between">
-                                        <div class="text-sm text-left font-base">Lundi 08 janvier 2024</div>
-                                        <div class="text-sm text-right font-extralight">18:00 - 20:00 </div>
+                                    class="flex flex-row items-start gap-2 p-2 mt-2 bg-gray-100 rounded-md hover:bg-gray-200">
+                                    <div
+                                        class="w-3 h-3 my-auto 
+                                        @if ($training->type == 'Directed') bg-red-800 ring-red-500 
+                                        @elseif ($training->type == 'Free') 
+                                        bg-green-600 ring-greend-500 
+                                        @elseif ($training->type == 'Supervised')
+                                        bg-yellow-600 ring-yellow-500 @endif
+                                        rounded-full shadow-xl ring-2 ring-opacity-50">
                                     </div>
-                                    <div class="flex flex-row justify-between">
-                                        <div class="text-sm italic text-left font-base">Entraînement jeunes</div>
-                                        <div class="text-sm text-right font-extralight">Blocry /G3</div>
+                                    <div class="w-full">
+                                        <div class="flex flex-row justify-between">
+                                            <div class="text-sm text-left font-base">
+                                                {{ $training->start->format('l d F Y') }}</div>
+                                            <div class="text-sm text-right font-extralight">
+                                                {{ $training->start->format('H:i') . ' - ' . $training->end->format('H:i') }}
+                                            </div>
+                                        </div>
+                                        <div class="flex flex-row justify-between">
+                                            <div class="text-sm italic text-left font-base">
+                                                {{ __('Level : ' . $training->level) }}
+                                            </div>
+                                            <div class="text-sm text-right font-extralight">{{ $training->room->name }}
+                                            </div>
+                                        </div>
+                                        <div class="flex flex-row justify-between">
+                                            <div class="text-sm italic text-left font-base">
+                                                {{ __('Type : ' . $training->type) }}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
+                            @endforeach
+                            @else
+                            <div class="flex flex-row items-start gap-2 p-2 mt-2 bg-gray-100 rounded-md hover:bg-gray-200">
+                                {{ __('No upcoming training. Please come back later.') }}
                             </div>
-
-                            <div
-                                class="flex flex-row items-start gap-2 p-2 mt-2 bg-gray-100 rounded-md hover:bg-gray-200">
-                                <div
-                                    class="w-3 h-3 my-auto bg-blue-800 rounded-full shadow-xl ring-2 ring-blue-500 ring-opacity-50">
-                                </div>
-                                <div class="w-full">
-                                    <div class="flex flex-row justify-between">
-                                        <div class="text-sm text-left font-base">Lundi 08 janvier 2024</div>
-                                        <div class="text-sm text-right font-extralight">18:00 - 22:00</div>
-                                    </div>
-                                    <div class="flex flex-row justify-between">
-                                        <div class="text-sm italic text-left font-base">Entraînement libre</div>
-                                        <div class="text-sm text-right font-extralight">Demeester /0</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div
-                                class="flex flex-row items-start gap-2 p-2 mt-2 bg-gray-100 rounded-md hover:bg-gray-200">
-                                <div
-                                    class="w-3 h-3 my-auto bg-blue-800 rounded-full shadow-xl ring-2 ring-blue-500 ring-opacity-50">
-                                </div>
-                                <div class="w-full">
-                                    <div class="flex flex-row justify-between">
-                                        <div class="text-sm text-left font-base">Lundi 08 janvier 2024</div>
-                                        <div class="text-sm text-right font-extralight">20:30 - 22:00</div>
-                                    </div>
-                                    <div class="flex flex-row justify-between">
-                                        <div class="text-sm italic text-left font-base">Entraînement Libre</div>
-                                        <div class="text-sm text-right font-extralight">Demeester /-1</div>
-                                    </div>
-                                </div>
-                            </div>
-
-
-                            <div
-                                class="flex flex-row items-start gap-2 p-2 mt-2 bg-gray-100 rounded-md hover:bg-gray-200">
-                                <div
-                                    class="w-3 h-3 my-auto bg-green-600 rounded-full shadow-xl ring-2 ring-greend-500 ring-opacity-50">
-                                </div>
-                                <div class="w-full">
-                                    <div class="flex flex-row justify-between">
-                                        <div class="text-sm text-left font-base">Lundi 08 janvier 2024</div>
-                                        <div class="text-sm text-right font-extralight">20:00 - 22:00 </div>
-                                    </div>
-                                    <div class="flex flex-row justify-between">
-                                        <div class="text-sm italic text-left font-base">Entraînement libre</div>
-                                        <div class="text-sm text-right font-extralight">Demeester /-1</div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div
-                                class="flex flex-row items-start gap-2 p-2 mt-2 bg-gray-100 rounded-md hover:bg-gray-200">
-                                <div
-                                    class="w-3 h-3 my-auto bg-red-800 rounded-full shadow-xl ring-2 ring-red-500 ring-opacity-50">
-                                </div>
-                                <div class="w-full">
-                                    <div class="flex flex-row justify-between">
-                                        <div class="text-sm text-left font-base">Mardi 09 janvier 2024</div>
-                                        <div class="text-sm text-right font-extralight">20:30 - 22:00 </div>
-                                    </div>
-                                    <div class="flex flex-row justify-between">
-                                        <div class="text-sm italic text-left font-base">Entraînement adultes</div>
-                                        <div class="text-sm text-right font-extralight">Demeester /-1</div>
-                                    </div>
-                                </div>
-                            </div>
+                                
+                            @endif
 
                             <x-button
                                 class="absolute py-2 text-sm font-medium text-blue-900 -translate-x-1/2 bg-indigo-300 w-36 bottom-2 left-1/2">
@@ -324,6 +278,11 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <div class="flex flex-row items-start gap-2 p-2 mt-2 bg-gray-100 rounded-md hover:bg-gray-200">
+                                {{ __('No upcoming matches. Please come back later.') }}
+                            </div>
+                                
 
                             <x-button
                                 class="absolute py-2 text-sm font-medium text-blue-900 -translate-x-1/2 bg-indigo-300 w-36 bottom-2 left-1/2">

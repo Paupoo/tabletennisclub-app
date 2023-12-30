@@ -82,7 +82,7 @@
                             <x-input-label for="room_id" :value="__('Room')" />
                             <x-select-input id="room_id" name="room_id" type="select" class="block w-full mt-1"
                                 :value="old('room_id')" required autofocus autocomplete="room_id">
-                                <option value="null" selected disabled>{{ __('Choose a room') }}</option>
+                                <option value="null" disabled>{{ __('Choose a room') }}</option>
                                 @foreach ($rooms as $room)
                                     <option value="{{ $room->id }}">{{ $room->name }}</option>
                                 @endforeach
@@ -95,11 +95,11 @@
                             <x-input-label for="type" :value="__('Type')" />
                             <x-select-input id="type" name="type" type="text" class="block w-full mt-1"
                                 :value="old('type')" required autofocus autocomplete="type">
-                                <option value="null" selected disabled>{{ __('Choose a type') }}</option>
+                                <option value="null" disabled>{{ __('Choose a type') }}</option>
                                 <option value="Directed">{{ __('Directed') }}</option>
                                 <option value="Free">{{ __('Free') }}</option>
                                 <option value="Supervised">{{ __('Supervised') }}</option>
-                                </x-text-input>
+                                </x-select-input>
                                 <x-input-error class="mt-2" :messages="$errors->get('type')" />
                         </div>
 

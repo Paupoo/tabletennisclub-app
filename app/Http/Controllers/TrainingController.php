@@ -48,9 +48,9 @@ class TrainingController extends Controller
             'end_date' => 'required|date_format:Y-m-d|after:start_date',
             'start_time' => 'required|date_format:H:i|before:end_time',
             'end_time' => 'required|date_format:H:i|after:start_time',
-            'room_id' => 'integer',
-            'type' => 'string',
-            'level' => 'string',
+            'room_id' => 'integer|required',
+            'type' => 'string|required',
+            'level' => 'string|required',
             'trainer_name' => 'string|nullable',
         ]);
 
@@ -126,34 +126,7 @@ class TrainingController extends Controller
 
         $training->delete();
 
-        return redirect()->route('trainings.index')->with('success','The training has been deleted.');
-    }
-
-    /**
-     * Undocumented function
-     *
-     * @param Request $request
-     * @return void
-     */
-    public function test2(Request $request)
-    {
-        $request->validate([
-            'start' => 'date|before:end|required',
-            'end' => 'date|after:start|required',
-            'day' => 'integer|required',
-        ]);
-
-        $result = $this->daysBetweenTwoDate($request->start, $request->end, $request->day);
-
-        if(count($result) == 0) {
-            // Return to previous page with an error if no date has been found.
-            return redirect::back()->with('error', __('You have chosen a too short period of time. No '. jddayofweek($request->day, 1) . ' found between ' . $request->start . ' and ' . $request->end . '.'));
-        } else {
-
-            // DO SOMETHING.
-        }
-        
-        return $result;
+        return redirect()->route('trainings.index')->with('deleted','The training has been deleted.');
     }
 
     /**

@@ -35,7 +35,7 @@
             <div class="overflow-hidden bg-white shadow-sm dark:bg-gray-800 sm:rounded-lg">
 
                 @if ($trainings->count() == 0)
-                    <p class="p-4">{{ __('It seems that no roles have been defined. Start by creating a new role.') }}</p>
+                    <p class="p-4">{{ __('It seems that no trainings have been defined. Start by creating a new training.') }}</p>
                 @else
                     <table
                         class="min-w-full text-sm font-light text-left border-collapse table-auto dark:bg-neutral-300">
@@ -54,7 +54,7 @@
                         </thead>
                         <tbody>
                             @foreach ($trainings as $training)
-                                <tr class="border-b dark:border-neutral-500">
+                                <tr class="border-b dark:border-neutral-500 hover:bg-slate-500 hover:bg-opacity-10">
                                     <td class="px-4 whitespace-wrap">{{ $training->start->format('l') }}</td>
                                     <td class="px-4 whitespace-wrap">{{ $training->start->format('d-m-Y') }}</td>
                                     <td class="px-4 whitespace-wrap">{{ $training->start->format('H:i') }}</td>

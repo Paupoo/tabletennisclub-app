@@ -18,7 +18,6 @@ return new class extends Migration
             $table->char('licence',6)->unique()->after('first_name')->nullable();
             $table->string('ranking')->nullable()->after('licence');
             $table->unsignedTinyInteger('force_index')->nullable()->after('ranking');
-            $table->string('team',2)->nullable()->after('force_index');
         });
     }
 
@@ -34,7 +33,6 @@ return new class extends Migration
             $table->dropColumn('licence');
             $table->dropColumn('ranking');
             $table->dropColumn('force_index');
-            $table->dropColumn('team');
         });
     }
 };

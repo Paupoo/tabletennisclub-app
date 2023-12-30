@@ -208,7 +208,7 @@
             <div class="overflow-hidden bg-white shadow-sm dark:bg-gray-800 sm:rounded-lg">
                 <div class="p-6 text-gray-900 dark:text-gray-100">
                     <h2 class="pb-2 text-lg font-semibold">Trainings</h2>
-
+                    
                     @if ($trainings->count() == 0)
                         <p>{{ __('It seems that no trainings have been defined. Start by creating a new training session.') }}
                         </p>

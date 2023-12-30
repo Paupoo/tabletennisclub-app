@@ -53,8 +53,8 @@
                                 <td class="px-4 whitespace-nowrap">{{ $team->division }}</td>
                                 <td class="px-4 whitespace-nowrap"></td>
                                 <td class="flex items-center gap-2 px-4 whitespace-nowrap">
-                                    <img class="h-4 cursor-pointer" src="{{ asset('images/icons/contact.svg') }}"
-                                        alt="Check details">
+                                    <a href="{{ route('teams.show', $team->id) }}"><img class="h-4 cursor-pointer" src="{{ asset('images/icons/contact.svg') }}"
+                                        alt="Check details"></a>
                                     <form action="{{ route('teams.edit', $team->id) }}" method="GET">
                                         <button type="submit">
                                             <img class="h-4 cursor-pointer" src="{{ asset('images/icons/edit.svg') }}" alt="Edit">

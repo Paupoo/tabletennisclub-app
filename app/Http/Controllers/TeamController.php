@@ -32,7 +32,7 @@ class TeamController extends Controller
     {
         //
         return view ('.admin.teams.create', [
-            'users' => User::orderby('last_name')->get(),
+            'users' => User::where('is_competitor', '=', true)->orderby('last_name')->get(),
             'seasons' => HtmlFactory::GetSeasonsHTMLDropdown(),
             'team_names' => HtmlFactory::GetTeamNames(),
         ]);
@@ -47,14 +47,22 @@ class TeamController extends Controller
         $request->validate([
             'season' => 'string',
             'name' => 'string',
-            'division' => 'string',            
+            'division' => 'string',         
+            // 'players.*' => 'nullable|exists:users,user_id',
         ]);
 
-        Team::create([
+        $team = Team::create([
             'season' => $request->season,
             'name' => $request->name,
             'division' => $request->division,
         ]);
+
+        foreach($request->players as $player){
+            $player = User::find($player);
+            $team->users()->save($player);
+        }
+
+        
 
         return redirect()->route('teams.index')->with('success', 'The team ' . $request->name . ' has been created.');
     }
@@ -65,6 +73,9 @@ class TeamController extends Controller
     public function show(string $id)
     {
         //
+        return view('admin.teams.show', [
+            'team' => Team::find($id)->load('users'),
+        ]);
     }
 
     /**

@@ -49,6 +49,7 @@
                                 <th scope="col" class="px-4 py-2">{{ __('Type') }}</th>
                                 <th scope="col" class="px-4 py-2">{{ __('Trainer') }}</th>
                                 <th scope="col" class="px-4 py-2">{{ __('Level') }}</th>
+                                <th scope="col" class="px-4 py-2">{{ __('Remaining places') }}</th>
                                 <th scope="col" class="px-4 py-2">{{ __('Action') }}</th>
                             </tr>
                         </thead>
@@ -63,6 +64,7 @@
                                     <td class="px-4 whitespace-wrap">{{ $training->type }}</td>
                                     <td class="px-4 whitespace-wrap">{{ $training->trainer_name }}</td>
                                     <td class="px-4 whitespace-wrap">{{ $training->level }}</td>
+                                    <td class="px-4 whitespace-wrap">{{ $training->room->capacity_trainings }}</td>
                                     <td class="flex items-center gap-2 px-4 whitespace-nowrap">
                                         <form action="{{ route('trainings.edit', $training->id) }}" method="GET">
                                             <button type="submit">

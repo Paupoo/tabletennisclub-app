@@ -30,7 +30,7 @@
                         </h2>
 
                         <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                            {{ __("Create a new member from this form.") }}
+                            {{ __('Create a new member from this form.') }}
                         </p>
                     </header>
 
@@ -82,7 +82,8 @@
                         {{-- Competition --}}
                         <div>
                             <x-input-label for="is_competitor" :value="__('Plays in competiton')" />
-                            <input id="is_competitor" name="is_competitor" type="checkbox" class="block mt-1" @checked(old('is_competitor')) autofocus></input>
+                            <input id="is_competitor" name="is_competitor" type="checkbox" class="block mt-1"
+                                @checked(old('is_competitor')) autofocus></input>
                             <x-input-error class="mt-2" :messages="$errors->get('is_competitor')" />
                         </div>
 
@@ -109,11 +110,11 @@
                             <x-select-input id="role" name="role" type="text" class="block w-full mt-1"
                                 autofocus autocomplete="role">
                                 @foreach ($roles as $role)
-                                @if(old('role') != null && old('role') == $role->id)
-                                <option value="{{ $role->id }}" selected>{{ $role->name }}</option>
-                                @else
-                                    <option value="{{ $role->id }}">{{ $role->name }}</option>
-                                @endif
+                                    @if (old('role') != null && old('role') == $role->id)
+                                        <option value="{{ $role->id }}" selected>{{ $role->name }}</option>
+                                    @else
+                                        <option value="{{ $role->id }}">{{ $role->name }}</option>
+                                    @endif
                                 @endforeach
                             </x-select-input>
                             <x-input-error class="mt-2" :messages="$errors->get('role')" />
@@ -121,10 +122,22 @@
 
                         {{-- Team --}}
                         <div>
-                            <x-input-label for="team" :value="__('Team')" />
-                            <x-text-input id="team" name="team" type="text" class="block w-full mt-1"
-                                :value="old('team')" autofocus autocomplete="team"></x-text-input>
-                            <x-input-error class="mt-2" :messages="$errors->get('team')" />
+                            <x-input-label for="team_id" :value="__('Team')" />
+                            <x-select-input id="team_id" name="team_id" type="text" class="block w-full mt-1"
+                                 autofocus autocomplete="team_id">
+                                @foreach ($teams as $team)
+                                    @if (old('team_id') != null && old('team_id') == $team->id)
+                                        <option value="{{ $team->id }}" selected>
+                                            {{ $team->season . ' - ' . $team->name . ' - ' . $team->division }}
+                                        </option>
+                                    @else
+                                        <option value="{{ $team->id }}">
+                                            {{ $team->season . ' - ' . $team->name . ' - ' . $team->division }}
+                                        </option>
+                                    @endif
+                                @endforeach
+                            </x-select-input>
+                            <x-input-error class="mt-2" :messages="$errors->get('team_id')" />
                         </div>
 
                         <div>

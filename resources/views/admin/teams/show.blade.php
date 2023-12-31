@@ -20,7 +20,7 @@
         <div class="flex flex-col max-w-sm gap-4 p-10">
             <div class="flex justify-between">{{ __('Team name : ') }}<span class="font-bold">{{ $team->name }}</span></div>
             <div class="flex justify-between">{{ __('Season : ') }}<span class="font-bold">{{ $team->season }}</span></div>
-            <div class="flex justify-between">{{ __('Season : ') }}<span class="font-bold">{{ $team->division }}</span></div>
+            <div class="flex justify-between">{{ __('Division : ') }}<span class="font-bold">{{ $team->division }}</span></div>
             <div class="flex justify-between">{{ __('Players : ') }}</div>
             @isset($team->users)
                 <ol>

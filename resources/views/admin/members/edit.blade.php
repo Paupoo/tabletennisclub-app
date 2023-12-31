@@ -130,13 +130,26 @@
                             </x-select-input>
                             <x-input-error class="mt-2" :messages="$errors->get('role')" />
                         </div>
-
                         {{-- Team --}}
                         <div>
-                            <x-input-label for="team" :value="__('Team')" />
-                            <x-text-input id="team" name="team" type="text" class="block w-full mt-1"
-                                :value="old('team', $member->team)" autofocus autocomplete="team"></x-text-input>
-                            <x-input-error class="mt-2" :messages="$errors->get('team')" />
+                            <x-input-label for="team_id" :value="__('Team')" />
+                            <x-select-input id="team_id" name="team_id" type="text" class="block w-full mt-1"
+                                 autofocus autocomplete="team_id">
+                                <option value="" selected disabled>{{ __('None') }}</option>
+
+                                @foreach ($teams as $team)
+                                    @if (old('team_id') != null && old('team_id') == $team->id)
+                                        <option value="{{ $team->id }}" selected>
+                                            {{ $team->season . ' - ' . $team->name . ' - ' . $team->division }}
+                                        </option>
+                                    @else
+                                        <option value="{{ $team->id }}">
+                                            {{ $team->season . ' - ' . $team->name . ' - ' . $team->division }}
+                                        </option>
+                                    @endif
+                                @endforeach
+                            </x-select-input>
+                            <x-input-error class="mt-2" :messages="$errors->get('team_id')" />
                         </div>
 
                         <div>

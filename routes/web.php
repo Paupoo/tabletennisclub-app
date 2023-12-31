@@ -82,19 +82,18 @@ Route::middleware('auth')->group(function () {
 /**
  * Teams management
  */
-Route::post('/admin/teams/proposeTeamsAmount', [
-    TeamController::class,
-    'proposeTeamsAmount',
-])->middleware(['auth', 'verified'])->name('proposeTeamsAmount');
+Route::get('/admin/teams/bulkComposer', function () {
+    return view('/admin/teams/bulk-composer');
+})->middleware(['auth', 'verified'])->name('teamBulkComposer');
 
-Route::get('/admin/teams/proposeTeamsCompositions', [
+Route::get('/admin/teams/bulkComposerValidate', [
     TeamController::class,
     'proposeTeamsCompositions',
 ])->middleware(['auth', 'verified'])->name('proposeTeamsCompositions');
 
-Route::get('/admin/teams/bulkComposer', function () {
-    return view('/admin/teams/bulk-composer');
-})->middleware(['auth', 'verified'])->name('teamBulkComposer');
+Route::post('/admin/teams/compose', [
+    TeamController::class, 'saveTeamsCompositions'
+])->middleware(['auth', 'verified'])->name('saveTeamsCompositions');
 
 Route::resource('/admin/teams', TeamController::class)->middleware(['auth', 'verified']);
 

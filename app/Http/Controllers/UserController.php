@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Role;
+use App\Models\Team;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rules\Password;
@@ -30,6 +31,7 @@ class UserController extends Controller
         //
         return View('admin.members.create', [
             'roles' => Role::orderby('name')->get(),
+            'teams' => Team::all(),
         ]);
     }
 
@@ -65,21 +67,7 @@ class UserController extends Controller
                 'E6',
                 'NC',
             ])],
-            'team' => ['nullable', Rule::in([
-                'A',
-                'B',
-                'C',
-                'D',
-                'E',
-                'F',
-                'G',
-                'H',
-                'I',
-                'J',
-                'K',
-                'L',
-
-            ])],
+            'team_id' => ['nullable', 'exists:teams,id'],
             'role' => ['nullable'],
         ]);
 
@@ -91,7 +79,7 @@ class UserController extends Controller
             'is_competitor' => ($request->is_competitor != null) ? true : false,
             'licence' => $request->licence,
             'ranking' => $request->ranking,
-            'team' => $request->team,
+            'team_id' => $request->team_id,
             'role_id' => $request->role,
         ]);
 
@@ -118,6 +106,7 @@ class UserController extends Controller
         return view ('admin.members.edit', [
             'member' => User::find($id),
             'roles' => Role::orderby('name')->get(),
+            'teams' => Team::all(),
         ]);
     }
 
@@ -153,21 +142,7 @@ class UserController extends Controller
                 'E6',
                 'NC',
             ])],
-            'team' => ['nullable', Rule::in([
-                'A',
-                'B',
-                'C',
-                'D',
-                'E',
-                'F',
-                'G',
-                'H',
-                'I',
-                'J',
-                'K',
-                'L',
-
-            ])],
+            'team_id' => ['nullable', 'exists:teams,id'],
             'role' => ['integer'],
         ]);
 
@@ -186,7 +161,7 @@ class UserController extends Controller
         };
         $user->licence = $request->licence;
         $user->ranking = $request->ranking;
-        $user->team = $request->team;
+        $user->team_id = $request->team_id;
         $user->role_id = $request->role;
 
         $user->save();

@@ -20,7 +20,7 @@ class TeamController extends Controller
     public function index()
     {
         //
-        return view ('admin.teams.index', [
+        return view('admin.teams.index', [
             'teams' => Team::orderby('name')->paginate(10),
         ]);
     }
@@ -31,7 +31,7 @@ class TeamController extends Controller
     public function create()
     {
         //
-        return view ('.admin.teams.create', [
+        return view('.admin.teams.create', [
             'users' => User::where('is_competitor', '=', true)->orderby('last_name')->get(),
             'seasons' => HtmlFactory::GetSeasonsHTMLDropdown(),
             'team_names' => HtmlFactory::GetTeamNames(),
@@ -47,7 +47,7 @@ class TeamController extends Controller
         $request->validate([
             'season' => 'string',
             'name' => 'string',
-            'division' => 'string',         
+            'division' => 'string',
             // 'players.*' => 'nullable|exists:users,user_id',
         ]);
 
@@ -57,12 +57,12 @@ class TeamController extends Controller
             'division' => $request->division,
         ]);
 
-        foreach($request->players as $player){
+        foreach ($request->players as $player) {
             $player = User::find($player);
             $team->users()->save($player);
         }
 
-        
+
 
         return redirect()->route('teams.index')->with('success', 'The team ' . $request->name . ' has been created.');
     }
@@ -84,7 +84,7 @@ class TeamController extends Controller
     public function edit(string $id)
     {
         //
-        return view ('.admin.teams.edit', [
+        return view('.admin.teams.edit', [
             'team' => Team::find($id),
             'users' => User::all(),
         ]);
@@ -119,155 +119,144 @@ class TeamController extends Controller
     public function destroy(string $id)
     {
         //
-        $team = Team::find($id);
+        $team = Team::findOrFail($id);
+        // Dissociate all books associated with the author
+        foreach($team->users as $user) {
+            $user->team()->dissociate();
+            $user->save();
+        }
+
+        // Delete the team.
         $team->delete();
 
-        return redirect()->route('teams.index')->with('deleted','The team '. $team->name . ' has been deleted.');
+        return redirect()->route('teams.index')->with('deleted', 'The team ' . $team->name . ' has been deleted.');
     }
 
     /**
-     *  Define team functions
+     * Get competitors ordered by ranking, then by last name, both descending.
+     *
+     * @return Collection
      */
-    private function countTotalCompetitors(): int
+    private function getCompetitors(): Collection
+    {
+        return User::where('is_competitor', '=', true)->orderby('force_index', 'desc')
+            ->orderby('last_name', 'desc')->get();
+    }
+
+    /**
+     * Return the amount of players that are competitors.
+     *
+     * @return integer
+     */
+    protected function countTotalCompetitors(): int
     {
         return User::where('is_competitor', '=', true)->count();
     }
 
-    private function countTotalTeams(int $kern_size): int
+    /**
+     * Return the amound of teams based on a specified amount of players per team.
+     *
+     * @param integer $playersPerTeam
+     * @return integer
+     */
+    protected function countTotalTeams(int $playersPerTeam): int
     {
         // Divide total competitors by wished kern size, return euclydian division (with a rest)
-        $total_teams = intdiv($this->countTotalCompetitors(), $kern_size);
+        $total_teams = intdiv($this->countTotalCompetitors(), $playersPerTeam);
 
         return $total_teams;
     }
 
-    private function countPlayersWithoutTeam(int $kern_size): int
+    /**
+     * Count players that are not in a team based on a specified amount of players per team.
+     *
+     * @param integer $playersPerTeam
+     * @return integer
+     */
+    private function countPlayersWithoutTeam(int $playersPerTeam): int
     {
         // Count the rest of total competitors divided kern size.
-        return $this->countTotalCompetitors() % $kern_size;
+        return $this->countTotalCompetitors() % $playersPerTeam;
     }
 
-    private function getCompetitors(): Collection
-    {
-        return User::where('is_competitor', '=', true)->orderby('force_index', 'asc')
-        ->orderby('last_name', 'asc')->get();
-    }
-
-    public function proposeTeamsAmount(): array
-    {
-
-        $kerns = [8, 7, 6, 5];
-
-        foreach ($kerns as $kern) {
-            $results['Kern with ' . $kern . ' team_players'] = [
-                'Total teams' => $this->countTotalTeams($kern),
-                'Remaining team_players' => $this->countPlayersWithoutTeam($kern),
-            ];
-        }
-
-        return $results;
-    }
-
+    /**
+     * Return the "teams bulk builder" view enriched with the players spread by teams for the user to validate.
+     *
+     * @param Request $request
+     * @return View
+     */
     public function proposeTeamsCompositions(Request $request): View
     {
 
-        // Validate and store wished kern size
+        // Validate the request
         $request->validate([
-            'kern_size' => ['integer', 'required', 'min:4', 'max:10'],
-            'season' => ['string','required'],
+            'playersPerTeam' => 'integer|required|between:5,10',
+            'season' => 'string|required',
         ]);
 
-        
 
-        $kern = $request->kern_size;
+
         $season = $request->season;
-
-        // Get competitors
         $competitors = $this->getCompetitors();
-        
+        $teamNames = range('A', 'Z'); // A, B, C, ..., Z
+        $poolTeamName = 'Pool';
+        $playersPerTeam = $request->playersPerTeam; // Specify the desired number of players per team
+
+        $teams = [];
+
         // Make sure every competitors has a force index
         foreach ($competitors as $competitor) {
             if ($competitor->force_index == null) {
                 throw new Exception(__('At least one competitor is missing a force index. Please run the "set force index" from members admin'), 851);
+            } else {
             }
         }
 
-        // Count total team
-        $total_teams = $this->countTotalTeams($kern);
+        foreach ($teamNames as $teamName) {
+            $team = [];
 
-        // Count team_players without team
-        $total_players_without_team = $this->countPlayersWithoutTeam($kern);
+            for ($i = 0; $i < $playersPerTeam && $competitors->count() > 0; $i++) {
+                $team[] = $competitors->pop();
+            }
 
-        // Teams should be named by a letter alphabetically
-        $team_name = 'A';
-
-        // Start variable will be use to determine the starting slices of competitors table for each team
-        $start = 0;
-
-        $teamsCollection = collect();
-
-        //Create the expected amount of teams and fill them with expected amount of players
-        for ($i = 0; $i < $total_teams; $i++) {
-
-            $team = new Team([
-                'name' => $team_name,
-                'season' => $season,
-                'division' => '',
-            ]);
-
-            $teamsCollection->push(collect($team));
-
-            $team_players_count = 0;
-            $team_players = $competitors->slice($start, $kern);
-
-            //Loop for each player
-            foreach ($team_players as $player) {
-                foreach($teamsCollection as $team) {
-                    if($team['name'] == $team_name) {
-                        $team->push(collect($player));
-                    }
+            // Add the team to $teams only if it has players
+            if (!empty($team)) {
+                // Use the letter only if a team is full
+                if (count($team) == $playersPerTeam) {
+                    $teams[] = [
+                        $teamName => $team,
+                    ];
+                    // Else, name it differently
+                } elseif (count($team) < $playersPerTeam) {
+                    $teams[] = [
+                        $poolTeamName => $team,
+                    ];
                 }
-                $team_players_count++;
             }
-
-            $start = $start + $kern;
-            $team_name++;
-        }
-
-        unset($player);
-
-        // Add remaining players without teams
-        $players_witout_teams = $competitors->slice(- $total_players_without_team, $total_players_without_team);
-
-        $count = 0;
-        foreach($players_witout_teams as $player) {
-            $count++;
-            $results['Players withtout a team']['Player ' . $count] = [
-                trans(__('Name')) => $player['last_name'] . ' ' . $player['first_name'],
-                trans(__('Ranking')) => $player['ranking'],
-            ];
         }
 
         return view('admin/teams/bulk-composer', [
-            'teams' => $teamsCollection,
-            'playersWithoutTeam' => $players_witout_teams,
-            'kern' => $kern,
+            'teams' => $teams,
+            'season' => $season,
+            'playersPerTeam' => $playersPerTeam,
         ]);
     }
 
+    /**
+     * Save in bulk the teams and associate the desired amount of players of player to each of them.
+     *
+     * @param Request $request
+     * @return RedirectResponse
+     */
     public function saveTeamsCompositions(Request $request): RedirectResponse
     {
 
         // Validate and store wished kern size
         $request->validate([
-            'kern_size' => ['integer'],
-            'season' => ['required','string'],
+            'playersPerTeam' => 'integer|required|between:5,10',
+            'season' => 'string|required',
         ]);
 
-        $kern = $request->kern_size;
-        $season = $request->season;
-
-        // Get competitors
         $competitors = $this->getCompetitors();
 
         // Make sure every competitors has a force index
@@ -275,47 +264,31 @@ class TeamController extends Controller
             if ($competitor->force_index == null) {
                 throw new Exception(__('At least one competitor is missing a force index. Please run the "set force index" from members admin'), 851);
             } else {
-
             }
         }
 
-        // Count total team
-        $total_teams = $this->countTotalTeams($kern);
+        $season = $request->season;
+        $playersPerTeam = $request->playersPerTeam;
+        $totalTeams = $this->countTotalTeams($playersPerTeam);
+        $teamName = 'A';
 
-        // Count team_players without team
-        $total_players_without_team = $this->countPlayersWithoutTeam($kern);
-
-        // Teams should be named by a letter alphabetically
-        $team_name = 'A';
-
-        // Start variable will be use to determine the starting slices of competitors table for each team
-        $start = 0;
-
-        //Create the expected amount of teams and fill them with expected amount of players
-        for ($i = 0; $i < $total_teams; $i++) {
-            
+        for ($i = 0; $i < $totalTeams; $i++) {
             $team = new Team([
-                'name' => $team_name,
+                'name' => $teamName,
                 'season' => $season,
-                'division' => 'to do',
+                'division' => 'To do',
             ]);
+
             $team->save();
 
-            $team_players_count = 0;
-            $team_players = $competitors->slice($start, $kern);
-
-            //Loop for each player
-            foreach ($team_players as $player) {
-                $team->users()->save($player);
-                $team_players_count++;
+            for ($j = 0; $j < $playersPerTeam; $j++) {
+                $competitor = $competitors->pop();
+                $team->users()->save($competitor);
             }
 
-            $start = $start + $kern;
-            $team_name++;
+            $teamName++;
         }
 
-        unset($player);
-
-        return redirect()->route('teams.index')->with('success', 'New teams for the season ' . date('Y', strtotime(now())) . ' - ' . date('Y', strtotime(now())) +1 . ' have been created.');
+        return redirect()->route('teams.index')->with('success', 'New teams for the season ' . date('Y', strtotime(now())) . ' - ' . date('Y', strtotime(now())) + 1 . ' have been created.');
     }
 }

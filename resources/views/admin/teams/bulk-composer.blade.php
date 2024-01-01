@@ -31,48 +31,42 @@
                     {!! \App\Classes\HtmlFactory::GetSeasonsHTMLDropdown() !!}
                 </x-select-input>
 
-                <x-input-label class="mt-2" for="kern_selector">{{ __('Define your teams kern size') }}</x-input-label>
-                <x-text-input class="w-20 h-8 mt-2" type="number" name="kern_size" id="kern_selector" min="5"
-                    step="1" value="{{ old('kern_size') }}" required></x-text-input>
+                <x-input-label class="mt-2"
+                    for="playersPerTeamSelector">{{ __('Define your players per teams') }}</x-input-label>
+                <x-text-input class="w-20 h-8 mt-2" type="number" name="playersPerTeam" id="playersPerTeamSelector"
+                    min="5" step="1" value="{{ old('playersPerTeam') }}" required></x-text-input>
+                    <x-input-error class="" :messages="$errors->get('playersPerTeam')" />
                 <x-primary-button class="mt-4 w-36">{{ __('Build teams') }}</x-primary-button>
             </form>
         </x-admin-block>
 
         @isset($teams)
             <div class="mx-auto text-center font-bold text-2xl">
-                <h1>{{ $teams[0]['season'] }}</h1>
+                <h1>{{ $season }}</h1>
 
             </div>
             <div class="grid grid-cols-3 gap-8 px-8 m-auto max-xl:grid-cols-2 max-w-7xl">
                 @foreach ($teams as $team)
-                    <div class="bg-white shadow-lg rounded-xl w-96">
-                        <h2 class="mt-2 mb-4 text-center">{{ $team['name'] }}</h2>
-                        <ol>
-                            @foreach ($team as $key => $value)
-                                <li class="flex justify-between px-4 rounded-lg even:bg-gray-200">
-                                    @if ($key <= $kern)
-                                        {{ $value['last_name'] . ' ' . $value['first_name'] . ' - ' . $value['ranking'] . ' - ' . $value['force_index'] }}
-                                    @endif
-                                </li>
-                            @endforeach
-                        </ol>
+                    <div
+                        class="@if ($loop->last) bg-gray-300 @else bg-white @endif shadow-lg rounded-xl w-96">
+                        @foreach ($team as $name => $players)
+                            <h2 class="mt-2 mb-4 text-center">{{ $name }}</h2>
+                            <ol>
+                                @foreach ($players as $player)
+                                    <li class="flex justify-between px-4 rounded-lg even:bg-gray-200">
+                                        {{ $player->last_name . ' ' . $player->first_name . ' - ' . $player->ranking }}
+                                    </li>
+                                @endforeach
+                            </ol>
+                        @endforeach
                     </div>
                 @endforeach
-                <div class="bg-white shadow-lg rounded-xl w-96">
-                    <h2 class="mt-2 mb-4 text-center">{{ __('Players Without Team') }}</h2>
-                    <ol>
-                        @foreach ($playersWithoutTeam as $key => $value)
-                            <li class="flex justify-between px-4 rounded-lg even:bg-gray-200">
-                                {{ $value['last_name'] . ' ' . $value['first_name'] . ' - ' . $value['ranking'] . ' - ' . $value['force_index'] }}
-                            </li>
-                        @endforeach
-                    </ol>
-                </div>
+
                 <div class="flex w-1/2 gap-4 mx-auto mt-6">
                     <form action="{{ route('saveTeamsCompositions') }}" method="POST">
                         @csrf
-                        <input type="hidden" name="kern_size" value="{{ $kern }}">
-                        <input type="hidden" name="season" value="{{ $teams[0]['season'] }}">
+                        <input type="hidden" name="playersPerTeam" value="{{ $playersPerTeam }}">
+                        <input type="hidden" name="season" value="{{ $season }}">
                         <x-danger-button>Confirm and create</x-primary-button>
                     </form>
                 </div>

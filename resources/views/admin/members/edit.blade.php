@@ -107,7 +107,7 @@
                         {{-- Role --}}
                         <div>
                             <x-input-label for="role" :value="__('Role')" />
-                            <x-select-input id="role" name="role" type="text" class="block w-full mt-1"
+                            <x-select-input id="role" name="role_id" type="text" class="block w-full mt-1"
                                  autofocus autocomplete="role">
                                 @foreach ($roles as $role)
 

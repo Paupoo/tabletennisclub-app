@@ -17,6 +17,7 @@
     </x-admin-block>
 
 
+    
     <div class="pt-12">
         <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
             <div class="overflow-hidden bg-white shadow-sm dark:bg-gray-800 sm:rounded-lg">
@@ -107,7 +108,7 @@
                         {{-- Role --}}
                         <div>
                             <x-input-label for="role" :value="__('Role')" />
-                            <x-select-input id="role" name="role" type="text" class="block w-full mt-1"
+                            <x-select-input id="role" name="role_id" type="text" class="block w-full mt-1"
                                 autofocus autocomplete="role">
                                 @foreach ($roles as $role)
                                     @if (old('role') != null && old('role') == $role->id)
@@ -125,6 +126,7 @@
                             <x-input-label for="team_id" :value="__('Team')" />
                             <x-select-input id="team_id" name="team_id" type="text" class="block w-full mt-1"
                                  autofocus autocomplete="team_id">
+                                        <option value="">{{ __('None') }}</option>
                                 @foreach ($teams as $team)
                                     @if (old('team_id') != null && old('team_id') == $team->id)
                                         <option value="{{ $team->id }}" selected>

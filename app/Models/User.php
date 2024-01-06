@@ -26,8 +26,6 @@ class User extends Authenticatable
         'licence',
         'ranking',
         'force_index',
-        'team',
-        'role_id',
         'is_active',
         'is_competitor',
         'has_debt',
@@ -36,8 +34,7 @@ class User extends Authenticatable
         'street',
         'city',
         'city_code',
-        'team_id',
-        'is_captain'
+        'role_id'
     ];
 
     /**
@@ -58,7 +55,43 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'first_name' => 'string',
+        'last_name' => 'string',
+        'email' => 'string',
+        'licence' => 'integer',
+        'ranking' => 'string',
+        'force_index' => 'integer',
+        'is_active' => 'boolean',
+        'is_competitor' => 'boolean',
+        'has_debt' => 'boolean',
+        'birthday' => 'date',
+        'phone_number' => 'string',
+        'street' => 'string',
+        'city' => 'string',
+        'city_code' => 'string',
     ];
+
+    /**
+     * Capitalize 1 first letter of each words
+     *
+     * @param [type] $value
+     * @return void
+     */
+    public function setFirstNameAttribute($value)
+    {
+        return $this->attributes['first_name'] = mb_convert_case($value, MB_CASE_TITLE);
+    }
+
+    /**
+     * Capitalize 1 first letter of each words
+     *
+     * @param [type] $value
+     * @return void
+     */
+    public function setLastNameAttribute($value)
+    {
+        return $this->attributes['last_name'] = mb_convert_case($value, MB_CASE_TITLE);
+    }
 
     public function role(): BelongsTo
     {

@@ -68,10 +68,12 @@ class UserController extends Controller
                 'NC',
             ])],
             'team_id' => ['nullable', 'exists:teams,id'],
-            'role' => ['nullable'],
+            'role_id' => ['required','exists:roles,id'],
         ]);
+        
+        $role = Role::findOrFail($request->role_id);
 
-        $request = User::create([
+        $user = User::create ([
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
             'email' => $request->email,
@@ -80,13 +82,13 @@ class UserController extends Controller
             'licence' => $request->licence,
             'ranking' => $request->ranking,
             'team_id' => $request->team_id,
-            'role_id' => $request->role,
+            'role_id' => $role->id,
         ]);
 
         $this->setForceIndex();
 
         return redirect()->route('members.create')
-            ->with('success', __('New member '. $request->first_name . ' ' . $request->last_name . ' created'));
+            ->with('success', __('New member '. $user->first_name . ' ' . $user->last_name . ' created'));
     }
 
     /**
@@ -143,10 +145,11 @@ class UserController extends Controller
                 'NC',
             ])],
             'team_id' => ['nullable', 'exists:teams,id'],
-            'role' => ['integer'],
+            'role_id' => ['integer'],
         ]);
 
         $user = User::find($id);
+        $role = Role::find($request->role_id);
 
         $user->first_name = $request->first_name;
         $user->last_name = $request->last_name;
@@ -162,8 +165,10 @@ class UserController extends Controller
         $user->licence = $request->licence;
         $user->ranking = $request->ranking;
         $user->team_id = $request->team_id;
-        $user->role_id = $request->role;
 
+        $user->save();
+
+        $user->role()->associate($role);
         $user->save();
 
         $this->setForceIndex();

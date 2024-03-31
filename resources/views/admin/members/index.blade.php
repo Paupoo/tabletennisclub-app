@@ -86,8 +86,8 @@
                                     @endif    
                                 </td>
                                 <td class="flex items-center gap-2 px-4 whitespace-nowrap">
-                                    <img class="h-4 cursor-pointer" src="{{ asset('images/icons/contact.svg') }}"
-                                        alt="Contact">
+                                    <a href="{{ route('members.show', $member->id)}}"><img class="h-4 cursor-pointer" src="{{ asset('images/icons/contact.svg') }}"
+                                        alt="Contact"></a>
                                     <form action="{{ route('members.edit', $member->id) }}" method="GET">
                                         <button type="submit">
                                             <img class="h-4 cursor-pointer" src="{{ asset('images/icons/edit.svg') }}" alt="Edit">

@@ -97,6 +97,9 @@ class UserController extends Controller
     public function show(string $id)
     {
         //
+        return view ('admin.members.info', [
+            'member' => User::find($id),
+        ]);
     }
 
     /**

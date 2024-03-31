@@ -11,7 +11,7 @@
 
 </head>
 
-<body class="w-screen bg-neutral-100 dark:bg-neutral-900">
+<body class="w-screen bg-neutral-100 dark:bg-neutral-700">
     <div class="mx-auto max-w-7xl max-sm:w-full scroll-smooth">
 
         {{-- HEADER --}}
@@ -44,7 +44,12 @@
                     <li>
                         <form action="{{ route('dashboard') }}" method="GET">
                             <x-button class="text-lg font-semibold text-yellow-400 bg-indigo-800">
-                                {{ __('Login') }}</x-button>
+                                @auth
+                                {{ __('My Account') }}    
+                                @else
+                                {{ __('Login') }}
+                                @endauth
+                            </x-button>
                         </form>
 
                     </li>
@@ -56,13 +61,13 @@
         </header>
 
         {{-- MAIN --}}
-        <main class="grid grid-flow-row z-1 top-24 bg-neutral-100 dark:bg-neutral-900 dark:text-slate-400">
+        <main class="grid grid-flow-row z-1 top-24 bg-neutral-100 dark:bg-neutral-700 dark:text-slate-200">
 
             {{-- Kiosk --}}
-            <section class="flex w-full overflow-x-auto snap-mandatory">
+            <section class="flex w-full overflow-x-auto snap-mandatory dark:text-black">
 
                 <div id="slide1 "
-                    class="relative grid min-w-full grid-cols-2 gap-4 px-12 py-8 mx-0 bg-yellow-400 rounded-b-sm snap-center snap-y max-lg:grid-cols-1 h-fix">
+                    class="relative grid min-w-full grid-cols-2 gap-4 px-12 py-8 mx-0 bg-yellow-400 rounded-b-sm snap-center snap-y max-lg:grid-cols-1 h-fix ">
 
                     {{-- Image --}}
                     <div class="px-4 max-lg:row-start-2 ">
@@ -77,7 +82,7 @@
                         </p>
                         <div class="flex flex-row items-center self-center">
                             <x-button
-                                class="py-2 mr-4 font-semibold text-yellow-400 bg-blue-800 shadow-2xl w-36 shadow-blue-800"
+                                class="py-2 mr-4 font-semibold text-yellow-400 bg-blue-800 w-36 shadow-blue-800"
                                 type="button">{{ __('Join us') }}</x-button>
                             <a class="flex items-baseline ml-4 text-lg font-semibold duration-300 ease-in-out transform hover:scale-110"
                                 href="/">
@@ -131,7 +136,7 @@
                 <div>
                     <h1 class="mt-4 text-2xl font-bold indent-4">{{ __('Upcoming trainings') }}</h1>
                     <div class="container">
-                        <div class="relative p-4 my-4 bg-white rounded-lg pb-14 max-sm:w-fit w-96">
+                        <div class="relative p-4 my-4 bg-white rounded-lg pb-14 max-sm:w-fit w-96 dark:bg-gray-700">
 
                             @if ($trainings->count() > 0)
                             @foreach ($trainings as $training)
@@ -170,7 +175,7 @@
                                 </div>
                             @endforeach
                             @else
-                            <div class="flex flex-row items-start gap-2 p-2 mt-2 bg-gray-100 rounded-md hover:bg-gray-200">
+                            <div class="flex flex-row items-start gap-2 p-2 mt-2 bg-gray-100 rounded-md hover:bg-gray-200 dark:bg-gray-400">
                                 {{ __('No upcoming training. Please come back later.') }}
                             </div>
                                 
@@ -186,11 +191,11 @@
 
                 {{-- Results --}}
                 <div>
-                    <h1 class="mt-4 text-2xl font-bold indent-4">{{ __('Lastest results') }}</h1>
+                    <h1 class="mt-4 text-2xl font-bold indent-4">{{ __('Latest results') }}</h1>
                     <div class="container">
-                        <div class="relative p-4 pb-12 my-4 bg-white rounded-lg w-96 max-sm:w-fit">
+                        <div class="relative p-4 pb-12 my-4 bg-white rounded-lg w-96 max-sm:w-fit dark:bg-gray-700">
                             <div
-                                class="flex flex-row items-start gap-2 p-2 my-2 bg-green-100 rounded-md hover:bg-gray-200">
+                                class="flex flex-row items-start gap-2 p-2 my-2 bg-green-100 dark:bg-green-700 rounded-md hover:bg-gray-200">
 
                                 <div class="w-full">
                                     <div class="relative flex flex-row justify-between">
@@ -208,7 +213,7 @@
                             </div>
 
                             <div
-                                class="flex flex-row items-start gap-2 p-2 my-2 bg-red-200 rounded-md hover:bg-gray-200">
+                                class="flex flex-row items-start gap-2 p-2 my-2 bg-red-200 dark:bg-red-700 rounded-md hover:bg-gray-200">
 
                                 <div class="w-full">
                                     <div class="relative flex flex-row justify-between">
@@ -226,7 +231,7 @@
                             </div>
 
                             <div
-                                class="flex flex-row items-start gap-2 p-2 my-2 rounded-md bg-neutral-100 hover:bg-gray-200">
+                                class="flex flex-row items-start gap-2 p-2 my-2 rounded-md bg-neutral-100 dark:bg-neutral-500 hover:bg-gray-200">
 
                                 <div class="w-full">
                                     <div class="relative flex flex-row justify-between">
@@ -244,7 +249,7 @@
                             </div>
 
                             <div
-                                class="flex flex-row items-start gap-2 p-2 my-2 bg-green-100 rounded-md hover:bg-gray-200">
+                                class="flex flex-row items-start gap-2 p-2 my-2 bg-green-100 dark:bg-green-700 rounded-md hover:bg-gray-200">
 
                                 <div class="w-full">
                                     <div class="relative flex flex-row justify-between">
@@ -262,7 +267,7 @@
                             </div>
 
                             <div
-                                class="flex flex-row items-start gap-2 p-2 my-2 bg-green-100 rounded-md hover:bg-gray-200">
+                                class="flex flex-row items-start gap-2 p-2 my-2 bg-green-100 dark:bg-green-700 rounded-md hover:bg-gray-200">
 
                                 <div class="w-full">
                                     <div class="relative flex flex-row justify-between">
@@ -279,7 +284,7 @@
                                 </div>
                             </div>
 
-                            <div class="flex flex-row items-start gap-2 p-2 mt-2 bg-gray-100 rounded-md hover:bg-gray-200">
+                            <div class="flex flex-row items-start gap-2 p-2 mt-2 bg-gray-100 dark:bg-gray-500 rounded-md hover:bg-gray-200">
                                 {{ __('No upcoming matches. Please come back later.') }}
                             </div>
                                 
@@ -299,7 +304,7 @@
                 <div class="grid grid-flow-row grid-cols-3 gap-6 my-4 max-lg:grid-cols-2 max-sm:grid-cols-1">
 
                     @for ($i = 0; $i < 6; $i++)
-                        <x-article>
+                        <x-article class="dark:bg-gray-700">
                             <h2 class="text-lg font-semibold text-center">{{ fake()->words(4, true) }}</h2>
                             <p class="mt-2 text-justify indent-3">{{ fake()->realText() }} </p>
                             <div class="grid items-end grid-cols-4 gap-2">
@@ -324,7 +329,7 @@
 
 
         {{-- Footer --}}
-        <footer class="px-12 py-8 text-yellow-500 bg-blue-900 rounded-t-sm max-sm:px-8 dark:bg-neutral-400">
+        <footer class="px-12 py-8 text-yellow-500 bg-blue-900 rounded-t-sm max-sm:px-8 dark:bg-blue-900">
 
             <div class="flex flex-wrap justify-around">
 

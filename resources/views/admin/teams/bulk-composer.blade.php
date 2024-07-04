@@ -28,7 +28,7 @@
                 @csrf
                 <x-input-label for="season">{{ __('Pick up a season') }}</x-input-label>
                 <x-select-input class="mt-2 w-1/2 w-min-sm" id="season" name="season">
-                    {!! \App\Classes\HtmlFactory::GetSeasonsHTMLDropdown() !!}
+                    {!! \App\Classes\HtmlFactory::SeasonsInHTMLList() !!}
                 </x-select-input>
 
                 <x-input-label class="mt-2"

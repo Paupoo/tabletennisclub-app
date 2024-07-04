@@ -33,8 +33,8 @@ class TeamController extends Controller
         //
         return view('.admin.teams.create', [
             'users' => User::where('is_competitor', '=', true)->orderby('last_name')->get(),
-            'seasons' => HtmlFactory::GetSeasonsHTMLDropdown(),
-            'team_names' => HtmlFactory::GetTeamNames(),
+            'seasons' => HtmlFactory::SeasonsInHTMLList(),
+            'team_names' => HtmlFactory::TeamNamesInHTMLList(),
         ]);
     }
 
@@ -61,8 +61,6 @@ class TeamController extends Controller
             $player = User::find($player);
             $team->users()->save($player);
         }
-
-
 
         return redirect()->route('teams.index')->with('success', 'The team ' . $request->name . ' has been created.');
     }
@@ -193,8 +191,6 @@ class TeamController extends Controller
             'playersPerTeam' => 'integer|required|between:5,10',
             'season' => 'string|required',
         ]);
-
-
 
         $season = $request->season;
         $competitors = $this->getCompetitors();

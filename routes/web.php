@@ -7,6 +7,7 @@ use App\Http\Controllers\TeamController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\TrainingController;
+use App\Http\Controllers\CompetitionController;
 use Illuminate\Support\Facades\Route;
 use App\Models\User;
 use App\Models\Role;
@@ -66,7 +67,7 @@ Route::resource('admin/members', UserController::class)->middleware(['auth', 've
  * Roles management
  */
 
-Route::resource('admin/roles', RoleController::class);
+Route::resource('admin/roles', RoleController::class)->middleware(['auth', 'verified']);
 
 /**
  * Rooms managements
@@ -101,11 +102,10 @@ Route::resource('/admin/teams', TeamController::class)->middleware(['auth', 'ver
  * Training management
  */
 Route::resource('/admin/trainings', TrainingController::class)->middleware(['auth', 'verified']);
+
 /**
- * Testing/temporary
+ * Matches management
  */
-Route::get('/test', [
-    RoomController::class, 'checkCapacity',
-]);
+Route::resource('/admin/competitions', CompetitionController::class)->middleware(['auth', 'verified']);
 
 require __DIR__ . '/auth.php';

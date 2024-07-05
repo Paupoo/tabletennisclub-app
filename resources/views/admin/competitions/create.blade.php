@@ -38,7 +38,7 @@
                     <form action="{{ route('competitions.store') }}" method="POST" class="mt-6 space-y-6">
                         @csrf
 
-                        {{-- Competition Date --}}
+                        {{-- Competition Type --}}
                         <div>
                             <x-input-label for="total_players" :value="__('Competition Type')" />
                             <x-select-input id="total_players" name="total_players" class="block w-full mt-1" :value="old('total_players')"
@@ -50,7 +50,7 @@
                             <x-input-error class="mt-2" :messages="$errors->get('total_players')" />
                         </div>
 
-                        {{-- Competition Type --}}
+                        {{-- Competition Date --}}
                         <div>
                             <x-input-label for="competition_date" :value="__('Competition Date')" />
                             <x-text-input id="competition_date" name="competition_date" type="datetime-local" class="block w-full mt-1"
@@ -74,20 +74,24 @@
                             <x-input-error class="mt-2" :messages="$errors->get('competition_week_number')" />
                         </div>    
 
-                        {{-- Visited Team --}}
+                        {{-- Club's Team --}}
                         <div>
-                            <x-input-label for="visited_team" :value="__('Visited team')" />
-                            <x-text-input id="visited_team" name="visited_team" type="text" class="block w-full mt-1"
-                                :value="old('visited_team')" required autofocus autocomplete="visited_team"></x-text-input>
-                            <x-input-error class="mt-2" :messages="$errors->get('visited_team')" />
+                            <x-input-label for="club_team" :value="__('Club\'s team')" />
+                            <x-select-input id="club_team" name="club_team" type="text" class="block w-full mt-1"
+                                :value="old('club_team')" required autofocus autocomplete="club_team">
+                                @foreach ($teams as $team)
+                                    <option value="{{ $team->id }}">Otttignies {{ $team->name }}</option>
+                                @endforeach
+                            </x-select-input>
+                            <x-input-error class="mt-2" :messages="$errors->get('club_team')" />
                         </div>    
 
-                        {{-- Visiting Team --}}
+                        {{-- Opposing Team --}}
                         <div>
-                            <x-input-label for="visiting_team" :value="__('Visiting team')" />
-                            <x-text-input id="visiting_team" name="visiting_team" type="text" class="block w-full mt-1"
-                                :value="old('visiting_team')" required autofocus autocomplete="visiting_team"></x-text-input>
-                            <x-input-error class="mt-2" :messages="$errors->get('visiting_team')" />
+                            <x-input-label for="opposing_team" :value="__('Opposing team')" />
+                            <x-text-input id="opposing_team" name="opposing_team" type="text" class="block w-full mt-1"
+                                :value="old('opposing_team')" required autofocus autocomplete="opposing_team"></x-text-input>
+                            <x-input-error class="mt-2" :messages="$errors->get('opposing_team')" />
                         </div>    
                         
                         <div>

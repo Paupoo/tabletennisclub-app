@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Team;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -17,8 +18,8 @@ return new class extends Migration
             $table->string('address', '255');
             $table->tinyInteger('total_players');
             $table->tinyInteger('week_number');
-            $table->string('team_visited');
-            $table->string('team_visiting');
+            $table->foreignIdFor(Team::class);
+            $table->string('opposing_team');
             $table->timestamps();
         });
     }

@@ -34,7 +34,7 @@
         {{-- Role --}}
         <div>
             <x-input-label for="role" :value="__('Role')" />
-            <x-text-input id="role" name="role" type="text" class="block w-full mt-1" :value="old('role', $user->role)" disabled autofocus autocomplete="role" />
+            <x-text-input id="role" name="role" type="text" class="block w-full mt-1" :value="old('role', $user->role->name)" disabled autofocus autocomplete="role" />
             <x-input-error class="mt-2" :messages="$errors->get('role')" />
         </div>
 
@@ -55,7 +55,7 @@
         {{-- Team --}}
         <div>
             <x-input-label for="team" :value="__('Team')" />
-            <x-text-input id="team" name="team" type="text" class="block mt-1 w-14" :value="old('team', $user->team)" autofocus />
+            <x-text-input id="team" name="team" type="text" class="block mt-1 w-14" :value="old('team', $user->team->name)" autofocus />
             <x-input-error class="mt-2" :messages="$errors->get('team')" />
         </div>
 

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Competition extends Model
 {
@@ -19,8 +20,8 @@ class Competition extends Model
         'address',
         'total_players',
         'week_number',
-        'team_visited',
-        'team_visiting'
+        'team_id',
+        'opposing_team'
     ];
 
     /**
@@ -33,7 +34,12 @@ class Competition extends Model
         'address' => 'string',
         'total_players' => 'string',
         'week_number' => 'string',
-        'team_visited' => 'string',
-        'team_visiting' => 'string',
+        // 'team_id' => 'integer',
+        'opposing_team' => 'string',
     ];
+
+    public function team(): BelongsTo
+    {
+        return $this->belongsTo(Team::class);
+    }
 }

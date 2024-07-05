@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Classes\HtmlFactory;
 use App\Models\Competition;
+use App\Models\Team;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class CompetitionController extends Controller
 {
@@ -13,9 +15,16 @@ class CompetitionController extends Controller
      */
     public function index()
     {
-        //
+        //  
+        if (Auth::user()->role->name === 'Admin') {
+            $competitions = Competition::orderBy('competition_date', 'asc')->paginate(10);
+        } else {
+            $competitions = Competition::where('team_id', Auth::user()->team_id)->orderBy('id')->paginate(10);
+        }
+
         return view('admin.competitions.index', [
-            'competitions' => Competition::orderBy('id')->paginate(10),
+            'competitions' => $competitions,
+            'teams' => Team::all(),
         ]);
     }
 
@@ -27,6 +36,7 @@ class CompetitionController extends Controller
         //
         return view('admin.competitions.create', [
             'competition_types' => HtmlFactory::competitionTypesInHtmlList(),
+            'teams' => Team::all(),
         ]);
     }
 
@@ -40,8 +50,8 @@ class CompetitionController extends Controller
             'competition_date' => ['date', 'required'],
             'competition_address' => ['string', 'required'],
             'competition_week_number' => ['integer','between:1,52'],
-            'visited_team' => ['string','required'],
-            'visiting_team' => ['string','required','different:visited_team'],
+            'club_team' => ['integer','required'],
+            'opposing_team' => ['string','required','different:visited_team'],
         ]); 
 
         Competition::create([
@@ -49,11 +59,11 @@ class CompetitionController extends Controller
             'competition_date' => $request->competition_date,
             'address' => $request->competition_address,
             'week_number' => $request->competition_week_number,
-            'team_visited' => $request->visited_team,
-            'team_visiting' => $request->visiting_team,
+            'team_id' => $request->club_team,
+            'opposing_team' => $request->opposing_team,
         ]);
 
-        return redirect()->route('competitions.index')->with('success', 'The match ' . $request->visited_team . ' - ' . $request->visited_team . ' has been added.');
+        return redirect()->route('competitions.index')->with('success', 'The match has been added.');
    
     }
 

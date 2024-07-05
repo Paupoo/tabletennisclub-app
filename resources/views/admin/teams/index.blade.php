@@ -55,11 +55,9 @@
                                 <td class="flex items-center gap-2 px-4 whitespace-nowrap">
                                     <a href="{{ route('teams.show', $team->id) }}"><img class="h-4 cursor-pointer" src="{{ asset('images/icons/contact.svg') }}"
                                         alt="Check details"></a>
-                                    <form action="{{ route('teams.edit', $team->id) }}" method="GET">
-                                        <button type="submit">
+                                    <a href="{{ route('teams.edit', $team->id) }}">
                                             <img class="h-4 cursor-pointer" src="{{ asset('images/icons/edit.svg') }}" alt="Edit">
-                                        </button>
-                                    </form>
+                                    </a>
                                     <form action="{{ route('teams.destroy', $team->id) }}" method="POST">
                                         @csrf
                                         @method('delete')

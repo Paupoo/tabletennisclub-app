@@ -82,7 +82,7 @@ class TeamController extends Controller
     public function edit(string $id)
     {
         //
-        return view('.admin.teams.edit', [
+        return view('admin.teams.edit', [
             'team' => Team::find($id),
             'users' => User::all(),
         ]);

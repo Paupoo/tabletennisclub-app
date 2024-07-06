@@ -34,7 +34,8 @@ class User extends Authenticatable
         'street',
         'city',
         'city_code',
-        'role_id'
+        'role_id',
+        'team_id'
     ];
 
     /**

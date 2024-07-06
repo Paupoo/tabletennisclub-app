@@ -7,6 +7,7 @@ use Illuminate\Database\Seeder;
 use App\Models\User;
 use App\Models\Role;
 use App\Models\Room;
+use App\Models\Team;
 use Illuminate\Support\Facades\DB;
 
 class DatabaseSeeder extends Seeder
@@ -32,6 +33,13 @@ class DatabaseSeeder extends Seeder
             'description' => 'Committe Members have various administrative privileges, such as team, rooms, trainings, match and members management.'
         ]);
 
+        // Create "no team"
+        Team::create([
+            'name' => '',
+            'season' => '',
+            'division' => '',
+        ]);
+
         // Create 1 admin
         User::create([
             'last_name' => 'Paulus',
@@ -42,6 +50,7 @@ class DatabaseSeeder extends Seeder
             'password' => 'test1234',
             'role_id' => 2,
             'is_competitor' => true,
+            'team_id' => 1,
         ]);
 
         // Create 75 members

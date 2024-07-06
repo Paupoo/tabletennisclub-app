@@ -83,8 +83,8 @@ class HtmlFactory
     {
 
         return ($text === '') // If the second argument
-            ? sprintf('<option value="%1$s">%1$s</options>' . PHP_EOL, $value)          // is the same as the value
-            : sprintf('<option value="%1$s">%2$s</options>' . PHP_EOL, $value, $text);  // is different as the value
+            ? sprintf('<option value="%1$s">%1$s</option>' . PHP_EOL, $value)          // is the same as the value
+            : sprintf('<option value="%1$s">%2$s</option>' . PHP_EOL, $value, $text);  // is different as the value
     }
     
 }

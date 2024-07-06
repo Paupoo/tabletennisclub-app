@@ -17,24 +17,24 @@
         @csrf
         @method('patch')
 
-        {{-- Last Name --}}
-        <div>
-            <x-input-label for="last_name" :value="__('Last Name')" />
-            <x-text-input id="last_name" name="last_name" type="text" class="block w-full mt-1" :value="old('last_name', $user->last_name)" required autofocus autocomplete="last_name" />
-            <x-input-error class="mt-2" :messages="$errors->get('last_name')" />
-        </div>
-
         {{-- First Name --}}
         <div>
             <x-input-label for="first_name" :value="__('First Name')" />
             <x-text-input id="first_name" name="first_name" type="text" class="block w-full mt-1" :value="old('first_name', $user->first_name)" required autofocus autocomplete="first_name" />
             <x-input-error class="mt-2" :messages="$errors->get('first_name')" />
         </div>
+
+        {{-- Last Name --}}
+        <div>
+            <x-input-label for="last_name" :value="__('Last Name')" />
+            <x-text-input id="last_name" name="last_name" type="text" class="block w-full mt-1" :value="old('last_name', $user->last_name)" required autofocus autocomplete="last_name" />
+            <x-input-error class="mt-2" :messages="$errors->get('last_name')" />
+        </div>
         
         {{-- Role --}}
         <div>
             <x-input-label for="role" :value="__('Role')" />
-            <x-text-input id="role" name="role" type="text" class="block w-full mt-1" :value="old('role', $user->role->name)" disabled autofocus autocomplete="role" />
+            <x-text-input id="role" name="role" type="text" class="block w-full mt-1" :value="old('role', $user->role?->name)" disabled autofocus autocomplete="role" />
             <x-input-error class="mt-2" :messages="$errors->get('role')" />
         </div>
 
@@ -54,7 +54,7 @@
         {{-- Team --}}
         <div>
             <x-input-label for="team" :value="__('Team')" />
-            <x-text-input id="team" name="team" type="text" class="block mt-1 w-14" :value="old('team', $team = $user->team->name)" autofocus />
+            <x-text-input id="team" name="team" type="text" class="block mt-1 w-14" :value="old('team', $user->team?->name)" disabled autofocus />
             <x-input-error class="mt-2" :messages="$errors->get('team')" />
         </div>
 

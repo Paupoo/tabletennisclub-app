@@ -30,7 +30,7 @@ class UserFactory extends Factory
             'remember_token' => Str::random(10),
             'licence' => fake()->unique()->numberBetween(95000, 170000),
             'ranking' => fake()->randomElement(['B0', 'B2', 'B4', 'B6', 'C0', 'C2', 'C4', 'C6', 'D0', 'D2', 'D4', 'D6', 'E0', 'E2', 'E4', 'E6', 'NC',null]),
-            'role_id' => 2,
+            'role_id' => 1,
             'is_competitor' => fake()->randomElement([true, false]),
             'is_active' => true,
             'has_debt' => false,

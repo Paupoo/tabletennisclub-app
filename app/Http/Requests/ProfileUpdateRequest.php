@@ -19,11 +19,6 @@ class ProfileUpdateRequest extends FormRequest
             'last_name' => ['required', 'string', 'max:255'],
             'first_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)->ignore($this->user()->id)],
-            'licence' => ['integer','digits:6','min:000001','max:999999'],
-            'ranking' => ['string','size:3'],
-            'force_index' => ['integer', 'min:1'],
-            'team' => ['string'],
-            'role' => ['string'],
         ];
     }
 }

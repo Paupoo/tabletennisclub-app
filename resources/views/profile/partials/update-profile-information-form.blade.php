@@ -51,11 +51,10 @@
             <x-text-input id="ranking" name="ranking" type="text" class="block mt-1 w-14" :value="old('ranking', $user->ranking)" disabled autofocus />
             <x-input-error class="mt-2" :messages="$errors->get('ranking')" />
         </div>
-
         {{-- Team --}}
         <div>
             <x-input-label for="team" :value="__('Team')" />
-            <x-text-input id="team" name="team" type="text" class="block mt-1 w-14" :value="old('team', $user->team->name)" autofocus />
+            <x-text-input id="team" name="team" type="text" class="block mt-1 w-14" :value="old('team', $team = $user->team->name)" autofocus />
             <x-input-error class="mt-2" :messages="$errors->get('team')" />
         </div>
 

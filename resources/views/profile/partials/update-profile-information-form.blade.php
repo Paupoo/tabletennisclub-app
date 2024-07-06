@@ -1,0 +1,99 @@
+<section>
+    <header>
+        <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">
+            {{ __('Profile Information') }}
+        </h2>
+
+        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+            {{ __("Update your account's profile information and email address.") }}
+        </p>
+    </header>
+
+    <form id="send-verification" method="post" action="{{ route('verification.send') }}">
+        @csrf
+    </form>
+
+    <form method="post" action="{{ route('profile.update') }}" class="mt-6 space-y-6">
+        @csrf
+        @method('patch')
+
+        {{-- First Name --}}
+        <div>
+            <x-input-label for="first_name" :value="__('First Name')" />
+            <x-text-input id="first_name" name="first_name" type="text" class="block w-full mt-1" :value="old('first_name', $user->first_name)" required autofocus autocomplete="first_name" />
+            <x-input-error class="mt-2" :messages="$errors->get('first_name')" />
+        </div>
+
+        {{-- Last Name --}}
+        <div>
+            <x-input-label for="last_name" :value="__('Last Name')" />
+            <x-text-input id="last_name" name="last_name" type="text" class="block w-full mt-1" :value="old('last_name', $user->last_name)" required autofocus autocomplete="last_name" />
+            <x-input-error class="mt-2" :messages="$errors->get('last_name')" />
+        </div>
+        
+        {{-- Role --}}
+        <div>
+            <x-input-label for="role" :value="__('Role')" />
+            <x-text-input id="role" name="role" type="text" class="block w-full mt-1" :value="old('role', $user->role?->name)" disabled autofocus autocomplete="role" />
+            <x-input-error class="mt-2" :messages="$errors->get('role')" />
+        </div>
+
+        {{-- Licence --}}
+        <div>
+            <x-input-label for="licence" :value="__('Licence')" />
+            <x-text-input id="licence" name="licence" type="text" class="block w-20 mt-1" :value="old('licence', $user->licence)" disabled autofocus />
+            <x-input-error class="mt-2" :messages="$errors->get('licence')" />
+        </div>
+
+        {{-- Ranking --}}
+        <div>
+            <x-input-label for="ranking" :value="__('Ranking')" />
+            <x-text-input id="ranking" name="ranking" type="text" class="block mt-1 w-14" :value="old('ranking', $user->ranking)" disabled autofocus />
+            <x-input-error class="mt-2" :messages="$errors->get('ranking')" />
+        </div>
+        {{-- Team --}}
+        <div>
+            <x-input-label for="team" :value="__('Team')" />
+            <x-text-input id="team" name="team" type="text" class="block mt-1 w-14" :value="old('team', $user->team?->name)" disabled autofocus />
+            <x-input-error class="mt-2" :messages="$errors->get('team')" />
+        </div>
+
+        <div>
+            <x-input-label for="email" :value="__('Email')" />
+            <x-text-input id="email" name="email" type="email" class="block w-full mt-1" :value="old('email', $user->email)" required autocomplete="username" />
+            <x-input-error class="mt-2" :messages="$errors->get('email')" />
+
+            @if ($user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && ! $user->hasVerifiedEmail())
+                <div>
+                    <p class="mt-2 text-sm text-gray-800 dark:text-gray-200">
+                        {{ __('Your email address is unverified.') }}
+
+                        <button form="send-verification" class="text-sm text-gray-600 underline rounded-md dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 dark:focus:ring-offset-gray-800">
+                            {{ __('Click here to re-send the verification email.') }}
+                        </button>
+                    </p>
+
+                    @if (session('status') === 'verification-link-sent')
+                        <p class="mt-2 text-sm font-medium text-green-600 dark:text-green-400">
+                            {{ __('A new verification link has been sent to your email address.') }}
+                        </p>
+                    @endif
+                </div>
+            @endif
+        </div>
+
+        <div class="flex items-center gap-4">
+            <x-primary-button>{{ __('Save') }}</x-primary-button>
+
+            @if (session('status') === 'profile-updated')
+                <p
+                    x-data="{ show: true }"
+                    x-show="show"
+                    x-transition
+                    x-init="setTimeout(() => show = false, 2000)"
+                    class="text-sm text-gray-600 dark:text-gray-400"
+                >{{ __('Saved.') }}</p>
+            @endif
+        </div>
+    </form>
+</section>

@@ -16,6 +16,12 @@ class Team extends Model
         'division',
     ];
 
+    protected $casts = [
+        'name' => 'string',
+        'season' => 'string',
+        'division' => 'string',
+    ];
+
     public function users() :HasMany
     {
         return $this->hasMany(User::class);

@@ -19,7 +19,7 @@ class UserController extends Controller
     {
         //
         return View('admin.members.index', [
-            'members' => User::orderby('last_name')->orderby('first_name')->paginate(20),
+            'members' => User::orderby('force_index')->orderby('last_name')->orderby('first_name')->paginate(20),
         ]);
     }
 
@@ -199,19 +199,21 @@ class UserController extends Controller
     /**
      * Calculate force index for every registered players and store into the DB.
      */
-    public function setForceIndex() 
-    {      
+    public static function setForceIndex() 
+    {
+        
         // Get aggregated counts by ranking (i.e. [B6]=>1, [D4]=>5, ...) but exclude E6 and NC players
         $members = DB::table('users')
             ->select('ranking', DB::raw('count(1) as total'))
-            ->whereNot('ranking', '=', 'NA')
-            ->whereNot('ranking', '=', null)
+            ->whereNot('ranking', 'NA')
+            ->whereNot('ranking', null)
             ->groupby('ranking')
             ->orderBy('ranking', 'asc')
             ->get();
 
         // Get count of total E6 & NC players
-        $totalE6_and_NC_users = User::whereIn('ranking', ['E6','NC'])->count();
+        $totalE6_and_NC_users = User::whereIn('ranking', ['E6','NC'])
+            ->count();
 
         // read the whole table, calculate force index for each ranking and update members in the db except for E6/NC.
         $i = 0;

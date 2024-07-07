@@ -53,8 +53,8 @@
                         {{-- Competition Date --}}
                         <div>
                             <x-input-label for="competition_date" :value="__('Competition Date')" />
-                            <x-text-input id="competition_date" name="competition_date" type="datetime-local" class="block w-full mt-1"
-                                :value="old('competition_date')" required autofocus autocomplete="competition_date"></x-text-input>
+                            <x-text-input id="competition_date" name="competition_date" type="datetime-local" min="{{ today()->format('Y-m-d\TH:i:s') }}" max="{{ now()->addMonth(6)->format('Y-m-d\TH:i:s') }}" class="block w-full mt-1"
+                                :value="old('competition_date', now()->format('Y-m-d\TH:i'))" required autofocus autocomplete="competition_date"></x-text-input>
                             <x-input-error class="mt-2" :messages="$errors->get('competition_date')" />
                         </div>
 
@@ -69,7 +69,7 @@
                         {{-- Competition Week Number --}}
                         <div>
                             <x-input-label for="competition_week_number" :value="__('Competition Week Number')" />
-                            <x-text-input id="competition_week_number" name="competition_week_number" type="number" class="block w-full mt-1"
+                            <x-text-input id="competition_week_number" name="competition_week_number" type="number" min="1" max="52" step="1" class="block w-full mt-1"
                                 :value="old('competition_week_number')" required autofocus autocomplete="competition_week_number"></x-text-input>
                             <x-input-error class="mt-2" :messages="$errors->get('competition_week_number')" />
                         </div>    

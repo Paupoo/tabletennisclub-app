@@ -3,11 +3,14 @@
 namespace Database\Seeders;
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+
 use Illuminate\Database\Seeder;
-use App\Models\User;
+use App\Http\Controllers\UserController;
+use App\Models\Competition;
 use App\Models\Role;
 use App\Models\Room;
 use App\Models\Team;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 class DatabaseSeeder extends Seeder
@@ -35,26 +38,64 @@ class DatabaseSeeder extends Seeder
 
         // Create "no team"
         Team::create([
-            'name' => '',
+            'name' => 'Pool',
             'season' => '',
             'division' => '',
         ]);
 
+        // Create Z team team
+        Team::create([
+            'name' => 'Z',
+            'season' => '2024-2025',
+            'division' => 'P5C'
+        ]);
+
+        // Create some matches for Z team
+        Competition::factory(15)->create();
+
         // Create 1 admin
         User::create([
-            'last_name' => 'Paulus',
             'first_name' => 'Aurélien',
+            'last_name' => 'Paulus',
             'ranking' => 'E4',
             'licence' => '114399',
             'email' => 'aurelien.paulus@gmail.com',
             'password' => 'test1234',
             'role_id' => 2,
             'is_competitor' => true,
-            'team_id' => 1,
+            'is_active' => true,
+            'team_id' => 2,
         ]);
+        
+        
+        // Create test dream team
+        $players = [
+            ['Olivier', 'Tilmans', 'E6', '223344', 'olivier.tilmans@test.com' ],
+            ['Xavier', 'Coenen', 'E6', '123123', 'xavier.coenen@test.com' ],
+            ['Arnaud', 'Ghysens', 'E2', '112233', 'arnaud.ghysens@test.com' ],
+            ['Éric', 'Godart', 'E0', '443211', 'eric.godart@test.com' ],
+            ['Sébastien', 'Vandevyver', 'E2', '987654', 'seba.vande@test.com' ],
+            ['Dariusz', 'Skula', 'E2', '332211', 'dariusz.sekula@test.com' ],
+        ];
+
+        foreach($players as $player) {
+            User::create([
+                'first_name' => $player[0],
+                'last_name' => $player[1],
+                'ranking' => $player[2],
+                'licence' => $player[3],
+                'email' => $player[4],
+                'password' => 'password',
+                'role_id' => 1,
+                'is_competitor' => true,
+                'is_active' => true,
+                'team_id' => 2,
+            ]);
+
+        }
 
         // Create 75 members
-        User::factory(96)->create();
+        User::factory(75)->create();
 
         // If a player is competitor and has no ranking, get one.
         $affected = DB::table('users')
@@ -99,5 +140,7 @@ class DatabaseSeeder extends Seeder
             'capacity_matches' => 0,
         ]);
 
+        // Set ForceIndexes
+        UserController::setForceIndex();
     }
 }

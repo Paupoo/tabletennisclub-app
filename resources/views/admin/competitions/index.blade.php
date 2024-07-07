@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
-            {{ __('Members') }}
+            {{ __('Matches') }}
         </h2>
     </x-slot>
 
@@ -17,7 +17,7 @@
             </div>
             
             @if(session('success'))
-            <div class="mt-4 bg-red-500">
+            <div class="mt-4 bg-green-500">
                 {{ session('success') }}
             </div>
             @elseif(session('deleted'))

@@ -51,10 +51,10 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // Create some matches for Z team
-        Competition::factory(15)->create();
+        $competitions = Competition::factory(15)->create();
 
         // Create 1 admin
-        User::create([
+        $admin = User::create([
             'first_name' => 'Aurélien',
             'last_name' => 'Paulus',
             'ranking' => 'E4',
@@ -66,9 +66,19 @@ class DatabaseSeeder extends Seeder
             'is_active' => true,
             'team_id' => 2,
         ]);
+
+        foreach($competitions as $competition) {
+            $admin->competitions()->attach($competition->id, [
+                'is_available' => false,
+                'is_selected' => false,
+                'has_played' => false,
+            ]);
+        }
         
         
         // Create test dream team
+
+        // the players
         $players = [
             ['Olivier', 'Tilmans', 'E6', '223344', 'olivier.tilmans@test.com' ],
             ['Xavier', 'Coenen', 'E6', '123123', 'xavier.coenen@test.com' ],
@@ -79,7 +89,7 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach($players as $player) {
-            User::create([
+            $user = User::create([
                 'first_name' => $player[0],
                 'last_name' => $player[1],
                 'ranking' => $player[2],
@@ -91,6 +101,14 @@ class DatabaseSeeder extends Seeder
                 'is_active' => true,
                 'team_id' => 2,
             ]);
+        // the matches
+        foreach($competitions as $competition) {
+            $user->competitions()->attach($competition->id, [
+                'is_available' => false,
+                'is_selected' => false,
+                'has_played' => false,
+            ]);
+        }
 
         }
 

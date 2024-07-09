@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Classes\HtmlFactory;
 use App\Models\Competition;
 use App\Models\Team;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -16,15 +17,10 @@ class CompetitionController extends Controller
     public function index()
     {
         //  
-        if (Auth::user()->role->name === 'Admin') {
-            $competitions = Competition::orderBy('competition_date', 'asc')->paginate(10);
-        } else {
-            $competitions = Competition::where('team_id', Auth::user()->team_id)->orderBy('id')->paginate(10);
-        }
-
+        $competitions = User::find(Auth::user()->id)->competitions()->orderBy('competition_date', 'asc')->paginate(10);
+        
         return view('admin.competitions.index', [
             'competitions' => $competitions,
-            'teams' => Team::all(),
         ]);
     }
 

@@ -46,15 +46,14 @@
                     </thead>
                     <tbody>
                         {{-- {{ dd($competitions)}} --}}
-                        {{ dd($competitions)}}
                         @foreach ($competitions as $competition)
                             <tr class="border-b dark:border-neutral-500">
                                 <td class="px-4 whitespace-nowrap">Ottignies {{ $competition->team->name }} - {{ $competition->opposing_team }}</td>
                                 <td class="px-4 whitespace-nowrap">{{ $competition->week_number }}</td>
                                 <td class="px-4 whitespace-nowrap">{{ $competition->competition_date->format('d-m-Y H:i') }}</td>
                                 <td class="px-4 whitespace-nowrap">{{ $competition->address }}</td>
-                                <td class="px-4 whitespace-nowrap"><input type="checkbox" name="subscription" id="subscription" unchecked></td>
-                                <td class="px-4 whitespace-nowrap"><input type="checkbox" name="selection" id="selection" unchecked disabled></td>
+                                <td class="px-4 whitespace-nowrap"><input type="checkbox" name="subscription" id="subscription" @checked($competition->pivot->is_available)></td>
+                                <td class="px-4 whitespace-nowrap"><input type="checkbox" name="selection" id="selection" disabled @checked($competition->pivot->is_selected)></td>
                                 <td class="px-4 whitespace-nowrap"><x-secondary-button>Send mail invite</x-secondary-button></td>
                             </tr>
                         @endforeach

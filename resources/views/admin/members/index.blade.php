@@ -63,7 +63,7 @@
                                 <td class="px-4 whitespace-nowrap">{{ $member->force_index }}</td>
                                 <td class="px-4 whitespace-nowrap">{{ $member->ranking }}</td>
                                 <td class="px-4 whitespace-nowrap">{{ isset($member->team) ? $member->team->name : __('None') }}</td>
-                                <td class="px-4 whitespace-nowrap">{{ $member->role->name }}</td>
+                                <td class="px-4 whitespace-nowrap">{{ isset($member->role->name) ? $member->role->name : __('None') }}</td>
                                 <td class="px-4 whitespace-nowrap">
                                     @if($member->is_active == false)
                                     {{ __('Inactive') }}

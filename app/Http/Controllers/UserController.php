@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreUserRequest;
 use App\Models\User;
 use App\Models\Role;
 use App\Models\Team;
@@ -38,38 +39,10 @@ class UserController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreUserRequest $request)
     {
         //
-        $request->validate([
-            'last_name' => ['required', 'string', 'max:255'],
-            'last_name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'lowercase', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'confirmed', 'min:8', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
-            'is_competitor' => ['nullable'],
-            'licence' => ['nullable', 'unique:users,licence', 'size:6'],
-            'ranking' => ['nullable', Rule::in([
-                'B0',
-                'B2',
-                'B4',
-                'B6',
-                'C0',
-                'C2',
-                'C4',
-                'C6',
-                'D0',
-                'D2',
-                'D4',
-                'D6',
-                'E0',
-                'E2',
-                'E4',
-                'E6',
-                'NC',
-            ])],
-            'team_id' => ['nullable', 'exists:teams,id'],
-            'role_id' => ['required','exists:roles,id'],
-        ]);
+        // $request->validate();
         
         $role = Role::findOrFail($request->role_id);
 

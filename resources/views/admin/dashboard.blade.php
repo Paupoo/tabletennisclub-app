@@ -36,7 +36,7 @@
                                     <tr>
                                         <td>{{ \Illuminate\Support\Str::of($role->name)->limit(30) }}</td>
                                         <td>{{ \Illuminate\Support\Str::of($role->description)->limit(60) }}</td>
-                                        <td>{{ $role->user->count() }}</td>
+                                        <td>{{ $role->users->count() }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>

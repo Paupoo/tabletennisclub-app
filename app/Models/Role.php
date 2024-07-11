@@ -25,7 +25,7 @@ class Role extends Model
         'descriptin' => 'string',
     ];
 
-    public function user() :HasMany
+    public function users() :HasMany
     {
         return $this->hasMany(User::class);
     }

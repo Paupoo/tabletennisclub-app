@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\Rankings;
+use App\Enums\Roles;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -15,7 +17,7 @@ class StoreUserRequest extends FormRequest
     public function authorize(Request $request): bool
     {
         // Forbid member to create a user.
-        return in_array($request->user()->role->id, [2,3]);
+        return $request->user()->role->name === Roles::ADMIN->value || $request->user()->role->name === Roles::COMITTEE_MEMBER->value;
     }
 
     /**
@@ -27,30 +29,12 @@ class StoreUserRequest extends FormRequest
     {
         return [
             'last_name' => ['required', 'string', 'max:255'],
-            'last_name' => ['required', 'string', 'max:255'],
+            'first_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'lowercase', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', 'min:8', RulesPassword::min(8)->letters()->mixedCase()->numbers()->symbols()],
             'is_competitor' => ['nullable'],
             'licence' => ['nullable', 'unique:users,licence', 'size:6'],
-            'ranking' => ['nullable', Rule::in([
-                'B0',
-                'B2',
-                'B4',
-                'B6',
-                'C0',
-                'C2',
-                'C4',
-                'C6',
-                'D0',
-                'D2',
-                'D4',
-                'D6',
-                'E0',
-                'E2',
-                'E4',
-                'E6',
-                'NC',
-            ])],
+            'ranking' => ['nullable', Rule::in(array_column(Rankings::cases(), 'value'))],
             'team_id' => ['nullable', 'exists:teams,id'],
             'role_id' => ['required','exists:roles,id'],
         ];

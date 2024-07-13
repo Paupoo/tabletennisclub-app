@@ -79,7 +79,7 @@ class UserCreationTest extends TestCase
         
     }
 
-    public function test_new_member_creation_with_email_and_licence_already_existing_returns_an_error(): void
+    public function test_new_member_creation_with_invalid_paramaters_returns_errors_in_the_session(): void
     {
         $user = User::factory()->create();
         $roleMember = Role::create([
@@ -127,15 +127,15 @@ class UserCreationTest extends TestCase
                         ->assertSessionHas('success');
         $respons = $this->actingAs($user)
                         ->post('/admin/members', [
-                            'last_name' => 'Dupont',
-                            'first_name' => 'Charles',
+                            'last_name' => '',
+                            'first_name' => 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Ea quibusdam temporibus reprehenderit ipsam sunt? Illo eos doloremque inventore obcaecati repudiandae culpa qui, rem explicabo consectetur numquam suscipit aut voluptatem nostrum! Lorem ipsum dolor sit amet consectetur adipisicing elit. Ea quibusdam temporibus reprehenderit ipsam sunt? Illo eos doloremque inventore obcaecati repudiandae culpa qui, rem explicabo consectetur numquam suscipit aut voluptatem nostrum!',
                             'email' => 'charles.dupont@gmail.com',
                             'email_verified_at' => now(),
-                            'password' => $password,
-                            'password_confirmation' => $password,
+                            'password' => '1234',
+                            'password_confirmation' => '1235',
                             'remember_token' => Str::random(10),
                             'licence' => 123456,
-                            'ranking' => 'B0',
+                            'ranking' => 'B5',
                             'role_id' => $roleMember->id,
                             'is_competitor' => true,
                             'is_active' => true,
@@ -149,17 +149,14 @@ class UserCreationTest extends TestCase
                         'licence',
                         ])
                         ->assertRedirect(route('members.create'))
-                        ->assertSessionHasErrors('email','licence'  );
-    }
-
-    public function test_new_member_creation_with_unexisting_ranking(): void
-    {
-
-    }
-
-    public function test_new_member_creation_with_strong_password(): void
-    {
-
+                        ->assertSessionHasErrors([
+                            'last_name',
+                            'first_name',
+                            'email',
+                            'licence',
+                            'ranking',
+                            'password'
+                        ]);
     }
 
     public function test_new_member_creation_adds_member_pool_if_no_team_if_linked(): void

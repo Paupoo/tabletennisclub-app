@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Classes\HtmlFactory;
+use App\Enums\Rankings;
 use App\Http\Requests\StoreUserRequest;
 use App\Models\User;
 use App\Models\Role;
@@ -19,8 +21,10 @@ class UserController extends Controller
     public function index()
     {
         //
+        $this->authorize('index', User::class);
         return View('admin.members.index', [
             'members' => User::orderby('force_index')->orderby('last_name')->orderby('first_name')->paginate(20),
+            'member_model' => User::class,
         ]);
     }
 
@@ -30,9 +34,12 @@ class UserController extends Controller
     public function create()
     {
         //
+        $this->authorize('create', User::class);
+
         return View('admin.members.create', [
             'roles' => Role::orderby('name')->get(),
             'teams' => Team::all(),
+            'rankings' => array_column(Rankings::cases(), 'value'),
         ]);
     }
 
@@ -41,21 +48,19 @@ class UserController extends Controller
      */
     public function store(StoreUserRequest $request)
     {
-        //
-        // $request->validate();
-        
-        $role = Role::findOrFail($request->role_id);
 
+        $request = $request->validated();
+        $role = Role::findOrFail($request['role_id']);
         $user = User::create ([
-            'first_name' => $request->first_name,
-            'last_name' => $request->last_name,
-            'email' => $request->email,
-            'password' => $request->password,
-            'is_competitor' => ($request->is_competitor != null) ? true : false,
-            'licence' => $request->licence,
-            'ranking' => $request->ranking,
-            'team_id' => $request->team_id,
-            'role_id' => $role->id,
+            'first_name' => $request['first_name'],
+            'last_name' => $request['last_name'],
+            'email' => $request['email'],
+            'password' => $request['password'],
+            'is_competitor' => isset($request['is_competitor']) ? true : false,
+            'licence' => $request['licence'],
+            'ranking' => $request['ranking'],
+            'team_id' => $request['team_id'],
+            'role_id' => $role['id'],
         ]);
 
         $this->setForceIndex();

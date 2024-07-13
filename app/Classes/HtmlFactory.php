@@ -2,8 +2,34 @@
 
 namespace App\Classes;
 
+use App\Enums\Roles;
+
 class HtmlFactory
 {
+
+    /**
+     * Return all the element from an array into HTML <option></option> tags to feed select inputs.
+     *
+     * @param array $array
+     * @return string
+     */
+    static public function arrayInHtmlList(array $array): string
+    {
+        $html_code = '';
+
+        if (array_is_list($array)) {
+            foreach ($array as $element) {
+                $html_code .= self::wrapIntoOptionTag($element);
+            }
+        } else {
+            foreach ($array as $key => $element) {
+                $html_code .= self::wrapIntoOptionTag($key,$element);
+            }
+        }
+
+
+        return $html_code;
+    }
 
     /**
      * Returns HTML <option></option> tags to show a list of seasons (i.e. 2023-2024)
@@ -86,5 +112,7 @@ class HtmlFactory
             ? sprintf('<option value="%1$s">%1$s</option>' . PHP_EOL, $value)          // is the same as the value
             : sprintf('<option value="%1$s">%2$s</option>' . PHP_EOL, $value, $text);  // is different as the value
     }
+
+
     
 }

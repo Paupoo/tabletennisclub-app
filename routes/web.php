@@ -48,21 +48,6 @@ Route::get('/admin/dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 /**
- * Users
- */
-Route::post('/admin/members/setForceIndex', [
-    UserController::class,
-    'setForceIndex',
-])->middleware(['auth', 'verified'])->name('setForceIndex');
-
-Route::post('/admin/members/deleteForceIndex', [
-    UserController::class,
-    'deleteForceIndex',
-])->middleware(['auth', 'verified'])->name('deleteForceIndex');
-
-Route::resource('admin/members', UserController::class)->middleware(['auth', 'verified']);
-
-/**
  * Roles management
  */
 
@@ -106,5 +91,21 @@ Route::resource('/admin/trainings', TrainingController::class)->middleware(['aut
  * Matches management
  */
 Route::resource('/admin/competitions', CompetitionController::class)->middleware(['auth', 'verified']);
+
+
+/**
+ * Users
+ */
+Route::get('/admin/members/setForceIndex', [
+    UserController::class,
+    'setForceIndex',
+])->middleware(['auth', 'verified'])->name('setForceIndex');
+
+Route::get('/admin/members/deleteForceIndex', [
+    UserController::class,
+    'deleteForceIndex',
+])->middleware(['auth', 'verified'])->name('deleteForceIndex');
+
+Route::resource('admin/members', UserController::class)->middleware(['auth', 'verified']);
 
 require __DIR__ . '/auth.php';

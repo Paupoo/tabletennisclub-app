@@ -100,22 +100,20 @@
                         {{-- Ranking --}}
                         <div>
                             <x-input-label for="ranking" :value="__('Ranking')" />
-                            <x-text-input id="ranking" name="ranking" type="text" class="block w-full mt-1"
-                                :value="old('ranking')" autofocus autocomplete="ranking"></x-text-input>
+                            <x-select-input id="ranking" name="ranking" class="block w-full mt-1" required autocomplete="ranking">
+                                @foreach ($rankings as $item)
+                                    <option value="{{ $item }}" @selected(old('ranking', 'NA') === $item)>{{ $item }}</option>
+                                @endforeach
+                            </x-select-input>
                             <x-input-error class="mt-2" :messages="$errors->get('ranking')" />
                         </div>
 
                         {{-- Role --}}
                         <div>
-                            <x-input-label for="role" :value="__('Role')" />
-                            <x-select-input id="role" name="role_id" type="text" class="block w-full mt-1"
-                                autofocus autocomplete="role">
-                                @foreach ($roles as $role)
-                                    @if (old('role') != null && old('role') == $role->id)
-                                        <option value="{{ $role->id }}" selected>{{ $role->name }}</option>
-                                    @else
-                                        <option value="{{ $role->id }}">{{ $role->name }}</option>
-                                    @endif
+                            <x-input-label for="role_id" :value="__('Role')" />
+                            <x-select-input id="role_id" name="role_id" class="block w-full mt-1" required autofocus autocomplete="role_id">
+                                @foreach ($roles as $role)    
+                                    <option value="{{ $role->id }}" @selected(old('role_id') === (string) $role->id)>{{ $role->name }}</option>
                                 @endforeach
                             </x-select-input>
                             <x-input-error class="mt-2" :messages="$errors->get('role')" />
@@ -128,15 +126,9 @@
                                  autofocus autocomplete="team_id">
                                         <option value="">{{ __('None') }}</option>
                                 @foreach ($teams as $team)
-                                    @if (old('team_id') != null && old('team_id') == $team->id)
-                                        <option value="{{ $team->id }}" selected>
+                                    <option value="{{ $team->id }}" @selected(old('team_id') === (string) $team->id)>
                                             {{ $team->season . ' - ' . $team->name . ' - ' . $team->division }}
-                                        </option>
-                                    @else
-                                        <option value="{{ $team->id }}">
-                                            {{ $team->season . ' - ' . $team->name . ' - ' . $team->division }}
-                                        </option>
-                                    @endif
+                                    </option>
                                 @endforeach
                             </x-select-input>
                             <x-input-error class="mt-2" :messages="$errors->get('team_id')" />

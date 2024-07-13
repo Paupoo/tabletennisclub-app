@@ -8,19 +8,20 @@
     <div class="pt-6">
         <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
             <div class="flex flex-row gap-4">
-                <form action="{{ route('dashboard') }}" method="GET">
+                <a href="{{ route('dashboard') }}">
                     <x-primary-button>{{ __('Dashboard') }}</x-primary-button>
-                </form>
-                <form action="{{ route('members.create') }}" method="GET">
-                    <x-primary-button>{{ __('Create new user') }}</x-primary-button>
-                </form>
-                <form action="{{ route('setForceIndex') }}" method="POST">
-                    @csrf
-                    <x-primary-button>{{ __('Set Force Index') }}</x-primary-button>
-                </form> <form action="{{ route('deleteForceIndex') }}" method="POST">
-                    @csrf
-                    <x-danger-button>{{ __('Delete Force Index') }}</x-primary-button>
-                </form>
+                </a>
+                @can('create', $member_model)
+                    <a href="{{ route('members.create') }}">
+                        <x-primary-button>{{ __('Create new user') }}</x-primary-button>
+                    </a>
+                    <a href="{{ route('setForceIndex') }}">
+                        <x-primary-button>{{ __('Set Force Index') }}</x-primary-button>
+                    </a> 
+                    <a href="{{ route('deleteForceIndex') }}">
+                        <x-danger-button>{{ __('Delete Force Index') }}</x-primary-button>
+                    </a>
+                @endcan
             </div>
             
             @if(session('success'))

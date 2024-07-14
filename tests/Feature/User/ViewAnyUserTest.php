@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class UserIndexTest extends TestCase
+class ViewAnyUserTest extends TestCase
 {
     use RefreshDatabase;
     
@@ -45,7 +45,7 @@ class UserIndexTest extends TestCase
                         ]);
     }
 
-    public function test_admin_and_comittee_members_can_see_create_member_and_force_index_buttons(): void
+    public function test_admin_and_comittee_members_can_see_create_member_and_force_index_buttons_from_index(): void
     {
         $admin = $this->createMemberUser(Roles::ADMIN->value);
         $comittee_member = $this->createMemberUser(Roles::COMITTEE_MEMBER->value);
@@ -74,6 +74,34 @@ class UserIndexTest extends TestCase
         $response = $this->actingAs($member)
                         ->get(route('members.create'))
                         ->assertStatus(403);
+    }
+
+    public function test_member_cannot_see_edit_and_delete_member_buttons_from_index(): void
+    {
+        $member = $this->createMemberUser();
+
+        $response = $this->actingAs($member)
+                        ->get(route('members.index'))
+                        ->assertDontSee([
+                            'Edit',
+                            'Delete',
+                        ])
+                        ->assertSee([
+                            'Contact'
+                        ]);
+    }
+
+    public function test_admin_and_comittee_members_can_see_edit_and_delete_member_buttons_from_index(): void
+    {
+        $member = $this->createMemberUser('Admin');
+
+        $response = $this->actingAs($member)
+                        ->get(route('members.index'))
+                        ->assertSee([
+                            'Contact',
+                            'Edit',
+                            'Delete',
+                        ]);
     }
 
     /**

@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Classes\HtmlFactory;
+use App\Classes\ForceIndex;
 use App\Enums\Rankings;
 use App\Http\Requests\StoreUserRequest;
+use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
 use App\Models\Role;
 use App\Models\Team;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\Rule;
@@ -63,7 +63,7 @@ class UserController extends Controller
             'role_id' => $role['id'],
         ]);
 
-        $this->setForceIndex();
+        ForceIndex::setForceIndex();
 
         return redirect()->route('members.create')
             ->with('success', __('New member '. $user->first_name . ' ' . $user->last_name . ' created'));
@@ -96,7 +96,7 @@ class UserController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(UpdateUserRequest $request, string $id)
     {
         //validation
         $request->validate([
@@ -106,25 +106,7 @@ class UserController extends Controller
             'password' => ['nullable', 'confirmed', 'min:8', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
             'is_competitor' => ['nullable'],
             'licence' => ['nullable', 'unique:users,licence,'.$id, 'size:6'],
-            'ranking' => ['nullable', Rule::in([
-                'B0',
-                'B2',
-                'B4',
-                'B6',
-                'C0',
-                'C2',
-                'C4',
-                'C6',
-                'D0',
-                'D2',
-                'D4',
-                'D6',
-                'E0',
-                'E2',
-                'E4',
-                'E6',
-                'NC',
-            ])],
+            'ranking' => ['nullable', Rule::in(array_column(Rankings::cases(),'value'))],
             'team_id' => ['nullable', 'exists:teams,id'],
             'role_id' => ['integer'],
         ]);
@@ -152,7 +134,7 @@ class UserController extends Controller
         $user->role()->associate($role);
         $user->save();
 
-        $this->setForceIndex();
+        ForceIndex::setForceIndex();
 
         return redirect()->route('members.index');
     }
@@ -169,55 +151,8 @@ class UserController extends Controller
 
         $user->delete();
 
-        $this->setForceIndex();
+        ForceIndex::setForceIndex();
 
         return redirect()->route('members.index')->with('success', 'User ' . $user->first_name . ' ' . $user->last_name . ' has been deleted');
-    }
-
-    /**
-     * Calculate force index for every registered players and store into the DB.
-     */
-    public static function setForceIndex() 
-    {
-        
-        // Get aggregated counts by ranking (i.e. [B6]=>1, [D4]=>5, ...) but exclude E6 and NC players
-        $members = DB::table('users')
-            ->select('ranking', DB::raw('count(1) as total'))
-            ->whereNot('ranking', 'NA')
-            ->whereNot('ranking', null)
-            ->groupby('ranking')
-            ->orderBy('ranking', 'asc')
-            ->get();
-
-        // Get count of total E6 & NC players
-        $totalE6_and_NC_users = User::whereIn('ranking', ['E6','NC'])
-            ->count();
-
-        // read the whole table, calculate force index for each ranking and update members in the db except for E6/NC.
-        $i = 0;
-        foreach ($members as $member) {
-            if ($member->ranking == 'E6' || $member->ranking == 'NC') {
-                null;
-            } elseif ($member->ranking != 'E6' || $member->ranking != 'NC') {
-                User::where('ranking', '=', $member->ranking)->update(['force_index' => ($member->total + $i)]);
-                $i = $member->total + $i;
-            }
-        }
-
-        // For E6 and NC players, simply mass update their count + last value of $i
-        User::whereIn('ranking', ['E6','NC'])->update(['force_index' => $totalE6_and_NC_users + $i]);
-        
-        unset($i);
-
-        return redirect()->route('members.index');
-    }
-
-    /**
-     * Delete force index for all members in the db.
-     */
-    public function deleteForceIndex()
-    {
-        User::where('force_index', '!=', null)->update(['force_index' => null]);
-        return redirect()->route('members.index');
     }
 }

@@ -138,15 +138,9 @@
                                 <option value="" selected disabled>{{ __('None') }}</option>
 
                                 @foreach ($teams as $team)
-                                    @if (old('team_id') != null && old('team_id') == $team->id)
-                                        <option value="{{ $team->id }}" selected>
+                                        <option value="{{ $team->id }}" @selected(old('team_id') === (string) $team->id)>
                                             {{ $team->season . ' - ' . $team->name . ' - ' . $team->division }}
                                         </option>
-                                    @else
-                                        <option value="{{ $team->id }}">
-                                            {{ $team->season . ' - ' . $team->name . ' - ' . $team->division }}
-                                        </option>
-                                    @endif
                                 @endforeach
                             </x-select-input>
                             <x-input-error class="mt-2" :messages="$errors->get('team_id')" />

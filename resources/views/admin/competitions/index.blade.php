@@ -15,15 +15,15 @@
                     <x-primary-button>{{ __('Create new match') }}</x-primary-button>
                 </form>
             </div>
-            
-            @if(session('success'))
-            <div class="mt-4 bg-green-500">
-                {{ session('success') }}
-            </div>
+
+            @if (session('success'))
+                <div class="mt-4 bg-green-500">
+                    {{ session('success') }}
+                </div>
             @elseif(session('deleted'))
-            <div class="bg-red-500 mt-4 rounded-lg pl-3">
-                {{ session('deleted') }}
-            </div>
+                <div class="bg-red-500 mt-4 rounded-lg pl-3">
+                    {{ session('deleted') }}
+                </div>
             @endif
         </div>
     </div>
@@ -35,8 +35,9 @@
                 <table class="min-w-full text-sm font-light text-left dark:bg-neutral-300">
                     <thead class="font-medium border-b dark:border-neutral-500">
                         <tr>
-                            <th scope="col" class="px-4 py-2">{{ __('Match') }}</th>
-                            <th scope="col" class="px-4 py-2">{{ __('Competition week') }}</th>
+                            <th scope="col" class="px-4 py-2">{{ __('Week') }}</th>
+                            <th scope="col" class="px-4 py-2">{{ __('Visitor') }}</th>
+                            <th scope="col" class="px-4 py-2">{{ __('Visited') }}</th>
                             <th scope="col" class="px-4 py-2">{{ __('Date and time') }}</th>
                             <th scope="col" class="px-4 py-2">{{ __('Address') }}</th>
                             <th scope="col" class="px-4 py-2">{{ __('Available') }}</th>
@@ -48,18 +49,38 @@
                         {{-- {{ dd($competitions)}} --}}
                         @foreach ($competitions as $competition)
                             <tr class="border-b dark:border-neutral-500">
-                                <td class="px-4 whitespace-nowrap">Ottignies {{ $competition->team->name }} - {{ $competition->opposing_team }}</td>
                                 <td class="px-4 whitespace-nowrap">{{ $competition->week_number }}</td>
-                                <td class="px-4 whitespace-nowrap">{{ $competition->competition_date->format('d-m-Y H:i') }}</td>
+                                @if ($loop->even)
+                                    <td class="px-4 whitespace-nowrap">Ottignies {{ $competition->team->name }}</td>
+                                    <td class="px-4 whitespace-nowrap">{{ $competition->opposing_team }}</td>
+                                @else
+                                    <td class="px-4 whitespace-nowrap">{{ $competition->opposing_team }}</td>
+                                    <td class="px-4 whitespace-nowrap">Ottignies {{ $competition->team->name }}</td>
+                                @endif
+                                <td class="px-4 whitespace-nowrap">
+                                    {{ $competition->competition_date->format('d-m-Y H:i') }}</td>
                                 <td class="px-4 whitespace-nowrap">{{ $competition->address }}</td>
-                                <td class="px-4 whitespace-nowrap"><input type="checkbox" name="subscription" id="subscription" @checked($competition->pivot->is_available)></td>
-                                <td class="px-4 whitespace-nowrap"><input type="checkbox" name="selection" id="selection" disabled @checked($competition->pivot->is_selected)></td>
-                                <td class="px-4 whitespace-nowrap"><x-secondary-button>Send mail invite</x-secondary-button></td>
+                                <td class="px-4 whitespace-nowrap"><input type="checkbox" name="subscription"
+                                        id="subscription" @checked($competition->pivot->is_available)></td>
+                                <td class="px-4 whitespace-nowrap"><input type="checkbox" name="selection"
+                                        id="selection" disabled @checked($competition->pivot->is_selected)></td>
+                                <td class="px-4 whitespace-nowrap"><a href=""><button type="submit"><img
+                                                class="h-4 cursor-pointer"
+                                                src="{{ asset('images/icons/info.svg') }}"
+                                                alt="Info"></button></a></td>
+                                <td class="px-4 whitespace-nowrap"><a href=""><button type="submit"><img
+                                                class="h-4 cursor-pointer"
+                                                src="{{ asset('images/icons/edit.svg') }}"
+                                                alt="Edit"></button></a></td>
+                                <td class="px-4 whitespace-nowrap"><a href=""><button type="submit"><img
+                                                class="h-4 cursor-pointer"
+                                                src="{{ asset('images/icons/calendar.svg') }}"
+                                                alt="Send iCal"></button></a></td>
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
-                
+
                 <x-admin-block>
                     <x-primary-button>Save</x-primary-button>
                     {{ $competitions->links() }}

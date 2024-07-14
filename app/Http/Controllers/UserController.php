@@ -9,9 +9,6 @@ use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
 use App\Models\Role;
 use App\Models\Team;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rules\Password;
-use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
@@ -23,7 +20,7 @@ class UserController extends Controller
         //
         $this->authorize('index', User::class);
         return View('admin.members.index', [
-            'members' => User::orderby('force_index')->orderby('last_name')->orderby('first_name')->paginate(20),
+            'members' => User::orderby('force_index')->orderBy('ranking')->orderby('last_name')->orderby('first_name')->paginate(20),
             'member_model' => User::class,
         ]);
     }
@@ -86,6 +83,8 @@ class UserController extends Controller
     public function edit(string $id)
     {
         //
+        $this->authorize('update', User::class);
+
         return view ('admin.members.edit', [
             'member' => User::find($id),
             'roles' => Role::orderby('name')->get(),
@@ -99,35 +98,25 @@ class UserController extends Controller
     public function update(UpdateUserRequest $request, string $id)
     {
         //validation
-        $request->validate([
-            'last_name' => ['required', 'string', 'max:255'],
-            'last_name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'lowercase', 'max:255', 'unique:users,email,'.$id,],
-            'password' => ['nullable', 'confirmed', 'min:8', Password::min(8)->letters()->mixedCase()->numbers()->symbols()],
-            'is_competitor' => ['nullable'],
-            'licence' => ['nullable', 'unique:users,licence,'.$id, 'size:6'],
-            'ranking' => ['nullable', Rule::in(array_column(Rankings::cases(),'value'))],
-            'team_id' => ['nullable', 'exists:teams,id'],
-            'role_id' => ['integer'],
-        ]);
+        $request->validated();
 
         $user = User::find($id);
         $role = Role::find($request->role_id);
 
-        $user->first_name = $request->first_name;
-        $user->last_name = $request->last_name;
-        $user->email = $request->email;
-        if($request->password != null) {
-            $user->password = $request->password;
+        $user->first_name = $request['first_name'];
+        $user->last_name = $request['last_name'];
+        $user->email = $request['email'];
+        if($request['password'] != null) {
+            $user->password = $request['password'];
         }
-        if($request->is_competitor != null) {
+        if($request['is_competitor'] != null) {
             $user->is_competitor = true;
         } else {
             $user->is_competitor = false;
         };
-        $user->licence = $request->licence;
-        $user->ranking = $request->ranking;
-        $user->team_id = $request->team_id;
+        $user->licence = $request['licence'];
+        $user->ranking = $request['ranking'];
+        $user->team_id = $request['team_id'];
 
         $user->save();
 

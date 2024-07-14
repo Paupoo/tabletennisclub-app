@@ -110,25 +110,11 @@
                             <x-select-input id="role" name="role_id" type="text" class="block w-full mt-1"
                                  autofocus autocomplete="role">
                                 @foreach ($roles as $role)
-
-                                    @if(old('role') !== null && old('role') == $role->id)
-
-                                        <option value="{{ $role->id }}" selected>{{ $role->name }}</option>
-
-                                    @elseif (old('role') === null && $role->id == $member->role->id)
-
-                                        <option value="{{ $role->id }}" selected>{{ $role->name }}</option>
-
-                                    @else
-
-                                        <option value="{{ $role->id }}">{{ $role->name }}</option>
-
-                                    @endif
-
+                                        <option value="{{ $role->id }}" @selected(old('role_id') === $member->role->id)>{{ $role->name }}</option>
                                 @endforeach
 
                             </x-select-input>
-                            <x-input-error class="mt-2" :messages="$errors->get('role')" />
+                            <x-input-error class="mt-2" :messages="$errors->get('role_id')" />
                         </div>
                         {{-- Team --}}
                         <div>

@@ -37,17 +37,19 @@ class UserPolicy
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, User $model): bool
+    public function update(User $user): bool
     {
         //
+        return $user->role->name === Roles::ADMIN->value || $user->role->name === Roles::COMITTEE_MEMBER->value;
     }
 
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, User $model): bool
+    public function delete(User $user): bool
     {
         //
+        return $user->role->name === Roles::ADMIN->value || $user->role->name === Roles::COMITTEE_MEMBER->value;
     }
 
     /**

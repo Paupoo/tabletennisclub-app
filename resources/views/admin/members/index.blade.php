@@ -87,13 +87,16 @@
                                     @endif    
                                 </td>
                                 <td class="flex items-center gap-2 px-4 whitespace-nowrap">
-                                    <a href="{{ route('members.show', $member->id)}}"><img class="h-4 cursor-pointer" src="{{ asset('images/icons/contact.svg') }}"
+                                    <a href="{{ route('members.show', $member->id)}}"><img class="h-4 cursor-pointer" src="{{ asset('images/icons/info.svg') }}"
                                         alt="Contact"></a>
-                                    <form action="{{ route('members.edit', $member->id) }}" method="GET">
+                                    @can('update', $member_model)
+                                    <a href="{{ route('members.edit', $member->id) }}">
                                         <button type="submit">
                                             <img class="h-4 cursor-pointer" src="{{ asset('images/icons/edit.svg') }}" alt="Edit">
                                         </button>
-                                    </form>
+                                    </a>
+                                    @endcan
+                                    @can('delete', $member_model)
                                     <form action="{{ route('members.destroy', $member->id) }}" method="POST">
                                         @csrf
                                         @method('delete')
@@ -101,6 +104,7 @@
                                             <img class="h-4 cursor-pointer" src="{{ asset('images/icons/delete.svg') }}" alt="Delete">
                                         </button>
                                     </form>
+                                    @endcan
                                 </td>
                             </tr>
                         @endforeach

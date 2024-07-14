@@ -1,11 +1,10 @@
 <?php
 
-use App\Models\Competition;
+use App\Models\Team;
 use App\Models\User;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use PhpParser\Node\Expr\Match_;
 
 return new class extends Migration
 {
@@ -14,13 +13,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('competition_user', function (Blueprint $table) {
+        Schema::create('captains', function (Blueprint $table) {
             $table->id();
-            $table->foreignIdFor(Competition::class);
             $table->foreignIdFor(User::class);
-            $table->boolean('is_subscribed');
-            $table->boolean('is_selected');
-            $table->boolean('has_played');
+            $table->foreignIdFor(Team::class);
+            $table->boolean('is_active');
             $table->timestamps();
         });
     }
@@ -30,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('competition_user');
+        Schema::dropIfExists('captains');
     }
 };

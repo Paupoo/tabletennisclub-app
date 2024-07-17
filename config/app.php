@@ -1,6 +1,5 @@
 <?php
 
-use App\Providers\ForceIndexProvider;
 use Illuminate\Support\Facades\Facade;
 use Illuminate\Support\ServiceProvider;
 
@@ -169,7 +168,7 @@ return [
         // App\Providers\BroadcastServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
-        ForceIndexProvider::class,
+        App\Providers\ForceIndexProvider::class,
     ])->toArray(),
 
     /*

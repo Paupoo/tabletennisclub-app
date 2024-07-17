@@ -1,16 +1,18 @@
 <?php
 
-namespace App\Classes;
+namespace App\Services;
 
 use App\Models\User;
+use Illuminate\Support\Collection as SupportCollection;
 use Illuminate\Support\Facades\DB;
 
 class ForceIndex
 {
-    /**
+    
+     /**
      * Calculate force index for every registered players and store into the DB.
      */
-    public static function setForceIndex() 
+    public static function set() 
     {
         
         // Get aggregated counts by ranking (i.e. [B6]=>1, [D4]=>5, ...) but exclude E6 and NC players
@@ -48,7 +50,7 @@ class ForceIndex
     /**
      * Delete force index for all members in the db.
      */
-    public static function deleteForceIndex()
+    public static function delete()
     {
         User::where('force_index', '!=', null)->update(['force_index' => null]);
         return redirect()->route('members.index');

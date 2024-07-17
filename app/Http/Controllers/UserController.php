@@ -2,16 +2,25 @@
 
 namespace App\Http\Controllers;
 
-use App\Classes\ForceIndex;
 use App\Enums\Rankings;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
 use App\Models\Role;
 use App\Models\Team;
+use App\Services\ForceIndex;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Redirect;
 
 class UserController extends Controller
 {
+    protected $forceIndex;
+
+    public function __construct(ForceIndex $forceIndex)
+    {
+        $this->forceIndex = $forceIndex;
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -60,7 +69,7 @@ class UserController extends Controller
             'role_id' => $role['id'],
         ]);
 
-        ForceIndex::setForceIndex();
+        $this->forceIndex->setForceIndex(); 
 
         return redirect()->route('members.create')
             ->with('success', __('New member '. $user->first_name . ' ' . $user->last_name . ' created'));
@@ -123,7 +132,7 @@ class UserController extends Controller
         $user->role()->associate($role);
         $user->save();
 
-        ForceIndex::setForceIndex();
+        $this->forceIndex->setForceIndex();
 
         return redirect()->route('members.index');
     }
@@ -140,8 +149,21 @@ class UserController extends Controller
 
         $user->delete();
 
-        ForceIndex::setForceIndex();
+        $this->forceIndex->set();
 
         return redirect()->route('members.index')->with('success', 'User ' . $user->first_name . ' ' . $user->last_name . ' has been deleted');
+    }
+
+    public function setForceIndex(): RedirectResponse
+    {
+        $this->forceIndex->set();
+        return redirect()->route('members.index');
+    }
+
+    public function deleteForceIndex(): RedirectResponse
+    {
+        $this->forceIndex->delete();
+        return redirect()->route('members.index');
+
     }
 }

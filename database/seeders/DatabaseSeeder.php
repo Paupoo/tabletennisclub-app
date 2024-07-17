@@ -11,10 +11,19 @@ use App\Models\Role;
 use App\Models\Room;
 use App\Models\Team;
 use App\Models\User;
+use App\Services\ForceIndex;
 use Illuminate\Support\Facades\DB;
 
 class DatabaseSeeder extends Seeder
 {
+
+    protected $forceIndex = null;
+
+    public function __construct(ForceIndex $forceIndex)
+    {
+        $this->forceIndex = $forceIndex;
+    }
+
     /**
      * Seed the application's database.
      */
@@ -69,7 +78,7 @@ class DatabaseSeeder extends Seeder
 
         foreach($competitions as $competition) {
             $admin->competitions()->attach($competition->id, [
-                'is_available' => false,
+                'is_subscribed' => false,
                 'is_selected' => false,
                 'has_played' => false,
             ]);
@@ -104,7 +113,7 @@ class DatabaseSeeder extends Seeder
         // the matches
         foreach($competitions as $competition) {
             $user->competitions()->attach($competition->id, [
-                'is_available' => false,
+                'is_subscribed' => false,
                 'is_selected' => false,
                 'has_played' => false,
             ]);
@@ -159,6 +168,6 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // Set ForceIndexes
-        UserController::setForceIndex();
+        $this->forceIndex->set();
     }
 }

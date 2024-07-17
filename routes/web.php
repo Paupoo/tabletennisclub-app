@@ -1,6 +1,5 @@
 <?php
 
-use App\Classes\ForceIndex;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicSiteController;
 use App\Http\Controllers\RoleController;
@@ -15,6 +14,7 @@ use App\Models\Role;
 use App\Models\Room;
 use App\Models\Team;
 use App\Models\Training;
+use App\Services\ForceIndex as ServicesForceIndex;
 
 /*
 |--------------------------------------------------------------------------
@@ -98,12 +98,12 @@ Route::resource('/admin/competitions', CompetitionController::class)->middleware
  * Users
  */
 Route::get('/admin/members/setForceIndex', [
-    ForceIndex::class,
+    UserController::class,
     'setForceIndex',
 ])->middleware(['auth', 'verified'])->name('setForceIndex');
 
 Route::get('/admin/members/deleteForceIndex', [
-    ForceIndex::class,
+    UserController::class,
     'deleteForceIndex',
 ])->middleware(['auth', 'verified'])->name('deleteForceIndex');
 

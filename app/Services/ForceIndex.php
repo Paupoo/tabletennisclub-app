@@ -3,8 +3,10 @@
 namespace App\Services;
 
 use App\Models\User;
-use Illuminate\Support\Collection as SupportCollection;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Redirect;
 
 class ForceIndex
 {
@@ -12,39 +14,12 @@ class ForceIndex
      /**
      * Calculate force index for every registered players and store into the DB.
      */
-    public static function set() 
+    public function setOrUpdate(): RedirectResponse
     {
-        
-        // Get aggregated counts by ranking (i.e. [B6]=>1, [D4]=>5, ...) but exclude E6 and NC players
-        $members = DB::table('users')
-            ->select('ranking', DB::raw('count(1) as total'))
-            ->whereNot('ranking', 'NA')
-            ->whereNot('ranking', null)
-            ->groupby('ranking')
-            ->orderBy('ranking', 'asc')
-            ->get();
+        $competitors = $this->countCompetitorsByRanking();
+        $this->storeForceIndexPerRanking($competitors);
 
-        // Get count of total E6 & NC players
-        $totalE6_and_NC_users = User::whereIn('ranking', ['E6','NC'])
-            ->count();
-
-        // read the whole table, calculate force index for each ranking and update members in the db except for E6/NC.
-        $i = 0;
-        foreach ($members as $member) {
-            if ($member->ranking == 'E6' || $member->ranking == 'NC') {
-                null;
-            } elseif ($member->ranking != 'E6' || $member->ranking != 'NC') {
-                User::where('ranking', '=', $member->ranking)->update(['force_index' => ($member->total + $i)]);
-                $i = $member->total + $i;
-            }
-        }
-
-        // For E6 and NC players, simply mass update their count + last value of $i
-        User::whereIn('ranking', ['E6','NC'])->update(['force_index' => $totalE6_and_NC_users + $i]);
-        
-        unset($i);
-
-        return redirect()->route('members.index');
+        return redirect()->route('members.index');    
     }
 
     /**
@@ -54,5 +29,41 @@ class ForceIndex
     {
         User::where('force_index', '!=', null)->update(['force_index' => null]);
         return redirect()->route('members.index');
+    }
+
+    private function countCompetitorsByRanking(): Collection
+    {
+        $members = DB::table('users')
+            ->select('ranking', DB::raw('count(1) as total'))
+            ->whereNotIn('ranking', ['NA', 'NC', 'E6'])
+            ->where ('is_competitor', true)
+            ->groupby('ranking')
+            ->orderBy('ranking', 'asc')
+            ->get();
+
+        $totalE6Nc = new \stdClass;
+        $totalE6Nc->ranking = 'E6-NC';
+        $totalE6Nc->total =  User::whereIn('ranking', ['E6','NC'])
+                                                ->where('is_competitor', true)
+                                                ->count();
+
+        return $members->push($totalE6Nc);
+    }
+
+    private function storeForceIndexPerRanking($members): void
+    {
+        $i = 0;
+        foreach ($members as $member) {
+            if ($member->ranking !== 'E6-NC') {
+                User::where('ranking', $member->ranking)
+                ->where('is_competitor', true)
+                ->update(['force_index' => $member->total + $i]);
+                $i = $member->total + $i;
+            } elseif ($member->ranking === 'E6-NC') {
+                User::whereIn('ranking', ['E6', 'NC'])
+                    ->where('is_competitor', true)
+                    ->update(['force_index' => $member->total + $i]);
+            }
+        }
     }
 }

@@ -168,6 +168,6 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // Set ForceIndexes
-        $this->forceIndex->set();
+        $this->forceIndex->setOrUpdate();
     }
 }

@@ -29,7 +29,7 @@ class UserController extends Controller
         //
         $this->authorize('index', User::class);
         return View('admin.members.index', [
-            'members' => User::orderby('force_index')->orderBy('ranking')->orderby('last_name')->orderby('first_name')->paginate(20),
+            'members' => User::orderby('is_competitor', 'desc')->orderby('force_index')->orderBy('ranking')->orderby('last_name')->orderby('first_name')->paginate(20),
             'member_model' => User::class,
         ]);
     }
@@ -69,7 +69,7 @@ class UserController extends Controller
             'role_id' => $role['id'],
         ]);
 
-        $this->forceIndex->setForceIndex(); 
+        $this->forceIndex->setOrUpdate(); 
 
         return redirect()->route('members.create')
             ->with('success', __('New member '. $user->first_name . ' ' . $user->last_name . ' created'));
@@ -132,7 +132,7 @@ class UserController extends Controller
         $user->role()->associate($role);
         $user->save();
 
-        $this->forceIndex->setForceIndex();
+        $this->forceIndex->setOrUpdate();
 
         return redirect()->route('members.index');
     }
@@ -149,14 +149,14 @@ class UserController extends Controller
 
         $user->delete();
 
-        $this->forceIndex->set();
+        $this->forceIndex->setOrUpdate();
 
         return redirect()->route('members.index')->with('success', 'User ' . $user->first_name . ' ' . $user->last_name . ' has been deleted');
     }
 
     public function setForceIndex(): RedirectResponse
     {
-        $this->forceIndex->set();
+        $this->forceIndex->setOrUpdate();
         return redirect()->route('members.index');
     }
 

@@ -108,7 +108,7 @@ class User extends Authenticatable
     public function competitions(): BelongsToMany
     {
         return $this->belongsToMany(Competition::class)
-            ->withPivot('is_available','is_selected','has_played')
+            ->withPivot('is_subscribed','is_selected','has_played')
             ->withTimestamps();
     }
 }

@@ -61,7 +61,7 @@
                                     {{ $competition->competition_date->format('d-m-Y H:i') }}</td>
                                 <td class="px-4 whitespace-nowrap">{{ $competition->address }}</td>
                                 <td class="px-4 whitespace-nowrap"><input type="checkbox" name="subscription"
-                                        id="subscription" @checked($competition->pivot->is_available)></td>
+                                        id="subscription" @checked($competition->pivot->is_subscribed)></td>
                                 <td class="px-4 whitespace-nowrap"><input type="checkbox" name="selection"
                                         id="selection" disabled @checked($competition->pivot->is_selected)></td>
                                 <td class="px-4 whitespace-nowrap"><a href=""><button type="submit"><img

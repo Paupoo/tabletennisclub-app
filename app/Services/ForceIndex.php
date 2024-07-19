@@ -10,26 +10,32 @@ use Illuminate\Support\Facades\Redirect;
 
 class ForceIndex
 {
-    
+    protected $members;
+
      /**
      * Calculate force index for every registered players and store into the DB.
      */
-    public function setOrUpdate(): void
+    public function setOrUpdateAll(): void
     {
-        $competitors = $this->countCompetitorsByRanking();
-        $this->storeForceIndexPerRanking($competitors);
+        $this->delete()->countCompetitorsByRanking()->assignForceIndexPerRanking($this->members);
     }
 
     /**
-     * Delete force index for all members in the db.
+     * Delete all force indexes
      */
-    public static function delete()
+    public function delete(): self
     {
         User::where('force_index', '!=', null)->update(['force_index' => null]);
-        return redirect()->route('members.index');
+
+        return $this;
     }
 
-    private function countCompetitorsByRanking(): Collection
+    /**
+     * Stores a collection, counting all the competitors grouped by their ranking and merging E6-NC
+     *
+     * @return self
+     */
+    private function countCompetitorsByRanking(): self
     {
         $members = User::select('ranking', DB::raw('count(1) as total'))
             ->whereNotIn('ranking', ['NA', 'NC', 'E6'])
@@ -43,11 +49,18 @@ class ForceIndex
         $totalE6Nc->total =  User::whereIn('ranking', ['E6','NC'])
                                                 ->where('is_competitor', true)
                                                 ->count();
+        $this->members = $members->push($totalE6Nc);
 
-        return $members->push($totalE6Nc);
+        return $this;
     }
 
-    private function storeForceIndexPerRanking($members): void
+    /**
+     * Assign force index for each competitor
+     *
+     * @param Collection $members
+     * @return self
+     */
+    private function assignForceIndexPerRanking(Collection $members): self
     {
         $i = 0;
         foreach ($members as $member) {
@@ -62,5 +75,7 @@ class ForceIndex
                     ->update(['force_index' => $member->total + $i]);
             }
         }
+
+        return $this;
     }
 }

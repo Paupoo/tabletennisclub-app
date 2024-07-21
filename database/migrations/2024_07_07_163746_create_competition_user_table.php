@@ -1,11 +1,10 @@
 <?php
 
-use App\Models\Competition;
+use App\Models\Interclub;
 use App\Models\User;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use PhpParser\Node\Expr\Match_;
 
 return new class extends Migration
 {
@@ -16,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('competition_user', function (Blueprint $table) {
             $table->id();
-            $table->foreignIdFor(Competition::class);
+            $table->foreignIdFor(Interclub::class);
             $table->foreignIdFor(User::class);
             $table->boolean('is_subscribed');
             $table->boolean('is_selected');

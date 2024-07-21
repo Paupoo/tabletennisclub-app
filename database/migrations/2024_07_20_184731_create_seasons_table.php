@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            //
-            $table->foreignId('role_id');
+        Schema::create('seasons', function (Blueprint $table) {
+            $table->id();
+            $table->timestamps();
+            $table->date('start_year');
+            $table->date('end_year');
         });
     }
 
@@ -22,9 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            //
-            $table->dropColumn('role_id');
-        });
+        Schema::dropIfExists('seasons');
     }
 };

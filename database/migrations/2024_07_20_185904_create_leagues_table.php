@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\LeagueCategory;
+use App\Enums\LeagueLevel;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -11,11 +13,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('roles', function (Blueprint $table) {
+        Schema::create('leagues', function (Blueprint $table) {
             $table->id();
-            $table->string('name', 50)->unique();
-            $table->string('description',255);
             $table->timestamps();
+            $table->string('division');
+            $table->enum('level', array_column(LeagueLevel::cases(), 'value'));
+            $table->enum('category', array_column(LeagueCategory::cases(), 'value'));
         });
     }
 
@@ -24,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('roles');
+        Schema::dropIfExists('leagues');
     }
 };

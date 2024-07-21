@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\Rankings;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -21,20 +22,25 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'last_name' => fake()->lastName(),
-            'first_name' => fake()->firstName(),
+            'is_active' => true,
+            'is_admin' => false,
+            'is_comitte_member' => false,
+            'is_competitor' => fake()->randomElement([true, false]),
+            'has_debt' => false,
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
-            'licence' => fake()->unique()->numberBetween(95000, 170000),
-            'ranking' => fake()->randomElement(['B0', 'B2', 'B4', 'B6', 'C0', 'C2', 'C4', 'C6', 'D0', 'D2', 'D4', 'D6', 'E0', 'E2', 'E4', 'E6', 'NC',null]),
-            'role_id' => 1,
-            'is_competitor' => fake()->randomElement([true, false]),
-            'is_active' => true,
-            'has_debt' => false,
-            'birthday' => fake()->dateTimeBetween('-75 years', '- 8 years'),
+            'first_name' => fake()->firstName(),
+            'last_name' => fake()->lastName(),
             'phone_number' => fake()->numberBetween(460000000,499000000),
+            'birthday' => fake()->dateTimeBetween('-75 years', '- 8 years'),
+            'street' => fake()->streetAddress(),
+            'city_code' => fake()->postcode(),
+            'city_name' => fake()->city(),
+            'ranking' => fake()->randomElement(array_column(Rankings::cases(), 'value')),
+            'licence' => fake()->unique()->numberBetween(95000, 170000),
+            'club_id' => 1,
             'team_id' => 1,
         ];
     }

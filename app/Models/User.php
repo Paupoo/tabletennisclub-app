@@ -3,6 +3,8 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+
+use App\Enums\Rankings;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -20,23 +22,20 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
-        'first_name',
-        'last_name',
-        'email',
-        'password',
-        'licence',
-        'ranking',
-        'force_index',
         'is_active',
         'is_competitor',
         'has_debt',
-        'birthday',
+        'email',
+        'password',
+        'first_name',
+        'last_name',
         'phone_number',
+        'birthday',
         'street',
-        'city',
         'city_code',
-        'role_id',
-        'team_id'
+        'city_name',
+        'ranking',
+        'licence',
     ];
 
     /**
@@ -55,22 +54,23 @@ class User extends Authenticatable
      * @var array<string, string>
      */
     protected $casts = [
-        'email_verified_at' => 'datetime',
-        'password' => 'hashed',
-        'first_name' => 'string',
-        'last_name' => 'string',
-        'email' => 'string',
-        'licence' => 'integer',
-        'ranking' => 'string',
-        'force_index' => 'integer',
         'is_active' => 'boolean',
+        'is_admin' => 'boolean',
+        'is_comittee_member' => 'boolean',
         'is_competitor' => 'boolean',
         'has_debt' => 'boolean',
-        'birthday' => 'date',
+        'email' => 'string',
+        'password' => 'string',
+        'first_name' => 'string',
+        'last_name' => 'string',
         'phone_number' => 'string',
+        'birthday' => 'datetime:d-m-Y',
         'street' => 'string',
-        'city' => 'string',
         'city_code' => 'string',
+        'city_name' => 'string',
+        'ranking' => Rankings::class,
+        'licence' => 'string',
+        'force_index' => 'integer',
     ];
 
     /**
@@ -95,9 +95,9 @@ class User extends Authenticatable
         return $this->attributes['last_name'] = mb_convert_case($value, MB_CASE_TITLE);
     }
 
-    public function role(): BelongsTo
+    public function club(): BelongsTo
     {
-        return $this->belongsTo(Role::class);
+        return $this->belongsTo(Club::class);
     }
 
     public function team(): BelongsTo
@@ -107,7 +107,7 @@ class User extends Authenticatable
 
     public function competitions(): BelongsToMany
     {
-        return $this->belongsToMany(Competition::class)
+        return $this->belongsToMany(Interclub::class)
             ->withPivot('is_subscribed','is_selected','has_played')
             ->withTimestamps();
     }

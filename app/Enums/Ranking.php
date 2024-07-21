@@ -2,7 +2,7 @@
 
 namespace App\Enums;
 
-enum Rankings: string
+enum Ranking: string
 {
     case B0 = 'B0';
     case B2 = 'B2';

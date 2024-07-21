@@ -15,9 +15,10 @@ return new class extends Migration
     {
         Schema::create('captains', function (Blueprint $table) {
             $table->id();
-            $table->foreignIdFor(User::class);
-            $table->foreignIdFor(Team::class);
             $table->boolean('is_active');
+            $table->foreignIdFor(User::class)
+                ->restrictOnUpdate()
+                ->nullOnDelete();
             $table->timestamps();
         });
     }

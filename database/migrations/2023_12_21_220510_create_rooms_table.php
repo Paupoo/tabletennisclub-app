@@ -23,7 +23,7 @@ return new class extends Migration
             $table->string('floor', 2)->nullable();
             $table->string('access_description', 255)->nullable();
             $table->unsignedTinyInteger('capacity_for_trainings');
-            $table->unsignedTinyInteger('capacity_for_competitions');
+            $table->unsignedTinyInteger('capacity_for_interclubs');
         });
     }
 

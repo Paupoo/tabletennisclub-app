@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('seasons', function (Blueprint $table) {
             $table->id();
             $table->timestamps();
-            $table->date('start_year');
-            $table->date('end_year');
+            $table->unsignedSmallInteger('start_year');
+            $table->unsignedSmallInteger('end_year');
         });
     }
 

@@ -13,12 +13,13 @@ return new class extends Migration
     {
         Schema::create('clubs', function (Blueprint $table) {
             $table->id();
-            $table->timestamps();
+            $table->string('name', 100);
             $table->boolean('is_active')->default(true);
             $table->string('licence', 10)->unique();
             $table->string('street', 255)->nullable();
             $table->string('city_code', 10)->nullable();
-            $table->string('city', 100)->nullable();
+            $table->string('city_name', 100)->nullable();
+            $table->timestamps();
         });
     }
 

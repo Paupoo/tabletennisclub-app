@@ -69,7 +69,7 @@ class UserController extends Controller
             'role_id' => $role['id'],
         ]);
 
-        $this->forceIndex->setOrUpdate(); 
+        $this->forceIndex->setOrUpdateAll(); 
 
         return redirect()->route('members.create')
             ->with('success', __('New member '. $user->first_name . ' ' . $user->last_name . ' created'));
@@ -132,7 +132,7 @@ class UserController extends Controller
         $user->role()->associate($role);
         $user->save();
 
-        $this->forceIndex->setOrUpdate();
+        $this->forceIndex->setOrUpdateAll();
 
         return redirect()->route('members.index');
     }
@@ -149,14 +149,14 @@ class UserController extends Controller
 
         $user->delete();
 
-        $this->forceIndex->setOrUpdate();
+        $this->forceIndex->setOrUpdateAll();
 
         return redirect()->route('members.index')->with('success', 'User ' . $user->first_name . ' ' . $user->last_name . ' has been deleted');
     }
 
     public function setForceIndex(): RedirectResponse
     {
-        $this->forceIndex->setOrUpdate();
+        $this->forceIndex->setOrUpdateAll();
         return redirect()->route('members.index');
     }
 

@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Enums\Rankings;
+use App\Enums\Ranking;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -38,7 +38,7 @@ class UserFactory extends Factory
             'street' => fake()->streetAddress(),
             'city_code' => fake()->postcode(),
             'city_name' => fake()->city(),
-            'ranking' => fake()->randomElement(array_column(Rankings::cases(), 'value')),
+            'ranking' => fake()->randomElement(array_column(Ranking::cases(), 'value')),
             'licence' => fake()->unique()->numberBetween(95000, 170000),
             'club_id' => 1,
             'team_id' => 1,

@@ -4,7 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
-use App\Enums\Rankings;
+use App\Enums\Ranking;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -68,7 +68,7 @@ class User extends Authenticatable
         'street' => 'string',
         'city_code' => 'string',
         'city_name' => 'string',
-        'ranking' => Rankings::class,
+        'ranking' => Ranking::class,
         'licence' => 'string',
         'force_index' => 'integer',
     ];
@@ -110,5 +110,10 @@ class User extends Authenticatable
         return $this->belongsToMany(Interclub::class)
             ->withPivot('is_subscribed','is_selected','has_played')
             ->withTimestamps();
+    }
+
+    public function trainings(): BelongsToMany
+    {
+        return $this->belongsToMany(Training::class);
     }
 }

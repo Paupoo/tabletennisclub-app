@@ -47,9 +47,4 @@ class Team extends Model
     {
         return $this->belongsTo(Club::class);
     }
-
-    public function captain(): BelongsTo
-    {
-        return $this->belongsTo(Captain::class);
-    }
 }

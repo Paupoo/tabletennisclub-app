@@ -13,7 +13,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('competition_user', function (Blueprint $table) {
+        Schema::create('interclub_user', function (Blueprint $table) {
             $table->id();
             $table->foreignIdFor(Interclub::class);
             $table->foreignIdFor(User::class);
@@ -29,6 +29,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('competition_user');
+        Schema::dropIfExists('interclub_user');
     }
 };

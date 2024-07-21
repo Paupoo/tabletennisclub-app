@@ -17,7 +17,7 @@ class Club extends Model
         'licence',
         'street',
         'city_code',
-        'city',
+        'city_name',
     ];
 
     protected $casts = [
@@ -25,7 +25,7 @@ class Club extends Model
         'licence' => 'string',
         'street' => 'string',
         'city_code' => 'string',
-        'city' => 'string',
+        'city_name' => 'string',
     ];
 
     public function users(): HasMany

@@ -4,15 +4,16 @@ namespace Database\Seeders;
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
+use App\Enums\LeagueCategory;
+use App\Enums\LeagueLevel;
 use Illuminate\Database\Seeder;
-use App\Http\Controllers\UserController;
-use App\Models\Competition;
-use App\Models\Role;
-use App\Models\Room;
+use App\Models\Club;
+use App\Models\League;
+use App\Models\Season;
 use App\Models\Team;
 use App\Models\User;
 use App\Services\ForceIndex;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -29,60 +30,78 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create roles
-        Role::create([
-            'name' => 'Member',
-            'description' => 'Members can subscribe to trainings, matches and events. They also see contact info of other member and invite guests to join the club.'
+        Season::create([
+            'start_year' => 2023,
+            'end_year' => 2024,
+        ]);
+        Season::create([
+            'start_year' => 2024,
+            'end_year' => 2025,
+        ]);
+        Season::create([
+            'start_year' => 2025,
+            'end_year' => 2026,
         ]);
 
-        Role::create([
-            'name' => 'Admin',
-            'description' => 'Admins are building and maintaining the website. They have access to all the features of the applications to manage roles for example.'
+        League::create([
+            'division' => '5E',
+            'level' => LeagueLevel::PROVINCIAL_BW->value,
+            'category' => LeagueCategory::MEN->value,
         ]);
 
-        Role::create([
-            'name' => 'Committee Member',
-            'description' => 'Committe Members have various administrative privileges, such as team, rooms, trainings, match and members management.'
+        Club::create([
+            'name' => 'C.T.T Ottignies-Blocry',
+            'licence' => 'BBW214',
+            'street' => 'Rue de l\'invasion 80',
+            'city_code' => '1340',
+            'city_name' => 'Ottignies',
         ]);
 
-        // Create "no team"
-        Team::create([
-            'name' => 'Pool',
-            'season' => '',
-            'division' => '',
+        // Create pool
+        $team = Team::make([
+            'letter' => 'pool',
         ]);
+        $team->club()->associate(Club::find(1));
+        $team->save();
 
         // Create Z team team
-        Team::create([
-            'name' => 'Z',
-            'season' => '2024-2025',
-            'division' => 'P5C'
-        ]);
+        $team = Team::make([
+            'letter' => 'Z',
+            ])
+            ->club()->associate(Club::find(1))
+            ->season()->associate(Season::find(2))
+            ->league()->associate(League::find(1));
+        $team->save();
 
-        // Create some matches for Z team
-        $competitions = Competition::factory(15)->create();
+        // // Create some matches for Z team
 
         // Create 1 admin
-        $admin = User::create([
+        $admin = User::make([
+            'is_active' => true,
+            'is_admin' => true,
+            'is_competitor' => true,
+            'email' => 'aurelien.paulus@gmail.com',
+            'password' => Hash::make('test1234'),
             'first_name' => 'Aurélien',
             'last_name' => 'Paulus',
+            'phone_number' => '0479577502',
+            'birthday' => '1988-08-17 00:00:00',
+            'street' => 'Rue de la chapelle 30',
+            'city_code' => '1340',
+            'city_name' => 'Ottignies',
             'ranking' => 'E4',
             'licence' => '114399',
-            'email' => 'aurelien.paulus@gmail.com',
-            'password' => 'test1234',
-            'role_id' => 2,
-            'is_competitor' => true,
-            'is_active' => true,
-            'team_id' => 2,
-        ]);
+        ])->club()->associate(Club::first())->team()->associate(Team::firstWhere('letter', 'Z'));
 
-        foreach($competitions as $competition) {
-            $admin->competitions()->attach($competition->id, [
-                'is_subscribed' => false,
-                'is_selected' => false,
-                'has_played' => false,
-            ]);
-        }
+        $admin->save();
+
+        // foreach($competitions as $competition) {
+        //     $admin->competitions()->attach($competition->id, [
+        //         'is_subscribed' => false,
+        //         'is_selected' => false,
+        //         'has_played' => false,
+        //     ]);
+        // }
         
         
         // Create test dream team
@@ -98,76 +117,83 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach($players as $player) {
-            $user = User::create([
+            $user = User::make([
+                'is_active' => true,
+                'is_admin' => false,
+                'is_competitor' => true,
+                'email' => $player[4],
+                'password' => Hash::make('password'),
                 'first_name' => $player[0],
                 'last_name' => $player[1],
-                'ranking' => $player[2],
+                'phone_number' => '047' . fake()->randomNumber(7, true),
+                'birthday' => fake()->dateTimeBetween('-59 years', '-25 years'),
+                'street' => fake()->streetAddress(),
+                'city_code' => fake()->postcode(),
+                'city_name' => fake()->city(),
+                'ranking' =>  $player[2],
                 'licence' => $player[3],
-                'email' => $player[4],
-                'password' => 'password',
-                'role_id' => 1,
-                'is_competitor' => true,
-                'is_active' => true,
-                'team_id' => 2,
-            ]);
-        // the matches
-        foreach($competitions as $competition) {
-            $user->competitions()->attach($competition->id, [
-                'is_subscribed' => false,
-                'is_selected' => false,
-                'has_played' => false,
-            ]);
-        }
+            ])->club()->associate(Club::first())->team()->associate(Team::firstWhere('letter', 'Z'))->save();
+
+        // // the matches
+        // foreach($competitions as $competition) {
+        //     $user->competitions()->attach($competition->id, [
+        //         'is_subscribed' => false,
+        //         'is_selected' => false,
+        //         'has_played' => false,
+        //     ]);
+        // }
 
         }
 
-        // Create 75 members
-        User::factory(75)->create();
+        // Give a captain for Z test team
 
-        // If a player is competitor and has no ranking, get one.
-        $affected = DB::table('users')
-        ->where('ranking', '=', null)
-        ->where('is_competitor',
-            '=',
-            true
-        )
-        ->update(['ranking' => 'NC']);
+        // // Create 75 members
+        // User::factory(75)->create();
 
-        // Create the rooms
-        Room::create([
-            'name' => 'Demeester /-1',
-            'street' => 'Rue de l\'Invasion 80',
-            'city_code' => '1340',
-            'city_name'=> 'Ottignies-Louvain-la-Neuve',
-            'building_name' => 'Centre Sportif Jean Demeester',
-            'access_description'=> 'Salle au -1',
-            'capacity_trainings' => 12,
-            'capacity_matches' => 2,
-        ]);
+        // // If a player is competitor and has no ranking, get one.
+        // $affected = DB::table('users')
+        // ->where('ranking', '=', null)
+        // ->where('is_competitor',
+        //     '=',
+        //     true
+        // )
+        // ->update(['ranking' => 'NC']);
 
-        Room::create([
-            'name' => 'Demeester /0',
-            'street' => 'Rue de l\'Invasion 80',
-            'city_code' => '1340',
-            'city_name'=> 'Ottignies-Louvain-la-Neuve',
-            'building_name' => 'Centre Sportif Jean Demeester',
-            'access_description'=> 'Salle au RDC',
-            'capacity_trainings' => 8,
-            'capacity_matches' => 1,
-        ]);
+        // // Create the rooms
+        // Room::create([
+        //     'name' => 'Demeester /-1',
+        //     'street' => 'Rue de l\'Invasion 80',
+        //     'city_code' => '1340',
+        //     'city_name'=> 'Ottignies-Louvain-la-Neuve',
+        //     'building_name' => 'Centre Sportif Jean Demeester',
+        //     'access_description'=> 'Salle au -1',
+        //     'capacity_trainings' => 12,
+        //     'capacity_matches' => 2,
+        // ]);
 
-        Room::create([
-            'name' => 'Blocry G3',
-            'street' => 'Place des sports, 1',
-            'city_code' => '1340',
-            'city_name'=> 'Ottignies-Louvain-la-Neuve',
-            'building_name' => 'Complexe Sportif de Blocry',
-            'access_description'=> 'Salle G3',
-            'capacity_trainings' => 16,
-            'capacity_matches' => 0,
-        ]);
+        // Room::create([
+        //     'name' => 'Demeester /0',
+        //     'street' => 'Rue de l\'Invasion 80',
+        //     'city_code' => '1340',
+        //     'city_name'=> 'Ottignies-Louvain-la-Neuve',
+        //     'building_name' => 'Centre Sportif Jean Demeester',
+        //     'access_description'=> 'Salle au RDC',
+        //     'capacity_trainings' => 8,
+        //     'capacity_matches' => 1,
+        // ]);
 
-        // Set ForceIndexes
-        $this->forceIndex->setOrUpdate();
+        // Room::create([
+        //     'name' => 'Blocry G3',
+        //     'street' => 'Place des sports, 1',
+        //     'city_code' => '1340',
+        //     'city_name'=> 'Ottignies-Louvain-la-Neuve',
+        //     'building_name' => 'Complexe Sportif de Blocry',
+        //     'access_description'=> 'Salle G3',
+        //     'capacity_trainings' => 16,
+        //     'capacity_matches' => 0,
+        // ]);
+
+        // // Set ForceIndexes
+        // $this->forceIndex->setOrUpdateAll();
     }
 }

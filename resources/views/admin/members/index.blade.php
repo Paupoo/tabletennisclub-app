@@ -49,7 +49,6 @@
                             <th scope="col" class="px-4 py-2">{{ __('Force Index') }}</th>
                             <th scope="col" class="px-4 py-2">{{ __('Ranking') }}</th>
                             <th scope="col" class="px-4 py-2">{{ __('Team') }}</th>
-                            <th scope="col" class="px-4 py-2">{{ __('Role') }}</th>
                             <th scope="col" class="px-4 py-2">{{ __('Active') }}</th>
                             <th scope="col" class="px-4 py-2">{{ __('Competitor') }}</th>
                             <th scope="col" class="px-4 py-2">{{ __('Has Debts') }}</th>

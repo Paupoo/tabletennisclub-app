@@ -23,6 +23,7 @@ class UserPolicy
     public function view(User $user, User $model): bool
     {
         //
+        return true;
     }
 
     /**
@@ -31,7 +32,7 @@ class UserPolicy
     public function create(User $user): bool
     {
         // Only allow admin & comittee mebers to create new users
-        return $user->role->name === Roles::ADMIN->value || $user->role->name === Roles::COMITTEE_MEMBER->value;
+        return $user->is_admin || $user->is_comittee_member;
     }
 
     /**
@@ -40,7 +41,7 @@ class UserPolicy
     public function update(User $user): bool
     {
         //
-        return $user->role->name === Roles::ADMIN->value || $user->role->name === Roles::COMITTEE_MEMBER->value;
+        return $user->is_admin || $user->is_comittee_member;
     }
 
     /**
@@ -49,7 +50,7 @@ class UserPolicy
     public function delete(User $user): bool
     {
         //
-        return $user->role->name === Roles::ADMIN->value || $user->role->name === Roles::COMITTEE_MEMBER->value;
+        return $user->is_admin || $user->is_comittee_member;
     }
 
     /**

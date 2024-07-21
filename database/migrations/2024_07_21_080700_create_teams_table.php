@@ -17,12 +17,14 @@ return new class extends Migration
     {
         Schema::create('teams', function (Blueprint $table) {
             $table->id();
-            $table->string('letter', 1);
-            $table->foreignIdFor(Season::class)->constrained();
-            $table->foreignIdFor(League::class)->consrained();
+            $table->string('letter', 4);
+            $table->foreignIdFor(Season::class)->nullable()->constrained();
+            $table->foreignIdFor(League::class)->nullable()->consrained();
             $table->foreignIdFor(Club::class)->constrained();
-            $table->foreignIdFor(Captain::class)->constrained();
+            $table->unsignedBigInteger('captain_id')->nullable();
             $table->timestamps();
+
+            $table->foreign('captain_id')->references('id')->on('users');
         });
     }
 

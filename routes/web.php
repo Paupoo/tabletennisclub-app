@@ -36,7 +36,6 @@ Route::get('/', [
  */
 Route::get('/admin/dashboard', function () {
     return view('admin.dashboard', [
-        'roles' => Role::orderby('name')->get(),
         'members' => User::latest()->take(5)->get(),
         'members_total_active' => User::where('is_active', '=', true)->count(),
         'members_total_inactive' => User::where('is_active', '=', false)->count(),

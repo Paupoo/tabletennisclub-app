@@ -27,7 +27,6 @@ return new class extends Migration
             $table->unsignedBigInteger('visiting_team_id');
             $table->foreignIdFor(Room::class)->constrained();
             $table->foreignIdFor(League::class)->constrained();
-            $table->foreignIdFor(Season::class)->constrained();
             $table->timestamps();
 
             $table->foreign('visited_team_id')->references('id')->on('users');

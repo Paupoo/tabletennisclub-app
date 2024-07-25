@@ -3,8 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Classes\HtmlFactory;
+use App\Enums\TeamName;
+use App\Http\Requests\StoreTeamRequest;
+use App\Http\Requests\UpdateTeamRequest;
+use App\Models\Club;
+use App\Models\League;
+use App\Models\Season;
 use App\Models\Team;
 use App\Models\User;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
@@ -21,7 +28,7 @@ class TeamController extends Controller
     {
         //
         return view('admin.teams.index', [
-            'teams' => Team::orderby('name')->paginate(10),
+            'teams' => Team::orderby('name')->with('captain')->paginate(10),
         ]);
     }
 
@@ -31,38 +38,45 @@ class TeamController extends Controller
     public function create()
     {
         //
-        return view('.admin.teams.create', [
-            'users' => User::where('is_competitor', '=', true)->orderby('last_name')->get(),
-            'seasons' => HtmlFactory::SeasonsInHTMLList(),
-            'team_names' => HtmlFactory::TeamNamesInHTMLList(),
+        return view('admin.teams.create', [
+            'users' => User::where('is_competitor', true)->doesntHave('teams')->orderby('force_index')->orderby('last_name')->orderby('first_name')->get(),
+            'leagues' => League::where('start_year', '>=', Carbon::now()->format('Y'))->orderBy('start_year')->orderBy('level')->orderBy('category')->orderBy('division')->get(),
+            'team_names' => TeamName::cases(),
         ]);
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreTeamRequest $request)
     {
-        //
-        $request->validate([
-            'season' => 'string',
-            'name' => 'string',
-            'division' => 'string',
-            // 'players.*' => 'nullable|exists:users,user_id',
+        $request = $request->validated();
+        
+        $team = new Team([
+            'name' => $request['name'],
         ]);
 
-        $team = Team::create([
-            'season' => $request->season,
-            'name' => $request->name,
-            'division' => $request->division,
-        ]);
+        $team->club()->associate(Club::firstWhere('licence', 'BBW214'))->save();
+        
+        $league = League::find($request['league_id']);
+        $team->league()->associate($league);
 
-        foreach ($request->players as $player) {
-            $player = User::find($player);
-            $team->users()->save($player);
+        if(isset($request['captain_id'])) {
+            $captain = User::find($request['captain_id']);
+            $team->captain()->associate($captain);
+        } else {
+            $team->captain()->dissociate();
         }
 
-        return redirect()->route('teams.index')->with('success', 'The team ' . $request->name . ' has been created.');
+        $team->save();
+
+
+        // foreach ($request->players as $player) {
+        //     $player = User::find($player);
+        //     $team->users()->save($player);
+        // }
+
+        return redirect()->route('teams.index')->with('success', 'The team ' . $request['name'] . ' has been created.');
     }
 
     /**
@@ -81,34 +95,38 @@ class TeamController extends Controller
      */
     public function edit(string $id)
     {
+        $team = Team::findOrFail($id);
         //
         return view('admin.teams.edit', [
-            'team' => Team::find($id),
+            'team' => $team,
+            'team_names' => TeamName::cases(),
             'users' => User::all(),
+            'leagues' => League::all(),
+            'attachedUsers' => $team->users->pluck('id')->toArray(),
         ]);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id): RedirectResponse
+    public function update(UpdateTeamRequest $request, string $id): RedirectResponse
     {
         //
-        $request->validate([
-            'season' => 'string',
-            'name' => 'string',
-            'division' => 'string',
-        ]);
+        $request = $request->validated();
 
         $team = Team::find($id);
 
-        $team->season = $request->season;
-        $team->name = $request->name;
-        $team->division = $request->division;
+        $team->name = $request['name'];
+        $team->league()->associate(League::find($request['league_id']));
+        if (isset($request['captain_id'])) {
+            $team->captain()->associate(User::find($request['captain_id']));
+        } else {
+            $team->captain()->dissociate();
+        }
 
         $team->save();
 
-        return redirect()->route('teams.index')->with('success', 'The team ' . $team->name . ' has been added.');
+        return redirect()->route('teams.index')->with('success', 'The team ' . $team->name . ' has been updated.');
     }
 
     /**

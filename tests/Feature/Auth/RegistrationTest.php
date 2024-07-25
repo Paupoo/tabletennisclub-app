@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Auth;
 
+use App\Models\Club;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -19,6 +20,11 @@ class RegistrationTest extends TestCase
 
     public function test_new_users_can_register(): void
     {
+        $club = Club::factory([
+            'licence' => 'BBW214',
+        ])->create();
+        
+
         $response = $this->post('/register', [
             'first_name' => 'John',
             'last_name' => 'doe',

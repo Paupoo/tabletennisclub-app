@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Club;
 use App\Models\User;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Auth\Events\Registered;
@@ -37,14 +38,15 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        $user = User::create([
+        $user = User::make([
             'last_name' => $request->last_name,
             'first_name' => $request->first_name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role_id' => 1,
-            'team_id' => 1,
         ]);
+
+        $user->club()->associate(Club::firstWhere('licence', 'BBW214'));
+        $user->save();
 
         event(new Registered($user));
 

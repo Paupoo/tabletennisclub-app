@@ -17,25 +17,11 @@ class CreateUserTest extends TestCase
 
     public function test_new_member_creation(): void
     {
-        $user = User::factory()->create();
-        $roleMember = Role::create([
-            'name' => 'Member',
-            'description' => 'Just a test',
-        ]);
-        $roleAdmin = Role::create([
-            'name' => 'Admin',
-            'description' => 'Just a test',
-        ]);
+        $user = User::factory()->create();       
+        $user->is_admin = true;
+                
+        $team = Team::create();
 
-        $roleAdmin->id = 2;
-        
-        $user->role()->associate($roleAdmin);
-        
-        $team = Team::create([
-            'name' => 'pool',
-            'season' => '',
-            'division' => '',
-        ]);
         $password = Hash::make('password');
 
         $response = $this->actingAs($user)
@@ -64,11 +50,6 @@ class CreateUserTest extends TestCase
     public function test_member_cannot_create_new_member(): void
     {
         $user = User::factory()->create();
-        $role = Role::create([
-            'name' => 'Member',
-            'description' => 'Just a test',
-        ]);
-        $user->role()->associate($role);
         $password = Hash::make('password');
 
         $response = $this->actingAs($user)
@@ -81,25 +62,9 @@ class CreateUserTest extends TestCase
 
     public function test_new_member_creation_with_invalid_paramaters_returns_errors_in_the_session(): void
     {
-        $user = User::factory()->create();
-        $roleMember = Role::create([
-            'name' => 'Member',
-            'description' => 'Just a test',
-        ]);
-        $roleAdmin = Role::create([
-            'name' => 'Admin',
-            'description' => 'Just a test',
-        ]);
+        $user = User::factory()->hasTeam()->create();        
+        $user->is_admin = true;
 
-        $roleAdmin->id = 2;
-        
-        $user->role()->associate($roleAdmin);
-        
-        $team = Team::create([
-            'name' => 'pool',
-            'season' => '',
-            'division' => '',
-        ]);
         $password = Hash::make('password');
 
         $response = $this->actingAs($user)
@@ -114,17 +79,21 @@ class CreateUserTest extends TestCase
                             'remember_token' => Str::random(10),
                             'licence' => 123456,
                             'ranking' => 'B0',
-                            'role_id' => $roleMember->id,
+                            'is_admin' => false,
                             'is_competitor' => true,
                             'is_active' => true,
                             'has_debt' => false,
                             'birthday' => Date::create(1988,8,17),
                             'phone_number' => '0479123456',
-                            'team_id' => $team->id,
+                            'team_id' => $user->team()->id,
                         ])
                         ->assertSessionHasNoErrors()
                         ->assertRedirect(route('members.create'))
                         ->assertSessionHas('success');
+
+        $user->is_comittee_member = true;
+        $user->is_admin = false;
+
         $respons = $this->actingAs($user)
                         ->post('/admin/members', [
                             'last_name' => '',
@@ -136,13 +105,12 @@ class CreateUserTest extends TestCase
                             'remember_token' => Str::random(10),
                             'licence' => 123456,
                             'ranking' => 'B5',
-                            'role_id' => $roleMember->id,
                             'is_competitor' => true,
                             'is_active' => true,
                             'has_debt' => false,
                             'birthday' => Date::create(1988,8,17),
                             'phone_number' => '0479123456',
-                            'team_id' => $team->id,
+                            'team_id' => $user->team()->id,
                         ])
                         ->assertInvalid([
                         'email',

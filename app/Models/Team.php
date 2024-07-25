@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Team extends Model
@@ -13,29 +14,25 @@ class Team extends Model
 
     protected $fillable = [
         'name',
-        'season',
-        'division',
     ];
 
     protected $casts = [
         'name' => 'string',
-        'season' => 'string',
-        'division' => 'string',
     ];
 
-    public function users() :HasMany
+    public function users(): BelongsToMany
     {
-        return $this->hasMany(User::class);
+        return $this->belongsToMany(User::class);
+    }
+
+    public function captain(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'captain_id', );
     }
 
     public function interclubs() :HasMany
     {
         return $this->hasMany(Interclub::class);
-    }
-
-    public function season(): BelongsTo
-    {
-        return $this->belongsTo(Season::class);
     }
 
     public function league(): BelongsTo

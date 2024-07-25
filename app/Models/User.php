@@ -11,6 +11,7 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class User extends Authenticatable
 {
@@ -100,9 +101,14 @@ class User extends Authenticatable
         return $this->belongsTo(Club::class);
     }
 
-    public function team(): BelongsTo
+    public function teams(): BelongsToMany
     {
-        return $this->belongsTo(Team::class);
+        return $this->belongsToMany(Team::class);
+    }
+
+    public function captainOf(): HasOne
+    {
+        return $this->hasOne(Team::class, 'captain_id');
     }
 
     public function competitions(): BelongsToMany

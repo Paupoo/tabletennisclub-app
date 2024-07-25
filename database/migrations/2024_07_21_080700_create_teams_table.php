@@ -17,8 +17,7 @@ return new class extends Migration
     {
         Schema::create('teams', function (Blueprint $table) {
             $table->id();
-            $table->string('letter', 4);
-            $table->foreignIdFor(Season::class)->nullable()->constrained();
+            $table->string('name', 1);
             $table->foreignIdFor(League::class)->nullable()->consrained();
             $table->foreignIdFor(Club::class)->constrained();
             $table->unsignedBigInteger('captain_id')->nullable();

@@ -34,63 +34,16 @@
                         </p>
                     </header>
 
+
+
                     <form action="{{ route('teams.store') }}" method="POST" class="mt-6 space-y-6">
                         @csrf
 
-                        {{-- Season --}}
-                        <div>
-                            <x-input-label for="season" :value="__('Season')" />
-                            <x-select-input id="season" name="season" class="block w-full mt-1" :value="old('season')"
-                                required autofocus>
-
-                                {!! $seasons !!}
-
-                            </x-select-input>
-                            <x-input-error class="mt-2" :messages="$errors->get('season')" />
-                        </div>
-
-
-
-                        {{-- Name --}}
-                        <div>
-                            <x-input-label for="name" :value="__('Name')" />
-                            <x-select-input id="name" name="name" type="text" class="block w-full mt-1"
-                                :value="old('name')" required autofocus autocomplete="name">
-                                {!! $team_names !!}
-                            </x-select-input>
-                            <x-input-error class="mt-2" :messages="$errors->get('name')" />
-                        </div>
-
-                        {{-- Division --}}
-                        <div>
-                            <x-input-label for="division" :value="__('Division')" />
-                            <x-text-input id="division" name="division" type="text" class="block w-full mt-1"
-                                :value="old('division')" required autofocus autocomplete="division"></x-text-input>
-                            <x-input-error class="mt-2" :messages="$errors->get('division')" />
-                        </div>
-
-                        {{-- Players --}}
-                        @for ($i = 0; $i < 4; $i++)
-
-                            <div>
-                                <x-input-label for="player1" :value="__('Choose a player from the list')" />
-
-                                <x-select-input id="player1" name="players[]" class="block w-full mt-1"
-                                    :value="old('player1')" selected>
-                                    <option value=""  selected disabled>{{ __('Select a member') }}</option>
-                                    @foreach ($users as $user)
-                                        <option value="{{ $user->id }}">
-                                            {{ $user->last_name . ' ' . $user->first_name . ' - ' . $user->ranking . ' - ' . $user->force_index }}
-                                        </option>
-                                    @endforeach
-                                </x-select-input>
-                                <x-input-error class="mt-2" :messages="$errors->get('player[]')" />
-                            </div>
-                        @endfor
+                        <x-forms.team :users="$users" :leagues="$leagues" :team_names="$team_names"></x-forms.team>
 
 
                         <div>
-                            <x-primary-button>{{ __('Create new team') }}</x-primary-button>
+                            <x-primary-button :disabled="count($users) === 0">{{ __('Create new team') }}</x-primary-button>
                         </div>
 
                     </form>

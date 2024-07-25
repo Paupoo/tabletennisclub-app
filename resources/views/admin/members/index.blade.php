@@ -48,7 +48,7 @@
                             <th scope="col" class="px-4 py-2">{{ __('First Name') }}</th>
                             <th scope="col" class="px-4 py-2">{{ __('Force Index') }}</th>
                             <th scope="col" class="px-4 py-2">{{ __('Ranking') }}</th>
-                            <th scope="col" class="px-4 py-2">{{ __('Team') }}</th>
+                            <th scope="col" class="px-4 py-2">{{ __('Teams') }}</th>
                             <th scope="col" class="px-4 py-2">{{ __('Active') }}</th>
                             <th scope="col" class="px-4 py-2">{{ __('Competitor') }}</th>
                             <th scope="col" class="px-4 py-2">{{ __('Has Debts') }}</th>
@@ -62,8 +62,19 @@
                                 <td class="px-4 whitespace-nowrap">{{ $member->first_name }}</td>
                                 <td class="px-4 whitespace-nowrap">{{ $member->force_index }}</td>
                                 <td class="px-4 whitespace-nowrap">{{ $member->ranking }}</td>
-                                <td class="px-4 whitespace-nowrap">{{ isset($member->team) ? $member->team->name : __('None') }}</td>
-                                <td class="px-4 whitespace-nowrap">{{ isset($member->role->name) ? $member->role->name : __('None') }}</td>
+                                <td class="px-4 whitespace-nowrap">
+                                    @if ($member->teams->count() > 0)
+                                        @foreach ($member->teams as $team)
+                                                {{ $team->name }}
+                                                @if (!$loop->last)
+                                                    {{-- This is not the last iteration --}}
+                                                    {{ ' | ' }}
+                                                @endif
+                                        @endforeach
+                                    @else
+                                        {{ __('Pool') }}
+                                    @endif  
+                                </td>
                                 <td class="px-4 whitespace-nowrap">
                                     @if($member->is_active == false)
                                     {{ __('Inactive') }}

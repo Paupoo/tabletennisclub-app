@@ -38,9 +38,10 @@
                 <table class="min-w-full text-sm font-light text-left dark:bg-neutral-300">
                     <thead class="font-medium border-b dark:border-neutral-500">
                         <tr>
-                            <th scope="col" class="px-4 py-2">{{ __('Name') }}</th>
+                            <th scope="col" class="px-4 py-2">{{ __('Name (#Players)') }}</th>
                             <th scope="col" class="px-4 py-2">{{ __('Season') }}</th>
-                            <th scope="col" class="px-4 py-2">{{ __('Division') }}</th>
+                            <th scope="col" class="px-4 py-2">{{ __('Category') }}</th>
+                            <th scope="col" class="px-4 py-2">{{ __('League') }}</th>
                             <th scope="col" class="px-4 py-2">{{ __('Captain') }}</th>
                             <th scope="col" class="px-4 py-2">{{ __('Action') }}</th>
                         </tr>
@@ -48,10 +49,11 @@
                     <tbody>
                         @foreach ($teams as $team)
                             <tr class="border-b dark:border-neutral-500">
-                                <td class="px-4 whitespace-nowrap">{{ $team->name }}</td>
-                                <td class="px-4 whitespace-nowrap">{{ $team->season }}</td>
-                                <td class="px-4 whitespace-nowrap">{{ $team->division }}</td>
-                                <td class="px-4 whitespace-nowrap"></td>
+                                <td class="px-4 whitespace-nowrap">{{ $team->name }} ({{ $team->users->count() }})</td>
+                                <td class="px-4 whitespace-nowrap">{{ $team->league?->start_year }} - {{ $team->league?->end_year }}</td>
+                                <td class="px-4 whitespace-nowrap">{{$team->league?->category }}</td>
+                                <td class="px-4 whitespace-nowrap">{{$team->league?->level }} {{ $team->league?->division }}</td>
+                                <td class="px-4 whitespace-nowrap">{{ isset($team->captain->last_name) ? $team->captain->first_name . ' ' . $team->captain->last_name : __('No captain') }}</td>
                                 <td class="flex items-center gap-2 px-4 whitespace-nowrap">
                                     <a href="{{ route('teams.show', $team->id) }}"><img class="h-4 cursor-pointer" src="{{ asset('images/icons/contact.svg') }}"
                                         alt="Check details"></a>

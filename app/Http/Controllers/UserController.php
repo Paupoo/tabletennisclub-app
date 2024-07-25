@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Ranking;
 use App\Enums\Rankings;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
@@ -29,7 +30,7 @@ class UserController extends Controller
         //
         $this->authorize('index', User::class);
         return View('admin.members.index', [
-            'members' => User::orderby('is_competitor', 'desc')->orderby('force_index')->orderBy('ranking')->orderby('last_name')->orderby('first_name')->paginate(20),
+            'members' => User::orderby('is_competitor', 'desc')->with('teams')->orderby('force_index')->orderBy('ranking')->orderby('last_name')->orderby('first_name')->paginate(20),
             'member_model' => User::class,
         ]);
     }
@@ -43,9 +44,8 @@ class UserController extends Controller
         $this->authorize('create', User::class);
 
         return View('admin.members.create', [
-            'roles' => Role::orderby('name')->get(),
-            'teams' => Team::all(),
-            'rankings' => array_column(Rankings::cases(), 'value'),
+            'teams' => Team::with('league')->get(),
+            'rankings' => array_column(Ranking::cases(), 'value'),
         ]);
     }
 
@@ -54,9 +54,7 @@ class UserController extends Controller
      */
     public function store(StoreUserRequest $request)
     {
-
         $request = $request->validated();
-        $role = Role::findOrFail($request['role_id']);
         $user = User::create ([
             'first_name' => $request['first_name'],
             'last_name' => $request['last_name'],
@@ -65,9 +63,15 @@ class UserController extends Controller
             'is_competitor' => isset($request['is_competitor']) ? true : false,
             'licence' => $request['licence'],
             'ranking' => $request['ranking'],
-            'team_id' => $request['team_id'],
-            'role_id' => $role['id'],
+            'is_admin' => isset($request['is_admin']) ? true : false,
+            'is_comittee_member' => isset($request['is_comittee_member']) ? true : false,
+            'is_active' => true,
         ]);
+
+        // Attach a team (TO CHECK, need to be able to attach many teams)
+        if(isset($request['team_id'])) {
+            $user->teams()->attach(Team::find($request['team_id']));
+        }
 
         $this->forceIndex->setOrUpdateAll(); 
 
@@ -95,9 +99,9 @@ class UserController extends Controller
         $this->authorize('update', User::class);
 
         return view ('admin.members.edit', [
-            'member' => User::find($id),
-            'roles' => Role::orderby('name')->get(),
+            'member' => User::find($id)->load('teams'),
             'teams' => Team::all(),
+            'rankings' => array_column(Ranking::cases(),'value'),
         ]);
     }
 
@@ -106,11 +110,8 @@ class UserController extends Controller
      */
     public function update(UpdateUserRequest $request, string $id)
     {
-        //validation
-        $request->validated();
-
+        $request = $request->validated();
         $user = User::find($id);
-        $role = Role::find($request->role_id);
 
         $user->first_name = $request['first_name'];
         $user->last_name = $request['last_name'];
@@ -125,12 +126,19 @@ class UserController extends Controller
         };
         $user->licence = $request['licence'];
         $user->ranking = $request['ranking'];
-        $user->team_id = $request['team_id'];
-
+        $user->is_active = isset($request['is_active']) ? true : false;
+        $user->is_admin = isset($request['is_admin']) ? true : false;
+        $user->is_comittee_member = isset($request['is_comittee_member']) ? true : false;
+        
         $user->save();
 
-        $user->role()->associate($role);
-        $user->save();
+        // Attach a team (TO CHECK, need to be able to attach many teams)
+        if($request['team_id'] !== null) {
+            $user->teams()->attach(Team::find($request['team_id']));
+        } else {
+            $user->teams()->detach();
+        }
+
 
         $this->forceIndex->setOrUpdateAll();
 

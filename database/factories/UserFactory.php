@@ -24,7 +24,7 @@ class UserFactory extends Factory
         return [
             'is_active' => true,
             'is_admin' => false,
-            'is_comitte_member' => false,
+            'is_comittee_member' => false,
             'is_competitor' => fake()->randomElement([true, false]),
             'has_debt' => false,
             'email' => fake()->unique()->safeEmail(),

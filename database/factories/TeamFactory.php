@@ -18,7 +18,7 @@ class TeamFactory extends Factory
     {
         return [
             //
-            'letter' => fake()->range('A','Z'),
+            'name' => fake()->range('A','Z'),
             'season_id' => 1,
             'league_id' => 1,
             'club_id' => 1,

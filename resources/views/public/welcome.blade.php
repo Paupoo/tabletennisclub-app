@@ -81,9 +81,9 @@
                         <p>{{ __('Lorem ipsum dolor sit amet consectetur, adipisicing elit. Dicta, voluptatum consectetur? Ut, delectus quod eveniet autem laborum ullam reiciendis deserunt a consequuntur dolor quis cumque quibusdam esse nulla odit dolorum.') }}
                         </p>
                         <div class="flex flex-row items-center self-center">
-                            <x-button
+                            <a href="{{ route('register') }}"><x-button
                                 class="py-2 mr-4 font-semibold text-yellow-400 bg-blue-800 w-36 shadow-blue-800"
-                                type="button">{{ __('Join us') }}</x-button>
+                                type="button">{{ __('Join us') }}</x-button></a>
                             <a class="flex items-baseline ml-4 text-lg font-semibold duration-300 ease-in-out transform hover:scale-110"
                                 href="/">
                                 <p>{{ 'Learn more' }}</p>

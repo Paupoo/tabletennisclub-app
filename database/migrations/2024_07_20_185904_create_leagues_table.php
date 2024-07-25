@@ -19,6 +19,8 @@ return new class extends Migration
             $table->string('division');
             $table->enum('level', array_column(LeagueLevel::cases(), 'value'));
             $table->enum('category', array_column(LeagueCategory::cases(), 'value'));
+            $table->unsignedSmallInteger('start_year');
+            $table->unsignedSmallInteger('end_year');
         });
     }
 

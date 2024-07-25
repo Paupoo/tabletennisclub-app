@@ -31,17 +31,19 @@ class UpdateUserTest extends TestCase
                         ->assertStatus(403);
     }
 
-    public function test_admin_and_comittee_members_cant_access_edit_member_page(): void   
+    public function test_admin_and_comittee_members_can_access_edit_member_page(): void   
     {
-        $admin = $this->createMemberUser(Roles::ADMIN->value);
-        $comitte_member = $this->createMemberUser(Roles::COMITTEE_MEMBER->value);
-        $member = $this->createMemberUser(Roles::MEMBER->value);
+        $admin = $this->createMemberUser();
+        $admin->is_admin = true;
+        $comitte_member = $this->createMemberUser();
+        $comitte_member->is_comittee_member = true;
+        $member = $this->createMemberUser();
 
         $response = $this->actingAs($admin)
                         ->get(route('members.edit', 1))
                         ->assertOK();
 
-        $response = $this->actingAs($comitte_member)
+        $response = $this->actingAs($comittee_member)
                         ->get(route('members.edit', 1))
                         ->assertOK();
     }
@@ -52,21 +54,9 @@ class UpdateUserTest extends TestCase
      * @param string $role
      * @return Model
      */
-    private function createMemberUser(string $role = 'Member'): Model
-    {
-        if(in_array($role, array_column(Roles::cases(), 'value'))) {
-
-        } else {
-            throw new InvalidArgument('This a problem');
-        }
-        
+    private function createMemberUser(): Model
+    {        
         $user = User::factory()->create();
-
-        $roleMember = Role::create([
-            'name' => $role,
-            'description' => 'Just a test',
-        ]);
-        $user->role()->associate($roleMember);
 
         return $user;
     }

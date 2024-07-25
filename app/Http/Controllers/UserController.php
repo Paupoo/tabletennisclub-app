@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\Ranking;
 use App\Enums\Rankings;
+use App\Enums\Sex;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
@@ -45,7 +46,8 @@ class UserController extends Controller
 
         return View('admin.members.create', [
             'teams' => Team::with('league')->get(),
-            'rankings' => array_column(Ranking::cases(), 'value'),
+            'rankings' => array_column(Ranking::cases(), 'name'),
+            'sexes' => array_column(Sex::cases(), 'name'),
         ]);
     }
 
@@ -55,7 +57,7 @@ class UserController extends Controller
     public function store(StoreUserRequest $request)
     {
         $request = $request->validated();
-        $user = User::create ([
+        $user = User::create([
             'first_name' => $request['first_name'],
             'last_name' => $request['last_name'],
             'email' => $request['email'],
@@ -69,14 +71,14 @@ class UserController extends Controller
         ]);
 
         // Attach a team (TO CHECK, need to be able to attach many teams)
-        if(isset($request['team_id'])) {
+        if (isset($request['team_id'])) {
             $user->teams()->attach(Team::find($request['team_id']));
         }
 
-        $this->forceIndex->setOrUpdateAll(); 
+        $this->forceIndex->setOrUpdateAll();
 
         return redirect()->route('members.create')
-            ->with('success', __('New member '. $user->first_name . ' ' . $user->last_name . ' created'));
+            ->with('success', __('New member ' . $user->first_name . ' ' . $user->last_name . ' created'));
     }
 
     /**
@@ -85,7 +87,7 @@ class UserController extends Controller
     public function show(string $id)
     {
         //
-        return view ('admin.members.info', [
+        return view('admin.members.info', [
             'member' => User::find($id),
         ]);
     }
@@ -97,11 +99,12 @@ class UserController extends Controller
     {
         //
         $this->authorize('update', User::class);
-
-        return view ('admin.members.edit', [
+        return view('admin.members.edit', [
             'member' => User::find($id)->load('teams'),
             'teams' => Team::all(),
-            'rankings' => array_column(Ranking::cases(),'value'),
+            'rankings' => array_column(Ranking::cases(), 'name'),
+            'sexes' => array_column(Sex::cases(), 'name'),
+
         ]);
     }
 
@@ -110,30 +113,21 @@ class UserController extends Controller
      */
     public function update(UpdateUserRequest $request, string $id)
     {
-        $request = $request->validated();
+        // $request = $request->validated();
         $user = User::find($id);
 
-        $user->first_name = $request['first_name'];
-        $user->last_name = $request['last_name'];
-        $user->email = $request['email'];
-        if($request['password'] != null) {
+        $user->fill($request->validated());
+        if ($request['password'] != null) {
             $user->password = $request['password'];
         }
-        if($request['is_competitor'] != null) {
-            $user->is_competitor = true;
-        } else {
-            $user->is_competitor = false;
-        };
-        $user->licence = $request['licence'];
-        $user->ranking = $request['ranking'];
+        $user->is_competitor = isset($request['is_competitor']) ? true : false;
         $user->is_active = isset($request['is_active']) ? true : false;
         $user->is_admin = isset($request['is_admin']) ? true : false;
         $user->is_comittee_member = isset($request['is_comittee_member']) ? true : false;
-        
         $user->save();
-
+        
         // Attach a team (TO CHECK, need to be able to attach many teams)
-        if($request['team_id'] !== null) {
+        if ($request['team_id'] !== null) {
             $user->teams()->attach(Team::find($request['team_id']));
         } else {
             $user->teams()->detach();
@@ -172,6 +166,5 @@ class UserController extends Controller
     {
         $this->forceIndex->delete();
         return redirect()->route('members.index');
-
     }
 }

@@ -16,7 +16,6 @@
         </div>
     </x-admin-block>
 
-
     
     <div class="pt-12">
         <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
@@ -38,7 +37,7 @@
                     <form action="{{ route('members.store') }}" method="POST" class="mt-6 space-y-6">
                         @csrf
 
-                        <x-forms.user :rankings="$rankings" :teams="$teams"></x-forms.user>
+                        <x-forms.user :rankings="$rankings" :teams="$teams" :sexes="$sexes"></x-forms.user>
 
                         
 

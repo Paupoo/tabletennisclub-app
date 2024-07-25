@@ -5,6 +5,7 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
 use App\Enums\Ranking;
+use App\Enums\Sex;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -23,13 +24,10 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
-        'is_active',
-        'is_competitor',
-        'has_debt',
         'email',
-        'password',
         'first_name',
         'last_name',
+        'sex',
         'phone_number',
         'birthday',
         'street',
@@ -64,12 +62,13 @@ class User extends Authenticatable
         'password' => 'string',
         'first_name' => 'string',
         'last_name' => 'string',
+        'sex' => 'string',
         'phone_number' => 'string',
         'birthday' => 'datetime:d-m-Y',
         'street' => 'string',
         'city_code' => 'string',
         'city_name' => 'string',
-        'ranking' => Ranking::class,
+        'ranking' => 'string',
         'licence' => 'string',
         'force_index' => 'integer',
     ];

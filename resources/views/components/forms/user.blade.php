@@ -2,8 +2,8 @@
     'member' => new App\Models\User(),
     'rankings' => [],
     'teams' => [],
+    'sexes' => [],
     ])
-
     
 {{-- First Name --}}
 <div>
@@ -19,6 +19,17 @@
     <x-text-input id="last_name" name="last_name" type="text" class="block w-full mt-1"
         :value="old('last_name', $member->last_name)" required autofocus autocomplete="last_name"></x-text-input>
     <x-input-error class="mt-2" :messages="$errors->get('last_name')" />
+</div>
+
+{{-- Sex --}}
+<div>
+    <x-input-label for="sex" :value="__('Sex')" />
+    <x-select-input id="sex" name="sex" class="block w-full mt-1" required autofocus>
+        @foreach ($sexes as $sex)
+            <option value="{{ $sex }}" @selected(old('sex', $member->sex) === $sex)>{{ $sex }}</option>
+        @endforeach
+    </x-select-input>
+    <x-input-error class="mt-2" :messages="$errors->get('sex')" />
 </div>
 
 {{-- Email --}}
@@ -70,7 +81,7 @@
     <x-select-input id="ranking" name="ranking" class="block w-full mt-1"
         autofocus autocomplete="ranking" required>
         @foreach ($rankings as $item)
-            <option value="{{ $item }}" @selected(old('ranking', $member->ranking?->value) === $item)>{{ $item }}</option>
+            <option value="{{ $item }}" @selected(old('ranking', $member->ranking) === $item)>{{ $item }}</option>
         @endforeach
     </x-select-input>
     <x-input-error class="mt-2" :messages="$errors->get('ranking')" />

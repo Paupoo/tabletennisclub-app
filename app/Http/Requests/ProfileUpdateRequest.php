@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\Sex;
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -18,6 +19,7 @@ class ProfileUpdateRequest extends FormRequest
         return [
             'last_name' => ['required', 'string', 'max:255'],
             'first_name' => ['required', 'string', 'max:255'],
+            'sex' => ['required', Rule::In(array_column(Sex::cases(), 'name'))],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)->ignore($this->user()->id)],
         ];
     }

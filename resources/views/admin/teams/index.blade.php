@@ -16,6 +16,7 @@
                 </form>
                 <form action="{{ route('teamBulkComposer') }}" method="GET">
                     <x-primary-button>{{ __('Bulk builder') }}</x-primary-button>
+                </form>
             </div>
             
             @if(session('success'))

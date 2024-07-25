@@ -43,7 +43,7 @@ Route::get('/admin/dashboard', function () {
         'members_total_casuals' => User::where('is_competitor', '=', false)->count(),
         'rooms' => Room::orderby('name')->get(),
         'trainings' => Training::latest()->take(5)->get(),
-        'teams' => Team::all(),
+        'teams' => Team::all()->load(['captain', 'users']),
     ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 

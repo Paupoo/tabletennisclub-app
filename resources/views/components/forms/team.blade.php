@@ -57,7 +57,7 @@
                 
                     <tr class="table-row hover:bg-gray-100">
                         <td class="table-cell text-left">
-                            <x-input-label for="test" :value="$user->ranking->value . ' | ' . $user->first_name . ' ' . $user->last_name" />
+                            <x-input-label for="test" :value="$user->ranking . ' | ' . $user->first_name . ' ' . $user->last_name" />
                         </td>
                         <td class="table-cell text-right w-fit">
                             <x-checkbox-input id="player{{ $loop->iteration }}" name="players[]"

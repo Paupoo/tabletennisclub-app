@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Enums\Ranking;
+use App\Enums\Sex;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -29,11 +30,12 @@ class StoreUserRequest extends FormRequest
         return [
             'last_name' => ['required', 'string', 'max:255'],
             'first_name' => ['required', 'string', 'max:255'],
+            'sex' => ['required', Rule::in(array_column(Sex::cases(), 'name'))],
             'email' => ['required', 'lowercase', 'max:255', 'unique:users,email'],
             'password' => ['required', 'confirmed', 'min:8', RulesPassword::min(8)->letters()->mixedCase()->numbers()->symbols()],
             'is_competitor' => ['nullable'],
             'licence' => ['nullable', 'required_if:is_competitor,true', 'unique:users,licence', 'size:6'],
-            'ranking' => ['nullable', 'required_if:is_competitor,true', Rule::in(array_column(Ranking::cases(), 'value'))],
+            'ranking' => ['nullable', 'required_if:is_competitor,true', Rule::in(array_column(Ranking::cases(), 'name'))],
             'team_id' => ['nullable', 'exists:teams,id'],
             'is_admin' => ['nullable'],
             'is_comittee_member' => ['nullable'],

@@ -30,6 +30,17 @@
             <x-text-input id="last_name" name="last_name" type="text" class="block w-full mt-1" :value="old('last_name', $user->last_name)" required autofocus autocomplete="last_name" />
             <x-input-error class="mt-2" :messages="$errors->get('last_name')" />
         </div>
+
+        {{-- Sex --}}
+        <div>
+            <x-input-label for="sex" :value="__('Sex')" />
+            <x-select-input id="sex" name="sex" class="block w-full mt-1" required autofocus>
+                @foreach ($sexes as $sex)
+                    <option value="{{ $sex->name }}" @selected(old('sex', $user->sex) === $sex->name)>{{ $sex->name }}</option>
+                @endforeach
+            </x-select-input>
+            <x-input-error class="mt-2" :messages="$errors->get('sex')" />
+        </div>
         
         {{-- Role --}}
         <div>

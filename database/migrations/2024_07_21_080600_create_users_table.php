@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\Ranking;
+use App\Enums\Sex;
 use App\Models\Club;
 use App\Models\Team;
 use Illuminate\Database\Migrations\Migration;
@@ -28,12 +29,13 @@ return new class extends Migration
             $table->rememberToken();
             $table->string('first_name');
             $table->string('last_name');
+            $table->enum('sex', array_column(Sex::cases(), 'name'));
             $table->string('phone_number', 20)->nullable();
             $table->date('birthday')->nullable();
             $table->string('street', 255)->nullable();
             $table->string('city_code', 10)->nullable();
             $table->string('city_name', 100)->nullable();
-            $table->enum('ranking', array_column(Ranking::cases(), 'value'))->default(Ranking::NA);
+            $table->enum('ranking', array_column(Ranking::cases(), 'name'))->default(Ranking::NA->name);
             $table->string('licence', 6)->unique()->nullable();
             $table->unsignedTinyInteger('force_index')->nullable();
             $table->foreignIdFor(Club::class)->default(1);

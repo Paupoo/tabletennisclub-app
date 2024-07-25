@@ -2,13 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Classes\HtmlFactory;
 use App\Enums\TeamName;
 use App\Http\Requests\StoreTeamRequest;
 use App\Http\Requests\UpdateTeamRequest;
 use App\Models\Club;
 use App\Models\League;
-use App\Models\Season;
 use App\Models\Team;
 use App\Models\User;
 use Carbon\Carbon;
@@ -39,7 +37,7 @@ class TeamController extends Controller
     {
         //
         return view('admin.teams.create', [
-            'users' => User::where('is_competitor', true)->doesntHave('teams')->orderby('force_index')->orderby('last_name')->orderby('first_name')->get(),
+            'users' => User::where('is_competitor', true)->orderby('force_index')->orderby('last_name')->orderby('first_name')->get(),
             'leagues' => League::where('start_year', '>=', Carbon::now()->format('Y'))->orderBy('start_year')->orderBy('level')->orderBy('category')->orderBy('division')->get(),
             'team_names' => TeamName::cases(),
         ]);
@@ -51,30 +49,23 @@ class TeamController extends Controller
     public function store(StoreTeamRequest $request)
     {
         $request = $request->validated();
-        
+        $league = League::find($request['league_id']);
         $team = new Team([
             'name' => $request['name'],
         ]);
 
         $team->club()->associate(Club::firstWhere('licence', 'BBW214'))->save();
-        
-        $league = League::find($request['league_id']);
         $team->league()->associate($league);
-
+        
         if(isset($request['captain_id'])) {
             $captain = User::find($request['captain_id']);
             $team->captain()->associate($captain);
         } else {
             $team->captain()->dissociate();
         }
-
         $team->save();
 
-
-        // foreach ($request->players as $player) {
-        //     $player = User::find($player);
-        //     $team->users()->save($player);
-        // }
+        $team->users()->sync($request['players']);
 
         return redirect()->route('teams.index')->with('success', 'The team ' . $request['name'] . ' has been created.');
     }
@@ -100,7 +91,7 @@ class TeamController extends Controller
         return view('admin.teams.edit', [
             'team' => $team,
             'team_names' => TeamName::cases(),
-            'users' => User::all(),
+            'users' => User::where('is_competitor', true)->orderby('force_index')->orderby('last_name')->orderby('first_name')->get(),
             'leagues' => League::all(),
             'attachedUsers' => $team->users->pluck('id')->toArray(),
         ]);
@@ -113,7 +104,7 @@ class TeamController extends Controller
     {
         //
         $request = $request->validated();
-
+        
         $team = Team::find($id);
 
         $team->name = $request['name'];
@@ -123,8 +114,14 @@ class TeamController extends Controller
         } else {
             $team->captain()->dissociate();
         }
-
         $team->save();
+
+        if(isset($request['players'])) {
+            $team->users()->sync($request['players']);
+        } else {
+            $team->users()->detach();
+        }
+        
 
         return redirect()->route('teams.index')->with('success', 'The team ' . $team->name . ' has been updated.');
     }
@@ -135,13 +132,8 @@ class TeamController extends Controller
     public function destroy(string $id)
     {
         //
-        $team = Team::findOrFail($id);
-        // Dissociate all books associated with the author
-        foreach($team->users as $user) {
-            $user->team()->dissociate();
-            $user->save();
-        }
-
+        $team = Team::find($id);
+        
         // Delete the team.
         $team->delete();
 

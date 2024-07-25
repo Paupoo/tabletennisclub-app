@@ -271,9 +271,9 @@
                                 @foreach ($teams as $team)
                                     <tr>
                                         <td>{{ $team->name }}</td>
-                                        <td>{{ $team->division }}</td>
-                                        <td># ToDo Captain name</td>
-                                        <td># ToDo players count</td>
+                                        <td>{{ $team->league->category }} {{ $team->league->level }} {{ $team->league->division }}</td>
+                                        <td>{{ $team->captain?->first_name }} {{ $team->captain?->last_name }}</td>
+                                        <td>{{ $team->users->count()}}</td>
                                     </tr>
                                 @endforeach
 

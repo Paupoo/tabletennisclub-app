@@ -7,6 +7,7 @@ namespace Database\Seeders;
 use App\Enums\LeagueCategory;
 use App\Enums\LeagueLevel;
 use App\Enums\Ranking;
+use App\Enums\Sex;
 use Illuminate\Database\Seeder;
 use App\Models\Club;
 use App\Models\League;
@@ -63,6 +64,14 @@ class DatabaseSeeder extends Seeder
             'end_year' => 2025,
         ]);
 
+        League::create([
+        'division' => '4B',
+            'level' => LeagueLevel::PROVINCIAL_BW->value,
+            'category' => LeagueCategory::WOMEN->value,
+            'start_year' => 2024,
+            'end_year' => 2025,
+        ]);
+
         Club::create([
             'name' => 'C.T.T Ottignies-Blocry',
             'licence' => 'BBW214',
@@ -99,12 +108,13 @@ class DatabaseSeeder extends Seeder
             'password' => Hash::make('test1234'),
             'first_name' => 'Aurélien',
             'last_name' => 'Paulus',
+            'sex' => Sex::MEN->name,
             'phone_number' => '0479577502',
             'birthday' => '1988-08-17 00:00:00',
             'street' => 'Rue de la chapelle 30',
             'city_code' => '1340',
             'city_name' => 'Ottignies',
-            'ranking' => 'E4',
+            'ranking' => Ranking::E4->name,
             'licence' => '114399',
         ])->club()->associate(Club::first());
         $admin->save();
@@ -114,12 +124,12 @@ class DatabaseSeeder extends Seeder
 
         // the players
         $players = [
-            ['Olivier', 'Tilmans', 'E6', '223344', 'olivier.tilmans@test.com' ],
-            ['Xavier', 'Coenen', 'E6', '123123', 'xavier.coenen@test.com' ],
-            ['Arnaud', 'Ghysens', 'E2', '112233', 'arnaud.ghysens@test.com' ],
-            ['Éric', 'Godart', 'E0', '443211', 'eric.godart@test.com' ],
-            ['Sébastien', 'Vandevyver', 'E2', '987654', 'seba.vande@test.com' ],
-            ['Dariusz', 'Sekula', 'E2', '332211', 'dariusz.sekula@test.com' ],
+            ['Olivier', 'Tilmans', Ranking::E6->name, '223344', 'olivier.tilmans@test.com',Sex::MEN->name],
+            ['Xavier', 'Coenen', Ranking::E6->name, '123123', 'xavier.coenen@test.com',Sex::MEN->name],
+            ['Arnaud', 'Ghysens', Ranking::E2->name, '112233', 'arnaud.ghysens@test.com',Sex::MEN->name],
+            ['Éric', 'Godart', Ranking::E0->name, '443211', 'eric.godart@test.com',Sex::MEN->name],
+            ['Sébastien', 'Vandevyver', Ranking::E2->name, '987654', 'seba.vande@test.com',Sex::MEN->name],
+            ['Dariusz', 'Sekula', Ranking::E2->name, '332211', 'dariusz.sekula@test.com',Sex::MEN->name],
         ];
 
         foreach($players as $player) {
@@ -131,6 +141,7 @@ class DatabaseSeeder extends Seeder
                 'password' => Hash::make('password'),
                 'first_name' => $player[0],
                 'last_name' => $player[1],
+                'sex' => $player[5],
                 'phone_number' => '047' . fake()->randomNumber(7, true),
                 'birthday' => fake()->dateTimeBetween('-59 years', '-25 years'),
                 'street' => fake()->streetAddress(),
@@ -152,13 +163,33 @@ class DatabaseSeeder extends Seeder
             'password' => Hash::make('password'),
             'first_name' => 'Thierry',
             'last_name' => 'Regnier',
+            'sex' => Sex::MEN->name,
             'phone_number' => '047' . fake()->randomNumber(7, true),
             'birthday' => fake()->dateTimeBetween('-59 years', '-25 years'),
             'street' => fake()->streetAddress(),
             'city_code' => fake()->postcode(),
             'city_name' => fake()->city(),
-            'ranking' =>  Ranking::D6->value,
+            'ranking' =>  Ranking::D6->name,
             'licence' => '154856',
+        ])->club()->associate(Club::first())->save();
+
+        User::make([
+            'is_active' => true,
+            'is_admin' => false,
+            'is_comittee_member' => true,
+            'is_competitor' => true,
+            'email' => 'manon.patigny@gmail.com',
+            'password' => Hash::make('password'),
+            'first_name' => 'Manon',
+            'last_name' => 'Patigny',
+            'sex' => Sex::WOMEN->name,
+            'phone_number' => '047' . fake()->randomNumber(7, true),
+            'birthday' => fake()->dateTimeBetween('-59 years', '-25 years'),
+            'street' => fake()->streetAddress(),
+            'city_code' => fake()->postcode(),
+            'city_name' => fake()->city(),
+            'ranking' =>  Ranking::D4->name,
+            'licence' => '852364',
         ])->club()->associate(Club::first())->save();
 
 

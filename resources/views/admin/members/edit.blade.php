@@ -38,7 +38,7 @@
                         @csrf
                         @method('PUT')
                         
-                        <x-forms.user :member="$member" :rankings="$rankings" :teams="$teams"></x-forms.user>
+                        <x-forms.user :member="$member" :rankings="$rankings" :teams="$teams" :sexes="$sexes"></x-forms.user>
 
                         
                         <div>

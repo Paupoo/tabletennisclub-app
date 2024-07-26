@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\User;
 
+use App\Enums\Sex;
 use App\Models\Club;
 use App\Models\League;
 use App\Models\Role;
@@ -66,8 +67,11 @@ class CreateUserTest extends TestCase
 
     public function test_new_member_creation_with_invalid_paramaters_returns_errors_in_the_session(): void
     {
-        $user = User::factory()->hasTeam()->create();        
+        $team = Team::factory()->create();
+        $user = User::factory()->create();        
+        $user->teams()->attach($team);
         $user->is_admin = true;
+        $user->save();
 
         $password = Hash::make('password');
 
@@ -76,6 +80,7 @@ class CreateUserTest extends TestCase
                         ->post('/admin/members', [
                             'last_name' => 'Dupont',
                             'first_name' => 'Charles',
+                            'sex' => Sex::MEN->name,
                             'email' => 'charles.dupont@gmail.com',
                             'email_verified_at' => now(),
                             'password' => $password,
@@ -89,7 +94,6 @@ class CreateUserTest extends TestCase
                             'has_debt' => false,
                             'birthday' => Date::create(1988,8,17),
                             'phone_number' => '0479123456',
-                            'team_id' => $user->team()->id,
                         ])
                         ->assertSessionHasNoErrors()
                         ->assertRedirect(route('members.create'))
@@ -98,7 +102,7 @@ class CreateUserTest extends TestCase
         $user->is_comittee_member = true;
         $user->is_admin = false;
 
-        $respons = $this->actingAs($user)
+        $response = $this->actingAs($user)
                         ->post('/admin/members', [
                             'last_name' => '',
                             'first_name' => 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Ea quibusdam temporibus reprehenderit ipsam sunt? Illo eos doloremque inventore obcaecati repudiandae culpa qui, rem explicabo consectetur numquam suscipit aut voluptatem nostrum! Lorem ipsum dolor sit amet consectetur adipisicing elit. Ea quibusdam temporibus reprehenderit ipsam sunt? Illo eos doloremque inventore obcaecati repudiandae culpa qui, rem explicabo consectetur numquam suscipit aut voluptatem nostrum!',
@@ -114,7 +118,6 @@ class CreateUserTest extends TestCase
                             'has_debt' => false,
                             'birthday' => Date::create(1988,8,17),
                             'phone_number' => '0479123456',
-                            'team_id' => $user->team()->id,
                         ])
                         ->assertInvalid([
                         'email',

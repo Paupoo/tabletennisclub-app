@@ -4,6 +4,7 @@ namespace Tests\Feature\User;
 
 use App\Enums\Roles;
 use App\Models\Role;
+use App\Models\Team;
 use App\Models\User;
 use Doctrine\Common\Cache\Psr6\InvalidArgument;
 use Illuminate\Database\Eloquent\Model;
@@ -33,19 +34,31 @@ class UpdateUserTest extends TestCase
 
     public function test_admin_and_comittee_members_can_access_edit_member_page(): void   
     {
-        $admin = $this->createMemberUser();
-        $admin->is_admin = true;
-        $comitte_member = $this->createMemberUser();
-        $comitte_member->is_comittee_member = true;
+        $admin = $this->createMemberUser('is_admin');
+        $comittee_member = $this->createMemberUser('is_comittee_member');
         $member = $this->createMemberUser();
 
         $response = $this->actingAs($admin)
-                        ->get(route('members.edit', 1))
+                        ->get(route('members.edit', $member->id))
                         ->assertOK();
 
         $response = $this->actingAs($comittee_member)
-                        ->get(route('members.edit', 1))
+                        ->get(route('members.edit', $member->id))
                         ->assertOK();
+    }
+
+    public function test_members_cant_access_edit_member_page(): void   
+    {
+        
+        $member = $this->createMemberUser();
+
+        $response = $this->actingAs($member)
+                        ->get(route('members.edit', $member->id))
+                        ->assertStatus(403);
+
+        $response = $this->actingAs($member)
+                        ->get(route('members.edit', $member->id))
+                        ->assertStatus(403);
     }
 
     /**
@@ -54,9 +67,15 @@ class UpdateUserTest extends TestCase
      * @param string $role
      * @return Model
      */
-    private function createMemberUser(): Model
+    private function createMemberUser(string $role = ''): Model
     {        
         $user = User::factory()->create();
+        
+        if ($role === 'is_admin') {
+            $user->is_admin = true;
+        } elseif  ($role === 'is_comittee_member') {
+            $user->is_comittee_member = true;
+        }
 
         return $user;
     }

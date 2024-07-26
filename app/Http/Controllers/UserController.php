@@ -100,7 +100,7 @@ class UserController extends Controller
         //
         $this->authorize('update', User::class);
         return view('admin.members.edit', [
-            'member' => User::find($id)->load('teams'),
+            'member' => User::find($id),
             'teams' => Team::all(),
             'rankings' => array_column(Ranking::cases(), 'name'),
             'sexes' => array_column(Sex::cases(), 'name'),

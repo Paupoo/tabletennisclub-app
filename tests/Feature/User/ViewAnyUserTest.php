@@ -47,8 +47,8 @@ class ViewAnyUserTest extends TestCase
 
     public function test_admin_and_comittee_members_can_see_create_member_and_force_index_buttons_from_index(): void
     {
-        $admin = $this->createMemberUser(Roles::ADMIN->value);
-        $comittee_member = $this->createMemberUser(Roles::COMITTEE_MEMBER->value);
+        $admin = $this->createMemberUser('is_admin');
+        $comittee_member = $this->createMemberUser('is_comittee_member');
 
         $response = $this->actingAs($admin)
                         ->get(route('members.index'))
@@ -93,7 +93,17 @@ class ViewAnyUserTest extends TestCase
 
     public function test_admin_and_comittee_members_can_see_edit_and_delete_member_buttons_from_index(): void
     {
-        $member = $this->createMemberUser('Admin');
+        $member = $this->createMemberUser('is_admin');
+
+        $response = $this->actingAs($member)
+                        ->get(route('members.index'))
+                        ->assertSee([
+                            'Contact',
+                            'Edit',
+                            'Delete',
+                        ]);
+
+        $member = $this->createMemberUser('is_comittee_member');
 
         $response = $this->actingAs($member)
                         ->get(route('members.index'))
@@ -110,21 +120,15 @@ class ViewAnyUserTest extends TestCase
      * @param string $role
      * @return Model
      */
-    private function createMemberUser(string $role = 'Member'): Model
+    private function createMemberUser(string $role = ''): Model
     {
-        if(in_array($role, array_column(Roles::cases(), 'value'))) {
-
-        } else {
-            throw new InvalidArgument('This a problem');
-        }
-        
         $user = User::factory()->create();
-
-        $roleMember = Role::create([
-            'name' => $role,
-            'description' => 'Just a test',
-        ]);
-        $user->role()->associate($roleMember);
+        
+        if ($role === 'is_admin') {
+            $user->is_admin = true;
+        } elseif  ($role === 'is_comittee_member') {
+            $user->is_comittee_member = true;
+        }
 
         return $user;
     }

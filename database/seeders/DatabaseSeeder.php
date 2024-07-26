@@ -11,11 +11,11 @@ use App\Enums\Sex;
 use Illuminate\Database\Seeder;
 use App\Models\Club;
 use App\Models\League;
-use App\Models\Season;
 use App\Models\Team;
 use App\Models\User;
 use App\Services\ForceIndex;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
@@ -65,7 +65,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         League::create([
-        'division' => '4B',
+            'division' => '4B',
             'level' => LeagueLevel::PROVINCIAL_BW->value,
             'category' => LeagueCategory::WOMEN->value,
             'start_year' => 2024,
@@ -85,7 +85,7 @@ class DatabaseSeeder extends Seeder
         $team = Team::make([
             'name' => 'Z',
             ])
-            ->club()->associate(Club::find(1))
+            ->club()->associate(Club::firstWhere('licence', 'BBW214'))
             ->league()->associate(League::find(1));
         $team->save();
 
@@ -116,7 +116,7 @@ class DatabaseSeeder extends Seeder
             'city_name' => 'Ottignies',
             'ranking' => Ranking::E4->name,
             'licence' => '114399',
-        ])->club()->associate(Club::first());
+        ])->club()->associate(Club::firstWhere('licence', 'BBW214'));
         $admin->save();
         $admin->teams()->attach(Team::firstWhere('name', 'Z'));     
         
@@ -139,6 +139,7 @@ class DatabaseSeeder extends Seeder
                 'is_competitor' => true,
                 'email' => $player[4],
                 'password' => Hash::make('password'),
+                'remember_token' => Str::random(10),
                 'first_name' => $player[0],
                 'last_name' => $player[1],
                 'sex' => $player[5],
@@ -149,7 +150,7 @@ class DatabaseSeeder extends Seeder
                 'city_name' => fake()->city(),
                 'ranking' =>  $player[2],
                 'licence' => $player[3],
-            ])->club()->associate(Club::first());
+            ])->club()->associate(Club::firstWhere('licence', 'BBW214'));
             $player->save();
             $player->teams()->attach(Team::firstWhere('name', 'Z'));
         }
@@ -171,7 +172,7 @@ class DatabaseSeeder extends Seeder
             'city_name' => fake()->city(),
             'ranking' =>  Ranking::D6->name,
             'licence' => '154856',
-        ])->club()->associate(Club::first())->save();
+        ])->club()->associate(Club::firstWhere('licence', 'BBW214'))->save();
 
         User::make([
             'is_active' => true,
@@ -191,6 +192,20 @@ class DatabaseSeeder extends Seeder
             'ranking' =>  Ranking::D4->name,
             'licence' => '852364',
         ])->club()->associate(Club::first())->save();
+
+        User::factory()->count(5)->create([
+            'is_competitor' => false,
+        ]);
+
+        User::factory()->count(2)->create([
+            'is_competitor' => true,
+            'ranking' => 'NC'
+        ]);
+
+        User::factory()->count(2)->create([
+            'is_competitor' => false,
+            'ranking' => 'NC'
+        ]);
 
 
         // Set ForceIndexes

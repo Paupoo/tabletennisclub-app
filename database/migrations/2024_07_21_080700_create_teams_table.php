@@ -19,7 +19,7 @@ return new class extends Migration
             $table->id();
             $table->string('name', 1);
             $table->foreignIdFor(League::class)->nullable()->constrained();
-            $table->foreignIdFor(Club::class)->constrained();
+            $table->foreignIdFor(Club::class)->nullable()->constrained();
             $table->unsignedBigInteger('captain_id')->nullable();
             $table->timestamps();
 

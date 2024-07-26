@@ -15,8 +15,6 @@ use Tests\TestCase;
 class UpdateUserTest extends TestCase
 {
 
-    use RefreshDatabase;
-
     public function test_unlogged_user_cannot_access_members_edit(): void
     {
         $response = $this->get(route('members.edit', 1))

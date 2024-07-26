@@ -16,7 +16,6 @@ use Tests\TestCase;
 
 class CreateUserTest extends TestCase
 {
-    use RefreshDatabase;
 
     public function test_new_member_creation(): void
     {
@@ -132,11 +131,6 @@ class CreateUserTest extends TestCase
                             'ranking',
                             'password'
                         ]);
-    }
-
-    public function test_new_member_creation_adds_member_pool_if_no_team_if_linked(): void
-    {
-
     }
 
 }

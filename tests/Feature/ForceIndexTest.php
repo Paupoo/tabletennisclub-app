@@ -9,21 +9,12 @@ use Tests\TestCase;
 
 class ForceIndexTest extends TestCase
 {
-    use RefreshDatabase;
-    
-    /**
-     * Indicates whether the default seeder should run before each test.
-     *
-     * @var bool
-     */
-    protected $seed = true;
     
     /**
      * A basic feature test example.
      */
     public function test_delete_force_indexes_set_all_value_to_null_in_database(): void
     {
-
         $user = User::factory()->create(['is_admin' => true]);
         $response = $this->actingAs($user)
                         ->get('/admin/members/deleteForceIndex');
@@ -65,8 +56,7 @@ class ForceIndexTest extends TestCase
     }
 
     public function test_force_index_are_calculated_only_for_competitors(): void
-    {
-        
+    {       
         foreach(User::where('is_competitor', true)->get() as $competitor) {
             $this->assertIsInt($competitor->force_index);
         }

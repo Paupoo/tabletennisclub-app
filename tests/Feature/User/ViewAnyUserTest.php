@@ -12,7 +12,6 @@ use Tests\TestCase;
 
 class ViewAnyUserTest extends TestCase
 {
-    use RefreshDatabase;
     
     /**
      * User management

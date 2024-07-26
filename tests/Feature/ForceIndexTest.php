@@ -56,7 +56,11 @@ class ForceIndexTest extends TestCase
     }
 
     public function test_force_index_are_calculated_only_for_competitors(): void
-    {       
+    {
+        $user = User::factory()->create(['is_admin' => true]);
+        $response = $this->actingAs($user)
+                        ->get('/admin/members/setForceIndex');
+
         foreach(User::where('is_competitor', true)->get() as $competitor) {
             $this->assertIsInt($competitor->force_index);
         }
@@ -64,6 +68,8 @@ class ForceIndexTest extends TestCase
         foreach(User::where('is_competitor', false)->get() as $competitor) {
             $this->assertNull($competitor->force_index);
         }
+
+        $response->assertRedirect(route('members.index'));
 
     }
 

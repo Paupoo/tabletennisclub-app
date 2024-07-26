@@ -2,6 +2,9 @@
 
 namespace Database\Factories;
 
+use App\Models\Club;
+use App\Models\League;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -18,10 +21,10 @@ class TeamFactory extends Factory
     {
         return [
             //
-            'name' => fake()->range('A','Z'),
-            'league_id' => 1,
-            'club_id' => 1,
-            'captain_id' => 1,
+            'name' => strtoupper(fake()->randomLetter()),
+            'league_id' => League::find(1),
+            'club_id' => Club::find(1),
+            'captain_id' => User::find(1),
         ];
     }
 }

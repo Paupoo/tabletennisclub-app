@@ -10,7 +10,7 @@ use Tests\TestCase;
 class ForceIndexTest extends TestCase
 {
     use RefreshDatabase;
-
+    
     /**
      * Indicates whether the default seeder should run before each test.
      *
@@ -24,7 +24,8 @@ class ForceIndexTest extends TestCase
     public function test_delete_force_indexes_set_all_value_to_null_in_database(): void
     {
 
-        $response = $this->actingAs(User::find(1))
+        $user = User::factory()->create(['is_admin' => true]);
+        $response = $this->actingAs($user)
                         ->get('/admin/members/deleteForceIndex');
 
         foreach (User::all() as $user) {

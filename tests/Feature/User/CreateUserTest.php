@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\User;
 
+use App\Models\Club;
+use App\Models\League;
 use App\Models\Role;
 use App\Models\Team;
 use App\Models\User;
@@ -19,8 +21,11 @@ class CreateUserTest extends TestCase
     {
         $user = User::factory()->create();       
         $user->is_admin = true;
+
+        $league = League::factory()->create();
+        $club = Club::factory()->create();
                 
-        $team = Team::create();
+        $team = Team::factory()->create();
 
         $password = Hash::make('password');
 
@@ -28,6 +33,7 @@ class CreateUserTest extends TestCase
                         ->post('/admin/members', [
                             'last_name' => 'Dupont',
                             'first_name' => 'Charles',
+                            'sex' => 'MEN',
                             'email' => 'charles.dupont@gmail.com',
                             'email_verified_at' => now(),
                             'password' => $password,
@@ -35,13 +41,11 @@ class CreateUserTest extends TestCase
                             'remember_token' => Str::random(10),
                             'licence' => 123456,
                             'ranking' => 'B0',
-                            'role_id' => $roleMember->id,
                             'is_competitor' => true,
                             'is_active' => true,
                             'has_debt' => false,
                             'birthday' => Date::create(1988,8,17),
                             'phone_number' => '0479123456',
-                            'team_id' => $team->id,
                         ])
                         ->assertRedirect(route('members.create'))
                         ->assertSessionHasNoErrors();

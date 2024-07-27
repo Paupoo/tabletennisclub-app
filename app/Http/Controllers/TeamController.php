@@ -35,7 +35,8 @@ class TeamController extends Controller
      */
     public function create()
     {
-        //
+        $this->authorize('create', Team::class);
+
         return view('admin.teams.create', [
             'users' => User::where('is_competitor', true)->orderby('force_index')->orderby('last_name')->orderby('first_name')->get(),
             'leagues' => League::where('start_year', '>=', Carbon::now()->format('Y'))->orderBy('start_year')->orderBy('level')->orderBy('category')->orderBy('division')->get(),

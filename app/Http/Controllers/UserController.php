@@ -158,12 +158,14 @@ class UserController extends Controller
 
     public function setForceIndex(): RedirectResponse
     {
+        $this->authorize('setOrUpdateForceIndex', User::class);
         $this->forceIndex->setOrUpdateAll();
         return redirect()->route('members.index');
     }
 
     public function deleteForceIndex(): RedirectResponse
     {
+        $this->authorize('deleteForceIndex', User::class);
         $this->forceIndex->delete();
         return redirect()->route('members.index');
     }

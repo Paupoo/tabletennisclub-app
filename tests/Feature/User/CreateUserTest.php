@@ -57,9 +57,7 @@ class CreateUserTest extends TestCase
         $password = Hash::make('password');
 
         $response = $this->actingAs($user)
-                        ->post('/admin/members/create', [
-                            
-                        ])
+                        ->post('/admin/members/create')
                         ->assertStatus(405);
         
     }

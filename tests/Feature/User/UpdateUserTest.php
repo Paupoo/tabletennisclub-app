@@ -72,7 +72,6 @@ class UpdateUserTest extends TestCase
                 'email' => 'jean.lechat@gmail.com',
                 'password' => 'Jean1234!',
                 'password_confirmation' => 'Jean1234!',
-                'is_active' => true,
                 'is_admin' => false,
                 'is_comittee_member' => false,
                 'is_competitor' => false,
@@ -105,7 +104,6 @@ class UpdateUserTest extends TestCase
                 'last_name' => 1,
                 'sex' => 'femme',
                 'email' => 'test.com',
-                'password' => '1234',
                 'is_active' => 15,
                 'is_admin' => 'false',
                 'is_comittee_member' => null,
@@ -117,7 +115,6 @@ class UpdateUserTest extends TestCase
                 'last_name',
                 'sex',
                 'email',
-                'password',
                 'licence',
                 'ranking',
             ])
@@ -127,10 +124,65 @@ class UpdateUserTest extends TestCase
                 'last_name',
                 'sex',
                 'email',
-                'password',
                 'licence',
                 'ranking',
             ]);
+    }
+
+    public function test_member_cant_be_competitor_without_valid_licence_and_ranking(): void
+    {
+        $admin = $this->createMemberUser('is_admin');
+        $member = $this->createMemberUser();
+
+        $this->actingAs($admin)
+            ->from(route('members.edit', $member->id))
+            ->put(route('members.update', $member->id), [
+                'first_name' => 'Jean',
+                'last_name' => 'Lechat',
+                'sex' => 'MEN',
+                'email' => 'jean.lechat@gmail.com',
+                'password' => 'Jean1234!',
+                'password_confirmation' => 'Jean1234!',
+                'is_admin' => false,
+                'is_comittee_member' => false,
+                'is_competitor' => true,
+                'licence' => '1245',
+                'ranking' => 'NA',
+            ])
+            ->assertInvalid([
+                'licence',
+                'ranking',
+            ])
+            ->assertRedirect(route('members.edit', $member->id))
+            ->assertSessionHasErrors([
+                'licence',
+                'ranking',
+            ]);
+    }
+
+    public function test_member_can_be_casual_with_valid_licence_and_ranking(): void
+    {
+        $admin = $this->createMemberUser('is_admin');
+        $member = $this->createMemberUser();
+
+        $this->actingAs($admin)
+            ->from(route('members.edit', $member->id))
+            ->put(route('members.update', $member->id), [
+                'first_name' => 'Jean',
+                'last_name' => 'Lechat',
+                'sex' => 'MEN',
+                'email' => 'jean.lechat@gmail.com',
+                'password' => 'Jean1234!',
+                'password_confirmation' => 'Jean1234!',
+                'is_admin' => false,
+                'is_comittee_member' => false,
+                'is_competitor' => false,
+                'licence' => '124599',
+                'ranking' => 'B0',
+            ])
+            ->assertValid()
+            ->assertRedirect(route('members.index'))
+            ->assertSessionHasNoErrors();
     }
 
     /**

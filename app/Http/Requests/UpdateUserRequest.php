@@ -24,8 +24,17 @@ class UpdateUserRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
-        if (empty($this->password)) {
-            unset($request['password']);
+        if($this->ranking === null) {
+            $this->merge([
+                'ranking' => Ranking::NA->name,
+            ]);
+        }
+
+        // Forbid a player that plays in competition to not have a ranking.
+        if($this->is_competitor && $this->ranking === Ranking::NA->name) {
+            $this->merge([
+                'ranking' => 'null'
+            ]);
         }
     }
 
@@ -42,13 +51,11 @@ class UpdateUserRequest extends FormRequest
             'last_name' => ['required', 'string', 'max:255'],
             'sex' => ['required', Rule::in(array_column(Sex::cases(), 'name'))],
             'email' => ['required', 'email:rfc,dns,spoof,filter_unicode', 'unique:users,email,'.$this->route('member'),],
-            'password' => ['nullable', 'confirmed', 'min:8', RulesPassword::min(8)->letters()->mixedCase()->numbers()->symbols()],
             'is_competitor' => ['nullable'],
-            'is_active' => ['nullable'],
             'is_admin' => ['nullable'],
             'is_comittee_member' => ['nullable'],
-            'licence' => ['present_if:is_competitor,true', 'unique:users,licence,'.$this->route('member'), 'size:6'],
-            'ranking' => ['present_if:is_competitor,true', Rule::in(array_column(Ranking::cases(),'name'))],            
+            'licence' => ['nullable', 'required_if:is_competitor,true', 'unique:users,licence,'.$this->route('member'), 'size:6'],
+            'ranking' => ['required_if:is_competitor,true', Rule::in(array_column(Ranking::cases(),'name'))],
         ];
     }
 }

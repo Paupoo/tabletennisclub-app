@@ -41,22 +41,22 @@
 </div>
 
 {{-- Password --}}
-<div>
+{{-- <div>
     <x-input-label for="password" :value="__('Password')" />
     <x-text-input id="password" name="password" type="password" class="block w-full mt-1"
         :value="old('password')" autofocus autocomplete="false"></x-text-input>
     <x-input-error class="mt-2" :messages="$errors->get('password')" />
-</div>
+</div> --}}
 
 {{-- Confirm Password --}}
-<div class="mt-4">
+{{-- <div class="mt-4">
     <x-input-label for="password_confirmation" :value="__('Confirm Password')" />
 
     <x-text-input id="password_confirmation" class="block w-full mt-1" type="password"
         name="password_confirmation" autocomplete="new-password" />
 
     <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
-</div>
+</div> --}}
 
 {{-- Competition --}}
 <div>

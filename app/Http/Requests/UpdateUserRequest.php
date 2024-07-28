@@ -20,6 +20,16 @@ class UpdateUserRequest extends FormRequest
     }
 
     /**
+     * Prepare the data for validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        if (empty($this->password)) {
+            unset($request['password']);
+        }
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
@@ -31,16 +41,14 @@ class UpdateUserRequest extends FormRequest
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
             'sex' => ['required', Rule::in(array_column(Sex::cases(), 'name'))],
-            'email' => ['required', 'lowercase', 'max:255', 'unique:users,email,'.$this->route('member'),],
+            'email' => ['required', 'email:rfc,dns,spoof,filter_unicode', 'unique:users,email,'.$this->route('member'),],
             'password' => ['nullable', 'confirmed', 'min:8', RulesPassword::min(8)->letters()->mixedCase()->numbers()->symbols()],
             'is_competitor' => ['nullable'],
             'is_active' => ['nullable'],
             'is_admin' => ['nullable'],
             'is_comittee_member' => ['nullable'],
-            'licence' => ['nullable', 'unique:users,licence,'.$this->route('member'), 'size:6'],
-            'ranking' => ['nullable', Rule::in(array_column(Ranking::cases(),'name'))],
-            'team_id' => ['nullable', 'exists:teams,id'],
-            'role_id' => ['integer'],
+            'licence' => ['present_if:is_competitor,true', 'unique:users,licence,'.$this->route('member'), 'size:6'],
+            'ranking' => ['present_if:is_competitor,true', Rule::in(array_column(Ranking::cases(),'name'))],            
         ];
     }
 }

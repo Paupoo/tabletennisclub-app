@@ -31,7 +31,7 @@ class StoreUserRequest extends FormRequest
             'last_name' => ['required', 'string', 'max:255'],
             'first_name' => ['required', 'string', 'max:255'],
             'sex' => ['required', Rule::in(array_column(Sex::cases(), 'name'))],
-            'email' => ['required', 'lowercase', 'max:255', 'unique:users,email'],
+            'email' => ['required', 'email:rfc,dns,spoof,filter_unicode', 'unique:users,email'],
             'password' => ['required', 'confirmed', 'min:8', RulesPassword::min(8)->letters()->mixedCase()->numbers()->symbols()],
             'is_competitor' => ['nullable'],
             'licence' => ['nullable', 'required_if:is_competitor,true', 'unique:users,licence', 'size:6'],

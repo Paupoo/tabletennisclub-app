@@ -17,21 +17,21 @@
                     </a>
                     <a href="{{ route('setForceIndex') }}">
                         <x-primary-button>{{ __('Set Force Index') }}</x-primary-button>
-                    </a> 
+                    </a>
                     <a href="{{ route('deleteForceIndex') }}">
                         <x-danger-button>{{ __('Delete Force Index') }}</x-primary-button>
                     </a>
                 @endcan
             </div>
-            
-            @if(session('success'))
-            <div class="mt-4 bg-red-500">
-                {{ session('success') }}
-            </div>
+
+            @if (session('success'))
+                <div class="mt-4 bg-green-500 rounded-lg pl-3">
+                    {{ session('success') }}
+                </div>
             @elseif(session('deleted'))
-            <div class="bg-red-500 mt-4 rounded-lg pl-3">
-                {{ session('deleted') }}
-            </div>
+                <div class=" mt-4 bg-red-500 rounded-lg pl-3">
+                    {{ session('deleted') }}
+                </div>
             @endif
         </div>
     </div>
@@ -65,28 +65,28 @@
                                 <td class="px-4 whitespace-nowrap">
                                     @if ($member->teams->count() > 0)
                                         @foreach ($member->teams as $team)
-                                                {{ $team->name }}
-                                                @if (!$loop->last)
-                                                    {{-- This is not the last iteration --}}
-                                                    {{ ' | ' }}
-                                                @endif
+                                            {{ $team->name }}
+                                            @if (!$loop->last)
+                                                {{-- This is not the last iteration --}}
+                                                {{ ' | ' }}
+                                            @endif
                                         @endforeach
                                     @else
                                         {{ __('Pool') }}
-                                    @endif  
-                                </td>
-                                <td class="px-4 whitespace-nowrap">
-                                    @if($member->is_active == false)
-                                    {{ __('Inactive') }}
-                                    @else
-                                    {{ __('Active') }}
                                     @endif
                                 </td>
                                 <td class="px-4 whitespace-nowrap">
-                                    @if($member->is_competitor == false)
-                                    {{ __('Casual') }}
+                                    @if ($member->is_active == false)
+                                        {{ __('Inactive') }}
                                     @else
-                                    {{ __('Competitor') }}
+                                        {{ __('Active') }}
+                                    @endif
+                                </td>
+                                <td class="px-4 whitespace-nowrap">
+                                    @if ($member->is_competitor == false)
+                                        {{ __('Casual') }}
+                                    @else
+                                        {{ __('Competitor') }}
                                     @endif
                                 </td>
                                 <td class="px-4 whitespace-nowrap">
@@ -94,33 +94,35 @@
                                         {{ __('No') }}
                                     @else
                                         {{ __('Yes') }}
-                                    @endif    
+                                    @endif
                                 </td>
                                 <td class="flex items-center gap-2 px-4 whitespace-nowrap">
-                                    <a href="{{ route('members.show', $member->id)}}"><img class="h-4 cursor-pointer" src="{{ asset('images/icons/info.svg') }}"
-                                        alt="Contact"></a>
+                                    <a href="{{ route('members.show', $member->id) }}"><img class="h-4 cursor-pointer"
+                                            src="{{ asset('images/icons/info.svg') }}" alt="Contact"></a>
                                     @can('update', $member_model)
-                                    <a href="{{ route('members.edit', $member->id) }}">
-                                        <button type="submit">
-                                            <img class="h-4 cursor-pointer" src="{{ asset('images/icons/edit.svg') }}" alt="Edit">
-                                        </button>
-                                    </a>
+                                        <a href="{{ route('members.edit', $member->id) }}">
+                                            <button type="submit">
+                                                <img class="h-4 cursor-pointer" src="{{ asset('images/icons/edit.svg') }}"
+                                                    alt="Edit">
+                                            </button>
+                                        </a>
                                     @endcan
                                     @can('delete', $member_model)
-                                    <form action="{{ route('members.destroy', $member->id) }}" method="POST">
-                                        @csrf
-                                        @method('delete')
-                                        <button>
-                                            <img class="h-4 cursor-pointer" src="{{ asset('images/icons/delete.svg') }}" alt="Delete">
-                                        </button>
-                                    </form>
+                                        <form action="{{ route('members.destroy', $member->id) }}" method="POST">
+                                            @csrf
+                                            @method('delete')
+                                            <button>
+                                                <img class="h-4 cursor-pointer"
+                                                    src="{{ asset('images/icons/delete.svg') }}" alt="Delete">
+                                            </button>
+                                        </form>
                                     @endcan
                                 </td>
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
-                
+
                 <x-admin-block>
                     {{ $members->links() }}
                 </x-admin-block>

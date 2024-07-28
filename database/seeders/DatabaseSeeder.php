@@ -122,6 +122,7 @@ class DatabaseSeeder extends Seeder
         
         // Create test dream team
 
+        $password = Hash::make('password');
         // the players
         $players = [
             ['Olivier', 'Tilmans', Ranking::E6->name, '223344', 'olivier.tilmans@test.com',Sex::MEN->name],
@@ -138,7 +139,7 @@ class DatabaseSeeder extends Seeder
                 'is_admin' => false,
                 'is_competitor' => true,
                 'email' => $player[4],
-                'password' => Hash::make('password'),
+                'password' => $password,
                 'remember_token' => Str::random(10),
                 'first_name' => $player[0],
                 'last_name' => $player[1],
@@ -161,7 +162,7 @@ class DatabaseSeeder extends Seeder
             'is_comittee_member' => true,
             'is_competitor' => true,
             'email' => 'thierry.regnier@gmail.com',
-            'password' => Hash::make('password'),
+            'password' => $password,
             'first_name' => 'Thierry',
             'last_name' => 'Regnier',
             'sex' => Sex::MEN->name,
@@ -180,7 +181,7 @@ class DatabaseSeeder extends Seeder
             'is_comittee_member' => true,
             'is_competitor' => true,
             'email' => 'manon.patigny@gmail.com',
-            'password' => Hash::make('password'),
+            'password' => $password,
             'first_name' => 'Manon',
             'last_name' => 'Patigny',
             'sex' => Sex::WOMEN->name,

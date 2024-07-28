@@ -60,6 +60,7 @@ class UserController extends Controller
         $user = User::create([
             'first_name' => $request['first_name'],
             'last_name' => $request['last_name'],
+            'sex' => $request['sex'],
             'email' => $request['email'],
             'password' => $request['password'],
             'is_competitor' => isset($request['is_competitor']) ? true : false,
@@ -113,13 +114,10 @@ class UserController extends Controller
      */
     public function update(UpdateUserRequest $request, string $id)
     {
-        // $request = $request->validated();
         $user = User::find($id);
-
+        
         $user->fill($request->validated());
-        if ($request['password'] != null) {
-            $user->password = $request['password'];
-        }
+
         $user->is_competitor = isset($request['is_competitor']) ? true : false;
         $user->is_active = isset($request['is_active']) ? true : false;
         $user->is_admin = isset($request['is_admin']) ? true : false;
@@ -136,7 +134,9 @@ class UserController extends Controller
 
         $this->forceIndex->setOrUpdateAll();
 
-        return redirect()->route('members.index');
+        return redirect()
+            ->route('members.index')
+            ->with('success', __('Member ' . $user->first_name . ' ' . $user->last_name . ' has been updated.'));
     }
 
 

@@ -27,6 +27,8 @@ class TeamController extends Controller
         //
         return view('admin.teams.index', [
             'teams' => Team::orderby('name')->with('captain')->paginate(10),
+            'team_model' => Team::class,
+
         ]);
     }
 
@@ -87,6 +89,8 @@ class TeamController extends Controller
      */
     public function edit(string $id)
     {
+        $this->authorize('update', Team::class);
+
         $team = Team::findOrFail($id);
         //
         return view('admin.teams.edit', [
@@ -103,7 +107,6 @@ class TeamController extends Controller
      */
     public function update(UpdateTeamRequest $request, string $id): RedirectResponse
     {
-        //
         $request = $request->validated();
         
         $team = Team::find($id);

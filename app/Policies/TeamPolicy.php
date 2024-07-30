@@ -35,17 +35,18 @@ class TeamPolicy
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, Team $team): bool
+    public function update(User $user = null, Team $team = null): bool
     {
-        //
+        return $user->is_admin || $user->is_comittee_member;
     }
 
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, Team $team): bool
+    public function delete(User $user = null, Team $team = null): bool
     {
         //
+        return $user->is_admin || $user->is_comitte_member;
     }
 
     /**

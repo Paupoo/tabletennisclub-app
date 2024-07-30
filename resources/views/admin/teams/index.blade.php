@@ -58,9 +58,12 @@
                                 <td class="flex items-center gap-2 px-4 whitespace-nowrap">
                                     <a href="{{ route('teams.show', $team->id) }}"><img class="h-4 cursor-pointer" src="{{ asset('images/icons/contact.svg') }}"
                                         alt="Check details"></a>
+                                    @can('update', $team_model)
                                     <a href="{{ route('teams.edit', $team->id) }}">
                                             <img class="h-4 cursor-pointer" src="{{ asset('images/icons/edit.svg') }}" alt="Edit">
                                     </a>
+                                    @endcan
+                                    @can('delete', $team_model)
                                     <form action="{{ route('teams.destroy', $team->id) }}" method="POST">
                                         @csrf
                                         @method('delete')
@@ -68,6 +71,7 @@
                                             <img class="h-4 cursor-pointer" src="{{ asset('images/icons/delete.svg') }}" alt="Delete">
                                         </button>
                                     </form>
+                                    @endcan
                                 </td>
                             </tr>
                         @endforeach

@@ -51,7 +51,7 @@
                         @foreach ($teams as $team)
                             <tr class="border-b dark:border-neutral-500">
                                 <td class="px-4 whitespace-nowrap">{{ $team->name }} ({{ $team->users->count() }})</td>
-                                <td class="px-4 whitespace-nowrap">{{ $team->league?->start_year }} - {{ $team->league?->end_year }}</td>
+                                <td class="px-4 whitespace-nowrap">{{ $team->season?->name }}</td>
                                 <td class="px-4 whitespace-nowrap">{{$team->league?->category }}</td>
                                 <td class="px-4 whitespace-nowrap">{{$team->league?->level }} {{ $team->league?->division }}</td>
                                 <td class="px-4 whitespace-nowrap">{{ isset($team->captain->last_name) ? $team->captain->first_name . ' ' . $team->captain->last_name : __('No captain') }}</td>

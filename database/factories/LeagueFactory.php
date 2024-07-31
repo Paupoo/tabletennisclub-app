@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Enums\LeagueCategory;
 use App\Enums\LeagueLevel;
+use App\Models\Season;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -24,8 +25,7 @@ class LeagueFactory extends Factory
             'division' => fake()->numberBetween(1,5) . fake()->randomLetter(),
             'level' => fake()->randomElement(array_column(LeagueLevel::cases(), 'value')),
             'category' => fake()->randomElement(array_column(LeagueCategory::cases(), 'value')),
-            'start_year' => $thisYear,
-            'end_year' => ++$thisYear,
+            'season_id' => fake()->randemElement(Season::select('id')->get())
         ];
     }
 }

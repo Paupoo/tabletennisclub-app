@@ -44,4 +44,9 @@ class Team extends Model
     {
         return $this->belongsTo(Club::class);
     }
+
+    public function season(): BelongsTo
+    {
+        return $this->belongsTo(Season::class);
+    }
 }

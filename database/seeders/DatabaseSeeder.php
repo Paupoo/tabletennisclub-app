@@ -11,6 +11,7 @@ use App\Enums\Sex;
 use Illuminate\Database\Seeder;
 use App\Models\Club;
 use App\Models\League;
+use App\Models\Season;
 use App\Models\Team;
 use App\Models\User;
 use App\Services\ForceIndex;
@@ -32,46 +33,6 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-
-        League::create([
-            'division' => '5E',
-            'level' => LeagueLevel::PROVINCIAL_BW->value,
-            'category' => LeagueCategory::MEN->value,
-            'start_year' => 2023,
-            'end_year' => 2024,
-        ]);
-        League::create([
-            'division' => '5E',
-            'level' => LeagueLevel::PROVINCIAL_BW->value,
-            'category' => LeagueCategory::MEN->value,
-            'start_year' => 2024,
-            'end_year' => 2025,
-        ]);
-
-        League::create([
-            'division' => '4B',
-            'level' => LeagueLevel::PROVINCIAL_BW->value,
-            'category' => LeagueCategory::MEN->value,
-            'start_year' => 2024,
-            'end_year' => 2025,
-        ]);
-
-        League::create([
-            'division' => '3F',
-            'level' => LeagueLevel::PROVINCIAL_BW->value,
-            'category' => LeagueCategory::VETERANS->value,
-            'start_year' => 2024,
-            'end_year' => 2025,
-        ]);
-
-        League::create([
-            'division' => '4B',
-            'level' => LeagueLevel::PROVINCIAL_BW->value,
-            'category' => LeagueCategory::WOMEN->value,
-            'start_year' => 2024,
-            'end_year' => 2025,
-        ]);
-
         Club::create([
             'name' => 'C.T.T Ottignies-Blocry',
             'licence' => 'BBW214',
@@ -80,13 +41,55 @@ class DatabaseSeeder extends Seeder
             'city_name' => 'Ottignies',
         ]);
 
+        Season::factory(10)->create();
+
+        League::create([
+            'division' => '5E',
+            'level' => LeagueLevel::PROVINCIAL_BW->value,
+            'category' => LeagueCategory::MEN->value,
+            'season_id' => 1,
+
+        ]);
+        League::create([
+            'division' => '5E',
+            'level' => LeagueLevel::PROVINCIAL_BW->value,
+            'category' => LeagueCategory::MEN->value,
+            'season_id' => 2,
+
+        ]);
+
+        League::create([
+            'division' => '4B',
+            'level' => LeagueLevel::PROVINCIAL_BW->value,
+            'category' => LeagueCategory::MEN->value,
+            'season_id' => 3,
+
+        ]);
+
+        League::create([
+            'division' => '3F',
+            'level' => LeagueLevel::PROVINCIAL_BW->value,
+            'category' => LeagueCategory::VETERANS->value,
+            'season_id' => 4,
+
+        ]);
+
+        League::create([
+            'division' => '4B',
+            'level' => LeagueLevel::PROVINCIAL_BW->value,
+            'category' => LeagueCategory::WOMEN->value,
+            'season_id' => 5,
+        ]);
+
+
 
         // Create Z team team
         $team = Team::make([
             'name' => 'Z',
             ])
             ->club()->associate(Club::firstWhere('licence', 'BBW214'))
-            ->league()->associate(League::find(1));
+            ->league()->associate(League::find(1))
+            ->season()->associate(Season::find(1));
         $team->save();
 
         // Create F team team
@@ -94,8 +97,9 @@ class DatabaseSeeder extends Seeder
             'name' => 'F',
             ])
             ->club()->associate(Club::find(1))
-            ->league()->associate(League::firstWhere('division', '4B'));
-        $team->save();
+            ->league()->associate(League::firstWhere('division', '4B'))
+            ->season()->associate(Season::find(1));
+            $team->save();
 
         // // Create some matches for Z team
 

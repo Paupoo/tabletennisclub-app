@@ -13,7 +13,7 @@
         <option value="" disabled @selected(old('name') === null)>{{ __('Select a league') }}</option>
         @foreach ($leagues as $league)
             <option value="{{ $league->id }}" @selected(old('name', $team->league?->id) === $league->id)>
-                {{ $league->start_year }}-{{ $league->end_year }} | {{ $league->level }}
+                {{ $league->season?->name }} | {{ $league->level }}
                 | {{ $league->category }} | {{ $league->division }}</option>
         @endforeach
 

@@ -2,6 +2,7 @@
 
 use App\Enums\LeagueCategory;
 use App\Enums\LeagueLevel;
+use App\Models\Season;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -19,8 +20,7 @@ return new class extends Migration
             $table->string('division');
             $table->enum('level', array_column(LeagueLevel::cases(), 'value'));
             $table->enum('category', array_column(LeagueCategory::cases(), 'value'));
-            $table->unsignedSmallInteger('start_year');
-            $table->unsignedSmallInteger('end_year');
+            $table->foreignIdFor(Season::class)->constrained();
         });
     }
 

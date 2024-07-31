@@ -21,6 +21,7 @@ return new class extends Migration
             $table->foreignIdFor(League::class)->nullable()->constrained();
             $table->foreignIdFor(Club::class)->nullable()->constrained();
             $table->unsignedBigInteger('captain_id')->nullable();
+            $table->foreignIdFor(Season::class)->constrained();
             $table->timestamps();
 
             $table->foreign('captain_id')->references('id')->on('users');

@@ -3,6 +3,7 @@
 use App\Enums\TrainingLevel;
 use App\Enums\TrainingType;
 use App\Models\Room;
+use App\Models\Season;
 use App\Models\User;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -22,8 +23,11 @@ return new class extends Migration
             $table->dateTime('start', $precision = 0);
             $table->dateTime('end', $precision = 0);
             $table->foreignIdFor(Room::class)->constrained();
-            $table->foreignIdFor(User::class, 'trainer_id')->nullable();
+            $table->unsignedBigInteger('trainer_id');
+            $table->foreignIdFor(Season::class);
             $table->timestamps();
+
+            $table->foreign('trainer_id')->references('id')->on('users')->nullable()->constrained();
         });
     }
 

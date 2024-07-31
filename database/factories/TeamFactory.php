@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\Club;
 use App\Models\League;
+use App\Models\Season;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -25,6 +26,7 @@ class TeamFactory extends Factory
             'league_id' => League::find(1),
             'club_id' => Club::find(1),
             'captain_id' => User::find(1),
+            'season_id' => Season::find(1),
         ];
     }
 }

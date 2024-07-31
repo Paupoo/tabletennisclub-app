@@ -7,10 +7,12 @@ use App\Http\Requests\StoreTeamRequest;
 use App\Http\Requests\UpdateTeamRequest;
 use App\Models\Club;
 use App\Models\League;
+use App\Models\Season;
 use App\Models\Team;
 use App\Models\User;
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,9 +28,8 @@ class TeamController extends Controller
     {
         //
         return view('admin.teams.index', [
-            'teams' => Team::orderby('name')->with('captain')->paginate(10),
+            'teams' => Team::orderby('name')->paginate(10),
             'team_model' => Team::class,
-
         ]);
     }
 
@@ -41,7 +42,13 @@ class TeamController extends Controller
 
         return view('admin.teams.create', [
             'users' => User::where('is_competitor', true)->orderby('force_index')->orderby('last_name')->orderby('first_name')->get(),
-            'leagues' => League::where('start_year', '>=', Carbon::now()->format('Y'))->orderBy('start_year')->orderBy('level')->orderBy('category')->orderBy('division')->get(),
+            'leagues' => League::join('seasons', 'leagues.season_id', '=', 'seasons.id')
+                ->where('end_year', '>=', Carbon::now()->format('Y'))
+                ->orderBy('seasons.end_year', 'asc')
+                ->orderBy('level')
+                ->orderBy('category')
+                ->orderBy('division')
+                ->get(),
             'team_names' => TeamName::cases(),
         ]);
     }
@@ -52,23 +59,25 @@ class TeamController extends Controller
     public function store(StoreTeamRequest $request)
     {
         $request = $request->validated();
-        $league = League::find($request['league_id']);
-        $team = new Team([
+        $league_model = League::find($request['league_id']);
+        $team_model = new Team([
             'name' => $request['name'],
         ]);
 
-        $team->club()->associate(Club::firstWhere('licence', 'BBW214'))->save();
-        $team->league()->associate($league);
+        $team_model->season()->associate(Season::find($league_model->season_id));
+        $team_model->club()->associate(Club::firstWhere('licence', 'BBW214'));
+        $team_model->league()->associate($league_model);
+        $team_model->save();
         
         if(isset($request['captain_id'])) {
             $captain = User::find($request['captain_id']);
-            $team->captain()->associate($captain);
+            $team_model->captain()->associate($captain);
         } else {
-            $team->captain()->dissociate();
+            $team_model->captain()->dissociate();
         }
-        $team->save();
+        $team_model->save();
 
-        $team->users()->sync($request['players']);
+        $team_model->users()->sync($request['players']);
 
         return redirect()->route('teams.index')->with('success', 'The team ' . $request['name'] . ' has been created.');
     }
@@ -109,25 +118,24 @@ class TeamController extends Controller
     {
         $request = $request->validated();
         
-        $team = Team::find($id);
+        $team_model = Team::find($id);
+        $league_model = League::find($request['league_id']);
 
-        $team->name = $request['name'];
-        $team->league()->associate(League::find($request['league_id']));
-        if (isset($request['captain_id'])) {
-            $team->captain()->associate(User::find($request['captain_id']));
-        } else {
-            $team->captain()->dissociate();
-        }
-        $team->save();
+        $team_model->name = $request['name'];
+        $team_model->league()->associate($league_model);
+        $team_model->season()->associate($league_model->season_id);
+        isset($request['captain_id'])
+            ? $team_model->captain()->associate(User::find($request['captain_id']))
+            : $team_model->captain()->dissociate();
 
-        if(isset($request['players'])) {
-            $team->users()->sync($request['players']);
-        } else {
-            $team->users()->detach();
-        }
+        $team_model->save();
+
+        isset($request['players'])
+            ? $team_model->users()->sync($request['players'])
+            : $team_model->users()->detach();
         
 
-        return redirect()->route('teams.index')->with('success', 'The team ' . $team->name . ' has been updated.');
+        return redirect()->route('teams.index')->with('success', 'The team ' . $team_model->name . ' has been updated.');
     }
 
     /**

@@ -10,7 +10,6 @@ use App\Http\Controllers\TrainingController;
 use App\Http\Controllers\CompetitionController;
 use Illuminate\Support\Facades\Route;
 use App\Models\User;
-use App\Models\Role;
 use App\Models\Room;
 use App\Models\Team;
 use App\Models\Training;
@@ -67,18 +66,21 @@ Route::middleware('auth')->group(function () {
 /**
  * Teams management
  */
-Route::get('/admin/teams/bulkComposer', function () {
-    return view('/admin/teams/bulk-composer');
-})->middleware(['auth', 'verified'])->name('teamBulkComposer');
 
-Route::get('/admin/teams/bulkComposerValidate', [
+Route::get('/admin/teams/team-builder', [
     TeamController::class,
-    'proposeTeamsCompositions',
-])->middleware(['auth', 'verified'])->name('proposeTeamsCompositions');
+    'initiateTeamsBuilder',
+    ])->middleware(['auth', 'verified'])->name('teamBuilder');
+    
+Route::post('/admin/teams/team-builder', [
+    TeamController::class,
+    'validateTeamsBuilder',
+])->middleware(['auth', 'verified'])->name('teamBuilder');
 
-Route::post('/admin/teams/compose', [
-    TeamController::class, 'saveTeamsCompositions'
-])->middleware(['auth', 'verified'])->name('saveTeamsCompositions');
+Route::post('/admin/teams/saveTeams', [
+    TeamController::class, 
+    'saveTeams',
+])->middleware(['auth', 'verified'])->name('saveTeams');
 
 Route::resource('/admin/teams', TeamController::class)->middleware(['auth', 'verified']);
 

@@ -14,8 +14,8 @@
                 <form action="{{ route('teams.create') }}" method="GET">
                     <x-primary-button>{{ __('Create new team') }}</x-primary-button>
                 </form>
-                <form action="{{ route('teamBulkComposer') }}" method="GET">
-                    <x-primary-button>{{ __('Bulk builder') }}</x-primary-button>
+                <form action="{{ route('teamBuilder') }}" method="GET">
+                    <x-primary-button>{{ __('Team Builder') }}</x-primary-button>
                 </form>
             </div>
             

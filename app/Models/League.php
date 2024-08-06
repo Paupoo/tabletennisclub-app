@@ -15,16 +15,14 @@ class League extends Model
         'division',
         'level',
         'category',
-        'start_year',
-        'end_year',
+        'season_id',
     ];
 
     protected $casts = [
         'division' => 'string',
         'level' => 'string',
         'category' => 'string',
-        'start_year' => 'integer',
-        'end_year' => 'integer',
+        'season_id' => 'integer'
     ];
 
     public function teams(): HasMany

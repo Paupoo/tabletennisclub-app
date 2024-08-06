@@ -2,33 +2,46 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\LeagueCategory;
+use App\Enums\LeagueLevel;
 use App\Enums\TeamName;
+use App\Http\Requests\InitiateTeamBuilderRequest;
 use App\Http\Requests\StoreTeamRequest;
 use App\Http\Requests\UpdateTeamRequest;
+use App\Http\Requests\ValidateTeamBuilderRequest;
 use App\Models\Club;
 use App\Models\League;
 use App\Models\Season;
 use App\Models\Team;
 use App\Models\User;
 use Carbon\Carbon;
-use Exception;
-use Illuminate\Contracts\Database\Eloquent\Builder;
+use Doctrine\Common\Cache\Psr6\InvalidArgument;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Collection as SupportCollection;
 use Illuminate\View\View;
 
 class TeamController extends Controller
 {
+    private SupportCollection $competitors;
+    private int $totalCompetitors = 0;
+    private int $totalTeamsAmount = 0;
+    private SupportCollection $teams;
+    private SupportCollection $teamsWithPlayers;
+    
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
         //
+
         return view('admin.teams.index', [
-            'teams' => Team::orderby('name')->paginate(10),
+            'teams' => Team::select('teams.*')->join('seasons', 'teams.season_id', 'seasons.id')
+                ->orderBy('seasons.start_year')
+                ->orderBy('teams.name')
+                ->paginate(10),
             'team_model' => Team::class,
         ]);
     }
@@ -152,113 +165,47 @@ class TeamController extends Controller
         return redirect()->route('teams.index')->with('deleted', 'The team ' . $team->name . ' has been deleted.');
     }
 
-    /**
-     * Get competitors ordered by ranking, then by last name, both descending.
-     *
-     * @return Collection
-     */
-    private function getCompetitors(): Collection
-    {
-        return User::where('is_competitor', '=', true)->orderby('force_index', 'desc')
-            ->orderby('last_name', 'desc')->get();
+    public function initiateTeamsBuilder(): View
+    {    
+            return view('admin/teams/team-builder', [
+                'seasons' => $this->getUpToDateSeasons('asc'),
+            ]);
     }
 
-    /**
-     * Return the amount of players that are competitors.
-     *
-     * @return integer
-     */
-    protected function countTotalCompetitors(): int
+    public function validateTeamsBuilder(ValidateTeamBuilderRequest $request): View
     {
-        return User::where('is_competitor', '=', true)->count();
-    }
+        $playersPerTeam = $request->safe()->playersPerTeam;
+        $this->getCompetitors()
+        ->countCompetitors()
+        ->countTotalTeams($playersPerTeam)
+        ->buildTeamsFromAToZ()
+        ->addPlayersToTeams($playersPerTeam);
 
-    /**
-     * Return the amound of teams based on a specified amount of players per team.
-     *
-     * @param integer $playersPerTeam
-     * @return integer
-     */
-    protected function countTotalTeams(int $playersPerTeam): int
-    {
-        // Divide total competitors by wished kern size, return euclydian division (with a rest)
-        $total_teams = intdiv($this->countTotalCompetitors(), $playersPerTeam);
-
-        return $total_teams;
-    }
-
-    /**
-     * Count players that are not in a team based on a specified amount of players per team.
-     *
-     * @param integer $playersPerTeam
-     * @return integer
-     */
-    private function countPlayersWithoutTeam(int $playersPerTeam): int
-    {
-        // Count the rest of total competitors divided kern size.
-        return $this->countTotalCompetitors() % $playersPerTeam;
-    }
-
-    /**
-     * Return the "teams bulk builder" view enriched with the players spread by teams for the user to validate.
-     *
-     * @param Request $request
-     * @return View
-     */
-    public function proposeTeamsCompositions(Request $request): View
-    {
-
-        // Validate the request
-        $request->validate([
-            'playersPerTeam' => 'integer|required|between:5,10',
-            'season' => 'string|required',
-        ]);
-
-        $season = $request->season;
-        $competitors = $this->getCompetitors();
-        $teamNames = range('A', 'Z'); // A, B, C, ..., Z
-        $poolTeamName = 'Pool';
-        $playersPerTeam = $request->playersPerTeam; // Specify the desired number of players per team
-
-        $teams = [];
-
-        // Make sure every competitors has a force index
-        foreach ($competitors as $competitor) {
-            if ($competitor->force_index == null) {
-                throw new Exception(__('At least one competitor is missing a force index. Please run the "set force index" from members admin'), 851);
-            } else {
-            }
-        }
-
-        foreach ($teamNames as $teamName) {
-            $team = [];
-
-            for ($i = 0; $i < $playersPerTeam && $competitors->count() > 0; $i++) {
-                $team[] = $competitors->pop();
-            }
-
-            // Add the team to $teams only if it has players
-            if (!empty($team)) {
-                // Use the letter only if a team is full
-                if (count($team) == $playersPerTeam) {
-                    $teams[] = [
-                        $teamName => $team,
-                    ];
-                    // Else, name it differently
-                } elseif (count($team) < $playersPerTeam) {
-                    $teams[] = [
-                        $poolTeamName => $team,
-                    ];
-                }
-            }
-        }
-
-        return view('admin/teams/bulk-composer', [
-            'teams' => $teams,
-            'season' => $season,
+        return view('admin/teams/team-builder', [
+            'seasons' => $this->getUpToDateSeasons('asc'),
+            'selectedSeason' => Season::findOrFail($request->season_id),
+            'leagueLevel' => LeagueLevel::cases(),
+            'leagueCategory' => LeagueCategory::cases(),
             'playersPerTeam' => $playersPerTeam,
+            'teamsWithPlayers' => $this->teamsWithPlayers ,
         ]);
     }
+
+    /**
+     * Return Seasons in the future, starting from this year.
+     *
+     * @return Season
+     */
+    public function getUpToDateSeasons(string $sorting_order = 'asc'): Collection
+    {
+        if ($sorting_order !== 'asc' & $sorting_order !== 'desc') {
+            throw new InvalidArgument('This function only accepts those 2 argumments : \'asc\' or \'desc\'');
+        }
+        $this_year = Carbon::today()->format('Y');
+
+        return Season::where('end_year', '>=', $this_year)->orderBy('end_year', $sorting_order)->get();
+    }
+
 
     /**
      * Save in bulk the teams and associate the desired amount of players of player to each of them.
@@ -266,47 +213,134 @@ class TeamController extends Controller
      * @param Request $request
      * @return RedirectResponse
      */
-    public function saveTeamsCompositions(Request $request): RedirectResponse
+    public function saveTeams(Request $request): RedirectResponse
     {
+        $seasonId = $request->season_id;
 
-        // Validate and store wished kern size
-        $request->validate([
-            'playersPerTeam' => 'integer|required|between:5,10',
-            'season' => 'string|required',
-        ]);
-
-        $competitors = $this->getCompetitors();
-
-        // Make sure every competitors has a force index
-        foreach ($competitors as $competitor) {
-            if ($competitor->force_index == null) {
-                throw new Exception(__('At least one competitor is missing a force index. Please run the "set force index" from members admin'), 851);
-            } else {
-            }
-        }
-
-        $season = $request->season;
-        $playersPerTeam = $request->playersPerTeam;
-        $totalTeams = $this->countTotalTeams($playersPerTeam);
-        $teamName = 'A';
-
-        for ($i = 0; $i < $totalTeams; $i++) {
+        // Looping for each team
+        foreach($request->teams as $teamName => $data) {
             $team = new Team([
                 'name' => $teamName,
-                'season' => $season,
-                'division' => 'To do',
             ]);
+            $team->season()->associate($seasonId);
+            
+            // Add the captain if any
+            if (isset($data['captain_id'])) {
+                $team->captain()->associate($data['captain_id']);
+            }
 
             $team->save();
 
-            for ($j = 0; $j < $playersPerTeam; $j++) {
-                $competitor = $competitors->pop();
-                $team->users()->save($competitor);
+            // Add the players
+            foreach($data['players_id'] as $player_id) {
+                $team->users()->attach($player_id);
             }
 
-            $teamName++;
+            // FindOrCreate League and add it
+            $level = $data['level_id'];
+            $category = $data['category_id'];
+            $division = $data['division'];
+            $league = League::firstOrCreate([
+                'level' => $level,
+                'category' => $category,
+                'division' => $division,
+                'season_id' => $seasonId,
+            ]);
+
+            $team->league()->associate($league->id)->save();
+
+
         }
 
-        return redirect()->route('teams.index')->with('success', 'New teams for the season ' . date('Y', strtotime(now())) . ' - ' . date('Y', strtotime(now())) + 1 . ' have been created.');
+        return redirect()->route('teams.index')->with('success', sprintf('New teams for the season %s have been created.', Season::find($seasonId)->name));
+    }
+
+    /**
+     * Get competitors ordered by ranking, then by last name, both descending.
+     *
+     * @return self
+     */
+    private function getCompetitors(): self
+    {
+        $this->competitors = User::where('is_competitor', '=', true)
+            ->orderby('force_index', 'asc')
+            ->orderby('last_name', 'asc')
+            ->orderby('first_name', 'asc')
+            ->get();
+
+        return $this;
+    }
+
+    /**
+     * Return the amount of players that are competitors.
+     *
+     * @return self
+     */
+    protected function countCompetitors(): self
+    {
+        $this->totalCompetitors = $this->competitors->count();
+        
+        return $this;
+    }
+
+    /**
+     * Return the amound of teams based on a specified amount of players per team.
+     *
+     * @param integer $playersPerTeam
+     * @return self
+     */
+    protected function countTotalTeams(int $playersPerTeam = 0): self
+    {
+
+        if ($playersPerTeam < 5) {
+            throw new InvalidArgument('A team must have a core of minimum 5 players.');
+        }
+
+        $this->totalTeamsAmount = intdiv($this->totalCompetitors, $playersPerTeam);
+
+        return $this;
+    }
+
+    /**
+     * Returns a collection of teams names from A to Z
+     *
+     * @param integer $totalTeamsAmount
+     * @return self 
+     */
+    private function buildTeamsFromAToZ(): self
+    {
+        $teams = collect();
+            
+        for ($i = 0; $i < $this->totalTeamsAmount; $i++) {
+            $teams->push(TeamName::cases()[$i]->name);
+        }
+
+        $this->teams = $teams;
+
+        return $this;
+    }
+
+    /**
+     * Add competitors to each teams
+     *
+     * @param SupportCollection $competitors
+     * @param integer $playersPerTeam
+     * @return self
+     */
+    private function addPlayersToTeams(int $playersPerTeam = 5): self
+    {
+
+        $this->teamsWithPlayers = collect();
+
+        foreach($this->teams as $team){
+            $players = collect();
+            for ($i = 0; $i < $playersPerTeam; $i++) {
+                $players->push($this->competitors->shift());
+                
+            }
+            $this->teamsWithPlayers->put($team, $players);
+        }
+
+        return $this;
     }
 }

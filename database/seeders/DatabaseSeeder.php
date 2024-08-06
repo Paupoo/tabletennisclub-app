@@ -45,39 +45,39 @@ class DatabaseSeeder extends Seeder
 
         League::create([
             'division' => '5E',
-            'level' => LeagueLevel::PROVINCIAL_BW->value,
-            'category' => LeagueCategory::MEN->value,
+            'level' => LeagueLevel::PROVINCIAL_BW->name,
+            'category' => LeagueCategory::MEN->name,
             'season_id' => 1,
 
         ]);
         League::create([
             'division' => '5E',
-            'level' => LeagueLevel::PROVINCIAL_BW->value,
-            'category' => LeagueCategory::MEN->value,
+            'level' => LeagueLevel::PROVINCIAL_BW->name,
+            'category' => LeagueCategory::MEN->name,
             'season_id' => 2,
 
         ]);
 
         League::create([
             'division' => '4B',
-            'level' => LeagueLevel::PROVINCIAL_BW->value,
-            'category' => LeagueCategory::MEN->value,
+            'level' => LeagueLevel::PROVINCIAL_BW->name,
+            'category' => LeagueCategory::MEN->name,
             'season_id' => 3,
 
         ]);
 
         League::create([
             'division' => '3F',
-            'level' => LeagueLevel::PROVINCIAL_BW->value,
-            'category' => LeagueCategory::VETERANS->value,
+            'level' => LeagueLevel::PROVINCIAL_BW->name,
+            'category' => LeagueCategory::VETERANS->name,
             'season_id' => 4,
 
         ]);
 
         League::create([
             'division' => '4B',
-            'level' => LeagueLevel::PROVINCIAL_BW->value,
-            'category' => LeagueCategory::WOMEN->value,
+            'level' => LeagueLevel::PROVINCIAL_BW->name,
+            'category' => LeagueCategory::WOMEN->name,
             'season_id' => 5,
         ]);
 
@@ -211,6 +211,8 @@ class DatabaseSeeder extends Seeder
             'is_competitor' => false,
             'ranking' => 'NC'
         ]);
+
+        // User::factory()->count(40)->create();
 
 
         // Set ForceIndexes

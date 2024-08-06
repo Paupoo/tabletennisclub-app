@@ -14,6 +14,10 @@ class Team extends Model
 
     protected $fillable = [
         'name',
+        'league_id',
+        'club_id',
+        'captain_id',
+        'season_id',
     ];
 
     protected $casts = [

@@ -15,50 +15,6 @@
         </div>
     </div>
 
-    {{-- Roles management --}}
-    {{-- <div class="pt-6">
-        <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
-            <div class="overflow-hidden bg-white shadow-sm dark:bg-gray-800 sm:rounded-lg">
-                <div class="p-6 text-gray-900 dark:text-gray-100">
-                    <h2 class="pb-2 text-lg font-semibold">Roles</h2>
-                    @if ($roles->count() > 0)
-                        <table class="table w-full mt-4 text-left border border-collapse table-auto lg:w-3/4">
-                            <caption class="font-thin text-right caption-top">Current roles</caption>
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Description</th>
-                                    <th>Members</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($roles as $role)
-                                    <tr>
-                                        <td>{{ \Illuminate\Support\Str::of($role->name)->limit(30) }}</td>
-                                        <td>{{ \Illuminate\Support\Str::of($role->description)->limit(60) }}</td>
-                                        <td>{{ $role->users->count() }}</td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    @else
-                        <p>{{ __('It seems that no roles have been defined. Start by creating a new role.') }}</p>
-                    @endif
-
-
-                    <div class="flex gap-4 mt-4 w-96">
-                        <form action="{{ route('roles.create') }}">
-                            <x-primary-button>Create new role</x-primary-button>
-                        </form>
-                        <form action="{{ route('roles.index') }}">
-                            <x-primary-button>Manage roles</x-primary-button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div> --}}
-
     {{-- Members management --}}
     <div class="pt-6">
         <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
@@ -271,7 +227,7 @@
                                 @foreach ($teams as $team)
                                     <tr>
                                         <td>{{ $team->name }}</td>
-                                        <td>{{ $team->league->category }} {{ $team->league->level }} {{ $team->league->division }}</td>
+                                        <td>{{ $team->league?->category }} {{ $team->league?->level }} {{ $team->league?->division }}</td>
                                         <td>{{ $team->captain?->first_name }} {{ $team->captain?->last_name }}</td>
                                         <td>{{ $team->users->count()}}</td>
                                     </tr>
@@ -337,10 +293,10 @@
 
                     <div class="flex gap-4 mt-4 w-96">
                         <form action="">
-                            <x-danger-button>Create new match</x-primary-button>
+                            <x-danger-button>{{ __('Create new match') }}</x-primary-button>
                         </form>
                         <form action="">
-                            <x-danger-button>Manage matches</x-primary-button>
+                            <x-danger-button>{{ __('Manage matches') }}</x-primary-button>
                         </form>
                     </div>
                 </div>

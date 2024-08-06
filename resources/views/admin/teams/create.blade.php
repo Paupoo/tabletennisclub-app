@@ -41,7 +41,6 @@
 
                         <x-forms.team :users="$users" :leagues="$leagues" :team_names="$team_names"></x-forms.team>
 
-
                         <div>
                             <x-primary-button :disabled="count($users) === 0">{{ __('Create new team') }}</x-primary-button>
                         </div>

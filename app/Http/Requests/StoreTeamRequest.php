@@ -27,8 +27,16 @@ class StoreTeamRequest extends FormRequest
         return [
             'name' => ['required', Rule::in(array_column(TeamName::cases(), 'name'))],
             'league_id' => ['required','exists:leagues,id'],
-            'players.*' => ['exists:users,id'],
+            'players' => ['required', 'min:5'],
+            'players.*' => ['required', 'exists:users,id'],
             'captain_id' => ['exists:users,id'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'players' => __('At least 5 players must be selected.'),
         ];
     }
 }

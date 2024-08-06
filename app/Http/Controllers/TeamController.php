@@ -42,7 +42,7 @@ class TeamController extends Controller
                 ->orderBy('seasons.start_year')
                 ->orderBy('teams.name')
                 ->paginate(10),
-            'team_model' => Team::class,
+            'teamModel' => Team::class,
         ]);
     }
 

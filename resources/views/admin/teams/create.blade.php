@@ -39,7 +39,14 @@
                     <form action="{{ route('teams.store') }}" method="POST" class="mt-6 space-y-6">
                         @csrf
 
-                        <x-forms.team :users="$users" :leagues="$leagues" :team_names="$team_names"></x-forms.team>
+                        <x-forms.team
+                            :seasons="$seasons"
+                            :league_categories="$league_categories"
+                            :league_levels="$league_levels"
+                            :league_divisions="$league_divisions"
+                            :users="$users"
+                            :team_names="$team_names">
+                        </x-forms.team>
 
                         <div>
                             <x-primary-button :disabled="count($users) === 0">{{ __('Create new team') }}</x-primary-button>

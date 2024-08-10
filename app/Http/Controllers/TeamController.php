@@ -55,12 +55,13 @@ class TeamController extends Controller
 
         return view('admin.teams.create', [
             'users' => User::where('is_competitor', true)->orderby('force_index')->orderby('last_name')->orderby('first_name')->get(),
-            'leagues' => League::join('seasons', 'leagues.season_id', '=', 'seasons.id')
-                ->where('end_year', '>=', Carbon::now()->format('Y'))
-                ->orderBy('seasons.end_year', 'asc')
-                ->orderBy('level')
-                ->orderBy('category')
-                ->orderBy('division')
+            'league_categories' => LeagueCategory::cases(),
+            'league_levels' => LeagueLevel::cases(),
+            'league_divisions' => League::select('division', 'id')
+                ->get(),
+            'seasons' => Season::select('name', 'id', 'start_year')
+                ->where('end_year', '>=', today()->format('Y'))
+                ->orderBy('start_year', 'asc')
                 ->get(),
             'team_names' => TeamName::cases(),
         ]);
@@ -71,28 +72,35 @@ class TeamController extends Controller
      */
     public function store(StoreTeamRequest $request)
     {
-        $request = $request->validated();
-        $league_model = League::find($request['league_id']);
+        $validated_request = $request->validated();
+        
+        $league_model = League::firstOrCreate([
+            'category' => $validated_request['category'],
+            'division' => $validated_request['division'],
+            'level' => $validated_request['level'],
+            'season_id' => $validated_request['season_id'],
+        ]);
+        
+        $request->isDuplicatedTeam();
+        
         $team_model = new Team([
-            'name' => $request['name'],
+            'name' => $validated_request['name'],
         ]);
 
         $team_model->season()->associate(Season::find($league_model->season_id));
         $team_model->club()->associate(Club::firstWhere('licence', 'BBW214'));
         $team_model->league()->associate($league_model);
-        $team_model->save();
         
         if(isset($request['captain_id'])) {
-            $captain = User::find($request['captain_id']);
+            $captain = User::find($validated_request['captain_id']);
             $team_model->captain()->associate($captain);
-        } else {
-            $team_model->captain()->dissociate();
         }
+
         $team_model->save();
 
-        $team_model->users()->sync($request['players']);
+        $team_model->users()->sync($validated_request['players']);
 
-        return redirect()->route('teams.index')->with('success', 'The team ' . $request['name'] . ' has been created.');
+        return redirect()->route('teams.index')->with('success', 'The team ' . $validated_request['name'] . ' has been created.');
     }
 
     /**

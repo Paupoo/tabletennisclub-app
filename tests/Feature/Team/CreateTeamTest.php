@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Enums\LeagueCategory;
+use App\Enums\LeagueLevel;
 use App\Models\Team;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
@@ -14,6 +16,49 @@ class CreateTeamTest extends TestCase
     protected Model $user;
     protected Model $committee_member;
     protected Model $admin;
+    protected array $valid_request = [
+        'captain_id' => 1,
+        'category' => LeagueCategory::MEN->name,
+        'division' => '5E',
+        'level' => LeagueLevel::PROVINCIAL_BW->name,
+        'name' => 'A',
+        'players' => [
+            0 => '1',
+            1 => '2',
+            2 => '3',
+            3 => '4',
+            4 => '5',
+        ],
+        'season_id' => 1,
+    ];
+    protected array $invalid_request = [
+        'captain_id' => 666,
+        'category' => 'somethingWrong',
+        'division' => null,
+        'level' => 'somethingWrong',
+        'name' => 'AA',
+        'players' => [
+            0 => '666',
+            1 => '667',
+            2 => '668',
+            3 => '1',       // this one is correct.
+        ],
+        'season_id' => 99,
+    ];
+    protected array $less_than_5_players_request = [
+        'captain_id' => 1,
+        'category' => LeagueCategory::MEN->name,
+        'division' => '5E',
+        'level' => LeagueLevel::PROVINCIAL_BW->name,
+        'name' => 'A',
+        'players' => [
+            0 => '1',
+            1 => '2',
+            2 => '3',
+            3 => '4',
+        ],
+        'season_id' => 1,
+    ];  
 
     protected function setUp(): void
     {
@@ -79,18 +124,7 @@ class CreateTeamTest extends TestCase
 
         $response = $this->actingAs($comittee_member)
             ->from('teams.create')
-            ->post(route('teams.store'), [
-                'name' => 'A',
-                'league_id' => 1,
-                'players' => [
-                    0 => '1',
-                    1 => '2',
-                    2 => '3',
-                    3 => '4',
-                    4 => '5',
-                ],
-                'captain_id' => 1,
-            ])
+            ->post(route('teams.store'), $this->valid_request)
             ->assertRedirectToRoute('teams.index');
     }
 
@@ -105,101 +139,55 @@ class CreateTeamTest extends TestCase
 
     public function test_validation_should_fail_in_case_of_invalid_parameters(): void
     {
-        $admin = User::factory()->create([
-            'is_admin' => true,
-        ]);
-
-        $response = $this->actingAs($admin)
+        $this->actingAs($this->admin)
             ->from(route('teams.create'))
-            ->post(route('teams.store'), [
-                'name' => 'AA',
-                'league_id' => 666,
-                'players' => [
-                    0 => '666',
-                    1 => '667',
-                    2 => '668',
-                    3 => '1',       // this one is correct.
-                ],
-                'captain_id' => 666,
-            ]);
-
-        $response->assertInvalid([
-            'name',
-            'league_id',
-            'players.0',
-            'players.1',
-            'players.2',
-            'captain_id'
-        ]);
-
-        $response->assertRedirect(route('teams.create'))
-            ->assertSessionHasErrors([
+            ->post(route('teams.store'), $this->invalid_request)
+            ->assertInvalid([
+                'captain_id',
+                'category',
+                'division',
+                'level',
                 'name',
-                'league_id',
                 'players.0',
                 'players.1',
                 'players.2',
-                'captain_id'
+                'season_id',
+            ])
+            ->assertRedirect(route('teams.create'))
+            ->assertSessionHasErrors([
+                'captain_id',
+                'category',
+                'division',
+                'level',
+                'name',
+                'players.0',
+                'players.1',
+                'players.2',
+                'season_id',
             ]);
     }
 
     public function test_team_should_contains_minimum_5_players(): void
     {
-        $admin = User::firstWhere('is_admin', true)
-            ->firstWhere('is_comittee_member', false);
-
-        $this->actingAs($admin)
+        $this->actingAs($this->admin)
             ->from('teams.create')
-            ->post(route('teams.store'), [
-                'name' => 'A',
-                'league_id' => 1,
-                'players' => [
-                    0 => '1',
-                    1 => '2',
-                    2 => '3',
-                    3 => '4',
-                ],
-                'captain_id' => 1,
-            ])
-            ->assertInvalid('players');
+            ->post(route('teams.store'), $this->less_than_5_players_request)
+            ->assertInvalid(['players'])
+            ->assertSessionHasErrors(['players']);
     }
 
     public function test_validation_should_fail_in_case_of_duplicate_teams_into_same_season(): void
     {
-        // to do
-        $comittee_member = User::firstWhere('is_admin', false)
-            ->firstWhere('is_comittee_member', true);
-
-        $this->actingAs($comittee_member)
+        $this->actingAs($this->committee_member)
             ->from('teams.create')
-            ->post(route('teams.store'), [
-                'name' => 'A',
-                'league_id' => 1,
-                'players' => [
-                    0 => '1',
-                    1 => '2',
-                    2 => '3',
-                    3 => '4',
-                    4 => '5',
-                ],
-                'captain_id' => 1,
-            ])
+            ->post(route('teams.store'), $this->valid_request)
             ->assertRedirectToRoute('teams.index');
 
-        $this->actingAs($comittee_member)
+        $this->actingAs($this->committee_member)
             ->from('teams.create')
-            ->post(route('teams.store'), [
-                'name' => 'A',
-                'league_id' => 1,
-                'players' => [
-                    0 => '1',
-                    1 => '2',
-                    2 => '3',
-                    3 => '4',
-                    4 => '5',
-                ],
-                'captain_id' => 1,
-            ])
-            ->assertInvalid();
+            ->post(route('teams.store'), $this->valid_request)
+            ->assertInvalid('name')
+            ->assertRedirect('teams.create')
+            ->assertSessionHasErrors('name');
     }
 }

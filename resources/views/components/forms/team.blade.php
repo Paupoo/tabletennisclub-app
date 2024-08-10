@@ -1,27 +1,52 @@
 @props([
+    'seasons' => [],
+    'league_categories' => [],
+    'league_divisions' => [],
+    'league_levels' => [],
+    'users' => [],
     'team' => new App\Models\Team(),
     'team_names' => [],
-    'leagues' => [],
-    'users' => [],
     'attachedUsers' => [],
 ])
+<div class="flex flew-row flex-wrap gap-2">
 
-{{-- League --}}
-<div>
-    <x-input-label for="league_id" :value="__('Select a league')" />
-    <x-select-input id="league_id" name="league_id" class="block w-full mt-1" :value="old('league_id')" required autofocus>
-        <option value="" disabled @selected(old('name') === null)>{{ __('Select a league') }}</option>
-        @foreach ($leagues as $league)
-            <option value="{{ $league->id }}" @selected(old('name', $team->league?->id) === $league->id)>
-                {{ $league->season?->name }} | {{ $league->level }}
-                | {{ $league->category }} | {{ $league->division }}</option>
-        @endforeach
-
-    </x-select-input>
-    <x-input-error class="mt-2" :messages="$errors->get('league_id')" />
+    <div>
+        <x-input-label for="season" :value="__('Select a season')" />
+        <x-select-input class="block w-fit mt-1" id="season" name="season_id" required autofocus>
+            @foreach ($seasons as $season)
+            <option value="{{ $season->id }}" @selected(today()->format('Y') >= $season->end_year)>{{ $season->name }}</option>
+            @endforeach
+        </x-select-input>
+        <x-input-error class="mt-2" :messages="$errors->get('season')" />
+    </div>
+    
+    <div>
+        <x-input-label for="category" :value="__('Select a category')" />
+        <x-select-input class="block w-fit mt-1" id="category" name="category" required autofocus>
+            @foreach ($league_categories as $category)
+            <option value="{{ $category->name }}">{{ $category->value }}</option>
+            @endforeach
+        </x-select-input>
+        <x-input-error class="mt-2" :messages="$errors->get('category')" />
+    </div>
+    
+    <div>
+        <x-input-label for="level" :value="__('Select a level')" />
+        <x-select-input class="block w-fit mt-1" id="level" name="level" required autofocus>
+            @foreach ($league_levels as $level)
+            <option value="{{ $level->name }}">{{ $level->value }}</option>
+            @endforeach
+        </x-select-input>
+        <x-input-error class="mt-2" :messages="$errors->get('level')" />
+    </div>
+    
+    <div>
+        <x-input-label for="division" :value="__('Division')" />
+        <x-text-input class="block w-fit mt-1" id="division" name="division" placeholder="5E" value="{{ old('division') }}" required autofocus />
+        <x-input-error class="mt-2" :messages="$errors->get('division')" />
+    </div>
 </div>
 
-{{-- Letter --}}
 <div>
     <x-input-label for="name" :value="__('Select a letter')" />
     <x-select-input id="name" name="name" type="text" class="block w-full mt-1" required autofocus
@@ -37,6 +62,8 @@
 {{-- Players --}}
 <div>
     <h3 class="mb-6">{{ __('Select players') }}</h3>
+
+    <x-input-error class="my-2" :messages="$errors->get('players')" />
 
     <table class="table-auto w-fit border border-collapse p-4">
         <thead class="table-header-group">

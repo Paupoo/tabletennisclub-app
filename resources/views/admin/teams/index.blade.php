@@ -12,11 +12,11 @@
                     <x-primary-button>{{ __('Dashboard') }}</x-primary-button>
                 </form>
                 @can('create', $teamModel)
-                <form action="{{ route('teams.create') }}" method="GET">
-                    <x-primary-button>{{ __('Create new team') }}</x-primary-button>
-                </form>
                 <form action="{{ route('teamBuilder') }}" method="GET">
                     <x-primary-button>{{ __('Team Builder') }}</x-primary-button>
+                </form>
+                <form action="{{ route('teams.create') }}" method="GET">
+                    <x-primary-button>{{ __('Create new team') }}</x-primary-button>
                 </form>
                 @endcan
             </div>

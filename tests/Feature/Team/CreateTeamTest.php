@@ -176,7 +176,7 @@ class CreateTeamTest extends TestCase
             ->assertSessionHasErrors(['players']);
     }
 
-    public function test_validation_should_fail_in_case_of_duplicate_teams_into_same_season(): void
+    public function test_validation_should_fail_in_case_of_duplicate_teams_into_same_league(): void
     {
         $this->actingAs($this->committee_member)
             ->from('teams.create')

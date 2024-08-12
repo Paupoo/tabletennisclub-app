@@ -6,6 +6,7 @@ use App\Enums\LeagueCategory;
 use App\Enums\LeagueLevel;
 use App\Enums\TeamName;
 use App\Http\Requests\InitiateTeamBuilderRequest;
+use App\Http\Requests\StoreOrUpdateTeamRequest;
 use App\Http\Requests\StoreTeamRequest;
 use App\Http\Requests\UpdateTeamRequest;
 use App\Http\Requests\ValidateTeamBuilderRequest;
@@ -76,37 +77,36 @@ class TeamController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreTeamRequest $request)
+    public function store(StoreOrUpdateTeamRequest $request)
     {
-        $validated_request = $request->validated();
+        $validated = $request->validated();
 
         $league_model = League::firstOrCreate([
-            'category' => $validated_request['category'],
-            'division' => $validated_request['division'],
-            'level' => $validated_request['level'],
-            'season_id' => $validated_request['season_id'],
+            'category' => $validated['category'],
+            'division' => $validated['division'],
+            'level' => $validated['level'],
+            'season_id' => $validated['season_id'],
         ]);
 
         $request->isDuplicatedTeam();
 
-        $team = new Team([
-            'name' => $validated_request['name'],
-        ]);
+        $team = new Team();
+        $team->fill($validated);
 
         $team->season()->associate(Season::find($league_model->season_id));
         $team->club()->associate(Club::firstWhere('licence', 'BBW214'));
         $team->league()->associate($league_model);
 
         if (isset($request['captain_id'])) {
-            $captain = User::find($validated_request['captain_id']);
+            $captain = User::find($validated['captain_id']);
             $team->captain()->associate($captain);
         }
 
         $team->save();
 
-        $team->users()->sync($validated_request['players']);
+        $team->users()->sync($validated['players']);
 
-        return redirect()->route('teams.index')->with('success', 'The team ' . $validated_request['name'] . ' has been created.');
+        return redirect()->route('teams.index')->with('success', 'The team ' . $validated['name'] . ' has been created.');
     }
 
     /**
@@ -149,10 +149,9 @@ class TeamController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateTeamRequest $request, Team $team): RedirectResponse
+    public function update(StoreOrUpdateTeamRequest $request, Team $team): RedirectResponse
     {
         $validated = $request->validated();
-        $team->update($validated);
         $league = League::firstOrCreate([
             'category' => $validated['category'],
             'division' => $validated['division'],
@@ -160,6 +159,9 @@ class TeamController extends Controller
             'season_id' => $validated['season_id'],
         ]);
 
+        $request->isDuplicatedTeam();
+        
+        $team->update($validated);
         $team->league()->associate($league);
         $team->season()->associate(Season::find($validated['season_id']));
 

@@ -6,14 +6,12 @@ use App\Enums\LeagueCategory;
 use App\Enums\LeagueLevel;
 use App\Enums\TeamName;
 use App\Models\Team;
-use GuzzleHttp\Psr7\Request;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 
-class StoreTeamRequest extends FormRequest
+class StoreOrUpdateTeamRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -76,7 +74,7 @@ class StoreTeamRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'players' => __('At least 5 players must be selected.'),
+            'players' => __('At least 5 players must be selected'),
         ];
     }
 
@@ -86,7 +84,7 @@ class StoreTeamRequest extends FormRequest
      * @return void
      * @throws ValidationException
      */
-    public function isDuplicatedTeam(): void // hasAlreadyThisTeam//isTeamAlreadyExisting
+    public function isDuplicatedTeam(): void
     {
         $team = Team::select('teams.*')->join('leagues', 'teams.league_id', 'leagues.id')
             ->where('teams.name', $this->name)

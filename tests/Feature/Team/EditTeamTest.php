@@ -34,19 +34,21 @@ class EditTeamTest extends TestCase
         ],
         'season_id' => 1,
     ];
-    protected array $invalid_request = [
-        'captain_id' => 666,
-        'category' => 'somethingWrong',
-        'division' => null,
-        'level' => 'somethingWrong',
-        'name' => 'AA',
+    protected array $valid_request_2 = [
+        'captain_id' => 2,
+        'category' => LeagueCategory::MEN->name,
+        'division' => '4C',
+        'level' => LeagueLevel::PROVINCIAL_BW->name,
+        'name' => 'B',
         'players' => [
-            0 => '666',
-            1 => '667',
-            2 => '668',
-            3 => '1',       // this one is correct.
+            0 => '1',
+            1 => '2',
+            2 => '3',
+            3 => '4',
+            4 => '5',
+            5=> '6',
         ],
-        'season_id' => 99,
+        'season_id' => 1,
     ];
     protected array $less_than_5_players_request = [
         'captain_id' => 5,
@@ -208,5 +210,29 @@ class EditTeamTest extends TestCase
             ->assertInvalid('players')
             ->assertRedirect(route('teams.edit', $team))
             ->assertSessionHasErrorsIn('players');
+    }
+
+    public function test_validation_should_fail_in_case_of_duplicate_teams_into_same_league(): void
+    {
+        //Create 2 different teams
+        $this->actingAs($this->committee_member)
+            ->from('teams.create')
+            ->post(route('teams.store'), $this->valid_request)
+            ->assertRedirectToRoute('teams.index');
+
+        $this->actingAs($this->committee_member)
+            ->from('teams.create')
+            ->post(route('teams.store'), $this->valid_request_2)
+            ->assertRedirectToRoute('teams.index');
+
+        // Create the duplicated team
+        $updated_team = Team::find(1);
+        $this->actingAs($this->committee_member)
+            ->from('teams.edit',$updated_team)
+            ->put(route('teams.update', $updated_team), $this->valid_request_2)
+            ->assertInvalid('name')
+            ->assertRedirect('teams.edit', $updated_team)
+            ->assertSessionHasErrors('name');
+        
     }
 }

@@ -2,12 +2,8 @@
 
 namespace Tests\Feature\User;
 
-use App\Enums\Roles;
-use App\Models\Role;
 use App\Models\User;
-use Doctrine\Common\Cache\Psr6\InvalidArgument;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ViewAnyUserTest extends TestCase

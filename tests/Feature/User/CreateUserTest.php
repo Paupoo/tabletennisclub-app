@@ -3,12 +3,8 @@
 namespace Tests\Feature\User;
 
 use App\Enums\Sex;
-use App\Models\Club;
-use App\Models\League;
-use App\Models\Role;
 use App\Models\Team;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;

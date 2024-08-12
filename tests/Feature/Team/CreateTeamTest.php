@@ -1,14 +1,12 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Team;
 
 use App\Enums\LeagueCategory;
 use App\Enums\LeagueLevel;
 use App\Models\Team;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 
 class CreateTeamTest extends TestCase

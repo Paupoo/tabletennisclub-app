@@ -21,19 +21,6 @@
             <a href="{{ route('teams.edit', $team) }}"><x-primary-button
                     class="my-2 float-end">{{ __('Edit') }}</x-primary-button></a>
         @endcan
-        {{-- <div class="flex flex-col max-w-sm gap-4 p-10">
-            <div class="flex justify-between">{{ __('Team name : ') }}<span class="font-bold">{{ $team->name }}</span></div>
-            <div class="flex justify-between">{{ __('Season : ') }}<span class="font-bold">{{ $team->season }}</span></div>
-            <div class="flex justify-between">{{ __('Division : ') }}<span class="font-bold">{{ $team->division }}</span></div>
-            <div class="flex justify-between">{{ __('Players : ') }}</div>
-            @isset($team->users)
-                <ol>
-                    @foreach ($team->users->sortBy([['ranking', 'asc'], ['last_name', 'asc']]) as $player)
-                        <li>{{ $player->last_name }} {{ $player->first_name }} - {{ $player->ranking }} -- {{ $player->force_index }}</li>
-                    @endforeach
-                </ol>
-            @endisset
-        </div> --}}
         <div class="mt-6 w-3/4 h-fit mr-auto border border-gray-100 rounded-md p-1">
             <div
                 class="w-fit -mt-5 -ml-5 rounded-sm bg-indigo-500 text-white text-lg font-bold text-left py-1 px-3 shadow-md relative">

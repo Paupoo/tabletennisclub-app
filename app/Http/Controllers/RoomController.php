@@ -27,10 +27,7 @@ class RoomController extends Controller
     public function create()
     {
         $this->authorize('create', Room::class);
-        $room = new Room([
-            'name' => __('Type the room name here'),
-            'street' => __('Street of the room'),
-        ]);
+        $room = new Room();
         return view('admin/rooms/create', [
             'room' => $room,
         ]);

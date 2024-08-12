@@ -17,6 +17,9 @@
     </x-admin-block>
 
     <x-admin-block>
+        @can('update', $team) 
+        <a href="{{ route('teams.edit', $team) }}"><x-primary-button class="my-2 float-end">{{ __('Edit') }}</x-primary-button></a>
+        @endcan
         <div class="flex flex-col max-w-sm gap-4 p-10">
             <div class="flex justify-between">{{ __('Team name : ') }}<span class="font-bold">{{ $team->name }}</span></div>
             <div class="flex justify-between">{{ __('Season : ') }}<span class="font-bold">{{ $team->season }}</span></div>

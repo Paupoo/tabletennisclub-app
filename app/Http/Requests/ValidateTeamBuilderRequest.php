@@ -14,6 +14,15 @@ class ValidateTeamBuilderRequest extends FormRequest
         return $this->user()->is_admin || $this->user()->is_committee_member;
     }
 
+    public function prepareForValidation(): void
+    {
+        if ($this->input('playersPerTeam') === null) {
+            $this->merge([
+                'playersPerTeam' => 5,
+            ]);
+        }
+    }
+
     /**
      * Get the validation rules that apply to the request.
      *

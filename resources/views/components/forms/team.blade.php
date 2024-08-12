@@ -1,7 +1,6 @@
 @props([
     'seasons' => [],
     'league_categories' => [],
-    'league_divisions' => [],
     'league_levels' => [],
     'users' => [],
     'team' => new App\Models\Team(),
@@ -24,7 +23,7 @@
         <x-input-label for="category" :value="__('Select a category')" />
         <x-select-input class="block w-fit mt-1" id="category" name="category" required autofocus>
             @foreach ($league_categories as $category)
-            <option value="{{ $category->name }}">{{ $category->value }}</option>
+            <option value="{{ $category->name }}" @selected($category->name === $team->league?->category)>{{ $category->value }}</option>
             @endforeach
         </x-select-input>
         <x-input-error class="mt-2" :messages="$errors->get('category')" />
@@ -42,7 +41,7 @@
     
     <div>
         <x-input-label for="division" :value="__('Division')" />
-        <x-text-input class="block w-fit mt-1" id="division" name="division" placeholder="5E" value="{{ old('division') }}" required autofocus />
+        <x-text-input class="block w-fit mt-1" id="division" name="division" placeholder="5E" value="{{ old('division', $team->league?->division) }}" required autofocus />
         <x-input-error class="mt-2" :messages="$errors->get('division')" />
     </div>
 </div>

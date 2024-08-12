@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\LeagueCategory;
+use App\Enums\LeagueLevel;
 use App\Enums\TeamName;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -24,10 +26,46 @@ class UpdateTeamRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', Rule::in(array_column(TeamName::cases(), 'name'))],
-            'league_id' => ['required','exists:leagues,id'],
-            'players.*' => ['exists:users,id'],
-            'captain_id' => ['exists:users,id'],
+            'season_id' => [
+                'required',
+                'integer',
+                'exists:seasons,id',
+            ],
+            'name' => [
+                'required',
+                Rule::in(array_column(TeamName::cases(), 'name')),
+            ],
+            'category' => [
+                'required',
+                Rule::in(array_column(LeagueCategory::cases(), 'name')),
+            ],
+            'level' => [
+                'required',
+                Rule::in(array_column(LeagueLevel::cases(), 'name')),
+            ],
+            'division' => [
+                'required',
+                'string'
+            ],
+            'players' => [
+                'required',
+                'array',
+                'min:5',
+            ],
+            'players.*' => [
+                'exists:users,id'
+            ],
+            'captain_id' => [
+                'integer',
+                'exists:users,id',
+            ],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'players' => 'A team must contain at least 5 players',
         ];
     }
 }

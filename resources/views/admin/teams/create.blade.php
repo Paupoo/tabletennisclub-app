@@ -43,8 +43,8 @@
                             :seasons="$seasons"
                             :league_categories="$league_categories"
                             :league_levels="$league_levels"
-                            :league_divisions="$league_divisions"
                             :users="$users"
+                            :team="$team"
                             :team_names="$team_names">
                         </x-forms.team>
 

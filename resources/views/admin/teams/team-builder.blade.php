@@ -59,7 +59,9 @@
                             <div class="border-2 p-2 border-indigo-400 w-fit rounded-lg border-grey-300">
 
                                 <h1 class="text-center font-extrabold text-xl">{{ $teamName }}</h1>
+                                
                                 <hr class="border-2 border-dashed my-4 border-indigo-500">
+                                
                                 <div class="flex flex-col">
                                     <label for="league{{ $teamName}}">{{ __('Pick up a league') }}</label>
                                     <div class="flex flex-col gap-2">
@@ -78,7 +80,9 @@
                                         <input type="text" name="teams[{{ $teamName }}][division]" id="league{{ $teamName}}" class="text-xs w-full py-2 rounded-md border-indigo-500" placeholder="{{ __('5E')}}" required>
                                     </div>
                                 </div>
+
                                 <hr class="border-2 border-dashed my-4 border-indigo-500">
+                                
                                 @foreach ($players as $player)
                                     <div class="grid grid-flow-col gap-2 text-sm mt-2 hover:bg-indigo-300 rounded p-1">
                                         <span class="text-left w-40">{{ $player->force_index }} | {{ $player->last_name }}

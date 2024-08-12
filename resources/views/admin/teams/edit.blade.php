@@ -39,7 +39,16 @@
                         @csrf
                         @method('PUT')
                         
-                        <x-forms.team :team="$team" :users="$users" :attachedUsers="$attachedUsers" :leagues="$leagues" :team_names="$team_names"></x-forms.team>
+                        <x-forms.team 
+                            :attachedUsers="$attachedUsers"
+                            :league_categories="$league_categories"
+                            :league_levels="$league_levels"
+                            :seasons="$seasons"
+                            :team="$team"
+                            :team_names="$team_names"
+                            :users="$users"
+                            >
+                        </x-forms.team>
 
                         <div>
                             <x-primary-button>{{ __('Save change') }}</x-primary-button>

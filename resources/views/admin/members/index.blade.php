@@ -64,15 +64,15 @@
                                 <td class="px-4 whitespace-nowrap">{{ $member->ranking }}</td>
                                 <td class="px-4 whitespace-nowrap">
                                     @if ($member->teams->count() > 0)
-                                        @foreach ($member->teams as $team)
-                                            {{ $team->name }}
+                                        @foreach ($member->teams->sortBy('name') as $team)
+                                            <a href="{{ route('teams.show', $team)}}">{{ $team->name }}</a>    
                                             @if (!$loop->last)
                                                 {{-- This is not the last iteration --}}
                                                 {{ ' | ' }}
                                             @endif
                                         @endforeach
                                     @else
-                                        {{ __('Pool') }}
+                                        {{ __('No team') }}
                                     @endif
                                 </td>
                                 <td class="px-4 whitespace-nowrap">

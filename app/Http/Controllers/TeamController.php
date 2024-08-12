@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection as SupportCollection;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class TeamController extends Controller
@@ -29,7 +30,7 @@ class TeamController extends Controller
     private int $totalTeamsAmount = 0;
     private SupportCollection $teams;
     private SupportCollection $teamsWithPlayers;
-    
+
     /**
      * Display a listing of the resource.
      */
@@ -53,17 +54,20 @@ class TeamController extends Controller
     {
         $this->authorize('create', Team::class);
 
+        $team = new Team();
+        $date = Carbon::now()->addYear()->format('Y');
+        $team->season()->associate(Season::firstWhere('start_year', $date));
+
         return view('admin.teams.create', [
-            'users' => User::where('is_competitor', true)->orderby('force_index')->orderby('last_name')->orderby('first_name')->get(),
             'league_categories' => LeagueCategory::cases(),
             'league_levels' => LeagueLevel::cases(),
-            'league_divisions' => League::select('division', 'id')
-                ->get(),
             'seasons' => Season::select('name', 'id', 'start_year')
                 ->where('end_year', '>=', today()->format('Y'))
                 ->orderBy('start_year', 'asc')
                 ->get(),
+            'team' => $team,
             'team_names' => TeamName::cases(),
+            'users' => User::where('is_competitor', true)->orderby('force_index')->orderby('last_name')->orderby('first_name')->get(),
         ]);
     }
 
@@ -73,32 +77,32 @@ class TeamController extends Controller
     public function store(StoreTeamRequest $request)
     {
         $validated_request = $request->validated();
-        
+
         $league_model = League::firstOrCreate([
             'category' => $validated_request['category'],
             'division' => $validated_request['division'],
             'level' => $validated_request['level'],
             'season_id' => $validated_request['season_id'],
         ]);
-        
+
         $request->isDuplicatedTeam();
-        
-        $team_model = new Team([
+
+        $team = new Team([
             'name' => $validated_request['name'],
         ]);
 
-        $team_model->season()->associate(Season::find($league_model->season_id));
-        $team_model->club()->associate(Club::firstWhere('licence', 'BBW214'));
-        $team_model->league()->associate($league_model);
-        
-        if(isset($request['captain_id'])) {
+        $team->season()->associate(Season::find($league_model->season_id));
+        $team->club()->associate(Club::firstWhere('licence', 'BBW214'));
+        $team->league()->associate($league_model);
+
+        if (isset($request['captain_id'])) {
             $captain = User::find($validated_request['captain_id']);
-            $team_model->captain()->associate($captain);
+            $team->captain()->associate($captain);
         }
 
-        $team_model->save();
+        $team->save();
 
-        $team_model->users()->sync($validated_request['players']);
+        $team->users()->sync($validated_request['players']);
 
         return redirect()->route('teams.index')->with('success', 'The team ' . $validated_request['name'] . ' has been created.');
     }
@@ -124,39 +128,51 @@ class TeamController extends Controller
         $team = Team::findOrFail($id);
         //
         return view('admin.teams.edit', [
+            'attachedUsers' => $team->users->pluck('id')->toArray(),
+            'league_categories' => LeagueCategory::cases(),
+            'league_divisions' => League::select('division', 'id')
+                ->get(),
+            'league_levels' => LeagueLevel::cases(),
+            'leagues' => League::all(),
+            'seasons' => Season::select('name', 'id', 'start_year')
+                ->where('end_year', '>=', today()->format('Y'))
+                ->orderBy('start_year', 'asc')
+                ->get(),
             'team' => $team,
             'team_names' => TeamName::cases(),
             'users' => User::where('is_competitor', true)->orderby('force_index')->orderby('last_name')->orderby('first_name')->get(),
-            'leagues' => League::all(),
-            'attachedUsers' => $team->users->pluck('id')->toArray(),
         ]);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateTeamRequest $request, string $id): RedirectResponse
+    public function update(UpdateTeamRequest $request, Team $team): RedirectResponse
     {
-        $request = $request->validated();
-        
-        $team_model = Team::find($id);
-        $league_model = League::find($request['league_id']);
+        $validated = $request->validated();
+        $team->update($validated);
+        $league = League::firstOrCreate([
+            'category' => $validated['category'],
+            'division' => $validated['division'],
+            'level' => $validated['level'],
+            'season_id' => $validated['season_id'],
+        ]);
 
-        $team_model->name = $request['name'];
-        $team_model->league()->associate($league_model);
-        $team_model->season()->associate($league_model->season_id);
-        isset($request['captain_id'])
-            ? $team_model->captain()->associate(User::find($request['captain_id']))
-            : $team_model->captain()->dissociate();
+        $team->league()->associate($league);
+        $team->season()->associate(Season::find($validated['season_id']));
 
-        $team_model->save();
+        isset($validated['captain_id'])
+            ? $team->captain()->associate(User::find($validated['captain_id']))
+            : $team->captain()->dissociate();
 
-        isset($request['players'])
-            ? $team_model->users()->sync($request['players'])
-            : $team_model->users()->detach();
-        
+        $team->save();
 
-        return redirect()->route('teams.index')->with('success', 'The team ' . $team_model->name . ' has been updated.');
+        isset($validated['players'])
+            ? $team->users()->sync($validated['players'])
+            : throw ValidationException::withMessages(['players' => 'A team must contain at least 5 players']);
+
+
+        return redirect()->route('teams.index')->with('success', 'The team ' . $team->name . ' has been updated.');
     }
 
     /**
@@ -166,7 +182,7 @@ class TeamController extends Controller
     {
         //
         $team = Team::find($id);
-        
+
         // Delete the team.
         $team->delete();
 
@@ -174,20 +190,20 @@ class TeamController extends Controller
     }
 
     public function initiateTeamsBuilder(): View
-    {    
-            return view('admin/teams/team-builder', [
-                'seasons' => $this->getUpToDateSeasons('asc'),
-            ]);
+    {
+        return view('admin/teams/team-builder', [
+            'seasons' => $this->getUpToDateSeasons('asc'),
+        ]);
     }
 
     public function validateTeamsBuilder(ValidateTeamBuilderRequest $request): View
     {
         $playersPerTeam = $request->safe()->playersPerTeam;
         $this->getCompetitors()
-        ->countCompetitors()
-        ->countTotalTeams($playersPerTeam)
-        ->buildTeamsFromAToZ()
-        ->addPlayersToTeams($playersPerTeam);
+            ->countCompetitors()
+            ->countTotalTeams($playersPerTeam)
+            ->buildTeamsFromAToZ()
+            ->addPlayersToTeams($playersPerTeam);
 
         return view('admin/teams/team-builder', [
             'seasons' => $this->getUpToDateSeasons('asc'),
@@ -195,7 +211,7 @@ class TeamController extends Controller
             'leagueLevel' => LeagueLevel::cases(),
             'leagueCategory' => LeagueCategory::cases(),
             'playersPerTeam' => $playersPerTeam,
-            'teamsWithPlayers' => $this->teamsWithPlayers ,
+            'teamsWithPlayers' => $this->teamsWithPlayers,
         ]);
     }
 
@@ -226,12 +242,12 @@ class TeamController extends Controller
         $seasonId = $request->season_id;
 
         // Looping for each team
-        foreach($request->teams as $teamName => $data) {
+        foreach ($request->teams as $teamName => $data) {
             $team = new Team([
                 'name' => $teamName,
             ]);
             $team->season()->associate($seasonId);
-            
+
             // Add the captain if any
             if (isset($data['captain_id'])) {
                 $team->captain()->associate($data['captain_id']);
@@ -240,7 +256,7 @@ class TeamController extends Controller
             $team->save();
 
             // Add the players
-            foreach($data['players_id'] as $player_id) {
+            foreach ($data['players_id'] as $player_id) {
                 $team->users()->attach($player_id);
             }
 
@@ -256,8 +272,6 @@ class TeamController extends Controller
             ]);
 
             $team->league()->associate($league->id)->save();
-
-
         }
 
         return redirect()->route('teams.index')->with('success', sprintf('New teams for the season %s have been created.', Season::find($seasonId)->name));
@@ -287,7 +301,7 @@ class TeamController extends Controller
     protected function countCompetitors(): self
     {
         $this->totalCompetitors = $this->competitors->count();
-        
+
         return $this;
     }
 
@@ -318,7 +332,7 @@ class TeamController extends Controller
     private function buildTeamsFromAToZ(): self
     {
         $teams = collect();
-            
+
         for ($i = 0; $i < $this->totalTeamsAmount; $i++) {
             $teams->push(TeamName::cases()[$i]->name);
         }
@@ -340,11 +354,10 @@ class TeamController extends Controller
 
         $this->teamsWithPlayers = collect();
 
-        foreach($this->teams as $team){
+        foreach ($this->teams as $team) {
             $players = collect();
             for ($i = 0; $i < $playersPerTeam; $i++) {
                 $players->push($this->competitors->shift());
-                
             }
             $this->teamsWithPlayers->put($team, $players);
         }

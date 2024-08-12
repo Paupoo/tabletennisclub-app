@@ -8,40 +8,40 @@
     'attachedUsers' => [],
 ])
 <div class="flex flew-row flex-wrap gap-2">
-
     <div>
         <x-input-label for="season" :value="__('Select a season')" />
         <x-select-input class="block w-fit mt-1" id="season" name="season_id" required autofocus>
             @foreach ($seasons as $season)
-            <option value="{{ $season->id }}" @selected(today()->format('Y') >= $season->end_year)>{{ $season->name }}</option>
+                <option value="{{ $season->id }}" @selected($season->id === $team->season?->id)>{{ $season->name }}</option>
             @endforeach
         </x-select-input>
         <x-input-error class="mt-2" :messages="$errors->get('season')" />
     </div>
-    
+
     <div>
         <x-input-label for="category" :value="__('Select a category')" />
         <x-select-input class="block w-fit mt-1" id="category" name="category" required autofocus>
             @foreach ($league_categories as $category)
-            <option value="{{ $category->name }}" @selected($category->name === $team->league?->category)>{{ $category->value }}</option>
+                <option value="{{ $category->name }}" @selected($category->name === $team->league?->category)>{{ $category->value }}</option>
             @endforeach
         </x-select-input>
         <x-input-error class="mt-2" :messages="$errors->get('category')" />
     </div>
-    
+
     <div>
         <x-input-label for="level" :value="__('Select a level')" />
         <x-select-input class="block w-fit mt-1" id="level" name="level" required autofocus>
             @foreach ($league_levels as $level)
-            <option value="{{ $level->name }}">{{ $level->value }}</option>
+                <option value="{{ $level->name }}">{{ $level->value }}</option>
             @endforeach
         </x-select-input>
         <x-input-error class="mt-2" :messages="$errors->get('level')" />
     </div>
-    
+
     <div>
         <x-input-label for="division" :value="__('Division')" />
-        <x-text-input class="block w-fit mt-1" id="division" name="division" placeholder="5E" value="{{ old('division', $team->league?->division) }}" required autofocus />
+        <x-text-input class="block w-fit mt-1" id="division" name="division" placeholder="5E"
+            value="{{ old('division', $team->league?->division) }}" required autofocus />
         <x-input-error class="mt-2" :messages="$errors->get('division')" />
     </div>
 </div>
@@ -80,14 +80,13 @@
                 </tr>
             @else
                 @foreach ($users as $user)
-                
                     <tr class="table-row hover:bg-gray-100">
                         <td class="table-cell text-left">
                             <x-input-label for="test" :value="$user->ranking . ' | ' . $user->first_name . ' ' . $user->last_name" />
                         </td>
                         <td class="table-cell text-right w-fit">
-                            <x-checkbox-input id="player{{ $loop->iteration }}" name="players[]"
-                                :value="$user->id" :checked="in_array($user->id, $attachedUsers)"></x-checkbox-input>
+                            <x-checkbox-input id="player{{ $loop->iteration }}" name="players[]" :value="$user->id"
+                                :checked="in_array($user->id, $attachedUsers)"></x-checkbox-input>
                             <x-input-error class="mt-2" :messages="$errors->get('players.' . $loop->index)" />
 
                         </td>

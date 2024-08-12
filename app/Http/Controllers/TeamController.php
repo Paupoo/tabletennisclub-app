@@ -55,8 +55,10 @@ class TeamController extends Controller
         $this->authorize('create', Team::class);
 
         $team = new Team();
-        $date = Carbon::now()->addYear()->format('Y');
-        $team->season()->associate(Season::firstWhere('start_year', $date));
+        $date = Carbon::now();
+        $date->format('m') <= 8
+            ? $team->season()->associate(Season::firstWhere('start_year', $date->format('y') - 1))
+            : $team->season()->associate(Season::firstWhere('start_year', $date->format('y')));
 
         return view('admin.teams.create', [
             'league_categories' => LeagueCategory::cases(),

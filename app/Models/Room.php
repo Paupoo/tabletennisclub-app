@@ -25,7 +25,7 @@ class Room extends Model
         'floor',
         'access_description',
         'capacity_for_trainings',
-        'capacity_for_matches',
+        'capacity_for_interclubs',
     ];
 
     protected $casts = [
@@ -37,7 +37,7 @@ class Room extends Model
         'floor' => 'string',
         'access_description' => 'string',
         'capacity_for_trainings' => 'integer',
-        'capacity_for_matches'  => 'integer',
+        'capacity_for_interclubs'  => 'integer',
     ];
 
     public function training(): HasMany

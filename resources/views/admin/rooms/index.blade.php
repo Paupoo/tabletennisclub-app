@@ -12,9 +12,11 @@
                     @csrf
                     <x-primary-button>{{ __('Dashboard') }}</x-primary-button>
                 </form>
+                @can('create', \App\Models\Room::class)        
                 <form action="{{ route('rooms.create') }}">
                     <x-primary-button>{{ __('Create a new room') }}</x-primary-button>
                 </form>
+                @endcan
 
             </div>
             
@@ -35,16 +37,18 @@
             <div class="overflow-hidden bg-white shadow-sm dark:bg-gray-800 sm:rounded-lg">
 
 
-                <table class="min-w-full text-sm font-light text-left border-collapse table-auto dark:bg-neutral-300">
+                <table class="min-w-full text-md font-light text-left border-collapse table-auto dark:bg-neutral-300">
                     <thead class="font-medium border-b dark:border-neutral-500">
                         <tr>
                             <th scope="col" class="px-4 py-2">{{ __('Name') }}</th>
                             <th scope="col" class="px-4 py-2">{{ __('Building name') }}</th>
                             <th scope="col" class="px-4 py-2">{{ __('Address') }}</th>
                             <th scope="col" class="px-4 py-2">{{ __('Training capacity') }}</th>
-                            <th scope="col" class="px-4 py-2">{{ __('Matches capacity') }}</th>
+                            <th scope="col" class="px-4 py-2">{{ __('Interclubs capacity') }}</th>
                             <th scope="col" class="px-4 py-2">{{ __('Access description') }}</th>
-                            <th scope="col" class="px-4 py-2">{{ __('Actions    ') }}</th>
+                            @can('create', \App\Models\Room::class)
+                            <th scope="col" class="px-4 py-2">{{ __('Actions') }}</th>
+                            @endcan
                         </tr>
                     </thead>
                     <tbody>
@@ -53,9 +57,10 @@
                                 <td class="px-4 whitespace-wrap">{{ $room->name }}</td>
                                 <td class="px-4 whitespace-wrap">{{ $room->building_name }}</td>
                                 <td class="px-4 whitespace-wrap">{{ $room->street . ', ' . $room->city_code . ' ' . $room->city_name }}</td>
-                                <td class="px-4 whitespace-wrap">{{ $room->capacity_trainings }}</td>
-                                <td class="px-4 whitespace-wrap">{{ $room->capacity_matches }}</td>
+                                <td class="px-4 whitespace-wrap">{{ $room->capacity_for_trainings }}</td>
+                                <td class="px-4 whitespace-wrap">{{ $room->capacity_for_interclubs }}</td>
                                 <td class="px-4 whitespace-wrap">{{ \Illuminate\Support\Str::of($room->access_description)->limit(100) }}</td>
+                                @can('create', \App\Models\Room::class)
                                 <td class="flex items-center gap-2 px-4 whitespace-nowrap">
                                     <form action="{{ route('rooms.edit', $room->id) }}" method="GET">
                                         <button type="submit">
@@ -70,6 +75,7 @@
                                         </button>
                                     </form>
                                 </td>
+                                @endcan
                             </tr>
                         @endforeach
                     </tbody>

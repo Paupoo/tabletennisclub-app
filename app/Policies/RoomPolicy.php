@@ -2,26 +2,26 @@
 
 namespace App\Policies;
 
-use App\Models\Team;
+use App\Models\Room;
 use App\Models\User;
 use Illuminate\Auth\Access\Response;
 
-class TeamPolicy
+class RoomPolicy
 {
     /**
      * Determine whether the user can view any models.
      */
     public function viewAny(User $user): bool
     {
-        
+        return true;
     }
 
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, Team $team): bool
+    public function view(User $user, Room $room): bool
     {
-        //
+        return false;
     }
 
     /**
@@ -35,7 +35,7 @@ class TeamPolicy
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user = null, Team $team = null): bool
+    public function update(User $user, Room $room): bool
     {
         return $user->is_admin || $user->is_comittee_member;
     }
@@ -43,25 +43,24 @@ class TeamPolicy
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user = null, Team $team = null): bool
+    public function delete(User $user, Room $room): bool
     {
-        //
-        return $user->is_admin || $user->is_comitte_member;
+        return $user->is_admin || $user->is_comittee_member;
     }
 
     /**
      * Determine whether the user can restore the model.
      */
-    public function restore(User $user, Team $team): bool
+    public function restore(User $user, Room $room): bool
     {
-        //
+        return $user->is_admin || $user->is_comittee_member;
     }
 
     /**
      * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(User $user, Team $team): bool
+    public function forceDelete(User $user, Room $room): bool
     {
-        //
+        return $user->is_admin || $user->is_comittee_member;
     }
 }

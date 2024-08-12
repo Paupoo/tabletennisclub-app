@@ -80,9 +80,8 @@ class CreateTeamTest extends TestCase
 
     public function test_unlogged_user_cant_create_a_team(): void
     {
-        $response = $this->get(route('teams.create'));
-
-        $response->assertRedirect('/login');
+        $this->get(route('teams.create'))
+            ->assertRedirect('/login');
     }
 
     public function test_member_cant_create_a_team(): void

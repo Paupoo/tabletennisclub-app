@@ -16,7 +16,7 @@ return new class extends Migration
         Schema::create('club_room', function (Blueprint $table) {
             $table->id();
             $table->foreignIdFor(Club::class)->constrained();
-            $table->foreignIdFor(Room::class)->constrained();
+            $table->foreignIdFor(Room::class)->constrained()->onDelete('cascade');
             $table->timestamps();
         });
     }

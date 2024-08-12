@@ -14,7 +14,6 @@ return new class extends Migration
     {
         Schema::create('rooms', function (Blueprint $table) {
             $table->id();
-            $table->timestamps();
             $table->string('name', 100)->unique();
             $table->string('building_name', 255)->nullable();
             $table->string('street', 100);
@@ -24,6 +23,7 @@ return new class extends Migration
             $table->string('access_description', 255)->nullable();
             $table->unsignedTinyInteger('capacity_for_trainings');
             $table->unsignedTinyInteger('capacity_for_interclubs');
+            $table->timestamps();
         });
     }
 

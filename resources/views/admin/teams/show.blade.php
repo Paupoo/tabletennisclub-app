@@ -28,10 +28,10 @@
             <div class="w-full m-auto mt-2 rounded-sm bg-white">Hello</div>
             <div
                 class="w-fit mt-5 -ml-5 rounded-sm bg-indigo-500 text-white text-lg font-bold text-left py-1 px-3 shadow-md relative">
-                {{ __('Captain') }} {{ $team->captain->first_name }} {{ $team->captain->last_name }}</div>
+                {{ __('Captain') }} {{ $team->captain?->first_name }} {{ $team->captain?->last_name }}</div>
                 <div class="mt-5 border border-gray-200 rounded overflow-hidden shadow-md w-3/4 mx-auto">
-                    {{ $team->captain->first_name }} {{ $team->captain->last_name }}
-                    {{ $team->captain->email }} {{ $team->captain->phone_number }}
+                    {{ $team->captain?->first_name }} {{ $team->captain?->last_name }}
+                    {{ $team->captain?->email }} {{ $team->captain?->phone_number }}
                 </div>
             <div
                 class="w-fit mt-5 -ml-5 rounded-sm bg-indigo-500 text-white text-lg font-bold text-left py-1 px-3 shadow-md relative">

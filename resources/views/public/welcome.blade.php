@@ -304,20 +304,10 @@
                 <div class="grid grid-flow-row grid-cols-3 gap-6 my-4 max-lg:grid-cols-2 max-sm:grid-cols-1">
 
                     @for ($i = 0; $i < 6; $i++)
-                        <x-article class="dark:bg-gray-700">
-                            <h2 class="text-lg font-semibold text-center">{{ fake()->words(4, true) }}</h2>
-                            <p class="mt-2 text-justify indent-3">{{ fake()->realText() }} </p>
-                            <div class="grid items-end grid-cols-4 gap-2">
-                                <x-published-date-indicator class="col-start-1 col-end-3">Published :
-                                    {{ fake()->date() }}</x-published-date-indicator>
-                                <x-button type="button"
-                                    class="col-start-4 col-end-5 px-4 py-2 mt-2 text-sm font-medium text-blue-900 bg-indigo-300 place-self-end w-36">Read
-                                    more</x-button>
-                            </div>
-                        </x-article>
+                        <x-cards.article class="dark:bg-gray-700"/>
                     @endfor
 
-                    <x-button>Older news</x-button>
+                    <x-button>{{ __('Older news') }}</x-button>
 
 
                 </div>

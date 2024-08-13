@@ -17,13 +17,10 @@ class Training extends Model
      * @var array
      */
     protected $fillable = [
-        'start',
         'end',
-        'room_id',
-        'type',
         'level',
-        'trainer_name',
-        'price',
+        'start',
+        'type',
     ];
 
     /**
@@ -32,11 +29,13 @@ class Training extends Model
      * @var array
      */
     protected $casts = [
-        'start' => 'datetime',
         'end' => 'datetime',
-        'type' => 'string',
         'level' => 'string',
-        'trainer_name' => 'string',
+        'room_id' => 'integer',
+        'start' => 'datetime',
+        'season_id' => 'integer',
+        'trainer_id' => 'integer',
+        'type' => 'string',
     ];
 
     // Relationships

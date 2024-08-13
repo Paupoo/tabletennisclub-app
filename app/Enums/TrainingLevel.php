@@ -9,4 +9,5 @@ enum TrainingLevel: string
     case INTERMEDIATE = 'Intermediate';
     case YOUNG_POTENTIAL = 'Young potential';
     case ELITE = 'Elite';
+    case OPEN = 'Open';
 }

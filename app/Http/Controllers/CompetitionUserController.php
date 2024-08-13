@@ -69,7 +69,7 @@ class CompetitionUserController extends Controller
     public function subscribeToCompetition(User $user, Competition $competition)
     {
         $user = User::find($user);
-        $competition = Competition::($competition)
+        // $competition = Competition::($competition)
 
         $user->competition()->attach($competition);
     }

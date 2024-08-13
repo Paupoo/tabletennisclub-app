@@ -37,12 +37,12 @@ class StoreOrUpdateTeamRequest extends FormRequest
             'category' => [
                 'required',
                 'string',
-                Rule::in(array_column(LeagueCategory::cases(),'name')),
+                Rule::in(collect(LeagueCategory::cases())->pluck('name')),
             ],
             'level' => [
                 'required',
                 'string',
-                Rule::in(array_column(LeagueLevel::cases(), 'name'))
+                Rule::in(collect(LeagueLevel::cases())->pluck('name')),
             ],
             'division' => [
                 'required',
@@ -50,7 +50,7 @@ class StoreOrUpdateTeamRequest extends FormRequest
             ],
             'name' => [
                 'required',
-                Rule::in(array_column(TeamName::cases(), 'name')),
+                Rule::in(collect(TeamName::cases())->pluck('name')),
                 Rule::unique('teams', 'name')
                     ->where('league_id', $this->input('league_id'))
             ],

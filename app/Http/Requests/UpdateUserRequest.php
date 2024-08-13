@@ -49,13 +49,13 @@ class UpdateUserRequest extends FormRequest
             //
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
-            'sex' => ['required', Rule::in(array_column(Sex::cases(), 'name'))],
+            'sex' => ['required', Rule::in(collect(Sex::cases())->pluck('name'))],
             'email' => ['required', 'email:rfc,dns,spoof,filter_unicode', 'unique:users,email,'.$this->route('member'),],
             'is_competitor' => ['nullable'],
             'is_admin' => ['nullable'],
             'is_comittee_member' => ['nullable'],
             'licence' => ['nullable', 'required_if:is_competitor,true', 'unique:users,licence,'.$this->route('member'), 'size:6'],
-            'ranking' => ['required_if:is_competitor,true', Rule::in(array_column(Ranking::cases(),'name'))],
+            'ranking' => ['required_if:is_competitor,true', Rule::in(collect(Ranking::cases())->pluck('name'))],
         ];
     }
 }

@@ -4,7 +4,7 @@ namespace Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
 
-class ForceIndexTest extends TestCase
+class TrainingBuilderTest extends TestCase
 {
     /**
      * A basic unit test example.

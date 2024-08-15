@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\Recurrence;
 use Carbon\Carbon;
+use Doctrine\Common\Cache\Psr6\InvalidArgument;
 use Exception;
 
 class TrainingDateGenerator
@@ -15,13 +16,18 @@ class TrainingDateGenerator
      * @param string $end_date
      * @param string $recurrence
      * @return array<int, Carbon>
-     * @throws
+     * @throws Exception
+     * @throws InvalidArgumens
      */
     public function generateDates(string $start_date, string $end_date = null, string $recurrence): array
     {
 
         if($end_date === null && $recurrence !== Recurrence::NONE->name) {
-            throw new Exception(sprintf('The occurence cannot be set without an end date or it must be set to s%.', Recurrence::NONE->name));
+            throw new Exception(sprintf('The occurence cannot be set without an end date or it must be set to %s.', Recurrence::NONE->name));
+        }
+        
+        if ($end_date < $start_date && $end_date !== null) {
+            throw new Exception(sprintf('The start date [%s] must be smaller or equal to the end date [%s] and vice-versa.', $start_date, $end_date));
         }
 
         $training_dates = [];
@@ -36,6 +42,7 @@ class TrainingDateGenerator
             Recurrence::DAILY->name => 1,
             Recurrence::WEEKLY->name => 7,
             Recurrence::BIWEEKLY->name => 14,
+            default => throw new InvalidArgument(),
         };
 
         // fill the array with dates

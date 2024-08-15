@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\Recurrence;
 use App\Enums\TrainingLevel;
 use App\Enums\TrainingType;
 use Illuminate\Foundation\Http\FormRequest;
@@ -26,9 +27,13 @@ class StoreTrainingRequest extends FormRequest
     {
         return [
             'end_date' => [
-                'required',
+                'nullable',
+                'required_if:recurrence,' . Recurrence::DAILY->name,
+                'required_if:recurrence,' . Recurrence::WEEKLY->name,
+                'required_if:recurrence,' . Recurrence::BIWEEKLY->name,
                 'date_format:Y-m-d',
-                'after:start_date',
+                'after_or_equal:start_date',
+                'after_or_equal:today',
             ],
             'end_time' => [
                 'required',
@@ -40,6 +45,11 @@ class StoreTrainingRequest extends FormRequest
                 'string',
                 Rule::in(collect(TrainingLevel::cases())->pluck('name')),
             ],
+            'recurrence' => [
+                'string',
+                'required',
+                Rule::in(collect(Recurrence::cases())->pluck('name')),
+            ],
             'room_id' => [
                 'required',
                 'integer',
@@ -48,20 +58,23 @@ class StoreTrainingRequest extends FormRequest
             'start_date' => [
                 'required',
                 'date_format:Y-m-d',
-                'before:end_date'
+                'before_or_equal:end_date',
+                'after_or_equal:today',
             ],
             'start_time' => [
                 'required',
                 'date_format:H:i',
-                'before:end_time'
+                'before:end_time',
             ],
             'season_id' => [
                 'required',
                 'integer',
-                'exists:seasons,id'
+                'exists:seasons,id',
             ],
             'trainer_id' => [
                 'nullable',
+                'required_if:type,' . TrainingType::DIRECTED->name,
+                'required_if:type,' . TrainingType::SUPERVISED->name,
                 'integer',
                 'exists:users,id',
             ],
@@ -70,6 +83,13 @@ class StoreTrainingRequest extends FormRequest
                 'string',
                 Rule::in(collect(TrainingType::cases())->pluck('name')),
             ],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            //
         ];
     }
 }

@@ -18,12 +18,12 @@ return new class extends Migration
     {
         Schema::create('trainings', function (Blueprint $table) {
             $table->id();
-            $table->enum('level', array_column(TrainingLevel::cases(), 'value'));
-            $table->enum('type', array_column(TrainingType::cases(), 'value'));
+            $table->enum('level', array_column(TrainingLevel::cases(), 'name'));
+            $table->enum('type', array_column(TrainingType::cases(), 'name'));
             $table->dateTime('start', $precision = 0);
             $table->dateTime('end', $precision = 0);
             $table->foreignIdFor(Room::class)->constrained();
-            $table->unsignedBigInteger('trainer_id');
+            $table->unsignedBigInteger('trainer_id')->nullable();
             $table->foreignIdFor(Season::class);
             $table->timestamps();
 

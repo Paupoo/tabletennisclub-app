@@ -2,23 +2,39 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Recurrence;
+use App\Enums\TrainingLevel;
+use App\Enums\TrainingType;
+use App\Http\Requests\StoreTrainingRequest;
 use App\Models\Room;
+use App\Models\Season;
 use App\Models\Training;
+use App\Models\User;
+use App\Services\TrainingBuilder;
+use App\Services\TrainingDateGenerator;
 use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Date;
-use Illuminate\Support\Facades\Redirect;
 
 class TrainingController extends Controller
 {
+
+    protected TrainingDateGenerator $dateGenerator;
+    protected TrainingBuilder $builder;
+
+    public function __construct(TrainingDateGenerator $training_date_generator, TrainingBuilder $training_builder)
+    {
+        $this->dateGenerator = $training_date_generator;
+        $this->builder = $training_builder;
+    }
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        //
+        $this->authorize('viewAny', Training::class);
+
         return view('admin.trainings.index', [
             'trainings' => Training::orderBy('start')->paginate(10),
         ]);
@@ -29,66 +45,41 @@ class TrainingController extends Controller
      */
     public function create()
     {
-        //
+        $this->authorize('create', Training::class);
+
+        $training = new Training();
 
         return view('admin.trainings.create', [
+            'levels' => TrainingLevel::cases(),
             'rooms' => Room::all(),
+            'seasons' => Season::where('start_year', '>=', now()->format('Y') - 1)->orderBy('start_year')->get(),
+            'training' => $training,
+            'types' => TrainingType::cases(),
+            'users' => User::select('id', 'last_name', 'first_name')->orderBy('last_name', 'asc')->orderBy('first_name', 'asc')->get(),
         ]);
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(StoreTrainingRequest $request): RedirectResponse
     {
-
         // Validate the request
-        $validated = $request->validate([
-            'start_date' => 'required|date_format:Y-m-d|before:end_date',
-            'end_date' => 'required|date_format:Y-m-d|after:start_date',
-            'start_time' => 'required|date_format:H:i|before:end_time',
-            'end_time' => 'required|date_format:H:i|after:start_time',
-            'room_id' => 'integer|required',
-            'type' => 'string|required',
-            'level' => 'string|required',
-            'trainer_name' => 'string|nullable',
-        ]);
+        $validated = $request->validated();
 
-        // add the number of the day from the start date (i. e. 2 for Tuesday)
-        $request->merge([
-            'start_date_day' => date('N', strtotime($request->start_date)),
-        ]);
-
-        // Get the array with all the dates in the interval with the same day.
-        $dates = $this->daysBetweenTwoDate($request->start_date, $request->end_date, $request->start_date_day);
-
-        if (count($dates) == 0
-        ) {
-            // Return to previous page with an error if no date has been found.
-            return redirect::back()->with('error', __('You have chosen a too short period of time. No ' . jddayofweek($request->day, 1) . ' found between ' . $request->start_date . ' and ' . $request->end_date . '.'));
-        } else {
-
-            foreach ($dates as $date) {
-
-                // Concatenate date & time in dedicated dateTime properties.
-                $request->start_dateTime = $date . 'T' . $request->start_time;
-                $request->end_dateTime = $date . 'T' . $request->end_time;
-
-                // Created trainings
-                $training = Training::create([
-                    'start' => $request->start_dateTime,
-                    'end' => $request->end_dateTime,
-                    'room_id' => $request->room_id,
-                    'type' => $request->type,
-                    'level' => $request->level,
-                    'trainer_name' => $request->trainer_name,
-                    'price' => 0,
-                ]);
-            }
-        }
-
-
+        $training_dates = $this->dateGenerator->generateDates($validated['start_date'], $validated['end_date'], $validated['recurrence']);
         
+        // create training(s)
+        foreach ($training_dates as $training_date) {
+            // merge date & time
+            $training = $this->builder
+                ->mergeDateAndTime($training_date, $validated['start_time'], $validated['end_time'])
+                ->setAttributes($validated)
+                ->setRoom($validated['room_id'])
+                ->setSeason($validated['season_id'])
+                ->setTrainer($validated['trainer_id'])
+                ->buildAndSave();
+        }        
 
         return redirect()->route('trainings.index')->with('success', 'The training has been created.');
     }

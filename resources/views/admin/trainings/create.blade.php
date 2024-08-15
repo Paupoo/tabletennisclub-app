@@ -38,7 +38,7 @@
                         </p>
                     </header>
 
-                    <x-forms.training :levels="$levels" :training="$training" :types="$types" :rooms="$rooms" :seasons="$seasons"/>
+                    <x-forms.training :levels="$levels" :training="$training" :types="$types" :rooms="$rooms" :seasons="$seasons" :users="$users"/>
                 </div>
             </div>
         </div>

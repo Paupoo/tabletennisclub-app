@@ -54,7 +54,7 @@ class UserController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreUserRequest $request)
+    public function store(StoreUserRequest $request, ForceIndex $forceIndex)
     {
         $request = $request->validated();
         $user = User::create([
@@ -76,7 +76,7 @@ class UserController extends Controller
             $user->teams()->attach(Team::find($request['team_id']));
         }
 
-        $this->forceIndex->setOrUpdateAll();
+        $forceIndex->setOrUpdateAll();
 
         return redirect()->route('members.create')
             ->with('success', __('New member ' . $user->first_name . ' ' . $user->last_name . ' created'));

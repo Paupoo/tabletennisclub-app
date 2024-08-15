@@ -6,12 +6,12 @@ use App\Models\Room;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Tests\TestCase;
+use Tests\Trait\CreateUser;
 
 class CRUDTest extends TestCase
 {
-    protected Model $member;
-    protected Model $admin;
-    protected Model $comittee_member;
+    use CreateUser;
+
     protected array $valid_room_request = [];
     protected array $valid_room_request_2 = [];
     protected array $invalid_room_request = [];
@@ -19,21 +19,6 @@ class CRUDTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-
-        $this->member = User::factory()->create([
-            'is_admin' => false,
-            'is_comittee_member' => false,
-        ]);
-    
-        $this->comittee_member = User::factory()->create([
-            'is_admin' => false,
-            'is_comittee_member' => true,
-        ]);
-        
-        $this->admin = User::factory()->create([
-            'is_admin' => true,
-            'is_comittee_member' => false,
-        ]);
 
         $this->valid_room_request = [
             'name' => 'Jules Demeester 0',
@@ -98,7 +83,7 @@ class CRUDTest extends TestCase
 
     public function test_members_cant_see_create_nor_edit_buttons(): void
     {
-        $this->actingAs($this->member)
+        $this->actingAs($this->createFakeMember())
             ->get(route('rooms.index'))
             ->assertDontSee('Create a new room')
             ->assertDontSee('Edit')
@@ -107,13 +92,13 @@ class CRUDTest extends TestCase
 
     public function test_admin_and_comittee_member_can_see_create_or_edit_buttons(): void
     {
-        $this->actingAs($this->admin)
+        $this->actingAs($this->createFakeAdmin())
             ->get(route('rooms.index'))
             ->assertSee('Create a new room')
             ->assertSee('Edit')
             ->assertSee('Delete');
 
-        $this->actingAs($this->comittee_member)
+        $this->actingAs($this->createFakeComitteeMember())
             ->get(route('rooms.index'))
             ->assertSee('Create a new room')
             ->assertSee('Edit')
@@ -123,37 +108,37 @@ class CRUDTest extends TestCase
     public function test_member_cant_create_nor_edit_nor_delete_rooms(): void
     {
         $room = Room::find(1);
-        $this->actingAs($this->member)
+        $this->actingAs($this->createFakeMember())
             ->get(route('rooms.create'))
             ->assertStatus(403);
 
-        $this->actingAs($this->member)
+        $this->actingAs($this->createFakeMember())
             ->post(route('rooms.store', $room))
             ->assertStatus(403);
 
-        $this->actingAs($this->member)
+        $this->actingAs($this->createFakeMember())
             ->get(route('rooms.edit', $room))
             ->assertStatus(403);
         
-        $this->actingAs($this->member)
+        $this->actingAs($this->createFakeMember())
             ->patch(route('rooms.update', $room))
             ->assertStatus(403);
         
-        $this->actingAs($this->member)
+        $this->actingAs($this->createFakeMember())
             ->delete(route('rooms.destroy', $room))
             ->assertStatus(403);
     }
 
     public function test_admin_or_comittee_member_can_create_a_room():void
     {
-        $this->actingAs($this->admin)
+        $this->actingAs($this->createFakeAdmin())
             ->from(route('rooms.create'))
             ->post(route('rooms.store', $this->valid_room_request))
             ->assertValid()
             ->assertRedirectToRoute('rooms.index')
             ->assertSessionHasNoErrors();
 
-        $this->actingAs($this->comittee_member)
+        $this->actingAs($this->createFakeComitteeMember())
             ->from(route('rooms.create'))
             ->post(route('rooms.store', $this->valid_room_request_2))
             ->assertValid()
@@ -165,14 +150,14 @@ class CRUDTest extends TestCase
     {
         $room = Room::find(1);
 
-        $this->actingAs($this->admin)
+        $this->actingAs($this->createFakeAdmin())
             ->from(route('rooms.edit', $room))
             ->patch(route('rooms.update', $room), $this->valid_room_request)
             ->assertValid()
             ->assertRedirect(route('rooms.index'))
             ->assertSessionHasNoErrors();
 
-        $this->actingAs($this->comittee_member)
+        $this->actingAs($this->createFakeComitteeMember())
             ->from(route('rooms.edit', $room))
             ->patch(route('rooms.update', $room), $this->valid_room_request_2)
             ->assertValid()
@@ -184,13 +169,14 @@ class CRUDTest extends TestCase
     {
         $room = Room::find(1);
 
-        $this->actingAs($this->admin)
+        $this->actingAs($this->createFakeAdmin())
             ->delete(route('rooms.destroy', $room))
             ->assertRedirect(route('rooms.index'))
             ->assertSessionHasNoErrors();
            
         $room = Room::find(2);
-        $this->actingAs($this->comittee_member)
+        
+        $this->actingAs($this->createFakeComitteeMember())
             ->delete(route('rooms.destroy', $room))
             ->assertRedirect(route('rooms.index'))
             ->assertSessionHasNoErrors();
@@ -200,7 +186,7 @@ class CRUDTest extends TestCase
     {
         $total_rooms_in_db = Room::count();
         
-        $this->actingAs($this->admin)
+        $this->actingAs($this->createFakeAdmin())
             ->from(route('rooms.create'))
             ->post(route('rooms.store', $this->valid_room_request));
 
@@ -213,7 +199,7 @@ class CRUDTest extends TestCase
 
         $room = Room::find(1);
 
-        $this->actingAs($this->admin)
+        $this->actingAs($this->createFakeAdmin())
             ->delete(route('rooms.destroy', $room));
 
         $this->assertDatabaseCount('rooms', $total_rooms_in_db - 1);
@@ -221,7 +207,7 @@ class CRUDTest extends TestCase
 
     public function test_invalid_data_are_returning_error_during_creation(): void
     {
-        $this->actingAs($this->admin)
+        $this->actingAs($this->createFakeAdmin())
             ->from(route('rooms.create'))
             ->post(route('rooms.store', $this->invalid_room_request))
             ->assertInvalid([

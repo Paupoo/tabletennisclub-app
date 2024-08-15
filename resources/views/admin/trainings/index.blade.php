@@ -62,9 +62,9 @@
                                     <td class="px-4 whitespace-wrap">{{ $training->end->format('H:i') }}</td>
                                     <td class="px-4 whitespace-wrap">{{ $training->room->name }}</td>
                                     <td class="px-4 whitespace-wrap">{{ $training->type }}</td>
-                                    <td class="px-4 whitespace-wrap">{{ $training->trainer_name }}</td>
+                                    <td class="px-4 whitespace-wrap">{{ $training->trainer?->last_name }} {{ $training->trainer?->first_name }}</td>
                                     <td class="px-4 whitespace-wrap">{{ $training->level }}</td>
-                                    <td class="px-4 whitespace-wrap">{{ $training->room->capacity_trainings }}</td>
+                                    <td class="px-4 whitespace-wrap">{{ $training->room->capacity_for_trainings }}</td>
                                     <td class="flex items-center gap-2 px-4 whitespace-nowrap">
                                         <form action="{{ route('trainings.edit', $training->id) }}" method="GET">
                                             <button type="submit">

@@ -50,10 +50,14 @@ class Training extends Model
         return $this->belongsTo(Room::class);
     }
 
-    public function users(): BelongsToMany
+    public function trainees(): BelongsToMany
     {
-        return $this->belongsToMany(User::class)
-            ->as('trainees');
+        return $this->belongsToMany(User::class);
+    }
+
+    public function trainer(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function season(): BelongsTo

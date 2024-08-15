@@ -60,7 +60,7 @@
                             <tr class="border-b dark:border-neutral-500">
                                 <td class="px-4 whitespace-nowrap">{{ $member->last_name }}</td>
                                 <td class="px-4 whitespace-nowrap">{{ $member->first_name }}</td>
-                                <td class="px-4 whitespace-nowrap">{{ $member->force_index }}</td>
+                                <td class="px-4 whitespace-nowrap">{{ $member->force_list }}</td>
                                 <td class="px-4 whitespace-nowrap">{{ $member->ranking }}</td>
                                 <td class="px-4 whitespace-nowrap">
                                     @if ($member->teams->count() > 0)

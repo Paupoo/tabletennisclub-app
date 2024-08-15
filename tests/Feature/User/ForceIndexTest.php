@@ -18,7 +18,7 @@ class ForceIndexTest extends TestCase
             ->get('/admin/members/deleteForceIndex');
 
         foreach (User::all() as $user) {
-            $this->assertNull($user->force_index);
+            $this->assertNull($user->force_list);
         }
 
         $response->assertRedirect(route('members.index'));
@@ -46,9 +46,9 @@ class ForceIndexTest extends TestCase
             'NC' => 11,
         ];
 
-        foreach ($checkReferences as $ranking => $force_index) {
-            foreach (User::select('force_index')->where('is_competitor', true)->where('ranking', $ranking)->get() as $user) {
-                $this->assertEquals($force_index, $user->force_index);
+        foreach ($checkReferences as $ranking => $force_list) {
+            foreach (User::select('force_list')->where('is_competitor', true)->where('ranking', $ranking)->get() as $user) {
+                $this->assertEquals($force_list, $user->force_list);
             }
         }
     }
@@ -60,11 +60,11 @@ class ForceIndexTest extends TestCase
             ->get('/admin/members/setForceIndex');
 
         foreach (User::where('is_competitor', true)->get() as $competitor) {
-            $this->assertIsInt($competitor->force_index);
+            $this->assertIsInt($competitor->force_list);
         }
 
         foreach (User::where('is_competitor', false)->get() as $competitor) {
-            $this->assertNull($competitor->force_index);
+            $this->assertNull($competitor->force_list);
         }
 
         $response->assertRedirect(route('members.index'));

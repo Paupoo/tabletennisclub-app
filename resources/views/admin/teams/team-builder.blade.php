@@ -85,7 +85,7 @@
                                 
                                 @foreach ($players as $player)
                                     <div class="grid grid-flow-col gap-2 text-sm mt-2 hover:bg-indigo-300 rounded p-1">
-                                        <span class="text-left w-40">{{ $player->force_index }} | {{ $player->last_name }}
+                                        <span class="text-left w-40">{{ $player->force_list }} | {{ $player->last_name }}
                                             {{ $player->first_name }}</span>
                                         <select name="teams[{{ $teamName }}][players_id][]" id=""
                                             class="rounded border-none text-xs hover:bg-indigo-100">

@@ -71,7 +71,7 @@ class User extends Authenticatable
         'city_name' => 'string',
         'ranking' => 'string',
         'licence' => 'string',
-        'force_index' => 'integer',
+        'force_list' => 'integer',
     ];
 
     /**

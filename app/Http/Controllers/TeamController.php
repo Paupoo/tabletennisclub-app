@@ -70,7 +70,7 @@ class TeamController extends Controller
                 ->get(),
             'team' => $team,
             'team_names' => TeamName::cases(),
-            'users' => User::where('is_competitor', true)->orderby('force_index')->orderby('last_name')->orderby('first_name')->get(),
+            'users' => User::where('is_competitor', true)->orderby('force_list')->orderby('last_name')->orderby('first_name')->get(),
         ]);
     }
 
@@ -142,7 +142,7 @@ class TeamController extends Controller
                 ->get(),
             'team' => $team,
             'team_names' => TeamName::cases(),
-            'users' => User::where('is_competitor', true)->orderby('force_index')->orderby('last_name')->orderby('first_name')->get(),
+            'users' => User::where('is_competitor', true)->orderby('force_list')->orderby('last_name')->orderby('first_name')->get(),
         ]);
     }
 
@@ -289,7 +289,7 @@ class TeamController extends Controller
     private function getCompetitors(): self
     {
         $this->competitors = User::where('is_competitor', '=', true)
-            ->orderby('force_index', 'asc')
+            ->orderby('force_list', 'asc')
             ->orderby('last_name', 'asc')
             ->orderby('first_name', 'asc')
             ->get();

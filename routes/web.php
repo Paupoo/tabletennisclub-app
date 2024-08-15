@@ -13,7 +13,7 @@ use App\Models\User;
 use App\Models\Room;
 use App\Models\Team;
 use App\Models\Training;
-use App\Services\ForceIndex as ServicesForceIndex;
+use App\Services\ForceList as ServicesForceIndex;
 
 /*
 |--------------------------------------------------------------------------

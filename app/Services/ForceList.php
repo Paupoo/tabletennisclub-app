@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Redirect;
 
-class ForceIndex
+class ForceList
 {
     protected $members;
 
@@ -25,7 +25,7 @@ class ForceIndex
      */
     public function delete(): self
     {
-        User::where('force_index', '!=', null)->update(['force_index' => null]);
+        User::where('force_list', '!=', null)->update(['force_list' => null]);
 
         return $this;
     }
@@ -67,12 +67,12 @@ class ForceIndex
             if ($member->ranking !== 'E6-NC') {
                 User::where('ranking', $member->ranking)
                 ->where('is_competitor', true)
-                ->update(['force_index' => $member->total + $i]);
+                ->update(['force_list' => $member->total + $i]);
                 $i += $member->total;
             } elseif ($member->ranking === 'E6-NC') {
                 User::whereIn('ranking', ['E6', 'NC'])
                     ->where('is_competitor', true)
-                    ->update(['force_index' => $member->total + $i]);
+                    ->update(['force_list' => $member->total + $i]);
             }
         }
 

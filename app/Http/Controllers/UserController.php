@@ -10,17 +10,17 @@ use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
 use App\Models\Role;
 use App\Models\Team;
-use App\Services\ForceIndex;
+use App\Services\ForceList;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Redirect;
 
 class UserController extends Controller
 {
-    protected $forceIndex;
+    protected $forceList;
 
-    public function __construct(ForceIndex $forceIndex)
+    public function __construct(ForceList $forceList)
     {
-        $this->forceIndex = $forceIndex;
+        $this->forceList = $forceList;
     }
 
     /**
@@ -31,7 +31,7 @@ class UserController extends Controller
         //
         $this->authorize('index', User::class);
         return View('admin.members.index', [
-            'members' => User::orderby('is_competitor', 'desc')->with('teams')->orderby('force_index')->orderBy('ranking')->orderby('last_name')->orderby('first_name')->paginate(20),
+            'members' => User::orderby('is_competitor', 'desc')->with('teams')->orderby('force_list')->orderBy('ranking')->orderby('last_name')->orderby('first_name')->paginate(20),
             'member_model' => User::class,
         ]);
     }
@@ -54,7 +54,7 @@ class UserController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreUserRequest $request, ForceIndex $forceIndex)
+    public function store(StoreUserRequest $request, ForceList $forceList)
     {
         $request = $request->validated();
         $user = User::create([
@@ -76,7 +76,7 @@ class UserController extends Controller
             $user->teams()->attach(Team::find($request['team_id']));
         }
 
-        $forceIndex->setOrUpdateAll();
+        $forceList->setOrUpdateAll();
 
         return redirect()->route('members.create')
             ->with('success', __('New member ' . $user->first_name . ' ' . $user->last_name . ' created'));
@@ -132,7 +132,7 @@ class UserController extends Controller
         }
 
 
-        $this->forceIndex->setOrUpdateAll();
+        $this->forceList->setOrUpdateAll();
 
         return redirect()
             ->route('members.index')
@@ -151,7 +151,7 @@ class UserController extends Controller
 
         $user->delete();
 
-        $this->forceIndex->setOrUpdateAll();
+        $this->forceList->setOrUpdateAll();
 
         return redirect()->route('members.index')->with('success', 'User ' . $user->first_name . ' ' . $user->last_name . ' has been deleted');
     }
@@ -159,14 +159,14 @@ class UserController extends Controller
     public function setForceIndex(): RedirectResponse
     {
         $this->authorize('setOrUpdateForceIndex', User::class);
-        $this->forceIndex->setOrUpdateAll();
+        $this->forceList->setOrUpdateAll();
         return redirect()->route('members.index');
     }
 
     public function deleteForceIndex(): RedirectResponse
     {
         $this->authorize('deleteForceIndex', User::class);
-        $this->forceIndex->delete();
+        $this->forceList->delete();
         return redirect()->route('members.index');
     }
 }

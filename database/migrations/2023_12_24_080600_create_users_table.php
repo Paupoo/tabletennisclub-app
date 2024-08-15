@@ -37,7 +37,7 @@ return new class extends Migration
             $table->string('city_name', 100)->nullable();
             $table->enum('ranking', array_column(Ranking::cases(), 'name'))->default(Ranking::NA->name);
             $table->string('licence', 6)->unique()->nullable();
-            $table->unsignedTinyInteger('force_index')->nullable();
+            $table->unsignedTinyInteger('force_list')->nullable();
             $table->foreignIdFor(Club::class)->default(1);
         });
     }

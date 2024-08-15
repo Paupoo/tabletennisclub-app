@@ -15,18 +15,18 @@ use App\Models\Room;
 use App\Models\Season;
 use App\Models\Team;
 use App\Models\User;
-use App\Services\ForceIndex;
+use App\Services\ForceList;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
 
-    protected $forceIndex = null;
+    protected $forceList = null;
 
-    public function __construct(ForceIndex $forceIndex)
+    public function __construct(ForceList $forceList)
     {
-        $this->forceIndex = $forceIndex;
+        $this->forceList = $forceList;
     }
 
     /**
@@ -214,7 +214,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // Set ForceIndexes
-        $this->forceIndex->setOrUpdateAll();
+        $this->forceList->setOrUpdateAll();
 
         Room::create([
             'name' => 'Demeester -1',

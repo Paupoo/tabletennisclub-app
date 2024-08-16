@@ -3,7 +3,6 @@
 namespace Tests\Trait;
 
 use App\Models\User;
-use Illuminate\Database\Eloquent\Model;
 
 trait CreateUser
 {

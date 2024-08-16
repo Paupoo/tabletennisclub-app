@@ -20,6 +20,17 @@ class StoreUserRequest extends FormRequest
         return $this->user()->is_admin || $this->user()->is_comittee_member;
     }
 
+    public function prepareForValidation(): void
+    {
+        $this->merge([
+            'has_debt' => false,
+            'is_active' => null !== $this->request->get('is_active'),
+            'is_admin' => null !== $this->request->get('is_admin'),
+            'is_comittee_member' => null !== $this->request->get('is_comittee_member'),
+            'is_competitor' => null !== $this->request->get('is_competitor'),
+        ]);
+    }
+
     /**
      * Get the validation rules that apply to the request.
      *
@@ -28,17 +39,23 @@ class StoreUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'last_name' => ['required', 'string', 'max:255'],
-            'first_name' => ['required', 'string', 'max:255'],
-            'sex' => ['required', Rule::in(collect(Sex::cases())->pluck('name'))],
+            'birthday' => ['sometimes', 'date'],
+            'city_code' => ['sometimes', 'string', 'digits:4'],
+            'city_name' => ['sometimes', 'string'],
             'email' => ['required', 'email:rfc,dns,spoof,filter_unicode', 'unique:users,email'],
-            'password' => ['required', 'confirmed', 'min:8', RulesPassword::min(8)->letters()->mixedCase()->numbers()->symbols()],
-            'is_competitor' => ['nullable'],
+            'first_name' => ['required', 'string', 'max:255'],
+            'is_active' => ['boolean'],
+            'is_admin' => ['boolean'],
+            'is_comittee_member' => ['boolean'],
+            'is_competitor' => ['boolean'],
+            'last_name' => ['required', 'string', 'max:255'],
             'licence' => ['nullable', 'required_if:is_competitor,true', 'unique:users,licence', 'size:6'],
+            'password' => ['required', 'confirmed', 'min:8', RulesPassword::min(8)->letters()->mixedCase()->numbers()->symbols()->uncompromised()],
+            'phone_number' => ['sometimes','string','digits_between:9,20'],
             'ranking' => ['nullable', 'required_if:is_competitor,true', Rule::in(collect(Ranking::cases())->pluck('name'))],
+            'sex' => ['required', Rule::in(collect(Sex::cases())->pluck('name'))],
+            'street' => ['sometimes', 'string'],
             'team_id' => ['nullable', 'exists:teams,id'],
-            'is_admin' => ['nullable'],
-            'is_comittee_member' => ['nullable'],
         ];
     }
 }

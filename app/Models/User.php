@@ -24,18 +24,22 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
-        'email',
-        'password',
-        'first_name',
-        'last_name',
-        'sex',
-        'phone_number',
         'birthday',
-        'street',
         'city_code',
         'city_name',
-        'ranking',
+        'email',
+        'first_name',
+        'is_active',
+        'is_admin',
+        'is_comittee_member',
+        'is_competitor',
+        'last_name',
         'licence',
+        'password',
+        'phone_number',
+        'ranking',
+        'sex',
+        'street',
     ];
 
     /**
@@ -114,7 +118,7 @@ class User extends Authenticatable
     public function competitions(): BelongsToMany
     {
         return $this->belongsToMany(Interclub::class)
-            ->withPivot('is_subscribed','is_selected','has_played')
+            ->withPivot('is_subscribed', 'is_selected', 'has_played')
             ->withTimestamps();
     }
 

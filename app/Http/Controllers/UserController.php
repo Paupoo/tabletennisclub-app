@@ -46,8 +46,8 @@ class UserController extends Controller
 
         return View('admin.members.create', [
             'teams' => Team::with('league')->get(),
-            'rankings' => array_column(Ranking::cases(), 'name'),
-            'sexes' => array_column(Sex::cases(), 'name'),
+            'rankings' => collect(Ranking::cases())->pluck('name')->toArray(),
+            'sexes' => collect(Sex::cases())->pluck('name')->toArray(),
         ]);
     }
 
@@ -56,23 +56,12 @@ class UserController extends Controller
      */
     public function store(StoreUserRequest $request, ForceList $forceList)
     {
-        $request = $request->validated();
-        $user = User::create([
-            'first_name' => $request['first_name'],
-            'last_name' => $request['last_name'],
-            'sex' => $request['sex'],
-            'email' => $request['email'],
-            'password' => $request['password'],
-            'is_competitor' => isset($request['is_competitor']) ? true : false,
-            'licence' => $request['licence'],
-            'ranking' => $request['ranking'],
-            'is_admin' => isset($request['is_admin']) ? true : false,
-            'is_comittee_member' => isset($request['is_comittee_member']) ? true : false,
-            'is_active' => true,
-        ]);
+        $validated = $request->validated();
+        
+        $user = User::create($validated);
 
         // Attach a team (TO CHECK, need to be able to attach many teams)
-        if (isset($request['team_id'])) {
+        if (null !== $validated['team_id']) {
             $user->teams()->attach(Team::find($request['team_id']));
         }
 

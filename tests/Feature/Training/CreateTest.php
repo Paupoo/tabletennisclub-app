@@ -7,10 +7,6 @@ use App\Enums\TrainingLevel;
 use App\Enums\TrainingType;
 use App\Models\Room;
 use App\Models\Training;
-use App\Services\TrainingBuilder;
-use App\Services\TrainingDateGenerator;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 use Tests\Trait\CreateUser;
 

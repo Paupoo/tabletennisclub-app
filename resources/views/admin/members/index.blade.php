@@ -58,7 +58,15 @@
                     <tbody>
                         @foreach ($members as $member)
                             <tr class="border-b dark:border-neutral-500">
-                                <td class="px-4 whitespace-nowrap">{{ $member->last_name }}</td>
+                                <td class="px-4 whitespace-nowrap">
+                                    @if ($member->sex === \App\Enums\Sex::MEN->name )
+                                        &#9794;
+                                    @elseif ($member->sex === \App\Enums\Sex::WOMEN->name)
+                                        &#9792;
+                                    @else
+                                        &#9892;
+                                    @endif
+                                    {{ $member->last_name }}</td>
                                 <td class="px-4 whitespace-nowrap">{{ $member->first_name }}</td>
                                 <td class="px-4 whitespace-nowrap">{{ $member->force_list }}</td>
                                 <td class="px-4 whitespace-nowrap">{{ $member->ranking }}</td>

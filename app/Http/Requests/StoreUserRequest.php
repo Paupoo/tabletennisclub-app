@@ -5,7 +5,6 @@ namespace App\Http\Requests;
 use App\Enums\Ranking;
 use App\Enums\Sex;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password as RulesPassword;
 
@@ -16,14 +15,12 @@ class StoreUserRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        // Forbid member to create a user.
         return $this->user()->is_admin || $this->user()->is_comittee_member;
     }
 
     public function prepareForValidation(): void
     {
         $this->merge([
-            'has_debt' => false,
             'is_active' => null !== $this->request->get('is_active'),
             'is_admin' => null !== $this->request->get('is_admin'),
             'is_comittee_member' => null !== $this->request->get('is_comittee_member'),

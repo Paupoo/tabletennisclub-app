@@ -3,7 +3,6 @@
 namespace App\Http\Requests;
 
 use App\Enums\Ranking;
-use App\Enums\Roles;
 use App\Enums\Sex;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -19,23 +18,14 @@ class UpdateUserRequest extends FormRequest
         return $this->user()->is_admin || $this->user()->is_comittee_member;
     }
 
-    /**
-     * Prepare the data for validation.
-     */
     protected function prepareForValidation(): void
     {
-        if($this->ranking === null) {
-            $this->merge([
-                'ranking' => Ranking::NA->name,
-            ]);
-        }
-
-        // Forbid a player that plays in competition to not have a ranking.
-        if($this->is_competitor && $this->ranking === Ranking::NA->name) {
-            $this->merge([
-                'ranking' => 'null'
-            ]);
-        }
+        $this->merge([
+            'is_active' => null !== $this->request->get('is_active'),
+            'is_admin' => null !== $this->request->get('is_admin'),
+            'is_comittee_member' => null !== $this->request->get('is_comittee_member'),
+            'is_competitor' => null !== $this->request->get('is_competitor'),
+        ]);
     }
 
     /**
@@ -46,16 +36,22 @@ class UpdateUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
-            'first_name' => ['required', 'string', 'max:255'],
-            'last_name' => ['required', 'string', 'max:255'],
-            'sex' => ['required', Rule::in(collect(Sex::cases())->pluck('name'))],
+            'birthdate' => ['sometimes', 'date'],
+            'city_code' => ['sometimes', 'string', 'digits:4'],
+            'city_name' => ['sometimes', 'string'],
             'email' => ['required', 'email:rfc,dns,spoof,filter_unicode', 'unique:users,email,'.$this->route('member'),],
-            'is_competitor' => ['nullable'],
-            'is_admin' => ['nullable'],
-            'is_comittee_member' => ['nullable'],
+            'first_name' => ['required', 'string', 'max:255'],
+            'is_active' => ['boolean'],
+            'is_admin' => ['boolean'],
+            'is_comittee_member' => ['boolean'],
+            'is_competitor' => ['boolean'],
+            'last_name' => ['required', 'string', 'max:255'],
             'licence' => ['nullable', 'required_if:is_competitor,true', 'unique:users,licence,'.$this->route('member'), 'size:6'],
-            'ranking' => ['required_if:is_competitor,true', Rule::in(collect(Ranking::cases())->pluck('name'))],
+            'phone_number' => ['nullable','string','digits_between:9,20'],
+            'ranking' => ['nullable', 'required_if:is_competitor,true', Rule::in(collect(Ranking::cases())->pluck('name'))],
+            'sex' => ['required', Rule::in(collect(Sex::cases())->pluck('name'))],
+            'street' => ['sometimes', 'string'],
+            'team_id' => ['nullable', 'exists:teams,id'],
         ];
     }
 }

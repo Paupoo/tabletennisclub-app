@@ -46,6 +46,7 @@ class UserController extends Controller
         $this->authorize('create', User::class);
 
         return View('admin.members.create', [
+            'member' => new User(),
             'teams' => Team::with('league')->get(),
             'rankings' => collect(Ranking::cases())->pluck('name')->toArray(),
             'sexes' => collect(Sex::cases())->pluck('name')->toArray(),
@@ -92,6 +93,7 @@ class UserController extends Controller
     {
         //
         $this->authorize('update', User::class);
+        
         return view('admin.members.edit', [
             'member' => User::find($id),
             'teams' => Team::all(),
@@ -106,15 +108,9 @@ class UserController extends Controller
      */
     public function update(UpdateUserRequest $request, string $id)
     {
+        $validated = $request->validated();
         $user = User::find($id);
-        
-        $user->fill($request->validated());
-
-        $user->is_competitor = isset($request['is_competitor']) ? true : false;
-        $user->is_active = isset($request['is_active']) ? true : false;
-        $user->is_admin = isset($request['is_admin']) ? true : false;
-        $user->is_comittee_member = isset($request['is_comittee_member']) ? true : false;
-        $user->save();
+        $user->update($validated);
         
         // Attach a team (TO CHECK, need to be able to attach many teams)
         if ($request['team_id'] !== null) {

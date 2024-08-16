@@ -37,7 +37,7 @@
                     <form action="{{ route('members.store') }}" method="POST" class="mt-6 space-y-6">
                         @csrf
 
-                        <x-forms.user :rankings="$rankings" :teams="$teams" :sexes="$sexes"></x-forms.user>
+                        <x-forms.user :member="$member" :rankings="$rankings" :teams="$teams" :sexes="$sexes"></x-forms.user>
 
                         
 

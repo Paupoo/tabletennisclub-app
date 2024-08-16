@@ -62,7 +62,7 @@ class UserController extends Controller
         $user = User::create($validated);
 
         // Attach a team (TO CHECK, need to be able to attach many teams)
-        if (null !== $validated['team_id']) {
+        if (isset($validated['team_id'])) {
             $user->teams()->attach(Team::find($request['team_id']));
         }
 

@@ -71,7 +71,7 @@ class CreateUserTest extends TestCase
         $this->actingAs($admin)
             ->from(route('members.create'))
             ->post('/admin/members', [
-                'birthday' => Date::create(1988, 8, 17),
+                'birthdate' => Date::create(1988, 8, 17),
                 'city_code' => '1340',
                 'city_name' => 'Ottignies',
                 'email' => 'charles.dupont@gmail.com',
@@ -111,7 +111,7 @@ class CreateUserTest extends TestCase
                 'password_confirmation' => '4321',
                 'licence' => 1234567,
                 'ranking' => 'B5',
-                'birthday' => Date::create(1988, 8, 17)->format('H:i'),
+                'birthdate' => Date::create(1988, 8, 17)->format('H:i'),
                 'phone_number' => 'abc0479123456',
             ])
             ->assertInvalid([
@@ -122,7 +122,7 @@ class CreateUserTest extends TestCase
                 'password',
                 'licence',
                 'ranking',
-                'birthday',
+                'birthdate',
                 'phone_number',
             ])
             ->assertRedirect(route('members.create'))
@@ -134,7 +134,7 @@ class CreateUserTest extends TestCase
                 'password',
                 'licence',
                 'ranking',
-                'birthday',
+                'birthdate',
                 'phone_number',
             ]);
     }
@@ -154,7 +154,7 @@ class CreateUserTest extends TestCase
                 'password_confirmation' => 'z8XDbhN5sFHjWv!',
                 'licence' => 123456,
                 'ranking' => 'B2',
-                'birthday' => Date::create(1988, 8, 17),
+                'birthdate' => Date::create(1988, 8, 17),
                 'phone_number' => '0479123456',
             ])
             ->assertInvalid('email')
@@ -181,7 +181,7 @@ class CreateUserTest extends TestCase
                 'password_confirmation' => 'z8XDbhN5sFHjWv!',
                 'licence' => $licenceAlreadyUsed,
                 'ranking' => 'B2',
-                'birthday' => Date::create(1988, 8, 17),
+                'birthdate' => Date::create(1988, 8, 17),
                 'phone_number' => '0479123456',
             ])
             ->assertInvalid('licence')
@@ -205,7 +205,7 @@ class CreateUserTest extends TestCase
                 'password_confirmation' => 'z8XDbhN5sFHjWv!',
                 'licence' => '123456',
                 'ranking' => 'E3',
-                'birthday' => Date::create(1988, 8, 17),
+                'birthdate' => Date::create(1988, 8, 17),
                 'phone_number' => '0479123456',
             ])
             ->assertInvalid('ranking')
@@ -231,7 +231,7 @@ class CreateUserTest extends TestCase
                 'password_confirmation' => 'z8XDbhN5sFHjWv!',
                 'licence' => '123456',
                 'ranking' => 'E0',
-                'birthday' => Date::create(1988, 8, 17),
+                'birthdate' => Date::create(1988, 8, 17),
                 'phone_number' => '0479123456',
             ])
             ->assertValid()
@@ -254,7 +254,7 @@ class CreateUserTest extends TestCase
                 'email' => 'jules.destree@gmail.com',
                 'password' => 'z8XDbhN5sFHjWv!',
                 'password_confirmation' => 'z8XDbhN5sFHjWv!',
-                'birthday' => Date::create(1988, 8, 17),
+                'birthdate' => Date::create(1988, 8, 17),
                 'phone_number' => '0479123456',
             ])
             ->assertInvalid([

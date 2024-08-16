@@ -24,7 +24,7 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
-        'birthday',
+        'birthdate',
         'city_code',
         'city_name',
         'email',
@@ -69,7 +69,7 @@ class User extends Authenticatable
         'last_name' => 'string',
         'sex' => 'string',
         'phone_number' => 'string',
-        'birthday' => 'datetime:d-m-Y',
+        'birthdate' => 'datetime:d-m-Y',
         'street' => 'string',
         'city_code' => 'string',
         'city_name' => 'string',

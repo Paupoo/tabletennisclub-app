@@ -36,7 +36,7 @@ class UserFactory extends Factory
             'last_name' => fake()->lastName(),
             'sex' => fake()->randomElement(array_column(Sex::cases(), 'name')),
             'phone_number' => fake()->numberBetween(460000000,499000000),
-            'birthday' => fake()->dateTimeBetween('-75 years', '- 8 years'),
+            'birthdate' => fake()->dateTimeBetween('-75 years', '- 8 years'),
             'street' => fake()->streetAddress(),
             'city_code' => fake()->postcode(),
             'city_name' => fake()->city(),

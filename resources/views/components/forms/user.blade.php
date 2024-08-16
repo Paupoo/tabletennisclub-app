@@ -71,9 +71,9 @@
 
 {{-- Birthday --}}
 <div>
-    <x-input-label for="birthday" :value="__('Birth date')" />
-    <x-text-input id="birthday" name="birthday" type="date" class="block w-full mt-1" :value="old('birthday', $member->birthday?->format('Y-m-d'))" autofocus autocomplete="false"></x-text-input>
-    <x-input-error class="mt-2" :messages="$errors->get('birthday')" />
+    <x-input-label for="birthdate" :value="__('Birth date')" />
+    <x-text-input id="birthdate" name="birthdate" type="date" class="block w-full mt-1" :value="old('birthdate', $member->birthdate?->format('Y-m-d'))" autofocus autocomplete="false"></x-text-input>
+    <x-input-error class="mt-2" :messages="$errors->get('birthdate')" />
 </div>
 
 {{-- Street --}}

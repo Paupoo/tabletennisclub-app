@@ -31,7 +31,7 @@ return new class extends Migration
             $table->string('last_name');
             $table->enum('sex', array_column(Sex::cases(), 'name'));
             $table->string('phone_number', 20)->nullable();
-            $table->date('birthday')->nullable();
+            $table->date('birthdate')->nullable();
             $table->string('street', 255)->nullable();
             $table->string('city_code', 10)->nullable();
             $table->string('city_name', 100)->nullable();

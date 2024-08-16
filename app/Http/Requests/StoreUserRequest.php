@@ -39,7 +39,7 @@ class StoreUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'birthday' => ['sometimes', 'date'],
+            'birthdate' => ['sometimes', 'date'],
             'city_code' => ['sometimes', 'string', 'digits:4'],
             'city_name' => ['sometimes', 'string'],
             'email' => ['required', 'email:rfc,dns,spoof,filter_unicode', 'unique:users,email'],

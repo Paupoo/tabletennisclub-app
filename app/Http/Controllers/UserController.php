@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Models\Role;
 use App\Models\Team;
 use App\Services\ForceList;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Redirect;
 
@@ -77,8 +78,10 @@ class UserController extends Controller
     public function show(string $id)
     {
         //
+        $member = User::find($id);
+        $member->age = Carbon::parse($member->birthdate)->age;
         return view('admin.members.info', [
-            'member' => User::find($id),
+            'member' => $member,
         ]);
     }
 

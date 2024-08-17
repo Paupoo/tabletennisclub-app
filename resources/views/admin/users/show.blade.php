@@ -74,8 +74,12 @@
                                 <img class="rounded-full w-5 h-5object-cover"
                                     src="{{ asset('images/icons/birthday.svg') }}" alt="">
                                 <div class="my-auto">
-                                    {{ $user->birthdate->format('d/m/Y') }} ({{ $user?->age }}
-                                    {{ __('years') }})
+                                    @if ($user->birthdate)
+                                        {{ $user->birthdate->format('d/m/Y') }} ({{ $user->age }} {{ __('years') }})
+                                    @else
+                                        {{ __('Unknown')}}
+                                    @endif
+                                    
                                 </div>
                             </li>
                         </ul>

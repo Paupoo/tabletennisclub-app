@@ -87,7 +87,9 @@ class User extends Authenticatable
      */
     public function setFirstNameAttribute($value)
     {
-        return $this->attributes['first_name'] = mb_convert_case($value, MB_CASE_TITLE);
+        $cleaned_name = mb_convert_case($value, MB_CASE_TITLE);
+
+        return $this->attributes['first_name'] = $cleaned_name;
     }
 
     /**
@@ -98,7 +100,9 @@ class User extends Authenticatable
      */
     public function setLastNameAttribute($value)
     {
-        return $this->attributes['last_name'] = mb_convert_case($value, MB_CASE_TITLE);
+        $cleaned_name = mb_convert_case($value, MB_CASE_TITLE);
+
+        return $this->attributes['last_name'] = $cleaned_name;
     }
 
     /**
@@ -111,6 +115,8 @@ class User extends Authenticatable
         if ($this->birthdate !== null)
         {
             $this->setAttribute('age', Carbon::parse($this->birthdate)->age);
+        } else {
+            $this->setAttribute('age', 'Unknown');
         }
 
         return $this;

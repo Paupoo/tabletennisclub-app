@@ -80,6 +80,8 @@ class UserController extends Controller
     public function show(User $user)
     {
         //
+        $user->setAge();
+        
         return view('admin.users.show', [
             'user' => $user,
         ]);

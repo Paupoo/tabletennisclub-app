@@ -51,8 +51,7 @@ class UpdateUserRequest extends FormRequest
             'licence' => ['nullable', 'required_if:is_competitor,true', 'unique:users,licence,'.$this->route()->user->id, 'size:6'],
             'phone_number' => ['nullable','string','digits_between:9,20'],
             'ranking' => [
-                'nullable',
-                'required_if:is_competitor,true',
+                'required',
                 Rule::when(
                     $this->input('is_competitor'),              // If the "is_competitor" is true
                     Rule::in($rankings_enum->reject('NA')),     // Don't allow NA as the player must have a ranking...

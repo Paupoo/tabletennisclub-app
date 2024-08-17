@@ -144,7 +144,7 @@ class UpdateUserTest extends TestCase
                 'password_confirmation' => 'Jean1234!',
                 'is_admin' => false,
                 'is_comittee_member' => false,
-                'is_competitor' => true,
+                'is_competitor' => 'on',
                 'licence' => '1245',
                 'ranking' => 'NA',
             ])

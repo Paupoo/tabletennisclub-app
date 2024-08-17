@@ -37,4 +37,17 @@ class UserTest extends TestCase
         // Assert
         $this->assertEquals($age, $user->age);
     }
+
+
+    public function test_method_set_age_without_birthdate(): void
+    {
+        // Start
+        $user = new User();
+
+        // Change
+        $user->setAge();
+
+        // Assert
+        $this->assertEquals('Unknown', $user->age); 
+    }
 }

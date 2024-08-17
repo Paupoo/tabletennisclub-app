@@ -10,7 +10,7 @@
             <form action="{{ route('dashboard') }}" method="GET">
                 <x-primary-button>{{ __('Dashboard') }}</x-primary-button>
             </form>
-            <form action="{{ route('members.index') }}" method="GET">
+            <form action="{{ route('users.index') }}" method="GET">
                 <x-primary-button>{{ __('Manage members') }}</x-primary-button>
             </form>
         </div>
@@ -31,16 +31,16 @@
                             <li
                                 class="flex justify-center align-middle gap-1 px-4 py-2 bg-white hover:bg-sky-100 hover:text-sky-900 border-b last:border-none border-gray-200 transition-all duration-300 ease-in-out">
                                 <img class="rounded-full w-12 h-12 border-4 border-indigo-200 object-cover"
-                                    @if ($member->sex == \App\Enums\Sex::MEN->name) src="{{ asset('images/man.png') }}"
-                            @elseif ($member->sex == \App\Enums\Sex::WOMEN->name)
+                                    @if ($user->sex == \App\Enums\Sex::MEN->name) src="{{ asset('images/man.png') }}"
+                            @elseif ($user->sex == \App\Enums\Sex::WOMEN->name)
                                 src="{{ asset('images/woman.png') }}" alt="" @endif>
                                 <div class="my-auto">
-                                    {{ $member->first_name . ' ' . $member->last_name }}
+                                    {{ $user->first_name . ' ' . $user->last_name }}
                                 </div>
                                 <div class="">
-                                    @if ($member->sex == \App\Enums\Sex::MEN->name)
+                                    @if ($user->sex == \App\Enums\Sex::MEN->name)
                                         &#9794;
-                                    @elseif ($member->sex == \App\Enums\Sex::WOMEN->name)
+                                    @elseif ($user->sex == \App\Enums\Sex::WOMEN->name)
                                         &#9792;
                                     @endif
                                 </div>
@@ -50,7 +50,7 @@
                                 <img class="rounded-full w-5 h-5object-cover"
                                     src="{{ asset('images/icons/phone.svg') }}" alt="">
                                 <div class="my-auto">
-                                    {{ $member->phone_number }}
+                                    {{ $user->phone_number }}
                                 </div>
                             </li>
                             <li
@@ -58,7 +58,7 @@
                                 <img class="rounded-full w-5 h-5object-cover"
                                     src="{{ asset('images/icons/email.svg') }}" alt="">
                                 <div class="my-auto">
-                                    {{ $member->email }}
+                                    {{ $user->email }}
                                 </div>
                             </li>
                             <li
@@ -66,8 +66,8 @@
                                 <img class="rounded-full w-5 h-5object-cover"
                                     src="{{ asset('images/icons/address.svg') }}" alt="">
                                 <div class="my-auto">
-                                    <p>{{ $member->street }}</p>
-                                    <p>{{ $member->city_code }} {{ $member->city_name }}</p>
+                                    <p>{{ $user->street }}</p>
+                                    <p>{{ $user->city_code }} {{ $user->city_name }}</p>
                                 </div>
                             </li>
                             <li
@@ -75,7 +75,7 @@
                                 <img class="rounded-full w-5 h-5object-cover"
                                     src="{{ asset('images/icons/birthday.svg') }}" alt="">
                                 <div class="my-auto">
-                                    {{ $member->birthdate->format('d/m/Y') }} ({{ $member->age }}
+                                    {{ $user->birthdate->format('d/m/Y') }} ({{ $user?->age }}
                                     {{ __('years') }})
                                 </div>
                             </li>
@@ -92,7 +92,7 @@
                             <li
                                 class="flex justify-center align-middle gap-1 px-4 py-2 bg-white hover:bg-sky-100 hover:text-sky-900 border-b last:border-none border-gray-200 transition-all duration-300 ease-in-out">
                                 <div class="my-auto">
-                                    {{ __('Licence:') }} {{ $member->licence }}
+                                    {{ __('Licence:') }} {{ $user->licence }}
                                 </div>
                             </li>
                             <li
@@ -100,7 +100,7 @@
                                 <img class="rounded-full w-5 h-5object-cover"
                                     src="{{ asset('images/icons/ranking.svg') }}" alt="">
                                 <div class="my-auto">
-                                    {{ __('Ranking:') }} {{ $member->ranking }}
+                                    {{ __('Ranking:') }} {{ $user->ranking }}
                                 </div>
                             </li>
 
@@ -110,7 +110,7 @@
                                     src="{{ asset('images/icons/teams.svg') }}" alt="">
                                 <div class="my-auto">
                                     <ul>
-                                        @foreach ($member->teams as $team)
+                                        @foreach ($user->teams as $team)
                                             <li>{{ $team->league->level }} {{ $team->league->division }}
                                                 {{ $team->name }}
                                             </li>
@@ -140,10 +140,14 @@
 
                 </div>
             </div>
-            <div>
-                @can('update', $member)
-                    <a href="{{ route('members.edit', $member) }}"><x-primary-button
+            <div class="flex flex-auto gap-2">
+                @can('update', $user)
+                    <a href="{{ route('users.edit', $user) }}"><x-primary-button
                             class="my-2 float-end">{{ __('Edit') }}</x-primary-button></a>
+                @endcan
+                @can('delete', $user)
+                    <a href="{{ route('users.destroy', $user) }}"><x-danger-button
+                            class="my-2 float-end">{{ __('Delete') }}</x-danger-button></a>
                 @endcan
             </div>
         </div>

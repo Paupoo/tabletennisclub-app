@@ -334,7 +334,7 @@ class CreateTest extends TestCase
 
     public function test_members_cant_create_training(): void
     {
-        $this->actingAs($this->createFakeMember())
+        $this->actingAs($this->createFakeUser())
             ->get(route('trainings.create'))
             ->assertStatus(403);
     }

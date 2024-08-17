@@ -83,7 +83,7 @@ class CRUDTest extends TestCase
 
     public function test_members_cant_see_create_nor_edit_buttons(): void
     {
-        $this->actingAs($this->createFakeMember())
+        $this->actingAs($this->createFakeUser())
             ->get(route('rooms.index'))
             ->assertDontSee('Create a new room')
             ->assertDontSee('Edit')
@@ -108,23 +108,23 @@ class CRUDTest extends TestCase
     public function test_member_cant_create_nor_edit_nor_delete_rooms(): void
     {
         $room = Room::find(1);
-        $this->actingAs($this->createFakeMember())
+        $this->actingAs($this->createFakeUser())
             ->get(route('rooms.create'))
             ->assertStatus(403);
 
-        $this->actingAs($this->createFakeMember())
+        $this->actingAs($this->createFakeUser())
             ->post(route('rooms.store', $room))
             ->assertStatus(403);
 
-        $this->actingAs($this->createFakeMember())
+        $this->actingAs($this->createFakeUser())
             ->get(route('rooms.edit', $room))
             ->assertStatus(403);
         
-        $this->actingAs($this->createFakeMember())
+        $this->actingAs($this->createFakeUser())
             ->patch(route('rooms.update', $room))
             ->assertStatus(403);
         
-        $this->actingAs($this->createFakeMember())
+        $this->actingAs($this->createFakeUser())
             ->delete(route('rooms.destroy', $room))
             ->assertStatus(403);
     }

@@ -4,24 +4,26 @@ namespace Tests\Feature\User;
 
 use App\Models\User;
 use Tests\TestCase;
+use Tests\Trait\CreateUser;
 
 class ForceIndexTest extends TestCase
 {
+    use CreateUser;
 
     /**
      * A basic feature test example.
      */
     public function test_delete_force_indexes_set_all_value_to_null_in_database(): void
     {
-        $user = User::factory()->create(['is_admin' => true]);
-        $response = $this->actingAs($user)
-            ->get('/admin/members/deleteForceIndex');
+        $admin = $this->createFakeAdmin();
+        $response = $this->actingAs($admin)
+            ->get(route('deleteForceIndex'));
 
         foreach (User::all() as $user) {
             $this->assertNull($user->force_list);
         }
 
-        $response->assertRedirect(route('members.index'));
+        $response->assertRedirect(route('users.index'));
     }
 
     public function test_set_force_index_are_correctly_calculated(): void
@@ -55,9 +57,9 @@ class ForceIndexTest extends TestCase
 
     public function test_force_index_are_calculated_only_for_competitors(): void
     {
-        $user = User::factory()->create(['is_admin' => true]);
-        $response = $this->actingAs($user)
-            ->get('/admin/members/setForceIndex');
+        $admin = $this->createFakeAdmin();
+        $response = $this->actingAs($admin)
+            ->get(route('setForceIndex'));
 
         foreach (User::where('is_competitor', true)->get() as $competitor) {
             $this->assertIsInt($competitor->force_list);
@@ -67,7 +69,7 @@ class ForceIndexTest extends TestCase
             $this->assertNull($competitor->force_list);
         }
 
-        $response->assertRedirect(route('members.index'));
+        $response->assertRedirect(route('users.index'));
     }
 
     public function test_force_index_cant_be_deleted_by_unlogged_users(): void
@@ -78,35 +80,26 @@ class ForceIndexTest extends TestCase
 
     public function test_force_index_cant_be_deleted_by_members(): void
     {
-        $member = User::factory()->create([
-            'is_admin' => false,
-            'is_comittee_member' => false,
-        ]);
+        $user = $this->createFakeUser();
 
-        $this->actingAs($member)
+        $this->actingAs($user)
             ->get(route('deleteForceIndex'))
             ->assertStatus(403);
     }
 
     public function test_force_index_can_be_deleted_by_admin_or_comittee_member(): void
     {
-        $admin = User::factory()->create([
-            'is_admin' => true,
-            'is_comittee_member' => false,
-        ]);
+        $admin = $this->createFakeAdmin();
 
-        $comittee_member = User::factory()->create([
-            'is_admin' => false,
-            'is_comittee_member' => true,
-        ]);
+        $comittee_member = $this->createFakeComitteeMember();
 
         $this->actingAs($admin)
             ->get(route('deleteForceIndex'))
-            ->assertRedirect(route('members.index'));
+            ->assertRedirect(route('users.index'));
 
         $this->actingAs($comittee_member)
             ->get(route('deleteForceIndex'))
-            ->assertRedirect(route('members.index'));
+            ->assertRedirect(route('users.index'));
     }
 
     public function test_force_index_cant_be_set_or_updated_by_unlogged_users(): void
@@ -117,34 +110,25 @@ class ForceIndexTest extends TestCase
 
     public function test_force_index_cant_be_set_or_updated_by_members(): void
     {
-        $member = User::factory()->create([
-            'is_admin' => false,
-            'is_comittee_member' => false,
-        ]);
+        $user = $this->createFakeUser();
 
-        $this->actingAs($member)
+        $this->actingAs($user)
             ->get(route('setForceIndex'))
             ->assertStatus(403);
     }
 
     public function test_force_index_can_be_set_or_updated_by_admin_or_comittee_member(): void
     {
-        $admin = User::factory()->create([
-            'is_admin' => true,
-            'is_comittee_member' => false,
-        ]);
+        $admin = $this->createFakeAdmin();
 
-        $comittee_member = User::factory()->create([
-            'is_admin' => false,
-            'is_comittee_member' => true,
-        ]);
+        $comittee_member = $this->createFakeComitteeMember();
 
         $this->actingAs($admin)
             ->get(route('setForceIndex'))
-            ->assertRedirect(route('members.index'));
+            ->assertRedirect(route('users.index'));
 
         $this->actingAs($comittee_member)
             ->get(route('setForceIndex'))
-            ->assertRedirect(route('members.index'));
+            ->assertRedirect(route('users.index'));
     }
 }

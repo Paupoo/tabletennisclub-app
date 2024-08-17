@@ -35,11 +35,11 @@ Route::get('/', [
  */
 Route::get('/admin/dashboard', function () {
     return view('admin.dashboard', [
-        'members' => User::latest()->take(5)->get(),
-        'members_total_active' => User::where('is_active', '=', true)->count(),
-        'members_total_inactive' => User::where('is_active', '=', false)->count(),
-        'members_total_competitors' => User::where('is_competitor', '=', true)->count(),
-        'members_total_casuals' => User::where('is_competitor', '=', false)->count(),
+        'users' => User::latest()->take(5)->get(),
+        'users_total_active' => User::where('is_active', '=', true)->count(),
+        'users_total_inactive' => User::where('is_active', '=', false)->count(),
+        'users_total_competitors' => User::where('is_competitor', '=', true)->count(),
+        'users_total_casuals' => User::where('is_competitor', '=', false)->count(),
         'rooms' => Room::orderby('name')->get(),
         'trainings' => Training::latest()->take(5)->get(),
         'teams' => Team::all()->load(['captain', 'users']),
@@ -98,16 +98,16 @@ Route::resource('/admin/competitions', CompetitionController::class)->middleware
 /**
  * Users
  */
-Route::get('/admin/members/setForceIndex', [
+Route::get('/admin/users/setForceIndex', [
     UserController::class,
     'setForceIndex',
 ])->middleware(['auth', 'verified'])->name('setForceIndex');
 
-Route::get('/admin/members/deleteForceIndex', [
+Route::get('/admin/users/deleteForceIndex', [
     UserController::class,
     'deleteForceIndex',
 ])->middleware(['auth', 'verified'])->name('deleteForceIndex');
 
-Route::resource('admin/members', UserController::class)->middleware(['auth', 'verified']);
+Route::resource('admin/users', UserController::class)->middleware(['auth', 'verified']);
 
 require __DIR__ . '/auth.php';

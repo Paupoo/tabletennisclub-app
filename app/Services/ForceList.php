@@ -10,14 +10,14 @@ use Illuminate\Support\Facades\Redirect;
 
 class ForceList
 {
-    protected $members;
+    protected $users;
 
      /**
      * Calculate force index for every registered players and store into the DB.
      */
     public function setOrUpdateAll(): void
     {
-        $this->delete()->countCompetitorsByRanking()->assignForceIndexPerRanking($this->members);
+        $this->delete()->countCompetitorsByRanking()->assignForceIndexPerRanking($this->users);
     }
 
     /**
@@ -37,7 +37,7 @@ class ForceList
      */
     private function countCompetitorsByRanking(): self
     {
-        $members = User::select('ranking', DB::raw('count(1) as total'))
+        $users = User::select('ranking', DB::raw('count(1) as total'))
             ->whereNotIn('ranking', ['NA', 'NC', 'E6'])
             ->where ('is_competitor', true)
             ->groupby('ranking')
@@ -49,7 +49,7 @@ class ForceList
         $totalE6Nc->total =  User::whereIn('ranking', ['E6','NC'])
                                                 ->where('is_competitor', true)
                                                 ->count();
-        $this->members = $members->push($totalE6Nc);
+        $this->users = $users->push($totalE6Nc);
 
         return $this;
     }
@@ -57,22 +57,22 @@ class ForceList
     /**
      * Assign force index for each competitor
      *
-     * @param Collection $members
+     * @param Collection $users
      * @return self
      */
-    private function assignForceIndexPerRanking(Collection $members): self
+    private function assignForceIndexPerRanking(Collection $users): self
     {
         $i = 0;
-        foreach ($members as $member) {
-            if ($member->ranking !== 'E6-NC') {
-                User::where('ranking', $member->ranking)
+        foreach ($users as $user) {
+            if ($user->ranking !== 'E6-NC') {
+                User::where('ranking', $user->ranking)
                 ->where('is_competitor', true)
-                ->update(['force_list' => $member->total + $i]);
-                $i += $member->total;
-            } elseif ($member->ranking === 'E6-NC') {
+                ->update(['force_list' => $user->total + $i]);
+                $i += $user->total;
+            } elseif ($user->ranking === 'E6-NC') {
                 User::whereIn('ranking', ['E6', 'NC'])
                     ->where('is_competitor', true)
-                    ->update(['force_list' => $member->total + $i]);
+                    ->update(['force_list' => $user->total + $i]);
             }
         }
 

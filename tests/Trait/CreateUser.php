@@ -7,7 +7,7 @@ use App\Models\User;
 trait CreateUser
 {
     
-    public function createFakeMember(): User
+    public function createFakeUser(): User
     {
         return User::factory()->create();
     }

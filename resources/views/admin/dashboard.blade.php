@@ -35,9 +35,9 @@
                                 <tr class="">
                                     <th class="text-right">Total</th>
                                     <td class="text-center rounded-lg hover:bg-blue-200 hover:font-bold">
-                                        {{ $members_total_active }}</td>
+                                        {{ $users_total_active }}</td>
                                     <td class="text-center rounded-lg hover:bg-blue-200 hover:font-bold">
-                                        {{ $members_total_inactive }}</td>
+                                        {{ $users_total_inactive }}</td>
                                 </tr>
                                 <tr>
                                     <th class="text-right">Training</th>
@@ -47,9 +47,9 @@
                                 <tr>
                                     <th class="text-right">Competition</th>
                                     <td class="text-center rounded-lg hover:bg-blue-200 hover:font-bold">
-                                        {{ $members_total_competitors }}</td>
+                                        {{ $users_total_competitors }}</td>
                                     <td class="text-center rounded-lg hover:bg-blue-200 hover:font-bold">
-                                        {{ $members_total_casuals }}</td>
+                                        {{ $users_total_casuals }}</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -64,11 +64,11 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach ($members as $member)
+                                @foreach ($users as $user)
                                     <tr>
-                                        <td>{{ $member->created_at->format('d-M-Y') }}</td>
-                                        <td>{{ $member->first_name }}</td>
-                                        <td>{{ $member->last_name }}</td>
+                                        <td>{{ $user->created_at->format('d-M-Y') }}</td>
+                                        <td>{{ $user->first_name }}</td>
+                                        <td>{{ $user->last_name }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -76,10 +76,10 @@
                     </div>
 
                     <div class="flex gap-4 mt-4 w-96">
-                        <form action="{{ route('members.create') }}" method="GET">
+                        <form action="{{ route('users.create') }}" method="GET">
                             <x-primary-button>Create new member</x-primary-button>
                         </form>
-                        <form action="{{ route('members.index') }}" method="GET">
+                        <form action="{{ route('users.index') }}" method="GET">
                             <x-primary-button>Manage members</x-primary-button>
                         </form>
                     </div>

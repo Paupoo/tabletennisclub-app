@@ -31,9 +31,10 @@ class UserController extends Controller
     {
         //
         $this->authorize('index', User::class);
-        return View('admin.members.index', [
-            'members' => User::orderby('is_competitor', 'desc')->with('teams')->orderby('force_list')->orderBy('ranking')->orderby('last_name')->orderby('first_name')->paginate(20),
-            'member_model' => User::class,
+
+        return View('admin.users.index', [
+            'users' => User::orderby('is_competitor', 'desc')->with('teams')->orderby('force_list')->orderBy('ranking')->orderby('last_name')->orderby('first_name')->paginate(20),
+            'user_model' => User::class,
         ]);
     }
 
@@ -45,8 +46,8 @@ class UserController extends Controller
         //
         $this->authorize('create', User::class);
 
-        return View('admin.members.create', [
-            'member' => new User(),
+        return View('admin.users.create', [
+            'user' => new User(),
             'teams' => Team::with('league')->get(),
             'rankings' => collect(Ranking::cases())->pluck('name')->toArray(),
             'sexes' => collect(Sex::cases())->pluck('name')->toArray(),
@@ -69,33 +70,32 @@ class UserController extends Controller
 
         $forceList->setOrUpdateAll();
 
-        return redirect()->route('members.create')
+        return redirect()->route('users.create')
             ->with('success', __('New member ' . $user->first_name . ' ' . $user->last_name . ' created'));
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(User $user)
     {
         //
-        $member = User::find($id);
-        $member->age = Carbon::parse($member->birthdate)->age;
-        return view('admin.members.info', [
-            'member' => $member,
+        $user->age = Carbon::parse($user->birthdate)->age;
+        return view('admin.users.show', [
+            'user' => $user,
         ]);
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(User $user)
     {
         //
         $this->authorize('update', User::class);
         
-        return view('admin.members.edit', [
-            'member' => User::find($id),
+        return view('admin.users.edit', [
+            'user' => $user,
             'teams' => Team::all(),
             'rankings' => array_column(Ranking::cases(), 'name'),
             'sexes' => array_column(Sex::cases(), 'name'),
@@ -106,10 +106,9 @@ class UserController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateUserRequest $request, string $id)
+    public function update(UpdateUserRequest $request, User $user)
     {
         $validated = $request->validated();
-        $user = User::find($id);
         $user->update($validated);
         
         // Attach a team (TO CHECK, need to be able to attach many teams)
@@ -123,7 +122,7 @@ class UserController extends Controller
         $this->forceList->setOrUpdateAll();
 
         return redirect()
-            ->route('members.index')
+            ->route('users.index')
             ->with('success', __('Member ' . $user->first_name . ' ' . $user->last_name . ' has been updated.'));
     }
 
@@ -132,29 +131,30 @@ class UserController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(User $user)
     {
-        //
-        $user = User::find($id);
+        $this->authorize('delete', User::class);
 
         $user->delete();
 
         $this->forceList->setOrUpdateAll();
 
-        return redirect()->route('members.index')->with('success', 'User ' . $user->first_name . ' ' . $user->last_name . ' has been deleted');
+        return redirect()
+            ->route('users.index')
+            ->with('deleted', 'User ' . $user->first_name . ' ' . $user->last_name . ' has been deleted');
     }
 
     public function setForceIndex(): RedirectResponse
     {
         $this->authorize('setOrUpdateForceIndex', User::class);
         $this->forceList->setOrUpdateAll();
-        return redirect()->route('members.index');
+        return redirect()->route('users.index');
     }
 
     public function deleteForceIndex(): RedirectResponse
     {
         $this->authorize('deleteForceIndex', User::class);
         $this->forceList->delete();
-        return redirect()->route('members.index');
+        return redirect()->route('users.index');
     }
 }

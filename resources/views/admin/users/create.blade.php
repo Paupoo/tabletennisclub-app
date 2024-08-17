@@ -10,7 +10,7 @@
             <form action="{{ route('dashboard') }}" method="GET">
                 <x-primary-button>{{ __('Dashboard') }}</x-primary-button>
             </form>
-            <form action="{{ route('members.index') }}" method="GET">
+            <form action="{{ route('users.index') }}" method="GET">
                 <x-primary-button>{{ __('Manage members') }}</x-primary-button>
             </form>
         </div>
@@ -34,10 +34,10 @@
                         </p>
                     </header>
 
-                    <form action="{{ route('members.store') }}" method="POST" class="mt-6 space-y-6">
+                    <form action="{{ route('users.store') }}" method="POST" class="mt-6 space-y-6">
                         @csrf
 
-                        <x-forms.user :member="$member" :rankings="$rankings" :teams="$teams" :sexes="$sexes"></x-forms.user>
+                        <x-forms.user :user="$user" :rankings="$rankings" :teams="$teams" :sexes="$sexes"></x-forms.user>
 
                         
 

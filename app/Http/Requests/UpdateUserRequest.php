@@ -21,10 +21,10 @@ class UpdateUserRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->merge([
-            'is_active' => null !== $this->request->get('is_active'),
-            'is_admin' => null !== $this->request->get('is_admin'),
-            'is_comittee_member' => null !== $this->request->get('is_comittee_member'),
-            'is_competitor' => null !== $this->request->get('is_competitor'),
+            'is_active' => null !== $this->input('is_active'),
+            'is_admin' => null !== $this->input('is_admin'),
+            'is_comittee_member' => null !== $this->input('is_comittee_member'),
+            'is_competitor' => null !== $this->input('is_competitor'),
         ]);
     }
 
@@ -35,20 +35,30 @@ class UpdateUserRequest extends FormRequest
      */
     public function rules(): array
     {
+        $rankings_enum = collect(Ranking::cases())->pluck('name');
+
         return [
             'birthdate' => ['sometimes', 'date'],
             'city_code' => ['sometimes', 'string', 'digits:4'],
             'city_name' => ['sometimes', 'string'],
-            'email' => ['required', 'email:rfc,dns,spoof,filter_unicode', 'unique:users,email,'.$this->route('member'),],
+            'email' => ['required', 'email:rfc,dns,spoof,filter_unicode', 'unique:users,email,'.$this->route()->user->id,],
             'first_name' => ['required', 'string', 'max:255'],
             'is_active' => ['boolean'],
             'is_admin' => ['boolean'],
             'is_comittee_member' => ['boolean'],
             'is_competitor' => ['boolean'],
             'last_name' => ['required', 'string', 'max:255'],
-            'licence' => ['nullable', 'required_if:is_competitor,true', 'unique:users,licence,'.$this->route('member'), 'size:6'],
+            'licence' => ['nullable', 'required_if:is_competitor,true', 'unique:users,licence,'.$this->route()->user->id, 'size:6'],
             'phone_number' => ['nullable','string','digits_between:9,20'],
-            'ranking' => ['nullable', 'required_if:is_competitor,true', Rule::in(collect(Ranking::cases())->pluck('name'))],
+            'ranking' => [
+                'nullable',
+                'required_if:is_competitor,true',
+                Rule::when(
+                    $this->input('is_competitor'),              // If the "is_competitor" is true
+                    Rule::in($rankings_enum->reject('NA')),     // Don't allow NA as the player must have a ranking...
+                    Rule::in($rankings_enum),
+                ),
+            ],
             'sex' => ['required', Rule::in(collect(Sex::cases())->pluck('name'))],
             'street' => ['sometimes', 'string'],
             'team_id' => ['nullable', 'exists:teams,id'],

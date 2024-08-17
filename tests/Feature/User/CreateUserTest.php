@@ -50,11 +50,11 @@ class CreateUserTest extends TestCase
         $admin = $this->createFakeAdmin();
 
         $response = $this->actingAs($admin)
-            ->get(route('members.create'));
+            ->get(route('users.create'));
 
         $response
             ->assertOk()
-            ->assertViewIs('admin.members.create')
+            ->assertViewIs('admin.users.create')
             ->assertViewHasAll([
                 'teams' => Team::with('league')->get(),
                 'rankings' => collect(Ranking::cases())->pluck('name')->toArray(),
@@ -69,8 +69,8 @@ class CreateUserTest extends TestCase
         $admin = $this->createFakeAdmin();
 
         $this->actingAs($admin)
-            ->from(route('members.create'))
-            ->post('/admin/members', [
+            ->from(route('users.create'))
+            ->post('/admin/users', [
                 'birthdate' => Date::create(1988, 8, 17),
                 'city_code' => '1340',
                 'city_name' => 'Ottignies',
@@ -89,7 +89,7 @@ class CreateUserTest extends TestCase
                 'sex' => 'MEN',
             ])
             ->assertValid()
-            ->assertRedirect(route('members.create'))
+            ->assertRedirect(route('users.create'))
             ->assertSessionHasNoErrors()
             ->assertSessionHas('success');
 
@@ -101,8 +101,8 @@ class CreateUserTest extends TestCase
         $admin = $this->createFakeAdmin();
 
         $this->actingAs($admin)
-            ->from(route('members.create'))
-            ->post('/admin/members', [
+            ->from(route('users.create'))
+            ->post('/admin/users', [
                 'last_name' => null,
                 'first_name' => 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Provident autem, quod eos rerum tempore iure sit inventore. Laboriosam corrupti libero et reiciendis consequuntur cumque alias ex repellat nulla, temporibus dolore. This is mini Lorem exceeding 255 characters',
                 'sex' => 'wrong',
@@ -125,7 +125,7 @@ class CreateUserTest extends TestCase
                 'birthdate',
                 'phone_number',
             ])
-            ->assertRedirect(route('members.create'))
+            ->assertRedirect(route('users.create'))
             ->assertSessionHasErrors([
                 'last_name',
                 'first_name',
@@ -144,8 +144,8 @@ class CreateUserTest extends TestCase
         $admin = $this->createFakeAdmin();
 
         $this->actingAs($admin)
-            ->from(route('members.create'))
-            ->post('/admin/members', [
+            ->from(route('users.create'))
+            ->post('/admin/users', [
                 'last_name' => 'Jules',
                 'first_name' => 'Destrée',
                 'sex' => 'MEN',
@@ -158,7 +158,7 @@ class CreateUserTest extends TestCase
                 'phone_number' => '0479123456',
             ])
             ->assertInvalid('email')
-            ->assertRedirect(route('members.create'))
+            ->assertRedirect(route('users.create'))
             ->assertSessionHasErrors([
                 'email' => 'The email has already been taken.',
             ]);
@@ -171,8 +171,8 @@ class CreateUserTest extends TestCase
         $licenceAlreadyUsed = User::firstWhere('licence', '!=', null)->licence;
 
         $this->actingAs($admin)
-            ->from(route('members.create'))
-            ->post('/admin/members', [
+            ->from(route('users.create'))
+            ->post('/admin/users', [
                 'last_name' => 'Jules',
                 'first_name' => 'Destrée',
                 'sex' => 'MEN',
@@ -185,7 +185,7 @@ class CreateUserTest extends TestCase
                 'phone_number' => '0479123456',
             ])
             ->assertInvalid('licence')
-            ->assertRedirect(route('members.create'))
+            ->assertRedirect(route('users.create'))
             ->assertSessionHasErrors([
                 'licence' => 'The licence has already been taken.',
             ]);
@@ -195,8 +195,8 @@ class CreateUserTest extends TestCase
         $admin = $this->createFakeAdmin();
 
         $this->actingAs($admin)
-            ->from(route('members.create'))
-            ->post('/admin/members', [
+            ->from(route('users.create'))
+            ->post('/admin/users', [
                 'last_name' => 'Jules',
                 'first_name' => 'Destrée',
                 'sex' => 'MEN',
@@ -209,7 +209,7 @@ class CreateUserTest extends TestCase
                 'phone_number' => '0479123456',
             ])
             ->assertInvalid('ranking')
-            ->assertRedirect(route('members.create'))
+            ->assertRedirect(route('users.create'))
             ->assertSessionHasErrors([
                 'ranking',
             ]);
@@ -220,8 +220,8 @@ class CreateUserTest extends TestCase
         $admin = $this->createFakeAdmin();
 
         $this->actingAs($admin)
-            ->from(route('members.create'))
-            ->post('/admin/members', [
+            ->from(route('users.create'))
+            ->post('/admin/users', [
                 'is_competitor' => 'on',
                 'last_name' => 'Jules',
                 'first_name' => 'Destrée',
@@ -235,7 +235,7 @@ class CreateUserTest extends TestCase
                 'phone_number' => '0479123456',
             ])
             ->assertValid()
-            ->assertRedirect(route('members.create'))
+            ->assertRedirect(route('users.create'))
             ->assertSessionHasNoErrors()
             ->assertSessionHas('success');
     }
@@ -245,8 +245,8 @@ class CreateUserTest extends TestCase
         $admin = $this->createFakeAdmin();
 
         $this->actingAs($admin)
-            ->from(route('members.create'))
-            ->post('/admin/members', [
+            ->from(route('users.create'))
+            ->post('/admin/users', [
                 'is_competitor' => 'on',
                 'last_name' => 'Jules',
                 'first_name' => 'Destrée',
@@ -261,7 +261,7 @@ class CreateUserTest extends TestCase
                 'licence',
                 'ranking'
                 ])
-            ->assertRedirect(route('members.create'))
+            ->assertRedirect(route('users.create'))
             ->assertSessionHasErrors([
                 'licence',
                 'ranking',
@@ -270,10 +270,10 @@ class CreateUserTest extends TestCase
 
     public function test_member_cannot_create_new_member(): void
     {
-        $member = $this->createFakeMember();
+        $user = $this->createFakeUser();
 
-        $this->actingAs($member)
-            ->post('/admin/members/create')
+        $this->actingAs($user)
+            ->post('/admin/users/create')
             ->assertStatus(405);
     }
 }

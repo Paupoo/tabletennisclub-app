@@ -12,7 +12,7 @@
 
         <div class="mt-6 flex gap-4">
             <x-secondary-button>{{ __('Reset password') }}</x-secondary-button>
-            @if ($member->is_active)
+            @if ($user->is_active)
             <x-danger-button>{{ __('Deactivate') }}</x-danger-button>
             @else
             <x-green-button>{{ __('Activate') }}</x-green-button>

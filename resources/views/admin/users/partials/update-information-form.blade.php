@@ -13,11 +13,11 @@
             </p>
         </header>
 
-        <form action="{{ route('members.update', $member->id) }}" method="POST" class="mt-6 space-y-6">
+        <form action="{{ route('users.update', $user->id) }}" method="POST" class="mt-6 space-y-6">
             @csrf
             @method('PUT')
 
-            <x-forms.user :member="$member" :rankings="$rankings" :teams="$teams"
+            <x-forms.user :user="$user" :rankings="$rankings" :teams="$teams"
                 :sexes="$sexes"></x-forms.user>
 
 

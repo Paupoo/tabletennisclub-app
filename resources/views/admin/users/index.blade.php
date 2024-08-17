@@ -11,8 +11,8 @@
                 <a href="{{ route('dashboard') }}">
                     <x-primary-button>{{ __('Dashboard') }}</x-primary-button>
                 </a>
-                @can('create', $member_model)
-                    <a href="{{ route('members.create') }}">
+                @can('create', $user_model)
+                    <a href="{{ route('users.create') }}">
                         <x-primary-button>{{ __('Create new user') }}</x-primary-button>
                     </a>
                     <a href="{{ route('setForceIndex') }}">
@@ -56,23 +56,23 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($members as $member)
+                        @foreach ($users as $user)
                             <tr class="border-b dark:border-neutral-500">
                                 <td class="px-4 whitespace-nowrap">
-                                    @if ($member->sex === \App\Enums\Sex::MEN->name )
+                                    @if ($user->sex === \App\Enums\Sex::MEN->name )
                                         &#9794;
-                                    @elseif ($member->sex === \App\Enums\Sex::WOMEN->name)
+                                    @elseif ($user->sex === \App\Enums\Sex::WOMEN->name)
                                         &#9792;
                                     @else
                                         &#9892;
                                     @endif
-                                    {{ $member->last_name }}</td>
-                                <td class="px-4 whitespace-nowrap">{{ $member->first_name }}</td>
-                                <td class="px-4 whitespace-nowrap">{{ $member->force_list }}</td>
-                                <td class="px-4 whitespace-nowrap">{{ $member->ranking }}</td>
+                                    {{ $user->last_name }}</td>
+                                <td class="px-4 whitespace-nowrap">{{ $user->first_name }}</td>
+                                <td class="px-4 whitespace-nowrap">{{ $user->force_list }}</td>
+                                <td class="px-4 whitespace-nowrap">{{ $user->ranking }}</td>
                                 <td class="px-4 whitespace-nowrap">
-                                    @if ($member->teams->count() > 0)
-                                        @foreach ($member->teams->sortBy('name') as $team)
+                                    @if ($user->teams->count() > 0)
+                                        @foreach ($user->teams->sortBy('name') as $team)
                                             <a href="{{ route('teams.show', $team)}}">{{ $team->name }}</a>    
                                             @if (!$loop->last)
                                                 {{-- This is not the last iteration --}}
@@ -84,39 +84,39 @@
                                     @endif
                                 </td>
                                 <td class="px-4 whitespace-nowrap">
-                                    @if ($member->is_active == false)
+                                    @if ($user->is_active == false)
                                         {{ __('Inactive') }}
                                     @else
                                         {{ __('Active') }}
                                     @endif
                                 </td>
                                 <td class="px-4 whitespace-nowrap">
-                                    @if ($member->is_competitor == false)
+                                    @if ($user->is_competitor == false)
                                         {{ __('Casual') }}
                                     @else
                                         {{ __('Competitor') }}
                                     @endif
                                 </td>
                                 <td class="px-4 whitespace-nowrap">
-                                    @if ($member->has_debt == false)
+                                    @if ($user->has_debt == false)
                                         {{ __('No') }}
                                     @else
                                         {{ __('Yes') }}
                                     @endif
                                 </td>
                                 <td class="flex items-center gap-2 px-4 whitespace-nowrap">
-                                    <a href="{{ route('members.show', $member->id) }}"><img class="h-4 cursor-pointer"
+                                    <a href="{{ route('users.show', $user->id) }}"><img class="h-4 cursor-pointer"
                                             src="{{ asset('images/icons/info.svg') }}" alt="Contact"></a>
-                                    @can('update', $member_model)
-                                        <a href="{{ route('members.edit', $member->id) }}">
+                                    @can('update', $user_model)
+                                        <a href="{{ route('users.edit', $user) }}">
                                             <button type="submit">
                                                 <img class="h-4 cursor-pointer" src="{{ asset('images/icons/edit.svg') }}"
                                                     alt="Edit">
                                             </button>
                                         </a>
                                     @endcan
-                                    @can('delete', $member_model)
-                                        <form action="{{ route('members.destroy', $member->id) }}" method="POST">
+                                    @can('delete', $user_model)
+                                        <form action="{{ route('users.destroy', $user) }}" method="POST">
                                             @csrf
                                             @method('delete')
                                             <button>
@@ -132,7 +132,7 @@
                 </table>
 
                 <x-admin-block>
-                    {{ $members->links() }}
+                    {{ $users->links() }}
                 </x-admin-block>
 
             </div>

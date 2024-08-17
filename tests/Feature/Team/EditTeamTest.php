@@ -11,7 +11,7 @@ use Tests\TestCase;
 
 class EditTeamTest extends TestCase
 {
-    protected Model $member;
+    protected Model $user;
     protected Model $committee_member;
     protected Model $admin;
     protected array $valid_request = [

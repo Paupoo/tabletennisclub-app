@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\Ranking;
 use App\Enums\Sex;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -98,6 +99,21 @@ class User extends Authenticatable
     public function setLastNameAttribute($value)
     {
         return $this->attributes['last_name'] = mb_convert_case($value, MB_CASE_TITLE);
+    }
+
+    /**
+     * Calculate user's age and store it into ->age attribute.
+     *
+     * @return self
+     */
+    public function setAge(): self
+    {
+        if ($this->birthdate !== null)
+        {
+            $this->setAttribute('age', Carbon::parse($this->birthdate)->age);
+        }
+
+        return $this;
     }
 
     public function club(): BelongsTo

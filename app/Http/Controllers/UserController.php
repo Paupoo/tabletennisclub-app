@@ -80,7 +80,6 @@ class UserController extends Controller
     public function show(User $user)
     {
         //
-        $user->age = Carbon::parse($user->birthdate)->age;
         return view('admin.users.show', [
             'user' => $user,
         ]);
@@ -144,16 +143,16 @@ class UserController extends Controller
             ->with('deleted', 'User ' . $user->first_name . ' ' . $user->last_name . ' has been deleted');
     }
 
-    public function setForceIndex(): RedirectResponse
+    public function setForceList(): RedirectResponse
     {
-        $this->authorize('setOrUpdateForceIndex', User::class);
+        $this->authorize('setOrUpdateForceList', User::class);
         $this->forceList->setOrUpdateAll();
         return redirect()->route('users.index');
     }
 
-    public function deleteForceIndex(): RedirectResponse
+    public function deleteForceList(): RedirectResponse
     {
-        $this->authorize('deleteForceIndex', User::class);
+        $this->authorize('deleteForceList', User::class);
         $this->forceList->delete();
         return redirect()->route('users.index');
     }

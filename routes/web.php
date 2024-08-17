@@ -27,7 +27,8 @@ use App\Services\ForceList as ServicesForceIndex;
 */
 
 Route::get('/', [
-    PublicSiteController::class, 'homePage',
+    PublicSiteController::class,
+    'homePage',
 ])->name('welcome');
 
 /**
@@ -70,15 +71,15 @@ Route::middleware('auth')->group(function () {
 Route::get('/admin/teams/team-builder', [
     TeamController::class,
     'initiateTeamsBuilder',
-    ])->middleware(['auth', 'verified'])->name('teamBuilder');
-    
+])->middleware(['auth', 'verified'])->name('teamBuilder');
+
 Route::post('/admin/teams/team-builder', [
     TeamController::class,
     'validateTeamsBuilder',
 ])->middleware(['auth', 'verified'])->name('teamBuilder');
 
 Route::post('/admin/teams/saveTeams', [
-    TeamController::class, 
+    TeamController::class,
     'saveTeams',
 ])->middleware(['auth', 'verified'])->name('saveTeams');
 
@@ -98,15 +99,15 @@ Route::resource('/admin/competitions', CompetitionController::class)->middleware
 /**
  * Users
  */
-Route::get('/admin/users/setForceIndex', [
+Route::get('/admin/users/setForceList', [
     UserController::class,
-    'setForceIndex',
-])->middleware(['auth', 'verified'])->name('setForceIndex');
+    'setForceList',
+])->middleware(['auth', 'verified'])->name('setForceList');
 
-Route::get('/admin/users/deleteForceIndex', [
+Route::get('/admin/users/deleteForceList', [
     UserController::class,
-    'deleteForceIndex',
-])->middleware(['auth', 'verified'])->name('deleteForceIndex');
+    'deleteForceList',
+])->middleware(['auth', 'verified'])->name('deleteForceList');
 
 Route::resource('admin/users', UserController::class)->middleware(['auth', 'verified']);
 

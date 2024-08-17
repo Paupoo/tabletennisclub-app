@@ -25,7 +25,7 @@ class ForceList
      */
     public function delete(): self
     {
-        User::where('force_list', '!=', null)->update(['force_list' => null]);
+        User::whereNotNull('force_list')->update(['force_list' => null]);
 
         return $this;
     }

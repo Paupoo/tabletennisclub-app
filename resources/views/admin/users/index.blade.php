@@ -15,10 +15,10 @@
                     <a href="{{ route('users.create') }}">
                         <x-primary-button>{{ __('Create new user') }}</x-primary-button>
                     </a>
-                    <a href="{{ route('setForceIndex') }}">
+                    <a href="{{ route('setForceList') }}">
                         <x-primary-button>{{ __('Set Force Index') }}</x-primary-button>
                     </a>
-                    <a href="{{ route('deleteForceIndex') }}">
+                    <a href="{{ route('deleteForceList') }}">
                         <x-danger-button>{{ __('Delete Force Index') }}</x-primary-button>
                     </a>
                 @endcan

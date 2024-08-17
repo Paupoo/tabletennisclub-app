@@ -72,7 +72,7 @@ class UserPolicy
     /**
      * Determine wether the user can set or update force index.
      */
-    public function setOrUpdateForceIndex(User $user): bool
+    public function setOrUpdateForceList(User $user): bool
     {
         return $user->is_admin || $user->is_comittee_member;
     }
@@ -80,7 +80,7 @@ class UserPolicy
      /**
      * Determine wether the user can delete force index.
      */
-    public function deleteForceIndex(User $user): bool
+    public function deleteForceList(User $user): bool
     {
         return $user->is_admin || $user->is_comittee_member;
     }

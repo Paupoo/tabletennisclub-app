@@ -18,7 +18,6 @@
 
     <x-admin-block>
         <div class="flex flex-row flex-wrap gap-20 min-w-fit w-fit">
-            
             <div>
                 <div class="mt-6 w-fit h-fit mr-auto p-1">
                     <div

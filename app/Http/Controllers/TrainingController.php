@@ -68,7 +68,7 @@ class TrainingController extends Controller
         $validated = $request->validated();
 
         $training_dates = $this->dateGenerator->generateDates($validated['start_date'], $validated['end_date'], $validated['recurrence']);
-        
+
         // create training(s)
         foreach ($training_dates as $training_date) {
             // merge date & time

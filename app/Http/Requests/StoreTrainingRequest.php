@@ -18,6 +18,16 @@ class StoreTrainingRequest extends FormRequest
         return $this->user()->is_admin || $this->user()->is_comittee_member;
     }
 
+    public function prepareForValidation(): void
+    {
+        if ($this->input('trainer_id') === null)
+        {
+            $this->merge([
+                'trainer_id' => null,
+            ]);
+        }
+    }
+
     /**
      * Get the validation rules that apply to the request.
      *

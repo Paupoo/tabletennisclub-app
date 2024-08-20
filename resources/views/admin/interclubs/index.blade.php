@@ -11,7 +11,7 @@
                 <form action="{{ route('dashboard') }}" method="GET">
                     <x-primary-button>{{ __('Dashboard') }}</x-primary-button>
                 </form>
-                <form action="{{ route('competitions.create') }}" method="GET">
+                <form action="{{ route('interclubs.create') }}" method="GET">
                     <x-primary-button>{{ __('Create new match') }}</x-primary-button>
                 </form>
             </div>
@@ -46,24 +46,27 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {{-- {{ dd($competitions)}} --}}
-                        @foreach ($competitions as $competition)
+                        <form action="{{ route('interclubs.subscription')}}" method="post">
+                            @csrf
+                            
+                        {{-- {{ dd($interclubs)}} --}}
+                        @foreach ($interclubs as $interclub)
                             <tr class="border-b dark:border-neutral-500">
-                                <td class="px-4 whitespace-nowrap">{{ $competition->week_number }}</td>
+                                <td class="px-4 whitespace-nowrap">{{ $interclub->week_number }}</td>
                                 @if ($loop->even)
-                                    <td class="px-4 whitespace-nowrap">Ottignies {{ $competition->team->name }}</td>
-                                    <td class="px-4 whitespace-nowrap">{{ $competition->opposing_team }}</td>
+                                    <td class="px-4 whitespace-nowrap">Ottignies {{ $interclub?->team?->name }}</td>
+                                    <td class="px-4 whitespace-nowrap">{{ $interclub?->opposing_team }}</td>
                                 @else
-                                    <td class="px-4 whitespace-nowrap">{{ $competition->opposing_team }}</td>
-                                    <td class="px-4 whitespace-nowrap">Ottignies {{ $competition->team->name }}</td>
+                                    <td class="px-4 whitespace-nowrap">{{ $interclub?->opposing_team }}</td>
+                                    <td class="px-4 whitespace-nowrap">Ottignies</td>
                                 @endif
                                 <td class="px-4 whitespace-nowrap">
-                                    {{ $competition->competition_date->format('d-m-Y H:i') }}</td>
-                                <td class="px-4 whitespace-nowrap">{{ $competition->address }}</td>
-                                <td class="px-4 whitespace-nowrap"><input type="checkbox" name="subscription"
-                                        id="subscription" @checked($competition->pivot->is_subscribed)></td>
+                                    {{ $interclub->start_date_time->format('d-m-Y H:i') }}</td>
+                                <td class="px-4 whitespace-nowrap">{{ $interclub->address }}</td>
+                                <td class="px-4 whitespace-nowrap"><input type="checkbox" name="subscriptions[{{ $interclub->id}}]"
+                                        id="subscription" @checked(Auth::user()->interclubs->firstWhere('id', $interclub->id))></td>
                                 <td class="px-4 whitespace-nowrap"><input type="checkbox" name="selection"
-                                        id="selection" disabled @checked($competition->pivot->is_selected)></td>
+                                        id="selection" disabled @checked(false)></td>
                                 <td class="px-4 whitespace-nowrap"><a href=""><button type="submit"><img
                                                 class="h-4 cursor-pointer"
                                                 src="{{ asset('images/icons/info.svg') }}"
@@ -83,7 +86,9 @@
 
                 <x-admin-block>
                     <x-primary-button>Save</x-primary-button>
-                    {{ $competitions->links() }}
+
+                </form>
+                    {{ $interclubs->links() }}
                 </x-admin-block>
 
             </div>

@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Services\ForceList;
+use App\Services\InterclubService;
 use App\Services\TrainingBuilder;
 use App\Services\TrainingDateGenerator;
 use Illuminate\Support\ServiceProvider;
@@ -25,6 +26,10 @@ class AppServiceProvider extends ServiceProvider
         
         $this->app->singleton(TrainingBuilder::class, function ($app) {
             return new TrainingBuilder();
+        });
+
+        $this->app->singleton(InterclubService::class, function ($app) {
+            return new InterclubService();
         });
     }
 

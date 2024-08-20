@@ -8,6 +8,9 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\TrainingController;
 use App\Http\Controllers\CompetitionController;
+use App\Http\Controllers\InterclubController;
+use App\Http\Controllers\TestController;
+use App\Models\Interclub;
 use Illuminate\Support\Facades\Route;
 use App\Models\User;
 use App\Models\Room;
@@ -91,9 +94,15 @@ Route::resource('/admin/teams', TeamController::class)->middleware(['auth', 'ver
 Route::resource('/admin/trainings', TrainingController::class)->middleware(['auth', 'verified']);
 
 /**
- * Matches management
+ * Interclub management
  */
-Route::resource('/admin/competitions', CompetitionController::class)->middleware(['auth', 'verified']);
+Route::post('admin/interclubs/subscribe', [
+    InterclubController::class, 
+    'subscribe'
+    ])
+    ->middleware(['auth', 'verified'])
+    ->name('interclubs.subscription');
+Route::resource('/admin/interclubs', InterclubController::class)->middleware(['auth', 'verified']);
 
 
 /**
@@ -110,5 +119,10 @@ Route::get('/admin/users/deleteForceList', [
 ])->middleware(['auth', 'verified'])->name('deleteForceList');
 
 Route::resource('admin/users', UserController::class)->middleware(['auth', 'verified']);
+
+Route::get('/test', [
+    TestController::class,
+    'test',
+]);
 
 require __DIR__ . '/auth.php';

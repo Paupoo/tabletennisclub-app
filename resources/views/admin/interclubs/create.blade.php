@@ -10,7 +10,7 @@
             <form action="{{ route('dashboard') }}" method="GET">
                 <x-primary-button>{{ __('Dashboard') }}</x-primary-button>
             </form>
-            <form action="{{ route('competitions.index') }}" method="GET">
+            <form action="{{ route('interclubs.index') }}" method="GET">
                 <x-primary-button>{{ __('Manage competitiones') }}</x-primary-button>
             </form>
         </div>
@@ -34,45 +34,10 @@
                             {{ __('Create a new competition from this form.') }}
                         </p>
                     </header>
+                    <x-input-error class="mt-2" :messages="$errors->all()" />
 
-                    <form action="{{ route('competitions.store') }}" method="POST" class="mt-6 space-y-6">
+                    <form action="{{ route('interclubs.store') }}" method="POST" class="mt-6 space-y-6">
                         @csrf
-
-                        {{-- Competition Type --}}
-                        <div>
-                            <x-input-label for="total_players" :value="__('Competition Type')" />
-                            <x-select-input id="total_players" name="total_players" class="block w-full mt-1" :value="old('total_players')"
-                                required autofocus>
-
-                                {!! $competition_types !!}
-
-                            </x-select-input>
-                            <x-input-error class="mt-2" :messages="$errors->get('total_players')" />
-                        </div>
-
-                        {{-- Competition Date --}}
-                        <div>
-                            <x-input-label for="competition_date" :value="__('Competition Date')" />
-                            <x-text-input id="competition_date" name="competition_date" type="datetime-local" min="{{ today()->format('Y-m-d\TH:i:s') }}" max="{{ now()->addMonth(6)->format('Y-m-d\TH:i:s') }}" class="block w-full mt-1"
-                                :value="old('competition_date', now()->format('Y-m-d\TH:i'))" required autofocus autocomplete="competition_date"></x-text-input>
-                            <x-input-error class="mt-2" :messages="$errors->get('competition_date')" />
-                        </div>
-
-                        {{-- Competition Address --}}
-                        <div>
-                            <x-input-label for="competition_address" :value="__('Competition Address')" />
-                            <x-text-input id="competition_address" name="competition_address" type="text" class="block w-full mt-1"
-                                :value="old('competition_address')" required autofocus autocomplete="competition_address"></x-text-input>
-                            <x-input-error class="mt-2" :messages="$errors->get('competition_address')" />
-                        </div>                        
-
-                        {{-- Competition Week Number --}}
-                        <div>
-                            <x-input-label for="competition_week_number" :value="__('Competition Week Number')" />
-                            <x-text-input id="competition_week_number" name="competition_week_number" type="number" min="1" max="52" step="1" class="block w-full mt-1"
-                                :value="old('competition_week_number')" required autofocus autocomplete="competition_week_number"></x-text-input>
-                            <x-input-error class="mt-2" :messages="$errors->get('competition_week_number')" />
-                        </div>    
 
                         {{-- Club's Team --}}
                         <div>
@@ -84,7 +49,35 @@
                                 @endforeach
                             </x-select-input>
                             <x-input-error class="mt-2" :messages="$errors->get('club_team')" />
-                        </div>    
+                        </div>  
+
+                        {{-- Competition Date --}}
+                        <div>
+                            <x-input-label for="start_date_time" :value="__('Competition Date')" />
+                            <x-text-input id="start_date_time" name="start_date_time" type="datetime-local" min="{{ today()->format('Y-m-d\TH:i:s') }}" max="{{ now()->addMonth(6)->format('Y-m-d\TH:i:s') }}" class="block w-full mt-1"
+                                :value="old('start_date_time', now()->format('Y-m-d\TH:i'))" required autofocus autocomplete="start_date_time"></x-text-input>
+                            <x-input-error class="mt-2" :messages="$errors->get('start_date_time')" />
+                        </div>
+
+                        {{-- at home? --}}
+                        <div>
+                            <x-input-label for="address" :value="__('Select a room if the interclub is taking place in the club')" />
+                            <x-select-input id="room_id" name="room_id" class="block w-full mt-1">
+                                <option value="" selected>{{ __('None') }}</option>
+                                @foreach ($rooms as $room)
+                                    <option value="{{ $room->id }}">{{ $room->name }}</option>
+                                @endforeach
+                            </x-select-input>
+                            <x-input-error class="mt-2" :messages="$errors->get('room_id')" />
+                         </div>
+
+                        {{-- Competition Address --}}
+                        <div>
+                            <x-input-label for="address" :value="__('Competition Address (Do not fill if the interclub is taking place at the club)')" />
+                            <x-text-input id="address" name="address" type="text" class="block w-full mt-1"
+                                :value="old('address')" autofocus autocomplete="address"></x-text-input>
+                            <x-input-error class="mt-2" :messages="$errors->get('address')" />
+                        </div>
 
                         {{-- Opposing Team --}}
                         <div>

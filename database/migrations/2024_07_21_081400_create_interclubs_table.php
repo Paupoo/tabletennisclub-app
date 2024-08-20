@@ -18,16 +18,17 @@ return new class extends Migration
     {
         Schema::create('interclubs', function (Blueprint $table) {
             $table->id();
+            $table->string('address', 150);
             $table->dateTime('start_date_time', 0);
-            $table->unsignedTinyInteger('competition_week_number');
+            $table->unsignedTinyInteger('week_number')->nullable();
             $table->unsignedTinyInteger('total_players');
-            $table->string('score', 5);
-            $table->enum('result', array_column(InterclubResult::cases(), 'value'));
-            $table->unsignedBigInteger('visited_team_id');
-            $table->unsignedBigInteger('visiting_team_id');
-            $table->foreignIdFor(Room::class)->constrained();
-            $table->foreignIdFor(League::class)->constrained();
-            $table->foreignIdFor(Season::class)->constrained();
+            $table->string('score', 5)->nullable();
+            $table->enum('result', array_column(InterclubResult::cases(), 'value'))->nullable();
+            $table->unsignedBigInteger('visited_team_id')->nullable();
+            $table->unsignedBigInteger('visiting_team_id')->nullable();
+            $table->foreignIdFor(Room::class)->nullable();
+            $table->foreignIdFor(League::class)->nullable();
+            $table->foreignIdFor(Season::class)->nullable();
             $table->timestamps();
 
             $table->foreign('visited_team_id')->references('id')->on('users');

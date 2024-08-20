@@ -37,7 +37,7 @@
                     </x-nav-link>
                 </div>
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('competitions.index')" :active="request()->routeIs('competitions.index')">
+                    <x-nav-link :href="route('interclubs.index')" :active="request()->routeIs('interclubs.index')">
                         {{ __('Matches') }}
                     </x-nav-link>
                 </div>
@@ -110,7 +110,7 @@
             <x-responsive-nav-link :href="route('welcome')" :active="request()->routeIs('welcome')">
                 {{ __('Trainings') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('competitions.index')" :active="request()->routeIs('competitions.index')">
+            <x-responsive-nav-link :href="route('interclubs.index')" :active="request()->routeIs('interclubs.index')">
                 {{ __('Matches') }}
             </x-responsive-nav-link>
         </div>

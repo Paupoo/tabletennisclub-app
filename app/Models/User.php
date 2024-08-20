@@ -137,10 +137,11 @@ class User extends Authenticatable
         return $this->hasOne(Team::class, 'captain_id');
     }
 
-    public function competitions(): BelongsToMany
+    public function interclubs(): BelongsToMany
     {
         return $this->belongsToMany(Interclub::class)
             ->withPivot('is_subscribed', 'is_selected', 'has_played')
+            ->as('registration')
             ->withTimestamps();
     }
 

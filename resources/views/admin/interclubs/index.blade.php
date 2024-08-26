@@ -36,8 +36,11 @@
                     <thead class="font-medium border-b dark:border-neutral-500">
                         <tr>
                             <th scope="col" class="px-4 py-2">{{ __('Week') }}</th>
-                            <th scope="col" class="px-4 py-2">{{ __('Visitor') }}</th>
+                            {{-- <th scope="col" class="px-4 py-2">{{ __('Level') }}</th>
+                            <th scope="col" class="px-4 py-2">{{ __('Category') }}</th>
+                            <th scope="col" class="px-4 py-2">{{ __('Division') }}</th> --}}
                             <th scope="col" class="px-4 py-2">{{ __('Visited') }}</th>
+                            <th scope="col" class="px-4 py-2">{{ __('Visitor') }}</th>
                             <th scope="col" class="px-4 py-2">{{ __('Date and time') }}</th>
                             <th scope="col" class="px-4 py-2">{{ __('Address') }}</th>
                             <th scope="col" class="px-4 py-2">{{ __('Available') }}</th>
@@ -46,48 +49,47 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <form action="{{ route('interclubs.subscription')}}" method="post">
+                        <form action="{{ route('interclubs.subscription') }}" method="post">
                             @csrf
-                            
-                        {{-- {{ dd($interclubs)}} --}}
-                        @foreach ($interclubs as $interclub)
-                            <tr class="border-b dark:border-neutral-500">
-                                <td class="px-4 whitespace-nowrap">{{ $interclub->week_number }}</td>
-                                @if ($loop->even)
-                                    <td class="px-4 whitespace-nowrap">Ottignies {{ $interclub?->team?->name }}</td>
-                                    <td class="px-4 whitespace-nowrap">{{ $interclub?->opposing_team }}</td>
-                                @else
-                                    <td class="px-4 whitespace-nowrap">{{ $interclub?->opposing_team }}</td>
-                                    <td class="px-4 whitespace-nowrap">Ottignies</td>
-                                @endif
-                                <td class="px-4 whitespace-nowrap">
-                                    {{ $interclub->start_date_time->format('d-m-Y H:i') }}</td>
-                                <td class="px-4 whitespace-nowrap">{{ $interclub->address }}</td>
-                                <td class="px-4 whitespace-nowrap"><input type="checkbox" name="subscriptions[{{ $interclub->id}}]"
-                                        id="subscription" @checked(Auth::user()->interclubs->firstWhere('id', $interclub->id))></td>
-                                <td class="px-4 whitespace-nowrap"><input type="checkbox" name="selection"
-                                        id="selection" disabled @checked(false)></td>
-                                <td class="px-4 whitespace-nowrap"><a href=""><button type="submit"><img
-                                                class="h-4 cursor-pointer"
-                                                src="{{ asset('images/icons/info.svg') }}"
-                                                alt="Info"></button></a></td>
-                                <td class="px-4 whitespace-nowrap"><a href=""><button type="submit"><img
-                                                class="h-4 cursor-pointer"
-                                                src="{{ asset('images/icons/edit.svg') }}"
-                                                alt="Edit"></button></a></td>
-                                <td class="px-4 whitespace-nowrap"><a href=""><button type="submit"><img
-                                                class="h-4 cursor-pointer"
-                                                src="{{ asset('images/icons/calendar.svg') }}"
-                                                alt="Send iCal"></button></a></td>
-                            </tr>
-                        @endforeach
+
+                            {{-- {{ dd($interclubs)}} --}}
+                            @foreach ($interclubs as $interclub)
+                                <tr class="border-b dark:border-neutral-500">
+                                    <td class="px-4 whitespace-nowrap">{{ $interclub->week_number }}</td>
+                                    {{-- <td class="px-4 whitespace-nowrap">{{ $interclub->league?->level }}</td>
+                                    <td class="px-4 whitespace-nowrap">{{ $interclub->league?->category }}</td>
+                                    <td class="px-4 whitespace-nowrap">{{ $interclub->league?->division }}</td> --}}
+                                    <td class="px-4 whitespace-nowrap">{{ $interclub->visitedTeam?->club->name}} {{ $interclub?->visitedTeam?->name }}</td>
+                                    <td class="px-4 whitespace-nowrap">{{ $interclub->visitingTeam?->club->name}} {{ $interclub?->visitingTeam?->name }}</td>
+                                    <td class="px-4 whitespace-nowrap">
+                                        {{ $interclub->start_date_time->format('l d/m/Y H:i') }}</td>
+                                    <td class="px-4 whitespace-nowrap">{{ $interclub->address }}</td>
+                                    <td class="px-4 whitespace-nowrap"><input type="checkbox"
+                                            name="subscriptions[{{ $interclub->id }}]" id="subscription"
+                                            @checked(Auth::user()->interclubs->firstWhere('id', $interclub->id))></td>
+                                    <td class="px-4 whitespace-nowrap"><input type="checkbox" name="selection"
+                                            id="selection" disabled @checked(false)></td>
+                                    <td class="px-4 whitespace-nowrap"><a href=""><button type="submit"><img
+                                                    class="h-4 cursor-pointer"
+                                                    src="{{ asset('images/icons/info.svg') }}"
+                                                    alt="Info"></button></a></td>
+                                    <td class="px-4 whitespace-nowrap"><a href=""><button type="submit"><img
+                                                    class="h-4 cursor-pointer"
+                                                    src="{{ asset('images/icons/edit.svg') }}"
+                                                    alt="Edit"></button></a></td>
+                                    <td class="px-4 whitespace-nowrap"><a href=""><button type="submit"><img
+                                                    class="h-4 cursor-pointer"
+                                                    src="{{ asset('images/icons/calendar.svg') }}"
+                                                    alt="Send iCal"></button></a></td>
+                                </tr>
+                            @endforeach
                     </tbody>
                 </table>
 
                 <x-admin-block>
                     <x-primary-button>Save</x-primary-button>
 
-                </form>
+                    </form>
                     {{ $interclubs->links() }}
                 </x-admin-block>
 

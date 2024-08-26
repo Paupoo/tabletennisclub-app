@@ -36,7 +36,7 @@ class Interclub extends Model
     {
 
         if (in_array($type, array_column(LeagueCategory::cases(), 'name'))) { // If the input exist in the Enum
-   
+
             $total = match ($type) {
                 LeagueCategory::MEN->name => 4,
                 LeagueCategory::WOMEN->name => 3,
@@ -46,9 +46,8 @@ class Interclub extends Model
             $this->total_players = $total;
 
             return $this;
-   
         } else {
-   
+
             throw new Exception('This category is unknown and not allowed.');
         }
     }
@@ -59,21 +58,14 @@ class Interclub extends Model
         return $this;
     }
 
-
-
     public function league(): BelongsTo
     {
         return $this->belongsTo(League::class);
     }
 
-    public function visitedTeam(): BelongsTo
+    public function room(): BelongsTo
     {
-        return $this->belongsTo(Team::class, 'visited_team_id');
-    }
-
-    public function visitingTeam(): BelongsTo
-    {
-        return $this->belongsTo(Team::class, 'visiting_team_id');
+        return $this->belongsTo(Room::class);
     }
 
     public function season(): BelongsTo
@@ -87,5 +79,15 @@ class Interclub extends Model
             ->withPivot('is_subscribed', 'is_selected', 'has_played')
             ->as('registration')
             ->withTimestamps();
+    }
+
+    public function visitedTeam(): BelongsTo
+    {
+        return $this->belongsTo(Team::class, 'visited_team_id');
+    }
+
+    public function visitingTeam(): BelongsTo
+    {
+        return $this->belongsTo(Team::class, 'visiting_team_id');
     }
 }

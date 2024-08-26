@@ -38,9 +38,12 @@ class TeamController extends Controller
     public function index()
     {
         //
+        $club = Club::firstWhere('licence', 'BBW214');
 
         return view('admin.teams.index', [
-            'teams' => Team::select('teams.*')->join('seasons', 'teams.season_id', 'seasons.id')
+            'teams' => Team::where('club_id', $club->id)
+                ->select('teams.*')
+                ->join('seasons', 'teams.season_id', 'seasons.id')
                 ->orderBy('seasons.start_year')
                 ->orderBy('teams.name')
                 ->paginate(10),

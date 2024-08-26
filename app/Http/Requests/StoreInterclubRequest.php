@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Enums\LeagueCategory;
 use App\Models\League;
+use App\Models\Team;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -14,16 +15,20 @@ class StoreInterclubRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()->is_admin || $this->user()->is_comittee_member;
+        return $this->user()->is_admin || $this->user()->is_comittee_member || $this->user()->captainOf()->where('id', $this->input('team_id'))->exists();
     }
 
-    public function prepareForValidation(): void
+    protected function prepareForValidation(): void
     {
-        $league = League::whereRelation('teams', 'id', '=', $this->input('club_team'))->firstOrFail();
-        
+        // Capitalize team names
         $this->merge([
-            'league_category' => $league->category,
+            'opposite_team_name' => strtoupper($this->input('opposite_team_name')),
         ]);
+
+        // Remove Room_id if null
+        if ($this->input('room_id') === null) {
+            $this->offsetUnset('room_id');
+        }
     }
 
     /**
@@ -34,12 +39,44 @@ class StoreInterclubRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'address' => ['nullable', 'string', 'required_if:room_id,null'],
-            'club_team' => ['integer','required', 'exists:teams,id'],
-            'league_category' => ['required', 'string', Rule::in(collect(LeagueCategory::cases())->pluck('name'))],
-            'opposing_team' => ['string','required','different:visited_team'],
-            'room_id' => ['nullable', 'integer','required_if:address,null', 'exists:rooms,id'],
-            'start_date_time' => ['date', 'required'],
+            'is_visited' => [
+                'boolean',
+            ],
+            'opposite_club_id' => [
+                'integer',
+                'required',
+                'exists:clubs,id',
+            ],
+            'opposite_team_name' => [
+                'required',
+                'string',
+                'regex:/^[a-zA-Z]{1}$/',
+            ],
+            'room_id' => [
+                Rule::when(
+                    isset($this->input()['is_visited']),
+                    'required',
+                    'prohibited',
+                'integer',
+                'exists:rooms,id',
+            ),
+            ],
+            'start_date_time' => [
+                'date',
+                'required',
+            ],
+            'team_id' => [
+                'integer',
+                'required',
+                'exists:teams,id',
+            ],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'room_id' => __('If you receive another club, select a room. If you play outside, do not select a room.'),
         ];
     }
 }

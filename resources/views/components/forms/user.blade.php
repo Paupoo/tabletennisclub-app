@@ -35,24 +35,23 @@
 
 {{-- Password --}}
 @if (!$user->id)
-    
-<div>
-    <x-input-label for="password" :value="__('Password')" />
-    <x-text-input id="password" name="password" type="password" class="block w-full mt-1" :value="old('password')" autofocus
-    autocomplete="false"></x-text-input>
-    <x-input-error class="mt-2" :messages="$errors->get('password')" />
-</div>
+    <div>
+        <x-input-label for="password" :value="__('Password')" />
+        <x-text-input id="password" name="password" type="password" class="block w-full mt-1" :value="old('password')"
+            autofocus autocomplete="false"></x-text-input>
+        <x-input-error class="mt-2" :messages="$errors->get('password')" />
+    </div>
 
 
-{{-- Confirm Password --}}
-<div class="mt-4">
-    <x-input-label for="password_confirmation" :value="__('Confirm Password')" />
-    
-    <x-text-input id="password_confirmation" class="block w-full mt-1" type="password" name="password_confirmation"
-    autocomplete="new-password" />
-    
-    <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
-</div>
+    {{-- Confirm Password --}}
+    <div class="mt-4">
+        <x-input-label for="password_confirmation" :value="__('Confirm Password')" />
+
+        <x-text-input id="password_confirmation" class="block w-full mt-1" type="password" name="password_confirmation"
+            autocomplete="new-password" />
+
+        <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
+    </div>
 @endif
 
 {{-- Phone Number --}}
@@ -66,73 +65,81 @@
 {{-- Birthday --}}
 <div>
     <x-input-label for="birthdate" :value="__('Birth date')" />
-    <x-text-input id="birthdate" name="birthdate" type="date" class="block w-full mt-1" :value="old('birthdate', $user?->birthdate?->format('Y-m-d'))" autofocus autocomplete="false"></x-text-input>
+    <x-text-input id="birthdate" name="birthdate" type="date" class="block w-full mt-1" :value="old('birthdate', $user?->birthdate?->format('Y-m-d'))" autofocus
+        autocomplete="false"></x-text-input>
     <x-input-error class="mt-2" :messages="$errors->get('birthdate')" />
 </div>
 
 {{-- Street --}}
 <div>
     <x-input-label for="street" :value="__('Street')" />
-    <x-text-input id="street" name="street" type="text" class="block w-full mt-1" :value="old('street', $user?->street)" placeholder="Rue du pont neuf, 80" autofocus autocomplete="false"></x-text-input>
+    <x-text-input id="street" name="street" type="text" class="block w-full mt-1" :value="old('street', $user?->street)"
+        placeholder="Rue du pont neuf, 80" autofocus autocomplete="false"></x-text-input>
     <x-input-error class="mt-2" :messages="$errors->get('street')" />
 </div>
 
 {{-- City Code --}}
 <div>
     <x-input-label for="city_code" :value="__('Post Code')" />
-    <x-text-input id="city_code" name="city_code" type="text" class="block w-full mt-1" :value="old('city_code', $user?->city_code)" placeholder="1340" autofocus autocomplete="false"></x-text-input>
+    <x-text-input id="city_code" name="city_code" type="text" class="block w-full mt-1" :value="old('city_code', $user?->city_code)"
+        placeholder="1340" autofocus autocomplete="false"></x-text-input>
     <x-input-error class="mt-2" :messages="$errors->get('city_code')" />
 </div>
 
 {{-- City Name --}}
 <div>
     <x-input-label for="city_name" :value="__('City')" />
-    <x-text-input id="city_name" name="city_name" type="text" class="block w-full mt-1" :value="old('city_name', $user?->city_name)" placeholder="Rue du pont neuf, 80" autofocus autocomplete="false"></x-text-input>
+    <x-text-input id="city_name" name="city_name" type="text" class="block w-full mt-1" :value="old('city_name', $user?->city_name)"
+        placeholder="Rue du pont neuf, 80" autofocus autocomplete="false"></x-text-input>
     <x-input-error class="mt-2" :messages="$errors->get('city_name')" />
 </div>
 
 {{-- Competition --}}
-<div>
-    <x-input-label for="is_competitor" :value="__('Plays in competiton')" />
-    <input id="is_competitor" name="is_competitor" type="checkbox" class="block mt-1" @checked(old('is_competitor', $user?->is_competitor))
-        autofocus></input>
-    <x-input-error class="mt-2" :messages="$errors->get('is_competitor')" />
-</div>
+<fieldset class="border p-2 space-y-8">
+    <legend class="text-lg font-bold">Competition</legend>
+    <div>
+        <x-input-label for="is_competitor" :value="__('Plays in competiton')" />
+        <input id="is_competitor" name="is_competitor" type="checkbox" class="block mt-1" @checked(old('is_competitor', $user?->is_competitor))
+            autofocus></input>
+        <x-input-error class="mt-2" :messages="$errors->get('is_competitor')" />
+    </div>
 
-{{-- Licence --}}
-<div>
-    <x-input-label for="licence" :value="__('Licence')" />
-    <x-text-input id="licence" name="licence" type="number" class="block w-full mt-1" :min="1"
-        :max="999999" :value="old('licence', $user?->licence)" autofocus autocomplete="licence"></x-text-input>
-    <x-input-error class="mt-2" :messages="$errors->get('licence')" />
-</div>
+    {{-- Licence --}}
+    <div>
+        <x-input-label for="licence" :value="__('Licence')" />
+        <x-text-input id="licence" name="licence" type="number" class="block w-full mt-1" :min="1"
+            :max="999999" :value="old('licence', $user?->licence)" autofocus autocomplete="licence"></x-text-input>
+        <x-input-error class="mt-2" :messages="$errors->get('licence')" />
+    </div>
 
-{{-- Ranking --}}
-<div>
-    <x-input-label for="ranking" :value="__('Ranking')" />
-    <x-select-input id="ranking" name="ranking" class="block w-full mt-1" autofocus autocomplete="ranking" required>
-        @foreach ($rankings as $item)
-            <option value="{{ $item }}" @selected(old('ranking', $user?->ranking) === $item)>{{ $item }}</option>
-        @endforeach
-    </x-select-input>
-    <x-input-error class="mt-2" :messages="$errors->get('ranking')" />
-</div>
+    {{-- Ranking --}}
+    <div>
+        <x-input-label for="ranking" :value="__('Ranking')" />
+        <x-select-input id="ranking" name="ranking" class="block w-full mt-1" autofocus autocomplete="ranking"
+            required>
+            @foreach ($rankings as $item)
+                <option value="{{ $item }}" @selected(old('ranking', $user?->ranking) === $item)>{{ $item }}</option>
+            @endforeach
+        </x-select-input>
+        <x-input-error class="mt-2" :messages="$errors->get('ranking')" />
+    </div>
 
-{{-- Team --}}
-<div>
-    <x-input-label for="team_id" :value="__('Team')" />
-    <x-select-input id="team_id" name="team_id" type="text" class="block w-full mt-1" autofocus
-        autocomplete="team_id">
-        <option value="" selected>{{ __('None') }}</option>
+    {{-- Team --}}
+    <div>
+        <x-input-label for="team_id" :value="__('Team')" />
+        <x-select-input id="team_id" name="team_id" type="text" class="block w-full mt-1" autofocus
+            autocomplete="team_id">
+            <option value="" selected>{{ __('None') }}</option>
 
-        @foreach ($teams as $team)
-            <option value="{{ $team->id }}" @selected(old('team_id', $user?->team_id) === (string) $team->id)>
-                {{ $team?->season?->name. ' | ' . $team->league?->level . ' | ' . $team?->league->division . ' | ' . $team->name }}
-            </option>
-        @endforeach
-    </x-select-input>
-    <x-input-error class="mt-2" :messages="$errors->get('team_id')" />
-</div>
+            @foreach ($teams as $team)
+                <option value="{{ $team->id }}" @selected(old('team_id', $user?->team_id) === (string) $team->id)>
+                    {{ $team?->season?->name . ' | ' . $team->league?->level . ' | ' . $team?->league->division . ' | ' . $team->name }}
+                </option>
+            @endforeach
+        </x-select-input>
+        <x-input-error class="mt-2" :messages="$errors->get('team_id')" />
+    </div>
+</fieldset>
 
 {{-- Role --}}
 <div class="flex gap-4">

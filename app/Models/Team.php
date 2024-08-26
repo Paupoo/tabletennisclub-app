@@ -13,7 +13,11 @@ class Team extends Model
     use HasFactory;
 
     protected $fillable = [
+        'captain_id',
+        'club_id',
+        'league_id',
         'name',
+        'season_id',
     ];
 
     protected $casts = [

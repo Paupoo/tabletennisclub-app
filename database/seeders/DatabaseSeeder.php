@@ -42,6 +42,46 @@ class DatabaseSeeder extends Seeder
             'city_name' => 'Ottignies',
         ]);
 
+        Club::create([
+            'name' => 'Set-Jet Fleur Bleue',
+            'licence' => 'BBW034',
+            'street' => 'Avenue du Comté de Jette, 3',
+            'city_code' => '1090',
+            'city_name' => 'Jette',
+        ]);
+
+        Club::create([
+            'name' => 'Logis Auderghem',
+            'licence' => 'BBW165',
+            'street' => 'Chaussée de Wavre, 1690',
+            'city_code' => '1160',
+            'city_name' => 'Auderghem',
+        ]);
+
+        Club::create([
+            'name' => 'REP Nivellois',
+            'licence' => 'BBW118',
+            'street' => 'Rue des Heures Claires, 46',
+            'city_code' => '1400',
+            'city_name' => 'Nivelles',
+        ]);
+
+        Club::create([
+            'name' => 'CTT Limal',
+            'licence' => 'BBW123',
+            'street' => 'Rue Charles Jaumotte, 156',
+            'city_code' => '1300',
+            'city_name' => 'Limal',
+        ]);
+
+        Club::create([
+            'name' => 'TT Perwez',
+            'licence' => 'BBW289',
+            'street' => 'Rue du Presbytère, 5',
+            'city_code' => '1360',
+            'city_name' => 'Perwez',
+        ]);
+
         Season::factory(10)->create();
 
         League::create([
@@ -85,22 +125,22 @@ class DatabaseSeeder extends Seeder
 
 
         // Create Z team team
-        $team = Team::make([
+        $teamZ = Team::make([
             'name' => 'Z',
             ])
             ->club()->associate(Club::firstWhere('licence', 'BBW214'))
             ->league()->associate(League::find(1))
             ->season()->associate(Season::find(1));
-        $team->save();
+        $teamZ->save();
 
         // Create F team team
-        $team = Team::make([
+        $teamF = Team::make([
             'name' => 'F',
             ])
             ->club()->associate(Club::find(1))
             ->league()->associate(League::firstWhere('division', '4B'))
             ->season()->associate(Season::find(1));
-            $team->save();
+            $teamF->save();
 
         // // Create some matches for Z team
 
@@ -159,7 +199,17 @@ class DatabaseSeeder extends Seeder
             ])->club()->associate(Club::firstWhere('licence', 'BBW214'));
             $player->save();
             $player->teams()->attach(Team::firstWhere('name', 'Z'));
+            
+            // Promote Oliver captain of team Z
+            if ($player->licence === '223344') {
+                $teamZ->update([
+                    'captain_id' => $player->id
+                ]);
+            }
         }
+
+
+        // Add some random users
 
         User::make([
             'is_active' => true,

@@ -7,8 +7,7 @@ use App\Models\Interclub;
 use PHPUnit\Framework\TestCase;
 
 class InterclubTest extends TestCase
-{
-
+{    
     public function test_method_set_total_players_per_team_without_empty_string(): void
     {
         $interclub = new Interclub();

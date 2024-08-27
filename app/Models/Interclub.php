@@ -54,7 +54,7 @@ class Interclub extends Model
 
     public function setWeekNumber(string $date): self
     {
-        $this->week_number = Carbon::create($date)->week;
+        $this->week_number = Carbon::create($date)->isoWeek;
         return $this;
     }
 

@@ -130,7 +130,7 @@ class InterClubTest extends TestCase
 
     public function test_storing_interclub_in_the_club_stores_club_address_and_the_room_id(): void
     {
-        $club = Club::firstWhere('licence', 'BBW214');
+        $club = Club::firstWhere('licence', config('app.club_licence'));
         $clubAddress = $club->street . ', ' . $club->city_code . ' ' . $club->city_name;
 
         $admin = $this->createFakeAdmin();

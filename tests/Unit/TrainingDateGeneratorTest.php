@@ -121,15 +121,27 @@ class TrainingDateGeneratorTest extends TestCase
 
     }
 
-    public function test_recurrence_not_allowed(): void
+    public function test_recurrence_not_existing_in_enum_returns_an_exception(): void
     {
-        // test on 12 weeks (6 biweekly)
         $date_generator = new TrainingDateGenerator();
         $start_date = '2024-08-06';
         $end_date = '2024-08-06';
         $recurrence = 'notExpected';
 
         $this->expectException(Exception::class);
+
+        $date_generator->generateDates($start_date, $end_date, $recurrence);
+    }
+
+    public function test_exception_is_returned_when_no_endate_with_recurrent(): void
+    {
+        $date_generator = new TrainingDateGenerator();
+        $start_date = '2024-08-06';
+        $end_date = null;
+        $recurrence = '7';
+
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('The occurence cannot be set without an end date or it must be set to NONE.');
 
         $date_generator->generateDates($start_date, $end_date, $recurrence);
     }

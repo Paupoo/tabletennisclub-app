@@ -36,8 +36,8 @@ class InterclubController extends Controller
     {
         //
         $this->authorize('create', Interclub::class);
-        $club = Club::firstWhere('licence', config('app.club_licence'));
-        $otherClubs = Club::where('licence', '!=', config('app.club_licence'))->orderBy('name')->get();
+        $club = Club::OurClub()->select('id')->first();
+        $otherClubs = Club::OtherClubs()->orderBy('name')->get();
         $user = Auth::user();
         $teams = ($user->is_admin || $user->is_comittee_member) 
             ? $teams = Team::where('club_id', $club->id)->get()

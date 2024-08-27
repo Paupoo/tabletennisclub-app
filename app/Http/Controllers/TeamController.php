@@ -37,17 +37,20 @@ class TeamController extends Controller
      */
     public function index()
     {
-        //
-        $club = Club::firstWhere('licence', config('app.club_licence'));
-
         return view('admin.teams.index', [
-            'teams' => Team::where('club_id', $club->id)
-                ->select('teams.*')
+            'teamsInClub' => Team::select('teams.*')
+                ->InClub()
                 ->join('seasons', 'teams.season_id', 'seasons.id')
                 ->orderBy('seasons.start_year')
                 ->orderBy('teams.name')
                 ->paginate(10),
             'teamModel' => Team::class,
+            'teamsNotInClub' => Team::select('teams.*')
+                ->NotInClub()
+                ->join('seasons', 'teams.season_id', 'seasons.id')
+                ->orderBy('seasons.start_year')
+                ->orderBy('teams.name')
+                ->paginate(10),
         ]);
     }
 

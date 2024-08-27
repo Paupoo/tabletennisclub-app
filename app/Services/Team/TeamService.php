@@ -8,15 +8,13 @@ use App\Models\Club;
 use App\Models\Season;
 use App\Models\Team;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 
 class TeamService
 {
     public function __construct(protected Team $team){}
     
-    public function getAllTeams(){}
 
-    // Club filtering
-    public function getTeamsInClub(){}
     public function getTeamsNotInClub(){}
     public function getTeamsFromClub(Club $club){}
 

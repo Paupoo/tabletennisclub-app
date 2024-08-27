@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -41,5 +42,15 @@ class Club extends Model
     public function rooms(): BelongsToMany
     {
         return $this->belongsToMany(Room::class);
+    }
+
+    public function scopeOurClub(Builder $query): void
+    {
+        $query->where('licence', '=', config('app.club_licence'));
+    }
+
+    public function scopeOtherClubs(Builder $query): void
+    {
+        $query->whereNot('licence', '=', config('app.club_licence'));
     }
 }

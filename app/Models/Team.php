@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -52,5 +53,15 @@ class Team extends Model
     public function season(): BelongsTo
     {
         return $this->belongsTo(Season::class);
+    }
+
+    public function scopeInClub(Builder $query): void
+    {
+        $query->whereHas('club', fn (Builder $subquery) => $subquery->where('licence', '=', config('app.club_licence')));
+    }
+
+    public function scopeNotInClub(Builder $query): void
+    {
+        $query->whereHas('club', fn (Builder $subquery) => $subquery->where('licence', '!=', config('app.club_licence')));
     }
 }

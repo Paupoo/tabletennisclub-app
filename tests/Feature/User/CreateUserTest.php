@@ -5,6 +5,7 @@ namespace Tests\Feature\User;
 use App\Enums\Ranking;
 use App\Enums\Sex;
 use App\Http\Controllers\UserController;
+use App\Models\Club;
 use App\Models\Team;
 use App\Models\User;
 use App\Services\ForceList;
@@ -94,6 +95,13 @@ class CreateUserTest extends TestCase
             ->assertSessionHas('success');
 
         $this->assertDatabaseCount('users', $totalMembers + 2);
+    }
+
+    public function test_new_nember_created_is_automatically_linked_to_the_club(): void
+    {
+        $user = User::factory()->create();
+        $club = Club::firstWhere('licence', config('app.club_licence'));
+        $this->assertEquals($club->id, $user->club_id);
     }
 
     public function test_new_member_creation_with_invalid_paramaters_returns_errors_in_the_session(): void

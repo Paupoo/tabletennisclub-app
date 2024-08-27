@@ -187,7 +187,7 @@ return [
 
 
     /**
-     * My imput
+     * My input
      */
 
     /*
@@ -195,13 +195,23 @@ return [
     | Application Version
     |--------------------------------------------------------------------------
     |
-    | This value is the version of the application. This value is used when the
-    | framework needs to place the application's version in a notification or
-    | any other location as required by the application or its packages.
-    | x.x.x for "Major/Minor/Patch"
+    | This string represents the version of the application. The versioning
+    | follows the principe "Major/Minor/Patch".
     |
     */
 
     'version' => env('APP_VERSION', '0.0.0'),
+
+    /*
+     |--------------------------------------------------------------------------
+     | Club Licence
+     |--------------------------------------------------------------------------
+     |
+     | This string represent the unique licence that identifies of the club
+     | using this website. Just copy the licence of your club here to
+     | distinguish your club from other clubs in the code.
+     |
+     */
+    'club_licence' => env('APP_CLUB_LICENCE', 'BBW214'),
 
 ];

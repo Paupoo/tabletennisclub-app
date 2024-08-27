@@ -45,7 +45,7 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        $user->club()->associate(Club::firstWhere('licence', 'BBW214'));
+        $user->club()->associate(Club::firstWhere('licence', config('app.club_licence')));
         $user->save();
 
         event(new Registered($user));

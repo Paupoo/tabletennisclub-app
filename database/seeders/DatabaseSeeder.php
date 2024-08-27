@@ -36,7 +36,7 @@ class DatabaseSeeder extends Seeder
     {
         Club::create([
             'name' => 'C.T.T Ottignies-Blocry',
-            'licence' => 'BBW214',
+            'licence' => config('app.club_licence'),
             'street' => 'Rue de l\'invasion 80',
             'city_code' => '1340',
             'city_name' => 'Ottignies',
@@ -128,7 +128,7 @@ class DatabaseSeeder extends Seeder
         $teamZ = Team::make([
             'name' => 'Z',
             ])
-            ->club()->associate(Club::firstWhere('licence', 'BBW214'))
+            ->club()->associate(Club::firstWhere('licence', config('app.club_licence')))
             ->league()->associate(League::find(1))
             ->season()->associate(Season::find(1));
         $teamZ->save();
@@ -161,7 +161,7 @@ class DatabaseSeeder extends Seeder
             'city_name' => 'Ottignies',
             'ranking' => Ranking::E4->name,
             'licence' => '114399',
-        ])->club()->associate(Club::firstWhere('licence', 'BBW214'));
+        ])->club()->associate(Club::firstWhere('licence', config('app.club_licence')));
         $admin->save();
         $admin->teams()->attach(Team::firstWhere('name', 'Z'));     
         
@@ -196,7 +196,7 @@ class DatabaseSeeder extends Seeder
                 'city_name' => fake()->city(),
                 'ranking' =>  $player[2],
                 'licence' => $player[3],
-            ])->club()->associate(Club::firstWhere('licence', 'BBW214'));
+            ])->club()->associate(Club::firstWhere('licence', config('app.club_licence')));
             $player->save();
             $player->teams()->attach(Team::firstWhere('name', 'Z'));
             
@@ -228,7 +228,7 @@ class DatabaseSeeder extends Seeder
             'city_name' => fake()->city(),
             'ranking' =>  Ranking::D6->name,
             'licence' => '154856',
-        ])->club()->associate(Club::firstWhere('licence', 'BBW214'))->save();
+        ])->club()->associate(Club::firstWhere('licence', config('app.club_licence')))->save();
 
         User::make([
             'is_active' => true,

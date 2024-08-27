@@ -38,7 +38,7 @@ class TeamController extends Controller
     public function index()
     {
         //
-        $club = Club::firstWhere('licence', 'BBW214');
+        $club = Club::firstWhere('licence', config('app.club_licence'));
 
         return view('admin.teams.index', [
             'teams' => Team::where('club_id', $club->id)
@@ -97,7 +97,7 @@ class TeamController extends Controller
         $team->fill($validated);
 
         $team->season()->associate(Season::find($league_model->season_id));
-        $team->club()->associate(Club::firstWhere('licence', 'BBW214'));
+        $team->club()->associate(Club::firstWhere('licence', config('app.club_licence')));
         $team->league()->associate($league_model);
 
         if (isset($request['captain_id'])) {

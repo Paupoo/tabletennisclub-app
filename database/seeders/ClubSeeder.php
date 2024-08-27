@@ -14,7 +14,7 @@ class ClubSeeder extends Seeder
     public function run(): void
     {
         Club::create([
-            'licence' => 'BBW214',
+            'licence' => config('app.club_licence'),
             'street' => 'Rue de l\'invasion 80',
             'city_code' => '1340',
             'city_name' => 'Ottignies',

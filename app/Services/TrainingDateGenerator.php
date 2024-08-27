@@ -4,8 +4,8 @@ namespace App\Services;
 
 use App\Enums\Recurrence;
 use Carbon\Carbon;
-use Doctrine\Common\Cache\Psr6\InvalidArgument;
 use Exception;
+use InvalidArgumentException;
 
 class TrainingDateGenerator
 {
@@ -42,7 +42,7 @@ class TrainingDateGenerator
             Recurrence::DAILY->name => 1,
             Recurrence::WEEKLY->name => 7,
             Recurrence::BIWEEKLY->name => 14,
-            default => throw new InvalidArgument(),
+            default => throw new InvalidArgumentException(),
         };
 
         // fill the array with dates

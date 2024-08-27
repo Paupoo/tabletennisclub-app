@@ -6,6 +6,7 @@ use App\Enums\Recurrence;
 use App\Services\TrainingDateGenerator;
 use Carbon\Carbon;
 use Exception;
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
 class TrainingDateGeneratorTest extends TestCase
@@ -128,7 +129,7 @@ class TrainingDateGeneratorTest extends TestCase
         $end_date = '2024-08-06';
         $recurrence = 'notExpected';
 
-        $this->expectException(Exception::class);
+        $this->expectException(InvalidArgumentException::class);
 
         $date_generator->generateDates($start_date, $end_date, $recurrence);
     }

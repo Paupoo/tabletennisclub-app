@@ -14,6 +14,10 @@
                 <form action="{{ route('interclubs.create') }}" method="GET">
                     <x-primary-button>{{ __('Create new match') }}</x-primary-button>
                 </form>
+                </form>
+                <form action="{{ route('interclubs.selections') }}" method="GET">
+                    <x-primary-button>{{ __('Make selections') }}</x-primary-button>
+                </form>
             </div>
 
             @if (session('success'))
@@ -69,7 +73,7 @@
                                             @checked(Auth::user()->interclubs->firstWhere('id', $interclub->id))></td>
                                     <td class="px-4 whitespace-nowrap"><input type="checkbox" name="selection"
                                             id="selection" disabled @checked(false)></td>
-                                    <td class="px-4 whitespace-nowrap"><a href=""><button type="submit"><img
+                                    <td class="px-4 whitespace-nowrap"><a href="{{ route('interclubs.show', $interclub->id) }}"><button type="button"><img
                                                     class="h-4 cursor-pointer"
                                                     src="{{ asset('images/icons/info.svg') }}"
                                                     alt="Info"></button></a></td>

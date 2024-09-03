@@ -17,9 +17,9 @@ return new class extends Migration
             $table->id();
             $table->foreignIdFor(Interclub::class);
             $table->foreignIdFor(User::class);
-            $table->boolean('is_subscribed')->nullable();
-            $table->boolean('is_selected')->nullable();
-            $table->boolean('has_played')->nullable();
+            $table->boolean('is_subscribed')->default(false);
+            $table->boolean('is_selected')->default(false);
+            $table->boolean('has_played')->default(false);
             $table->timestamps();
         });
     }

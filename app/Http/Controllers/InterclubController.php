@@ -6,20 +6,30 @@ use App\Enums\LeagueCategory;
 use App\Http\Requests\StoreInterclubRequest;
 use App\Models\Club;
 use App\Models\Interclub;
-use App\Models\League;
 use App\Models\Room;
-use App\Models\Season;
 use App\Models\Team;
+use App\Models\User;
+use App\Services\InterclubService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 
 class InterclubController extends Controller
 {
+
+    protected $interclubService;
+
+    public function __construct(InterclubService $interclubService)
+    {
+        $this->interclubService = $interclubService;
+    }
+
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(): View
     {
         //  
         $interclubs = Interclub::orderBy('start_date_time', 'asc')->paginate(10);
@@ -36,7 +46,7 @@ class InterclubController extends Controller
     {
         //
         $this->authorize('create', Interclub::class);
-        $club = Club::OurClub()->select('id')->first();
+        $club = Club::OurClub()->first();
         $otherClubs = Club::OtherClubs()->orderBy('name')->get();
         $user = Auth::user();
         $teams = ($user->is_admin || $user->is_comittee_member) 
@@ -62,41 +72,7 @@ class InterclubController extends Controller
     {
         $validated = $request->validated();
         
-        // Instanciating elements
-        $clubTeam = Team::find($validated['team_id']);
-        $season = Season::find($clubTeam->season->id);
-        $league = League::find($clubTeam->league->id);
-        $oppositeClub = Club::find($validated['opposite_club_id']);
-
-        // Deal with other club's team
-        $oppositeTeam = Team::firstorCreate([
-            'name' => $validated['opposite_team_name'],
-            'club_id' => $oppositeClub->id,
-            'season_id' => $season->id,
-            'league_id' => $league->id,
-        ]);
-
-        $interclub = new Interclub();
-        
-        if(isset($validated['is_visited'])) {       // If visited
-            $room = Room::find($validated['room_id']);
-            $validated['address'] = sprintf('%s, %s %s',$room->street, $room->city_code, $room->city_name);
-            $interclub->visitedTeam()->associate($clubTeam);
-            $interclub->visitingTeam()->associate($oppositeTeam);
-            $interclub->room()->associate($room);
-        } else {                                    // If visiting
-            $validated['address'] = sprintf('%s, %s %s',$oppositeClub->street, $oppositeClub->city_code, $oppositeClub->city_name);
-            $interclub->visitedTeam()->associate($oppositeTeam);
-            $interclub->visitingTeam()->associate($clubTeam);
-        }
-        
-        
-        $interclub
-            ->fill($validated)
-            ->setTotalPlayersPerteam($league->category)
-            ->setWeekNumber($validated['start_date_time'])
-            ->save();
-
+        $this->interclubService->createInterclub($validated);
 
         return redirect()->route('interclubs.index')->with('success', 'The match has been added.');
    
@@ -105,9 +81,41 @@ class InterclubController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Interclub $interclub)
+    public function show(Interclub $interclub): View
     {
-        //
+        $this->authorize('view', Auth::user(), Interclub::class);
+
+        $selectedUsers = $interclub
+            ->users()
+            ->wherePivot('is_selected', true)
+            ->orderBy('last_name', 'asc')
+            ->orderby('first_name', 'asc')
+            ->get();
+        
+        $subscribedUsers = $interclub
+            ->users()
+            ->wherePivot('is_subscribed', true)
+            ->wherePivot('is_selected', false)
+            ->orWherePivot('is_selected', null)
+            ->orderBy('last_name', 'asc')
+            ->orderby('first_name', 'asc')
+            ->get();
+
+        $users = User::where('is_competitor', true)
+            ->whereDoesntHave('interclubs')
+            ->orWhereHas('interclubs', function (Builder $query) use ($interclub) {
+                $query->where('interclub_id', $interclub->id)
+                    ->whereNot('is_subscribed', true)
+                    ->whereNot('is_selected', true);
+            })
+            ->get();
+
+        return View('admin.interclubs.show', [
+            'interclub' => $interclub,
+            'selectedUsers' => $selectedUsers,
+            'subscribedUsers' => $subscribedUsers,
+            'users' => $users,
+        ]);
     }
 
     /**
@@ -144,5 +152,54 @@ class InterclubController extends Controller
         $user->interclubs()->syncWithPivotValues(array_values($subscriptions), ['is_subscribed' => true]  );
 
         return redirect()->route('interclubs.index')->with('success', __('You have correctly subscribed.'));
+    }
+
+    public function addToSelection(Interclub $interclub, User $user): RedirectResponse
+    {
+        /**
+         * to do : check if allowed, make a function for this
+         *  - not selected in other team already
+         *  - match not in the past
+         *  - player is competitor
+         *  - player is allow to play (list force check)
+         */
+
+         $userSelected = $user->interclubs()->sync([
+            $interclub->id => ['is_selected' => true],
+         ]);
+
+        return redirect()->route('interclubs.show', $interclub)->with('success', __($user->last_name . ' ' . $user->first_name . ' have been selected for the interclub.'));
+
+
+    }
+
+    public function toggleSelection(Interclub $interclub, User $user): RedirectResponse
+    {
+        $userWithPivot = $user->interclubs()->where('interclub_id', $interclub->id)->first();
+
+        // if (!isset($userWithPivot->registration->is_selected)) {
+        //     $userWithPivot->registration->is_selected = false;
+        // }
+
+
+        // Toggle pivot value
+        $user->interclubs()->updateExistingPivot($interclub->id, [
+            'is_selected' => !$userWithPivot->registration->is_selected,
+        ]);
+
+        return !$userWithPivot->registration->is_selected 
+            ? redirect()->route('interclubs.show', $interclub)->with('success', __($user->last_name . ' ' . $user->first_name . ' has been selected for the interclub.'))
+            : redirect()->route('interclubs.show', $interclub)->with('deleted', __($user->last_name . ' ' . $user->first_name . ' has been unselected for the interclub.'));
+    }
+
+
+    public function showSelections(): View
+    {
+        $interclubs = Interclub::all();
+
+        return View('admin.interclubs.selections', [
+            'interclubs' => $interclubs,
+
+        ]);
     }
 }

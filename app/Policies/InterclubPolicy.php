@@ -23,6 +23,7 @@ class InterclubPolicy
     public function view(User $user, Interclub $interclub): bool
     {
         //
+        return true;
     }
 
     /**
@@ -40,6 +41,7 @@ class InterclubPolicy
     public function update(User $user, Interclub $interclub): bool
     {
         //
+        return true;
     }
 
     /**
@@ -48,6 +50,7 @@ class InterclubPolicy
     public function delete(User $user, Interclub $interclub): bool
     {
         //
+        return true;
     }
 
     /**

@@ -7,16 +7,13 @@ use App\Http\Controllers\TeamController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\TrainingController;
-use App\Http\Controllers\CompetitionController;
 use App\Http\Controllers\InterclubController;
 use App\Http\Controllers\TestController;
-use App\Models\Interclub;
 use Illuminate\Support\Facades\Route;
 use App\Models\User;
 use App\Models\Room;
 use App\Models\Team;
 use App\Models\Training;
-use App\Services\ForceList as ServicesForceIndex;
 
 /*
 |--------------------------------------------------------------------------
@@ -102,7 +99,25 @@ Route::post('admin/interclubs/subscribe', [
     ])
     ->middleware(['auth', 'verified'])
     ->name('interclubs.subscription');
+    
 Route::resource('/admin/interclubs', InterclubController::class)->middleware(['auth', 'verified']);
+
+Route::post('/admin/interclub/add/{interclub}/{user}', [
+    InterclubController::class,
+    'addToSelection',
+])->middleware(['auth', 'verified'])
+    ->name('interclubs.addToSelection');
+
+Route::post('/admin/interclub/toggle/{interclub}/{user}', [
+    InterclubController::class,
+    'toggleSelection',
+])->middleware(['auth', 'verified'])
+    ->name('interclubs.toggleSelection');
+
+Route::get('/admin/interclub/selections', [
+    InterclubController::class,
+    'showSelections',
+])->name('interclubs.selections');
 
 
 /**

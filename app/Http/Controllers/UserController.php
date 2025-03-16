@@ -3,17 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Enums\Ranking;
-use App\Enums\Rankings;
 use App\Enums\Sex;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
-use App\Models\Role;
 use App\Models\Team;
 use App\Services\ForceList;
-use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Redirect;
 
 class UserController extends Controller
 {

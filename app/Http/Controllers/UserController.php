@@ -33,7 +33,6 @@ class UserController extends Controller
         $this->authorize('index', User::class);
 
         return View('admin.users.index', [
-            'users' => User::orderby('is_competitor', 'desc')->with('teams')->orderby('force_list')->orderBy('ranking')->orderby('last_name')->orderby('first_name')->paginate(20),
             'user_model' => User::class,
         ]);
     }

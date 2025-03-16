@@ -149,4 +149,18 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Training::class);
     }
+    
+    /** Scopes */
+
+    /**
+     * Scope search to search by last or first name
+     *
+     * @param [type] $query
+     * @param [type] $value
+     * @return void
+     */
+    public function scopeSearch($query, $value) {
+        $query->where('last_name', 'like', '%' . $value . '%')
+            ->orWhere('first_name', 'like', '%' . $value . '%');
+    }
 }

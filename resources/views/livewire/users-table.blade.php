@@ -1,17 +1,24 @@
 <div class="overflow-hidden bg-white shadow-sm dark:bg-gray-800 sm:rounded-lg">
 
-
-    <table class="min-w-full text-sm font-light text-left dark:bg-neutral-300">
+    <div class="flex flex-row justify-between w-full p-4 bg-gray-200 space-around">
+        <x-text-input class="text-sm" placeholder="Search" wire:model.live.debounce.500ms="search" />
+        <x-select-input class="text-sm" id="role_selector" wire:model.live="competitor">
+            <option value="">{{ __('All') }}</option>
+            <option value="1">{{ __('Competitor') }}</option>
+            <option value="0">{{ __('Casual') }}</option>
+        </x-select-input>
+    </div>
+    <table class="min-w-full text-sm font-light text-left dark:bg-neutral-300 mt-8">
         <thead class="font-medium border-b dark:border-neutral-500">
             <tr>
-                <th scope="col" class="px-4 py-2">{{ __('Last Name') }}</th>
-                <th scope="col" class="px-4 py-2">{{ __('First Name') }}</th>
-                <th scope="col" class="px-4 py-2">{{ __('Force Index') }}</th>
-                <th scope="col" class="px-4 py-2">{{ __('Ranking') }}</th>
-                <th scope="col" class="px-4 py-2">{{ __('Teams') }}</th>
-                <th scope="col" class="px-4 py-2">{{ __('Active') }}</th>
-                <th scope="col" class="px-4 py-2">{{ __('Competitor') }}</th>
-                <th scope="col" class="px-4 py-2">{{ __('Has Debts') }}</th>
+                <th scope="col" class="px-4 py-2" wire:click="sortBy('last_name')">{{ __('Last Name') }}</th>
+                <th scope="col" class="px-4 py-2" wire:click="sortBy('first_name')"">{{ __('First Name') }}</th>
+                <th scope="col" class="px-4 py-2" wire:click="sortBy('force_list')"">{{ __('Force Index') }}</th>
+                <th scope="col" class="px-4 py-2" wire:click="sortBy('ranking')"">{{ __('Ranking') }}</th>
+                <th scope="col" class="px-4 py-2" wire:click="sortBy('team_id')"">{{ __('Teams') }}</th>
+                <th scope="col" class="px-4 py-2" wire:click="sortBy('is_active')"">{{ __('Active') }}</th>
+                <th scope="col" class="px-4 py-2" wire:click="sortBy('is_competitor')"">{{ __('Competitor') }}</th>
+                <th scope="col" class="px-4 py-2" wire:click="sortBy('has_debt')"">{{ __('Has Debts') }}</th>
                 <th scope="col" class="px-4 py-2">{{ __('Actions') }}</th>
             </tr>
         </thead>

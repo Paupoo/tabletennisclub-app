@@ -301,6 +301,10 @@ class DatabaseSeeder extends Seeder
             'capacity_for_interclubs' => 0,
         ])->clubs()->attach(1);
 
+        User::factory()
+            ->count(50)
+            ->create();
+
 
     }
 }

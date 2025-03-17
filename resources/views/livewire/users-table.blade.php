@@ -24,7 +24,7 @@
         </thead>
         <tbody>
             @foreach ($users as $user)
-                <tr class="border-b dark:border-neutral-500">
+                <tr wire:key="{{ $user->id }}" class="border-b dark:border-neutral-500 {{ $user->is_admin ? 'text-green-500' : '' }} {{ $user->is_comittee_member ? 'text-blue-500' : ''}}">
                     <td class="px-4 whitespace-nowrap">
                         @if ($user->sex === \App\Enums\Sex::MEN->name )
                             &#9794;
@@ -83,10 +83,8 @@
                             </a>
                         @endcan
                         @can('delete', $user_model)
-                            <form action="{{ route('users.destroy', $user) }}" method="POST">
-                                @csrf
-                                @method('delete')
-                                <button>
+                            <form wire:confirm="Are you sure you want to delete {{ $user->first_name }} {{ $user->last_name }}?" wire:submit.prevent="destroy({{ $user }})">
+                                <button type="submit">
                                     <img class="h-4 cursor-pointer"
                                         src="{{ asset('images/icons/delete.svg') }}" alt="Delete">
                                 </button>

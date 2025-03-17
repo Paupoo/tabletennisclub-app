@@ -3,12 +3,15 @@
 namespace App\Livewire;
 
 use App\Models\User;
+use App\Services\ForceList;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class UsersTable extends Component
 {
     use WithPagination;
+
+    protected ForceList $forceList;
     
     public int $perPage = 10;
 
@@ -20,6 +23,11 @@ class UsersTable extends Component
 
     public string $sortDirection = 'desc';
 
+    public function boot(ForceList $forceList)
+    {
+        $this->forceList = $forceList;
+    }
+
     public function sortBy($field)
     {
         if($this->sortByField === $field) {
@@ -29,6 +37,21 @@ class UsersTable extends Component
         $this->sortByField = $field;
     }
 
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(User $user)
+    {
+        $this->authorize('delete', User::class);
+
+        $user->delete();
+
+        $this->forceList->setOrUpdateAll();
+
+        session()->flash('deleted', 'User ' . $user->first_name . ' ' . $user->last_name . ' has been deleted');
+        
+        $this->redirectRoute('users.index');
+    }
 
     public function render()
     {

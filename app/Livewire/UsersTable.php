@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\User;
 use App\Services\ForceList;
+use Illuminate\Database\QueryException;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -44,13 +45,21 @@ class UsersTable extends Component
     {
         $this->authorize('delete', User::class);
 
-        $user->delete();
+        try {
+            $user->delete();
+            $this->forceList->setOrUpdateAll();
+            session()->flash('deleted', __('User ' . $user->first_name . ' ' . $user->last_name . ' has been deleted'));
+            $this->redirectRoute('users.index');
+        } catch (QueryException $e) {
+            if ($e->getCode() === '23000') {
+                session()->flash('error', __('User ' . $user->first_name . ' ' . $user->last_name . ' is captain of a team and cannot be deleted'));
+                $this->redirectRoute('users.index');
 
-        $this->forceList->setOrUpdateAll();
+            }
+        }
 
-        session()->flash('deleted', 'User ' . $user->first_name . ' ' . $user->last_name . ' has been deleted');
+
         
-        $this->redirectRoute('users.index');
     }
 
     public function render()

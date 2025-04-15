@@ -86,7 +86,7 @@
                                         
                                         @foreach($rounds[$roundName] as $match)
                                             <div class="match-box border border-gray-200 mb-{{ $spacing }} p-4 rounded-lg shadow-sm bg-white">
-                                                @include('tournaments.partials.knockout-match', ['match' => $match])
+                                                @include('admin.tournaments.partials.knockout-match', ['match' => $match])
                                             </div>
                                         @endforeach
                                     </div>
@@ -96,7 +96,7 @@
                                 <div class="flex flex-col justify-center">
                                     @if(isset($rounds['final']) && count($rounds['final']) > 0)
                                         <div class="match-box border border-yellow-300 p-4 rounded-lg shadow-md bg-yellow-50">
-                                            @include('tournaments.partials.knockout-match', ['match' => $rounds['final'][0]])
+                                            @include('admin.tournaments.partials.knockout-match', ['match' => $rounds['final'][0]])
                                         </div>
                                     @endif
                                 </div>
@@ -105,7 +105,7 @@
                                 <div class="flex flex-col justify-center">
                                     @if(isset($rounds['bronze']) && count($rounds['bronze']) > 0)
                                         <div class="match-box border border-amber-300 p-4 rounded-lg shadow-md bg-amber-50">
-                                            @include('tournaments.partials.knockout-match', ['match' => $rounds['bronze'][0]])
+                                            @include('admin.tournaments.partials.knockout-match', ['match' => $rounds['bronze'][0]])
                                         </div>
                                     @endif
                                 </div>

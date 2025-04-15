@@ -23,7 +23,8 @@ class TournamentPoolService
         // 1. Récupérer tous les joueurs inscrits au tournoi, triés par ranking
         $players = $tournament->users()
             ->orderBy('ranking')
-            ->orderBy('name')
+            ->orderBy('first_name')
+            ->orderBy('last_name')
             ->get();
             
         if ($players->isEmpty()) {

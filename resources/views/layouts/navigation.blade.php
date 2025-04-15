@@ -42,7 +42,7 @@
                     </x-nav-link>
                 </div>
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('tournamentsIndex')" :active="request()->routeIs('interclubs.index')">
+                    <x-nav-link :href="route('tournamentsIndex')" :active="request()->routeIs('tournamentsIndex')">
                         {{ __('Tournaments') }}
                     </x-nav-link>
                 </div>
@@ -117,6 +117,9 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('interclubs.index')" :active="request()->routeIs('interclubs.index')">
                 {{ __('Matches') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('admin.tournaments.index')" :active="request()->routeIs('tournamentsIndex')">
+                {{ __('Tournaments') }}
             </x-responsive-nav-link>
         </div>
 

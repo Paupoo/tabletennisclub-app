@@ -118,7 +118,7 @@
             <x-responsive-nav-link :href="route('interclubs.index')" :active="request()->routeIs('interclubs.index')">
                 {{ __('Matches') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('admin.tournaments.index')" :active="request()->routeIs('tournamentsIndex')">
+            <x-responsive-nav-link :href="route('tournamentsIndex')" :active="request()->routeIs('tournamentsIndex')">
                 {{ __('Tournaments') }}
             </x-responsive-nav-link>
         </div>

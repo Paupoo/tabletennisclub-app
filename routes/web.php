@@ -8,7 +8,9 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\TrainingController;
 use App\Http\Controllers\InterclubController;
+use App\Http\Controllers\KnockoutPhaseController;
 use App\Http\Controllers\TestController;
+use App\Http\Controllers\TournamentController;
 use Illuminate\Support\Facades\Route;
 use App\Models\User;
 use App\Models\Room;
@@ -139,5 +141,54 @@ Route::get('/test', [
     TestController::class,
     'test',
 ]);
+
+// Routes pour les tournois
+Route::get('/tournaments', [TournamentController::class, 'index'])->name('tournamentsIndex');
+Route::get('/tournament/{id}', [TournamentController::class, 'show'])->name('tournamentShow');
+Route::get('/tournament/register/{tournament}/{user}', [TournamentController::class, 'registrerUser'])->name('tournamentRegister');
+Route::get('/tournament/unregister/{tournament}/{user}', [TournamentController::class, 'unregistrerUser'])->name('tournamentUnregister');
+Route::get('/tournament/payment/{tournament}/{user}', [TournamentController::class, 'toggleHasPaid'])->name('tournamentToggleHasPaid');
+Route::get('/tournament/{tournament}/setup', [TournamentController::class, 'setup'])->name('tournamentSetup');
+Route::get('/tournament/{tournament}/set_max_players', [TournamentController::class, 'setMaxPlayers'])->name('tournamentSetMaxPlayers');
+Route::get('/tournament/{tournament}/set_start_date', [TournamentController::class, 'setStartTime'])->name('tournamentSetStartTime');
+Route::get('/tournaments/{tournament}/pools', [TournamentController::class, 'managePools'])
+     ->name('tournaments.manage-pools');
+     
+Route::post('/tournaments/{tournament}/generate-pools', [TournamentController::class, 'generatePools'])
+     ->name('tournaments.generate-pools');
+
+Route::put('/tournaments/{tournament}/generate-pools', [TournamentController::class, 'updatePoolPlayers'])
+->name('tournament.updatePoolPlayers');
+
+// Routes pour les matches
+Route::post('/tournaments/{tournament}/generate-matches', [TournamentController::class, 'generatePoolMatches'])
+    ->name('generatePoolMatches');
+Route::get('/pools/{pool}/matches', [TournamentController::class, 'showPoolMatches'])
+    ->name('showPoolMatches');
+Route::get('/matches/{match}/edit', [TournamentController::class, 'editMatch'])
+    ->name('editMatch');
+Route::get('/matches/{match}/start', [TournamentController::class, 'startMatch'])
+    ->name('startMatch');
+Route::put('/matches/{match}', [TournamentController::class, 'updateMatch'])
+    ->name('updateMatch');
+Route::delete('/matches/{match}/reset', [TournamentController::class, 'resetMatch'])
+    ->name('resetMatch');
+
+// Routes pour les tables
+Route::get('/tables', function () {
+    return view('tables.overview');
+});
+
+// Routes pour la phase finale
+Route::get('/tournaments/{tournament}/knockout/setup', [KnockoutPhaseController::class, 'setup'])
+    ->name('knockoutSetup');
+Route::post('/tournaments/{tournament}/knockout/configure', [KnockoutPhaseController::class, 'configure'])
+    ->name('configureKnockout');
+Route::get('/tournaments/{tournament}/knockout/bracket', [KnockoutPhaseController::class, 'showBracket'])
+    ->name('knockoutBracket');
+Route::get('/knockout-matches/{match}/start', [KnockoutPhaseController::class, 'startMatch'])
+    ->name('startKnockoutMatch');
+Route::delete('/knockout-matches/{match}/reset', [KnockoutPhaseController::class, 'resetMatch'])
+    ->name('resetKnockoutMatch');
 
 require __DIR__ . '/auth.php';

@@ -14,8 +14,10 @@ use App\Models\League;
 use App\Models\Room;
 use App\Models\Season;
 use App\Models\Team;
+use App\Models\Tournament;
 use App\Models\User;
 use App\Services\ForceList;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
@@ -23,6 +25,7 @@ class DatabaseSeeder extends Seeder
 {
 
     protected $forceList = null;
+    private Tournament $tournament;
 
     public function __construct(ForceList $forceList)
     {
@@ -305,6 +308,30 @@ class DatabaseSeeder extends Seeder
             ->count(50)
             ->create();
 
+        // Gestion du tournoi
+        Tournament::factory(3)->create();
+        $this->tournament = Tournament::find(1);
+        $this->tournament->name = 'Tournoi des crêpes';
+        $this->tournament->start_date = Carbon::createFromDate('16-10-2024 10:00:00');
+        $this->tournament->save();
 
+        $this->tournament = Tournament::find(2);
+        $this->tournament->name = 'Vieux tournoi';
+        $this->tournament->start_date = Carbon::createFromDate('09-11-2018 11:00:00');
+        $this->tournament->save();
+
+
+
+        $this->tournament = Tournament::find(3);
+        $this->tournament->name = 'Tournoi de doubles';
+        $this->tournament->max_users = 24;
+        $this->tournament->total_users = 24;
+        $this->tournament->start_date = Carbon::createFromDate('06-04-2025 10:00:00');
+        $this->tournament->save();
+
+        for ($i=1; $i < 25; $i++){
+            $user = User::find($i);
+            $this->tournament->users()->attach($user);
+        }
     }
 }

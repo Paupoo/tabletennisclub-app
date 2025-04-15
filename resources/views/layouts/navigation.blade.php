@@ -41,6 +41,11 @@
                         {{ __('Matches') }}
                     </x-nav-link>
                 </div>
+                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                    <x-nav-link :href="route('tournamentsIndex')" :active="request()->routeIs('interclubs.index')">
+                        {{ __('Tournaments') }}
+                    </x-nav-link>
+                </div>
             </div>
 
             <!-- Settings Dropdown -->

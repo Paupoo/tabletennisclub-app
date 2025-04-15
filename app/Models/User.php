@@ -163,4 +163,21 @@ class User extends Authenticatable
         $query->where('last_name', 'like', '%' . $value . '%')
             ->orWhere('first_name', 'like', '%' . $value . '%');
     }
+
+    public function tournaments(): BelongsToMany
+    {
+        return $this->belongsToMany(Tournament::class, 'tournament_user');
+    }
+
+    public function pools(): BelongsToMany
+    {
+        return $this->belongsToMany(Pool::class, 'pool_user');
+    }
+
+    public function scopeUnregisteredUsers($query, $tournament)
+    {
+        return $query->whereDoesntHave('tournaments', function ($query) use ($tournament) {
+            $query->where('tournaments.id', $tournament->id);
+        })->orderBy('name');
+    }
 }

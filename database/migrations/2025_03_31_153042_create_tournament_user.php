@@ -16,8 +16,9 @@ return new class extends Migration
     {
         Schema::create('tournament_user', function (Blueprint $table) {
             $table->id();
-            $table->foreignIdFor(User::class)->nullable()->constrained()->nullOnDelete();
-            $table->foreignIdFor(Tournament::class)->nullable()->constrained()->nullOnDelete();
+            $table->foreignIdFor(User::class)->constrained()->nullOnDelete();
+            $table->foreignIdFor(Tournament::class)->constrained()->nullOnDelete();
+            $table->foreignIdFor(Pool::class)->nullable()->constrained()->nullOnDelete();
             $table->boolean('has_paid')->default(false);
             $table->integer('matches_won')->default(0);
             $table->integer('sets_won')->default(0);

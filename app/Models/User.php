@@ -178,6 +178,6 @@ class User extends Authenticatable
     {
         return $query->whereDoesntHave('tournaments', function ($query) use ($tournament) {
             $query->where('tournaments.id', $tournament->id);
-        })->orderBy('name');
+        })->orderBy('last_name')->orderBy('first_name');
     }
 }

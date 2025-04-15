@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('name', 1);
             $table->foreignIdFor(League::class)->nullable()->constrained();
             $table->foreignIdFor(Club::class)->nullable()->constrained();
-            $table->foreignIdFor(User::class, 'captain_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignIdFor(User::class, 'captain_id')->nullable()->nullOnDelete();
             $table->foreignIdFor(Season::class)->constrained();
             $table->timestamps();
         });

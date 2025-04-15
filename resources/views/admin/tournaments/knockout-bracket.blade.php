@@ -74,12 +74,11 @@
                                     <div class="w-1/{{ $totalRounds + 2 }} text-center font-bold p-2 text-gray-800">{{ $roundName }}</div>
                                 @endforeach
                             </div>
-
                             <!-- Bracket structure -->
-                            <div class="flex flex-row h-full gap-4">
+                            <div class="grid grid-cols-{{ $totalRounds + 2 }} gap-4">
                                 <!-- Dynamic rounds -->
                                 @foreach($availableRounds as $index => $roundName)
-                                    <div class="w-1/{{ $totalRounds + 2 }} {{ $index > 0 ? 'flex flex-col justify-around' : 'relative' }}">
+                                    <div class="{{ $index > 0 ? 'flex flex-col justify-around' : 'relative' }}">
                                         @php
                                             $matchCount = count($rounds[$roundName]);
                                             $spacing = pow(2, $index);
@@ -87,26 +86,26 @@
                                         
                                         @foreach($rounds[$roundName] as $match)
                                             <div class="match-box border border-gray-200 mb-{{ $spacing }} p-4 rounded-lg shadow-sm bg-white">
-                                                @include('admin.tournaments.partials.knockout-match', ['match' => $match])
+                                                @include('tournaments.partials.knockout-match', ['match' => $match])
                                             </div>
                                         @endforeach
                                     </div>
                                 @endforeach
 
                                 <!-- Final match -->
-                                <div class="w-1/{{ $totalRounds + 2 }} flex flex-col justify-center">
+                                <div class="flex flex-col justify-center">
                                     @if(isset($rounds['final']) && count($rounds['final']) > 0)
                                         <div class="match-box border border-yellow-300 p-4 rounded-lg shadow-md bg-yellow-50">
-                                            @include('admin.tournaments.partials.knockout-match', ['match' => $rounds['final'][0]])
+                                            @include('tournaments.partials.knockout-match', ['match' => $rounds['final'][0]])
                                         </div>
                                     @endif
                                 </div>
 
                                 <!-- Bronze match -->
-                                <div class="w-1/{{ $totalRounds + 2 }} flex flex-col justify-center">
+                                <div class="flex flex-col justify-center">
                                     @if(isset($rounds['bronze']) && count($rounds['bronze']) > 0)
                                         <div class="match-box border border-amber-300 p-4 rounded-lg shadow-md bg-amber-50">
-                                            @include('admin.tournaments.partials.knockout-match', ['match' => $rounds['bronze'][0]])
+                                            @include('tournaments.partials.knockout-match', ['match' => $rounds['bronze'][0]])
                                         </div>
                                     @endif
                                 </div>

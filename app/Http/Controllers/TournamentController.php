@@ -90,28 +90,44 @@ class TournamentController extends Controller
             // ->with('success', __('The tournament ' . $tournament->name . ' has been deleted.'));
     }
 
-    public function unpublish(Tournament $tournament)
+    public function unpublish(Tournament $tournament): RedirectResponse
     {
         $tournament->status = 'draft';
         $tournament->update();
+
+        return redirect()
+            ->back()
+            ->with('success', __('Tournament ' . $tournament->name . ' has been unpublished.'));
     }
     
-    public function publish(Tournament $tournament)
+    public function publish(Tournament $tournament): RedirectResponse
     {
         $tournament->status = 'open';
         $tournament->update();
+
+        return redirect()
+            ->back()
+            ->with('success', __('Tournament ' . $tournament->name . ' has been published.'));
     }
 
-    public function start(Tournament $tournament)
+    public function start(Tournament $tournament): RedirectResponse
     {
         $tournament->status = 'pending';
         $tournament->update();
+
+        return redirect()
+            ->back()
+            ->with('success', __('Tournament ' . $tournament->name . ' has been started.'));
     }
 
-    public function close(Tournament $tournament)
+    public function close(Tournament $tournament): RedirectResponse
     {
         $tournament->status = 'closed';
         $tournament->update();
+
+        return redirect()
+            ->back()
+            ->with('success', __('Tournament ' . $tournament->name . ' has been closed.'));
     }
 
     public function registrerUser(Tournament $tournament, User $user): RedirectResponse

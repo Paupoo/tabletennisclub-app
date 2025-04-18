@@ -20,7 +20,8 @@ class TournamentFactory extends Factory
             'name' => fake()->name(),
             'start_date' => fake()->dateTimeThisMonth(),
             'start_date' => fake()->dateTimeThisMonth(),
-            'max_users' => 0,
+            'max_users' => fake()->randomNumber(2),
+            'price' => fake()->randomFloat(2,10,30)
         ];
     }
 }

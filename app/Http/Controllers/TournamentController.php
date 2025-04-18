@@ -32,15 +32,7 @@ class TournamentController extends Controller
         $tournaments = Tournament::orderBy('start_date')->get();
 
         return view('admin.tournaments.index', [
-            'headers' => ['Name', 'Start Date', 'price', 'Total Players'],
-            'rows' => $tournaments->map(fn($tournament) => [
-                "<a href='" . route('tournamentShow', $tournament) . "' class='hover:underline'>{$tournament->name}</a>",
-                $tournament->start_date->format('d/m/Y H:i'),
-                $tournament->price,
-                $tournament->total_users
-            ])->toArray(),
-
-
+            'tournaments' => $tournaments
         ]);
     }
 
@@ -54,6 +46,72 @@ class TournamentController extends Controller
             'tournament' => $tournament,
             'unregisteredUsers' => $unregisteredUsers,
         ]);
+    }
+
+    public function create(Request $request): RedirectResponse
+    {
+        $tournament = Tournament::create([
+            'name' => $request->name,
+            'start_date' => $request->startDate,
+            'end_date' => $request->endDate,
+            'price' => $request->price,
+            // 'total_users' => // 0
+            'max_users' => $request->maxUsers,
+            // 'status' => , // draft, open, pending, closed
+        ]);
+
+        return redirect()
+            ->route('tournamentsIndex')
+            ->with('success', __('The tournament ' . $tournament->name . ' has been created.'));
+    }
+
+    public function update(Tournament $tournament, Request $request): RedirectResponse
+    {
+        $tournament->name = $request->name;
+        $tournament->start_date = $request->startDate;
+        $tournament->end_date = $request->endDate;
+        $tournament->total_users = $request->totalUsers;
+        $tournament->max_users = $request->maxUsers;
+        // $tournament->status = '' // draft, open, pending, closed
+        
+        $tournament->udpate();
+
+        return redirect()
+            ->route('tournamentsIndex')
+            ->with('success', __('The tournament ' . $tournament->name . ' has been created.'));
+    }
+
+    public function destroy(Tournament $tournament): RedirectResponse
+    {
+        $tournament->delete();
+
+        return redirect()
+            ->route('tournamentsIndex');
+            // ->with('success', __('The tournament ' . $tournament->name . ' has been deleted.'));
+    }
+
+    public function unpublish(Tournament $tournament)
+    {
+        $tournament->status = 'draft';
+        $tournament->update();
+    }
+    
+    public function publish(Tournament $tournament)
+    {
+        $tournament->status = 'open';
+        $tournament->update();
+    }
+
+    public function start(Tournament $tournament)
+    {
+        $tournament->status = 'pending';
+        $tournament->update();
+    }
+
+    public function close(Tournament $tournament)
+    {
+        $tournament->status = 'closed';
+        $tournament->update();
     }
 
     public function registrerUser(Tournament $tournament, User $user): RedirectResponse

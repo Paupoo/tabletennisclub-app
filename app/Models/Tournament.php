@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Casts\MoneyCast;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -13,15 +14,24 @@ class Tournament extends Model
     use HasFactory;
 
     protected $fillable = [
+        'name',
+        'start_date',
+        'end_date',
+        'price',
         'total_users',
         'max_users',
+        'status',
     ];
 
     protected $casts = [
+        'name',
         'start_date' => 'datetime:Y-m-d\TH:i',
-        'number_of_pools' => 'integer',
+        'end_date' => 'datetime:Y-m-d\TH:i',
+        'price' => MoneyCast::class,
+        'total_users' => 'integer',
         'max_users' => 'integer',
-    ];
+        'status' => 'string',
+        ];
 
     public function users(): BelongsToMany
     {

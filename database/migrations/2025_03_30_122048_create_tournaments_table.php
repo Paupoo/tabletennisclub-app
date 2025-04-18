@@ -18,6 +18,8 @@ return new class extends Migration
             $table->datetime('end_date')->nullable();
             $table->integer('total_users')->default(0);
             $table->integer('max_users')->default(0);
+            $table->integer('price')->default(0);
+            $table->string('status')->default('draft'); // draft, open, pending, closed
             $table->timestamps();
         });
     }

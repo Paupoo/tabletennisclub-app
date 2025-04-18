@@ -146,7 +146,9 @@ Route::middleware(['auth', 'verified'])
 ->group(function () {
         // Routes pour les tournois
         Route::get('/tournaments', [TournamentController::class, 'index'])->name('tournamentsIndex');
+        Route::post('/tournaments/create', [TournamentController::class, 'create'])->name('createTournament');
         Route::get('/tournament/{id}', [TournamentController::class, 'show'])->name('tournamentShow');
+        Route::get('/tournaments/{tournament}/delete', [TournamentController::class, 'destroy'])->name('deleteTournament');
         Route::get('/tournament/register/{tournament}/{user}', [TournamentController::class, 'registrerUser'])->name('tournamentRegister');
         Route::get('/tournament/unregister/{tournament}/{user}', [TournamentController::class, 'unregistrerUser'])->name('tournamentUnregister');
         Route::get('/tournament/payment/{tournament}/{user}', [TournamentController::class, 'toggleHasPaid'])->name('tournamentToggleHasPaid');

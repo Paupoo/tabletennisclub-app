@@ -90,6 +90,17 @@ class TournamentController extends Controller
             // ->with('success', __('The tournament ' . $tournament->name . ' has been deleted.'));
     }
 
+    public function changeStatus(Tournament $tournament, Request $request):RedirectResponse
+    {
+        $tournament->status = $request->status;
+        $tournament->update();
+
+        return redirect()
+            ->back()
+            ->with('success', __('Status for tournament ' . $tournament->name . ' has been updated.'));
+
+    }
+
     public function unpublish(Tournament $tournament): RedirectResponse
     {
         $tournament->status = 'draft';

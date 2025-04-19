@@ -151,6 +151,7 @@ Route::middleware(['auth', 'verified'])
             Route::post('/tournaments/create', [TournamentController::class, 'create'])->name('createTournament');
             Route::get('/tournament/{id}', [TournamentController::class, 'show'])->name('tournamentShow');
             Route::get('/tournament/{tournament}/delete', [TournamentController::class, 'destroy'])->name('deleteTournament');
+            Route::patch('/tournament/{tournament}/statusUpdate', [TournamentController::class, 'changeStatus'])->name('tournamentSetStatus');
             Route::get('/tournament/{tournament}/draft', [TournamentController::class, 'unpublish'])->name('unpublishTournament');
             Route::get('/tournament/{tournament}/publish', [TournamentController::class, 'publish'])->name('publishTournament');
             Route::get('/tournament/{tournament}/start', [TournamentController::class, 'start'])->name('startTournament');

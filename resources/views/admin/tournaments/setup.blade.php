@@ -15,7 +15,7 @@
                         <!-- Informations sur le tournoi -->
                         <div class="bg-gray-50 rounded-lg p-5 mb-8">
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div class="flex items-center">
+                                <div class="flex items-center bg-red-500">
                                     <div class="rounded-full bg-blue-100 p-3 mr-3">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-600"
                                             fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -28,7 +28,7 @@
                                         <p class="font-bold text-lg ">{{ $tournament->users->count() }}</p>
                                     </div>
                                 </div>
-                                <div class="flex items-center text-gray-500">
+                                <div class="flex items-center text-gray-500 bg-green-500">
                                     <div class="rounded-full bg-green-100 p-3 mr-3">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600"
                                             fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -41,7 +41,7 @@
                                         <form class="flex gap-4"
                                             action="{{ route('tournamentSetMaxPlayers', $tournament) }}" method="GET">
                                             <input
-                                                class="block w-18 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-500"
+                                                class="block px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-500"
                                                 type="number" name="max_users" min="10" step="1"
                                                 value="{{ $tournament->max_users }}">
                                             </input>
@@ -52,7 +52,7 @@
                                         </form>
                                     </div>
                                 </div>
-                                <div class="flex items-center text-gray-500">
+                                <div class="flex items-center text-gray-500 bg-orange-500">
                                     <div class="rounded-full bg-purple-100 p-3 mr-3">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-600"
                                             fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -68,13 +68,65 @@
                                                 class="block w-fit px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-500"
                                                 type="datetime-local" name="start_date"
                                                 value="{{ $tournament->start_date->format('Y-m-d\TH:i') }}"
-                                                min="{{  now()->format('Y-m-d\TH:i') }}">
+                                                min="{{ now()->format('Y-m-d\TH:i') }}">
                                             </input>
                                             <button type="submit"
                                                 class="w-full md:w-auto px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition duration-200">
                                                 Confirmer
                                             </button>
                                         </form>
+                                    </div>
+                                </div>
+                                <!-- Statut du tournoi -->
+                                <div class="flex items-center text-gray-500 bg-purple-500">
+                                    <div
+                                        class="rounded-full 
+            @if ($tournament->status == 'draft') bg-gray-100
+            @elseif($tournament->status == 'open') bg-blue-100
+            @elseif($tournament->status == 'pending') bg-purple-100
+            @elseif($tournament->status == 'closed') bg-green-100 @endif p-3 mr-3">
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                            class="h-6 w-6 
+                @if ($tournament->status == 'draft') text-gray-600
+                @elseif($tournament->status == 'open') text-blue-600
+                @elseif($tournament->status == 'pending') text-purple-600
+                @elseif($tournament->status == 'closed') text-green-600 @endif"
+                                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-500">Statut du tournoi</p>
+                                        <form" class="flex flex-col gap-2">
+
+                                            <div x-show="open" class="flex gap-2">
+                                                <form action="{{ route('tournamentSetStatus', $tournament) }}"
+                                                    method="POST" class="flex gap-2">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <select name="status"
+                                                        class="block px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-500">
+                                                        <option value="draft"
+                                                            {{ $tournament->status == 'draft' ? 'selected' : '' }}>Non
+                                                            publié</option>
+                                                        <option value="open"
+                                                            {{ $tournament->status == 'open' ? 'selected' : '' }}>
+                                                            Publié</option>
+                                                        <option value="pending"
+                                                            {{ $tournament->status == 'pending' ? 'selected' : '' }}>En
+                                                            cours</option>
+                                                        <option value="closed"
+                                                            {{ $tournament->status == 'closed' ? 'selected' : '' }}>
+                                                            Terminé</option>
+                                                    </select>
+                                                    <button type="submit"
+                                                        class="w-full md:w-auto px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition duration-200">
+                                                        Confirmer
+                                                    </button>
+                                                </form>
+                                            </div>
+                                            </form>
                                     </div>
                                 </div>
                             </div>
@@ -98,7 +150,8 @@
                                         <select name="number_of_pools" id="number_of_pools"
                                             class="block w-full appearance-none px-3 py-2 pr-8 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-500">
                                             @for ($i = 2; $i <= 8; $i++)
-                                                <option value="{{ $i }}">{{ $i }} pools</option>
+                                                <option value="{{ $i }}">{{ $i }} pools
+                                                </option>
                                             @endfor
                                         </select>
                                         <input type="hidden" name="minMatches" value=0>
@@ -217,7 +270,8 @@
                                                                     </span>
                                                                     <div>
                                                                         <p class="font-medium text-gray-500">
-                                                                            {{ $user->first_name }} {{ $user->last_name }}</p>
+                                                                            {{ $user->first_name }}
+                                                                            {{ $user->last_name }}</p>
                                                                         <p class="text-sm text-gray-500">Rank:
                                                                             {{ $user->ranking }}</p>
                                                                     </div>
@@ -261,12 +315,14 @@
     <div class="container mx-auto px-4 py-8">
         <div class="flex justify-center">
             <div class="w-full max-w-8xl">
-                <div class="bg-white rounded-lg shadow-lg overflow-hidden p-6 text-gray-900">                    <div class="flex justify-between mb-6">
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden p-6 text-gray-900">
+                    <div class="flex justify-between mb-6">
                         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                             {{ __('Configuration de la phase finale') }} - {{ $tournament->name }}
                         </h2>
                         <div>
-                            <a href="{{ route('tournamentShow', $tournament) }}" class="text-blue-600 hover:underline">
+                            <a href="{{ route('tournamentShow', $tournament) }}"
+                                class="text-blue-600 hover:underline">
                                 &larr; Retour au tournoi
                             </a>
                         </div>
@@ -275,8 +331,10 @@
                     <form action="{{ route('configureKnockout', $tournament) }}" method="POST">
                         @csrf
                         <div class="mb-6">
-                            <label for="starting_round" class="block text-sm font-medium text-gray-700">Phase de départ</label>
-                            <select id="starting_round" name="starting_round" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            <label for="starting_round" class="block text-sm font-medium text-gray-700">Phase de
+                                départ</label>
+                            <select id="starting_round" name="starting_round"
+                                class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                                 <option value="round_16">16ème de finale (16 joueurs)</option>
                                 <option value="round_8">8ème de finale (8 joueurs)</option>
                                 <option value="round_4">Quart de finale (4 joueurs)</option>
@@ -288,7 +346,8 @@
                         </div>
 
                         <div class="bg-gray-50 px-4 py-3 text-right sm:px-6">
-                            <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            <button type="submit"
+                                class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                                 Configurer la phase finale
                             </button>
                         </div>

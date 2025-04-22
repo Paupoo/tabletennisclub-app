@@ -45,9 +45,9 @@
                         <form action="{{ route('dashboard') }}" method="GET">
                             <x-button class="text-lg font-semibold text-yellow-400 bg-indigo-800">
                                 @auth
-                                {{ __('My Account') }}    
+                                    {{ __('My Account') }}
                                 @else
-                                {{ __('Login') }}
+                                    {{ __('Login') }}
                                 @endauth
                             </x-button>
                         </form>
@@ -82,8 +82,8 @@
                         </p>
                         <div class="flex flex-row items-center self-center">
                             <a href="{{ route('register') }}"><x-button
-                                class="py-2 mr-4 font-semibold text-yellow-400 bg-blue-800 w-36 shadow-blue-800"
-                                type="button">{{ __('Join us') }}</x-button></a>
+                                    class="py-2 mr-4 font-semibold text-yellow-400 bg-blue-800 w-36 shadow-blue-800"
+                                    type="button">{{ __('Join us') }}</x-button></a>
                             <a class="flex items-baseline ml-4 text-lg font-semibold duration-300 ease-in-out transform hover:scale-110"
                                 href="/">
                                 <p>{{ 'Learn more' }}</p>
@@ -107,11 +107,7 @@
                     {{-- Call to action --}}
                     <div class="flex flex-col justify-around gap-4 px-4 mb-2 max-lg:row-start-1">
                         <h1 class="text-3xl font-bold text-left">{{ __('Welcome') }}</h1>
-                        <p>{{ __('Lorem ipsum dolor sit amet consectetur, adipisicing elit. Dicta, voluptatum consectetur? Ut,
-                                                                                                                                                                            delectus
-                                                                                                                                                                            quod eveniet autem laborum ullam reiciendis deserunt a consequuntur dolor quis cumque quibusdam
-                                                                                                                                                                            esse
-                                                                                                                                                                            nulla odit dolorum.') }}
+                        <p>{{ __('Lorem ipsum dolor sit amet consectetur, adipisicing elit. Dicta, voluptatum consectetur? Ut, delectus quod eveniet autem laborum ullam reiciendis deserunt a consequuntur dolor quis cumque quibusdam esse  nulla odit dolorum.') }}
                         </p>
                         <div class="flex flex-row items-center self-center">
                             <x-button
@@ -132,53 +128,55 @@
             {{-- Events & results --}}
             <section class="flex flex-row flex-wrap justify-around gap-4 px-8 bg-opacity-30">
 
-                {{-- Upcoming events --}}
+                {{-- Upcoming tranings --}}
                 <div>
                     <h1 class="mt-4 text-2xl font-bold indent-4">{{ __('Upcoming trainings') }}</h1>
                     <div class="container">
                         <div class="relative p-4 my-4 bg-white rounded-lg pb-14 max-sm:w-fit w-96 dark:bg-gray-700">
 
                             @if ($trainings->count() > 0)
-                            @foreach ($trainings as $training)
-                                <div
-                                    class="flex flex-row items-start gap-2 p-2 mt-2 bg-gray-100 rounded-md hover:bg-gray-200">
+                                @foreach ($trainings as $training)
                                     <div
-                                        class="w-3 h-3 my-auto 
+                                        class="flex flex-row items-start gap-2 p-2 mt-2 bg-gray-100 rounded-md hover:bg-gray-200">
+                                        <div
+                                            class="w-3 h-3 my-auto 
                                         @if ($training->type == \App\Enums\TrainingType::DIRECTED->name) bg-red-800 ring-red-500 
                                         @elseif ($training->type == \App\Enums\TrainingType::FREE->name) 
                                         bg-green-600 ring-greend-500 
                                         @elseif ($training->type == \App\Enums\TrainingType::SUPERVISED->name)
                                         bg-yellow-600 ring-yellow-500 @endif
                                         rounded-full shadow-xl ring-2 ring-opacity-50">
+                                        </div>
+                                        <div class="w-full">
+                                            <div class="flex flex-row justify-between">
+                                                <div class="text-sm text-left font-base">
+                                                    {{ $training->start->format('l d F Y') }}</div>
+                                                <div class="text-sm text-right font-extralight">
+                                                    {{ $training->start->format('H:i') . ' - ' . $training->end->format('H:i') }}
+                                                </div>
+                                            </div>
+                                            <div class="flex flex-row justify-between">
+                                                <div class="text-sm italic text-left font-base">
+                                                    {{ __('Level : ' . $training_levels->firstWhere('name', $training->level)->value) }}
+                                                </div>
+                                                <div class="text-sm text-right font-extralight">
+                                                    {{ $training->room->name }}
+                                                </div>
+                                            </div>
+                                            <div class="flex flex-row justify-between">
+                                                <div class="text-sm italic text-left font-base">
+                                                    {{ __('Type : ' . $training_types->firstWhere('name', $training->type)->value) }}
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="w-full">
-                                        <div class="flex flex-row justify-between">
-                                            <div class="text-sm text-left font-base">
-                                                {{ $training->start->format('l d F Y') }}</div>
-                                            <div class="text-sm text-right font-extralight">
-                                                {{ $training->start->format('H:i') . ' - ' . $training->end->format('H:i') }}
-                                            </div>
-                                        </div>
-                                        <div class="flex flex-row justify-between">
-                                            <div class="text-sm italic text-left font-base">
-                                                {{ __('Level : ' . $training_levels->firstWhere('name', $training->level)->value) }}
-                                            </div>
-                                            <div class="text-sm text-right font-extralight">{{ $training->room->name }}
-                                            </div>
-                                        </div>
-                                        <div class="flex flex-row justify-between">
-                                            <div class="text-sm italic text-left font-base">
-                                                {{ __('Type : ' . $training_types->firstWhere('name', $training->type)->value) }}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
+                                @endforeach
                             @else
-                            <div class="flex flex-row items-start gap-2 p-2 mt-2 bg-gray-100 rounded-md hover:bg-gray-200 dark:bg-gray-400">
-                                {{ __('No upcoming training. Please come back later.') }}
-                            </div>
-                                
+                                <div
+                                    class="flex flex-row items-start gap-2 p-2 mt-2 bg-gray-100 rounded-md hover:bg-gray-200 dark:bg-gray-400">
+                                    {{ __('No upcoming training. Please come back later.') }}
+                                </div>
+
                             @endif
 
                             <x-button
@@ -284,10 +282,71 @@
                                 </div>
                             </div>
 
-                            <div class="flex flex-row items-start gap-2 p-2 mt-2 bg-gray-100 dark:bg-gray-500 rounded-md hover:bg-gray-200">
+                            <div
+                                class="flex flex-row items-start gap-2 p-2 mt-2 bg-gray-100 dark:bg-gray-500 rounded-md hover:bg-gray-200">
                                 {{ __('No upcoming matches. Please come back later.') }}
                             </div>
-                                
+
+
+                            <x-button
+                                class="absolute py-2 text-sm font-medium text-blue-900 -translate-x-1/2 bg-indigo-300 w-36 bottom-2 left-1/2">
+                                More
+                            </x-button>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Upcoming tournaments --}}
+                <div>
+                    <h1 class="mt-4 text-2xl font-bold indent-4">{{ __('Upcoming tournaments') }}</h1>
+                    <div class="container">
+                        <div class="relative p-4 my-4 bg-white rounded-lg pb-14 max-sm:w-fit w-96 dark:bg-gray-700">
+
+                            @if ($tournaments->count() > 0)
+                                @foreach ($tournaments as $tournament)
+                                {{-- {{ $tournament }} --}}
+                                    <div
+                                        class="flex flex-row items-start gap-2 p-2 mt-2 bg-gray-100 rounded-md hover:bg-gray-200">
+                                        <div
+                                            class="w-3 h-3 my-auto 
+                                        @if ($training->type == \App\Enums\TrainingType::DIRECTED->name) bg-red-800 ring-red-500 
+                                        @elseif ($training->type == \App\Enums\TrainingType::FREE->name) 
+                                        bg-green-600 ring-greend-500 
+                                        @elseif ($training->type == \App\Enums\TrainingType::SUPERVISED->name)
+                                        bg-yellow-600 ring-yellow-500 @endif
+                                        rounded-full shadow-xl ring-2 ring-opacity-50">
+                                        </div>
+                                        <div class="w-full">
+                                            <div class="flex flex-row justify-between">
+                                                <div class="text-sm text-left font-base">
+                                                    {{ $tournament->start_date->format('l d F Y') }}</div>
+                                                <div class="text-sm text-right font-extralight">
+                                                    {{ $tournament->start_date->format('H:i') . ' - ' . $tournament->end_date?->format('H:i') }}
+                                                </div>
+                                            </div>
+                                            <div class="flex flex-row justify-between">
+                                                <div class="text-sm italic text-left font-base">
+                                                    {{ $tournament->name }}
+                                                </div>
+                                                <div class="text-sm text-right font-extralight">
+                                                    {{-- {{ $training->room->name }} --}}
+                                                </div>
+                                            </div>
+                                            <div class="flex flex-row justify-between">
+                                                <div class="text-sm italic text-left font-base">
+                                                    {{-- {{ __('Type : ' . $training_types->firstWhere('name', $training->type)->value) }} --}}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            @else
+                                <div
+                                    class="flex flex-row items-start gap-2 p-2 mt-2 bg-gray-100 rounded-md hover:bg-gray-200 dark:bg-gray-400">
+                                    {{ __('No upcoming training. Please come back later.') }}
+                                </div>
+
+                            @endif
 
                             <x-button
                                 class="absolute py-2 text-sm font-medium text-blue-900 -translate-x-1/2 bg-indigo-300 w-36 bottom-2 left-1/2">
@@ -304,7 +363,7 @@
                 <div class="grid grid-flow-row grid-cols-3 gap-6 my-4 max-lg:grid-cols-2 max-sm:grid-cols-1">
 
                     @for ($i = 0; $i < 6; $i++)
-                        <x-cards.article class="dark:bg-gray-700"/>
+                        <x-cards.article class="dark:bg-gray-700" />
                     @endfor
 
                     <x-button>{{ __('Older news') }}</x-button>

@@ -221,15 +221,6 @@ class TournamentController extends Controller
 
     public function setStartTime(Tournament $tournament, Request $request): RedirectResponse
     {
-
-        // // Check that we don't already have more registered players
-        // if ($tournament->total_users > $request->max_users) {
-        //     return redirect()
-        //     ->route('tournamentSetup', $tournament)
-        //     ->with([
-        //         'error' => 'There are already ' . $tournament->total_users - $request->max_users. ' more players registered than the limit.',
-        //     ]);
-        // }
         $start_date = Carbon::createFromFormat('Y-m-d\TH:i', $request->start_date, $request->timezone ?: config('app.timezone'));
 
         $tournament->start_date = $start_date;
@@ -239,6 +230,20 @@ class TournamentController extends Controller
             ->route('tournamentSetup', $tournament)
             ->with([
                 'success' => 'Start date updated successfully.',
+            ]);
+    }
+
+    public function setEndTime(Tournament $tournament, Request $request): RedirectResponse
+    {
+        $end_date = Carbon::createFromFormat('Y-m-d\TH:i', $request->end_date, $request->timezone ?: config('app.timezone'));
+
+        $tournament->end_date = $end_date;
+        $tournament->save();
+
+        return redirect()
+            ->route('tournamentSetup', $tournament)
+            ->with([
+                'success' => 'End date updated successfully.',
             ]);
     }
 

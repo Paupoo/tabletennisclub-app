@@ -61,13 +61,38 @@
                                         </svg>
                                     </div>
                                     <div>
-                                        <p class="text-sm text-gray-500">Date du tournoi</p>
+                                        <p class="text-sm text-gray-500">{{ __('Tournament start') }}</p>
                                         <form class="flex gap-4"
                                             action="{{ route('tournamentSetStartTime', $tournament) }}" method="GET">
                                             <input
                                                 class="block w-fit px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-500"
                                                 type="datetime-local" name="start_date"
                                                 value="{{ $tournament->start_date->format('Y-m-d\TH:i') }}"
+                                                min="{{ now()->format('Y-m-d\TH:i') }}">
+                                            </input>
+                                            <button type="submit"
+                                                class="w-full md:w-auto px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition duration-200">
+                                                Confirmer
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                                <div class="flex items-center text-gray-500 bg-orange-500">
+                                    <div class="rounded-full bg-purple-100 p-3 mr-3">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-purple-600"
+                                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm text-gray-500">{{ __('Tournament end') }}</p>
+                                        <form class="flex gap-4"
+                                            action="{{ route('tournamentSetEndTime', $tournament) }}" method="GET">
+                                            <input
+                                                class="block w-fit px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-500"
+                                                type="datetime-local" name="end_date"
+                                                value="{{ $tournament->end_date ? $tournament->end_date->format('Y-m-d\TH:i') : $tournament->start_date->format('Y-m-d\TH:i') }}"
                                                 min="{{ now()->format('Y-m-d\TH:i') }}">
                                             </input>
                                             <button type="submit"

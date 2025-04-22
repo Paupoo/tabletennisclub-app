@@ -162,6 +162,7 @@ Route::middleware(['auth', 'verified'])
             Route::get('/tournament/{tournament}/setup', [TournamentController::class, 'setup'])->name('tournamentSetup');
             Route::get('/tournament/{tournament}/set_max_players', [TournamentController::class, 'setMaxPlayers'])->name('tournamentSetMaxPlayers');
             Route::get('/tournament/{tournament}/set_start_date', [TournamentController::class, 'setStartTime'])->name('tournamentSetStartTime');
+            Route::get('/tournament/{tournament}/set_end_date', [TournamentController::class, 'setEndTime'])->name('tournamentSetEndTime');
             Route::get('/tournaments/{tournament}/pools', [TournamentController::class, 'managePools'])
                 ->name('tournaments.manage-pools');         
             Route::post('/tournaments/{tournament}/generate-pools', [TournamentController::class, 'generatePools'])

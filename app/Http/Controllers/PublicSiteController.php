@@ -18,7 +18,7 @@ class PublicSiteController extends Controller
             'trainings' => Training::where('start', '>=', $now)->orderBy('start', 'asc')->take(5)->get(),
             'training_levels' => collect(TrainingLevel::cases()),
             'training_types' => collect(TrainingType::cases()),
-            'tournaments' => Tournament::where('start_date', '>', today())->get(),
+            'tournaments' => Tournament::where('start_date', '>', today())->where('status', 'open')->with('rooms')->get(),
         ]);
     }
 }

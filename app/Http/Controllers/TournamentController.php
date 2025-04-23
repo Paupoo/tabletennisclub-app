@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Models\Pool;
+use App\Models\Room;
 use App\Models\Tournament;
 use App\Models\TournamentMatch;
 use App\Models\User;
@@ -32,7 +33,8 @@ class TournamentController extends Controller
         $tournaments = Tournament::orderBy('start_date')->get();
 
         return view('admin.tournaments.index', [
-            'tournaments' => $tournaments
+            'tournaments' => $tournaments,
+            'rooms' => Room::all(),
         ]);
     }
 
@@ -59,6 +61,10 @@ class TournamentController extends Controller
             'max_users' => $request->maxUsers,
             // 'status' => , // draft, open, pending, closed
         ]);
+
+        foreach($request->room_ids as $room_id) {
+            $tournament->rooms()->attach($room_id);
+        }
 
         return redirect()
             ->route('tournamentsIndex')

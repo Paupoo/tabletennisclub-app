@@ -55,5 +55,10 @@ class Room extends Model
         return $this->hasMany(Interclub::class);
     }
 
+    public function tournaments(): BelongsToMany
+    {
+        return $this->belongsToMany(Tournament::class);
+    }
+
     
 }

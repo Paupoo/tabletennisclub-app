@@ -45,4 +45,9 @@ class Tournament extends Model
         return $this->hasMany(Pool::class);
     }
 
+    public function rooms(): BelongsToMany
+    {
+        return $this->BelongsToMany(Room::class);
+    }
+
 }

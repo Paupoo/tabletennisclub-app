@@ -329,7 +329,9 @@
                                                     {{ $tournament->name }}
                                                 </div>
                                                 <div class="text-sm text-right font-extralight">
-                                                    {{-- {{ $training->room->name }} --}}
+                                                    @foreach ($tournament->rooms as $room)
+                                                        {{ $room->name }} 
+                                                    @endforeach
                                                 </div>
                                             </div>
                                             <div class="flex flex-row justify-between">

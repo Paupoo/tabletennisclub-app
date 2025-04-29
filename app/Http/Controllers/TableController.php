@@ -47,6 +47,8 @@ class TableController extends Controller
         $validated = $request->validated();
         
         $table = Table::create($validated);
+        $room = Room::find($table->room_id);
+        $this->updateTablesCount($room);
 
         return redirect()->route('tables.index')->with('success', 'The table ' . $table->name . ' has been added.');
     }
@@ -84,6 +86,9 @@ class TableController extends Controller
         $table->fill($validated);
 
         $table->save();
+        
+        $room = Room::find($table->room_id);
+        $this->updateTablesCount($room);
 
         return redirect()->route('tables.index')->with('success', 'The table ' . $table->name . ' has been updated.');
     }
@@ -97,7 +102,20 @@ class TableController extends Controller
 
         $table->delete();
 
+        $room = Room::find($table->room_id);
+        $this->updateTablesCount($room);
+
         return redirect()->route('tables.index')->with('success', 'The table ' . $table->name . ' has been deleted.');
 
     }
+
+    public function updateTablesCount(Room $room): void
+    {
+        $total_tables = $room->tables()->count();
+        $total_playable_tables = $room->tables()->where('state', '!=', 'Unusable')->count();
+        $room->total_tables = $total_tables;
+        $room->total_playable_tables = $total_playable_tables;
+        $room->save();
+    }
+
 }

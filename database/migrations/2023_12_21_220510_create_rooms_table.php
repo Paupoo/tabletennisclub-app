@@ -23,6 +23,8 @@ return new class extends Migration
             $table->string('access_description', 255)->nullable();
             $table->unsignedTinyInteger('capacity_for_trainings');
             $table->unsignedTinyInteger('capacity_for_interclubs');
+            $table->integer('total_tables')->default(0);
+            $table->integer('total_playable_tables')->default(0);
             $table->timestamps();
         });
     }

@@ -43,6 +43,8 @@
                             <th scope="col" class="px-4 py-2">{{ __('Name') }}</th>
                             <th scope="col" class="px-4 py-2">{{ __('Building name') }}</th>
                             <th scope="col" class="px-4 py-2">{{ __('Address') }}</th>
+                            <th scope="col" class="px-4 py-2">{{ __('Total tables') }}</th>
+                            <th scope="col" class="px-4 py-2">{{ __('Total playable tables') }}</th>
                             <th scope="col" class="px-4 py-2">{{ __('Training capacity') }}</th>
                             <th scope="col" class="px-4 py-2">{{ __('Interclubs capacity') }}</th>
                             <th scope="col" class="px-4 py-2">{{ __('Access description') }}</th>
@@ -57,6 +59,8 @@
                                 <td class="px-4 whitespace-wrap">{{ $room->name }}</td>
                                 <td class="px-4 whitespace-wrap">{{ $room->building_name }}</td>
                                 <td class="px-4 whitespace-wrap">{{ $room->street . ', ' . $room->city_code . ' ' . $room->city_name }}</td>
+                                <td class="px-4 whitespace-wrap">{{ $room->total_tables }}</td>
+                                <td class="px-4 whitespace-wrap">{{ $room->total_playable_tables }}</td>
                                 <td class="px-4 whitespace-wrap">{{ $room->capacity_for_trainings }}</td>
                                 <td class="px-4 whitespace-wrap">{{ $room->capacity_for_interclubs }}</td>
                                 <td class="px-4 whitespace-wrap">{{ \Illuminate\Support\Str::of($room->access_description)->limit(100) }}</td>

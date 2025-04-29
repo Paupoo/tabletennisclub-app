@@ -25,7 +25,7 @@ class StoreOrUpdateTableRequest extends FormRequest
             'name' => [
                 'required',
                 'string',
-                'unique:tables,name,' . $this->id,
+                'unique:tables,name,' . $this->route()->table?->id,
             ],
             'purchased_on' => [
                 'nullable',

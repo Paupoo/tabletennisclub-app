@@ -214,7 +214,7 @@
                     <option value="0">{{ __('All') }}</option>
                 </x-select-input>
             </div>
-            <div class="bg-black">
+            <div class="ml-auto">
                 <h3 class="text-sm font-medium text-gray-700 mb-3">{{ __('Legend') }}</h3>
                 <div class="flex flex-wrap gap-4">
                     <div class="flex items-center">

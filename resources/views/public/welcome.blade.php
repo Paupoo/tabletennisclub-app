@@ -307,15 +307,7 @@
                                 {{-- {{ $tournament }} --}}
                                     <div
                                         class="flex flex-row items-start gap-2 p-2 mt-2 bg-gray-100 rounded-md hover:bg-gray-200">
-                                        <div
-                                            class="w-3 h-3 my-auto 
-                                        @if ($training->type == \App\Enums\TrainingType::DIRECTED->name) bg-red-800 ring-red-500 
-                                        @elseif ($training->type == \App\Enums\TrainingType::FREE->name) 
-                                        bg-green-600 ring-greend-500 
-                                        @elseif ($training->type == \App\Enums\TrainingType::SUPERVISED->name)
-                                        bg-yellow-600 ring-yellow-500 @endif
-                                        rounded-full shadow-xl ring-2 ring-opacity-50">
-                                        </div>
+                                        
                                         <div class="w-full">
                                             <div class="flex flex-row justify-between">
                                                 <div class="text-sm text-left font-base">

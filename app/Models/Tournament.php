@@ -33,6 +33,8 @@ class Tournament extends Model
         'status' => 'string',
         ];
 
+    /* Relations */
+
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class)
@@ -48,6 +50,20 @@ class Tournament extends Model
     public function rooms(): BelongsToMany
     {
         return $this->BelongsToMany(Room::class);
+    }
+
+    /** Scopes */
+
+    /**
+     * Scope search to search by last or first name
+     *
+     * @param [type] $query
+     * @param [type] $value
+     * @return void
+     */
+    public function scopeSearch($query, $value) {
+        $query->where('name', 'like', '%' . $value . '%')
+            ->orWhere('price', 'like', '%' . $value . '%');
     }
 
 }

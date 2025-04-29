@@ -15,7 +15,8 @@ return new class extends Migration
         Schema::create('tables', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->boolean('is_free');
+            $table->date('purchased_on')->nullable();
+            $table->string('state')->nullable(); // New, Used, Degraded, Unusable
             $table->foreignIdFor(Room::class)->nullable()->constrained()->nullOnDelete();
             $table->timestamps();
         });

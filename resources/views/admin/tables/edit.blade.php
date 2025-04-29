@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
-            {{ __('Edit a room') }}
+            {{ __('Edit a table') }}
         </h2>
     </x-slot>
 
@@ -10,8 +10,8 @@
             <form action="{{ route('dashboard') }}" method="GET">
                 <x-primary-button>{{ __('Dashboard') }}</x-primary-button>
             </form>
-            <form action="{{ route('rooms.index') }}" method="GET">
-                <x-primary-button>{{ __('Manage Rooms') }}</x-primary-button>
+            <form action="{{ route('tables.index') }}" method="GET">
+                <x-primary-button>{{ __('Manage Tables') }}</x-primary-button>
             </form>
         </div>
     </x-admin-block>
@@ -26,15 +26,15 @@
                 <div class="w-full p-6 text-gray-900 dark:text-gray-100 lg:w-1/2">
                     <header>
                         <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">
-                            {{ __('Edit \'' . $room->name) . '\'' }}
+                            {{ __('Edit \'' . $table->name) . '\'' }}
                         </h2>
 
                         <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                            {{ __("Rooms are used for trainings and for competition. Their addresses are also shown on the public website.") }}
+                            {{ __("Tables are used for trainings and for competition. Their addresses are also shown on the public website.") }}
                         </p>
                     </header>
 
-                    <x-forms.room :room="$room" />
+                    <x-forms.table :table="$table" :rooms="$rooms"/>
                 </div>
             </div>
         </div>

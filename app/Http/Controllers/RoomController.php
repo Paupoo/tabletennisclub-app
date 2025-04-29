@@ -17,7 +17,7 @@ class RoomController extends Controller
         $this->authorize('viewAny', Room::class);
 
         return view('admin.rooms.index', [
-            'rooms' => Room::all(),
+            'rooms' => Room::orderBy('name')->paginate(10),
         ]);
     }
 

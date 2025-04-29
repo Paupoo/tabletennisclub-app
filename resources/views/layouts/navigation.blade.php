@@ -32,6 +32,11 @@
                     </x-nav-link>
                 </div>
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                    <x-nav-link :href="route('tables.index')" :active="request()->routeIs('tables.index')">
+                        {{ __('Tables') }}
+                    </x-nav-link>
+                </div>
+                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                     <x-nav-link :href="route('trainings.index')" :active="request()->routeIs('trainings.index')">
                         {{ __('Trainings') }}
                     </x-nav-link>
@@ -111,6 +116,9 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('rooms.index')" :active="request()->routeIs('rooms.index')">
                 {{ __('Rooms') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('tables.index')" :active="request()->routeIs('tables.index')">
+                {{ __('Tables') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('welcome')" :active="request()->routeIs('welcome')">
                 {{ __('Trainings') }}

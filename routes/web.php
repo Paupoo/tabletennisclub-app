@@ -9,6 +9,7 @@ use App\Http\Controllers\RoomController;
 use App\Http\Controllers\TrainingController;
 use App\Http\Controllers\InterclubController;
 use App\Http\Controllers\KnockoutPhaseController;
+use App\Http\Controllers\TableController;
 use App\Http\Controllers\TestController;
 use App\Http\Controllers\TournamentController;
 use Illuminate\Support\Facades\Route;
@@ -56,15 +57,23 @@ Route::get('/admin/dashboard', function () {
 Route::resource('admin/roles', RoleController::class)->middleware(['auth', 'verified']);
 
 /**
- * Rooms managements
+ * Rooms management
  */
 Route::resource('/admin/rooms', RoomController::class)->middleware(['auth', 'verified']);
 
+/**
+ * Profile management
+ */
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+
+/**
+ * Tables management
+ */
+Route::resource('/admin/tables', TableController::class)->middleware(['auth', 'verified']);
 
 /**
  * Teams management

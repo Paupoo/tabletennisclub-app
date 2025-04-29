@@ -60,5 +60,8 @@ class Room extends Model
         return $this->belongsToMany(Tournament::class);
     }
 
-    
+    public function tables(): HasMany
+    {
+        return $this->hasMany(Table::class);
+    }
 }

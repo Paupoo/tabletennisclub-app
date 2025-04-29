@@ -16,7 +16,7 @@ class RoomController extends Controller
     {
         $this->authorize('viewAny', Room::class);
 
-        return view('admin/rooms/index', [
+        return view('admin.rooms.index', [
             'rooms' => Room::all(),
         ]);
     }
@@ -28,7 +28,7 @@ class RoomController extends Controller
     {
         $this->authorize('create', Room::class);
         $room = new Room();
-        return view('admin/rooms/create', [
+        return view('admin.rooms.create', [
             'room' => $room,
         ]);
     }
@@ -64,7 +64,7 @@ class RoomController extends Controller
 
         $this->authorize('create', Room::class);
 
-        return view('admin/rooms/edit', [
+        return view('admin.rooms.edit', [
             'room' => $room,
         ]);
     }

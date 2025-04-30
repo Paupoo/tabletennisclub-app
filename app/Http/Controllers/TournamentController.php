@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreOrUpdateTournamentRequest;
 use App\Models\Pool;
 use App\Models\Room;
+use App\Models\Table;
 use App\Models\Tournament;
 use App\Models\TournamentMatch;
 use App\Models\User;
@@ -377,12 +378,19 @@ class TournamentController extends Controller
             ->get();
         
         $standings = $this->matchService->calculatePoolStandings($pool);
+        $tournament = $pool->tournament;
+        $tables = $tournament->tables()
+                        ->whereNot('state','oos')
+                        ->where('is_table_free', true)
+                        ->orderBy('name')
+                        ->get();
         
         return view('admin.tournaments.pool-matches', [
             'pool' => $pool,
-            'tournament' => $pool->tournament,
+            'tournament' => $tournament,
             'matches' => $matches,
             'standings' => $standings,
+            'tables' => $tables,
         ]);
     }
 

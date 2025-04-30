@@ -166,9 +166,9 @@
                                                   </div>
                                                   
                                                   <select name="tableNumber" id="tableNumber" class="pl-3 pr-10 py-1 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md shadow-sm">
-                                                    @for ($i=0; $i<8; $i++)
-                                                      <option value="{{ $i+1 }}">{{ $i+1 }}</option>
-                                                    @endfor
+                                                    @foreach($tables as $table)
+                                                      <option value="{{ $table }}">{{ $table->name }}</option>
+                                                    @endforeach
                                                   </select>
                                                   
                                                   <button type="submit" class="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition">

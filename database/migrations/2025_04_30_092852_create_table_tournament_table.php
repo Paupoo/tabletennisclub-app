@@ -1,6 +1,7 @@
 <?php
 
-use App\Models\Room;
+use App\Models\Table;
+use App\Models\Tournament;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -12,12 +13,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tables', function (Blueprint $table) {
+        Schema::create('table_tournament', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->date('purchased_on')->nullable();
-            $table->string('state')->nullable(); // New, Used, Degraded, Out of Service
-            $table->foreignIdFor(Room::class)->nullable()->constrained()->nullOnDelete();
+            $table->foreignIdFor(Tournament::class);
+            $table->foreignIdFor(Table::class);
+            $table->boolean('is_table_free')->default(true);
+            $table->dateTime('match_started_at')->nullable()->default(null);
             $table->timestamps();
         });
     }
@@ -27,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('tables');
+        Schema::dropIfExists('table_tournament');
     }
 };

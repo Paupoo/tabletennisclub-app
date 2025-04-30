@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class Tournament extends Model
 {
@@ -50,6 +51,15 @@ class Tournament extends Model
     public function rooms(): BelongsToMany
     {
         return $this->BelongsToMany(Room::class);
+    }
+
+    public function tables(): BelongsToMany
+    {
+        return $this->belongsToMany(Table::class)
+            ->withPivot([
+                'is_table_free',
+                'match_started_at',
+            ]);
     }
 
     /** Scopes */

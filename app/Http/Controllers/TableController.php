@@ -112,7 +112,7 @@ class TableController extends Controller
     public function updateTablesCount(Room $room): void
     {
         $total_tables = $room->tables()->count();
-        $total_playable_tables = $room->tables()->where('state', '!=', 'Unusable')->count();
+        $total_playable_tables = $room->tables()->where('state', '!=', 'Out of Service')->count();
         $room->total_tables = $total_tables;
         $room->total_playable_tables = $total_playable_tables;
         $room->save();

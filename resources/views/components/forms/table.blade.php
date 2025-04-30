@@ -28,7 +28,7 @@
             <option value="New"></option>
             <option value="Used"></option>
             <option value="Degraded"></option>
-            <option value="Unusable"></option>
+            <option value="Out of Service"></option>
             <option value="Unknown"></option>
         </datalist>
         <x-input-error class="mt-2" :messages="$errors->get('state')" />

@@ -158,6 +158,7 @@ Route::middleware(['auth', 'verified'])
             // Routes pour les tournois
             Route::get('/tournaments', [TournamentController::class, 'index'])->name('tournamentsIndex');
             Route::post('/tournaments/create', [TournamentController::class, 'create'])->name('createTournament');
+            Route::put('/tournaments/{tournament}/update}', [TournamentController::class, 'update'])->name('updateTournament');
             Route::get('/tournament/{id}', [TournamentController::class, 'show'])->name('tournamentShow');
             Route::get('/tournament/{tournament}/delete', [TournamentController::class, 'destroy'])->name('deleteTournament');
             Route::patch('/tournament/{tournament}/statusUpdate', [TournamentController::class, 'changeStatus'])->name('tournamentSetStatus');

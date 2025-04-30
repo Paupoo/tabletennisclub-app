@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreOrUpdateTournamentRequest;
 use App\Models\Pool;
 use App\Models\Room;
 use App\Models\Tournament;
@@ -12,6 +13,7 @@ use App\Models\User;
 use App\Services\KnockoutPhaseService;
 use App\Services\TournamentMatchService;
 use App\Services\TournamentPoolService;
+use App\Services\TournamentTableService;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\RedirectResponse;
@@ -23,6 +25,7 @@ class TournamentController extends Controller
 {
     //
     public function __construct(
+        private TournamentTableService $tableService,
         private TournamentPoolService $poolService,
         private TournamentMatchService $matchService,
         private KnockoutPhaseService $knockoutService,
@@ -31,7 +34,8 @@ class TournamentController extends Controller
     public function index(): View
     {
         return view('admin.tournaments.index', [
-            'rooms' => Room::all(),
+            'rooms' => Room::orderBy('name')->get(),
+            'tournament' => new Tournament(),
         ]);
     }
 
@@ -47,37 +51,33 @@ class TournamentController extends Controller
         ]);
     }
 
-    public function create(Request $request): RedirectResponse
+    public function create(StoreOrUpdateTournamentRequest $request): RedirectResponse
     {
-        $tournament = Tournament::create([
-            'name' => $request->name,
-            'start_date' => $request->startDate,
-            'end_date' => $request->endDate,
-            'price' => $request->price,
-            // 'total_users' => // 0
-            'max_users' => $request->maxUsers,
-            // 'status' => , // draft, open, pending, closed
-        ]);
+        $validated = $request->validated();
+
+        $tournament = Tournament::create($validated);
 
         foreach($request->room_ids as $room_id) {
             $tournament->rooms()->attach($room_id);
         }
+
+        $this->tableService->linkAvailableTables($tournament);
 
         return redirect()
             ->route('tournamentsIndex')
             ->with('success', __('The tournament ' . $tournament->name . ' has been created.'));
     }
 
-    public function update(Tournament $tournament, Request $request): RedirectResponse
+    public function update(Tournament $tournament, StoreOrUpdateTournamentRequest $request): RedirectResponse
     {
-        $tournament->name = $request->name;
-        $tournament->start_date = $request->startDate;
-        $tournament->end_date = $request->endDate;
-        $tournament->total_users = $request->totalUsers;
-        $tournament->max_users = $request->maxUsers;
-        // $tournament->status = '' // draft, open, pending, closed
-        
-        $tournament->udpate();
+
+        $validated = $request->validated();
+        $tournament->update($validated);
+                
+        $tournament->rooms()->sync($validated['room_ids']);
+
+        $this->tableService->linkAvailableTables($tournament);
+
 
         return redirect()
             ->route('tournamentsIndex')
@@ -265,6 +265,7 @@ class TournamentController extends Controller
     {
         return view('admin.tournaments.setup', [
             'tournament' => $tournament->load(['pools.users']),
+            'rooms' => Room::orderBy('name')->get(),
         ]);
     }
 

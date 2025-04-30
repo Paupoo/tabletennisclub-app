@@ -24,7 +24,6 @@ return new class extends Migration
             $table->integer('sets_won')->default(0);
             $table->integer('points_won')->default(0);
             $table->timestamps();
-
             $table->unique(['user_id', 'tournament_id', 'pool_id']);
         });
     }

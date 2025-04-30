@@ -11,6 +11,7 @@ use Illuminate\Support\Collection;
 
 class TournamentPoolService
 {
+
     /**
      * Répartit les joueurs inscrits à un tournoi dans des pools
      *

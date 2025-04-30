@@ -89,8 +89,8 @@ class TournamentController extends Controller
         $tournament->delete();
 
         return redirect()
-            ->route('tournamentsIndex');
-            // ->with('success', __('The tournament ' . $tournament->name . ' has been deleted.'));
+            ->route('tournamentsIndex')
+            ->with('success', __('The tournament ' . $tournament->name . ' has been deleted.'));
     }
 
     public function changeStatus(Tournament $tournament, Request $request):RedirectResponse

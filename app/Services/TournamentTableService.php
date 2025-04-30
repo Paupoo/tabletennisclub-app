@@ -19,9 +19,11 @@ class TournamentTableService
      */
     public function linkAvailableTables(Tournament $tournament)
     {
+        $tournament->tables()->sync([]);
+        
         foreach($tournament->rooms as $room){
             foreach($room->tables as $table){
-                if($table->state !== 'Out of Service'){
+                if($table->state !== 'oos'){
                     $tournament->tables()->attach($table);
                 }
             }

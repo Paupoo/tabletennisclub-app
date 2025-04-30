@@ -58,8 +58,10 @@ class Tournament extends Model
         return $this->belongsToMany(Table::class)
             ->withPivot([
                 'is_table_free',
+                'tournament_match_id',
                 'match_started_at',
-            ]);
+            ])
+            ->withTimestamps();
     }
 
     /** Scopes */

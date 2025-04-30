@@ -188,7 +188,7 @@ Route::middleware(['auth', 'verified'])
                 ->name('showPoolMatches');
             Route::get('/matches/{match}/edit', [TournamentController::class, 'editMatch'])
                 ->name('editMatch');
-            Route::get('/matches/{match}/start', [TournamentController::class, 'startMatch'])
+            Route::post('/matches/{match}/start', [TournamentController::class, 'startMatch'])
                 ->name('startMatch');
             Route::put('/matches/{match}', [TournamentController::class, 'updateMatch'])
                 ->name('updateMatch');
@@ -198,7 +198,7 @@ Route::middleware(['auth', 'verified'])
             // Routes pour les tables
             Route::get('/admin/tables-overview', function () {
                 return view('tables.overview');
-            });
+            })->name('tables-overview');
             
             // Routes pour la phase finale
             Route::get('/admin/tournaments/{tournament}/knockout/setup', [KnockoutPhaseController::class, 'setup'])

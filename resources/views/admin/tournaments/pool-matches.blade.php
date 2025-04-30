@@ -155,31 +155,36 @@
                                                         Réinitialiser
                                                     </button>
                                                 </form>
+                                            @elseif($tables->count() == 0)
+                                            <a href="{{ route('tables-overview') }}"><p class="text-gray-600">{{ __('All the tables are currently used') }}</p></a>
                                             @else
                                             <div class="flex items-center p-2 bg-gray-50 rounded-lg shadow-sm hover:bg-gray-100 transition">
-                                                <form action="{{ route('startMatch', $match) }}" method="GET" class="flex w-full items-center space-x-2">
+                                                <form action="{{ route('startMatch', $match) }}" method="POST" class="flex w-full items-center space-x-2">
+                                                    @csrf
                                                   <div class="flex items-center space-x-2">
                                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-500" viewBox="0 0 20 20" fill="currentColor">
                                                       <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd" />
                                                     </svg>
-                                                    <label for="tableNumber" class="text-sm font-medium text-gray-700">Table</label>
+                                                    <label for="table_id" class="text-sm font-medium text-gray-700">Table</label>
                                                   </div>
                                                   
-                                                  <select name="tableNumber" id="tableNumber" class="pl-3 pr-10 py-1 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md shadow-sm">
-                                                    @foreach($tables as $table)
-                                                      <option value="{{ $table }}">{{ $table->name }}</option>
-                                                    @endforeach
-                                                  </select>
-                                                  
-                                                  <button type="submit" class="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition">
-                                                    <span>Démarrer</span>
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="ml-1 h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                                      <path fill-rule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                                    </svg>
-                                                  </button>
+                                                  <select name="table_id" id="table_id" class="pl-3 pr-10 py-1 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md shadow-sm">
+                                                      <option selected value="" disabled>{{ __('Select a table') }}</option>
+                                                      @foreach($tables as $table)
+                                                      <option value="{{ $table->id }}">{{ $table->name }} ==> {{ $table->room->name }}</option>
+                                                      @endforeach
+                                                    </select>
+                                                    
+                                                    <button type="submit" class="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition">
+                                                        <span>Démarrer</span>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="ml-1 h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                                            <path fill-rule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                                        </svg>
+                                                    </button>
                                                 </form>
-                                              </div>
+                                            </div>
                                             @endif
+                                            <x-input-error class="mt-2" :messages="$errors->get('table')" />
                                         </td>
                                     </tr>
                                 @endforeach

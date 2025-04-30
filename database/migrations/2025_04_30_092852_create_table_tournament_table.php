@@ -2,6 +2,7 @@
 
 use App\Models\Table;
 use App\Models\Tournament;
+use App\Models\TournamentMatch;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -15,8 +16,9 @@ return new class extends Migration
     {
         Schema::create('table_tournament', function (Blueprint $table) {
             $table->id();
-            $table->foreignIdFor(Tournament::class);
-            $table->foreignIdFor(Table::class);
+            $table->foreignIdFor(Tournament::class)->nullable()->constrained()->nullOnDelete();
+            $table->foreignIdFor(Table::class)->nullable()->constrained()->nullOnDelete();
+            $table->foreignIdFor(TournamentMatch::class)->nullable();
             $table->boolean('is_table_free')->default(true);
             $table->dateTime('match_started_at')->nullable()->default(null);
             $table->timestamps();

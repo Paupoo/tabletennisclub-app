@@ -328,6 +328,7 @@ class DatabaseSeeder extends Seeder
         $this->tournament->total_users = 24;
         $this->tournament->start_date = Carbon::createFromDate('06-04-2025 10:00:00');
         $this->tournament->save();
+        $this->tournament->rooms()->sync([1,2]);
 
         for ($i=1; $i < 25; $i++){
             $user = User::find($i);

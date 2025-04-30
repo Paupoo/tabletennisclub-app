@@ -34,4 +34,9 @@ class Table extends Model
                 'match_started_at',
             ]);
     }
+
+    public function tournamentMatches(): BelongsToMany
+    {
+        return $this->belongsToMany(TournamentMatch::class);
+    }
 }

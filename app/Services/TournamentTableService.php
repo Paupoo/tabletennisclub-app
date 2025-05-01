@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Models\Tournament;
 use App\Models\Pool;
+use App\Models\Room;
 use Exception;
 use Illuminate\Support\Collection;
 
@@ -28,5 +29,14 @@ class TournamentTableService
                 }
             }
         }
+    }
+
+    public function updateTablesCount(Room $room): void
+    {
+        $total_tables = $room->tables()->count();
+        $total_playable_tables = $room->tables()->where('state', '!=', 'oos')->count();
+        $room->total_tables = $total_tables;
+        $room->total_playable_tables = $total_playable_tables;
+        $room->save();
     }
 }

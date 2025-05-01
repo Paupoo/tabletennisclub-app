@@ -13,10 +13,12 @@ use App\Models\Club;
 use App\Models\League;
 use App\Models\Room;
 use App\Models\Season;
+use App\Models\Table;
 use App\Models\Team;
 use App\Models\Tournament;
 use App\Models\User;
 use App\Services\ForceList;
+use App\Services\TournamentTableService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -24,13 +26,12 @@ use Illuminate\Support\Str;
 class DatabaseSeeder extends Seeder
 {
 
-    protected $forceList = null;
     private Tournament $tournament;
 
-    public function __construct(ForceList $forceList)
-    {
-        $this->forceList = $forceList;
-    }
+    public function __construct(
+        private ForceList $forceList,
+        private TournamentTableService $tableService
+        ){}
 
     /**
      * Seed the application's database.
@@ -303,6 +304,20 @@ class DatabaseSeeder extends Seeder
             'capacity_for_trainings' => 12,
             'capacity_for_interclubs' => 0,
         ])->clubs()->attach(1);
+
+        for($i=0; $i<15; $i++){
+            Table::create([
+                'name' => $i+1,
+                'purchased_on' => fake()->dateTimeBetween('-10 years', '-1 year'),
+                'state' => 'used',
+                'room_id' => Room::inRandomOrder()->first()->id,
+            ]);
+        }
+
+        $rooms = Room::all();
+        foreach($rooms as $room) {
+            $this->tableService->updateTablesCount($room);
+        }    
 
         User::factory()
             ->count(50)

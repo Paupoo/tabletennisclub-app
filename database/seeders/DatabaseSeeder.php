@@ -18,6 +18,8 @@ use App\Models\Team;
 use App\Models\Tournament;
 use App\Models\User;
 use App\Services\ForceList;
+use App\Services\TournamentMatchService;
+use App\Services\TournamentPoolService;
 use App\Services\TournamentTableService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Hash;
@@ -30,7 +32,9 @@ class DatabaseSeeder extends Seeder
 
     public function __construct(
         private ForceList $forceList,
-        private TournamentTableService $tableService
+        private TournamentTableService $tableService,
+        private TournamentPoolService $poolService,
+        private TournamentMatchService $matchService,
         ){}
 
     /**
@@ -327,12 +331,14 @@ class DatabaseSeeder extends Seeder
         Tournament::factory(3)->create();
         $this->tournament = Tournament::find(1);
         $this->tournament->name = 'Tournoi des crêpes';
-        $this->tournament->start_date = Carbon::createFromDate('16-10-2024 10:00:00');
+        $this->tournament->start_date = fake()->dateTimeBetween('+5 days', '+25 days');
+        $this->tournament->end_date = Carbon::parse($this->tournament->start_date)->addHour(8);
         $this->tournament->save();
 
         $this->tournament = Tournament::find(2);
         $this->tournament->name = 'Vieux tournoi';
-        $this->tournament->start_date = Carbon::createFromDate('09-11-2018 11:00:00');
+        $this->tournament->start_date = fake()->dateTimeBetween('+5 days', '+25 days');
+        $this->tournament->end_date = Carbon::parse($this->tournament->start_date)->addHour(8);
         $this->tournament->save();
 
 
@@ -341,13 +347,27 @@ class DatabaseSeeder extends Seeder
         $this->tournament->name = 'Tournoi de doubles';
         $this->tournament->max_users = 24;
         $this->tournament->total_users = 24;
-        $this->tournament->start_date = Carbon::createFromDate('06-04-2025 10:00:00');
+        $this->tournament->start_date = fake()->dateTimeBetween('+5 days', '+25 days');
+        $this->tournament->end_date = Carbon::parse($this->tournament->start_date)->addHour(8);
         $this->tournament->save();
         $this->tournament->rooms()->sync([1,2]);
+
+        // Link tables
+        $this->tableService->linkAvailableTables($this->tournament);
+        
+        // Add users
 
         for ($i=1; $i < 25; $i++){
             $user = User::find($i);
             $this->tournament->users()->attach($user);
+        }
+
+        // Generate pools
+        $this->poolService->distributePlayersInPools($this->tournament, 6);
+
+        // Generate matches
+        foreach($this->tournament->pools as $pool){
+            $this->matchService->generateMatches($pool);
         }
     }
 }

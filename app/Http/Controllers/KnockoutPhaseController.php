@@ -5,14 +5,14 @@ namespace App\Http\Controllers;
 use App\Models\Tournament;
 use App\Models\MatchSet;
 use App\Models\TournamentMatch;
-use App\Services\KnockoutPhaseService;
+use App\Services\TournamentFinalPhaseService;
 use Illuminate\Http\Request;
 
 class KnockoutPhaseController extends Controller
 {
     protected $knockoutService;
     
-    public function __construct(KnockoutPhaseService $knockoutService)
+    public function __construct(TournamentFinalPhaseService $knockoutService)
     {
         $this->knockoutService = $knockoutService;
     }

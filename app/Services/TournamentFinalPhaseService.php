@@ -4,16 +4,15 @@ namespace App\Services;
 
 use App\Models\Tournament;
 use App\Models\TournamentMatch;
+use Exception;
 use Illuminate\Support\Collection;
 
-class KnockoutPhaseService
-{
-    protected $tournamentMatchService;
-    
-    public function __construct(TournamentMatchService $tournamentMatchService)
-    {
-        $this->tournamentMatchService = $tournamentMatchService;
-    }
+class TournamentFinalPhaseService
+{    
+    public function __construct(
+        private TournamentMatchService $tournamentMatchService,
+        private TournamentPoolService $tournamentPoolService,
+        ) {}
     
     /**
      * Configure knockout phase
@@ -24,6 +23,18 @@ class KnockoutPhaseService
      */
     public function configureKnockoutPhase(Tournament $tournament, string $startingRound): bool
     {
+        // Only allow if all pools are closed.
+        $result = true;
+        foreach($tournament->pools as $pool){
+            if($this->tournamentPoolService->isPoolFinished($pool) === false) {
+                $result = false;
+            }
+        }
+
+        if($result === false) {
+            throw new Exception(__('At least one pool is still open. Please encode all matches first'));
+        }
+
         // Delete existing knockout matches if any
         TournamentMatch::where('tournament_id', $tournament->id)->delete();
         

@@ -106,4 +106,17 @@ class TournamentPoolService
 
            }
     }
+
+    public function isPoolFinished(Pool $pool): bool
+    {
+        $result = true;
+
+        foreach($pool->tournamentmatches as $match){
+            if($match->status !== 'completed'){
+                $result = false;
+            } 
+        }
+
+        return $result;
+    }
 }

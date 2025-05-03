@@ -12,7 +12,7 @@ use App\Models\Table;
 use App\Models\Tournament;
 use App\Models\TournamentMatch;
 use App\Models\User;
-use App\Services\KnockoutPhaseService;
+use App\Services\TournamentFinalPhaseService;
 use App\Services\TournamentMatchService;
 use App\Services\TournamentPoolService;
 use App\Services\TournamentTableService;
@@ -30,7 +30,7 @@ class TournamentController extends Controller
         private TournamentTableService $tableService,
         private TournamentPoolService $poolService,
         private TournamentMatchService $matchService,
-        private KnockoutPhaseService $knockoutService,
+        private TournamentFinalPhaseService $knockoutService,
         ) {}
 
     public function index(): View
@@ -375,6 +375,7 @@ class TournamentController extends Controller
      */
     public function showPoolMatches(Pool $pool): View
     {
+        dump($this->poolService->isPoolFinished($pool));
         $matches = TournamentMatch::where('pool_id', $pool->id)
             ->orderBy('match_order')
             ->get();

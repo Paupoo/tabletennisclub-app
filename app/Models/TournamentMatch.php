@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class TournamentMatch extends Model
@@ -75,9 +76,9 @@ class TournamentMatch extends Model
      /**
      * Get the table for this match
      */
-    public function table(): HasOne
+    public function table(): BelongsToMany
     {
-        return $this->hasOne(Table::class);
+        return $this->belongsToMany(Table::class, 'table_tournament');
     }
 
     /**

@@ -131,16 +131,11 @@ class TableController extends Controller
                     'is_table_free',
                     'match_started_at',
                 ])
+                ->with('match.player1', 'match.player2')
                 ->orderBy('is_table_free')
                 ->orderBy('match_started_at')
                 ->orderByRaw('name * 1 ASC')
                 ->get(),
-            'matches' => TournamentMatch::where('tournament_id', $tournament->id)
-                                        ->with([
-                                            'player1',
-                                            'player2'
-                                        ])
-                                        ->get(),
-        ]);
+        ]); 
     }
 }

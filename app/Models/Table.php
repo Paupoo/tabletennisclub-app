@@ -38,8 +38,8 @@ class Table extends Model
             ->withTimestamps();
     }
 
-    public function tournamentMatches(): BelongsToMany
+    public function match(): BelongsToMany
     {
-        return $this->belongsToMany(TournamentMatch::class);
+        return $this->belongsToMany(TournamentMatch::class, 'table_tournament');
     }
 }

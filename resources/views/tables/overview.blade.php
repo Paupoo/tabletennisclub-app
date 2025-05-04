@@ -32,33 +32,41 @@
               {{ $table->name }}
             </div>
             <div class="flex flex-col">
-              <span class="text-green-700 font-semibold text-lg">Disponible</span>
+              <span class="text-green-700 font-semibold text-lg">{{ __('Free') }}</span>
               {{-- <span class="text-green-600 text-sm">Libre depuis {{ round($table->pivot->match_ended_at->diffInMinutes(now())) }} min</span> --}}
             </div>
           </div>
           
           <div class="mt-4 flex justify-end">
             <button class="px-3 py-1 bg-green-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              Réserver
+              {{ __('Book') }}
             </button>
           </div>
         </div>
         @else
+
+        {{-- Duration --}}
+        @php
+                  $expected_match_duration = 20;
+                  $duration = round($table->pivot->match_started_at->diffInMinutes(now()));
+                  $percent = min(100, $duration / $expected_match_duration * 100);
+        @endphp
+
         <!-- Table 2 - Occupée -->
-        <div class="group relative rounded-xl border border-red-400 bg-gradient-to-br from-red-50 to-red-100 p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+        <div class="group relative rounded-xl border border-{{ $percent < 100 ? 'gray' : 'red'}}-400 bg-gradient-to-br from-{{ $percent < 100 ? 'gray' : 'red'}}-50 to-{{ $percent < 100 ? 'gray' : 'red'}}-100 p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
           <div class="absolute top-3 right-3">
             <span class="flex h-3 w-3">
-              <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+              <span class="relative inline-flex rounded-full h-3 w-3 bg-{{ $percent < 100 ? 'gray' : 'red'}}-500"></span>
             </span>
           </div>
           
           <div class="flex items-center space-x-4">
-            <div class="flex items-center justify-center w-12 h-12 rounded-full bg-red-500 text-white font-bold text-xl shadow-inner">
+            <div class="flex items-center justify-center w-12 h-12 rounded-full bg-{{ $percent < 100 ? 'gray' : 'red'}}-500 text-white font-bold text-xl shadow-inner">
               {{ $table->name }}
             </div>
             <div class="flex flex-col">
-              <span class="text-red-700 font-semibold text-lg">Occupée</span>
-              <span class="text-red-600 text-sm">Depuis {{ round($table->pivot->match_started_at->diffInMinutes(now())) }} min</span>
+              <span class="text-{{ $percent < 100 ? 'gray' : 'red'}}-700 font-semibold text-lg">Occupée</span>
+              <span class="text-{{ $percent < 100 ? 'gray' : 'red'}}-600 text-sm">Depuis {{ $duration }} min</span>
             </div>
           </div>
           
@@ -68,35 +76,33 @@
                 <svg class="w-4 h-4 text-gray-600 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
                 </svg>
-                @foreach ($matches as $match)
-                  @if($match->table_id === $table->id)
+                @php
+                    $match = $table->match->first();
+                @endphp
                   <span class="text-gray-800 font-medium text-sm">{{ $match->player1->first_name}} {{ $match->player1->last_name}}</span>
-                  @endif
-                @endforeach
               </div>
               <span class="text-gray-500 text-xs">VS</span>
               <div class="flex items-center">
-                @foreach ($matches as $match)
-                @if($match->table_id === $table->id)
                 <span class="text-gray-800 font-medium text-sm">{{ $match->player2->first_name}} {{ $match->player2->last_name}}</span>
-                @endif
-              @endforeach                <svg class="w-4 h-4 text-gray-600 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <svg class="w-4 h-4 text-gray-600 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
                 </svg>
               </div>
             </div>
             <div class="flex justify-center items-center mt-2">
               <div class="w-full bg-gray-200 rounded-full h-2">
-                <div class="bg-red-500 h-2 rounded-full" style="width: 45%"></div>
+                <div class="bg-{{ $percent < 100 ? 'gray' : 'red'}}-500 h-2 rounded-full" style="width: {{ $percent }}%"></div>
               </div>
+            </div>
+            <div class="mt-4 flex justify-end">
+                <a href="{{ route('editMatch', $match) }}">
+                  <button type="submit" class="px-3 py-1 bg-blue-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    {{ __('Encode results') }}
+                  </button>
+                </a>
             </div>
           </div>
           
-          <div class="mt-4 flex justify-end">
-            <button class="px-3 py-1 bg-blue-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              Détails
-            </button>
-          </div>
         </div>
         @endif
         @endforeach

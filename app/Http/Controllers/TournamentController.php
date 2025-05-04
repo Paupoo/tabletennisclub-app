@@ -513,8 +513,7 @@ class TournamentController extends Controller
         $table = $tournament->tables()->wherePivot('tournament_match_id', $match->id)->first()  ;
         $tournament->tables()->updateExistingPivot($table->id, [
             'is_table_free' => true,
-            'tournament_match_id' => null,
-            'match_started_at' => null,
+            'match_ended_at' => now(),
         ]);
         
         // Editing a match from pool or from final bracket?
@@ -557,15 +556,15 @@ class TournamentController extends Controller
 
     public function bookTableForMatch(Table $table, Tournament $tournament, TournamentMatch $match): void
     {
-        $relation = $table->tournaments()
-        ->wherePivot('tournament_id', $tournament->id)
-        ->wherePivotNull('tournament_match_id') // Vérifie que la table est libre
-        // ->wherePivot('is_table_free', false)
-        ->first();
+        // $relation = $table->tournaments()
+        // ->wherePivot('tournament_id', $tournament->id)
+        // ->wherePivotNull('tournament_match_id') // Vérifie que la table est libre
+        // // ->wherePivot('is_table_free', false)
+        // ->first();
 
-        if (! $relation) {
-            throw new \RuntimeException('Table déjà assignée à un match dans ce tournoi.');
-        }
+        // if (! $relation) {
+        //     throw new \RuntimeException('Table déjà assignée à un match dans ce tournoi.');
+        // }
         
         $table->tournaments()
             ->updateExistingPivot($tournament->id, [
@@ -573,6 +572,9 @@ class TournamentController extends Controller
                 'tournament_match_id' => $match->id,
                 'match_started_at' => now(),
             ]);
+        
+        $match->table_id = $table->id;
+        $match->save();
     }
 
     /**

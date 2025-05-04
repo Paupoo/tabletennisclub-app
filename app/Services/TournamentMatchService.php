@@ -56,6 +56,7 @@ class TournamentMatchService
                 
                 $matches[] = [
                     'pool_id' => $pool->id,
+                    'tournament_id' => $pool->tournament->id,
                     'player1_id' => $players[$home]['id'],
                     'player2_id' => $players[$away]['id'],
                     'status' => 'scheduled',

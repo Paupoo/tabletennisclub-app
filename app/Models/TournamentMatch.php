@@ -14,6 +14,7 @@ class TournamentMatch extends Model
 
     protected $fillable = [
         'pool_id',
+        'table_id',
         'player1_id',
         'player2_id',
         'winner_id',

@@ -21,6 +21,7 @@ return new class extends Migration
             $table->foreignIdFor(TournamentMatch::class)->nullable();
             $table->boolean('is_table_free')->default(true);
             $table->dateTime('match_started_at')->nullable()->default(null);
+            $table->dateTime('match_ended_at')->nullable()->default(null);
             $table->timestamps();
         });
     }

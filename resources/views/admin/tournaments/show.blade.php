@@ -14,6 +14,10 @@
                             class="inline-block px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition duration-200 text-center">
                             Configurer le tournoi
                         </a>
+                        <a href="{{ route('tablesOverview', $tournament) }}"
+                            class="inline-block px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition duration-200 text-center">
+                            Consulter les tables
+                        </a>
                         <a href="{{ route('knockoutBracket', $tournament) }}"
                             class="inline-block px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition duration-200 text-center">
                             Phase finale (show)

@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreOrUpdateTableRequest;
 use App\Models\Room;
 use App\Models\Table;
+use App\Models\Tournament;
+use App\Models\TournamentMatch;
 use App\Services\TournamentTableService;
 use Illuminate\Http\Request;
 
@@ -117,4 +119,28 @@ class TableController extends Controller
 
     }
 
+    /**
+     *  Show tables and their current status for a given tournament
+     */
+    public function tableOverview(Tournament $tournament)
+    {
+        return view('tables.overview', [
+            'tables' => $tournament
+                ->tables()
+                ->withPivot([
+                    'is_table_free',
+                    'match_started_at',
+                ])
+                ->orderBy('is_table_free')
+                ->orderBy('match_started_at')
+                ->orderByRaw('name * 1 ASC')
+                ->get(),
+            'matches' => TournamentMatch::where('tournament_id', $tournament->id)
+                                        ->with([
+                                            'player1',
+                                            'player2'
+                                        ])
+                                        ->get(),
+        ]);
+    }
 }

@@ -61,7 +61,9 @@ class Tournament extends Model
                 'tournament_match_id',
                 'match_started_at',
             ])
+            ->using(TableTournament::class)
             ->withTimestamps();
+            
     }
 
     /** Scopes */

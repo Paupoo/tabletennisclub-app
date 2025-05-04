@@ -196,9 +196,8 @@ Route::middleware(['auth', 'verified'])
                 ->name('resetMatch');
             
             // Routes pour les tables
-            Route::get('/admin/tables-overview', function () {
-                return view('tables.overview');
-            })->name('tables-overview');
+            Route::get('/admin/tournament/{tournament}/tables-overview', [TableController::class, 'tableOverview'])
+                ->name('tablesOverview');
             
             // Routes pour la phase finale
             Route::get('/admin/tournaments/{tournament}/knockout/setup', [KnockoutPhaseController::class, 'setup'])

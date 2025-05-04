@@ -32,7 +32,9 @@ class Table extends Model
             ->withPivot([
                 'is_table_free',
                 'match_started_at',
-            ]);
+            ])
+            ->using(TableTournament::class)
+            ->withTimestamps();
     }
 
     public function tournamentMatches(): BelongsToMany

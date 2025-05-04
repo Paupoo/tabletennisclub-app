@@ -44,7 +44,6 @@ class TournamentController extends Controller
     public function show(string $id): View
     {
         $tournament = Tournament::findorFail($id);
-        $this->tableService->linkAvailableTables($tournament);
 
         $unregisteredUsers = User::unregisteredUsers($tournament)->get();
 
@@ -73,7 +72,9 @@ class TournamentController extends Controller
 
     public function update(Tournament $tournament, StoreOrUpdateTournamentRequest $request): RedirectResponse
     {
-
+        $this->authorize('update', [
+            $tournament,
+        ]);
         $validated = $request->validated();
         $tournament->update($validated);
                 
@@ -84,7 +85,7 @@ class TournamentController extends Controller
 
         return redirect()
             ->route('tournamentsIndex')
-            ->with('success', __('The tournament ' . $tournament->name . ' has been created.'));
+            ->with('success', __('The tournament ' . $tournament->name . ' has been updated.'));
     }
 
     public function destroy(Tournament $tournament): RedirectResponse
@@ -383,7 +384,7 @@ class TournamentController extends Controller
         $tournament = $pool->tournament;
         $tables = $tournament->tables()
                         ->wherePivot('is_table_free', true)
-                        ->orderBy('name')
+                        ->orderByRaw('name * 1 ASC')
                         ->get();
         
         return view('admin.tournaments.pool-matches', [
@@ -543,6 +544,7 @@ class TournamentController extends Controller
      */
     public function startMatch(TournamentMatch $match, StartTournamentMatch $request): RedirectResponse
     {
+        // TODO : check that none of the players are currently busy playing a match or being a referee
         $table = Table::find($request->table_id);
         $tournament = $match->pool->tournament;
         $this->bookTableForMatch($table, $tournament, $match);

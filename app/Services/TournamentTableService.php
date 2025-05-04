@@ -18,17 +18,19 @@ class TournamentTableService
      * @param Tournament $tournament Le tournoi concerné
      * @return array Les pools créées avec leurs joueurs
      */
-    public function linkAvailableTables(Tournament $tournament)
+    public function linkAvailableTables(Tournament $tournament): void
     {
-        $tournament->tables()->sync([]);
+        $tablesToSync = []; // Collect tables to keep or add to the tournament
         
         foreach($tournament->rooms as $room){
             foreach($room->tables as $table){
                 if($table->state !== 'oos'){
-                    $tournament->tables()->attach($table);
+                    $tablesToSync[] = $table->id;
                 }
             }
         }
+
+        $tournament->tables()->sync($tablesToSync);
     }
 
     public function updateTablesCount(Room $room): void

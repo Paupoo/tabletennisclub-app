@@ -107,16 +107,20 @@ class TournamentPoolService
            }
     }
 
+    public function hasPoolMatches(Pool $pool): bool
+    {
+        $total_matches = $pool->tournamentmatches()->count();
+
+        return ($total_matches > 0);
+    }
+
     public function isPoolFinished(Pool $pool): bool
     {
         $result = true;
 
-        foreach($pool->tournamentmatches as $match){
-            if($match->status !== 'completed'){
-                $result = false;
-            } 
-        }
+        $total_matches = $pool->tournamentmatches()->count();
+        $totalMatchesCompleted = $pool->tournamentmatches()->where('status', 'completed')->count();
 
-        return $result;
+        return ($total_matches === $totalMatchesCompleted);
     }
 }

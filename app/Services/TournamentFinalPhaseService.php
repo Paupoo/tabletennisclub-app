@@ -23,15 +23,11 @@ class TournamentFinalPhaseService
      */
     public function configureKnockoutPhase(Tournament $tournament, string $startingRound): bool
     {
-        // Only allow if all pools are closed.
-        $result = true;
-        foreach($tournament->pools as $pool){
-            if($this->tournamentPoolService->isPoolFinished($pool) === false) {
-                $result = false;
-            }
+        if($this->checkIfAllPoolsContainsMatches($tournament) === false){
+            throw new Exception(__('Pool found without match.'));
         }
-
-        if($result === false) {
+        
+        if($this->checkIfAllPoolsAreFinished($tournament) === false){
             throw new Exception(__('At least one pool is still open. Please encode all matches first'));
         }
 
@@ -42,6 +38,30 @@ class TournamentFinalPhaseService
         $qualifiedPlayers = $this->getQualifiedPlayers($tournament, $startingRound);
         // Create bracket structure
         return $this->createBracket($tournament, $qualifiedPlayers, $startingRound);
+    }
+
+    public function checkIfAllPoolsContainsMatches(Tournament $tournament): bool
+    {
+        $result = true;
+        foreach($tournament->pools as $pool){
+            if($pool->tournamentMatches->count() === 0){
+                $result = false;
+            }
+        }
+
+        return $result;
+    }
+
+    public function checkIfAllPoolsAreFinished(Tournament $tournament): bool
+    {
+        $result = true;
+        foreach($tournament->pools as $pool){
+            if($this->tournamentPoolService->isPoolFinished($pool) === false) {
+                $result = false;
+            }
+        }
+
+        return $result;
     }
     
     /**

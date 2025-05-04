@@ -331,14 +331,11 @@ class DatabaseSeeder extends Seeder
         Tournament::factory(3)->create();
         $this->tournament = Tournament::find(1);
         $this->tournament->name = 'Tournoi des crêpes';
-        $this->tournament->start_date = fake()->dateTimeBetween('+5 days', '+25 days');
-        $this->tournament->end_date = Carbon::parse($this->tournament->start_date)->addHour(8);
+        
         $this->tournament->save();
 
         $this->tournament = Tournament::find(2);
         $this->tournament->name = 'Vieux tournoi';
-        $this->tournament->start_date = fake()->dateTimeBetween('+5 days', '+25 days');
-        $this->tournament->end_date = Carbon::parse($this->tournament->start_date)->addHour(8);
         $this->tournament->save();
 
 
@@ -347,8 +344,6 @@ class DatabaseSeeder extends Seeder
         $this->tournament->name = 'Tournoi de doubles';
         $this->tournament->max_users = 24;
         $this->tournament->total_users = 24;
-        $this->tournament->start_date = fake()->dateTimeBetween('+5 days', '+25 days');
-        $this->tournament->end_date = Carbon::parse($this->tournament->start_date)->addHour(8);
         $this->tournament->save();
         $this->tournament->rooms()->sync([1,2]);
 

@@ -375,7 +375,6 @@ class TournamentController extends Controller
      */
     public function showPoolMatches(Pool $pool): View
     {
-        dump($this->poolService->isPoolFinished($pool));
         $matches = TournamentMatch::where('pool_id', $pool->id)
             ->orderBy('match_order')
             ->get();
@@ -425,6 +424,7 @@ class TournamentController extends Controller
      */
     public function updateMatch(Request $request, TournamentMatch $match): RedirectResponse
     {
+
         $rules = [
             'sets' => 'required|array|min:3|max:5',
         ];
@@ -508,6 +508,14 @@ class TournamentController extends Controller
 
         // Record results - ne garder que les sets avec des résultats
         $match->recordResult($setsWithResults);
+
+        $tournament = $match->pool->tournament()->first();
+        $table = $tournament->tables()->wherePivot('tournament_match_id', $match->id)->first()  ;
+        $tournament->tables()->updateExistingPivot($table->id, [
+            'is_table_free' => true,
+            'tournament_match_id' => null,
+            'match_started_at' => null,
+        ]);
         
         // Editing a match from pool or from final bracket?
         if(isset($match->pool->tournament)){
@@ -525,6 +533,7 @@ class TournamentController extends Controller
                 ->route('knockoutBracket', $match->tournament_id)
                 ->with('success', 'Résultats du match enregistrés avec succès');
         }
+
     }
 
     /**

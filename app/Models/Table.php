@@ -31,6 +31,7 @@ class Table extends Model
         return $this->belongsToMany(Tournament::class)
             ->withPivot([
                 'is_table_free',
+                'tournament_match_id',
                 'match_started_at',
             ])
             ->using(TableTournament::class)

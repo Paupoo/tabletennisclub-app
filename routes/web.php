@@ -164,8 +164,8 @@ Route::middleware(['auth', 'verified'])
             Route::patch('/admin/tournament/{tournament}/statusUpdate', [TournamentController::class, 'changeStatus'])->name('tournamentSetStatus');
             Route::get('/admin/tournament/{tournament}/draft', [TournamentController::class, 'unpublish'])->name('unpublishTournament');
             Route::get('/admin/tournament/{tournament}/publish', [TournamentController::class, 'publish'])->name('publishTournament');
-            Route::get('/admin/tournament/{tournament}/start', [TournamentController::class, 'start'])->name('startTournament');
-            Route::get('/admin/tournament/{tournament}/closed', [TournamentController::class, 'close'])->name('closeTournament');
+            Route::get('/admin/tournament/{tournament}/start', [TournamentController::class, 'startTournament'])->name('startTournament');
+            Route::get('/admin/tournament/{tournament}/closed', [TournamentController::class, 'closeTournament'])->name('closeTournament');
             Route::get('/admin/tournament/register/{tournament}/{user}', [TournamentController::class, 'registrerUser'])->name('tournamentRegister');
             Route::get('/admin/tournament/unregister/{tournament}/{user}', [TournamentController::class, 'unregistrerUser'])->name('tournamentUnregister');
             Route::get('/admin/tournament/payment/{tournament}/{user}', [TournamentController::class, 'toggleHasPaid'])->name('tournamentToggleHasPaid');

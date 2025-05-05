@@ -134,7 +134,7 @@ class TableController extends Controller
                 ->with('match.player1', 'match.player2')
                 ->orderBy('is_table_free')
                 ->orderBy('match_started_at')
-                ->orderByRaw('name * 1 ASC')
+                ->orderByRaw('name')
                 ->get(),
         ]); 
     }

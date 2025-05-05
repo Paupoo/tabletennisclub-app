@@ -47,10 +47,25 @@ class TournamentController extends Controller
         
         $unregisteredUsers = User::unregisteredUsers($tournament)->get();
 
+        $matches = $this->matchService->getPoolMatchesListForTournament($tournament);
+
+        $tables = $tournament
+                    ->tables()
+                    ->withPivot([
+                        'is_table_free',
+                        'match_started_at',
+                    ])
+                    ->with('match.player1', 'match.player2')
+                    ->orderBy('is_table_free')
+                    ->orderBy('match_started_at')
+                    ->orderByRaw('name')
+                    ->get();
+
         return view('admin.tournaments.show', [
             'tournament' => $tournament,
             'unregisteredUsers' => $unregisteredUsers,
-            'matches' => $this->matchService->getPoolMatchesListForTournament($tournament),
+            'matches' => $matches,
+            'tables' => $tables,
         ]);
     }
 
@@ -129,7 +144,7 @@ class TournamentController extends Controller
             ->with('success', __('Tournament ' . $tournament->name . ' has been published.'));
     }
 
-    public function start(Tournament $tournament): RedirectResponse
+    public function startTournament(Tournament $tournament): RedirectResponse
     {
         $tournament->status = 'pending';
         $tournament->update();
@@ -139,7 +154,7 @@ class TournamentController extends Controller
             ->with('success', __('Tournament ' . $tournament->name . ' has been started.'));
     }
 
-    public function close(Tournament $tournament): RedirectResponse
+    public function closeTournament(Tournament $tournament): RedirectResponse
     {
         $tournament->status = 'closed';
         $tournament->update();
@@ -385,7 +400,7 @@ class TournamentController extends Controller
         $tournament = $pool->tournament;
         $tables = $tournament->tables()
                         ->wherePivot('is_table_free', true)
-                        ->orderByRaw('name * 1 ASC')
+                        ->orderByRaw('name')
                         ->get();
         
         return view('admin.tournaments.pool-matches', [
@@ -553,7 +568,7 @@ class TournamentController extends Controller
         $match->save();
         
         return redirect()
-            ->route('showPoolMatches', $match->pool)
+            ->back()
             ->with('success', 'Le match est en cours.');
     }
 

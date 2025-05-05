@@ -156,7 +156,7 @@
                                                     </button>
                                                 </form>
                                             @elseif($tables->count() == 0)
-                                            <a href="{{ route('tables-overview') }}"><p class="text-gray-600">{{ __('All the tables are currently used') }}</p></a>
+                                            <a href="{{ route('tablesOverview', $tournament) }}"><p class="text-gray-600">{{ __('All the tables are currently used') }}</p></a>
                                             @else
                                             <div class="flex items-center p-2 bg-gray-50 rounded-lg shadow-sm hover:bg-gray-100 transition">
                                                 <form action="{{ route('startMatch', $match) }}" method="POST" class="flex w-full items-center space-x-2">

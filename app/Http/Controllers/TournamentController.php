@@ -44,12 +44,13 @@ class TournamentController extends Controller
     public function show(string $id): View
     {
         $tournament = Tournament::findorFail($id);
-
+        
         $unregisteredUsers = User::unregisteredUsers($tournament)->get();
 
         return view('admin.tournaments.show', [
             'tournament' => $tournament,
             'unregisteredUsers' => $unregisteredUsers,
+            'matches' => $this->matchService->getPoolMatchesListForTournament($tournament),
         ]);
     }
 

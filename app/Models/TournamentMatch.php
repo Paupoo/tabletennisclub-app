@@ -33,6 +33,10 @@ class TournamentMatch extends Model
         'scheduled_time' => 'datetime',
     ];
 
+    public function tournament(): BelongsTo
+    {
+        return $this->belongsTo('Tournament::class');
+    }
     /**
      * Get the pool this match belongs to
      */

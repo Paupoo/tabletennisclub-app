@@ -45,27 +45,31 @@ class TournamentController extends Controller
     {
         $tournament = Tournament::findorFail($id);
         
+        
+        $matches = $this->matchService->getPoolMatchesListForTournament($tournament);
+        
+        $rooms = Room::orderBy('name')->get();
+        
+        $tables = $tournament
+        ->tables()
+        ->withPivot([
+            'is_table_free',
+            'match_started_at',
+            ])
+            ->with('match.player1', 'match.player2')
+            ->orderBy('is_table_free')
+            ->orderBy('match_started_at')
+            ->orderByRaw('name')
+            ->get();
+            
         $unregisteredUsers = User::unregisteredUsers($tournament)->get();
 
-        $matches = $this->matchService->getPoolMatchesListForTournament($tournament);
-
-        $tables = $tournament
-                    ->tables()
-                    ->withPivot([
-                        'is_table_free',
-                        'match_started_at',
-                    ])
-                    ->with('match.player1', 'match.player2')
-                    ->orderBy('is_table_free')
-                    ->orderBy('match_started_at')
-                    ->orderByRaw('name')
-                    ->get();
-
         return view('admin.tournaments.show', [
+            'matches' => $matches,
+            'rooms' => $rooms,
+            'tables' => $tables,
             'tournament' => $tournament,
             'unregisteredUsers' => $unregisteredUsers,
-            'matches' => $matches,
-            'tables' => $tables,
         ]);
     }
 
@@ -296,8 +300,8 @@ class TournamentController extends Controller
     {
         $numberOfPools = intval($request->input('number_of_pools'));
 
-        if($request->minMatches === 1) {
-            $numberOfPools = intdiv($tournament->total_users, $numberOfPools+1);
+        if($request->input('minMatches')) {
+            $numberOfPools = intdiv($tournament->total_users, $numberOfPools+1)  ;
         }
         // Utiliser le service pour distribuer les joueurs
         $pools = $this->poolService->distributePlayersInPools($tournament, $numberOfPools);
@@ -306,6 +310,36 @@ class TournamentController extends Controller
             'success' => 'Joueurs répartis dans les poules avec succès',
             'pools' => $pools
         ]);
+    }
+
+    /**
+     * Erase all pools from a specific tournament.
+     *
+     * @param Tournament $tournament
+     * @return RedirectResponse
+     */
+    public function erasePools(Tournament $tournament): RedirectResponse
+    {
+        foreach($tournament->pools as $pool){
+            $this->eraseMatches($pool);
+        }
+        
+        $tournament->pools()->delete();
+
+        return redirect()
+                ->back()
+                ->with('success', __('Pools have been erased successfully.'));
+    }
+
+    /**
+     * Erase all matches from a pool.
+     *
+     * @param Pool $pool
+     * @return void
+     */
+    private function eraseMatches(Pool $pool): void
+    {
+        $pool->tournamentmatches()->delete();
     }
 
     /**
@@ -378,7 +412,7 @@ class TournamentController extends Controller
         }
         
         return redirect()
-            ->route('tournamentSetup', $tournament)
+            ->back()
             ->with([
                 'success' => $totalMatches . ' matches ont été générés avec succès pour toutes les poules',
             ]);

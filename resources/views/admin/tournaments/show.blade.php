@@ -776,10 +776,12 @@
                                                                 <option selected value="" disabled>
                                                                     {{ __('Select a table') }}</option>
                                                                 @foreach ($tables as $table)
+                                                                    @if($table->pivot->is_table_free)
                                                                     <option value="{{ $table->id }}">
                                                                         {{ $table->name }}
                                                                         ==>
                                                                         {{ $table->room->name }}</option>
+                                                                    @endif
                                                                 @endforeach
                                                             </select>
 

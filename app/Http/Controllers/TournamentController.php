@@ -59,7 +59,7 @@ class TournamentController extends Controller
             ->with('match.player1', 'match.player2')
             ->orderBy('is_table_free')
             ->orderBy('match_started_at')
-            ->orderByRaw('name')
+            ->orderByRaw('name * 1 ASC')
             ->get();
             
         $unregisteredUsers = User::unregisteredUsers($tournament)->get();

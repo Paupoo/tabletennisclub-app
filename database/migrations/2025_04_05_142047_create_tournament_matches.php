@@ -25,7 +25,7 @@ return new class extends Migration
             $table->string('round')->nullable(); // 'round_16', 'quarterfinal', 'semifinal', 'final', 'bronze'
             $table->string('status')->default('scheduled'); // scheduled, in_progress, completed
             $table->string('started_ad')->nullable();
-            $table->integer('match_order');
+            $table->unsignedTinyInteger('match_order');
             $table->timestamp('scheduled_time')->nullable();
             $table->integer('table_number')->nullable();
             $table->foreignId('next_match_id')->nullable()->references('id')->on('tournament_matches')->nullOnDelete();

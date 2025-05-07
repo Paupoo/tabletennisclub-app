@@ -85,6 +85,12 @@ class TournamentMatch extends Model
         return $this->belongsToMany(Table::class, 'table_tournament');
     }
 
+    public function scopeOrdered($query, Tournament $tournament){
+        $query->where('tournament_id', $tournament->id)
+            ->orderBy('match_order')
+            ->orderby('pool_id');
+    }
+
     /**
      * Check if the match is in progress
      */

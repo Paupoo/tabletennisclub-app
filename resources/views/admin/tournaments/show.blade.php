@@ -685,6 +685,7 @@
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     @foreach ($matches as $match)
+                                        @if($match != null)
                                         <tr>
                                             <td class="px-6 py-4 whitespace-nowrap">{{ $loop->iteration }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap">{{ $match->player1->first_name }}
@@ -802,6 +803,7 @@
                                                 <x-input-error class="mt-2" :messages="$errors->get('table')" />
                                             </td>
                                         </tr>
+                                        @endif
                                     @endforeach
                                 </tbody>
                             </table>

@@ -44,10 +44,7 @@ class TournamentController extends Controller
     public function show(string $id): View
     {
         $tournament = Tournament::findorFail($id);
-        
-        
-        $matches = $this->matchService->getPoolMatchesListForTournament($tournament);
-        
+                
         $rooms = Room::orderBy('name')->get();
         
         $tables = $tournament
@@ -61,6 +58,8 @@ class TournamentController extends Controller
             ->orderBy('match_started_at')
             ->orderByRaw('name * 1 ASC')
             ->get();
+
+        $matches = TournamentMatch::where('tournament_id', $tournament->id)->ordered()->get();
             
         $unregisteredUsers = User::unregisteredUsers($tournament)->get();
 
@@ -560,7 +559,7 @@ class TournamentController extends Controller
         // Record results - ne garder que les sets avec des résultats
         $match->recordResult($setsWithResults);
 
-        $tournament = $match->pool->tournament()->first();
+        $tournament = $match->tournament()->first();
         $table = $tournament->tables()->wherePivot('tournament_match_id', $match->id)->first()  ;
         $tournament->tables()->updateExistingPivot($table->id, [
             'is_table_free' => true,
@@ -596,7 +595,7 @@ class TournamentController extends Controller
     {
         // TODO : check that none of the players are currently busy playing a match or being a referee
         $table = Table::find($request->table_id);
-        $tournament = $match->pool->tournament;
+        $tournament = $match->tournament;
         $this->bookTableForMatch($table, $tournament, $match);
         $match->status = 'in_progress';
         $match->save();
@@ -607,17 +606,7 @@ class TournamentController extends Controller
     }
 
     public function bookTableForMatch(Table $table, Tournament $tournament, TournamentMatch $match): void
-    {
-        // $relation = $table->tournaments()
-        // ->wherePivot('tournament_id', $tournament->id)
-        // ->wherePivotNull('tournament_match_id') // Vérifie que la table est libre
-        // // ->wherePivot('is_table_free', false)
-        // ->first();
-
-        // if (! $relation) {
-        //     throw new \RuntimeException('Table déjà assignée à un match dans ce tournoi.');
-        // }
-        
+    {        
         $table->tournaments()
             ->updateExistingPivot($tournament->id, [
                 'is_table_free' => false,
@@ -643,7 +632,7 @@ class TournamentController extends Controller
         $match->save();
         
         return redirect()
-            ->route('showPoolMatches', $match->pool)
+            ->back()
             ->with('success', 'Résultats du match réinitialisés avec succès');
     }
 

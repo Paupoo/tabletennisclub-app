@@ -32,7 +32,7 @@ class TournamentFinalPhaseService
         }
 
         // Delete existing knockout matches if any
-        TournamentMatch::where('tournament_id', $tournament->id)->delete();
+        TournamentMatch::where('tournament_id', $tournament->id)->fromBracket()->delete();
         
         // Get qualified players based on pool standings
         $qualifiedPlayers = $this->getQualifiedPlayers($tournament, $startingRound);
@@ -343,6 +343,7 @@ class TournamentFinalPhaseService
     {
         // Get all matches
         $matches = TournamentMatch::where('tournament_id', $tournament->id)
+            ->fromBracket()
             ->orderBy('match_order')
             ->get();
         

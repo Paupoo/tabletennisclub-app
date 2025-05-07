@@ -43,35 +43,73 @@
 
     <!-- Match controls -->
     <div class="mt-2 flex justify-between text-xs">
-        @if($match->status == 'scheduled' && $match->player1_id && $match->player2_id)
-            <form action="{{ route('startKnockoutMatch', $match) }}" method="GET" class="inline">
+        @if ($match->isInProgress())
+        <a href="{{ route('editMatch', $match) }}"
+            class="text-indigo-600 hover:text-indigo-900 mr-3">
+            {{ $match->isCompleted() ? 'Modifier' : 'Saisir le score' }}
+        </a>
+    @elseif ($match->isCompleted())
+        <form action="{{ route('resetMatch', $match) }}" method="POST"
+            class="inline">
+            @csrf
+            @method('DELETE')
+            <button type="submit" class="text-red-600 hover:text-red-900"
+                onclick="return confirm('Êtes-vous sûr de vouloir réinitialiser ce match ?')">
+                Réinitialiser
+            </button>
+        </form>
+    @elseif($tables->count() == 0)
+        <a href="{{ route('tablesOverview', $tournament) }}">
+            <p class="text-gray-600">
+                {{ __('All the tables are currently used') }}
+            </p>
+        </a>
+    @else
+        <div
+            class="flex items-center p-2 bg-gray-50 rounded-lg shadow-sm hover:bg-gray-100 transition">
+            <form action="{{ route('startMatch', $match) }}"
+                method="POST" class="flex w-full items-center space-x-2">
                 @csrf
-                <div class="flex items-center">
-                    <select name="tableNumber" class="mr-1 text-xs p-1 border border-gray-300 rounded">
-                        @for($i = 1; $i <= 8; $i++)
-                            <option value="{{ $i }}">T{{ $i }}</option>
-                        @endfor
-                    </select>
-                    <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white py-1 px-2 rounded text-xs">
-                        Commencer
-                    </button>
+                <div class="flex items-center space-x-2">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                        class="h-5 w-5 text-indigo-500"
+                        viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    <label for="table_id"
+                        class="text-sm font-medium text-gray-700">Table</label>
                 </div>
-            </form>
-        @elseif($match->status == 'in_progress')
-            <a href="{{ route('editMatch', $match) }}" class="bg-green-500 hover:bg-green-700 text-white py-1 px-3 rounded text-xs">
-                Saisir résultat
-            </a>
-        @elseif($match->status == 'completed')
-            <form action="{{ route('resetKnockoutMatch', $match) }}" method="POST" class="inline" onsubmit="return confirm('Êtes-vous sûr de vouloir réinitialiser ce match?');">
-                @csrf
-                @method('DELETE')
-                <button type="submit" class="bg-orange-500 hover:bg-orange-700 text-white py-1 px-3 rounded text-xs">
-                    Réinitialiser
+
+                <select name="table_id" id="table_id"
+                    class="pl-3 pr-10 py-1 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md shadow-sm">
+                    <option selected value="" disabled>
+                        {{ __('Select a table') }}</option>
+                    @foreach ($tables as $table)
+                        @if($table->pivot->is_table_free)
+                        <option value="{{ $table->id }}">
+                            {{ $table->name }}
+                            ==>
+                            {{ $table->room->name }}</option>
+                        @endif
+                    @endforeach
+                </select>
+
+                <button type="submit"
+                    class="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition">
+                    <span>Démarrer</span>
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                        class="ml-1 h-4 w-4" viewBox="0 0 20 20"
+                        fill="currentColor">
+                        <path fill-rule="evenodd"
+                            d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
+                            clip-rule="evenodd" />
+                    </svg>
                 </button>
             </form>
-            <a href="{{ route('editMatch', $match) }}" class="bg-gray-500 hover:bg-gray-700 text-white py-1 px-3 rounded text-xs">
-                Détails
-            </a>
-        @endif
+        </div>
+    @endif
+        
     </div>
 </div>

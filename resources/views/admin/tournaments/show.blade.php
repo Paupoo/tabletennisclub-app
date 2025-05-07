@@ -688,11 +688,11 @@
                                         @if($match != null)
                                         <tr>
                                             <td class="px-6 py-4 whitespace-nowrap">{{ $loop->iteration }}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap">{{ $match->player1->first_name }}
-                                                {{ $match->player1->last_name }}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap">{{ $match->player2->first_name }}
-                                                {{ $match->player2->last_name }}</td>
-                                            <td class="px-6 py-4 whitespace-nowrap">{{ $match->pool->name }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">{{ $match->player1?->first_name }}
+                                                {{ $match->player1?->last_name }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">{{ $match->player2?->first_name }}
+                                                {{ $match->player2?->last_name }}</td>
+                                            <td class="px-6 py-4 whitespace-nowrap">{{ $match->pool ? $match->pool->name : $match->round }}</td>
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 @if ($match->status === 'scheduled')
                                                     <span

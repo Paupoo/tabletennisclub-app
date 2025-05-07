@@ -35,7 +35,7 @@ class TournamentMatch extends Model
 
     public function tournament(): BelongsTo
     {
-        return $this->belongsTo('Tournament::class');
+        return $this->belongsTo(Tournament::class);
     }
     /**
      * Get the pool this match belongs to
@@ -85,10 +85,18 @@ class TournamentMatch extends Model
         return $this->belongsToMany(Table::class, 'table_tournament');
     }
 
-    public function scopeOrdered($query, Tournament $tournament){
-        $query->where('tournament_id', $tournament->id)
-            ->orderBy('match_order')
-            ->orderby('pool_id');
+    public function scopeOrdered($query){
+        $query->orderBy('match_order')
+            ->orderBy('pool_id')
+            ->orderBy('round');
+    }
+
+    public function scopeFromPools($query){
+        $query->whereNotNull('pool_id');
+    }
+
+    public function scopeFromBracket($query){
+        $query->whereNotNull('round');
     }
 
     /**

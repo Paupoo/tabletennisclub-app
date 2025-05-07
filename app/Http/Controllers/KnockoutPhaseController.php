@@ -53,7 +53,19 @@ class KnockoutPhaseController extends Controller
     public function showBracket(Tournament $tournament)
     {
         $rounds = $this->knockoutService->getKnockoutMatches($tournament);
-        return view('admin.tournaments.knockout-bracket', compact('tournament', 'rounds'));
+        $tables = $tournament
+        ->tables()
+        ->withPivot([
+            'is_table_free',
+            'match_started_at',
+            ])
+            ->with('match.player1', 'match.player2')
+            ->orderBy('is_table_free')
+            ->orderBy('match_started_at')
+            ->orderByRaw('name * 1 ASC')
+            ->get();
+
+        return view('admin.tournaments.knockout-bracket', compact('tournament', 'rounds', 'tables'));
     }
     
     /**

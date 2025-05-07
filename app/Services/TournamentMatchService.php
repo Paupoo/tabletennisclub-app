@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\Pool;
-use App\Models\PoolMatch;
 use App\Models\Tournament;
 use App\Models\TournamentMatch;
-use App\Models\User;
 use Illuminate\Support\Collection;
 
 class TournamentMatchService
@@ -177,27 +175,5 @@ class TournamentMatchService
         return $standings->sortByDesc(function ($item) {
             return sprintf('%06d%06d%06d', $item['matches_won'], $item['sets_won'], $item['total_points']);
         })->values();
-    }
-
-    /**
-     * Return the list of matches from each pool in a way that each pool is progressing at the same time.
-     * @param Tournament The tournament to get the pools and the matches from
-     * @return  TournamentMatches[] Returns an array of matches
-     */
-    public function getPoolMatchesListForTournament(Tournament $tournament): array
-    {
-        $totalPools = $tournament->pools->count();
-        $totalMatches = $tournament->matches->count();
-
-        $pools = Pool::where('tournament_id', $tournament->id)->with('tournamentmatches')->get();
-        $poolSelector = 0;
-        $matches = [];
-
-        for($i=0; $i<$totalMatches; $i++){
-            $matches[] = $pools[$poolSelector]->tournamentmatches->shift();
-            $poolSelector = ($poolSelector < $totalPools -1) ? $poolSelector+1: 0;
-        }
-
-        return $matches;
     }
 }

@@ -20,6 +20,7 @@ return new class extends Migration
             $table->integer('max_users')->default(0);
             $table->integer('price')->default(0);
             $table->string('status')->default('draft'); // draft, open, pending, closed
+            $table->boolean('has_handicap_points')->default(false);
             $table->timestamps();
         });
     }

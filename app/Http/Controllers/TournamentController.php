@@ -35,9 +35,11 @@ class TournamentController extends Controller
 
     public function index(): View
     {
+        $tournament = new Tournament;
+        
         return view('admin.tournaments.index', [
             'rooms' => Room::orderBy('name')->get(),
-            'tournament' => new Tournament(),
+            'tournament' => $tournament,
         ]);
     }
 

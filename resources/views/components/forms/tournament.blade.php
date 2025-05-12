@@ -70,6 +70,17 @@
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
             <x-input-error class="mt-2" :messages="$errors->get('max_users')" />
         </div>
+        {{-- Points d'handicap --}}
+        <div>
+            <label for="has_handicap_points" class="block text-sm font-medium text-gray-700 mb-1">{{ __('Handicap Points') }}</label>
+            <select name="has_handicap_points" id="has_handicap_points"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                <option disabled selected>{{ __('Please make a choice') }}</option>
+                <option value="1" @selected(old($tournament->has_handicap_points, $tournament->has_handicap_points) === 1)>{{ __('With handicap points (friendly tournament)')}}</option>
+                <option value="0" @selected(old($tournament->has_handicap_points, $tournament->has_handicap_points) === 0)>{{ __('Without handicap points')}}</option>
+            </select>
+            <x-input-error class="mt-2" :messages="$errors->get('room_ids')" />
+        </div>
 
         {{-- Price --}}
         <div>

@@ -20,7 +20,9 @@ return new class extends Migration
             $table->foreignIdFor(Tournament::class)->nullable()->constrained()->onDelete('cascade');
             $table->foreignIdFor(Table::class)->nullable()->constrained()->onDelete('cascade');
             $table->foreignId('player1_id')->nullable()->constrained('users')->onDelete('set null');
+            $table->integer('player1_handicap_points')->default(0);
             $table->foreignId('player2_id')->nullable()->constrained('users')->onDelete('set null');
+            $table->integer('player2_handicap_points')->default(0);
             $table->foreignId('winner_id')->nullable()->constrained('users')->onDelete('set null');
             $table->string('round')->nullable(); // 'round_16', 'quarterfinal', 'semifinal', 'final', 'bronze'
             $table->string('status')->default('scheduled'); // scheduled, in_progress, completed

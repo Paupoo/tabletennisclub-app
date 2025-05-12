@@ -18,6 +18,8 @@ class TournamentMatch extends Model
         'table_id',
         'player1_id',
         'player2_id',
+        'player1_handicap_points',
+        'player2_handicap_points',
         'winner_id',
         'status', // 'scheduled', 'in_progress', 'completed'
         'match_order',
@@ -31,6 +33,8 @@ class TournamentMatch extends Model
 
     protected $casts = [
         'scheduled_time' => 'datetime',
+        'player1_handicap_points' => 'integer',
+        'player1_handicap_points' => 'integer',
     ];
 
     public function tournament(): BelongsTo

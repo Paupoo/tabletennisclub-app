@@ -344,6 +344,7 @@ class DatabaseSeeder extends Seeder
         $this->tournament->name = 'Tournoi de doubles';
         $this->tournament->max_users = 24;
         $this->tournament->total_users = 24;
+        $this->tournament->has_handicap_points = true;
         $this->tournament->save();
         $this->tournament->rooms()->sync([1,2]);
 

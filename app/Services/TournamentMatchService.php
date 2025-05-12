@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\Ranking;
 use App\Models\Pool;
 use App\Models\Tournament;
 use App\Models\TournamentMatch;
 use App\Models\User;
 use Illuminate\Support\Collection;
+use InvalidArgumentException;
 
 class TournamentMatchService
 {
@@ -165,7 +167,179 @@ class TournamentMatchService
             'E6' => 5,
             'NC' => 5,
         ],
+        'D0' => [
+            'B0' => 0,
+            'B2' => 0,
+            'B4' => 0,
+            'B6' => 0,
+            'C0' => 0,
+            'C2' => 0,
+            'C4' => 0,
+            'C6' => 0,
+            'D0' => 0,
+            'D2' => 1,
+            'D4' => 2,
+            'D6' => 2,
+            'E0' => 3,
+            'E2' => 3,
+            'E4' => 4,
+            'E6' => 4,
+            'NC' => 5,
+        ],
+        'D2' => [
+            'B0' => 0,
+            'B2' => 0,
+            'B4' => 0,
+            'B6' => 0,
+            'C0' => 0,
+            'C2' => 0,
+            'C4' => 0,
+            'C6' => 0,
+            'D0' => 0,
+            'D2' => 0,
+            'D4' => 1,
+            'D6' => 2,
+            'E0' => 2,
+            'E2' => 3,
+            'E4' => 3,
+            'E6' => 4,
+            'NC' => 4,
+        ],
+        'D4' => [
+            'B0' => 0,
+            'B2' => 0,
+            'B4' => 0,
+            'B6' => 0,
+            'C0' => 0,
+            'C2' => 0,
+            'C4' => 0,
+            'C6' => 0,
+            'D0' => 0,
+            'D2' => 0,
+            'D4' => 0,
+            'D6' => 1,
+            'E0' => 2,
+            'E2' => 2,
+            'E4' => 3,
+            'E6' => 3,
+            'NC' => 4,
+        ],
+        'D6' => [
+            'B0' => 0,
+            'B2' => 0,
+            'B4' => 0,
+            'B6' => 0,
+            'C0' => 0,
+            'C2' => 0,
+            'C4' => 0,
+            'C6' => 0,
+            'D0' => 0,
+            'D2' => 0,
+            'D4' => 0,
+            'D6' => 0,
+            'E0' => 1,
+            'E2' => 2,
+            'E4' => 2,
+            'E6' => 3,
+            'NC' => 3,
+        ],
+        'E0' => [
+            'B0' => 0,
+            'B2' => 0,
+            'B4' => 0,
+            'B6' => 0,
+            'C0' => 0,
+            'C2' => 0,
+            'C4' => 0,
+            'C6' => 0,
+            'D0' => 0,
+            'D2' => 0,
+            'D4' => 0,
+            'D6' => 0,
+            'E0' => 0,
+            'E2' => 1,
+            'E4' => 2,
+            'E6' => 2,
+            'NC' => 3,
+        ],
+        'E2' => [
+            'B0' => 0,
+            'B2' => 0,
+            'B4' => 0,
+            'B6' => 0,
+            'C0' => 0,
+            'C2' => 0,
+            'C4' => 0,
+            'C6' => 0,
+            'D0' => 0,
+            'D2' => 0,
+            'D4' => 0,
+            'D6' => 0,
+            'E0' => 0,
+            'E2' => 0,
+            'E4' => 1,
+            'E6' => 2,
+            'NC' => 2,
+        ],
+        'E4' => [
+            'B0' => 0,
+            'B2' => 0,
+            'B4' => 0,
+            'B6' => 0,
+            'C0' => 0,
+            'C2' => 0,
+            'C4' => 0,
+            'C6' => 0,
+            'D0' => 0,
+            'D2' => 0,
+            'D4' => 0,
+            'D6' => 0,
+            'E0' => 0,
+            'E2' => 0,
+            'E4' => 0,
+            'E6' => 1,
+            'NC' => 2,
+        ],
+        'E6' => [
+            'B0' => 0,
+            'B2' => 0,
+            'B4' => 0,
+            'B6' => 0,
+            'C0' => 0,
+            'C2' => 0,
+            'C4' => 0,
+            'C6' => 0,
+            'D0' => 0,
+            'D2' => 0,
+            'D4' => 0,
+            'D6' => 0,
+            'E0' => 0,
+            'E2' => 0,
+            'E4' => 0,
+            'E6' => 0,
+            'NC' => 1,
+        ],
+        'NC' => [
+            'B0' => 0,
+            'B2' => 0,
+            'B4' => 0,
+            'B6' => 0,
+            'C0' => 0,
+            'C2' => 0,
+            'C4' => 0,
+            'C6' => 0,
+            'D0' => 0,
+            'D2' => 0,
+            'D4' => 0,
+            'D6' => 0,
+            'E0' => 0,
+            'E2' => 0,
+            'E4' => 0,
+            'E6' => 0,
+            'NC' => 0,
+        ],
     ];
+
 
     /**
      * Generate all matches for a pool using Round Robin algorithm
@@ -213,8 +387,8 @@ class TournamentMatchService
                     'tournament_id' => $pool->tournament->id,
                     'player1_id' => $players[$home]['id'],
                     'player2_id' => $players[$away]['id'],
-                    'player1_handicap_points' => $pool->tournament->has_handicap_points ? $this->calculateHandicapPoints(User::find($players[$home]['id']), User::find($players[$away]['id'])) : 0,
-                    'player2_handicap_points' => $pool->tournament->has_handicap_points ? $this->calculateHandicapPoints(User::find($players[$away]['id']), User::find($players[$home]['id'])) : 0,
+                    'player1_handicap_points' => $pool->tournament->has_handicap_points ? $this->calculateHandicapPointsToReceive(User::find($players[$home]['id']), User::find($players[$away]['id'])) : 0,
+                    'player2_handicap_points' => $pool->tournament->has_handicap_points ? $this->calculateHandicapPointsToReceive(User::find($players[$away]['id']), User::find($players[$home]['id'])) : 0,
                     'status' => 'scheduled',
                     'match_order' => $matchOrder++,
                     'created_at' => now(),
@@ -335,8 +509,30 @@ class TournamentMatchService
         })->values();
     }
 
-    private function calculateHandicapPoints(User $player1, User $player2): int
+    /**
+     * This function caculates the handicap points to receive for player 1 vs player 2 based on both their ranking.
+     * Base on referece document : https://bbw.aftt.be/wp-content/uploads/2014/02/handicaps-M-D.pdf
+     *
+     * @param User $player1
+     * @param User $player2
+     * @return integer
+     */
+    private function calculateHandicapPointsToReceive(User $player1, User $player2): int
     {
-        return $this->handicapPoints[$player1->ranking][$player2->ranking];
+        if (!$this->isValidRanking($player2->ranking) || !$this->isValidRanking($player2->ranking)) {
+            throw new InvalidArgumentException("Classement invalide.");
+        }
+
+        return $this->handicapPoints[$player2->ranking][$player1->ranking];
     }
+
+    private function isValidRanking(string $value): bool
+    {
+        foreach (Ranking::cases() as $case) {
+            if ($case->name === $value) {
+                return true;
+            }
+        }
+        return false;
+}
 }

@@ -161,11 +161,12 @@ Route::middleware(['auth', 'verified'])
             Route::put('/admin/tournaments/{tournament}/update', [TournamentController::class, 'update'])->name('updateTournament');
             Route::get('/admin/tournament/{id}', [TournamentController::class, 'show'])->name('tournamentShow');
             Route::get('/admin/tournament/{tournament}/delete', [TournamentController::class, 'destroy'])->name('deleteTournament');
+            Route::get('/admin/tournament/{tournament}/erasePools', [TournamentController::class, 'erasePools'])->name('erasePools');
             Route::patch('/admin/tournament/{tournament}/statusUpdate', [TournamentController::class, 'changeStatus'])->name('tournamentSetStatus');
             Route::get('/admin/tournament/{tournament}/draft', [TournamentController::class, 'unpublish'])->name('unpublishTournament');
             Route::get('/admin/tournament/{tournament}/publish', [TournamentController::class, 'publish'])->name('publishTournament');
-            Route::get('/admin/tournament/{tournament}/start', [TournamentController::class, 'start'])->name('startTournament');
-            Route::get('/admin/tournament/{tournament}/closed', [TournamentController::class, 'close'])->name('closeTournament');
+            Route::get('/admin/tournament/{tournament}/start', [TournamentController::class, 'startTournament'])->name('startTournament');
+            Route::get('/admin/tournament/{tournament}/closed', [TournamentController::class, 'closeTournament'])->name('closeTournament');
             Route::get('/admin/tournament/register/{tournament}/{user}', [TournamentController::class, 'registrerUser'])->name('tournamentRegister');
             Route::get('/admin/tournament/unregister/{tournament}/{user}', [TournamentController::class, 'unregistrerUser'])->name('tournamentUnregister');
             Route::get('/admin/tournament/payment/{tournament}/{user}', [TournamentController::class, 'toggleHasPaid'])->name('tournamentToggleHasPaid');
@@ -196,9 +197,8 @@ Route::middleware(['auth', 'verified'])
                 ->name('resetMatch');
             
             // Routes pour les tables
-            Route::get('/admin/tables-overview', function () {
-                return view('tables.overview');
-            })->name('tables-overview');
+            Route::get('/admin/tournament/{tournament}/tables-overview', [TableController::class, 'tableOverview'])
+                ->name('tablesOverview');
             
             // Routes pour la phase finale
             Route::get('/admin/tournaments/{tournament}/knockout/setup', [KnockoutPhaseController::class, 'setup'])

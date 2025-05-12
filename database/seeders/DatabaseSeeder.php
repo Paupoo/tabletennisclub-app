@@ -13,10 +13,14 @@ use App\Models\Club;
 use App\Models\League;
 use App\Models\Room;
 use App\Models\Season;
+use App\Models\Table;
 use App\Models\Team;
 use App\Models\Tournament;
 use App\Models\User;
 use App\Services\ForceList;
+use App\Services\TournamentMatchService;
+use App\Services\TournamentPoolService;
+use App\Services\TournamentTableService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -24,13 +28,14 @@ use Illuminate\Support\Str;
 class DatabaseSeeder extends Seeder
 {
 
-    protected $forceList = null;
     private Tournament $tournament;
 
-    public function __construct(ForceList $forceList)
-    {
-        $this->forceList = $forceList;
-    }
+    public function __construct(
+        private ForceList $forceList,
+        private TournamentTableService $tableService,
+        private TournamentPoolService $poolService,
+        private TournamentMatchService $matchService,
+        ){}
 
     /**
      * Seed the application's database.
@@ -304,6 +309,20 @@ class DatabaseSeeder extends Seeder
             'capacity_for_interclubs' => 0,
         ])->clubs()->attach(1);
 
+        for($i=0; $i<15; $i++){
+            Table::create([
+                'name' => $i+1,
+                'purchased_on' => fake()->dateTimeBetween('-10 years', '-1 year'),
+                'state' => 'used',
+                'room_id' => Room::inRandomOrder()->first()->id,
+            ]);
+        }
+
+        $rooms = Room::all();
+        foreach($rooms as $room) {
+            $this->tableService->updateTablesCount($room);
+        }    
+
         User::factory()
             ->count(50)
             ->create();
@@ -312,12 +331,11 @@ class DatabaseSeeder extends Seeder
         Tournament::factory(3)->create();
         $this->tournament = Tournament::find(1);
         $this->tournament->name = 'Tournoi des crêpes';
-        $this->tournament->start_date = Carbon::createFromDate('16-10-2024 10:00:00');
+        
         $this->tournament->save();
 
         $this->tournament = Tournament::find(2);
         $this->tournament->name = 'Vieux tournoi';
-        $this->tournament->start_date = Carbon::createFromDate('09-11-2018 11:00:00');
         $this->tournament->save();
 
 
@@ -326,13 +344,26 @@ class DatabaseSeeder extends Seeder
         $this->tournament->name = 'Tournoi de doubles';
         $this->tournament->max_users = 24;
         $this->tournament->total_users = 24;
-        $this->tournament->start_date = Carbon::createFromDate('06-04-2025 10:00:00');
+        $this->tournament->has_handicap_points = true;
         $this->tournament->save();
         $this->tournament->rooms()->sync([1,2]);
+
+        // Link tables
+        $this->tableService->linkAvailableTables($this->tournament);
+        
+        // Add users
 
         for ($i=1; $i < 25; $i++){
             $user = User::find($i);
             $this->tournament->users()->attach($user);
+        }
+
+        // Generate pools
+        $this->poolService->distributePlayersInPools($this->tournament, 6);
+
+        // Generate matches
+        foreach($this->tournament->pools as $pool){
+            $this->matchService->generateMatches($pool);
         }
     }
 }

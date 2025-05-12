@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class TournamentMatch extends Model
@@ -14,8 +15,11 @@ class TournamentMatch extends Model
 
     protected $fillable = [
         'pool_id',
+        'table_id',
         'player1_id',
         'player2_id',
+        'player1_handicap_points',
+        'player2_handicap_points',
         'winner_id',
         'status', // 'scheduled', 'in_progress', 'completed'
         'match_order',
@@ -29,8 +33,14 @@ class TournamentMatch extends Model
 
     protected $casts = [
         'scheduled_time' => 'datetime',
+        'player1_handicap_points' => 'integer',
+        'player1_handicap_points' => 'integer',
     ];
 
+    public function tournament(): BelongsTo
+    {
+        return $this->belongsTo(Tournament::class);
+    }
     /**
      * Get the pool this match belongs to
      */
@@ -74,9 +84,23 @@ class TournamentMatch extends Model
      /**
      * Get the table for this match
      */
-    public function table(): HasOne
+    public function table(): BelongsToMany
     {
-        return $this->hasOne(Table::class);
+        return $this->belongsToMany(Table::class, 'table_tournament');
+    }
+
+    public function scopeOrdered($query){
+        $query->orderBy('match_order')
+            ->orderBy('pool_id')
+            ->orderBy('round');
+    }
+
+    public function scopeFromPools($query){
+        $query->whereNotNull('pool_id');
+    }
+
+    public function scopeFromBracket($query){
+        $query->whereNotNull('round');
     }
 
     /**

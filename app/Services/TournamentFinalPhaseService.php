@@ -4,16 +4,15 @@ namespace App\Services;
 
 use App\Models\Tournament;
 use App\Models\TournamentMatch;
+use Exception;
 use Illuminate\Support\Collection;
 
-class KnockoutPhaseService
-{
-    protected $tournamentMatchService;
-    
-    public function __construct(TournamentMatchService $tournamentMatchService)
-    {
-        $this->tournamentMatchService = $tournamentMatchService;
-    }
+class TournamentFinalPhaseService
+{    
+    public function __construct(
+        private TournamentMatchService $tournamentMatchService,
+        private TournamentPoolService $tournamentPoolService,
+        ) {}
     
     /**
      * Configure knockout phase
@@ -24,13 +23,45 @@ class KnockoutPhaseService
      */
     public function configureKnockoutPhase(Tournament $tournament, string $startingRound): bool
     {
+        if($this->checkIfAllPoolsContainsMatches($tournament) === false){
+            throw new Exception(__('Pool found without match.'));
+        }
+        
+        if($this->checkIfAllPoolsAreFinished($tournament) === false){
+            throw new Exception(__('At least one pool is still open. Please encode all matches first'));
+        }
+
         // Delete existing knockout matches if any
-        TournamentMatch::where('tournament_id', $tournament->id)->delete();
+        TournamentMatch::where('tournament_id', $tournament->id)->fromBracket()->delete();
         
         // Get qualified players based on pool standings
         $qualifiedPlayers = $this->getQualifiedPlayers($tournament, $startingRound);
         // Create bracket structure
         return $this->createBracket($tournament, $qualifiedPlayers, $startingRound);
+    }
+
+    public function checkIfAllPoolsContainsMatches(Tournament $tournament): bool
+    {
+        $result = true;
+        foreach($tournament->pools as $pool){
+            if($pool->tournamentMatches->count() === 0){
+                $result = false;
+            }
+        }
+
+        return $result;
+    }
+
+    public function checkIfAllPoolsAreFinished(Tournament $tournament): bool
+    {
+        $result = true;
+        foreach($tournament->pools as $pool){
+            if($this->tournamentPoolService->isPoolFinished($pool) === false) {
+                $result = false;
+            }
+        }
+
+        return $result;
     }
     
     /**
@@ -312,6 +343,7 @@ class KnockoutPhaseService
     {
         // Get all matches
         $matches = TournamentMatch::where('tournament_id', $tournament->id)
+            ->fromBracket()
             ->orderBy('match_order')
             ->get();
         

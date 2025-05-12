@@ -24,7 +24,7 @@ class StoreOrUpdateTableRequest extends FormRequest
         return [
             'name' => [
                 'required',
-                'string',
+                'integer',
                 'unique:tables,name,' . $this->route()->table?->id,
             ],
             'purchased_on' => [

@@ -5,10 +5,20 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreOrUpdateTableRequest;
 use App\Models\Room;
 use App\Models\Table;
+use App\Models\Tournament;
+use App\Models\TournamentMatch;
+use App\Services\TournamentTableService;
 use Illuminate\Http\Request;
 
 class TableController extends Controller
 {
+
+    public function __construct(private TournamentTableService $tableService)
+    {
+
+    }
+
+
     /**
      * Display a listing of the resource.
      */
@@ -17,7 +27,7 @@ class TableController extends Controller
         $this->authorize('viewAny', Table::class);
 
         return view('admin.tables.index', [
-            'tables' => Table::orderBy('name')->paginate(10),
+            'tables' => Table::orderByRaw('name * 1 ASC')->paginate(10),
         ]);
     }
 
@@ -48,7 +58,7 @@ class TableController extends Controller
         
         $table = Table::create($validated);
         $room = Room::find($table->room_id);
-        $this->updateTablesCount($room);
+        $this->tableService->updateTablesCount($room);
 
         return redirect()->route('tables.index')->with('success', 'The table ' . $table->name . ' has been added.');
     }
@@ -88,7 +98,7 @@ class TableController extends Controller
         $table->save();
         
         $room = Room::find($table->room_id);
-        $this->updateTablesCount($room);
+        $this->tableService->updateTablesCount($room);
 
         return redirect()->route('tables.index')->with('success', 'The table ' . $table->name . ' has been updated.');
     }
@@ -109,13 +119,23 @@ class TableController extends Controller
 
     }
 
-    public function updateTablesCount(Room $room): void
+    /**
+     *  Show tables and their current status for a given tournament
+     */
+    public function tableOverview(Tournament $tournament)
     {
-        $total_tables = $room->tables()->count();
-        $total_playable_tables = $room->tables()->where('state', '!=', 'oos')->count();
-        $room->total_tables = $total_tables;
-        $room->total_playable_tables = $total_playable_tables;
-        $room->save();
+        return view('tables.overview', [
+            'tables' => $tournament
+                ->tables()
+                ->withPivot([
+                    'is_table_free',
+                    'match_started_at',
+                ])
+                ->with('match.player1', 'match.player2')
+                ->orderBy('is_table_free')
+                ->orderBy('match_started_at')
+                ->orderByRaw('name')
+                ->get(),
+        ]); 
     }
-
 }

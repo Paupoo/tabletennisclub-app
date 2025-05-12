@@ -22,6 +22,7 @@ class Tournament extends Model
         'total_users',
         'max_users',
         'status',
+        'has_handicap_points',
     ];
 
     protected $casts = [
@@ -32,6 +33,7 @@ class Tournament extends Model
         'total_users' => 'integer',
         'max_users' => 'integer',
         'status' => 'string',
+        'has_handicap_points' => 'boolean',
         ];
 
     /* Relations */
@@ -61,7 +63,14 @@ class Tournament extends Model
                 'tournament_match_id',
                 'match_started_at',
             ])
+            ->using(TableTournament::class)
             ->withTimestamps();
+            
+    }
+
+    public function matches(): HasMany
+    {
+        return $this->hasMany(TournamentMatch::class);            
     }
 
     /** Scopes */

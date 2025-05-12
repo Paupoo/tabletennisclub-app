@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Models\Tournament;
 use App\Models\Pool;
+use App\Models\Room;
 use Exception;
 use Illuminate\Support\Collection;
 
@@ -17,16 +18,27 @@ class TournamentTableService
      * @param Tournament $tournament Le tournoi concerné
      * @return array Les pools créées avec leurs joueurs
      */
-    public function linkAvailableTables(Tournament $tournament)
+    public function linkAvailableTables(Tournament $tournament): void
     {
-        $tournament->tables()->sync([]);
+        $tablesToSync = []; // Collect tables to keep or add to the tournament
         
         foreach($tournament->rooms as $room){
             foreach($room->tables as $table){
                 if($table->state !== 'oos'){
-                    $tournament->tables()->attach($table);
+                    $tablesToSync[] = $table->id;
                 }
             }
         }
+
+        $tournament->tables()->sync($tablesToSync);
+    }
+
+    public function updateTablesCount(Room $room): void
+    {
+        $total_tables = $room->tables()->count();
+        $total_playable_tables = $room->tables()->where('state', '!=', 'oos')->count();
+        $room->total_tables = $total_tables;
+        $room->total_playable_tables = $total_playable_tables;
+        $room->save();
     }
 }

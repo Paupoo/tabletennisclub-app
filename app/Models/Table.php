@@ -31,12 +31,15 @@ class Table extends Model
         return $this->belongsToMany(Tournament::class)
             ->withPivot([
                 'is_table_free',
+                'tournament_match_id',
                 'match_started_at',
-            ]);
+            ])
+            ->using(TableTournament::class)
+            ->withTimestamps();
     }
 
-    public function tournamentMatches(): BelongsToMany
+    public function match(): BelongsToMany
     {
-        return $this->belongsToMany(TournamentMatch::class);
+        return $this->belongsToMany(TournamentMatch::class, 'table_tournament');
     }
 }

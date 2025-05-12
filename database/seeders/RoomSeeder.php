@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Club;
 use App\Models\Room;
+use App\Models\Table;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -37,6 +38,18 @@ class RoomSeeder extends Seeder
             'capacity_for_trainings' => 5,
             'capacity_for_interclubs' => 4,
         ])->clubs()->attach(1);
+        
+        Room::create([
+            'name' => 'Demeester 2',
+            'building_name' => 'Centre Sportif Jean Demeester',
+            'street' => 'Rue de l\'invasion 80',
+            'city_code' => '1340',
+            'city_name' => 'Ottignies',
+            'floor' => '0',
+            'access_description' => fake()->text(150),
+            'capacity_for_trainings' => 5,
+            'capacity_for_interclubs' => 4,
+        ])->clubs()->attach(1);
 
         Room::create([
             'name' => 'Blocry G3',
@@ -53,5 +66,6 @@ class RoomSeeder extends Seeder
             ->count(5)
             ->hasClubs(1)
             ->create();
+
     }
 }

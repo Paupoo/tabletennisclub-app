@@ -18,9 +18,10 @@ return new class extends Migration
             $table->id();
             $table->foreignIdFor(Tournament::class)->nullable()->constrained()->nullOnDelete();
             $table->foreignIdFor(Table::class)->nullable()->constrained()->nullOnDelete();
-            $table->foreignIdFor(TournamentMatch::class)->nullable();
+            $table->foreignIdFor(TournamentMatch::class)->nullable()->constrained()->nullOnDelete();
             $table->boolean('is_table_free')->default(true);
             $table->dateTime('match_started_at')->nullable()->default(null);
+            $table->dateTime('match_ended_at')->nullable()->default(null);
             $table->timestamps();
         });
     }

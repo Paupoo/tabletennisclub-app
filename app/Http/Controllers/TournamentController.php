@@ -12,7 +12,7 @@ use App\Models\Table;
 use App\Models\Tournament;
 use App\Models\TournamentMatch;
 use App\Models\User;
-use App\Services\KnockoutPhaseService;
+use App\Services\TournamentFinalPhaseService;
 use App\Services\TournamentMatchService;
 use App\Services\TournamentPoolService;
 use App\Services\TournamentTableService;
@@ -30,25 +30,45 @@ class TournamentController extends Controller
         private TournamentTableService $tableService,
         private TournamentPoolService $poolService,
         private TournamentMatchService $matchService,
-        private KnockoutPhaseService $knockoutService,
+        private TournamentFinalPhaseService $knockoutService,
         ) {}
 
     public function index(): View
     {
+        $tournament = new Tournament;
+        
         return view('admin.tournaments.index', [
             'rooms' => Room::orderBy('name')->get(),
-            'tournament' => new Tournament(),
+            'tournament' => $tournament,
         ]);
     }
 
     public function show(string $id): View
     {
         $tournament = Tournament::findorFail($id);
-        $this->tableService->linkAvailableTables($tournament);
+                
+        $rooms = Room::orderBy('name')->get();
+        
+        $tables = $tournament
+        ->tables()
+        ->withPivot([
+            'is_table_free',
+            'match_started_at',
+            ])
+            ->with('match.player1', 'match.player2')
+            ->orderBy('is_table_free')
+            ->orderBy('match_started_at')
+            ->orderByRaw('name * 1 ASC')
+            ->get();
 
+        $matches = TournamentMatch::where('tournament_id', $tournament->id)->ordered()->get();
+            
         $unregisteredUsers = User::unregisteredUsers($tournament)->get();
 
         return view('admin.tournaments.show', [
+            'matches' => $matches,
+            'rooms' => $rooms,
+            'tables' => $tables,
             'tournament' => $tournament,
             'unregisteredUsers' => $unregisteredUsers,
         ]);
@@ -73,7 +93,9 @@ class TournamentController extends Controller
 
     public function update(Tournament $tournament, StoreOrUpdateTournamentRequest $request): RedirectResponse
     {
-
+        $this->authorize('update', [
+            $tournament,
+        ]);
         $validated = $request->validated();
         $tournament->update($validated);
                 
@@ -84,7 +106,7 @@ class TournamentController extends Controller
 
         return redirect()
             ->route('tournamentsIndex')
-            ->with('success', __('The tournament ' . $tournament->name . ' has been created.'));
+            ->with('success', __('The tournament ' . $tournament->name . ' has been updated.'));
     }
 
     public function destroy(Tournament $tournament): RedirectResponse
@@ -127,7 +149,7 @@ class TournamentController extends Controller
             ->with('success', __('Tournament ' . $tournament->name . ' has been published.'));
     }
 
-    public function start(Tournament $tournament): RedirectResponse
+    public function startTournament(Tournament $tournament): RedirectResponse
     {
         $tournament->status = 'pending';
         $tournament->update();
@@ -137,7 +159,7 @@ class TournamentController extends Controller
             ->with('success', __('Tournament ' . $tournament->name . ' has been started.'));
     }
 
-    public function close(Tournament $tournament): RedirectResponse
+    public function closeTournament(Tournament $tournament): RedirectResponse
     {
         $tournament->status = 'closed';
         $tournament->update();
@@ -279,8 +301,8 @@ class TournamentController extends Controller
     {
         $numberOfPools = intval($request->input('number_of_pools'));
 
-        if($request->minMatches === 1) {
-            $numberOfPools = intdiv($tournament->total_users, $numberOfPools+1);
+        if($request->input('minMatches')) {
+            $numberOfPools = intdiv($tournament->total_users, $numberOfPools+1)  ;
         }
         // Utiliser le service pour distribuer les joueurs
         $pools = $this->poolService->distributePlayersInPools($tournament, $numberOfPools);
@@ -289,6 +311,36 @@ class TournamentController extends Controller
             'success' => 'Joueurs répartis dans les poules avec succès',
             'pools' => $pools
         ]);
+    }
+
+    /**
+     * Erase all pools from a specific tournament.
+     *
+     * @param Tournament $tournament
+     * @return RedirectResponse
+     */
+    public function erasePools(Tournament $tournament): RedirectResponse
+    {
+        foreach($tournament->pools as $pool){
+            $this->eraseMatches($pool);
+        }
+        
+        $tournament->pools()->delete();
+
+        return redirect()
+                ->back()
+                ->with('success', __('Pools have been erased successfully.'));
+    }
+
+    /**
+     * Erase all matches from a pool.
+     *
+     * @param Pool $pool
+     * @return void
+     */
+    private function eraseMatches(Pool $pool): void
+    {
+        $pool->tournamentmatches()->delete();
     }
 
     /**
@@ -361,7 +413,7 @@ class TournamentController extends Controller
         }
         
         return redirect()
-            ->route('tournamentSetup', $tournament)
+            ->back()
             ->with([
                 'success' => $totalMatches . ' matches ont été générés avec succès pour toutes les poules',
             ]);
@@ -383,7 +435,7 @@ class TournamentController extends Controller
         $tournament = $pool->tournament;
         $tables = $tournament->tables()
                         ->wherePivot('is_table_free', true)
-                        ->orderBy('name')
+                        ->orderByRaw('name')
                         ->get();
         
         return view('admin.tournaments.pool-matches', [
@@ -424,6 +476,7 @@ class TournamentController extends Controller
      */
     public function updateMatch(Request $request, TournamentMatch $match): RedirectResponse
     {
+
         $rules = [
             'sets' => 'required|array|min:3|max:5',
         ];
@@ -507,6 +560,13 @@ class TournamentController extends Controller
 
         // Record results - ne garder que les sets avec des résultats
         $match->recordResult($setsWithResults);
+
+        $tournament = $match->tournament()->first();
+        $table = $tournament->tables()->wherePivot('tournament_match_id', $match->id)->first()  ;
+        $tournament->tables()->updateExistingPivot($table->id, [
+            'is_table_free' => true,
+            'match_ended_at' => now(),
+        ]);
         
         // Editing a match from pool or from final bracket?
         if(isset($match->pool->tournament)){
@@ -524,6 +584,7 @@ class TournamentController extends Controller
                 ->route('knockoutBracket', $match->tournament_id)
                 ->with('success', 'Résultats du match enregistrés avec succès');
         }
+
     }
 
     /**
@@ -534,35 +595,29 @@ class TournamentController extends Controller
      */
     public function startMatch(TournamentMatch $match, StartTournamentMatch $request): RedirectResponse
     {
+        // TODO : check that none of the players are currently busy playing a match or being a referee
         $table = Table::find($request->table_id);
-        $tournament = $match->pool->tournament;
+        $tournament = $match->tournament;
         $this->bookTableForMatch($table, $tournament, $match);
         $match->status = 'in_progress';
         $match->save();
         
         return redirect()
-            ->route('showPoolMatches', $match->pool)
+            ->back()
             ->with('success', 'Le match est en cours.');
     }
 
     public function bookTableForMatch(Table $table, Tournament $tournament, TournamentMatch $match): void
-    {
-        $relation = $table->tournaments()
-        ->wherePivot('tournament_id', $tournament->id)
-        ->wherePivotNull('tournament_match_id') // Vérifie que la table est libre
-        // ->wherePivot('is_table_free', false)
-        ->first();
-
-        if (! $relation) {
-            throw new \RuntimeException('Table déjà assignée à un match dans ce tournoi.');
-        }
-        
+    {        
         $table->tournaments()
             ->updateExistingPivot($tournament->id, [
                 'is_table_free' => false,
                 'tournament_match_id' => $match->id,
                 'match_started_at' => now(),
             ]);
+        
+        $match->table_id = $table->id;
+        $match->save();
     }
 
     /**
@@ -579,7 +634,7 @@ class TournamentController extends Controller
         $match->save();
         
         return redirect()
-            ->route('showPoolMatches', $match->pool)
+            ->back()
             ->with('success', 'Résultats du match réinitialisés avec succès');
     }
 

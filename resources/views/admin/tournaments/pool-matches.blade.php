@@ -98,8 +98,14 @@
                                 @foreach ($matches as $match)
                                     <tr>
                                         <td class="px-6 py-4 whitespace-nowrap">{{ $match->match_order }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap">{{ $match->player1->first_name }} {{ $match->player1->last_name }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap">{{ $match->player2->first_name }} {{ $match->player2->last_name }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="font-bold">{{ $match->player1->first_name }} {{ $match->player1->last_name }}</span>
+                                            <div class="text-xs text-gray-500 mt-1">{{ $match->player1->ranking }} {{ $match->player1_handicap_points > 0 ? '+ ' . $match->player1_handicap_points . ' pts' : '' }}</div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="font-bold">{{ $match->player2->first_name }} {{ $match->player2->last_name }}</span>
+                                            <div class="text-xs text-gray-500 mt-1">{{ $match->player2->ranking }} {{ $match->player2_handicap_points > 0 ? '+ ' . $match->player2_handicap_points . ' pts' : '' }}</div>
+                                        </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             @if ($match->status === 'scheduled')
                                                 <span
@@ -156,7 +162,7 @@
                                                     </button>
                                                 </form>
                                             @elseif($tables->count() == 0)
-                                            <a href="{{ route('tables-overview') }}"><p class="text-gray-600">{{ __('All the tables are currently used') }}</p></a>
+                                            <a href="{{ route('tablesOverview', $tournament) }}"><p class="text-gray-600">{{ __('All the tables are currently used') }}</p></a>
                                             @else
                                             <div class="flex items-center p-2 bg-gray-50 rounded-lg shadow-sm hover:bg-gray-100 transition">
                                                 <form action="{{ route('startMatch', $match) }}" method="POST" class="flex w-full items-center space-x-2">

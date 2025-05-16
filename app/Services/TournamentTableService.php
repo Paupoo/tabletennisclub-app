@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\Tournament;
 use App\Models\Pool;
 use App\Models\Room;
+use App\Models\TournamentMatch;
 use Exception;
 use Illuminate\Support\Collection;
 
@@ -31,6 +32,16 @@ class TournamentTableService
         }
 
         $tournament->tables()->sync($tablesToSync);
+    }
+
+    public function freeUsedTable(TournamentMatch $match): void
+    {
+        $tournament = $match->tournament()->first();
+        $table = $tournament->tables()->wherePivot('tournament_match_id', $match->id)->first()  ;
+        $tournament->tables()->updateExistingPivot($table->id, [
+            'is_table_free' => true,
+            'match_ended_at' => now(),
+        ]);
     }
 
     public function updateTablesCount(Room $room): void

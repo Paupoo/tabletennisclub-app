@@ -131,6 +131,13 @@ class TournamentController extends Controller
 
     public function unpublish(Tournament $tournament): RedirectResponse
     {
+        foreach($tournament->matches as $match){
+            if($match->status == 'in_progress' || $match->status == 'completed'){
+                return redirect()
+                    ->back()
+                    ->with('error', __('Tournament ' . $tournament->name . ' has pending or completed matches and can\'t be unpublished.'));
+            }
+        }
         $tournament->status = 'draft';
         $tournament->update();
 
@@ -141,6 +148,14 @@ class TournamentController extends Controller
     
     public function publish(Tournament $tournament): RedirectResponse
     {
+        foreach($tournament->matches as $match){
+            if($match->status == 'in_progress' || $match->status == 'completed'){
+                return redirect()
+                    ->back()
+                    ->with('error', __('Tournament ' . $tournament->name . ' has pending or completed matches and can\'t be unpublished.'));
+            }
+        }
+        
         $tournament->status = 'open';
         $tournament->update();
 
@@ -321,11 +336,19 @@ class TournamentController extends Controller
      */
     public function erasePools(Tournament $tournament): RedirectResponse
     {
+        if($tournament->status == 'pending' || $tournament->status == 'closed') {
+            return redirect()
+                ->back()
+                ->with('error', __('You can\'t modify a tournament that is started or closed.'));          
+        }
+
         foreach($tournament->pools as $pool){
             $this->eraseMatches($pool);
+
         }
         
         $tournament->pools()->delete();
+        dd($tournament->tables);
 
         return redirect()
                 ->back()
@@ -561,12 +584,7 @@ class TournamentController extends Controller
         // Record results - ne garder que les sets avec des résultats
         $match->recordResult($setsWithResults);
 
-        $tournament = $match->tournament()->first();
-        $table = $tournament->tables()->wherePivot('tournament_match_id', $match->id)->first()  ;
-        $tournament->tables()->updateExistingPivot($table->id, [
-            'is_table_free' => true,
-            'match_ended_at' => now(),
-        ]);
+        $this->tableService->freeUsedTable($match);
         
         // Editing a match from pool or from final bracket?
         if(isset($match->pool->tournament)){

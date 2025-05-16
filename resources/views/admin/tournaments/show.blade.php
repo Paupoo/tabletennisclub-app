@@ -10,14 +10,21 @@
                             class="inline-block px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md transition duration-200 text-center">
                             &larr; Retour
                         </a>
+                        @if($tournament->status == 'open')
                         <a href="{{ route('startTournament', $tournament) }}"
                             class="inline-block px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition duration-200 text-center">
                             Démarrer le tournoi
+                        </a>
+                        @elseif($tournament->status == 'pending')
+                        <a href="{{ route('publishTournament', $tournament) }}"
+                            class="inline-block px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-md transition duration-200 text-center">
+                            Rouvrir le tournoi
                         </a>
                         <a href="{{ route('closeTournament', $tournament) }}"
                             class="inline-block px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition duration-200 text-center">
                             Clôturer le tournoi
                         </a>
+                        @endif
                         <a href="{{ route('knockoutBracket', $tournament) }}"
                             class="inline-block px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition duration-200 text-center">
                             Phase finale (show)

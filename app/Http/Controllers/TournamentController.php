@@ -595,9 +595,16 @@ class TournamentController extends Controller
      */
     public function startMatch(TournamentMatch $match, StartTournamentMatch $request): RedirectResponse
     {
+        $tournament = $match->tournament;
+        
+        if($tournament->status != 'pending') {
+            return redirect()
+                    ->back()
+                    ->with('error', __('Please start the tournament first'));
+        }
+        
         // TODO : check that none of the players are currently busy playing a match or being a referee
         $table = Table::find($request->table_id);
-        $tournament = $match->tournament;
         $this->bookTableForMatch($table, $tournament, $match);
         $match->status = 'in_progress';
         $match->save();

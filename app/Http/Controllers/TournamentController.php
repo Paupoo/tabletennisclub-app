@@ -348,7 +348,7 @@ class TournamentController extends Controller
         }
         
         $tournament->pools()->delete();
-        dd($tournament->tables);
+        // dd($tournament->tables);
 
         return redirect()
                 ->back()

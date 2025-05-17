@@ -33,6 +33,7 @@ class TournamentMatchService
             'E4' => 8,
             'E6' => 8,
             'NC' => 8,
+            'NA' => 8,
         ],
         'B2' => [
             'B0' => 0,
@@ -52,6 +53,7 @@ class TournamentMatchService
             'E4' => 7,
             'E6' => 8,
             'NC' => 8,
+            'NA' => 8,
         ],
         'B4' => [
             'B0' => 0,
@@ -71,6 +73,7 @@ class TournamentMatchService
             'E4' => 7,
             'E6' => 7,
             'NC' => 8,
+            'NA' => 8,
         ],
         'B6' => [
             'B0' => 0,
@@ -90,6 +93,7 @@ class TournamentMatchService
             'E4' => 6,
             'E6' => 7,
             'NC' => 7,
+            'NA' => 7,
         ],
         'C0' => [
             'B0' => 0,
@@ -109,6 +113,7 @@ class TournamentMatchService
             'E4' => 6,
             'E6' => 6,
             'NC' => 7,
+            'NA' => 7,
         ],
         'C2' => [
             'B0' => 0,
@@ -128,6 +133,7 @@ class TournamentMatchService
             'E4' => 5,
             'E6' => 6,
             'NC' => 6,
+            'NA' => 6,
         ],
         'C4' => [
             'B0' => 0,
@@ -147,6 +153,7 @@ class TournamentMatchService
             'E4' => 5,
             'E6' => 5,
             'NC' => 6,
+            'NA' => 6,
         ],
         'C6' => [
             'B0' => 0,
@@ -166,6 +173,7 @@ class TournamentMatchService
             'E4' => 4,
             'E6' => 5,
             'NC' => 5,
+            'NA' => 5,
         ],
         'D0' => [
             'B0' => 0,
@@ -185,6 +193,7 @@ class TournamentMatchService
             'E4' => 4,
             'E6' => 4,
             'NC' => 5,
+            'NA' => 5,
         ],
         'D2' => [
             'B0' => 0,
@@ -204,8 +213,10 @@ class TournamentMatchService
             'E4' => 3,
             'E6' => 4,
             'NC' => 4,
+            'NA' => 4,
         ],
         'D4' => [
+            'NA' => 4,
             'B0' => 0,
             'B2' => 0,
             'B4' => 0,
@@ -223,6 +234,7 @@ class TournamentMatchService
             'E4' => 3,
             'E6' => 3,
             'NC' => 4,
+            'NA' => 4,
         ],
         'D6' => [
             'B0' => 0,
@@ -242,6 +254,7 @@ class TournamentMatchService
             'E4' => 2,
             'E6' => 3,
             'NC' => 3,
+            'NA' => 3,
         ],
         'E0' => [
             'B0' => 0,
@@ -261,6 +274,7 @@ class TournamentMatchService
             'E4' => 2,
             'E6' => 2,
             'NC' => 3,
+            'NA' => 3,
         ],
         'E2' => [
             'B0' => 0,
@@ -280,6 +294,7 @@ class TournamentMatchService
             'E4' => 1,
             'E6' => 2,
             'NC' => 2,
+            'NA' => 2,
         ],
         'E4' => [
             'B0' => 0,
@@ -299,6 +314,7 @@ class TournamentMatchService
             'E4' => 0,
             'E6' => 1,
             'NC' => 2,
+            'NA' => 2,
         ],
         'E6' => [
             'B0' => 0,
@@ -318,6 +334,7 @@ class TournamentMatchService
             'E4' => 0,
             'E6' => 0,
             'NC' => 1,
+            'NA' => 1,
         ],
         'NC' => [
             'B0' => 0,
@@ -337,6 +354,27 @@ class TournamentMatchService
             'E4' => 0,
             'E6' => 0,
             'NC' => 0,
+            'NA' => 0,
+        ],
+        'NA' => [
+            'B0' => 0,
+            'B2' => 0,
+            'B4' => 0,
+            'B6' => 0,
+            'C0' => 0,
+            'C2' => 0,
+            'C4' => 0,
+            'C6' => 0,
+            'D0' => 0,
+            'D2' => 0,
+            'D4' => 0,
+            'D6' => 0,
+            'E0' => 0,
+            'E2' => 0,
+            'E4' => 0,
+            'E6' => 0,
+            'NC' => 0,
+            'NA' => 0,
         ],
     ];
 

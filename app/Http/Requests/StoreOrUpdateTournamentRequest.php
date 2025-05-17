@@ -28,6 +28,7 @@ class StoreOrUpdateTournamentRequest extends FormRequest
             'room_ids' => 'required|array|min:1',
             'max_users' => 'required|integer|min:10',
             'price' => 'decimal:0,2',
+            'has_handicap_points' => 'required|bool',
         ];
     }
 }

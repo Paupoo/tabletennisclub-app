@@ -131,14 +131,20 @@ class UserController extends Controller
     {
         $this->authorize('delete', User::class);
 
+        if ($user->tournaments()->whereIn('status', ['draft', 'open', 'pending'])->count() > 0) {
+            return redirect()
+                ->back()
+                ->with('error', __('Cannot delete ' . $user->first_name . ' ' . $user->last_name . ' because he subscribed to one or more tournaments'));
+        }
+
         $user->delete();
 
         $this->forceList->setOrUpdateAll();
 
         return redirect()
             ->route('users.index')
-            ->with('deleted', 'User ' . $user->first_name . ' ' . $user->last_name . ' has been deleted');
-    }
+            ->with('success', 'User ' . $user->first_name . ' ' . $user->last_name . ' has been deleted');
+    }   
 
     public function setForceList(): RedirectResponse
     {

@@ -28,5 +28,7 @@
                 {{ $slot }}
             </main>
         </div>
+        <x-growler/>
+
     </body>
 </html>

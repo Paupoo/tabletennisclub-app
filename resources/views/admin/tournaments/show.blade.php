@@ -1,4 +1,6 @@
 <x-app-layout>
+
+
     <div class="container mx-auto px-4 py-8">
         <!-- En-tête du tournoi -->
         <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
@@ -108,7 +110,7 @@
         </div>
 
         <!-- Messages de succès -->
-        @if (session()->has('success'))
+        {{-- @if (session()->has('success'))
             <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-8" role="alert">
                 <p>{{ session()->get('success') }}</p>
             </div>
@@ -116,7 +118,7 @@
             <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-8" role="alert">
                 <p>{{ session()->get('error') }}</p>
             </div>
-        @endif
+        @endif --}}
 
         <!-- Système de navigation par onglets -->
         <div class="mb-8 bg-white rounded-lg shadow-lg overflow-hidden" x-data="{ activeTab: 'registered' }">
@@ -1040,4 +1042,6 @@
             animation-delay: 0.4s;
         }
     </style>
+
+
 </x-app-layout>

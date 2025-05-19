@@ -166,6 +166,18 @@ class TournamentController extends Controller
 
     public function startTournament(Tournament $tournament): RedirectResponse
     {
+        if($tournament->pools()->count() == 0) {
+            return redirect()
+                ->back()
+                ->with('error', __('Please generate the pools first'));
+        }
+        
+        if($tournament->matches()->count() == 0) {
+            return redirect()
+                ->back()
+                ->with('warning', __('Please generate the matches first'));
+        }
+
         $tournament->status = 'pending';
         $tournament->update();
 
@@ -415,7 +427,7 @@ class TournamentController extends Controller
         return redirect()
             ->route('tournamentShow', $tournament)
             ->with([
-                'success' => 'Le paiement de ' . $user->first_name . ' ' . $user->last_name . ' a bien été ' . (($hasPaid) ? 'supprimé' : 'enregistré'),
+                $hasPaid ? 'warning' : 'success' => 'Le paiement de ' . $user->first_name . ' ' . $user->last_name . ' a bien été ' . (($hasPaid) ? 'supprimé' : 'enregistré'),
             ]);
 
     }

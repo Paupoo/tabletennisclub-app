@@ -29,7 +29,7 @@ class TournamentPolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        return ($user->is_admin || $user->is_comittee_member);
     }
 
     /**
@@ -63,6 +63,6 @@ class TournamentPolicy
      */
     public function forceDelete(User $user, Tournament $tournament): bool
     {
-        return false;
+        return ($user->is_admin || $user->is_comittee_member) && $tournament->status !== 'pending';
     }
 }

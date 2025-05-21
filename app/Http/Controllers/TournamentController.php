@@ -76,6 +76,8 @@ class TournamentController extends Controller
 
     public function create(StoreOrUpdateTournamentRequest $request): RedirectResponse
     {
+        $this->authorize('create', Tournament::class);
+
         $validated = $request->validated();
 
         $tournament = Tournament::create($validated);
@@ -91,7 +93,7 @@ class TournamentController extends Controller
             ->with('success', __('The tournament ' . $tournament->name . ' has been created.'));
     }
 
-    public function update(Tournament $tournament, StoreOrUpdateTournamentRequest $request): RedirectResponse
+    public function update(StoreOrUpdateTournamentRequest $request, Tournament $tournament): RedirectResponse
     {
         $this->authorize('update', [
             $tournament,
@@ -111,6 +113,8 @@ class TournamentController extends Controller
 
     public function destroy(Tournament $tournament): RedirectResponse
     {
+        $this->authorize('forceDelete', [$tournament]);
+
         $tournament->delete();
 
         return redirect()
@@ -188,6 +192,7 @@ class TournamentController extends Controller
 
     public function closeTournament(Tournament $tournament): RedirectResponse
     {
+        
         $tournament->status = 'closed';
         $tournament->update();
 
@@ -388,7 +393,7 @@ class TournamentController extends Controller
     public function updatePoolPlayers(Request $request, Tournament $tournament)
     {
         // Vérifier l'autorisation
-        // $this->authorize('update', $tournament);
+        $this->authorize('update', $tournament);
 
         // Récupérer les mouvements de joueurs depuis le formulaire
         $playerMoves = $request->input('player_moves', []);
@@ -511,6 +516,8 @@ class TournamentController extends Controller
      */
     public function updateMatch(Request $request, TournamentMatch $match): RedirectResponse
     {
+
+        dd($request);
 
         $rules = [
             'sets' => 'required|array|min:3|max:5',

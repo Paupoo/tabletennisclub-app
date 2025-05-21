@@ -12,7 +12,12 @@
                             class="inline-block px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md transition duration-200 text-center">
                             &larr; Retour
                         </a>
-                        @if($tournament->status == 'open')
+                        @if($tournament->status == 'draft')
+                        <a href="{{ route('tournamentSetup', $tournament) }}"
+                            class="inline-block px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition duration-200 text-center">
+                            Modifier le tournoi
+                        </a>
+                        @elseif($tournament->status == 'open')
                         <a href="{{ route('startTournament', $tournament) }}"
                             class="inline-block px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition duration-200 text-center">
                             Démarrer le tournoi
@@ -20,7 +25,7 @@
                         @elseif($tournament->status == 'pending')
                         <a href="{{ route('publishTournament', $tournament) }}"
                             class="inline-block px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-md transition duration-200 text-center">
-                            Rouvrir le tournoi
+                            Stopper le tournoi (pour modifier)
                         </a>
                         <a href="{{ route('closeTournament', $tournament) }}"
                             class="inline-block px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition duration-200 text-center">
@@ -64,11 +69,11 @@
                             </div>
                         </div>
                         <div class="flex items-center">
-                            <div class="rounded-full bg-green-100 p-3 mr-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600" fill="none"
+                            <div class="rounded-full bg-red-100 p-3 mr-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-600" fill="none"
                                     viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                                 </svg>
                             </div>
                             <div class="text-gray-500">
@@ -77,11 +82,11 @@
                             </div>
                         </div>
                         <div class="flex items-center">
-                            <div class="rounded-full bg-green-100 p-3 mr-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600" fill="none"
+                            <div class="rounded-full bg-orange-100 p-3 mr-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-orange-600" fill="none" 
                                     viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                                 </svg>
                             </div>
                             <div class="text-gray-500">
@@ -96,12 +101,31 @@
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600" fill="none"
                                     viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                                </svg>
+                                        d="M3 8h18M3 8v2a1 1 0 001 1h16a1 1 0 001-1V8M6 8v8m12-8v8" />
+                                </svg>  
                             </div>
                             <div class="text-gray-500">
                                 <p class="text-sm">{{ __('Total tables') }}</p>
                                 <p class="font-bold text-lg">{{ $tournament->tables->count() }}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <div class="rounded-full bg-yellow-100 p-3 mr-3">
+                                <!-- SVG de la balance ici -->
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-600" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="12" y1="3" x2="12" y2="21" />
+                                    <line x1="4" y1="7" x2="20" y2="7" />
+                                    <line x1="9" y1="21" x2="15" y2="21" />
+                                    <circle cx="7" cy="14" r="3" />
+                                    <circle cx="17" cy="14" r="3" />
+                                    <line x1="7" y1="7" x2="7" y2="11" />
+                                    <line x1="17" y1="7" x2="17" y2="11" />
+                                </svg>
+                            </div>
+                            <div class="text-gray-500">
+                                <p class="text-sm">Points d'handicap</p>
+                                <p class="font-bold text-lg">{{ $tournament->has_handicap_points ? 'Oui' : 'Non' }}</p>
                             </div>
                         </div>
                     </div>

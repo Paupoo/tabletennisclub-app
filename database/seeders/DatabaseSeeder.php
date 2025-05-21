@@ -335,10 +335,29 @@ class DatabaseSeeder extends Seeder
         $this->tournament->save();
 
         $this->tournament = Tournament::find(2);
-        $this->tournament->name = 'Vieux tournoi';
+        $this->tournament->name = 'Petit tournoi amical';
+        $this->tournament->total_users = 16;
+        $this->tournament->max_users = 16;
+        $this->tournament->has_handicap_points = true;
         $this->tournament->save();
+        $this->tournament->rooms()->sync([1,2]);
 
+        // Link tables
+        $this->tableService->linkAvailableTables($this->tournament);
+        
+        // Add users
+        for ($i=1; $i < 17; $i++){
+            $user = User::find($i);
+            $this->tournament->users()->attach($user);
+        }
 
+        // Generate pools
+        $this->poolService->distributePlayersInPools($this->tournament, 4);
+
+        // Generate matches
+        foreach($this->tournament->pools as $pool){
+            $this->matchService->generateMatches($pool);
+        }
 
         $this->tournament = Tournament::find(3);
         $this->tournament->name = 'Tournoi de doubles';

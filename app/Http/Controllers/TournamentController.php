@@ -74,7 +74,15 @@ class TournamentController extends Controller
         ]);
     }
 
-    public function create(StoreOrUpdateTournamentRequest $request): RedirectResponse
+    public function create(): View
+    {
+        return view('admin.tournaments.create', [
+            'tournament' => new Tournament(),
+            'rooms' => Room::all(),
+        ]);
+    }
+
+    public function store(StoreOrUpdateTournamentRequest $request): RedirectResponse
     {
         $this->authorize('create', Tournament::class);
 

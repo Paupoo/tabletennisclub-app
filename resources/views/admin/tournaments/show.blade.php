@@ -32,6 +32,16 @@
                             <!-- Composant Livewire pour l'inscription de joueur -->
                             <livewire:player-registration :tournament="$tournament" />
                             
+                            <a href="{{ route('publishTournament', $tournament) }}"
+                                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                                <x-ui.icon name="arrow-counter-clockwise" class="h-4 w-4 mr-2" />
+                                {{ __('Reset') }}
+                            </a>
+                            <a href="{{ route('startTournament', $tournament) }}"
+                                class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                                <x-ui.icon name="rocket-launch" class="mr-2" />
+                                {{ __('Start') }}
+                            </a>
                             <a href="{{ route('tournamentSetup', $tournament) }}"
                                 class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
                                 <x-ui.icon name="modify" class="mr-2" />

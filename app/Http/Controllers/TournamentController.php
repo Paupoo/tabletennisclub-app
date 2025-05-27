@@ -649,8 +649,6 @@ class TournamentController extends Controller
     public function updateMatch(Request $request, TournamentMatch $match): RedirectResponse
     {
 
-        dd($request);
-
         $rules = [
             'sets' => 'required|array|min:3|max:5',
         ];

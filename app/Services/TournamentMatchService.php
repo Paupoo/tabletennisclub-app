@@ -216,7 +216,6 @@ class TournamentMatchService
             'NA' => 4,
         ],
         'D4' => [
-            'NA' => 4,
             'B0' => 0,
             'B2' => 0,
             'B4' => 0,
@@ -507,7 +506,7 @@ class TournamentMatchService
     /**
      * Calculate standings for a pool
      * 
-     * @param Pool $pool The pool to calculate standings for
+     * @param Tournament $tournament The tournament to calculate pools standings for
      * @return Collection Collection of players with their stats
      */
     public function calculateRowStandings(Tournament $tournament): Collection
@@ -542,9 +541,11 @@ class TournamentMatchService
         });
         
         // Sort standings by matches won (desc), sets won (desc), and total points (desc)
-        return $standings->sortByDesc(function ($item) {
-            return sprintf('%06d%06d%06d', $item['matches_won'], $item['sets_won'], $item['total_points']);
-        })->values();
+        return $standings->sortByDesc([
+                ['matches_won', 'desc'],
+                ['sets_won', 'desc'],
+                ['total_points', 'desc'],
+            ])->values();
     }
 
     /**
@@ -557,13 +558,19 @@ class TournamentMatchService
      */
     private function calculateHandicapPointsToReceive(User $player1, User $player2): int
     {
-        if (!$this->isValidRanking($player2->ranking) || !$this->isValidRanking($player2->ranking)) {
+        if (!$this->isValidRanking($player1->ranking) || !$this->isValidRanking($player2->ranking)) {
             throw new InvalidArgumentException("Classement invalide.");
         }
 
         return $this->handicapPoints[$player2->ranking][$player1->ranking];
     }
 
+    /**
+     * Verify if the ranking exists
+     *
+     * @param string $value The ranking to check
+     * @return boolean
+     */
     private function isValidRanking(string $value): bool
     {
         foreach (Ranking::cases() as $case) {

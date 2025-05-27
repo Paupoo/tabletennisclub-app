@@ -32,37 +32,12 @@
                         <div class="py-1">
                             <a href="{{ route('createTournament') }}"
                                 class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-gray-500"
-                                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                </svg>
+                                <x-ui.icon name="plus"/>
                                 {{ __('Create tournament') }}
                             </a>
                         </div>
                     </div>
                 </div>
-
-                {{-- <div class="inline-block h-4/5 min-h-[1em] w-0.5 mx-2 my-auto self-stretch bg-neutral-300 dark:bg-white/10"></div> --}}
-                <!-- Boutons d'accès rapide -->
-                {{-- <a href="#"
-                    class="h-8 text-md flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition duration-150 ease-in-out">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-white" fill="none"
-                        viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M3 8h18M3 8v2a1 1 0 001 1h16a1 1 0 001-1V8M6 8v8m12-8v8" />
-                    </svg>
-                    {{ __('Show Tables') }}
-                </a>
-                <a href=""
-                    class="h-8 text-md flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition duration-150 ease-in-out">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                    </svg>
-                    {{ __('Show scores') }}
-                </a> --}}
             </div>
         </div>
     </x-slot>

@@ -74,6 +74,130 @@ class TournamentController extends Controller
         ]);
     }
 
+    public function showPlayers(string $id): View
+    {
+        $tournament = Tournament::findorFail($id);
+                
+        $rooms = Room::orderBy('name')->get();
+        
+        $tables = $tournament
+        ->tables()
+        ->withPivot([
+            'is_table_free',
+            'match_started_at',
+            ])
+            ->with('match.player1', 'match.player2')
+            ->orderBy('is_table_free')
+            ->orderBy('match_started_at')
+            ->orderByRaw('name * 1 ASC')
+            ->get();
+
+        $matches = TournamentMatch::where('tournament_id', $tournament->id)->ordered()->get();
+            
+        $unregisteredUsers = User::unregisteredUsers($tournament)->get();
+
+        return view('admin.tournaments.show-players', [
+            'matches' => $matches,
+            'rooms' => $rooms,
+            'tables' => $tables,
+            'tournament' => $tournament,
+            'unregisteredUsers' => $unregisteredUsers,
+        ]);
+    }
+
+    public function showPools(string $id): View
+    {
+        $tournament = Tournament::findorFail($id);
+                
+        $rooms = Room::orderBy('name')->get();
+        
+        $tables = $tournament
+        ->tables()
+        ->withPivot([
+            'is_table_free',
+            'match_started_at',
+            ])
+            ->with('match.player1', 'match.player2')
+            ->orderBy('is_table_free')
+            ->orderBy('match_started_at')
+            ->orderByRaw('name * 1 ASC')
+            ->get();
+
+        $matches = TournamentMatch::where('tournament_id', $tournament->id)->ordered()->get();
+            
+        $unregisteredUsers = User::unregisteredUsers($tournament)->get();
+
+        return view('admin.tournaments.show-pools', [
+            'matches' => $matches,
+            'rooms' => $rooms,
+            'tables' => $tables,
+            'tournament' => $tournament,
+            'unregisteredUsers' => $unregisteredUsers,
+        ]);
+    }
+
+    public function showMatches(string $id): View
+    {
+        $tournament = Tournament::findorFail($id);
+                
+        $rooms = Room::orderBy('name')->get();
+        
+        $tables = $tournament
+        ->tables()
+        ->withPivot([
+            'is_table_free',
+            'match_started_at',
+            ])
+            ->with('match.player1', 'match.player2')
+            ->orderBy('is_table_free')
+            ->orderBy('match_started_at')
+            ->orderByRaw('name * 1 ASC')
+            ->get();
+
+        $matches = TournamentMatch::where('tournament_id', $tournament->id)->ordered()->get();
+            
+        $unregisteredUsers = User::unregisteredUsers($tournament)->get();
+
+        return view('admin.tournaments.show-matches', [
+            'matches' => $matches,
+            'rooms' => $rooms,
+            'tables' => $tables,
+            'tournament' => $tournament,
+            'unregisteredUsers' => $unregisteredUsers,
+        ]);
+    }
+
+    public function showTables(string $id): View
+    {
+        $tournament = Tournament::findorFail($id);
+                
+        $rooms = Room::orderBy('name')->get();
+        
+        $tables = $tournament
+        ->tables()
+        ->withPivot([
+            'is_table_free',
+            'match_started_at',
+            ])
+            ->with('match.player1', 'match.player2')
+            ->orderBy('is_table_free')
+            ->orderBy('match_started_at')
+            ->orderByRaw('name * 1 ASC')
+            ->get();
+
+        $matches = TournamentMatch::where('tournament_id', $tournament->id)->ordered()->get();
+            
+        $unregisteredUsers = User::unregisteredUsers($tournament)->get();
+
+        return view('admin.tournaments.show-tables', [
+            'matches' => $matches,
+            'rooms' => $rooms,
+            'tables' => $tables,
+            'tournament' => $tournament,
+            'unregisteredUsers' => $unregisteredUsers,
+        ]);
+    }
+
     public function create(): View
     {
         return view('admin.tournaments.create', [
@@ -214,7 +338,7 @@ class TournamentController extends Controller
 
         if ($this->IsFull($tournament)) {
             return redirect()
-                ->route('tournamentShow', $tournament)
+                ->route('tournamentShowPlayers', $tournament)
                 ->with('error', 'Sorry, the tournament is full, you cannot register more players.');
         }
 
@@ -223,7 +347,7 @@ class TournamentController extends Controller
         $this->countRegisteredUsers($tournament);
 
         return redirect()
-            ->route('tournamentShow', [$tournament])
+            ->route('tournamentShowPlayers', [$tournament])
             ->with('success', $user->first_name . ' ' . $user->last_name . ' has been registered to the tournament');
     }
 
@@ -233,7 +357,7 @@ class TournamentController extends Controller
         $this->countRegisteredUsers($tournament);
 
         return redirect()
-            ->route('tournamentShow', [$tournament])
+            ->route('tournamentShowPlayers', [$tournament])
             ->with('success', $user->first_name . ' ' . $user->last_name . ' has been unregistered to the tournament');
     }
 

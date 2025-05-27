@@ -82,8 +82,9 @@
         <!-- Menu secondaire pour tournoi sélectionné -->
         @include('admin.tournaments.partials.secondary-menu')
 
-        <!-- Informations sur le tournoi -->
-        @include('admin.tournaments.partials.details')
+
+        <!-- Contenu de l'onglet: Joueurs inscrits -->
+        @include('admin.tournaments.partials.registered-players')
 
     </x-admin-block>
 </x-app-layout>

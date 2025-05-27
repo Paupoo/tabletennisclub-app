@@ -136,6 +136,7 @@ class TableController extends Controller
                 ->orderBy('match_started_at')
                 ->orderByRaw('name')
                 ->get(),
+            'tournament' => $tournament,
         ]); 
     }
 }

@@ -82,8 +82,10 @@
         <!-- Menu secondaire pour tournoi sélectionné -->
         @include('admin.tournaments.partials.secondary-menu')
 
-        <!-- Informations sur le tournoi -->
-        @include('admin.tournaments.partials.details')
+
+
+        <!-- Liste des poules -->
+        @include('admin.tournaments.partials.pools')
 
     </x-admin-block>
 </x-app-layout>

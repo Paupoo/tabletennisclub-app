@@ -1,4 +1,5 @@
-<div id="content-matches" x-show="activeTab === 'matches'" class="tab-content" x-cloak>
+<div class="bg-white border border-gray-200 rounded-lg p-6 mb-8">
+
     <h2 class="text-xl font-bold text-gray-800 mb-6">Liste des matches</h2>
     <div class="overflow-x-auto">
         @if (count($matches) > 0)
@@ -104,24 +105,13 @@
                                         </a>
                                     @else
                                         <div
+                                            x-data="{ selected: '' }"
                                             class="flex items-center p-2 bg-gray-50 rounded-lg shadow-sm hover:bg-gray-100 transition">
                                             <form action="{{ route('startMatch', $match) }}" method="POST"
                                                 class="flex w-full items-center space-x-2">
                                                 @csrf
-                                                <div class="flex items-center space-x-2">
-                                                    <svg xmlns="http://www.w3.org/2000/svg"
-                                                        class="h-5 w-5 text-indigo-500" viewBox="0 0 20 20"
-                                                        fill="currentColor">
-                                                        <path fill-rule="evenodd"
-                                                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z"
-                                                            clip-rule="evenodd" />
-                                                    </svg>
-                                                    <label for="table_id"
-                                                        class="text-sm font-medium text-gray-700">Table</label>
-                                                </div>
-
-                                                <select name="table_id" id="table_id"
-                                                    class="pl-3 pr-10 py-1 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md shadow-sm">
+                                                <select x-model="selected" name="table_id" id="table_id"
+                                                    class="pl-3 pr-10 py-1 text-sm border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md shadow-sm">
                                                     <option selected value="" disabled>
                                                         {{ __('Select a table') }}</option>
                                                     @foreach ($tables as $table)
@@ -133,17 +123,13 @@
                                                         @endif
                                                     @endforeach
                                                 </select>
-
-                                                <button type="submit"
-                                                    class="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition">
-                                                    <span>Démarrer</span>
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="ml-1 h-4 w-4"
-                                                        viewBox="0 0 20 20" fill="currentColor">
-                                                        <path fill-rule="evenodd"
-                                                            d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z"
-                                                            clip-rule="evenodd" />
-                                                    </svg>
-                                                </button>
+                                                <x-ui.action-button
+                                                    x-show="selected !== ''" class="shrink-0" x-cloak
+                                                    variant="primary"
+                                                    icon="rocket-launch"
+                                                    type="submit"
+                                                    tooltip="Démarrer le match"
+                                                />
                                             </form>
                                         </div>
                                     @endif

@@ -35,7 +35,7 @@
                         <td class="px-4 py-3 whitespace-nowrap">
                             <div class="text-gray-900">{{ $user->ranking }}</div>
                         </td>
-                        <td class="px-4 py-3 whitespace-nowrap">31/03/2025</td>
+                        <td class="px-4 py-3 whitespace-nowrap">{{ $user->pivot->updated_at->format('d/m/Y') }}</td>
                         <td class="px-4 py-3 whitespace-nowrap">
                             <span
                                 class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-{{ $user->pivot->has_paid ? 'green' : 'red' }}-100 text-{{ $user->pivot->has_paid ? 'green' : 'red' }}-800">

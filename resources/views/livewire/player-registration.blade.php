@@ -1,9 +1,9 @@
-<div>
+<div x-data="{ show: @entangle('showModal') }" x-init="$watch('show', value => { if (value) $nextTick(() => $refs.search.focus()) })">
     <!-- Bouton pour ouvrir le modal -->
     <button wire:click="openModal" 
             class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
         <x-ui.icon name="plus" class="mr-2" />
-        Inscrire un joueur
+        {{ __('Register a user') }}
     </button>
 
     <!-- Modal -->
@@ -12,7 +12,7 @@
             <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
                 
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-semibold text-gray-900">Inscrire un joueur</h3>
+                    <h3 class="text-lg font-semibold text-gray-900">{{ __('Registrer a user') }}</h3>
                     <button wire:click="closeModal" class="text-gray-400 hover:text-gray-600">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -31,18 +31,19 @@
                 <form wire:submit="registerPlayer" class="space-y-4">
                     <div class="relative">
                         <label for="player-search" class="block text-sm font-medium text-gray-700 mb-2">
-                            Rechercher un joueur
+                            {{ __('Search for a player') }}
                         </label>
 
                         <!-- Input de recherche -->
                         <div class="relative">
                             <input 
+                                x-ref="search"
                                 type="text" 
                                 id="player-search" 
                                 wire:model.live.debounce.300ms="searchQuery"
                                 wire:focus="$set('showDropdown', true)"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 @error('selectedPlayerId') border-red-500 @enderror"
-                                placeholder="Tapez le nom du joueur..." 
+                                placeholder="{{ __('Type the name of a player') }}..." 
                                 autocomplete="off">
 
                             <!-- Icône de recherche -->
@@ -65,7 +66,7 @@
                                     <div wire:click="selectPlayer({{ $player->id }})" 
                                          class="px-4 py-2 cursor-pointer hover:bg-gray-50 flex items-center justify-between">
                                         <div>
-                                            <div class="font-medium">{{ $player->name }}</div>
+                                            <div class="font-medium">{{ $player->first_name }} {{ $player->last_name }}</div>
                                             <div class="text-sm text-gray-500">{{ $player->email }}</div>
                                         </div>
                                         @if($player->level ?? false)
@@ -89,7 +90,7 @@
                         <div class="bg-green-50 border border-green-200 rounded-md p-3">
                             <div class="flex items-center justify-between">
                                 <div>
-                                    <div class="font-medium text-green-800">{{ $selectedPlayer->name }}</div>
+                                    <div class="font-medium text-green-800">{{ $selectedPlayer->first_name }} {{ $selectedPlayer->last_name }}</div>
                                     <div class="text-sm text-green-600">{{ $selectedPlayer->email }}</div>
                                 </div>
                                 <button wire:click="clearSelection" type="button" class="text-green-400 hover:text-green-600">
@@ -105,14 +106,14 @@
                     <div class="flex justify-end space-x-3 pt-4">
                         <button wire:click="closeModal" type="button" 
                                 class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
-                            Annuler
+                            {{ __('Cancel') }}
                         </button>
                         <button type="submit" 
                                 @if(!$selectedPlayer) disabled @endif
                                 class="px-4 py-2 text-sm font-medium text-white rounded-md 
                                        @if($selectedPlayer) bg-blue-600 hover:bg-blue-700 @else bg-gray-300 cursor-not-allowed @endif">
-                            <span wire:loading.remove wire:target="registerPlayer">Inscrire</span>
-                            <span wire:loading wire:target="registerPlayer">Inscription...</span>
+                            <span wire:loading.remove wire:target="registerPlayer">{{ __('Register') }}</span>
+                            <span wire:loading wire:target="registerPlayer">{{ __('Registration') }}...</span>
                         </button>
                     </div>
                 </form>

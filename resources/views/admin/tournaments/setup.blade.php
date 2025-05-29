@@ -1,4 +1,12 @@
 <x-app-layout>
+    <x-slot name="header">
+        {{-- Header --}}
+        <div class="flex flex-row gap-2 items-center">
+            <x-admin.title :title="$tournament->name" />
+            <x-tournament.status-badge :status="$tournament->status" />
+            <x-admin.action-menu :tournament="$tournament" />
+        </div>
+    </x-slot>
     <div class="container mx-auto px-4 py-8">
         <div class="flex justify-center">
             <div class="w-full max-w-8xl">

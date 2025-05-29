@@ -15,6 +15,7 @@ use App\Models\User;
 use App\Services\TournamentFinalPhaseService;
 use App\Services\TournamentMatchService;
 use App\Services\TournamentPoolService;
+use App\Services\TournamentService;
 use App\Services\TournamentTableService;
 use Carbon\Carbon;
 use Exception;
@@ -27,6 +28,7 @@ class TournamentController extends Controller
 {
     //
     public function __construct(
+        private TournamentService $tournamentService,
         private TournamentTableService $tableService,
         private TournamentPoolService $poolService,
         private TournamentMatchService $matchService,
@@ -336,15 +338,24 @@ class TournamentController extends Controller
     public function registrerUser(Tournament $tournament, User $user): RedirectResponse
     {
 
-        if ($this->IsFull($tournament)) {
+        if ($this->tournamentService->IsFull($tournament)) {
             return redirect()
                 ->route('tournamentShowPlayers', $tournament)
                 ->with('error', 'Sorry, the tournament is full, you cannot register more players.');
         }
 
+        // Vérifier si le joueur n'est pas déjà inscrit
+        if ($tournament->users()->where('user_id', $user->id)->exists()) {
+            return redirect()
+                ->route('tournamentShowPlayers', $tournament)
+                ->with('error', 'This player is already registered to this tournament.');
+        }
+
+
         $tournament->users()
             ->attach($user);
-        $this->countRegisteredUsers($tournament);
+
+        $this->tournamentService->countRegisteredUsers($tournament);
 
         return redirect()
             ->route('tournamentShowPlayers', [$tournament])
@@ -354,7 +365,7 @@ class TournamentController extends Controller
     public function unregistrerUser(Tournament $tournament, User $user): RedirectResponse
     {
         $tournament->users()->detach($user);
-        $this->countRegisteredUsers($tournament);
+        $this->tournamentService->countRegisteredUsers($tournament);
 
         return redirect()
             ->route('tournamentShowPlayers', [$tournament])
@@ -379,15 +390,6 @@ class TournamentController extends Controller
         $pool->attachUser($user);
 
         return redirect()->back()->with('Utilisateur ajouté au pool avec succès');
-    }
-
-    public function countRegisteredUsers(Tournament $tournament): Int
-    {
-        $totalUsers = $tournament->users->count();
-        $tournament->total_users = $totalUsers;
-        $tournament->save();
-
-        return $totalUsers;
     }
 
     public function setMaxPlayers(Tournament $tournament, Request $request): RedirectResponse
@@ -437,17 +439,6 @@ class TournamentController extends Controller
             ->with([
                 'success' => 'End date updated successfully.',
             ]);
-    }
-
-    /**
-     * Check if there the tournament has reached its maximum amount of players
-     *
-     * @param Tournament $tournament
-     * @return boolean
-     */
-    private function IsFull(Tournament $tournament): bool
-    {
-        return ($tournament->total_users >= $tournament->max_users);
     }
 
     public function setUp(Tournament $tournament): View

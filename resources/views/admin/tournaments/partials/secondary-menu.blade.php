@@ -1,5 +1,5 @@
 <!-- Menu secondaire pour tournoi sélectionné -->
-<div class="bg-white p-4 rounded-lg shadow mb-6">
+<div class="lg-mx-auto max-w-7xl sm:px-6 lg:px-8">
     <div class="flex flex-wrap gap-2">
         <a href="{{ route('tournamentShow', $tournament) }}"
             class="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 bg-white border border-gray-300 hover:bg-gray-50">
@@ -63,7 +63,7 @@
         </a>
 
         <a href="#"
-            class="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 bg-white border border-gray-300 hover:bg-gray-50">
+            class="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md text-red-700 bg-white border border-gray-300 hover:bg-gray-50">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"
                 stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -73,7 +73,7 @@
         </a>
 
         <a href="#"
-            class="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-700 bg-white border border-gray-300 hover:bg-gray-50">
+            class="inline-flex items-center px-3 py-2 text-sm font-medium rounded-md text-red-700 bg-white border border-gray-300 hover:bg-gray-50">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24"
                 stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -83,3 +83,6 @@
         </a>
     </div>
 </div>
+
+<!-- Séparateur pour montrer la différence -->
+<div class="border-t border-gray-300 my-6"></div>

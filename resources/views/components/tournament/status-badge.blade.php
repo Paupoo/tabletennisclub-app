@@ -16,6 +16,6 @@ $statusMap = [
 $config = $statusMap[$status] ?? ['variant' => 'default', 'label' => ucfirst($status)];
 @endphp
 
-<x-ui.badge variant="{{ $config['variant'] }}">
+<x-ui.badge {{ $attributes->merge(['class' => 'ml-2']) }} variant="{{ $config['variant'] }}">
     {{ $config['label'] }}
 </x-ui.badge>

@@ -6,8 +6,7 @@
         
         {{-- Name --}}
         <div>
-            <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Nom du
-                tournoi</label>
+            <label for="name" class="block text-sm font-medium text-gray-700 mb-1">{{ __('Tournament Name')}}</label>
             <input type="text" name="name" id="name" placeholder="Nom du tournoi"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 value="{{ old('name', $tournament->name)}}"
@@ -17,8 +16,7 @@
 
         {{-- Price --}}
         <div>
-            <label for="price" class="block text-sm font-medium text-gray-700 mb-1">Prix
-                d'inscription (€)</label>
+            <label for="price" class="block text-sm font-medium text-gray-700 mb-1">{{ __('Registration fee (€)')}}</label>
             <input type="number"
                 name="price"
                 id="price"
@@ -31,7 +29,7 @@
         
         {{-- Start date --}}
         <div>
-            <label for="start_date" class="block text-sm font-medium text-gray-700 mb-1" >Date de début</label>
+            <label for="start_date" class="block text-sm font-medium text-gray-700 mb-1" >{{ __('Start Date') }}</label>
             <input 
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 type="datetime-local"
@@ -45,7 +43,7 @@
 
         {{-- End date --}}
         <div>
-            <label for="end_date" class="block text-sm font-medium text-gray-700 mb-1">Date de fin</label>
+            <label for="end_date" class="block text-sm font-medium text-gray-700 mb-1">{{ __('End Date') }}</label>
             <input 
             class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 type="datetime-local"
@@ -76,8 +74,7 @@
 
         {{-- Max Users --}}
         <div>
-            <label for="max_users" class="block text-sm font-medium text-gray-700 mb-1">Nombre
-                maximum de joueurs</label>
+            <label for="max_users" class="block text-sm font-medium text-gray-700 mb-1">{{ __('Maximum number of players')}}</label>
             <input type="number" name="max_users" id="max_users"
                 value="{{ old('max_users', $tournament->max_users) }}"
                 placeholder="Nombre max. de joueurs"
@@ -108,7 +105,7 @@
                     clip-rule="evenodd" />
             </svg>
             @endif
-            {{ $tournament->id === null ? __('Create tournament') : __('Update Tournament') }}
+            {{ $tournament->id === null ? __('Create tournament') : __('Update Parameters') }}
         </button>
     </div>
 </form>

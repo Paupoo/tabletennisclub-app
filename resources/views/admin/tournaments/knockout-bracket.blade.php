@@ -5,7 +5,7 @@
             <div class="w-full max-w-8xl">
                 <div class="bg-white rounded-lg shadow-lg overflow-hidden">
                     <div class="p-6">
-                        <a href="{{ route('tournamentSetup', $tournament) }}" 
+                        <a href="{{ route('tournament.edit', $tournament) }}" 
                            class="inline-block mb-6 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md transition duration-200">
                             &larr; Retour au tournoi
                         </a>

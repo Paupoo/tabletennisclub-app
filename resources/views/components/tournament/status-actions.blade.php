@@ -36,7 +36,7 @@
             variant="primary" 
             icon="edit" 
             tooltip="Modifier"
-            onclick="window.location.href='{{ route('tournamentShow', $tournament) }}'"
+            onclick="window.location.href='{{ route('tournament.edit', $tournament) }}'"
         />
     @endif
 

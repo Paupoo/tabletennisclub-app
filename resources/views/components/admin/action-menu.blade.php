@@ -21,7 +21,7 @@
                 <!-- Composant Livewire pour l'inscription de joueur -->
                 <livewire:player-registration :tournament="$tournament" />
 
-                <a href="{{ route('tournamentSetup', $tournament) }}"
+                <a href="{{ route('tournament.edit', $tournament) }}"
                     class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
                     <x-ui.icon name="modify" class="mr-2" />
                     {{ __('Modify') }}

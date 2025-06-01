@@ -88,9 +88,9 @@ class TournamentController extends Controller
             ->with('success', __('Tournament ' . $tournament->name . ' has been closed.'));
     }
 
-    public function configure(Tournament $tournament): View
+    public function edit(Tournament $tournament): View
     {
-        return view('admin.tournaments.setup', [
+        return view('admin.tournaments.edit', [
             'tournament' => $tournament->load(['pools.users']),
             'rooms' => Room::orderBy('name')->get(),
         ]);
@@ -327,7 +327,7 @@ class TournamentController extends Controller
         $tournament->save();
 
         return redirect()
-            ->route('tournamentSetup', $tournament)
+            ->route('tournament.edit', $tournament)
             ->with([
                 'success' => 'End date updated successfully.',
             ]);
@@ -339,7 +339,7 @@ class TournamentController extends Controller
         // Check that we don't already have more registered players
         if ($tournament->total_users > $request->max_users) {
             return redirect()
-                ->route('tournamentSetup', $tournament)
+                ->route('tournament.edit', $tournament)
                 ->with([
                     'error' => 'There are already ' . $tournament->total_users - $request->max_users . ' more players registered than the limit.',
                 ]);
@@ -348,7 +348,7 @@ class TournamentController extends Controller
         $tournament->save();
 
         return redirect()
-            ->route('tournamentSetup', $tournament)
+            ->route('tournament.edit', $tournament)
             ->with([
                 'success' => 'Maximum players updated successfully',
             ]);
@@ -362,7 +362,7 @@ class TournamentController extends Controller
         $tournament->save();
 
         return redirect()
-            ->route('tournamentSetup', $tournament)
+            ->route('tournament.edit', $tournament)
             ->with([
                 'success' => 'Start date updated successfully.',
             ]);

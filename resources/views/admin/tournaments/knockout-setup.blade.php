@@ -9,7 +9,7 @@
                             {{ __('Configuration de la phase finale') }} - {{ $tournament->name }}
                         </h2>
                         <div>
-                            <a href="{{ route('tournamentSetup', $tournament) }}" class="text-blue-600 hover:underline">
+                            <a href="{{ route('tournament.edit', $tournament) }}" class="text-blue-600 hover:underline">
                                 &larr; Retour au tournoi
                             </a>
                         </div>

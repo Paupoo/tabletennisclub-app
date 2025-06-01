@@ -95,9 +95,7 @@
                 @endforeach
             @else
                 <tr>
-                    <td colspan="6" class="px-4 py-4 text-center text-gray-500 italic">Aucun
-                        joueur
-                        inscrit pour le moment.</td>
+                    <td colspan="6" class="px-4 py-4 text-center text-gray-500 italic">{{ __('No registered players')}}</td>
                 </tr>
             @endif
         </tbody>

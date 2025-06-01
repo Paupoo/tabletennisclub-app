@@ -7,7 +7,7 @@
             <x-admin.action-menu :tournament="$tournament" />
         </div>
     </x-slot>
-
+    
     <x-admin-block>
         <!-- Menu secondaire pour tournoi sélectionné -->
         @include('admin.tournaments.partials.secondary-menu')

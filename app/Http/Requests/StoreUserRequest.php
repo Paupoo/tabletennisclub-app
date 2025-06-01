@@ -57,7 +57,7 @@ class StoreUserRequest extends FormRequest
                 'nullable',
                 'required_if:is_competitor,true',
                 Rule::when(
-                    $this->input('is_competitor'),              // If the "is_competitor" is true
+                    $this->input('ranking') !== null,              // If the "is_competitor" is true
                     Rule::in($rankings_enum->reject('NA')),     // Don't allow NA as the player must have a ranking...
                     Rule::in($rankings_enum),
                 ),

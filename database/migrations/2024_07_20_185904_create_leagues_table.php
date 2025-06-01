@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Enums\LeagueCategory;
 use App\Enums\LeagueLevel;
 use App\Models\Season;

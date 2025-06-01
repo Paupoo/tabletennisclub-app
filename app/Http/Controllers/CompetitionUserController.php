@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreCompetitionUserRequest;
@@ -74,32 +76,15 @@ class CompetitionUserController extends Controller
         $user->competition()->attach($competition);
     }
 
-    public function unsubscribeToCompetition()
-    {
+    public function unsubscribeToCompetition() {}
 
-    }
+    public function selectPlayerForCompetition() {}
 
-    public function selectPlayerForCompetition()
-    {
+    public function unselectPlayerForCompetition() {}
 
-    }
+    public function searchForAvailablePlayers() {}
 
-    public function unselectPlayerForCompetition()
-    {
+    public function markSelectedPlayerPresentToCompetition() {}
 
-    }
-
-    public function searchForAvailablePlayers()
-    {
-
-    }
-
-    public function markSelectedPlayerPresentToCompetition()
-    {
-
-    }
-    public function markSelectedPlayerAbsentFromCompetition()
-    {
-
-    }
+    public function markSelectedPlayerAbsentFromCompetition() {}
 }

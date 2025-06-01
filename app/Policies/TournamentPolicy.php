@@ -1,10 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Policies;
 
 use App\Models\Tournament;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class TournamentPolicy
 {
@@ -29,7 +30,7 @@ class TournamentPolicy
      */
     public function create(User $user): bool
     {
-        return ($user->is_admin || $user->is_comittee_member);
+        return $user->is_admin || $user->is_comittee_member;
     }
 
     /**
@@ -38,7 +39,7 @@ class TournamentPolicy
     public function update(User $user, Tournament $tournament): bool
     {
         $tournamentIsNotStartedOrFinished = ($tournament->status !== 'pending' && $tournament->status !== 'closed');
-        
+
         return ($user->is_admin || $user->is_comittee_member) && $tournamentIsNotStartedOrFinished;
     }
 

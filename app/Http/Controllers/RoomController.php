@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreOrUpdateRoomRequest;
@@ -27,7 +29,8 @@ class RoomController extends Controller
     public function create()
     {
         $this->authorize('create', Room::class);
-        $room = new Room();
+        $room = new Room;
+
         return view('admin.rooms.create', [
             'room' => $room,
         ]);
@@ -41,8 +44,8 @@ class RoomController extends Controller
         //
         $validated = $request->validated();
 
-        $room = new Room();
-        
+        $room = new Room;
+
         $room = Room::create($validated);
 
         return redirect()->route('rooms.index')->with('success', 'The room ' . $room->name . ' has been added.');
@@ -86,8 +89,8 @@ class RoomController extends Controller
 
     /**
      * Remove the specified resource from storage.
-     * 
-     * @param string $id
+     *
+     * @param  string  $id
      * @return void
      */
     public function destroy(Room $room)
@@ -100,9 +103,6 @@ class RoomController extends Controller
 
     /**
      * Check if a room has enough capacity for a specific activity (training or match)
-     *
-     * @param Request $request
-     * @return boolean
      */
     protected function checkCapacity(Request $request): bool
     {

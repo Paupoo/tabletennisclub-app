@@ -1,11 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Seeders;
 
-use App\Models\Club;
 use App\Models\Room;
-use App\Models\Table;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class RoomSeeder extends Seeder
@@ -38,7 +37,7 @@ class RoomSeeder extends Seeder
             'capacity_for_trainings' => 5,
             'capacity_for_interclubs' => 4,
         ])->clubs()->attach(1);
-        
+
         Room::create([
             'name' => 'Demeester 2',
             'building_name' => 'Centre Sportif Jean Demeester',

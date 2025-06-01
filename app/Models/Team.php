@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
@@ -32,10 +34,10 @@ class Team extends Model
 
     public function captain(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'captain_id', );
+        return $this->belongsTo(User::class, 'captain_id');
     }
 
-    public function interclubs() :HasMany
+    public function interclubs(): HasMany
     {
         return $this->hasMany(Interclub::class);
     }

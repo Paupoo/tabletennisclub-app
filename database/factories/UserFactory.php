@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Factories;
 
 use App\Enums\Ranking;
@@ -35,7 +37,7 @@ class UserFactory extends Factory
             'first_name' => fake()->firstName(),
             'last_name' => fake()->lastName(),
             'sex' => fake()->randomElement(array_column(Sex::cases(), 'name')),
-            'phone_number' => fake()->numberBetween(460000000,499000000),
+            'phone_number' => fake()->numberBetween(460000000, 499000000),
             'birthdate' => fake()->dateTimeBetween('-75 years', '- 8 years'),
             'street' => fake()->streetAddress(),
             'city_code' => fake()->postcode(),

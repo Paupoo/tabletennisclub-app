@@ -1,11 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Role;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
+use Illuminate\Http\Request;
 
 class RoleController extends Controller
 {
@@ -62,7 +62,7 @@ class RoleController extends Controller
     public function edit(string $id)
     {
         //
-        return view ('admin.roles.edit', [
+        return view('admin.roles.edit', [
             'role' => Role::find($id),
         ]);
     }
@@ -74,7 +74,7 @@ class RoleController extends Controller
     {
         //
         $request->validate([
-            'name' => ['required', 'string', 'max:100', 'unique:roles,name,' . $id,],
+            'name' => ['required', 'string', 'max:100', 'unique:roles,name,' . $id],
             'description' => ['nullable', 'string'],
         ]);
 
@@ -82,7 +82,7 @@ class RoleController extends Controller
 
         $role->name = $request->name;
         $role->description = $request->description;
-        
+
         $role->save();
 
         return redirect()->route('roles.index')->with('success', __('The role ' . $request->name . ' has been updated   '));

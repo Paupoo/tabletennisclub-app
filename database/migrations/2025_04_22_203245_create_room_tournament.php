@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Models\Room;
 use App\Models\Tournament;
 use Illuminate\Database\Migrations\Migration;

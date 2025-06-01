@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\User;
 
 use App\Enums\Ranking;
@@ -19,6 +21,7 @@ use Tests\Trait\CreateUser;
 class CreateUserTest extends TestCase
 {
     use CreateUser;
+
     private string $password;
 
     protected function setUp(): void
@@ -27,7 +30,7 @@ class CreateUserTest extends TestCase
         $this->password = Hash::make('password');
     }
 
-    public function test_forceListService_is_injected(): void
+    public function test_force_list_service_is_injected(): void
     {
         // Create a mock to use ForceList service
         $forceListMock = $this->createMock(ForceList::class);
@@ -62,7 +65,6 @@ class CreateUserTest extends TestCase
                 'sexes' => collect(Sex::cases())->pluck('name')->toArray(),
             ]);
     }
-
 
     public function test_new_member_creation_positive_case(): void
     {
@@ -198,6 +200,7 @@ class CreateUserTest extends TestCase
                 'licence' => 'The licence has already been taken.',
             ]);
     }
+
     public function test_ranking_is_invalid(): void
     {
         $admin = $this->createFakeAdmin();
@@ -267,8 +270,8 @@ class CreateUserTest extends TestCase
             ])
             ->assertInvalid([
                 'licence',
-                'ranking'
-                ])
+                'ranking',
+            ])
             ->assertRedirect(route('users.create'))
             ->assertSessionHasErrors([
                 'licence',

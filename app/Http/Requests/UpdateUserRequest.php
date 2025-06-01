@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests;
 
 use App\Enums\Ranking;
@@ -20,10 +22,10 @@ class UpdateUserRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->merge([
-            'is_active' => null !== $this->input('is_active'),
-            'is_admin' => null !== $this->input('is_admin'),
-            'is_comittee_member' => null !== $this->input('is_comittee_member'),
-            'is_competitor' => null !== $this->input('is_competitor'),
+            'is_active' => $this->input('is_active') !== null,
+            'is_admin' => $this->input('is_admin') !== null,
+            'is_comittee_member' => $this->input('is_comittee_member') !== null,
+            'is_competitor' => $this->input('is_competitor') !== null,
         ]);
     }
 
@@ -40,15 +42,15 @@ class UpdateUserRequest extends FormRequest
             'birthdate' => ['sometimes', 'date'],
             'city_code' => ['sometimes', 'string', 'digits:4'],
             'city_name' => ['sometimes', 'string'],
-            'email' => ['required', 'email:rfc,dns,spoof,filter_unicode', 'unique:users,email,'.$this->route()->user->id,],
+            'email' => ['required', 'email:rfc,dns,spoof,filter_unicode', 'unique:users,email,' . $this->route()->user->id],
             'first_name' => ['required', 'string', 'max:255'],
-            'is_active' => ['required', 'boolean',],
+            'is_active' => ['required', 'boolean'],
             'is_admin' => ['required', 'boolean'],
             'is_comittee_member' => ['required', 'boolean'],
             'is_competitor' => ['required', 'boolean'],
             'last_name' => ['required', 'string', 'max:255'],
-            'licence' => ['nullable', 'required_if:is_competitor,true', 'unique:users,licence,'.$this->route()->user->id, 'size:6'],
-            'phone_number' => ['nullable','string','digits_between:9,20'],
+            'licence' => ['nullable', 'required_if:is_competitor,true', 'unique:users,licence,' . $this->route()->user->id, 'size:6'],
+            'phone_number' => ['nullable', 'string', 'digits_between:9,20'],
             'ranking' => [
                 'required',
                 Rule::when(
@@ -65,10 +67,10 @@ class UpdateUserRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
-            if ($this->input('is_competitor') && !$this->input('is_active')) {
+            if ($this->input('is_competitor') && ! $this->input('is_active')) {
                 $validator->errors()->add('is_competitor', __('A competitor must be active.'));
             }
-            if (!$this->input('is_active') && $this->input('is_competitor')) {
+            if (! $this->input('is_active') && $this->input('is_competitor')) {
                 $validator->errors()->add('is_active', 'Un utilisateur actif est requis pour être compétiteur.');
             }
         });

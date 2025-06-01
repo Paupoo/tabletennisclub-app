@@ -1,12 +1,11 @@
 <?php
 
-namespace Tests\Trait;
+declare(strict_types=1);
 
-use App\Models\User;
+namespace Tests\Trait;
 
 trait CreateInterclub
 {
-    
     public function getValidInterclub(): array
     {
         return [

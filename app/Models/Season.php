@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -19,7 +21,7 @@ class Season extends Model
     protected $casts = [
         'name' => 'string',
         'start_year' => 'integer',
-        'end_year' => 'integer',        
+        'end_year' => 'integer',
     ];
 
     public function interclubs(): HasMany

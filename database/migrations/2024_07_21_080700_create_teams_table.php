@@ -1,6 +1,7 @@
 <?php
 
-use App\Models\Captain;
+declare(strict_types=1);
+
 use App\Models\Club;
 use App\Models\League;
 use App\Models\Season;

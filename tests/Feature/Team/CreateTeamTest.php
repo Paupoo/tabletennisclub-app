@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Team;
 
 use App\Enums\LeagueCategory;
@@ -12,8 +14,11 @@ use Tests\TestCase;
 class CreateTeamTest extends TestCase
 {
     protected Model $user;
+
     protected Model $committee_member;
+
     protected Model $admin;
+
     protected array $valid_request = [
         'captain_id' => 1,
         'category' => LeagueCategory::MEN->name,
@@ -29,6 +34,7 @@ class CreateTeamTest extends TestCase
         ],
         'season_id' => 1,
     ];
+
     protected array $invalid_request = [
         'captain_id' => 666,
         'category' => 'somethingWrong',
@@ -43,6 +49,7 @@ class CreateTeamTest extends TestCase
         ],
         'season_id' => 99,
     ];
+
     protected array $less_than_5_players_request = [
         'captain_id' => 1,
         'category' => LeagueCategory::MEN->name,
@@ -56,7 +63,7 @@ class CreateTeamTest extends TestCase
             3 => '4',
         ],
         'season_id' => 1,
-    ];  
+    ];
 
     protected function setUp(): void
     {
@@ -66,12 +73,12 @@ class CreateTeamTest extends TestCase
             'is_admin' => false,
             'is_comittee_member' => false,
         ]);
-    
+
         $this->committee_member = User::factory()->create([
             'is_admin' => false,
             'is_comittee_member' => true,
         ]);
-        
+
         $this->admin = User::factory()->create([
             'is_admin' => true,
             'is_comittee_member' => false,

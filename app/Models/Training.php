@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -39,11 +41,9 @@ class Training extends Model
     ];
 
     // Relationships
-    
+
     /**
      * Relationship belongs to 1 room.
-     *
-     * @return BelongsTo
      */
     public function room(): BelongsTo
     {
@@ -79,5 +79,5 @@ class Training extends Model
     }
 
     // Accessors
-    
+
 }

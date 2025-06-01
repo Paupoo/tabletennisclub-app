@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Unit;
 
 use App\Enums\Recurrence;
@@ -11,7 +13,6 @@ use PHPUnit\Framework\TestCase;
 
 class TrainingDateGeneratorTest extends TestCase
 {
-
     public function test_no_occurence_positive_test_case(): void
     {
         $start_date = '2024-08-14';
@@ -21,7 +22,7 @@ class TrainingDateGeneratorTest extends TestCase
             Carbon::parse($start_date),
         ];
 
-        $date_generator = new TrainingDateGenerator();
+        $date_generator = new TrainingDateGenerator;
         $this->assertEquals($expected_answer, $date_generator->generateDates($start_date, null, $recurrence));
 
     }
@@ -30,7 +31,7 @@ class TrainingDateGeneratorTest extends TestCase
     {
         $start_date = '2024-08-14';
         $recurrence = Recurrence::DAILY->name;
-        $date_generator = new TrainingDateGenerator();
+        $date_generator = new TrainingDateGenerator;
 
         $this->expectException(Exception::class);
         $this->expectExceptionMessage(sprintf('The occurence cannot be set without an end date or it must be set to %s.', Recurrence::NONE->name));
@@ -43,12 +44,13 @@ class TrainingDateGeneratorTest extends TestCase
         $start_date = '2024-08-17';
         $end_date = '1988-08-17';
 
-        $date_generator = new TrainingDateGenerator();
+        $date_generator = new TrainingDateGenerator;
+        $recurrence = Recurrence::WEEKLY->value;
 
         $this->expectException(Exception::class);
         $this->expectExceptionMessage(sprintf('The start date [%s] must be smaller or equal to the end date [%s] and vice-versa.', $start_date, $end_date));
 
-        $date_generator->generateDates($start_date, $end_date, 7);
+        $date_generator->generateDates($start_date, $end_date, $recurrence);
     }
 
     public function test_daily_recurrence_is_returning_expected_items(): void
@@ -62,7 +64,7 @@ class TrainingDateGeneratorTest extends TestCase
             Carbon::parse('2024-08-23'),
         ];
 
-        $date_generator = new TrainingDateGenerator();
+        $date_generator = new TrainingDateGenerator;
         $start_date = '2024-08-19';
         $end_date = '2024-08-23';
         $recurrence = Recurrence::DAILY->name;
@@ -85,7 +87,7 @@ class TrainingDateGeneratorTest extends TestCase
             Carbon::parse('2024-08-27'),
         ];
 
-        $date_generator = new TrainingDateGenerator();
+        $date_generator = new TrainingDateGenerator;
         $start_date = '2024-08-06';
         $end_date = '2024-08-30';
         $recurrence = Recurrence::WEEKLY->name;
@@ -109,7 +111,7 @@ class TrainingDateGeneratorTest extends TestCase
             Carbon::parse('2024-10-01'),
             Carbon::parse('2024-10-15'),
         ];
-        $date_generator = new TrainingDateGenerator();
+        $date_generator = new TrainingDateGenerator;
         $start_date = '2024-08-06';
         $end_date = '2024-10-28';
         $recurrence = Recurrence::BIWEEKLY->name;
@@ -124,7 +126,7 @@ class TrainingDateGeneratorTest extends TestCase
 
     public function test_recurrence_not_existing_in_enum_returns_an_exception(): void
     {
-        $date_generator = new TrainingDateGenerator();
+        $date_generator = new TrainingDateGenerator;
         $start_date = '2024-08-06';
         $end_date = '2024-08-06';
         $recurrence = 'notExpected';
@@ -136,7 +138,7 @@ class TrainingDateGeneratorTest extends TestCase
 
     public function test_exception_is_returned_when_no_endate_with_recurrent(): void
     {
-        $date_generator = new TrainingDateGenerator();
+        $date_generator = new TrainingDateGenerator;
         $start_date = '2024-08-06';
         $end_date = null;
         $recurrence = '7';

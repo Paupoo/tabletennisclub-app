@@ -1,19 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
-use App\Enums\Ranking;
-use App\Enums\Sex;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
@@ -107,13 +107,10 @@ class User extends Authenticatable
 
     /**
      * Calculate user's age and store it into ->age attribute.
-     *
-     * @return self
      */
     public function setAge(): self
     {
-        if ($this->birthdate !== null)
-        {
+        if ($this->birthdate !== null) {
             $this->setAttribute('age', Carbon::parse($this->birthdate)->age);
         } else {
             $this->setAttribute('age', 'Unknown');
@@ -149,7 +146,7 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Training::class);
     }
-    
+
     /** Scopes */
 
     /**
@@ -159,7 +156,8 @@ class User extends Authenticatable
      * @param [type] $value
      * @return void
      */
-    public function scopeSearch($query, $value) {
+    public function scopeSearch($query, $value)
+    {
         $query->where('last_name', 'like', '%' . $value . '%')
             ->orWhere('first_name', 'like', '%' . $value . '%');
     }

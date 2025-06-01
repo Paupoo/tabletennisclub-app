@@ -1,14 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Enums\LeagueCategory;
 use App\Enums\LeagueLevel;
 use App\Enums\TeamName;
-use App\Http\Requests\InitiateTeamBuilderRequest;
 use App\Http\Requests\StoreOrUpdateTeamRequest;
-use App\Http\Requests\StoreTeamRequest;
-use App\Http\Requests\UpdateTeamRequest;
 use App\Http\Requests\ValidateTeamBuilderRequest;
 use App\Models\Club;
 use App\Models\League;
@@ -27,9 +26,13 @@ use Illuminate\View\View;
 class TeamController extends Controller
 {
     private SupportCollection $competitors;
+
     private int $totalCompetitors = 0;
+
     private int $totalTeamsAmount = 0;
+
     private SupportCollection $teams;
+
     private SupportCollection $teamsWithPlayers;
 
     /**
@@ -61,7 +64,7 @@ class TeamController extends Controller
     {
         $this->authorize('create', Team::class);
 
-        $team = new Team();
+        $team = new Team;
         $date = Carbon::now();
         $date->format('m') <= 8
             ? $team->season()->associate(Season::firstWhere('start_year', $date->format('y') - 1))
@@ -96,7 +99,7 @@ class TeamController extends Controller
 
         $request->isDuplicatedTeam();
 
-        $team = new Team();
+        $team = new Team;
         $team->fill($validated);
 
         $team->season()->associate(Season::find($league_model->season_id));
@@ -134,6 +137,7 @@ class TeamController extends Controller
         $this->authorize('update', Team::class);
 
         $team = Team::findOrFail($id);
+
         //
         return view('admin.teams.edit', [
             'attachedUsers' => $team->users->pluck('id')->toArray(),
@@ -166,7 +170,7 @@ class TeamController extends Controller
         ]);
 
         $request->isDuplicatedTeam();
-        
+
         $team->update($validated);
         $team->league()->associate($league);
         $team->season()->associate(Season::find($validated['season_id']));
@@ -180,7 +184,6 @@ class TeamController extends Controller
         isset($validated['players'])
             ? $team->users()->sync($validated['players'])
             : throw ValidationException::withMessages(['players' => 'A team must contain at least 5 players']);
-
 
         return redirect()->route('teams.index')->with('success', 'The team ' . $team->name . ' has been updated.');
     }
@@ -240,12 +243,8 @@ class TeamController extends Controller
         return Season::where('end_year', '>=', $this_year)->orderBy('end_year', $sorting_order)->get();
     }
 
-
     /**
      * Save in bulk the teams and associate the desired amount of players of player to each of them.
-     *
-     * @param Request $request
-     * @return RedirectResponse
      */
     public function saveTeams(Request $request): RedirectResponse
     {
@@ -289,8 +288,6 @@ class TeamController extends Controller
 
     /**
      * Get competitors ordered by ranking, then by last name, both descending.
-     *
-     * @return self
      */
     private function getCompetitors(): self
     {
@@ -305,8 +302,6 @@ class TeamController extends Controller
 
     /**
      * Return the amount of players that are competitors.
-     *
-     * @return self
      */
     protected function countCompetitors(): self
     {
@@ -317,9 +312,6 @@ class TeamController extends Controller
 
     /**
      * Return the amound of teams based on a specified amount of players per team.
-     *
-     * @param integer $playersPerTeam
-     * @return self
      */
     protected function countTotalTeams(int $playersPerTeam = 0): self
     {
@@ -336,8 +328,7 @@ class TeamController extends Controller
     /**
      * Returns a collection of teams names from A to Z
      *
-     * @param integer $totalTeamsAmount
-     * @return self 
+     * @param  int  $totalTeamsAmount
      */
     private function buildTeamsFromAToZ(): self
     {
@@ -355,9 +346,7 @@ class TeamController extends Controller
     /**
      * Add competitors to each teams
      *
-     * @param SupportCollection $competitors
-     * @param integer $playersPerTeam
-     * @return self
+     * @param  SupportCollection  $competitors
      */
     private function addPlayersToTeams(int $playersPerTeam = 5): self
     {

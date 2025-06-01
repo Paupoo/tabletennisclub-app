@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Providers;
 
 use App\Services\ForceList;
@@ -17,19 +19,19 @@ class AppServiceProvider extends ServiceProvider
     {
         //
         $this->app->singleton('ForceList', function ($app) {
-            return new ForceList();
+            return new ForceList;
         });
-        
+
         $this->app->singleton(TrainingDateGenerator::class, function ($app) {
-            return new TrainingDateGenerator();
+            return new TrainingDateGenerator;
         });
-        
+
         $this->app->singleton(TrainingBuilder::class, function ($app) {
-            return new TrainingBuilder();
+            return new TrainingBuilder;
         });
 
         $this->app->singleton(InterclubService::class, function ($app) {
-            return new InterclubService();
+            return new InterclubService;
         });
     }
 

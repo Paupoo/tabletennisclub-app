@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
@@ -38,7 +40,7 @@ class Pool extends Model
     }
 
     /**
-     * Utiliser les événements du modèle pour intercepter 
+     * Utiliser les événements du modèle pour intercepter
      * les attachements d'utilisateurs via la relation
      */
     public function attachUser(User $user)

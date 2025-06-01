@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Team;
 
 use App\Models\User;
@@ -18,7 +20,7 @@ class ViewTeamsTest extends TestCase
     {
         $user = User::find(1);
         $response = $this->actingAs($user)
-                        ->get(route('teams.index'));
+            ->get(route('teams.index'));
 
         $response->assertStatus(200);
     }

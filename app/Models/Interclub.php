@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use App\Enums\LeagueCategory;
@@ -29,9 +31,6 @@ class Interclub extends Model
 
     /**
      * Set attribute to count total players needed to fill up one team.
-     *
-     * @param string $type
-     * @return self
      */
     public function setTotalPlayersPerteam(string $type): self
     {
@@ -56,6 +55,7 @@ class Interclub extends Model
     public function setWeekNumber(string $date): self
     {
         $this->week_number = Carbon::create($date)->isoWeek;
+
         return $this;
     }
 

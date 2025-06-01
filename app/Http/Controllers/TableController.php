@@ -1,23 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreOrUpdateTableRequest;
 use App\Models\Room;
 use App\Models\Table;
 use App\Models\Tournament;
-use App\Models\TournamentMatch;
 use App\Services\TournamentTableService;
-use Illuminate\Http\Request;
 
 class TableController extends Controller
 {
-
-    public function __construct(private TournamentTableService $tableService)
-    {
-
-    }
-
+    public function __construct(private TournamentTableService $tableService) {}
 
     /**
      * Display a listing of the resource.
@@ -37,8 +32,8 @@ class TableController extends Controller
     public function create()
     {
         $this->authorize('create', Table::class);
-        
-        $table = new Table();
+
+        $table = new Table;
         $rooms = Room::orderBy('name')->get();
 
         return view('admin.tables.create', [
@@ -55,7 +50,7 @@ class TableController extends Controller
         $this->authorize('create', Table::class);
 
         $validated = $request->validated();
-        
+
         $table = Table::create($validated);
         $room = Room::find($table->room_id);
         $this->tableService->updateTablesCount($room);
@@ -96,7 +91,7 @@ class TableController extends Controller
         $table->fill($validated);
 
         $table->save();
-        
+
         $room = Room::find($table->room_id);
         $this->tableService->updateTablesCount($room);
 
@@ -137,6 +132,6 @@ class TableController extends Controller
                 ->orderByRaw('name')
                 ->get(),
             'tournament' => $tournament,
-        ]); 
+        ]);
     }
 }

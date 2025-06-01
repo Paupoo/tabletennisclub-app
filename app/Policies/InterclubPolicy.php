@@ -1,11 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Policies;
 
 use App\Models\Interclub;
-use App\Models\Team;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class InterclubPolicy
 {
@@ -31,7 +31,7 @@ class InterclubPolicy
      */
     public function create(User $user): bool
     {
-        // 
+        //
         return ($user->is_admin || $user->is_comittee_member) || $user->captainOf()->exists();
     }
 

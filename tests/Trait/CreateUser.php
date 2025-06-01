@@ -1,12 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Trait;
 
 use App\Models\User;
 
 trait CreateUser
 {
-    
     public function createFakeUser(): User
     {
         return User::factory()->create();

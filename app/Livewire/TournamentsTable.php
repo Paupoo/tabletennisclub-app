@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Livewire;
 
 use App\Models\Tournament;
@@ -22,9 +24,9 @@ class TournamentsTable extends Component
 
     public function sortBy($field)
     {
-        if($this->sortByField === $field) {
+        if ($this->sortByField === $field) {
             $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
-        };
+        }
 
         $this->sortByField = $field;
     }
@@ -33,7 +35,7 @@ class TournamentsTable extends Component
     {
         return view('livewire.tournaments-table', [
             'tournaments' => Tournament::search($this->search)
-                ->when($this->status !== '', function($query) {
+                ->when($this->status !== '', function ($query) {
                     $query->where('status', $this->status);
                 })
                 ->orderBy('start_date')

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Models\Interclub;
 use App\Models\User;
 use Illuminate\Database\Migrations\Migration;

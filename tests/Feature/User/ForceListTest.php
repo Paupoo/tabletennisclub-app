@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\User;
 
 use App\Models\User;
@@ -12,7 +14,7 @@ class ForceListTest extends TestCase
 
     /**
      * Post seed expected status : (select id, force_list from `users` ORDER BY force_list ASC, id asc;)
-     * 
+     *
      * |id |force_list|
      * |---|----------|
      * |10 |          |
@@ -34,7 +36,6 @@ class ForceListTest extends TestCase
      * |15 |11        |
      * |16 |11        |
      */
-
     public function test_set_force_list_are_correctly_calculated(): void
     {
         /**
@@ -46,7 +47,6 @@ class ForceListTest extends TestCase
          * 2 E6 => 11   (+4)
          * 2 NC => 11   (included with E6)
          */
-
         $checkReferences = [
             'D4' => 1,
             'D6' => 2,
@@ -118,12 +118,12 @@ class ForceListTest extends TestCase
         // Check start status
         $totalForceListBeforeDelete = User::whereNotNull('force_list')->count();
         $this->assertEquals(11, $totalForceListBeforeDelete);
-        
+
         // Act: Call the delete method
         $this
             ->actingAs($admin)
             ->get(route('deleteForceList'));
-        
+
         // Check end status
         $totalForceListAfterlete = User::whereNotNull('force_list')->count();
         $this->assertEquals(0, $totalForceListAfterlete);

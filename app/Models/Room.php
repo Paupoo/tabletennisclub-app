@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -29,6 +31,7 @@ class Room extends Model
     ];
 
     protected $casts = [
+        'id' => 'integer',
         'name' => 'string',
         'building_name' => 'string',
         'street' => 'string',
@@ -37,7 +40,7 @@ class Room extends Model
         'floor' => 'string',
         'access_description' => 'string',
         'capacity_for_trainings' => 'integer',
-        'capacity_for_interclubs'  => 'integer',
+        'capacity_for_interclubs' => 'integer',
     ];
 
     public function training(): HasMany

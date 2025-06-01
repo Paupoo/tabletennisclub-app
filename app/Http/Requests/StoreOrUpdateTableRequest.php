@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
@@ -38,7 +40,7 @@ class StoreOrUpdateTableRequest extends FormRequest
             'room_id' => [
                 'required',
                 'integer',
-                'exists:rooms,id'
+                'exists:rooms,id',
             ],
         ];
     }

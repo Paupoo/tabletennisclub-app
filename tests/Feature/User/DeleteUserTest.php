@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\User;
 
 use App\Models\User;
@@ -17,7 +19,7 @@ class DeleteUserTest extends TestCase
     {
         $admin = $this->createFakeAdmin();
         $comitteeMember = $this->createFakeComitteeMember();
-        
+
         $userToDelete1 = User::factory()->create();
         $userToDelete2 = User::factory()->create();
 
@@ -31,7 +33,6 @@ class DeleteUserTest extends TestCase
         $response
             ->assertRedirect(route('users.index'))
             ->assertSessionHas('deleted');
-        
 
         $response = $this
             ->actingAs($comitteeMember)
@@ -41,7 +42,7 @@ class DeleteUserTest extends TestCase
         $response
             ->assertRedirect(route('users.index'))
             ->assertSessionHas('deleted');
-        
+
         $this->assertDatabaseCount('users', $totalUsers - 2);
     }
 
@@ -54,13 +55,13 @@ class DeleteUserTest extends TestCase
             ->actingAs($admin)
             ->get(route('users.index'));
 
-        $response->assertSee('Delete'); 
+        $response->assertSee('Delete');
 
         $response = $this
             ->actingAs($comitteeMember)
             ->get(route('users.index'));
 
-        $response->assertSee('Delete'); 
+        $response->assertSee('Delete');
     }
 
     public function test_admin_and_comittee_member_can_see_delete_button_from_users_show_view(): void
@@ -72,16 +73,16 @@ class DeleteUserTest extends TestCase
             ->actingAs($admin)
             ->get(route('users.show', $admin));
 
-        $response->assertSee('Delete'); 
+        $response->assertSee('Delete');
 
         $response = $this
             ->actingAs($comitteeMember)
             ->get(route('users.show', $comitteeMember));
 
-        $response->assertSee('Delete'); 
+        $response->assertSee('Delete');
     }
 
-    public function test_user_cant_delete_any_user():void
+    public function test_user_cant_delete_any_user(): void
     {
         $user = $this->createFakeUser();
         $userToDelete = User::find(1);
@@ -103,7 +104,7 @@ class DeleteUserTest extends TestCase
             ->actingAs($user)
             ->get(route('users.index'));
 
-        $response->assertDontSee('Delete'); 
+        $response->assertDontSee('Delete');
     }
 
     public function test_user_cant_see_delete_button_from_users_show_view(): void
@@ -114,6 +115,6 @@ class DeleteUserTest extends TestCase
             ->actingAs($user)
             ->get(route('users.show', $user));
 
-        $response->assertDontSee('Delete'); 
+        $response->assertDontSee('Delete');
     }
 }

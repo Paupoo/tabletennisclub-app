@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Models\Room;
@@ -14,7 +16,7 @@ class TrainingBuilder
 
     public function __construct()
     {
-        $this->training = new Training();
+        $this->training = new Training;
     }
 
     public function mergeDateAndTime(Carbon $date, string $start_time, string $end_time): self
@@ -25,7 +27,7 @@ class TrainingBuilder
         return $this;
     }
 
-    public function setAttributes(array $validated):self
+    public function setAttributes(array $validated): self
     {
         $this->training->fill($validated);
 
@@ -37,7 +39,7 @@ class TrainingBuilder
         $room = Room::findOrFail($room_id);
 
         $this->training->room()->associate($room);
-        
+
         return $this;
     }
 
@@ -50,7 +52,7 @@ class TrainingBuilder
         return $this;
     }
 
-    public function setTrainer(int $trainer_id = null): self
+    public function setTrainer(?int $trainer_id = null): self
     {
         if ($trainer_id !== null) {
             $trainer = User::findOrFail($trainer_id);
@@ -66,11 +68,8 @@ class TrainingBuilder
         $training = $this->training;
         $training->save();
 
-        $this->training = new Training();
+        $this->training = new Training;
 
         return $training;
     }
-
-
-        
 }

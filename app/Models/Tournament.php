@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use App\Casts\MoneyCast;
@@ -7,7 +9,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class Tournament extends Model
 {
@@ -34,7 +35,7 @@ class Tournament extends Model
         'max_users' => 'integer',
         'status' => 'string',
         'has_handicap_points' => 'boolean',
-        ];
+    ];
 
     /* Relations */
 
@@ -65,12 +66,12 @@ class Tournament extends Model
             ])
             ->using(TableTournament::class)
             ->withTimestamps();
-            
+
     }
 
     public function matches(): HasMany
     {
-        return $this->hasMany(TournamentMatch::class);            
+        return $this->hasMany(TournamentMatch::class);
     }
 
     /** Scopes */
@@ -82,9 +83,9 @@ class Tournament extends Model
      * @param [type] $value
      * @return void
      */
-    public function scopeSearch($query, $value) {
+    public function scopeSearch($query, $value)
+    {
         $query->where('name', 'like', '%' . $value . '%')
             ->orWhere('price', 'like', '%' . $value . '%');
     }
-
 }

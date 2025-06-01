@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,7 +13,7 @@ class League extends Model
 {
     use HasFactory;
 
-    protected $fillable = [ 
+    protected $fillable = [
         'division',
         'level',
         'category',
@@ -22,7 +24,7 @@ class League extends Model
         'division' => 'string',
         'level' => 'string',
         'category' => 'string',
-        'season_id' => 'integer'
+        'season_id' => 'integer',
     ];
 
     public function teams(): HasMany

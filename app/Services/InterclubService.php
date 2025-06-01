@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Models\Club;
@@ -11,7 +13,6 @@ use App\Models\Team;
 
 class InterclubService
 {
-
     public function createInterclub(array $validated): void
     {
         // Instanciating elements
@@ -29,26 +30,24 @@ class InterclubService
         ]);
 
         // Prepare interclub
-        $interclub = new Interclub();
-        
-        if(isset($validated['is_visited'])) {       // If visited
+        $interclub = new Interclub;
+
+        if (isset($validated['is_visited'])) {       // If visited
             $room = Room::find($validated['room_id']);
-            $validated['address'] = sprintf('%s, %s %s',$room->street, $room->city_code, $room->city_name);
+            $validated['address'] = sprintf('%s, %s %s', $room->street, $room->city_code, $room->city_name);
             $interclub->visitedTeam()->associate($clubTeam);
             $interclub->visitingTeam()->associate($oppositeTeam);
             $interclub->room()->associate($room);
         } else {                                    // If visiting
-            $validated['address'] = sprintf('%s, %s %s',$oppositeClub->street, $oppositeClub->city_code, $oppositeClub->city_name);
+            $validated['address'] = sprintf('%s, %s %s', $oppositeClub->street, $oppositeClub->city_code, $oppositeClub->city_name);
             $interclub->visitedTeam()->associate($oppositeTeam);
             $interclub->visitingTeam()->associate($clubTeam);
         }
-        
-        
+
         $interclub
             ->fill($validated)
             ->setTotalPlayersPerteam($league->category)
             ->setWeekNumber($validated['start_date_time'])
             ->save();
     }
-    
 }

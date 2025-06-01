@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Training;
 
 use App\Enums\Recurrence;
@@ -15,14 +17,23 @@ class CreateTest extends TestCase
     use CreateUser;
 
     private array $valid_request_only_one_training = [];
+
     private array $valid_request_5_daily_trainings = [];
+
     private array $valid_request_4_weekly_trainings = [];
+
     private array $valid_request_4_biweekly_trainings = [];
+
     private array $invalid_request_training_starting_in_the_past = [];
+
     private array $invalid_request_training_ending_in_the_past = [];
+
     private array $invalid_request_training_date_starting_after_end = [];
+
     private array $invalid_request_training_time_starting_after_end = [];
+
     private array $invalid_request_directed_training_without_trainer = [];
+
     private array $invalid_request_supervised_training_without_trainer = [];
 
     protected function setUp(): void
@@ -281,7 +292,6 @@ class CreateTest extends TestCase
             ]);
     }
 
-
     public function test_trainer_is_required_if_training_is_not_free(): void
     {
         $this->actingAs($this->createFakeAdmin())
@@ -312,7 +322,7 @@ class CreateTest extends TestCase
         $this->actingAs($this->createFakeAdmin())
             ->from(route('trainings.create'))
             ->post(route('trainings.store'), $this->valid_request_only_one_training);
-        
+
         $room = Room::find(1);
         $this->get('/')
             ->assertSee(TrainingLevel::BEGINNERS->value)

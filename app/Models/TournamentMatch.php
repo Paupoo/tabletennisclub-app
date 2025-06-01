@@ -1,12 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class TournamentMatch extends Model
 {
@@ -41,6 +42,7 @@ class TournamentMatch extends Model
     {
         return $this->belongsTo(Tournament::class);
     }
+
     /**
      * Get the pool this match belongs to
      */
@@ -81,7 +83,7 @@ class TournamentMatch extends Model
         return $this->hasMany(MatchSet::class);
     }
 
-     /**
+    /**
      * Get the table for this match
      */
     public function table(): BelongsToMany
@@ -89,17 +91,20 @@ class TournamentMatch extends Model
         return $this->belongsToMany(Table::class, 'table_tournament');
     }
 
-    public function scopeOrdered($query){
+    public function scopeOrdered($query)
+    {
         $query->orderBy('match_order')
             ->orderBy('pool_id')
             ->orderBy('round');
     }
 
-    public function scopeFromPools($query){
+    public function scopeFromPools($query)
+    {
         $query->whereNotNull('pool_id');
     }
 
-    public function scopeFromBracket($query){
+    public function scopeFromBracket($query)
+    {
         $query->whereNotNull('round');
     }
 
@@ -134,7 +139,7 @@ class TournamentMatch extends Model
         foreach ($setResults as $index => $result) {
             $player1Score = $result['player1_score'];
             $player2Score = $result['player2_score'];
-            
+
             // Determine set winner
             $setWinnerId = null;
             if ($player1Score > $player2Score) {
@@ -150,7 +155,7 @@ class TournamentMatch extends Model
                 'set_number' => $index + 1,
                 'player1_score' => $player1Score,
                 'player2_score' => $player2Score,
-                'winner_id' => $setWinnerId
+                'winner_id' => $setWinnerId,
             ]);
         }
 
@@ -171,7 +176,7 @@ class TournamentMatch extends Model
         foreach ($sets as $set) {
             if ($playerId === $this->player1_id) {
                 $points += $set->player1_score;
-            } else if ($playerId === $this->player2_id) {
+            } elseif ($playerId === $this->player2_id) {
                 $points += $set->player2_score;
             }
         }

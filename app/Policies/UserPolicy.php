@@ -1,10 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Policies;
 
-use App\Enums\Roles;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class UserPolicy
 {
@@ -77,7 +77,7 @@ class UserPolicy
         return $user->is_admin || $user->is_comittee_member;
     }
 
-     /**
+    /**
      * Determine wether the user can delete force index.
      */
     public function deleteForceList(User $user): bool

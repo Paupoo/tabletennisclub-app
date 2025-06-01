@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Models\Pool;
 use App\Models\Table;
 use App\Models\Tournament;

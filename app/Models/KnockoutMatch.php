@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -17,7 +19,7 @@ class KnockoutMatch extends Model
         'status',
         'table_number',
         'next_match_id',
-        'is_bronze_match'
+        'is_bronze_match',
     ];
 
     public function tournament(): BelongsTo
@@ -73,7 +75,7 @@ class KnockoutMatch extends Model
     public function getTotalPoints($playerId): int
     {
         $totalPoints = 0;
-        
+
         foreach ($this->sets as $set) {
             if ($set->player1_id == $playerId) {
                 $totalPoints += $set->player1_score;
@@ -81,7 +83,7 @@ class KnockoutMatch extends Model
                 $totalPoints += $set->player2_score;
             }
         }
-        
+
         return $totalPoints;
     }
 }

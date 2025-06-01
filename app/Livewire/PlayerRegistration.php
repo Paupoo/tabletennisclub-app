@@ -1,21 +1,28 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Livewire;
 
 use App\Models\Tournament;
 use App\Models\User;
 use App\Services\TournamentService;
 use Livewire\Component;
-use Illuminate\Validation\Rule;
 
 class PlayerRegistration extends Component
 {
     private TournamentService $tournamentService;
+
     public Tournament $tournament;
+
     public $showModal = false;
+
     public $searchQuery = '';
+
     public $selectedPlayerId = null;
+
     public $highlightedIndex = -1;
+
     public $showDropdown = false;
 
     protected $rules = [
@@ -60,7 +67,7 @@ class PlayerRegistration extends Component
 
     public function updatedSearchQuery()
     {
-        $this->showDropdown = !empty(trim($this->searchQuery));
+        $this->showDropdown = ! empty(trim($this->searchQuery));
         $this->highlightedIndex = -1;
 
         // Si on efface la recherche, on désélectionne le joueur
@@ -95,12 +102,14 @@ class PlayerRegistration extends Component
 
         if ($this->tournamentService->isFull($this->tournament)) {
             $this->adderror('selectedPlayerId', 'Sorry, the tournament is full, you cannot register more players.');
+
             return;
         }
 
         // Vérifier si le joueur n'est pas déjà inscrit
         if ($this->tournament->users()->where('user_id', $this->selectedPlayerId)->exists()) {
             $this->addError('selectedPlayerId', 'Ce joueur est déjà inscrit au tournoi.');
+
             return;
         }
 
@@ -138,7 +147,7 @@ class PlayerRegistration extends Component
 
     public function getSelectedPlayer()
     {
-        if (!$this->selectedPlayerId) {
+        if (! $this->selectedPlayerId) {
             return null;
         }
 
@@ -155,12 +164,9 @@ class PlayerRegistration extends Component
 
     /**
      * Check if there the tournament has reached its maximum amount of players
-     *
-     * @param Tournament $tournament
-     * @return boolean
      */
     private function IsFull(Tournament $tournament): bool
     {
-        return ($tournament->total_users >= $tournament->max_users);
+        return $tournament->total_users >= $tournament->max_users;
     }
 }

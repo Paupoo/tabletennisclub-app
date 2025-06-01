@@ -1,19 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Interclub;
 
 use App\Models\Club;
 use App\Models\Interclub;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 use Tests\Trait\CreateInterclub;
 use Tests\Trait\CreateUser;
 
 class InterClubTest extends TestCase
 {
-    use CreateUser;
     use CreateInterclub;
+    use CreateUser;
 
     public function test_route_index(): void
     {
@@ -114,7 +114,7 @@ class InterClubTest extends TestCase
     {
         $oppositeClub = Club::find($this->getValidInterclubNotInTheClub()['opposite_club_id']);
 
-        $oppositeClubAddress = $oppositeClub->street . ', ' . $oppositeClub->city_code . ' '. $oppositeClub->city_name;
+        $oppositeClubAddress = $oppositeClub->street . ', ' . $oppositeClub->city_code . ' ' . $oppositeClub->city_name;
 
         $admin = $this->createFakeAdmin();
 
@@ -125,7 +125,7 @@ class InterClubTest extends TestCase
         $this->assertDatabaseHas('interclubs', [
             'address' => $oppositeClubAddress,
             'room_id' => null,
-            ]);
+        ]);
     }
 
     public function test_storing_interclub_in_the_club_stores_club_address_and_the_room_id(): void

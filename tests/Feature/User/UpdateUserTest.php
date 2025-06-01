@@ -1,9 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\User;
 
 use App\Models\User;
-use Illuminate\Database\Eloquent\Model;
 use Tests\TestCase;
 use Tests\Trait\CreateUser;
 
@@ -15,9 +16,9 @@ class UpdateUserTest extends TestCase
     {
         $this->get(route('users.edit', 1))
             ->assertRedirect('/login');
-}
+    }
 
-    public function test_member_cannot_access_edit_member_page(): void   
+    public function test_member_cannot_access_edit_member_page(): void
     {
         $user = $this->createFakeUser();
 
@@ -26,7 +27,7 @@ class UpdateUserTest extends TestCase
             ->assertStatus(403);
     }
 
-    public function test_admin_and_comittee_members_can_access_edit_member_page(): void   
+    public function test_admin_and_comittee_members_can_access_edit_member_page(): void
     {
         $admin = $this->createFakeAdmin();
         $comittee_member = $this->createFakeComitteeMember();
@@ -41,9 +42,9 @@ class UpdateUserTest extends TestCase
             ->assertOK();
     }
 
-    public function test_members_cant_access_edit_member_page(): void   
+    public function test_members_cant_access_edit_member_page(): void
     {
-        
+
         $user = $this->createFakeUser();
 
         $this->actingAs($user)

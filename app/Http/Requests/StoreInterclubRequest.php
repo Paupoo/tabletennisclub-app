@@ -1,9 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests;
 
-use App\Enums\LeagueCategory;
-use App\Models\League;
 use App\Models\Team;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -57,9 +57,9 @@ class StoreInterclubRequest extends FormRequest
                     isset($this->input()['is_visited']),
                     'required',
                     'prohibited',
-                'integer',
-                'exists:rooms,id',
-            ),
+                    'integer',
+                    'exists:rooms,id',
+                ),
             ],
             'start_date_time' => [
                 'date',

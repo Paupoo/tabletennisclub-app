@@ -1,10 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Auth;
 
-use App\Models\Club;
 use App\Providers\RouteServiceProvider;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class RegistrationTest extends TestCase
@@ -17,7 +17,7 @@ class RegistrationTest extends TestCase
     }
 
     public function test_new_users_can_register(): void
-    {        
+    {
 
         $response = $this->post('/register', [
             'first_name' => 'John',

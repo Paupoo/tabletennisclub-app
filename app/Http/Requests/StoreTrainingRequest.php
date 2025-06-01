@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests;
 
 use App\Enums\Recurrence;
@@ -20,12 +22,11 @@ class StoreTrainingRequest extends FormRequest
 
     public function prepareForValidation(): void
     {
-        if ($this->input('trainer_id') === null)
-        {
-            $this->merge([
-                'trainer_id' => null,
-            ]);
-        }
+        $this->merge([
+            'room_id' => (int) $this->input('room_id'),
+            'season_id' => (int) $this->input('season_id'),
+            'trainer_id' => $this->filled('trainer_id') ? (int) $this->input('trainer_id') : null,
+        ]);
     }
 
     /**

@@ -1,13 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Enums\Ranking;
 use App\Enums\Sex;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
-use App\Models\User;
 use App\Models\Team;
+use App\Models\User;
 use App\Services\ForceList;
 use Illuminate\Http\RedirectResponse;
 
@@ -42,7 +44,7 @@ class UserController extends Controller
         $this->authorize('create', User::class);
 
         return View('admin.users.create', [
-            'user' => new User(),
+            'user' => new User,
             'teams' => Team::with('league')->get(),
             'rankings' => collect(Ranking::cases())->pluck('name')->toArray(),
             'sexes' => collect(Sex::cases())->pluck('name')->toArray(),
@@ -55,7 +57,7 @@ class UserController extends Controller
     public function store(StoreUserRequest $request, ForceList $forceList)
     {
         $validated = $request->validated();
-        
+
         $user = User::create($validated);
 
         // Attach a team (TO CHECK, need to be able to attach many teams)
@@ -76,7 +78,7 @@ class UserController extends Controller
     {
         //
         $user->setAge();
-        
+
         return view('admin.users.show', [
             'user' => $user,
         ]);
@@ -89,7 +91,7 @@ class UserController extends Controller
     {
         //
         $this->authorize('update', User::class);
-        
+
         return view('admin.users.edit', [
             'user' => $user,
             'teams' => Team::all(),
@@ -106,7 +108,7 @@ class UserController extends Controller
     {
         $validated = $request->validated();
         $user->update($validated);
-        
+
         // Attach a team (TO CHECK, need to be able to attach many teams)
         if ($request['team_id'] !== null) {
             $user->teams()->attach(Team::find($request['team_id']));
@@ -114,15 +116,12 @@ class UserController extends Controller
             $user->teams()->detach();
         }
 
-
         $this->forceList->setOrUpdateAll();
 
         return redirect()
             ->route('users.index')
             ->with('success', __('Member ' . $user->first_name . ' ' . $user->last_name . ' has been updated.'));
     }
-
-
 
     /**
      * Remove the specified resource from storage.
@@ -144,12 +143,13 @@ class UserController extends Controller
         return redirect()
             ->route('users.index')
             ->with('success', 'User ' . $user->first_name . ' ' . $user->last_name . ' has been deleted');
-    }   
+    }
 
     public function setForceList(): RedirectResponse
     {
         $this->authorize('setOrUpdateForceList', User::class);
         $this->forceList->setOrUpdateAll();
+
         return redirect()->route('users.index');
     }
 
@@ -157,6 +157,7 @@ class UserController extends Controller
     {
         $this->authorize('deleteForceList', User::class);
         $this->forceList->delete();
+
         return redirect()->route('users.index');
     }
 }

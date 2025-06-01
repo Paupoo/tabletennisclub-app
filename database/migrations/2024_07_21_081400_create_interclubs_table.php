@@ -1,10 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Enums\InterclubResult;
 use App\Models\League;
 use App\Models\Room;
 use App\Models\Season;
-use App\Models\Team;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;

@@ -1,8 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
-use App\Enums\Recurrence;
 use App\Enums\TrainingLevel;
 use App\Enums\TrainingType;
 use App\Http\Requests\StoreTrainingRequest;
@@ -18,8 +19,8 @@ use Illuminate\Http\Request;
 
 class TrainingController extends Controller
 {
-
     protected TrainingDateGenerator $dateGenerator;
+
     protected TrainingBuilder $builder;
 
     public function __construct(TrainingDateGenerator $training_date_generator, TrainingBuilder $training_builder)
@@ -47,7 +48,7 @@ class TrainingController extends Controller
     {
         $this->authorize('create', Training::class);
 
-        $training = new Training();
+        $training = new Training;
 
         return view('admin.trainings.create', [
             'levels' => TrainingLevel::cases(),
@@ -79,7 +80,7 @@ class TrainingController extends Controller
                 ->setSeason($validated['season_id'])
                 ->setTrainer($validated['trainer_id'])
                 ->buildAndSave();
-        }        
+        }
 
         return redirect()->route('trainings.index')->with('success', 'The training has been created.');
     }
@@ -117,13 +118,11 @@ class TrainingController extends Controller
 
         $training->delete();
 
-        return redirect()->route('trainings.index')->with('deleted','The training has been deleted.');
+        return redirect()->route('trainings.index')->with('deleted', 'The training has been deleted.');
     }
 
     /**
      * Get all dates for a specific weekday between 2 dates
-     *
-     * @return array
      */
     public function daysBetweenTwoDate(string $start_date, string $end_date, int $week_day): array
     {
@@ -135,14 +134,14 @@ class TrainingController extends Controller
         } else {
             while (strtotime($start_date) <= strtotime($end_date)) {
 
-                //If the day number matches the date's date number, add it into the array, otherwise do nothing.
+                // If the day number matches the date's date number, add it into the array, otherwise do nothing.
                 if (date('N', strtotime($start_date)) == $week_day) {
                     $dates[] = $start_date;
                 } else {
                 }
 
                 // Then add 24h.
-                $start_date = date('d-m-Y', strtotime("+1 day", strtotime($start_date)));
+                $start_date = date('d-m-Y', strtotime('+1 day', strtotime($start_date)));
             }
         }
 

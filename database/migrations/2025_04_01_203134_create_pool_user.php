@@ -9,6 +9,14 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('pool_user');
+    }
+
+    /**
      * Run the migrations.
      */
     public function up(): void
@@ -22,13 +30,5 @@ return new class extends Migration
             // Rendre la combinaison unique pour éviter les doublons
             $table->unique(['pool_id', 'user_id']);
         });
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('pool_user');
     }
 };

@@ -14,30 +14,21 @@ class UsersTable extends Component
 {
     use WithPagination;
 
-    protected ForceList $forceList;
+    public string $competitor = '';
 
     public int $perPage = 10;
 
     public string $search = '';
 
-    public string $competitor = '';
-
     public string $sortByField = '';
 
     public string $sortDirection = 'desc';
 
+    protected ForceList $forceList;
+
     public function boot(ForceList $forceList)
     {
         $this->forceList = $forceList;
-    }
-
-    public function sortBy($field)
-    {
-        if ($this->sortByField === $field) {
-            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
-        }
-
-        $this->sortByField = $field;
     }
 
     /**
@@ -85,5 +76,14 @@ class UsersTable extends Component
                 ->paginate(20),
             'user_model' => User::class,
         ]);
+    }
+
+    public function sortBy($field)
+    {
+        if ($this->sortByField === $field) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        }
+
+        $this->sortByField = $field;
     }
 }

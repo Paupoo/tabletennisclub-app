@@ -13,6 +13,19 @@ class Room extends Model
 {
     use HasFactory;
 
+    protected $casts = [
+        'id' => 'integer',
+        'name' => 'string',
+        'building_name' => 'string',
+        'street' => 'string',
+        'city_code' => 'string',
+        'city_name' => 'string',
+        'floor' => 'string',
+        'access_description' => 'string',
+        'capacity_for_trainings' => 'integer',
+        'capacity_for_interclubs' => 'integer',
+    ];
+
     /**
      * The attributes that are mass assignable.
      *
@@ -30,24 +43,6 @@ class Room extends Model
         'capacity_for_interclubs',
     ];
 
-    protected $casts = [
-        'id' => 'integer',
-        'name' => 'string',
-        'building_name' => 'string',
-        'street' => 'string',
-        'city_code' => 'string',
-        'city_name' => 'string',
-        'floor' => 'string',
-        'access_description' => 'string',
-        'capacity_for_trainings' => 'integer',
-        'capacity_for_interclubs' => 'integer',
-    ];
-
-    public function training(): HasMany
-    {
-        return $this->hasMany(Training::class);
-    }
-
     public function clubs(): BelongsToMany
     {
         return $this->belongsToMany(Club::class);
@@ -58,13 +53,18 @@ class Room extends Model
         return $this->hasMany(Interclub::class);
     }
 
+    public function tables(): HasMany
+    {
+        return $this->hasMany(Table::class);
+    }
+
     public function tournaments(): BelongsToMany
     {
         return $this->belongsToMany(Tournament::class);
     }
 
-    public function tables(): HasMany
+    public function training(): HasMany
     {
-        return $this->hasMany(Table::class);
+        return $this->hasMany(Training::class);
     }
 }

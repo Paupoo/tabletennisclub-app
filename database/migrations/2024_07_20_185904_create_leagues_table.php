@@ -12,6 +12,14 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('leagues');
+    }
+
+    /**
      * Run the migrations.
      */
     public function up(): void
@@ -24,13 +32,5 @@ return new class extends Migration
             $table->foreignIdFor(Season::class)->constrained();
             $table->timestamps();
         });
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('leagues');
     }
 };

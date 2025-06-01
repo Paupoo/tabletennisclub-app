@@ -15,18 +15,6 @@ class TableController extends Controller
     public function __construct(private TournamentTableService $tableService) {}
 
     /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        $this->authorize('viewAny', Table::class);
-
-        return view('admin.tables.index', [
-            'tables' => Table::orderByRaw('name * 1 ASC')->paginate(10),
-        ]);
-    }
-
-    /**
      * Show the form for creating a new resource.
      */
     public function create()
@@ -43,27 +31,19 @@ class TableController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Remove the specified resource from storage.
      */
-    public function store(StoreOrUpdateTableRequest $request)
+    public function destroy(Table $table)
     {
-        $this->authorize('create', Table::class);
+        $this->authorize('delete', $table);
 
-        $validated = $request->validated();
+        $table->delete();
 
-        $table = Table::create($validated);
         $room = Room::find($table->room_id);
-        $this->tableService->updateTablesCount($room);
+        $this->updateTablesCount($room);
 
-        return redirect()->route('tables.index')->with('success', 'The table ' . $table->name . ' has been added.');
-    }
+        return redirect()->route('tables.index')->with('success', 'The table ' . $table->name . ' has been deleted.');
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Table $table)
-    {
-        //
     }
 
     /**
@@ -82,36 +62,39 @@ class TableController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Display a listing of the resource.
      */
-    public function update(StoreOrUpdateTableRequest $request, Table $table)
+    public function index()
     {
-        $validated = $request->validated();
+        $this->authorize('viewAny', Table::class);
 
-        $table->fill($validated);
-
-        $table->save();
-
-        $room = Room::find($table->room_id);
-        $this->tableService->updateTablesCount($room);
-
-        return redirect()->route('tables.index')->with('success', 'The table ' . $table->name . ' has been updated.');
+        return view('admin.tables.index', [
+            'tables' => Table::orderByRaw('name * 1 ASC')->paginate(10),
+        ]);
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Display the specified resource.
      */
-    public function destroy(Table $table)
+    public function show(Table $table)
     {
-        $this->authorize('delete', $table);
+        //
+    }
 
-        $table->delete();
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(StoreOrUpdateTableRequest $request)
+    {
+        $this->authorize('create', Table::class);
 
+        $validated = $request->validated();
+
+        $table = Table::create($validated);
         $room = Room::find($table->room_id);
-        $this->updateTablesCount($room);
+        $this->tableService->updateTablesCount($room);
 
-        return redirect()->route('tables.index')->with('success', 'The table ' . $table->name . ' has been deleted.');
-
+        return redirect()->route('tables.index')->with('success', 'The table ' . $table->name . ' has been added.');
     }
 
     /**
@@ -133,5 +116,22 @@ class TableController extends Controller
                 ->get(),
             'tournament' => $tournament,
         ]);
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(StoreOrUpdateTableRequest $request, Table $table)
+    {
+        $validated = $request->validated();
+
+        $table->fill($validated);
+
+        $table->save();
+
+        $room = Room::find($table->room_id);
+        $this->tableService->updateTablesCount($room);
+
+        return redirect()->route('tables.index')->with('success', 'The table ' . $table->name . ' has been updated.');
     }
 }

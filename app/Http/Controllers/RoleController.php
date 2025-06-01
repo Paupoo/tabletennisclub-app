@@ -10,6 +10,39 @@ use Illuminate\Http\Request;
 class RoleController extends Controller
 {
     /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        //
+        return view('admin.roles.create');
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(string $id)
+    {
+        //
+        $role = Role::find($id);
+
+        $role->delete();
+
+        return redirect()->route('roles.index')->with('deleted', __($role->name . ' has been deleted.'));
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(string $id)
+    {
+        //
+        return view('admin.roles.edit', [
+            'role' => Role::find($id),
+        ]);
+    }
+
+    /**
      * Display a listing of the resource.
      */
     public function index()
@@ -21,12 +54,11 @@ class RoleController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Display the specified resource.
      */
-    public function create()
+    public function show(string $id)
     {
         //
-        return view('admin.roles.create');
     }
 
     /**
@@ -49,25 +81,6 @@ class RoleController extends Controller
     }
 
     /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-        return view('admin.roles.edit', [
-            'role' => Role::find($id),
-        ]);
-    }
-
-    /**
      * Update the specified resource in storage.
      */
     public function update(Request $request, string $id)
@@ -87,18 +100,5 @@ class RoleController extends Controller
 
         return redirect()->route('roles.index')->with('success', __('The role ' . $request->name . ' has been updated   '));
 
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
-        $role = Role::find($id);
-
-        $role->delete();
-
-        return redirect()->route('roles.index')->with('deleted', __($role->name . ' has been deleted.'));
     }
 }

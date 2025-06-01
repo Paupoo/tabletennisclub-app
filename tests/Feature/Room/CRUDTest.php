@@ -12,11 +12,11 @@ class CRUDTest extends TestCase
 {
     use CreateUser;
 
+    protected array $invalid_room_request = [];
+
     protected array $valid_room_request = [];
 
     protected array $valid_room_request_2 = [];
-
-    protected array $invalid_room_request = [];
 
     protected function setUp(): void
     {
@@ -57,39 +57,15 @@ class CRUDTest extends TestCase
 
     }
 
-    public function test_unlogged_users_cant_access_room_resource(): void
+    public function test_add_a_room_adds_an_entry_into_the_db(): void
     {
-        $room = Room::find(1);
+        $total_rooms_in_db = Room::count();
 
-        $this->get(route('rooms.index'))
-            ->assertRedirect('/login');
+        $this->actingAs($this->createFakeAdmin())
+            ->from(route('rooms.create'))
+            ->post(route('rooms.store', $this->valid_room_request));
 
-        $this->get(route('rooms.show', $room))
-            ->assertRedirect('/login');
-
-        $this->get(route('rooms.create'))
-            ->assertRedirect('/login');
-
-        $this->get(route('rooms.edit', $room))
-            ->assertRedirect('/login');
-
-        $this->post(route('rooms.store', $room))
-            ->assertRedirect('/login');
-
-        $this->patch(route('rooms.update', $room))
-            ->assertRedirect('/login');
-
-        $this->patch(route('rooms.destroy', $room))
-            ->assertRedirect('/login');
-    }
-
-    public function test_members_cant_see_create_nor_edit_buttons(): void
-    {
-        $this->actingAs($this->createFakeUser())
-            ->get(route('rooms.index'))
-            ->assertDontSee('Create a new room')
-            ->assertDontSee('Edit')
-            ->assertDontSee('Delete');
+        $this->assertDatabaseCount('rooms', $total_rooms_in_db + 1);
     }
 
     public function test_admin_and_comittee_member_can_see_create_or_edit_buttons(): void
@@ -107,30 +83,6 @@ class CRUDTest extends TestCase
             ->assertSee('Delete');
     }
 
-    public function test_member_cant_create_nor_edit_nor_delete_rooms(): void
-    {
-        $room = Room::find(1);
-        $this->actingAs($this->createFakeUser())
-            ->get(route('rooms.create'))
-            ->assertStatus(403);
-
-        $this->actingAs($this->createFakeUser())
-            ->post(route('rooms.store', $room))
-            ->assertStatus(403);
-
-        $this->actingAs($this->createFakeUser())
-            ->get(route('rooms.edit', $room))
-            ->assertStatus(403);
-
-        $this->actingAs($this->createFakeUser())
-            ->patch(route('rooms.update', $room))
-            ->assertStatus(403);
-
-        $this->actingAs($this->createFakeUser())
-            ->delete(route('rooms.destroy', $room))
-            ->assertStatus(403);
-    }
-
     public function test_admin_or_comittee_member_can_create_a_room(): void
     {
         $this->actingAs($this->createFakeAdmin())
@@ -143,25 +95,6 @@ class CRUDTest extends TestCase
         $this->actingAs($this->createFakeComitteeMember())
             ->from(route('rooms.create'))
             ->post(route('rooms.store', $this->valid_room_request_2))
-            ->assertValid()
-            ->assertRedirect(route('rooms.index'))
-            ->assertSessionHasNoErrors();
-    }
-
-    public function test_admin_or_comittee_member_can_update_a_room(): void
-    {
-        $room = Room::find(1);
-
-        $this->actingAs($this->createFakeAdmin())
-            ->from(route('rooms.edit', $room))
-            ->patch(route('rooms.update', $room), $this->valid_room_request)
-            ->assertValid()
-            ->assertRedirect(route('rooms.index'))
-            ->assertSessionHasNoErrors();
-
-        $this->actingAs($this->createFakeComitteeMember())
-            ->from(route('rooms.edit', $room))
-            ->patch(route('rooms.update', $room), $this->valid_room_request_2)
             ->assertValid()
             ->assertRedirect(route('rooms.index'))
             ->assertSessionHasNoErrors();
@@ -184,15 +117,23 @@ class CRUDTest extends TestCase
             ->assertSessionHasNoErrors();
     }
 
-    public function test_add_a_room_adds_an_entry_into_the_db(): void
+    public function test_admin_or_comittee_member_can_update_a_room(): void
     {
-        $total_rooms_in_db = Room::count();
+        $room = Room::find(1);
 
         $this->actingAs($this->createFakeAdmin())
-            ->from(route('rooms.create'))
-            ->post(route('rooms.store', $this->valid_room_request));
+            ->from(route('rooms.edit', $room))
+            ->patch(route('rooms.update', $room), $this->valid_room_request)
+            ->assertValid()
+            ->assertRedirect(route('rooms.index'))
+            ->assertSessionHasNoErrors();
 
-        $this->assertDatabaseCount('rooms', $total_rooms_in_db + 1);
+        $this->actingAs($this->createFakeComitteeMember())
+            ->from(route('rooms.edit', $room))
+            ->patch(route('rooms.update', $room), $this->valid_room_request_2)
+            ->assertValid()
+            ->assertRedirect(route('rooms.index'))
+            ->assertSessionHasNoErrors();
     }
 
     public function test_delete_a_room_removes_an_entry_into_the_db(): void
@@ -229,5 +170,64 @@ class CRUDTest extends TestCase
                 'capacity_for_trainings',
                 'capacity_for_interclubs',
             ]);
+    }
+
+    public function test_member_cant_create_nor_edit_nor_delete_rooms(): void
+    {
+        $room = Room::find(1);
+        $this->actingAs($this->createFakeUser())
+            ->get(route('rooms.create'))
+            ->assertStatus(403);
+
+        $this->actingAs($this->createFakeUser())
+            ->post(route('rooms.store', $room))
+            ->assertStatus(403);
+
+        $this->actingAs($this->createFakeUser())
+            ->get(route('rooms.edit', $room))
+            ->assertStatus(403);
+
+        $this->actingAs($this->createFakeUser())
+            ->patch(route('rooms.update', $room))
+            ->assertStatus(403);
+
+        $this->actingAs($this->createFakeUser())
+            ->delete(route('rooms.destroy', $room))
+            ->assertStatus(403);
+    }
+
+    public function test_members_cant_see_create_nor_edit_buttons(): void
+    {
+        $this->actingAs($this->createFakeUser())
+            ->get(route('rooms.index'))
+            ->assertDontSee('Create a new room')
+            ->assertDontSee('Edit')
+            ->assertDontSee('Delete');
+    }
+
+    public function test_unlogged_users_cant_access_room_resource(): void
+    {
+        $room = Room::find(1);
+
+        $this->get(route('rooms.index'))
+            ->assertRedirect('/login');
+
+        $this->get(route('rooms.show', $room))
+            ->assertRedirect('/login');
+
+        $this->get(route('rooms.create'))
+            ->assertRedirect('/login');
+
+        $this->get(route('rooms.edit', $room))
+            ->assertRedirect('/login');
+
+        $this->post(route('rooms.store', $room))
+            ->assertRedirect('/login');
+
+        $this->patch(route('rooms.update', $room))
+            ->assertRedirect('/login');
+
+        $this->patch(route('rooms.destroy', $room))
+            ->assertRedirect('/login');
     }
 }

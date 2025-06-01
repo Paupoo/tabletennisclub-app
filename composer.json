@@ -11,7 +11,8 @@
         "laravel/framework": "^11.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.8",
-        "livewire/livewire": "^3.4"
+        "livewire/livewire": "^3.4",
+        "peckphp/peck": "^0.1.3"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.13",

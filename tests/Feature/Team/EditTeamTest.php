@@ -13,11 +13,25 @@ use Tests\TestCase;
 
 class EditTeamTest extends TestCase
 {
-    protected Model $user;
+    protected Model $admin;
 
     protected Model $committee_member;
 
-    protected Model $admin;
+    protected array $less_than_5_players_request = [
+        'captain_id' => 5,
+        'category' => LeagueCategory::MEN->name,
+        'division' => '5E',
+        'level' => LeagueLevel::PROVINCIAL_BW->name,
+        'name' => 'A',
+        'players' => [
+            0 => '1',
+            1 => '2',
+            2 => '3',
+        ],
+        'season_id' => 1,
+    ];
+
+    protected Model $user;
 
     protected array $valid_request = [
         'captain_id' => 5,
@@ -53,20 +67,6 @@ class EditTeamTest extends TestCase
         'season_id' => 1,
     ];
 
-    protected array $less_than_5_players_request = [
-        'captain_id' => 5,
-        'category' => LeagueCategory::MEN->name,
-        'division' => '5E',
-        'level' => LeagueLevel::PROVINCIAL_BW->name,
-        'name' => 'A',
-        'players' => [
-            0 => '1',
-            1 => '2',
-            2 => '3',
-        ],
-        'season_id' => 1,
-    ];
-
     protected function setUp(): void
     {
         parent::setUp();
@@ -87,51 +87,15 @@ class EditTeamTest extends TestCase
         ]);
     }
 
-    public function test_unlogged_user_cant_edit_a_team(): void
+    public function test_admin_and_comittee_members_can_see_edit_button_from_team_show_view(): void
     {
-        $team = Team::first();
+        $this->actingAs($this->admin)
+            ->get(route('teams.show', 1))
+            ->assertSee('Edit');
 
-        $response = $this->get(route('teams.edit', $team->id));
-
-        $response->assertRedirect('/login');
-    }
-
-    public function test_member_cant_edit_a_team(): void
-    {
-        $user = User::factory()->create([
-            'is_admin' => false,
-            'is_comittee_member' => false,
-        ]);
-        $team = Team::first();
-
-        $this->actingAs($user)
-            ->get(route('teams.edit', $team->id))
-            ->assertStatus(403);
-    }
-
-    public function test_member_cannot_see_edit_team_button(): void
-    {
-        $user = User::factory()->create([
-            'is_admin' => false,
-            'is_comittee_member' => false,
-        ]);
-
-        $this->actingAs($user)
-            ->get(route('teams.index'))
-            ->assertDontSee('Edit');
-
-    }
-
-    public function test_member_cannot_see_delete_team_button(): void
-    {
-        $user = User::factory()->create([
-            'is_admin' => false,
-            'is_comittee_member' => false,
-        ]);
-
-        $this->actingAs($user)
-            ->get(route('teams.index'))
-            ->assertDontSee('Delete');
+        $this->actingAs($this->committee_member)
+            ->get(route('teams.show', 1))
+            ->assertSee('Edit');
     }
 
     public function test_admin_or_comittee_member_can_edit_a_team(): void
@@ -159,6 +123,72 @@ class EditTeamTest extends TestCase
             ->assertSessionHasErrors();
     }
 
+    public function test_member_cannot_see_delete_team_button(): void
+    {
+        $user = User::factory()->create([
+            'is_admin' => false,
+            'is_comittee_member' => false,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('teams.index'))
+            ->assertDontSee('Delete');
+    }
+
+    public function test_member_cannot_see_edit_team_button(): void
+    {
+        $user = User::factory()->create([
+            'is_admin' => false,
+            'is_comittee_member' => false,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('teams.index'))
+            ->assertDontSee('Edit');
+
+    }
+
+    public function test_member_cant_edit_a_team(): void
+    {
+        $user = User::factory()->create([
+            'is_admin' => false,
+            'is_comittee_member' => false,
+        ]);
+        $team = Team::first();
+
+        $this->actingAs($user)
+            ->get(route('teams.edit', $team->id))
+            ->assertStatus(403);
+    }
+
+    public function test_member_cant_see_edit_button_from_team_show_view(): void
+    {
+        $this->actingAs($this->member)
+            ->get(route('teams.show', 1))
+            ->assertDontSee('Edit');
+    }
+
+    public function test_team_should_contains_minimum_5_players(): void
+    {
+        $team = Team::firstwhere('name', 'Z');
+
+        $this->actingAs($this->admin)
+            ->from(route('teams.edit', $team))
+            ->put(route('teams.update', $team), $this->less_than_5_players_request)
+            ->assertInvalid('players')
+            ->assertRedirect(route('teams.edit', $team))
+            ->assertSessionHasErrorsIn('players');
+    }
+
+    public function test_unlogged_user_cant_edit_a_team(): void
+    {
+        $team = Team::first();
+
+        $response = $this->get(route('teams.edit', $team->id));
+
+        $response->assertRedirect('/login');
+    }
+
     public function test_updates_are_correctly_stored(): void
     {
         $totalTeams = Team::count();
@@ -182,36 +212,6 @@ class EditTeamTest extends TestCase
 
         $this->assertEquals(--$total_players, $total_players_final_count);
         $this->assertEquals(5, $storeTeam->captain_id);
-    }
-
-    public function test_member_cant_see_edit_button_from_team_show_view(): void
-    {
-        $this->actingAs($this->member)
-            ->get(route('teams.show', 1))
-            ->assertDontSee('Edit');
-    }
-
-    public function test_admin_and_comittee_members_can_see_edit_button_from_team_show_view(): void
-    {
-        $this->actingAs($this->admin)
-            ->get(route('teams.show', 1))
-            ->assertSee('Edit');
-
-        $this->actingAs($this->committee_member)
-            ->get(route('teams.show', 1))
-            ->assertSee('Edit');
-    }
-
-    public function test_team_should_contains_minimum_5_players(): void
-    {
-        $team = Team::firstwhere('name', 'Z');
-
-        $this->actingAs($this->admin)
-            ->from(route('teams.edit', $team))
-            ->put(route('teams.update', $team), $this->less_than_5_players_request)
-            ->assertInvalid('players')
-            ->assertRedirect(route('teams.edit', $team))
-            ->assertSessionHasErrorsIn('players');
     }
 
     public function test_validation_should_fail_in_case_of_duplicate_teams_into_same_league(): void

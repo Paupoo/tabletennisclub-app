@@ -11,32 +11,72 @@ use Livewire\Component;
 
 class PlayerRegistration extends Component
 {
-    private TournamentService $tournamentService;
-
-    public Tournament $tournament;
-
-    public $showModal = false;
+    public $highlightedIndex = -1;
 
     public $searchQuery = '';
 
     public $selectedPlayerId = null;
 
-    public $highlightedIndex = -1;
-
     public $showDropdown = false;
 
-    protected $rules = [
-        'selectedPlayerId' => 'required|exists:users,id',
-    ];
+    public $showModal = false;
+
+    public Tournament $tournament;
 
     protected $messages = [
         'selectedPlayerId.required' => 'Vous devez sélectionner un joueur.',
         'selectedPlayerId.exists' => 'Le joueur sélectionné n\'existe pas.',
     ];
 
+    protected $rules = [
+        'selectedPlayerId' => 'required|exists:users,id',
+    ];
+
+    private TournamentService $tournamentService;
+
     public function boot(TournamentService $tournamentService)
     {
         $this->tournamentService = $tournamentService;
+    }
+
+    public function clearSelection()
+    {
+        $this->selectedPlayerId = null;
+        $this->searchQuery = '';
+        $this->showDropdown = false;
+        $this->highlightedIndex = -1;
+    }
+
+    public function closeModal()
+    {
+        $this->showModal = false;
+        $this->resetForm();
+    }
+
+    public function getFilteredPlayers()
+    {
+        $query = trim($this->searchQuery);
+        if (empty($query)) {
+            return collect();
+        }
+
+        return User::unregisteredUsers($this->tournament)
+            ->where(function ($queryBuilder) use ($query) {
+                // Utilise le scope search + email
+                $queryBuilder->search($query)
+                    ->orWhere('email', 'like', '%' . $query . '%');
+            })
+            ->limit(10)
+            ->get();
+    }
+
+    public function getSelectedPlayer()
+    {
+        if (! $this->selectedPlayerId) {
+            return null;
+        }
+
+        return User::find($this->selectedPlayerId);
     }
 
     public function mount(Tournament $tournament)
@@ -48,52 +88,6 @@ class PlayerRegistration extends Component
     {
         $this->showModal = true;
         $this->resetForm();
-    }
-
-    public function closeModal()
-    {
-        $this->showModal = false;
-        $this->resetForm();
-    }
-
-    public function resetForm()
-    {
-        $this->searchQuery = '';
-        $this->selectedPlayerId = null;
-        $this->highlightedIndex = -1;
-        $this->showDropdown = false;
-        $this->resetErrorBag();
-    }
-
-    public function updatedSearchQuery()
-    {
-        $this->showDropdown = ! empty(trim($this->searchQuery));
-        $this->highlightedIndex = -1;
-
-        // Si on efface la recherche, on désélectionne le joueur
-        if (empty(trim($this->searchQuery))) {
-            $this->selectedPlayerId = null;
-        }
-    }
-
-    public function selectPlayer($playerId)
-    {
-        $player = $this->getFilteredPlayers()->firstWhere('id', $playerId);
-
-        if ($player) {
-            $this->selectedPlayerId = $playerId;
-            $this->searchQuery = $player->first_name . ' ' . $player->last_name;
-            $this->showDropdown = false;
-            $this->highlightedIndex = -1;
-        }
-    }
-
-    public function clearSelection()
-    {
-        $this->selectedPlayerId = null;
-        $this->searchQuery = '';
-        $this->showDropdown = false;
-        $this->highlightedIndex = -1;
     }
 
     public function registerPlayer()
@@ -128,38 +122,44 @@ class PlayerRegistration extends Component
         $this->dispatch('playerRegistered');
     }
 
-    public function getFilteredPlayers()
-    {
-        $query = trim($this->searchQuery);
-        if (empty($query)) {
-            return collect();
-        }
-
-        return User::unregisteredUsers($this->tournament)
-            ->where(function ($queryBuilder) use ($query) {
-                // Utilise le scope search + email
-                $queryBuilder->search($query)
-                    ->orWhere('email', 'like', '%' . $query . '%');
-            })
-            ->limit(10)
-            ->get();
-    }
-
-    public function getSelectedPlayer()
-    {
-        if (! $this->selectedPlayerId) {
-            return null;
-        }
-
-        return User::find($this->selectedPlayerId);
-    }
-
     public function render()
     {
         return view('livewire.player-registration', [
             'filteredPlayers' => $this->getFilteredPlayers(),
             'selectedPlayer' => $this->getSelectedPlayer(),
         ]);
+    }
+
+    public function resetForm()
+    {
+        $this->searchQuery = '';
+        $this->selectedPlayerId = null;
+        $this->highlightedIndex = -1;
+        $this->showDropdown = false;
+        $this->resetErrorBag();
+    }
+
+    public function selectPlayer($playerId)
+    {
+        $player = $this->getFilteredPlayers()->firstWhere('id', $playerId);
+
+        if ($player) {
+            $this->selectedPlayerId = $playerId;
+            $this->searchQuery = $player->first_name . ' ' . $player->last_name;
+            $this->showDropdown = false;
+            $this->highlightedIndex = -1;
+        }
+    }
+
+    public function updatedSearchQuery()
+    {
+        $this->showDropdown = ! empty(trim($this->searchQuery));
+        $this->highlightedIndex = -1;
+
+        // Si on efface la recherche, on désélectionne le joueur
+        if (empty(trim($this->searchQuery))) {
+            $this->selectedPlayerId = null;
+        }
     }
 
     /**

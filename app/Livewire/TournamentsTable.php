@@ -16,20 +16,11 @@ class TournamentsTable extends Component
 
     public string $search = '';
 
-    public string $status = '';
-
     public string $sortByField = '';
 
     public string $sortDirection = 'desc';
 
-    public function sortBy($field)
-    {
-        if ($this->sortByField === $field) {
-            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
-        }
-
-        $this->sortByField = $field;
-    }
+    public string $status = '';
 
     public function render()
     {
@@ -41,5 +32,14 @@ class TournamentsTable extends Component
                 ->orderBy('start_date')
                 ->paginate($this->perPage),
         ]);
+    }
+
+    public function sortBy($field)
+    {
+        if ($this->sortByField === $field) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        }
+
+        $this->sortByField = $field;
     }
 }

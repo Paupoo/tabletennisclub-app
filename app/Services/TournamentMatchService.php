@@ -378,6 +378,94 @@ class TournamentMatchService
     ];
 
     /**
+     * Calculate standings for a pool
+     *
+     * @param  Pool  $pool  The pool to calculate standings for
+     * @return Collection Collection of players with their stats
+     */
+    public function calculatePoolStandings(Pool $pool): Collection
+    {
+        $players = $pool->users;
+        $matches = TournamentMatch::where('pool_id', $pool->id)->get();
+
+        $standings = $players->map(function ($player) use ($matches) {
+            $playerMatches = $matches->filter(function ($match) use ($player) {
+                return $match->player1_id === $player->id || $match->player2_id === $player->id;
+            });
+
+            $matchesWon = $playerMatches->where('winner_id', $player->id)->count();
+
+            $setsWon = 0;
+            $totalPoints = 0;
+
+            foreach ($playerMatches as $match) {
+                if ($match->isCompleted()) {
+                    $setsWon += $match->getSetsWon($player->id);
+                    $totalPoints += $match->getTotalPoints($player->id);
+                }
+            }
+
+            return [
+                'player' => $player,
+                'matches_played' => $playerMatches->where('status', 'completed')->count(),
+                'matches_won' => $matchesWon,
+                'sets_won' => $setsWon,
+                'total_points' => $totalPoints,
+            ];
+        });
+
+        // Sort standings by matches won (desc), sets won (desc), and total points (desc)
+        return $standings->sortByDesc(function ($item) {
+            return sprintf('%06d%06d%06d', $item['matches_won'], $item['sets_won'], $item['total_points']);
+        })->values();
+    }
+
+    /**
+     * Calculate standings for a pool
+     *
+     * @param  Tournament  $tournament  The tournament to calculate pools standings for
+     * @return Collection Collection of players with their stats
+     */
+    public function calculateRowStandings(Tournament $tournament): Collection
+    {
+        $players = $tournament->users;
+        $matches = TournamentMatch::where('tournament_id', $tournament->id)->get();
+
+        $standings = $players->map(function ($player) use ($matches) {
+            $playerMatches = $matches->filter(function ($match) use ($player) {
+                return $match->player1_id === $player->id || $match->player2_id === $player->id;
+            });
+
+            $matchesWon = $playerMatches->where('winner_id', $player->id)->count();
+
+            $setsWon = 0;
+            $totalPoints = 0;
+
+            foreach ($playerMatches as $match) {
+                if ($match->isCompleted()) {
+                    $setsWon += $match->getSetsWon($player->id);
+                    $totalPoints += $match->getTotalPoints($player->id);
+                }
+            }
+
+            return [
+                'player' => $player,
+                'matches_played' => $playerMatches->where('status', 'completed')->count(),
+                'matches_won' => $matchesWon,
+                'sets_won' => $setsWon,
+                'total_points' => $totalPoints,
+            ];
+        });
+
+        // Sort standings by matches won (desc), sets won (desc), and total points (desc)
+        return $standings->sortByDesc([
+            ['matches_won', 'desc'],
+            ['sets_won', 'desc'],
+            ['total_points', 'desc'],
+        ])->values();
+    }
+
+    /**
      * Generate all matches for a pool using Round Robin algorithm
      *
      * @param  Pool  $pool  The pool to generate matches for
@@ -409,7 +497,7 @@ class TournamentMatchService
                 $away = ($numberOfPlayers - 1 - $match + $round) % ($numberOfPlayers - 1);
 
                 // Last player stays in the same position while the others rotate
-                if ($match == 0) {
+                if ($match === 0) {
                     $away = $numberOfPlayers - 1;
                 }
 
@@ -457,94 +545,6 @@ class TournamentMatchService
         }
 
         return $result;
-    }
-
-    /**
-     * Calculate standings for a pool
-     *
-     * @param  Pool  $pool  The pool to calculate standings for
-     * @return Collection Collection of players with their stats
-     */
-    public function calculatePoolStandings(Pool $pool): Collection
-    {
-        $players = $pool->users;
-        $matches = TournamentMatch::where('pool_id', $pool->id)->get();
-
-        $standings = $players->map(function ($player) use ($matches) {
-            $playerMatches = $matches->filter(function ($match) use ($player) {
-                return $match->player1_id == $player->id || $match->player2_id == $player->id;
-            });
-
-            $matchesWon = $playerMatches->where('winner_id', $player->id)->count();
-
-            $setsWon = 0;
-            $totalPoints = 0;
-
-            foreach ($playerMatches as $match) {
-                if ($match->isCompleted()) {
-                    $setsWon += $match->getSetsWon($player->id);
-                    $totalPoints += $match->getTotalPoints($player->id);
-                }
-            }
-
-            return [
-                'player' => $player,
-                'matches_played' => $playerMatches->where('status', 'completed')->count(),
-                'matches_won' => $matchesWon,
-                'sets_won' => $setsWon,
-                'total_points' => $totalPoints,
-            ];
-        });
-
-        // Sort standings by matches won (desc), sets won (desc), and total points (desc)
-        return $standings->sortByDesc(function ($item) {
-            return sprintf('%06d%06d%06d', $item['matches_won'], $item['sets_won'], $item['total_points']);
-        })->values();
-    }
-
-    /**
-     * Calculate standings for a pool
-     *
-     * @param  Tournament  $tournament  The tournament to calculate pools standings for
-     * @return Collection Collection of players with their stats
-     */
-    public function calculateRowStandings(Tournament $tournament): Collection
-    {
-        $players = $tournament->users;
-        $matches = TournamentMatch::where('tournament_id', $tournament->id)->get();
-
-        $standings = $players->map(function ($player) use ($matches) {
-            $playerMatches = $matches->filter(function ($match) use ($player) {
-                return $match->player1_id == $player->id || $match->player2_id == $player->id;
-            });
-
-            $matchesWon = $playerMatches->where('winner_id', $player->id)->count();
-
-            $setsWon = 0;
-            $totalPoints = 0;
-
-            foreach ($playerMatches as $match) {
-                if ($match->isCompleted()) {
-                    $setsWon += $match->getSetsWon($player->id);
-                    $totalPoints += $match->getTotalPoints($player->id);
-                }
-            }
-
-            return [
-                'player' => $player,
-                'matches_played' => $playerMatches->where('status', 'completed')->count(),
-                'matches_won' => $matchesWon,
-                'sets_won' => $setsWon,
-                'total_points' => $totalPoints,
-            ];
-        });
-
-        // Sort standings by matches won (desc), sets won (desc), and total points (desc)
-        return $standings->sortByDesc([
-            ['matches_won', 'desc'],
-            ['sets_won', 'desc'],
-            ['total_points', 'desc'],
-        ])->values();
     }
 
     /**

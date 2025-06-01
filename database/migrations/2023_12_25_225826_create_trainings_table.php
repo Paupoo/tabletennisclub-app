@@ -13,6 +13,14 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('trainings');
+    }
+
+    /**
      * Run the migrations.
      */
     public function up(): void
@@ -30,13 +38,5 @@ return new class extends Migration
 
             $table->foreign('trainer_id')->references('id')->on('users')->nullable()->constrained();
         });
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('trainings');
     }
 };

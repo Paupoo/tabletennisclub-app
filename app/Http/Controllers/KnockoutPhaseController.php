@@ -50,6 +50,42 @@ class KnockoutPhaseController extends Controller
     }
 
     /**
+     * Reset a match
+     */
+    public function resetMatch(TournamentMatch $match)
+    {
+        // Delete sets
+        MatchSet::where('tournament_match_id', $match->id)->delete();
+
+        // Reset match
+        $match->update([
+            'winner_id' => null,
+            'status' => 'scheduled',
+        ]);
+
+        // If there's a next match with one of our players, reset it
+        $this->knockoutService->cleanNextMatch($match);
+
+        // If this is a semifinal, check if we need to update the bronze match
+        if ($match->round === 'semifinal' && $match->bronze_match_id) {
+            $bronzeMatch = TournamentMatch::find($match->bronze_match_id);
+
+            if ($bronzeMatch) {
+                if ($bronzeMatch->player1_id === $match->player1_id || $bronzeMatch->player1_id === $match->player2_id) {
+                    $bronzeMatch->update(['player1_id' => null]);
+                }
+
+                if ($bronzeMatch->player2_id === $match->player1_id || $bronzeMatch->player2_id === $match->player2_id) {
+                    $bronzeMatch->update(['player2_id' => null]);
+                }
+            }
+        }
+
+        return redirect()->route('knockoutBracket', $match->tournament_id)
+            ->with('success', 'Match réinitialisé avec succès');
+    }
+
+    /**
      * Show knockout bracket
      */
     public function showBracket(Tournament $tournament)
@@ -142,41 +178,5 @@ class KnockoutPhaseController extends Controller
 
         return redirect()->route('knockoutBracket', $match->tournament_id)
             ->with('success', 'Match mis à jour avec succès');
-    }
-
-    /**
-     * Reset a match
-     */
-    public function resetMatch(TournamentMatch $match)
-    {
-        // Delete sets
-        MatchSet::where('tournament_match_id', $match->id)->delete();
-
-        // Reset match
-        $match->update([
-            'winner_id' => null,
-            'status' => 'scheduled',
-        ]);
-
-        // If there's a next match with one of our players, reset it
-        $this->knockoutService->cleanNextMatch($match);
-
-        // If this is a semifinal, check if we need to update the bronze match
-        if ($match->round === 'semifinal' && $match->bronze_match_id) {
-            $bronzeMatch = TournamentMatch::find($match->bronze_match_id);
-
-            if ($bronzeMatch) {
-                if ($bronzeMatch->player1_id == $match->player1_id || $bronzeMatch->player1_id == $match->player2_id) {
-                    $bronzeMatch->update(['player1_id' => null]);
-                }
-
-                if ($bronzeMatch->player2_id == $match->player1_id || $bronzeMatch->player2_id == $match->player2_id) {
-                    $bronzeMatch->update(['player2_id' => null]);
-                }
-            }
-        }
-
-        return redirect()->route('knockoutBracket', $match->tournament_id)
-            ->with('success', 'Match réinitialisé avec succès');
     }
 }

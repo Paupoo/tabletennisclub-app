@@ -10,6 +10,16 @@ use App\Models\TournamentMatch;
 
 class TournamentTableService
 {
+    public function freeUsedTable(TournamentMatch $match): void
+    {
+        $tournament = $match->tournament()->first();
+        $table = $tournament->tables()->wherePivot('tournament_match_id', $match->id)->first();
+        $tournament->tables()->updateExistingPivot($table->id, [
+            'is_table_free' => true,
+            'match_ended_at' => now(),
+        ]);
+    }
+
     /**
      * Lie les tables de chaque salle déjà liés à un tournoi
      *
@@ -29,16 +39,6 @@ class TournamentTableService
         }
 
         $tournament->tables()->sync($tablesToSync);
-    }
-
-    public function freeUsedTable(TournamentMatch $match): void
-    {
-        $tournament = $match->tournament()->first();
-        $table = $tournament->tables()->wherePivot('tournament_match_id', $match->id)->first();
-        $tournament->tables()->updateExistingPivot($table->id, [
-            'is_table_free' => true,
-            'match_ended_at' => now(),
-        ]);
     }
 
     public function updateTablesCount(Room $room): void

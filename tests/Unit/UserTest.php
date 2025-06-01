@@ -10,22 +10,6 @@ use PHPUnit\Framework\TestCase;
 
 class UserTest extends TestCase
 {
-    public function test_method_set_first_name_attribute(): void
-    {
-        $user = new User;
-        $user->first_name = 'aURÉliEN';
-
-        $this->assertEquals('Aurélien', $user->first_name);
-    }
-
-    public function test_method_set_last_name_attribute(): void
-    {
-        $user = new User;
-        $user->first_name = 'pAULUS';
-
-        $this->assertEquals('Paulus', $user->first_name);
-    }
-
     public function test_method_set_age(): void
     {
         // Start
@@ -50,5 +34,21 @@ class UserTest extends TestCase
 
         // Assert
         $this->assertEquals('Unknown', $user->age);
+    }
+
+    public function test_method_set_first_name_attribute(): void
+    {
+        $user = new User;
+        $user->first_name = 'aURÉliEN';
+
+        $this->assertEquals('Aurélien', $user->first_name);
+    }
+
+    public function test_method_set_last_name_attribute(): void
+    {
+        $user = new User;
+        $user->first_name = 'pAULUS';
+
+        $this->assertEquals('Paulus', $user->first_name);
     }
 }

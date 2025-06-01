@@ -16,28 +16,13 @@ class Pool extends Model
     /** @use HasFactory<\Database\Factories\PoolFactory> */
     use HasFactory;
 
-    protected $fillable = [
-        'name',
-    ];
-
     protected $casts = [
         'name' => 'string',
     ];
 
-    public function tournament(): BelongsTo
-    {
-        return $this->belongsTo(Tournament::class);
-    }
-
-    public function users(): BelongsToMany
-    {
-        return $this->belongsToMany(User::class, 'pool_user');
-    }
-
-    public function tournamentmatches(): HasMany
-    {
-        return $this->hasMany(TournamentMatch::class);
-    }
+    protected $fillable = [
+        'name',
+    ];
 
     /**
      * Utiliser les événements du modèle pour intercepter
@@ -59,5 +44,20 @@ class Pool extends Model
 
         // Si non, attacher l'utilisateur à ce pool
         return $this->users()->attach($user->id);
+    }
+
+    public function tournament(): BelongsTo
+    {
+        return $this->belongsTo(Tournament::class);
+    }
+
+    public function tournamentmatches(): HasMany
+    {
+        return $this->hasMany(TournamentMatch::class);
+    }
+
+    public function users(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'pool_user');
     }
 }

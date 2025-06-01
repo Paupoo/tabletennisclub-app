@@ -15,17 +15,6 @@ class Tournament extends Model
     /** @use HasFactory<\Database\Factories\TournamentFactory> */
     use HasFactory;
 
-    protected $fillable = [
-        'name',
-        'start_date',
-        'end_date',
-        'price',
-        'total_users',
-        'max_users',
-        'status',
-        'has_handicap_points',
-    ];
-
     protected $casts = [
         'name',
         'start_date' => 'datetime:Y-m-d\TH:i',
@@ -37,13 +26,20 @@ class Tournament extends Model
         'has_handicap_points' => 'boolean',
     ];
 
-    /* Relations */
+    protected $fillable = [
+        'name',
+        'start_date',
+        'end_date',
+        'price',
+        'total_users',
+        'max_users',
+        'status',
+        'has_handicap_points',
+    ];
 
-    public function users(): BelongsToMany
+    public function matches(): HasMany
     {
-        return $this->belongsToMany(User::class)
-            ->withPivot(['has_paid', 'matches_won', 'sets_won', 'points_won'])
-            ->withTimestamps();
+        return $this->hasMany(TournamentMatch::class);
     }
 
     public function pools(): HasMany
@@ -54,24 +50,6 @@ class Tournament extends Model
     public function rooms(): BelongsToMany
     {
         return $this->BelongsToMany(Room::class);
-    }
-
-    public function tables(): BelongsToMany
-    {
-        return $this->belongsToMany(Table::class)
-            ->withPivot([
-                'is_table_free',
-                'tournament_match_id',
-                'match_started_at',
-            ])
-            ->using(TableTournament::class)
-            ->withTimestamps();
-
-    }
-
-    public function matches(): HasMany
-    {
-        return $this->hasMany(TournamentMatch::class);
     }
 
     /** Scopes */
@@ -87,5 +65,27 @@ class Tournament extends Model
     {
         $query->where('name', 'like', '%' . $value . '%')
             ->orWhere('price', 'like', '%' . $value . '%');
+    }
+
+    public function tables(): BelongsToMany
+    {
+        return $this->belongsToMany(Table::class)
+            ->withPivot([
+                'is_table_free',
+                'tournament_match_id',
+                'match_started_at',
+            ])
+            ->using(TableTournament::class)
+            ->withTimestamps();
+
+    }
+
+    /* Relations */
+
+    public function users(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class)
+            ->withPivot(['has_paid', 'matches_won', 'sets_won', 'points_won'])
+            ->withTimestamps();
     }
 }

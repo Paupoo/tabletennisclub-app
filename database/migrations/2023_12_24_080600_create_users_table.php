@@ -12,6 +12,14 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('users');
+    }
+
+    /**
      * Run the migrations.
      */
     public function up(): void
@@ -41,13 +49,5 @@ return new class extends Migration
             $table->unsignedTinyInteger('force_list')->nullable();
             $table->foreignIdFor(Club::class)->default(1);
         });
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('users');
     }
 };

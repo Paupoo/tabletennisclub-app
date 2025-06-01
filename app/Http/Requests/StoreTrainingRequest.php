@@ -20,6 +20,13 @@ class StoreTrainingRequest extends FormRequest
         return $this->user()->is_admin || $this->user()->is_comittee_member;
     }
 
+    public function messages(): array
+    {
+        return [
+            //
+        ];
+    }
+
     public function prepareForValidation(): void
     {
         $this->merge([
@@ -94,13 +101,6 @@ class StoreTrainingRequest extends FormRequest
                 'string',
                 Rule::in(collect(TrainingType::cases())->pluck('name')),
             ],
-        ];
-    }
-
-    public function messages(): array
-    {
-        return [
-            //
         ];
     }
 }

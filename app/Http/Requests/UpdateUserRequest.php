@@ -19,14 +19,16 @@ class UpdateUserRequest extends FormRequest
         return $this->user()->is_admin || $this->user()->is_comittee_member;
     }
 
-    protected function prepareForValidation(): void
+    /**
+     * Get the error messages for the defined validation rules.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
     {
-        $this->merge([
-            'is_active' => $this->input('is_active') !== null,
-            'is_admin' => $this->input('is_admin') !== null,
-            'is_comittee_member' => $this->input('is_comittee_member') !== null,
-            'is_competitor' => $this->input('is_competitor') !== null,
-        ]);
+        return [
+            'ranking' => __('The ranking field is required and if the user is a competitor, it can\'t be "NA".'),
+        ];
     }
 
     /**
@@ -76,15 +78,13 @@ class UpdateUserRequest extends FormRequest
         });
     }
 
-    /**
-     * Get the error messages for the defined validation rules.
-     *
-     * @return array<string, string>
-     */
-    public function messages(): array
+    protected function prepareForValidation(): void
     {
-        return [
-            'ranking' => __('The ranking field is required and if the user is a competitor, it can\'t be "NA".'),
-        ];
+        $this->merge([
+            'is_active' => $this->input('is_active') !== null,
+            'is_admin' => $this->input('is_admin') !== null,
+            'is_comittee_member' => $this->input('is_comittee_member') !== null,
+            'is_competitor' => $this->input('is_competitor') !== null,
+        ]);
     }
 }

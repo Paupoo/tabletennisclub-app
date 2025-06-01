@@ -19,26 +19,14 @@ use Illuminate\Http\Request;
 
 class TrainingController extends Controller
 {
-    protected TrainingDateGenerator $dateGenerator;
-
     protected TrainingBuilder $builder;
+
+    protected TrainingDateGenerator $dateGenerator;
 
     public function __construct(TrainingDateGenerator $training_date_generator, TrainingBuilder $training_builder)
     {
         $this->dateGenerator = $training_date_generator;
         $this->builder = $training_builder;
-    }
-
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        $this->authorize('viewAny', Training::class);
-
-        return view('admin.trainings.index', [
-            'trainings' => Training::orderBy('start')->paginate(10),
-        ]);
     }
 
     /**
@@ -58,6 +46,73 @@ class TrainingController extends Controller
             'types' => TrainingType::cases(),
             'users' => User::select('id', 'last_name', 'first_name')->orderBy('last_name', 'asc')->orderBy('first_name', 'asc')->get(),
         ]);
+    }
+
+    /**
+     * Get all dates for a specific weekday between 2 dates
+     */
+    public function daysBetweenTwoDate(string $start_date, string $end_date, int $week_day): array
+    {
+
+        $dates = [];
+        // Make sure end time is always after start time.
+        if (strtotime($start_date) > strtotime($end_date)) {
+            throw new Exception('The end date cannot be before the start date.');
+        } else {
+            while (strtotime($start_date) <= strtotime($end_date)) {
+
+                // If the day number matches the date's date number, add it into the array, otherwise do nothing.
+                if (date('N', strtotime($start_date)) === $week_day) {
+                    $dates[] = $start_date;
+                } else {
+                }
+
+                // Then add 24h.
+                $start_date = date('d-m-Y', strtotime('+1 day', strtotime($start_date)));
+            }
+        }
+
+        return $dates;
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(Training $training)
+    {
+        //
+
+        $training->delete();
+
+        return redirect()->route('trainings.index')->with('deleted', 'The training has been deleted.');
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(Training $training)
+    {
+        //
+    }
+
+    /**
+     * Display a listing of the resource.
+     */
+    public function index()
+    {
+        $this->authorize('viewAny', Training::class);
+
+        return view('admin.trainings.index', [
+            'trainings' => Training::orderBy('start')->paginate(10),
+        ]);
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(Training $training)
+    {
+        //
     }
 
     /**
@@ -86,65 +141,10 @@ class TrainingController extends Controller
     }
 
     /**
-     * Display the specified resource.
-     */
-    public function show(Training $training)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Training $training)
-    {
-        //
-    }
-
-    /**
      * Update the specified resource in storage.
      */
     public function update(Request $request, Training $training)
     {
         //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Training $training)
-    {
-        //
-
-        $training->delete();
-
-        return redirect()->route('trainings.index')->with('deleted', 'The training has been deleted.');
-    }
-
-    /**
-     * Get all dates for a specific weekday between 2 dates
-     */
-    public function daysBetweenTwoDate(string $start_date, string $end_date, int $week_day): array
-    {
-
-        $dates = [];
-        // Make sure end time is always after start time.
-        if (strtotime($start_date) > strtotime($end_date)) {
-            throw new Exception('The end date cannot be before the start date.');
-        } else {
-            while (strtotime($start_date) <= strtotime($end_date)) {
-
-                // If the day number matches the date's date number, add it into the array, otherwise do nothing.
-                if (date('N', strtotime($start_date)) == $week_day) {
-                    $dates[] = $start_date;
-                } else {
-                }
-
-                // Then add 24h.
-                $start_date = date('d-m-Y', strtotime('+1 day', strtotime($start_date)));
-            }
-        }
-
-        return $dates;
     }
 }

@@ -40,29 +40,21 @@ class TournamentPoolService
         return $pools->toArray();
     }
 
-    /**
-     * Crée les pools pour le tournoi avec des noms A, B, C, etc.
-     *
-     * @return Collection Collection de pools
-     */
-    private function createPools(Tournament $tournament, int $numberOfPools): Collection
+    public function hasPoolMatches(Pool $pool): bool
     {
-        $pools = collect();
+        $total_matches = $pool->tournamentmatches()->count();
 
-        // Supprimer les pools existantes si nécessaire
-        $tournament->pools()->delete();
+        return $total_matches > 0;
+    }
 
-        // Créer les nouvelles pools
-        for ($i = 0; $i < $numberOfPools; $i++) {
-            $poolName = chr(65 + $i); // A=65, B=66, etc. en ASCII
-            $pool = new Pool;
-            $pool->name = "Pool $poolName";
-            $pool->tournament_id = $tournament->id;
-            $pool->save();
-            $pools->push($pool);
-        }
+    public function isPoolFinished(Pool $pool): bool
+    {
+        $result = true;
 
-        return $pools;
+        $total_matches = $pool->tournamentmatches()->count();
+        $totalMatchesCompleted = $pool->tournamentmatches()->where('status', 'completed')->count();
+
+        return $total_matches === $totalMatchesCompleted;
     }
 
     /**
@@ -105,20 +97,28 @@ class TournamentPoolService
         }
     }
 
-    public function hasPoolMatches(Pool $pool): bool
+    /**
+     * Crée les pools pour le tournoi avec des noms A, B, C, etc.
+     *
+     * @return Collection Collection de pools
+     */
+    private function createPools(Tournament $tournament, int $numberOfPools): Collection
     {
-        $total_matches = $pool->tournamentmatches()->count();
+        $pools = collect();
 
-        return $total_matches > 0;
-    }
+        // Supprimer les pools existantes si nécessaire
+        $tournament->pools()->delete();
 
-    public function isPoolFinished(Pool $pool): bool
-    {
-        $result = true;
+        // Créer les nouvelles pools
+        for ($i = 0; $i < $numberOfPools; $i++) {
+            $poolName = chr(65 + $i); // A=65, B=66, etc. en ASCII
+            $pool = new Pool;
+            $pool->name = "Pool {$poolName}";
+            $pool->tournament_id = $tournament->id;
+            $pool->save();
+            $pools->push($pool);
+        }
 
-        $total_matches = $pool->tournamentmatches()->count();
-        $totalMatchesCompleted = $pool->tournamentmatches()->where('status', 'completed')->count();
-
-        return $total_matches === $totalMatchesCompleted;
+        return $pools;
     }
 }

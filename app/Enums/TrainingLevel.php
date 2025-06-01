@@ -7,9 +7,9 @@ namespace App\Enums;
 enum TrainingLevel: string
 {
     case BEGINNERS = 'Beginners';
-    case KIDS = 'Kids';
-    case INTERMEDIATE = 'Intermediate';
-    case YOUNG_POTENTIAL = 'Young potential';
     case ELITE = 'Elite';
+    case INTERMEDIATE = 'Intermediate';
+    case KIDS = 'Kids';
     case OPEN = 'Open';
+    case YOUNG_POTENTIAL = 'Young potential';
 }

@@ -6,8 +6,8 @@ namespace App\Enums;
 
 enum InterclubResult: string
 {
-    case WIN = 'Win';
-    case LOSS = 'Loss';
     case DRAW = 'Draw';
+    case LOSS = 'Loss';
+    case WIN = 'Win';
     case WITHDRAWAL = 'Withdrawal';
 }

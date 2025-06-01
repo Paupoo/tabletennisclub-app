@@ -19,6 +19,16 @@ class TrainingBuilder
         $this->training = new Training;
     }
 
+    public function buildAndSave(): Training
+    {
+        $training = $this->training;
+        $training->save();
+
+        $this->training = new Training;
+
+        return $training;
+    }
+
     public function mergeDateAndTime(Carbon $date, string $start_time, string $end_time): self
     {
         $this->training->start = $date->setTimeFrom($start_time)->format('Y-m-d H:i');
@@ -61,15 +71,5 @@ class TrainingBuilder
         }
 
         return $this;
-    }
-
-    public function buildAndSave(): Training
-    {
-        $training = $this->training;
-        $training->save();
-
-        $this->training = new Training;
-
-        return $training;
     }
 }

@@ -27,17 +27,21 @@ class InterclubController extends Controller
         $this->interclubService = $interclubService;
     }
 
-    /**
-     * Display a listing of the resource.
-     */
-    public function index(): View
+    public function addToSelection(Interclub $interclub, User $user): RedirectResponse
     {
-        //
-        $interclubs = Interclub::orderBy('start_date_time', 'asc')->paginate(10);
-
-        return view('admin.interclubs.index', [
-            'interclubs' => $interclubs,
+        /**
+         * to do : check if allowed, make a function for this
+         *  - not selected in other team already
+         *  - match not in the past
+         *  - player is competitor
+         *  - player is allow to play (list force check)
+         */
+        $userSelected = $user->interclubs()->sync([
+            $interclub->id => ['is_selected' => true],
         ]);
+
+        return redirect()->route('interclubs.show', $interclub)->with('success', __($user->last_name . ' ' . $user->first_name . ' have been selected for the interclub.'));
+
     }
 
     /**
@@ -66,16 +70,32 @@ class InterclubController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Remove the specified resource from storage.
      */
-    public function store(StoreInterclubRequest $request)
+    public function destroy(Interclub $interclub)
     {
-        $validated = $request->validated();
+        //
+    }
 
-        $this->interclubService->createInterclub($validated);
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(Interclub $interclub)
+    {
+        //
+    }
 
-        return redirect()->route('interclubs.index')->with('success', 'The match has been added.');
+    /**
+     * Display a listing of the resource.
+     */
+    public function index(): View
+    {
+        //
+        $interclubs = Interclub::orderBy('start_date_time', 'asc')->paginate(10);
 
+        return view('admin.interclubs.index', [
+            'interclubs' => $interclubs,
+        ]);
     }
 
     /**
@@ -118,28 +138,27 @@ class InterclubController extends Controller
         ]);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Interclub $interclub)
+    public function showSelections(): View
     {
-        //
+        $interclubs = Interclub::all();
+
+        return View('admin.interclubs.selections', [
+            'interclubs' => $interclubs,
+
+        ]);
     }
 
     /**
-     * Update the specified resource in storage.
+     * Store a newly created resource in storage.
      */
-    public function update(Request $request, Interclub $interclub)
+    public function store(StoreInterclubRequest $request)
     {
-        //
-    }
+        $validated = $request->validated();
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Interclub $interclub)
-    {
-        //
+        $this->interclubService->createInterclub($validated);
+
+        return redirect()->route('interclubs.index')->with('success', 'The match has been added.');
+
     }
 
     public function subscribe(Request $request): RedirectResponse
@@ -152,23 +171,6 @@ class InterclubController extends Controller
         $user->interclubs()->syncWithPivotValues(array_values($subscriptions), ['is_subscribed' => true]);
 
         return redirect()->route('interclubs.index')->with('success', __('You have correctly subscribed.'));
-    }
-
-    public function addToSelection(Interclub $interclub, User $user): RedirectResponse
-    {
-        /**
-         * to do : check if allowed, make a function for this
-         *  - not selected in other team already
-         *  - match not in the past
-         *  - player is competitor
-         *  - player is allow to play (list force check)
-         */
-        $userSelected = $user->interclubs()->sync([
-            $interclub->id => ['is_selected' => true],
-        ]);
-
-        return redirect()->route('interclubs.show', $interclub)->with('success', __($user->last_name . ' ' . $user->first_name . ' have been selected for the interclub.'));
-
     }
 
     public function toggleSelection(Interclub $interclub, User $user): RedirectResponse
@@ -189,13 +191,11 @@ class InterclubController extends Controller
             : redirect()->route('interclubs.show', $interclub)->with('deleted', __($user->last_name . ' ' . $user->first_name . ' has been unselected for the interclub.'));
     }
 
-    public function showSelections(): View
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, Interclub $interclub)
     {
-        $interclubs = Interclub::all();
-
-        return View('admin.interclubs.selections', [
-            'interclubs' => $interclubs,
-
-        ]);
+        //
     }
 }

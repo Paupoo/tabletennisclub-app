@@ -30,6 +30,49 @@ class CreateUserTest extends TestCase
         $this->password = Hash::make('password');
     }
 
+    public function test_create_method_returning_expected_view_and_data(): void
+    {
+        $admin = $this->createFakeAdmin();
+
+        $response = $this->actingAs($admin)
+            ->get(route('users.create'));
+
+        $response
+            ->assertOk()
+            ->assertViewIs('admin.users.create')
+            ->assertViewHasAll([
+                'teams' => Team::with('league')->get(),
+                'rankings' => collect(Ranking::cases())->pluck('name')->toArray(),
+                'sexes' => collect(Sex::cases())->pluck('name')->toArray(),
+            ]);
+    }
+
+    public function test_email_is_not_already_taken(): void
+    {
+        $admin = $this->createFakeAdmin();
+
+        $this->actingAs($admin)
+            ->from(route('users.create'))
+            ->post('/admin/users', [
+                'last_name' => 'Jules',
+                'first_name' => 'Destrée',
+                'sex' => 'MEN',
+                'email' => 'aurelien.paulus@gmail.com',
+                'password' => 'z8XDbhN5sFHjWv',
+                'password_confirmation' => 'z8XDbhN5sFHjWv!',
+                'licence' => 123456,
+                'ranking' => 'B2',
+                'birthdate' => Date::create(1988, 8, 17),
+                'phone_number' => '0479123456',
+            ])
+            ->assertInvalid('email')
+            ->assertRedirect(route('users.create'))
+            ->assertSessionHasErrors([
+                'email' => 'The email has already been taken.',
+            ]);
+
+    }
+
     public function test_force_list_service_is_injected(): void
     {
         // Create a mock to use ForceList service
@@ -49,21 +92,39 @@ class CreateUserTest extends TestCase
         $this->assertSame($forceListMock, $property->getValue($controller));
     }
 
-    public function test_create_method_returning_expected_view_and_data(): void
+    public function test_licence_is_not_already_taken(): void
     {
         $admin = $this->createFakeAdmin();
+        $licenceAlreadyUsed = User::firstWhere('licence', '!=', null)->licence;
 
-        $response = $this->actingAs($admin)
-            ->get(route('users.create'));
-
-        $response
-            ->assertOk()
-            ->assertViewIs('admin.users.create')
-            ->assertViewHasAll([
-                'teams' => Team::with('league')->get(),
-                'rankings' => collect(Ranking::cases())->pluck('name')->toArray(),
-                'sexes' => collect(Sex::cases())->pluck('name')->toArray(),
+        $this->actingAs($admin)
+            ->from(route('users.create'))
+            ->post('/admin/users', [
+                'last_name' => 'Jules',
+                'first_name' => 'Destrée',
+                'sex' => 'MEN',
+                'email' => 'jules.destree@gmail.com',
+                'password' => 'z8XDbhN5sFHjWv!',
+                'password_confirmation' => 'z8XDbhN5sFHjWv!',
+                'licence' => $licenceAlreadyUsed,
+                'ranking' => 'B2',
+                'birthdate' => Date::create(1988, 8, 17),
+                'phone_number' => '0479123456',
+            ])
+            ->assertInvalid('licence')
+            ->assertRedirect(route('users.create'))
+            ->assertSessionHasErrors([
+                'licence' => 'The licence has already been taken.',
             ]);
+    }
+
+    public function test_member_cannot_create_new_member(): void
+    {
+        $user = $this->createFakeUser();
+
+        $this->actingAs($user)
+            ->post('/admin/users/create')
+            ->assertStatus(405);
     }
 
     public function test_new_member_creation_positive_case(): void
@@ -97,13 +158,6 @@ class CreateUserTest extends TestCase
             ->assertSessionHas('success');
 
         $this->assertDatabaseCount('users', $totalMembers + 2);
-    }
-
-    public function test_new_nember_created_is_automatically_linked_to_the_club(): void
-    {
-        $user = User::factory()->create();
-        $club = Club::firstWhere('licence', config('app.club_licence'));
-        $this->assertEquals($club->id, $user->club_id);
     }
 
     public function test_new_member_creation_with_invalid_paramaters_returns_errors_in_the_session(): void
@@ -146,83 +200,6 @@ class CreateUserTest extends TestCase
                 'ranking',
                 'birthdate',
                 'phone_number',
-            ]);
-    }
-
-    public function test_email_is_not_already_taken(): void
-    {
-        $admin = $this->createFakeAdmin();
-
-        $this->actingAs($admin)
-            ->from(route('users.create'))
-            ->post('/admin/users', [
-                'last_name' => 'Jules',
-                'first_name' => 'Destrée',
-                'sex' => 'MEN',
-                'email' => 'aurelien.paulus@gmail.com',
-                'password' => 'z8XDbhN5sFHjWv',
-                'password_confirmation' => 'z8XDbhN5sFHjWv!',
-                'licence' => 123456,
-                'ranking' => 'B2',
-                'birthdate' => Date::create(1988, 8, 17),
-                'phone_number' => '0479123456',
-            ])
-            ->assertInvalid('email')
-            ->assertRedirect(route('users.create'))
-            ->assertSessionHasErrors([
-                'email' => 'The email has already been taken.',
-            ]);
-
-    }
-
-    public function test_licence_is_not_already_taken(): void
-    {
-        $admin = $this->createFakeAdmin();
-        $licenceAlreadyUsed = User::firstWhere('licence', '!=', null)->licence;
-
-        $this->actingAs($admin)
-            ->from(route('users.create'))
-            ->post('/admin/users', [
-                'last_name' => 'Jules',
-                'first_name' => 'Destrée',
-                'sex' => 'MEN',
-                'email' => 'jules.destree@gmail.com',
-                'password' => 'z8XDbhN5sFHjWv!',
-                'password_confirmation' => 'z8XDbhN5sFHjWv!',
-                'licence' => $licenceAlreadyUsed,
-                'ranking' => 'B2',
-                'birthdate' => Date::create(1988, 8, 17),
-                'phone_number' => '0479123456',
-            ])
-            ->assertInvalid('licence')
-            ->assertRedirect(route('users.create'))
-            ->assertSessionHasErrors([
-                'licence' => 'The licence has already been taken.',
-            ]);
-    }
-
-    public function test_ranking_is_invalid(): void
-    {
-        $admin = $this->createFakeAdmin();
-
-        $this->actingAs($admin)
-            ->from(route('users.create'))
-            ->post('/admin/users', [
-                'last_name' => 'Jules',
-                'first_name' => 'Destrée',
-                'sex' => 'MEN',
-                'email' => 'jules.destree@gmail.com',
-                'password' => 'z8XDbhN5sFHjWv!',
-                'password_confirmation' => 'z8XDbhN5sFHjWv!',
-                'licence' => '123456',
-                'ranking' => 'E3',
-                'birthdate' => Date::create(1988, 8, 17),
-                'phone_number' => '0479123456',
-            ])
-            ->assertInvalid('ranking')
-            ->assertRedirect(route('users.create'))
-            ->assertSessionHasErrors([
-                'ranking',
             ]);
     }
 
@@ -279,12 +256,35 @@ class CreateUserTest extends TestCase
             ]);
     }
 
-    public function test_member_cannot_create_new_member(): void
+    public function test_new_nember_created_is_automatically_linked_to_the_club(): void
     {
-        $user = $this->createFakeUser();
+        $user = User::factory()->create();
+        $club = Club::firstWhere('licence', config('app.club_licence'));
+        $this->assertEquals($club->id, $user->club_id);
+    }
 
-        $this->actingAs($user)
-            ->post('/admin/users/create')
-            ->assertStatus(405);
+    public function test_ranking_is_invalid(): void
+    {
+        $admin = $this->createFakeAdmin();
+
+        $this->actingAs($admin)
+            ->from(route('users.create'))
+            ->post('/admin/users', [
+                'last_name' => 'Jules',
+                'first_name' => 'Destrée',
+                'sex' => 'MEN',
+                'email' => 'jules.destree@gmail.com',
+                'password' => 'z8XDbhN5sFHjWv!',
+                'password_confirmation' => 'z8XDbhN5sFHjWv!',
+                'licence' => '123456',
+                'ranking' => 'E3',
+                'birthdate' => Date::create(1988, 8, 17),
+                'phone_number' => '0479123456',
+            ])
+            ->assertInvalid('ranking')
+            ->assertRedirect(route('users.create'))
+            ->assertSessionHasErrors([
+                'ranking',
+            ]);
     }
 }

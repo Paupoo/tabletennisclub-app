@@ -13,6 +13,14 @@ use Illuminate\Support\ServiceProvider;
 class AppServiceProvider extends ServiceProvider
 {
     /**
+     * Bootstrap any application services.
+     */
+    public function boot(): void
+    {
+        //
+    }
+
+    /**
      * Register any application services.
      */
     public function register(): void
@@ -33,13 +41,5 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(InterclubService::class, function ($app) {
             return new InterclubService;
         });
-    }
-
-    /**
-     * Bootstrap any application services.
-     */
-    public function boot(): void
-    {
-        //
     }
 }

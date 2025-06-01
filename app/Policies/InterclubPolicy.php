@@ -10,38 +10,12 @@ use App\Models\User;
 class InterclubPolicy
 {
     /**
-     * Determine whether the user can view any models.
-     */
-    public function viewAny(User $user): bool
-    {
-        //
-    }
-
-    /**
-     * Determine whether the user can view the model.
-     */
-    public function view(User $user, Interclub $interclub): bool
-    {
-        //
-        return true;
-    }
-
-    /**
      * Determine whether the user can create models.
      */
     public function create(User $user): bool
     {
         //
         return ($user->is_admin || $user->is_comittee_member) || $user->captainOf()->exists();
-    }
-
-    /**
-     * Determine whether the user can update the model.
-     */
-    public function update(User $user, Interclub $interclub): bool
-    {
-        //
-        return true;
     }
 
     /**
@@ -54,6 +28,14 @@ class InterclubPolicy
     }
 
     /**
+     * Determine whether the user can permanently delete the model.
+     */
+    public function forceDelete(User $user, Interclub $interclub): bool
+    {
+        //
+    }
+
+    /**
      * Determine whether the user can restore the model.
      */
     public function restore(User $user, Interclub $interclub): bool
@@ -62,9 +44,27 @@ class InterclubPolicy
     }
 
     /**
-     * Determine whether the user can permanently delete the model.
+     * Determine whether the user can update the model.
      */
-    public function forceDelete(User $user, Interclub $interclub): bool
+    public function update(User $user, Interclub $interclub): bool
+    {
+        //
+        return true;
+    }
+
+    /**
+     * Determine whether the user can view the model.
+     */
+    public function view(User $user, Interclub $interclub): bool
+    {
+        //
+        return true;
+    }
+
+    /**
+     * Determine whether the user can view any models.
+     */
+    public function viewAny(User $user): bool
     {
         //
     }

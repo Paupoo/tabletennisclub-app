@@ -13,13 +13,6 @@ class League extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'division',
-        'level',
-        'category',
-        'season_id',
-    ];
-
     protected $casts = [
         'division' => 'string',
         'level' => 'string',
@@ -27,10 +20,12 @@ class League extends Model
         'season_id' => 'integer',
     ];
 
-    public function teams(): HasMany
-    {
-        return $this->hasMany(Team::class);
-    }
+    protected $fillable = [
+        'division',
+        'level',
+        'category',
+        'season_id',
+    ];
 
     public function interclubs(): HasMany
     {
@@ -40,5 +35,10 @@ class League extends Model
     public function season(): BelongsTo
     {
         return $this->belongsTo(Season::class);
+    }
+
+    public function teams(): HasMany
+    {
+        return $this->hasMany(Team::class);
     }
 }

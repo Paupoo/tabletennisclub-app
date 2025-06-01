@@ -17,6 +17,10 @@ class Interclub extends Model
 {
     use HasFactory;
 
+    protected $casts = [
+        'start_date_time' => 'datetime',
+    ];
+
     protected $fillable = [
         'address',
         'start_date_time',
@@ -25,9 +29,20 @@ class Interclub extends Model
         'visiting_team_id',
     ];
 
-    protected $casts = [
-        'start_date_time' => 'datetime',
-    ];
+    public function league(): BelongsTo
+    {
+        return $this->belongsTo(League::class);
+    }
+
+    public function room(): BelongsTo
+    {
+        return $this->belongsTo(Room::class);
+    }
+
+    public function season(): BelongsTo
+    {
+        return $this->belongsTo(Season::class);
+    }
 
     /**
      * Set attribute to count total players needed to fill up one team.
@@ -59,19 +74,9 @@ class Interclub extends Model
         return $this;
     }
 
-    public function league(): BelongsTo
+    public function teams(): HasMany
     {
-        return $this->belongsTo(League::class);
-    }
-
-    public function room(): BelongsTo
-    {
-        return $this->belongsTo(Room::class);
-    }
-
-    public function season(): BelongsTo
-    {
-        return $this->belongsTo(Season::class);
+        return $this->hasMany(Team::class);
     }
 
     public function users(): BelongsToMany
@@ -90,10 +95,5 @@ class Interclub extends Model
     public function visitingTeam(): BelongsTo
     {
         return $this->belongsTo(Team::class, 'visiting_team_id');
-    }
-
-    public function teams(): HasMany
-    {
-        return $this->hasMany(Team::class);
     }
 }

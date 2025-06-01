@@ -12,6 +12,14 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('table_tournament');
+    }
+
+    /**
      * Run the migrations.
      */
     public function up(): void
@@ -26,13 +34,5 @@ return new class extends Migration
             $table->dateTime('match_ended_at')->nullable()->default(null);
             $table->timestamps();
         });
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('table_tournament');
     }
 };

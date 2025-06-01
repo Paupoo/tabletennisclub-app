@@ -14,14 +14,6 @@ class Club extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'name',
-        'licence',
-        'street',
-        'city_code',
-        'city_name',
-    ];
-
     protected $casts = [
         'name' => 'string',
         'licence' => 'string',
@@ -30,19 +22,22 @@ class Club extends Model
         'city_name' => 'string',
     ];
 
-    public function users(): HasMany
-    {
-        return $this->hasMany(User::class);
-    }
-
-    public function teams(): HasMany
-    {
-        return $this->hasMany(Team::class);
-    }
+    protected $fillable = [
+        'name',
+        'licence',
+        'street',
+        'city_code',
+        'city_name',
+    ];
 
     public function rooms(): BelongsToMany
     {
         return $this->belongsToMany(Room::class);
+    }
+
+    public function scopeOtherClubs(Builder $query): void
+    {
+        $query->whereNot('licence', '=', config('app.club_licence'));
     }
 
     public function scopeOurClub(Builder $query): void
@@ -50,8 +45,13 @@ class Club extends Model
         $query->where('licence', '=', config('app.club_licence'));
     }
 
-    public function scopeOtherClubs(Builder $query): void
+    public function teams(): HasMany
     {
-        $query->whereNot('licence', '=', config('app.club_licence'));
+        return $this->hasMany(Team::class);
+    }
+
+    public function users(): HasMany
+    {
+        return $this->hasMany(User::class);
     }
 }

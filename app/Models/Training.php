@@ -14,18 +14,6 @@ class Training extends Model
     use HasFactory;
 
     /**
-     * The attributes that are mass assignable
-     *
-     * @var array
-     */
-    protected $fillable = [
-        'end',
-        'level',
-        'start',
-        'type',
-    ];
-
-    /**
      * The attributes with their data type in the application.
      *
      * @var array
@@ -40,6 +28,18 @@ class Training extends Model
         'type' => 'string',
     ];
 
+    /**
+     * The attributes that are mass assignable
+     *
+     * @var array
+     */
+    protected $fillable = [
+        'end',
+        'level',
+        'start',
+        'type',
+    ];
+
     // Relationships
 
     /**
@@ -48,16 +48,6 @@ class Training extends Model
     public function room(): BelongsTo
     {
         return $this->belongsTo(Room::class);
-    }
-
-    public function trainees(): BelongsToMany
-    {
-        return $this->belongsToMany(User::class);
-    }
-
-    public function trainer(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
     }
 
     public function season(): BelongsTo
@@ -76,6 +66,16 @@ class Training extends Model
     public function setTrainerNameAttribute($value)
     {
         $this->attributes['trainer_name'] = mb_convert_case($value, MB_CASE_TITLE);
+    }
+
+    public function trainees(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class);
+    }
+
+    public function trainer(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     // Accessors

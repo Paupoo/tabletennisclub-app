@@ -9,6 +9,14 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('tournaments');
+    }
+
+    /**
      * Run the migrations.
      */
     public function up(): void
@@ -25,13 +33,5 @@ return new class extends Migration
             $table->boolean('has_handicap_points')->default(false);
             $table->timestamps();
         });
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('tournaments');
     }
 };

@@ -16,6 +16,98 @@ class TournamentFinalPhaseService
         private TournamentPoolService $tournamentPoolService,
     ) {}
 
+    public function checkIfAllPoolsAreFinished(Tournament $tournament): bool
+    {
+        $result = true;
+        foreach ($tournament->pools as $pool) {
+            if ($this->tournamentPoolService->isPoolFinished($pool) === false) {
+                $result = false;
+            }
+        }
+
+        return $result;
+    }
+
+    public function checkIfAllPoolsContainsMatches(Tournament $tournament): bool
+    {
+        $result = true;
+        foreach ($tournament->pools as $pool) {
+            if ($pool->tournamentMatches->count() === 0) {
+                $result = false;
+            }
+        }
+
+        return $result;
+    }
+
+    public function cleanNextMatch(TournamentMatch $match): void
+    {
+        // If there's a next match with one of our players, reset it
+        if ($match->next_match_id) {
+            $nextMatch = TournamentMatch::find($match->next_match_id);
+
+            if ($nextMatch) {
+                if ($nextMatch->player1_id === $match->player1_id || $nextMatch->player1_id === $match->player2_id) {
+                    $nextMatch->update(['player1_id' => null]);
+                }
+
+                if ($nextMatch->player2_id === $match->player1_id || $nextMatch->player2_id === $match->player2_id) {
+                    $nextMatch->update(['player2_id' => null]);
+                }
+            }
+        }
+    }
+
+    /**
+     * Update match with winner and progress to next round
+     */
+    public function completeMatch(TournamentMatch $match, int $winnerId): bool
+    {
+        $match->update([
+            'winner_id' => $winnerId,
+            'status' => 'completed',
+        ]);
+
+        // If there's a next match with one of our players, reset it
+        $this->cleanNextMatch($match);
+
+        // If there's a next match, update it with the winner
+        if ($match->next_match_id) {
+            $nextMatch = TournamentMatch::find($match->next_match_id);
+            if ($nextMatch) {
+                // Determine which player field to update
+                $playerField = 'player1_id';
+                if ($nextMatch->player1_id) {
+                    $playerField = 'player2_id';
+                }
+                $nextMatch->update([
+                    $playerField => $winnerId,
+                ]);
+            }
+        }
+
+        // If this is a semifinal, update bronze match with loser
+        if ($match->round === 'semifinal' && $match->bronze_match_id) {
+            $bronzeMatch = TournamentMatch::find($match->bronze_match_id);
+            $loserId = $match->player1_id === $winnerId ? $match->player2_id : $match->player1_id;
+
+            if ($bronzeMatch) {
+                // Determine which player field to update
+                $playerField = 'player1_id';
+                // Only check if player1_id is NULL (not just any value)
+                if ($bronzeMatch->player1_id !== null) {
+                    $playerField = 'player2_id';
+                }
+
+                $bronzeMatch->update([
+                    $playerField => $loserId,
+                ]);
+            }
+        }
+
+        return true;
+    }
+
     /**
      * Configure knockout phase
      *
@@ -41,28 +133,121 @@ class TournamentFinalPhaseService
         return $this->createBracket($tournament, $qualifiedPlayers, $startingRound);
     }
 
-    public function checkIfAllPoolsContainsMatches(Tournament $tournament): bool
+    /**
+     * Create the knockout bracket
+     */
+    public function createBracket(Tournament $tournament, Collection $qualifiedPlayers, string $startingRound): bool
     {
-        $result = true;
-        foreach ($tournament->pools as $pool) {
-            if ($pool->tournamentMatches->count() === 0) {
-                $result = false;
+        $totalPlayers = $this->getRoundPlayerCount($startingRound);
+
+        // Seed players in the bracket (1st from pool A vs 2nd from pool B, etc.)
+        $seededPlayers = $this->seedPlayers($qualifiedPlayers);
+
+        // Create rounds starting from final and working backwards
+        $finalMatch = TournamentMatch::create([
+            'tournament_id' => $tournament->id,
+            'round' => 'final',
+            'match_order' => 1,
+            'status' => 'scheduled',
+        ]);
+
+        $bronzeMatch = TournamentMatch::create([
+            'tournament_id' => $tournament->id,
+            'round' => 'bronze',
+            'match_order' => 1,
+            'status' => 'scheduled',
+            'is_bronze_match' => true,
+        ]);
+
+        $semifinalMatches = $this->createRoundMatches($tournament, 'semifinal', 2, $finalMatch->id, $bronzeMatch->id);
+
+        if ($startingRound === 'round_4' || $totalPlayers <= 4) {
+            // If starting with semifinals, assign players directly
+            for ($i = 0; $i < min(count($seededPlayers), 4); $i++) {
+                $matchIndex = intdiv($i, 2);
+                $playerField = $i % 2 === 0 ? 'player1_id' : 'player2_id';
+
+                $semifinalMatches[$matchIndex]->update([
+                    $playerField => $seededPlayers[$i]['player']->id,
+                ]);
+            }
+
+            return true;
+        }
+
+        $quarterMatches = $this->createRoundMatches($tournament, 'quarterfinal', 4, $semifinalMatches->pluck('id')->toArray());
+
+        if ($startingRound === 'round_8' || $totalPlayers <= 8) {
+            // If starting with quarterfinals, assign players directly
+            for ($i = 0; $i < min(count($seededPlayers), 8); $i++) {
+                $matchIndex = intdiv($i, 2);
+                $playerField = $i % 2 === 0 ? 'player1_id' : 'player2_id';
+                $quarterMatches[$matchIndex]->update([
+                    $playerField => $seededPlayers[$i]['player']->id,
+                ]);
+            }
+
+            return true; // Ceci est correct, mais le code continue malgré tout
+        }
+
+        // Il manque les accolades autour de ce bloc
+        if ($startingRound === 'round_16') {
+            $round16Matches = $this->createRoundMatches($tournament, 'round_16', 8, $quarterMatches->pluck('id')->toArray());
+
+            // Assign players to first round
+            for ($i = 0; $i < min(count($seededPlayers), 16); $i++) {
+                $matchIndex = intdiv($i, 2);
+                $playerField = $i % 2 === 0 ? 'player1_id' : 'player2_id';
+                $round16Matches[$matchIndex]->update([
+                    $playerField => $seededPlayers[$i]['player']->id,
+                ]);
             }
         }
 
-        return $result;
+        return true;
     }
 
-    public function checkIfAllPoolsAreFinished(Tournament $tournament): bool
+    /**
+     * Get all knockout matches organized by rounds
+     */
+    public function getKnockoutMatches(Tournament $tournament): array
     {
-        $result = true;
-        foreach ($tournament->pools as $pool) {
-            if ($this->tournamentPoolService->isPoolFinished($pool) === false) {
-                $result = false;
-            }
-        }
+        // Get all matches
+        $matches = TournamentMatch::where('tournament_id', $tournament->id)
+            ->fromBracket()
+            ->orderBy('match_order')
+            ->get();
 
-        return $result;
+        // Define the order of rounds
+        $roundOrder = [
+            'round_16' => 1,
+            'quarterfinal' => 2,
+            'semifinal' => 3,
+            'final' => 4,
+            'bronze' => 5,
+        ];
+
+        // Sort the collection using the defined order
+        $sortedMatches = $matches->sort(function ($a, $b) use ($roundOrder) {
+            // First sort by round
+            if ($roundOrder[$a->round] !== $roundOrder[$b->round]) {
+                return $roundOrder[$a->round] <=> $roundOrder[$b->round];
+            }
+
+            // If rounds are the same, sort by match_order
+            return $a->match_order <=> $b->match_order;
+        });
+
+        // Group the sorted matches by round
+        $rounds = [
+            'round_16' => $sortedMatches->where('round', 'round_16')->values(),
+            'quarterfinal' => $sortedMatches->where('round', 'quarterfinal')->values(),
+            'semifinal' => $sortedMatches->where('round', 'semifinal')->values(),
+            'final' => $sortedMatches->where('round', 'final')->values(),
+            'bronze' => $sortedMatches->where('round', 'bronze')->values(),
+        ];
+
+        return $rounds;
     }
 
     /**
@@ -126,80 +311,6 @@ class TournamentFinalPhaseService
     }
 
     /**
-     * Create the knockout bracket
-     */
-    public function createBracket(Tournament $tournament, Collection $qualifiedPlayers, string $startingRound): bool
-    {
-        $totalPlayers = $this->getRoundPlayerCount($startingRound);
-
-        // Seed players in the bracket (1st from pool A vs 2nd from pool B, etc.)
-        $seededPlayers = $this->seedPlayers($qualifiedPlayers);
-
-        // Create rounds starting from final and working backwards
-        $finalMatch = TournamentMatch::create([
-            'tournament_id' => $tournament->id,
-            'round' => 'final',
-            'match_order' => 1,
-            'status' => 'scheduled',
-        ]);
-
-        $bronzeMatch = TournamentMatch::create([
-            'tournament_id' => $tournament->id,
-            'round' => 'bronze',
-            'match_order' => 1,
-            'status' => 'scheduled',
-            'is_bronze_match' => true,
-        ]);
-
-        $semifinalMatches = $this->createRoundMatches($tournament, 'semifinal', 2, $finalMatch->id, $bronzeMatch->id);
-
-        if ($startingRound == 'round_4' || $totalPlayers <= 4) {
-            // If starting with semifinals, assign players directly
-            for ($i = 0; $i < min(count($seededPlayers), 4); $i++) {
-                $matchIndex = intdiv($i, 2);
-                $playerField = $i % 2 == 0 ? 'player1_id' : 'player2_id';
-
-                $semifinalMatches[$matchIndex]->update([
-                    $playerField => $seededPlayers[$i]['player']->id,
-                ]);
-            }
-
-            return true;
-        }
-
-        $quarterMatches = $this->createRoundMatches($tournament, 'quarterfinal', 4, $semifinalMatches->pluck('id')->toArray());
-
-        if ($startingRound == 'round_8' || $totalPlayers <= 8) {
-            // If starting with quarterfinals, assign players directly
-            for ($i = 0; $i < min(count($seededPlayers), 8); $i++) {
-                $matchIndex = intdiv($i, 2);
-                $playerField = $i % 2 == 0 ? 'player1_id' : 'player2_id';
-                $quarterMatches[$matchIndex]->update([
-                    $playerField => $seededPlayers[$i]['player']->id,
-                ]);
-            }
-
-            return true; // Ceci est correct, mais le code continue malgré tout
-        }
-
-        // Il manque les accolades autour de ce bloc
-        if ($startingRound == 'round_16') {
-            $round16Matches = $this->createRoundMatches($tournament, 'round_16', 8, $quarterMatches->pluck('id')->toArray());
-
-            // Assign players to first round
-            for ($i = 0; $i < min(count($seededPlayers), 16); $i++) {
-                $matchIndex = intdiv($i, 2);
-                $playerField = $i % 2 == 0 ? 'player1_id' : 'player2_id';
-                $round16Matches[$matchIndex]->update([
-                    $playerField => $seededPlayers[$i]['player']->id,
-                ]);
-            }
-        }
-
-        return true;
-    }
-
-    /**
      * Create matches for a specific round
      *
      * @param  mixed  $nextMatchIds
@@ -240,6 +351,23 @@ class TournamentFinalPhaseService
     }
 
     /**
+     * Get number of players needed for a specific round
+     */
+    protected function getRoundPlayerCount(string $round): int
+    {
+        switch ($round) {
+            case 'round_16':
+                return 16;
+            case 'round_8':
+                return 8;
+            case 'round_4':
+                return 4;
+            default:
+                return 16;
+        }
+    }
+
+    /**
      * Seed players in bracket to avoid early matchups between top players from same pool
      */
     protected function seedPlayers(Collection $qualifiedPlayers): Collection
@@ -270,7 +398,7 @@ class TournamentFinalPhaseService
             foreach ($poolPairs as $poolPair) {
                 // Add 1st from pool A, then 2nd from pool B
                 foreach ($poolGroups[$poolPair[0]] as $player) {
-                    if ($player['position'] == $position) {
+                    if ($player['position'] === $position) {
                         $seededPlayers->push($player);
                         break;
                     }
@@ -278,7 +406,7 @@ class TournamentFinalPhaseService
 
                 // Add 2nd from pool B, then 1st from pool A (for next iteration)
                 foreach ($poolGroups[$poolPair[1]] as $player) {
-                    if ($player['position'] == $position) {
+                    if ($player['position'] === $position) {
                         $seededPlayers->push($player);
                         break;
                     }
@@ -296,133 +424,5 @@ class TournamentFinalPhaseService
         }
 
         return $seededPlayers;
-    }
-
-    /**
-     * Get number of players needed for a specific round
-     */
-    protected function getRoundPlayerCount(string $round): int
-    {
-        switch ($round) {
-            case 'round_16':
-                return 16;
-            case 'round_8':
-                return 8;
-            case 'round_4':
-                return 4;
-            default:
-                return 16;
-        }
-    }
-
-    /**
-     * Get all knockout matches organized by rounds
-     */
-    public function getKnockoutMatches(Tournament $tournament): array
-    {
-        // Get all matches
-        $matches = TournamentMatch::where('tournament_id', $tournament->id)
-            ->fromBracket()
-            ->orderBy('match_order')
-            ->get();
-
-        // Define the order of rounds
-        $roundOrder = [
-            'round_16' => 1,
-            'quarterfinal' => 2,
-            'semifinal' => 3,
-            'final' => 4,
-            'bronze' => 5,
-        ];
-
-        // Sort the collection using the defined order
-        $sortedMatches = $matches->sort(function ($a, $b) use ($roundOrder) {
-            // First sort by round
-            if ($roundOrder[$a->round] !== $roundOrder[$b->round]) {
-                return $roundOrder[$a->round] <=> $roundOrder[$b->round];
-            }
-
-            // If rounds are the same, sort by match_order
-            return $a->match_order <=> $b->match_order;
-        });
-
-        // Group the sorted matches by round
-        $rounds = [
-            'round_16' => $sortedMatches->where('round', 'round_16')->values(),
-            'quarterfinal' => $sortedMatches->where('round', 'quarterfinal')->values(),
-            'semifinal' => $sortedMatches->where('round', 'semifinal')->values(),
-            'final' => $sortedMatches->where('round', 'final')->values(),
-            'bronze' => $sortedMatches->where('round', 'bronze')->values(),
-        ];
-
-        return $rounds;
-    }
-
-    /**
-     * Update match with winner and progress to next round
-     */
-    public function completeMatch(TournamentMatch $match, int $winnerId): bool
-    {
-        $match->update([
-            'winner_id' => $winnerId,
-            'status' => 'completed',
-        ]);
-
-        // If there's a next match with one of our players, reset it
-        $this->cleanNextMatch($match);
-
-        // If there's a next match, update it with the winner
-        if ($match->next_match_id) {
-            $nextMatch = TournamentMatch::find($match->next_match_id);
-            if ($nextMatch) {
-                // Determine which player field to update
-                $playerField = 'player1_id';
-                if ($nextMatch->player1_id) {
-                    $playerField = 'player2_id';
-                }
-                $nextMatch->update([
-                    $playerField => $winnerId,
-                ]);
-            }
-        }
-
-        // If this is a semifinal, update bronze match with loser
-        if ($match->round === 'semifinal' && $match->bronze_match_id) {
-            $bronzeMatch = TournamentMatch::find($match->bronze_match_id);
-            $loserId = $match->player1_id == $winnerId ? $match->player2_id : $match->player1_id;
-
-            if ($bronzeMatch) {
-                // Determine which player field to update
-                $playerField = 'player1_id';
-                // Only check if player1_id is NULL (not just any value)
-                if ($bronzeMatch->player1_id !== null) {
-                    $playerField = 'player2_id';
-                }
-
-                $bronzeMatch->update([
-                    $playerField => $loserId,
-                ]);
-            }
-        }
-
-        return true;
-    }
-
-    public function cleanNextMatch(TournamentMatch $match): void
-    {
-        // If there's a next match with one of our players, reset it
-        if ($match->next_match_id) {
-            $nextMatch = TournamentMatch::find($match->next_match_id);
-
-            if ($nextMatch) {
-                if ($nextMatch->player1_id == $match->player1_id || $nextMatch->player1_id == $match->player2_id) {
-                    $nextMatch->update(['player1_id' => null]);
-                }
-
-                if ($nextMatch->player2_id == $match->player1_id || $nextMatch->player2_id == $match->player2_id) {
-                    $nextMatch->update(['player2_id' => null]);
-                }
-            }
-        }
     }
 }

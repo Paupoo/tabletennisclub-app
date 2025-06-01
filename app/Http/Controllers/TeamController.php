@@ -27,35 +27,13 @@ class TeamController extends Controller
 {
     private SupportCollection $competitors;
 
-    private int $totalCompetitors = 0;
-
-    private int $totalTeamsAmount = 0;
-
     private SupportCollection $teams;
 
     private SupportCollection $teamsWithPlayers;
 
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        return view('admin.teams.index', [
-            'teamsInClub' => Team::select('teams.*')
-                ->InClub()
-                ->join('seasons', 'teams.season_id', 'seasons.id')
-                ->orderBy('seasons.start_year')
-                ->orderBy('teams.name')
-                ->paginate(10),
-            'teamModel' => Team::class,
-            'teamsNotInClub' => Team::select('teams.*')
-                ->NotInClub()
-                ->join('seasons', 'teams.season_id', 'seasons.id')
-                ->orderBy('seasons.start_year')
-                ->orderBy('teams.name')
-                ->paginate(10),
-        ]);
-    }
+    private int $totalCompetitors = 0;
+
+    private int $totalTeamsAmount = 0;
 
     /**
      * Show the form for creating a new resource.
@@ -84,49 +62,17 @@ class TeamController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Remove the specified resource from storage.
      */
-    public function store(StoreOrUpdateTeamRequest $request)
-    {
-        $validated = $request->validated();
-
-        $league_model = League::firstOrCreate([
-            'category' => $validated['category'],
-            'division' => $validated['division'],
-            'level' => $validated['level'],
-            'season_id' => $validated['season_id'],
-        ]);
-
-        $request->isDuplicatedTeam();
-
-        $team = new Team;
-        $team->fill($validated);
-
-        $team->season()->associate(Season::find($league_model->season_id));
-        $team->club()->associate(Club::firstWhere('licence', config('app.club_licence')));
-        $team->league()->associate($league_model);
-
-        if (isset($request['captain_id'])) {
-            $captain = User::find($validated['captain_id']);
-            $team->captain()->associate($captain);
-        }
-
-        $team->save();
-
-        $team->users()->sync($validated['players']);
-
-        return redirect()->route('teams.index')->with('success', 'The team ' . $validated['name'] . ' has been created.');
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Team $team)
+    public function destroy(string $id)
     {
         //
-        return view('admin.teams.show', [
-            'team' => $team->load('users'),
-        ]);
+        $team = Team::find($id);
+
+        // Delete the team.
+        $team->delete();
+
+        return redirect()->route('teams.index')->with('deleted', 'The team ' . $team->name . ' has been deleted.');
     }
 
     /**
@@ -157,78 +103,6 @@ class TeamController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
-     */
-    public function update(StoreOrUpdateTeamRequest $request, Team $team): RedirectResponse
-    {
-        $validated = $request->validated();
-        $league = League::firstOrCreate([
-            'category' => $validated['category'],
-            'division' => $validated['division'],
-            'level' => $validated['level'],
-            'season_id' => $validated['season_id'],
-        ]);
-
-        $request->isDuplicatedTeam();
-
-        $team->update($validated);
-        $team->league()->associate($league);
-        $team->season()->associate(Season::find($validated['season_id']));
-
-        isset($validated['captain_id'])
-            ? $team->captain()->associate(User::find($validated['captain_id']))
-            : $team->captain()->dissociate();
-
-        $team->save();
-
-        isset($validated['players'])
-            ? $team->users()->sync($validated['players'])
-            : throw ValidationException::withMessages(['players' => 'A team must contain at least 5 players']);
-
-        return redirect()->route('teams.index')->with('success', 'The team ' . $team->name . ' has been updated.');
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
-        $team = Team::find($id);
-
-        // Delete the team.
-        $team->delete();
-
-        return redirect()->route('teams.index')->with('deleted', 'The team ' . $team->name . ' has been deleted.');
-    }
-
-    public function initiateTeamsBuilder(): View
-    {
-        return view('admin/teams/team-builder', [
-            'seasons' => $this->getUpToDateSeasons('asc'),
-        ]);
-    }
-
-    public function validateTeamsBuilder(ValidateTeamBuilderRequest $request): View
-    {
-        $playersPerTeam = $request->safe()->playersPerTeam;
-        $this->getCompetitors()
-            ->countCompetitors()
-            ->countTotalTeams($playersPerTeam)
-            ->buildTeamsFromAToZ()
-            ->addPlayersToTeams($playersPerTeam);
-
-        return view('admin/teams/team-builder', [
-            'seasons' => $this->getUpToDateSeasons('asc'),
-            'selectedSeason' => Season::findOrFail($request->season_id),
-            'leagueLevel' => LeagueLevel::cases(),
-            'leagueCategory' => LeagueCategory::cases(),
-            'playersPerTeam' => $playersPerTeam,
-            'teamsWithPlayers' => $this->teamsWithPlayers,
-        ]);
-    }
-
-    /**
      * Return Seasons in the future, starting from this year.
      *
      * @return Season
@@ -241,6 +115,35 @@ class TeamController extends Controller
         $this_year = Carbon::today()->format('Y');
 
         return Season::where('end_year', '>=', $this_year)->orderBy('end_year', $sorting_order)->get();
+    }
+
+    /**
+     * Display a listing of the resource.
+     */
+    public function index()
+    {
+        return view('admin.teams.index', [
+            'teamsInClub' => Team::select('teams.*')
+                ->InClub()
+                ->join('seasons', 'teams.season_id', 'seasons.id')
+                ->orderBy('seasons.start_year')
+                ->orderBy('teams.name')
+                ->paginate(10),
+            'teamModel' => Team::class,
+            'teamsNotInClub' => Team::select('teams.*')
+                ->NotInClub()
+                ->join('seasons', 'teams.season_id', 'seasons.id')
+                ->orderBy('seasons.start_year')
+                ->orderBy('teams.name')
+                ->paginate(10),
+        ]);
+    }
+
+    public function initiateTeamsBuilder(): View
+    {
+        return view('admin/teams/team-builder', [
+            'seasons' => $this->getUpToDateSeasons('asc'),
+        ]);
     }
 
     /**
@@ -287,17 +190,100 @@ class TeamController extends Controller
     }
 
     /**
-     * Get competitors ordered by ranking, then by last name, both descending.
+     * Display the specified resource.
      */
-    private function getCompetitors(): self
+    public function show(Team $team)
     {
-        $this->competitors = User::where('is_competitor', '=', true)
-            ->orderby('force_list', 'asc')
-            ->orderby('last_name', 'asc')
-            ->orderby('first_name', 'asc')
-            ->get();
+        //
+        return view('admin.teams.show', [
+            'team' => $team->load('users'),
+        ]);
+    }
 
-        return $this;
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(StoreOrUpdateTeamRequest $request)
+    {
+        $validated = $request->validated();
+
+        $league_model = League::firstOrCreate([
+            'category' => $validated['category'],
+            'division' => $validated['division'],
+            'level' => $validated['level'],
+            'season_id' => $validated['season_id'],
+        ]);
+
+        $request->isDuplicatedTeam();
+
+        $team = new Team;
+        $team->fill($validated);
+
+        $team->season()->associate(Season::find($league_model->season_id));
+        $team->club()->associate(Club::firstWhere('licence', config('app.club_licence')));
+        $team->league()->associate($league_model);
+
+        if (isset($request['captain_id'])) {
+            $captain = User::find($validated['captain_id']);
+            $team->captain()->associate($captain);
+        }
+
+        $team->save();
+
+        $team->users()->sync($validated['players']);
+
+        return redirect()->route('teams.index')->with('success', 'The team ' . $validated['name'] . ' has been created.');
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(StoreOrUpdateTeamRequest $request, Team $team): RedirectResponse
+    {
+        $validated = $request->validated();
+        $league = League::firstOrCreate([
+            'category' => $validated['category'],
+            'division' => $validated['division'],
+            'level' => $validated['level'],
+            'season_id' => $validated['season_id'],
+        ]);
+
+        $request->isDuplicatedTeam();
+
+        $team->update($validated);
+        $team->league()->associate($league);
+        $team->season()->associate(Season::find($validated['season_id']));
+
+        isset($validated['captain_id'])
+            ? $team->captain()->associate(User::find($validated['captain_id']))
+            : $team->captain()->dissociate();
+
+        $team->save();
+
+        isset($validated['players'])
+            ? $team->users()->sync($validated['players'])
+            : throw ValidationException::withMessages(['players' => 'A team must contain at least 5 players']);
+
+        return redirect()->route('teams.index')->with('success', 'The team ' . $team->name . ' has been updated.');
+    }
+
+    public function validateTeamsBuilder(ValidateTeamBuilderRequest $request): View
+    {
+        $playersPerTeam = $request->safe()->playersPerTeam;
+        $this->getCompetitors()
+            ->countCompetitors()
+            ->countTotalTeams($playersPerTeam)
+            ->buildTeamsFromAToZ()
+            ->addPlayersToTeams($playersPerTeam);
+
+        return view('admin/teams/team-builder', [
+            'seasons' => $this->getUpToDateSeasons('asc'),
+            'selectedSeason' => Season::findOrFail($request->season_id),
+            'leagueLevel' => LeagueLevel::cases(),
+            'leagueCategory' => LeagueCategory::cases(),
+            'playersPerTeam' => $playersPerTeam,
+            'teamsWithPlayers' => $this->teamsWithPlayers,
+        ]);
     }
 
     /**
@@ -326,6 +312,27 @@ class TeamController extends Controller
     }
 
     /**
+     * Add competitors to each teams
+     *
+     * @param  SupportCollection  $competitors
+     */
+    private function addPlayersToTeams(int $playersPerTeam = 5): self
+    {
+
+        $this->teamsWithPlayers = collect();
+
+        foreach ($this->teams as $team) {
+            $players = collect();
+            for ($i = 0; $i < $playersPerTeam; $i++) {
+                $players->push($this->competitors->shift());
+            }
+            $this->teamsWithPlayers->put($team, $players);
+        }
+
+        return $this;
+    }
+
+    /**
      * Returns a collection of teams names from A to Z
      *
      * @param  int  $totalTeamsAmount
@@ -344,22 +351,15 @@ class TeamController extends Controller
     }
 
     /**
-     * Add competitors to each teams
-     *
-     * @param  SupportCollection  $competitors
+     * Get competitors ordered by ranking, then by last name, both descending.
      */
-    private function addPlayersToTeams(int $playersPerTeam = 5): self
+    private function getCompetitors(): self
     {
-
-        $this->teamsWithPlayers = collect();
-
-        foreach ($this->teams as $team) {
-            $players = collect();
-            for ($i = 0; $i < $playersPerTeam; $i++) {
-                $players->push($this->competitors->shift());
-            }
-            $this->teamsWithPlayers->put($team, $players);
-        }
+        $this->competitors = User::where('is_competitor', '=', true)
+            ->orderby('force_list', 'asc')
+            ->orderby('last_name', 'asc')
+            ->orderby('first_name', 'asc')
+            ->get();
 
         return $this;
     }

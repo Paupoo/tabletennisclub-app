@@ -15,6 +15,10 @@ class Team extends Model
 {
     use HasFactory;
 
+    protected $casts = [
+        'name' => 'string',
+    ];
+
     protected $fillable = [
         'captain_id',
         'club_id',
@@ -23,18 +27,14 @@ class Team extends Model
         'season_id',
     ];
 
-    protected $casts = [
-        'name' => 'string',
-    ];
-
-    public function users(): BelongsToMany
-    {
-        return $this->belongsToMany(User::class);
-    }
-
     public function captain(): BelongsTo
     {
         return $this->belongsTo(User::class, 'captain_id');
+    }
+
+    public function club(): BelongsTo
+    {
+        return $this->belongsTo(Club::class);
     }
 
     public function interclubs(): HasMany
@@ -47,16 +47,6 @@ class Team extends Model
         return $this->belongsTo(League::class);
     }
 
-    public function club(): BelongsTo
-    {
-        return $this->belongsTo(Club::class);
-    }
-
-    public function season(): BelongsTo
-    {
-        return $this->belongsTo(Season::class);
-    }
-
     public function scopeInClub(Builder $query): void
     {
         $query->whereHas('club', fn (Builder $subquery) => $subquery->where('licence', '=', config('app.club_licence')));
@@ -65,5 +55,15 @@ class Team extends Model
     public function scopeNotInClub(Builder $query): void
     {
         $query->whereHas('club', fn (Builder $subquery) => $subquery->where('licence', '!=', config('app.club_licence')));
+    }
+
+    public function season(): BelongsTo
+    {
+        return $this->belongsTo(Season::class);
+    }
+
+    public function users(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class);
     }
 }

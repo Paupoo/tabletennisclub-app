@@ -12,40 +12,6 @@ class DeleteUserTest extends TestCase
 {
     use CreateUser;
 
-    /**
-     * A basic feature test example.
-     */
-    public function test_admin_or_comittee_member_delete_a_user_from_users_index_view(): void
-    {
-        $admin = $this->createFakeAdmin();
-        $comitteeMember = $this->createFakeComitteeMember();
-
-        $userToDelete1 = User::factory()->create();
-        $userToDelete2 = User::factory()->create();
-
-        $totalUsers = User::count();
-
-        $response = $this
-            ->actingAs($admin)
-            ->from(route('users.index'))
-            ->delete(route('users.destroy', $userToDelete1));
-
-        $response
-            ->assertRedirect(route('users.index'))
-            ->assertSessionHas('deleted');
-
-        $response = $this
-            ->actingAs($comitteeMember)
-            ->from(route('users.index'))
-            ->delete(route('users.destroy', $userToDelete2));
-
-        $response
-            ->assertRedirect(route('users.index'))
-            ->assertSessionHas('deleted');
-
-        $this->assertDatabaseCount('users', $totalUsers - 2);
-    }
-
     public function test_admin_and_comittee_member_can_see_delete_button_from_users_index_view(): void
     {
         $admin = $this->createFakeAdmin();
@@ -80,6 +46,40 @@ class DeleteUserTest extends TestCase
             ->get(route('users.show', $comitteeMember));
 
         $response->assertSee('Delete');
+    }
+
+    /**
+     * A basic feature test example.
+     */
+    public function test_admin_or_comittee_member_delete_a_user_from_users_index_view(): void
+    {
+        $admin = $this->createFakeAdmin();
+        $comitteeMember = $this->createFakeComitteeMember();
+
+        $userToDelete1 = User::factory()->create();
+        $userToDelete2 = User::factory()->create();
+
+        $totalUsers = User::count();
+
+        $response = $this
+            ->actingAs($admin)
+            ->from(route('users.index'))
+            ->delete(route('users.destroy', $userToDelete1));
+
+        $response
+            ->assertRedirect(route('users.index'))
+            ->assertSessionHas('deleted');
+
+        $response = $this
+            ->actingAs($comitteeMember)
+            ->from(route('users.index'))
+            ->delete(route('users.destroy', $userToDelete2));
+
+        $response
+            ->assertRedirect(route('users.index'))
+            ->assertSessionHas('deleted');
+
+        $this->assertDatabaseCount('users', $totalUsers - 2);
     }
 
     public function test_user_cant_delete_any_user(): void

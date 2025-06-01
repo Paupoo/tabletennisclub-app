@@ -12,6 +12,46 @@ use Illuminate\Http\Request;
 class RoomController extends Controller
 {
     /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        $this->authorize('create', Room::class);
+        $room = new Room;
+
+        return view('admin.rooms.create', [
+            'room' => $room,
+        ]);
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  string  $id
+     * @return void
+     */
+    public function destroy(Room $room)
+    {
+        $this->authorize('delete', $room);
+        $room->delete();
+
+        return redirect()->route('rooms.index')->with('deleted', 'The room ' . $room->name . ' has been deleted.');
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(Room $room)
+    {
+
+        $this->authorize('create', Room::class);
+
+        return view('admin.rooms.edit', [
+            'room' => $room,
+        ]);
+    }
+
+    /**
      * Display a listing of the resource.
      */
     public function index()
@@ -24,16 +64,11 @@ class RoomController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Display the specified resource.
      */
-    public function create()
+    public function show(Room $room)
     {
-        $this->authorize('create', Room::class);
-        $room = new Room;
-
-        return view('admin.rooms.create', [
-            'room' => $room,
-        ]);
+        $this->authorize('view', Room::class);
     }
 
     /**
@@ -52,27 +87,6 @@ class RoomController extends Controller
     }
 
     /**
-     * Display the specified resource.
-     */
-    public function show(Room $room)
-    {
-        $this->authorize('view', Room::class);
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Room $room)
-    {
-
-        $this->authorize('create', Room::class);
-
-        return view('admin.rooms.edit', [
-            'room' => $room,
-        ]);
-    }
-
-    /**
      * Update the specified resource in storage.
      */
     public function update(StoreOrUpdateRoomRequest $request, Room $room)
@@ -85,20 +99,6 @@ class RoomController extends Controller
         $room->save();
 
         return redirect()->route('rooms.index')->with('success', 'The room ' . $room->name . ' has been updated.');
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  string  $id
-     * @return void
-     */
-    public function destroy(Room $room)
-    {
-        $this->authorize('delete', $room);
-        $room->delete();
-
-        return redirect()->route('rooms.index')->with('deleted', 'The room ' . $room->name . ' has been deleted.');
     }
 
     /**

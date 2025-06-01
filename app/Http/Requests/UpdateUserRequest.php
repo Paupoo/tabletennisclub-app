@@ -68,7 +68,7 @@ class UpdateUserRequest extends FormRequest
 
     public function withValidator($validator)
     {
-        $validator->after(function ($validator) {
+        $validator->after(function ($validator): void {
             if ($this->input('is_competitor') && ! $this->input('is_active')) {
                 $validator->errors()->add('is_competitor', __('A competitor must be active.'));
             }

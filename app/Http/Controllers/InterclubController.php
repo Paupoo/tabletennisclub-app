@@ -123,7 +123,7 @@ class InterclubController extends Controller
 
         $users = User::where('is_competitor', true)
             ->whereDoesntHave('interclubs')
-            ->orWhereHas('interclubs', function (Builder $query) use ($interclub) {
+            ->orWhereHas('interclubs', function (Builder $query) use ($interclub): void {
                 $query->where('interclub_id', $interclub->id)
                     ->whereNot('is_subscribed', true)
                     ->whereNot('is_selected', true);

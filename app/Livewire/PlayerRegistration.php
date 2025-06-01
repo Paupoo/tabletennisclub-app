@@ -61,7 +61,7 @@ class PlayerRegistration extends Component
         }
 
         return User::unregisteredUsers($this->tournament)
-            ->where(function ($queryBuilder) use ($query) {
+            ->where(function ($queryBuilder) use ($query): void {
                 // Utilise le scope search + email
                 $queryBuilder->search($query)
                     ->orWhere('email', 'like', '%' . $query . '%');

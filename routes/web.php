@@ -65,7 +65,7 @@ Route::resource('/admin/rooms', RoomController::class)->middleware(['auth', 'ver
 /**
  * Profile management
  */
-Route::middleware('auth')->group(function () {
+Route::middleware('auth')->group(function (): void {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -152,7 +152,7 @@ Route::get('/test', [
 
 // Tournaments
 Route::middleware(['auth', 'verified'])
-    ->group(function () {
+    ->group(function (): void {
         // Routes pour les tournois
         Route::get('/admin/tournaments', [TournamentController::class, 'index'])->name('tournamentsIndex');
         Route::get('/admin/tournaments/create', [TournamentController::class, 'create'])->name('createTournament');

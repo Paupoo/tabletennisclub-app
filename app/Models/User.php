@@ -119,7 +119,7 @@ class User extends Authenticatable
 
     public function scopeUnregisteredUsers($query, $tournament)
     {
-        return $query->whereDoesntHave('tournaments', function ($query) use ($tournament) {
+        return $query->whereDoesntHave('tournaments', function ($query) use ($tournament): void {
             $query->where('tournaments.id', $tournament->id);
         })->orderBy('last_name')->orderBy('first_name');
     }

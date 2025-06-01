@@ -26,7 +26,7 @@ class TournamentsTable extends Component
     {
         return view('livewire.tournaments-table', [
             'tournaments' => Tournament::search($this->search)
-                ->when($this->status !== '', function ($query) {
+                ->when($this->status !== '', function ($query): void {
                     $query->where('status', $this->status);
                 })
                 ->orderBy('start_date')

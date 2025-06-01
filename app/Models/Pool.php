@@ -32,7 +32,7 @@ class Pool extends Model
     {
         // Vérifier si l'utilisateur est déjà dans un pool de ce tournoi
         $existingPool = $this->tournament->pools()
-            ->whereHas('users', function (Builder $query) use ($user) {
+            ->whereHas('users', function (Builder $query) use ($user): void {
                 $query->where('users.id', $user->id);
             })
             ->where('pools.id', '!=', $this->id)

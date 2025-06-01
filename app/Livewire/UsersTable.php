@@ -59,10 +59,10 @@ class UsersTable extends Component
     {
         return view('livewire.users-table', [
             'users' => User::search($this->search)
-                ->when($this->competitor !== '', function ($query) {
+                ->when($this->competitor !== '', function ($query): void {
                     $query->where('is_competitor', $this->competitor);
                 })
-                ->when($this->sortByField === '', function ($query) {
+                ->when($this->sortByField === '', function ($query): void {
                     $query->orderby('is_competitor', 'desc')
                         ->orderby('force_list')
                         ->orderBy('ranking')
@@ -70,7 +70,7 @@ class UsersTable extends Component
                         ->orderby('first_name')
                         ->with('teams');
                 })
-                ->when($this->sortByField !== '', function ($query) {
+                ->when($this->sortByField !== '', function ($query): void {
                     $query->orderBy($this->sortByField, $this->sortDirection);
                 })
                 ->paginate(20),

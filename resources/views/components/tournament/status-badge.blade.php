@@ -5,6 +5,7 @@
 ?>
 @props(['status'])
 
+
 @php
 $statusMap = [
     \App\Enums\TournamentStatusEnum::DRAFT->value => ['variant' => 'draft', 'label' => __('Draft')],
@@ -15,7 +16,7 @@ $statusMap = [
     \App\Enums\TournamentStatusEnum::CANCELLED->value => ['variant' => 'closed', 'label' => __('Cancelled')],
 ];
 
-$config = $statusMap[$status] ?? ['variant' => 'default', 'label' => ucfirst($status)];
+$config = $statusMap[$status->value] ?? ['variant' => 'default', 'label' => ucfirst($status)];
 @endphp
 
 <x-ui.badge {{ $attributes->merge(['class' => 'ml-2']) }} variant="{{ $config['variant'] }}">

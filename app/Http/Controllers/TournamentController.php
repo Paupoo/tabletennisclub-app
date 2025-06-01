@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Enums\TournamentStatusEnum;
 use App\Http\Requests\StartTournamentMatch;
 use App\Http\Requests\StoreOrUpdateTournamentRequest;
 use App\Models\Pool;
@@ -80,7 +81,7 @@ class TournamentController extends Controller
     public function closeTournament(Tournament $tournament): RedirectResponse
     {
 
-        $tournament->status = 'closed';
+        $tournament->status = TournamentStatusEnum::CLOSED->value;
         $tournament->update();
 
         return redirect()
@@ -263,14 +264,14 @@ class TournamentController extends Controller
     public function publish(Tournament $tournament): RedirectResponse
     {
         foreach ($tournament->matches as $match) {
-            if ($match->status === 'in_progress' || $match->status === 'completed') {
+            if ($match->status === TournamentStatusEnum::PENDING->value || $match->status === TournamentStatusEnum::CLOSED) {
                 return redirect()
                     ->back()
                     ->with('error', __('Tournament ' . $tournament->name . ' has pending or completed matches and can\'t be unpublished.'));
             }
         }
 
-        $tournament->status = 'open';
+        $tournament->status = TournamentStatusEnum::PUBLISHED->value;
         $tournament->update();
 
         return redirect()

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Casts\MoneyCast;
+use App\Enums\TournamentStatusEnum;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -22,7 +23,7 @@ class Tournament extends Model
         'price' => MoneyCast::class,
         'total_users' => 'integer',
         'max_users' => 'integer',
-        'status' => 'string',
+        'status' => TournamentStatusEnum::class,
         'has_handicap_points' => 'boolean',
     ];
 

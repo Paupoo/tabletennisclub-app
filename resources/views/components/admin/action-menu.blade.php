@@ -29,14 +29,76 @@
                 <a href="#"
                     class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
                     <x-ui.icon name="duplicate" class="mr-2" />
-                    {{ __('Duplicate') }}
+                    {{ __('Duplicate (TO DO)') }}
                 </a>
                 <div class="border-t border-gray-200"></div>
-                <a href="{{ route('deleteTournament', $tournament) }}"
-                    class="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100 hover:text-red-700">
+                <a href="{{ route('unpublishTournament', $tournament) }}"
+                    class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                    <x-ui.icon name="pen" class="mr-2" />
+                    {{ __('Draft') }}
+                </a>
+                <a href="{{ route('publishTournament', $tournament) }}"
+                    class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                    <x-ui.icon name="duplicate" class="mr-2" />
+                    {{ __('Publish') }}
+                </a>
+                <a href="#"
+                    class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                    <x-ui.icon name="locked" class="mr-2" />
+                    {{ __('Lock (TO DO)') }}
+                </a>
+                <a href="#"
+                    class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                    <x-ui.icon name="unlocked" class="mr-2" />
+                    {{ __('Unlock (TO DO)') }}
+                </a>
+                <a href="{{ route('startTournament', $tournament) }}"
+                    class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                    <x-ui.icon name="rocket-launch" class="mr-2" />
+                    {{ __('Start') }}
+                </a>
+                <a href="{{ route('closeTournament', $tournament) }}"
+                    class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                    <x-ui.icon name="flag" class="mr-2" />
+                    {{ __('Close') }}
+                </a>
+                <a href=""
+                    class="flex items-center px-4 py-2 text-sm text-red-700 hover:bg-gray-100 hover:text-red-900">
+                    <x-ui.icon name="cancel" class="mr-2" />
+                    {{ __('Cancel (To Do)') }}
+                </a>
+                <div class="border-t border-gray-200"></div>
+                <button @click="$dispatch('open-modal', 'confirm-tournament-deletion')"
+                    class="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100 hover:text-red-700">
                     <x-ui.icon name="delete" class="mr-2" />
                     {{ __('Delete') }}
-                </a>
+                </button>
+
+                <!-- Modal to confirm delete tournament -->
+                <x-modal name="confirm-tournament-deletion" focusable>
+                    <form method="get" action="{{ route('deleteTournament', $tournament) }}" class="p-6">
+                        @csrf
+
+                        <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">
+                            {{ __('Are you sure you want to delete this tournament?') }}
+                        </h2>
+
+                        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                            {{ __('This action is irreversible. All associated data will be permanently removed.') }}
+                        </p>
+
+                        <div class="mt-6 flex justify-end">
+                            <x-secondary-button x-on:click="$dispatch('close')">
+                                {{ __('Cancel') }}
+                            </x-secondary-button>
+
+                            <x-danger-button class="ms-3">
+                                {{ __('Delete') }}
+                            </x-danger-button>
+                        </div>
+                    </form>
+                </x-modal>
+
             </div>
         </div>
     </div>

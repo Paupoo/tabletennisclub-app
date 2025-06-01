@@ -7,10 +7,12 @@
 
 @php
 $statusMap = [
-    'draft' => ['variant' => 'draft', 'label' => 'Brouillon'],
-    'open' => ['variant' => 'open', 'label' => 'Ouvert'],
-    'pending' => ['variant' => 'pending', 'label' => 'En cours'],
-    'closed' => ['variant' => 'closed', 'label' => 'Fermé'],
+    \App\Enums\TournamentStatusEnum::DRAFT->value => ['variant' => 'draft', 'label' => __('Draft')],
+    \App\Enums\TournamentStatusEnum::PUBLISHED->value => ['variant' => 'open', 'label' => __('Published')],
+    \App\Enums\TournamentStatusEnum::LOCKED->value=> ['variant' => 'pending', 'label' => __('Locked')],
+    \App\Enums\TournamentStatusEnum::PENDING->value => ['variant' => 'closed', 'label' => __('Pending')],
+    \App\Enums\TournamentStatusEnum::CLOSED->value => ['variant' => 'closed', 'label' => __('closed')],
+    \App\Enums\TournamentStatusEnum::CANCELLED->value => ['variant' => 'closed', 'label' => __('Cancelled')],
 ];
 
 $config = $statusMap[$status] ?? ['variant' => 'default', 'label' => ucfirst($status)];

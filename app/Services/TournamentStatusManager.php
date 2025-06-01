@@ -11,55 +11,13 @@ use LogicException;
 
 final class TournamentStatusManager
 {
-
-    // How to use this class ? 
+    // How to use this class ?
     // $manager = new TournamentStatusManager($tournament);
     // $manager->setStatus(TournamentStatusEnum::LOCKED);
 
     public function __construct(
         public Tournament $tournament
     ) {}
-
-    /**
-     * Change the tournament status to a new one, if allowed.
-     *
-     * @param TournamentStatusEnum $newStatus
-     * @throws InvalidArgumentException
-     * @return void
-     */
-    public function setStatus(TournamentStatusEnum $newStatus): void
-    {
-        $currentStatus = $this->tournament->status;
-
-        $allowedStatuses = $this->getAllowedNextStatuses();
-
-        if (!in_array($newStatus, $allowedStatuses, true)) {
-            throw new InvalidArgumentException("Transition from {$currentStatus->value} to {$newStatus->value} is not allowed.");
-        }
-
-        // TODO: implement match checks for specific transitions
-        if ($currentStatus === TournamentStatusEnum::PENDING && $newStatus === TournamentStatusEnum::LOCKED) {
-            $totalMatchesStarted = $this->tournament->matches()
-                ->wherein('status',['in_progress','completed'])
-                ->count();
-
-            if($totalMatchesStarted > 0){
-                throw new LogicException('At least one match has already started.');
-            }
-        }
-
-        if ($currentStatus === TournamentStatusEnum::PENDING && $newStatus === TournamentStatusEnum::CLOSED) {
-            // TODO: ensure a winner is calculated and no open matches remain
-        }
-
-        if ($currentStatus === TournamentStatusEnum::PENDING && $newStatus === TournamentStatusEnum::CANCELLED) {
-            // TODO: ensure no match has started
-        }
-
-        $this->tournament->update([
-            'status' => $newStatus,
-        ]);
-    }
 
     /**
      * Return the list of statuses allowed as next transitions.
@@ -89,5 +47,50 @@ final class TournamentStatusManager
             ],
             TournamentStatusEnum::CLOSED, TournamentStatusEnum::CANCELLED => [],
         };
+    }
+
+    /**
+     * Change the tournament status to a new one, if allowed.
+     *
+     * @throws InvalidArgumentException
+     */
+    public function setStatus(TournamentStatusEnum $newStatus): void
+    {
+        $currentStatus = $this->tournament->status;
+
+        $allowedStatuses = $this->getAllowedNextStatuses();
+
+        if (! in_array($newStatus, $allowedStatuses, true)) {
+            throw new InvalidArgumentException("Transition from {$currentStatus->value} to {$newStatus->value} is not allowed.");
+        }
+
+        // TODO: implement match checks for specific transitions
+        if ($currentStatus === TournamentStatusEnum::PENDING && $newStatus === TournamentStatusEnum::LOCKED) {
+            $totalMatchesStarted = $this->tournament->matches()
+                ->wherein('status', ['in_progress', 'completed'])
+                ->count();
+
+            if ($totalMatchesStarted > 0) {
+                throw new LogicException('At least one match has already started. Is not allow to lock the tournament anymore');
+            }
+        }
+
+        if ($currentStatus === TournamentStatusEnum::PENDING && $newStatus === TournamentStatusEnum::CANCELLED) {
+            $totalMatchesStarted = $this->tournament->matches()
+                ->wherein('status', ['in_progress', 'completed'])
+                ->count();
+
+            if ($totalMatchesStarted > 0) {
+                throw new LogicException('At least one match has already started. Is not allow to cancel the tournament anymore');
+            }
+        }
+
+        if ($currentStatus === TournamentStatusEnum::PENDING && $newStatus === TournamentStatusEnum::CLOSED) {
+            // TODO: ensure a winner is calculated and no open matches remain
+        }
+
+        $this->tournament->update([
+            'status' => $newStatus,
+        ]);
     }
 }

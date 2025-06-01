@@ -1,13 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Enums;
 
 enum TournamentStatusEnum: string
 {
+    case CANCELLED = 'cancelled';
+    case CLOSED = 'closed';
     case DRAFT = 'draft';
-    case PUBLISHED = 'published';
     case LOCKED = 'locked';
     case PENDING = 'pending';
-    case CLOSED = 'closed';
-    case CANCELLED = 'cancelled';
+    case PUBLISHED = 'published';
 }

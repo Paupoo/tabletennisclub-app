@@ -80,21 +80,12 @@ class TournamentController extends Controller
 
     public function closeTournament(Tournament $tournament): RedirectResponse
     {
-
         $tournament->status = TournamentStatusEnum::CLOSED->value;
         $tournament->update();
 
         return redirect()
             ->back()
             ->with('success', __('Tournament ' . $tournament->name . ' has been closed.'));
-    }
-
-    public function edit(Tournament $tournament): View
-    {
-        return view('admin.tournaments.edit', [
-            'tournament' => $tournament->load(['pools.users']),
-            'rooms' => Room::orderBy('name')->get(),
-        ]);
     }
 
     public function create(): View
@@ -114,6 +105,14 @@ class TournamentController extends Controller
         return redirect()
             ->route('tournamentsIndex')
             ->with('success', __('The tournament ' . $tournament->name . ' has been deleted.'));
+    }
+
+    public function edit(Tournament $tournament): View
+    {
+        return view('admin.tournaments.edit', [
+            'tournament' => $tournament->load(['pools.users']),
+            'rooms' => Room::orderBy('name')->get(),
+        ]);
     }
 
     /**
@@ -263,6 +262,7 @@ class TournamentController extends Controller
 
     public function publish(Tournament $tournament): RedirectResponse
     {
+
         foreach ($tournament->matches as $match) {
             if ($match->status === TournamentStatusEnum::PENDING->value || $match->status === TournamentStatusEnum::CLOSED) {
                 return redirect()
@@ -556,7 +556,7 @@ class TournamentController extends Controller
     {
         $tournament = $match->tournament;
 
-        if ($tournament->status !== 'pending') {
+        if ($tournament->status !== TournamentStatusEnum::PENDING) {
             return redirect()
                 ->back()
                 ->with('error', __('Please start the tournament first'));

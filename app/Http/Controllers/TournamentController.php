@@ -17,6 +17,7 @@ use App\Services\TournamentFinalPhaseService;
 use App\Services\TournamentMatchService;
 use App\Services\TournamentPoolService;
 use App\Services\TournamentService;
+use App\Services\TournamentStatusManager;
 use App\Services\TournamentTableService;
 use Carbon\Carbon;
 use Exception;
@@ -67,15 +68,21 @@ class TournamentController extends Controller
         $match->save();
     }
 
-    public function changeStatus(Tournament $tournament, Request $request): RedirectResponse
+    public function changeStatus(Tournament $tournament, TournamentStatusEnum $newStatus): RedirectResponse
     {
-        $tournament->status = $request->status;
-        $tournament->update();
+        $manager = new TournamentStatusManager($tournament);
 
-        return redirect()
-            ->back()
-            ->with('success', __('Status for tournament ' . $tournament->name . ' has been updated.'));
-
+        try {
+            //code...
+            $manager->setStatus($newStatus);
+            return redirect()
+                ->back()
+                ->with('success', __('Status for tournament ' . $tournament->name . ' has been updated to ' . $newStatus->value));
+        } catch (\Throwable $th) {
+            return redirect()
+                ->back()
+                ->with('error', __($th->getMessage()));
+        }
     }
 
     public function closeTournament(Tournament $tournament): RedirectResponse
@@ -397,6 +404,7 @@ class TournamentController extends Controller
             'tables' => $tables,
             'tournament' => $tournament,
             'unregisteredUsers' => $unregisteredUsers,
+            'statusesAllowed' => new TournamentStatusManager($tournament)->getAllowedNextStatuses()
         ]);
     }
 

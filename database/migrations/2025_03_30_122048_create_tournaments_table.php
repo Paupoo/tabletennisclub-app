@@ -30,7 +30,7 @@ return new class extends Migration
             $table->integer('total_users')->default(0);
             $table->integer('max_users')->default(0);
             $table->integer('price')->default(0);
-            $table->enum('status', collect(TournamentStatusEnum::cases())->pluck('value')->toArray());
+            $table->enum('status', collect(TournamentStatusEnum::cases())->pluck('value')->toArray())->default(TournamentStatusEnum::DRAFT);
             $table->boolean('has_handicap_points')->default(false);
             $table->timestamps();
         });

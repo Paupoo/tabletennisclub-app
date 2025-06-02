@@ -6,6 +6,7 @@ namespace Tests\Feature\Tournament;
 
 use App\Enums\TournamentStatusEnum;
 use App\Models\Tournament;
+use App\Models\TournamentMatch;
 use App\Services\TournamentStatusManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use InvalidArgumentException;
@@ -67,16 +68,23 @@ class TournamentStatusManagerTest extends TestCase
     public function test_cannot_lock_pending_tournament_with_started_matches(): void
     {
         $tournament = Tournament::factory()
-            ->hasMatches(1, ['status' => 'in_progress'])
+            // ->hasTournamentMatches(1, ['status' => 'in_progress'])
             ->create([
                 'status' => TournamentStatusEnum::PENDING,
             ]);
+        
+        $match = TournamentMatch::factory()->create([
+            'status' => 'in_progress',
+        ]);
+
+        $tournament->matches()->save($match);
 
         $manager = new TournamentStatusManager($tournament);
-
+        
+        
         $this->expectException(LogicException::class);
-        $this->expectExceptionMessage('At least one match is started. This is not allowed.');
-
+        $this->expectExceptionMessage('At least one match has already started. Is not allow to lock the tournament anymore.');
+        
         $manager->setStatus(TournamentStatusEnum::LOCKED);
     }
 

@@ -71,7 +71,7 @@ final class TournamentStatusManager
                 ->count();
 
             if ($totalMatchesStarted > 0) {
-                throw new LogicException('At least one match has already started. Is not allow to lock the tournament anymore');
+                throw new LogicException('At least one match has already started. Is not allow to lock the tournament anymore.');
             }
         }
 

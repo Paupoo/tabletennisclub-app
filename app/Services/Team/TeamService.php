@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services\Team;
 
 use App\Enums\LeagueCategory;
@@ -8,52 +10,65 @@ use App\Models\Club;
 use App\Models\Season;
 use App\Models\Team;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Builder;
 
 class TeamService
 {
-    public function __construct(protected Team $team){}
-    
+    public function __construct(protected Team $team) {}
 
-    public function getTeamsNotInClub(){}
-    public function getTeamsFromClub(Club $club){}
+    public function addPlayersToTeam(array $players) {}
 
-    // Season based filtering
-    public function getTeamsInSeason(Season $season){}
-    public function getTeamsInSeasonsRange(Season $start, Season $end){}
-    public function getTeamsCurrentSeason(){}
-    public function getTeamsPreviousSeason(){}
-    public function getTeamsNextSeason(){}
-
-    // Captain filtering
-    public function getTeamsWithCaptain(User $captain){}
-    public function getTeamsWithoutCaptain(User $captain){}
-
-    // Players fitlering
-    public function getTeamsWithPlayers(){}
-    public function getTeamsWithoutPlayers(){}
-
-    // League filtering
-    public function getTeamsInLevel(LeagueLevel $level){}
-    public function getTeamsInCategory(LeagueCategory $category){}
-    public function getTeamsInDivision(string $division){}
+    public function addPlayerToTeam(User $player) {}
 
     // Status filtering
-    public function getActiveTeams(){}
-    public function getInactiveTeams(){}
+    public function getActiveTeams() {}
 
-    public function setTeamActive(){}
-    public function setTeamInactive(){}
-    public function setTeamClub(){}
-    public function setTeamSeason(){}
-    public function setTeamCaptain(){}
-    public function setTeamLeague(LeagueLevel $level, LeagueCategory $category, string $division){}
+    public function getInactiveTeams() {}
 
-    public function addPlayerToTeam(User $player){}
-    public function addPlayersToTeam(array $players){}
-    public function removePlayerFromTeam(User $player){}
-    public function removePlayersFromTeam(array $players){}
+    public function getTeamsCurrentSeason() {}
 
+    public function getTeamsFromClub(Club $club) {}
 
+    public function getTeamsInCategory(LeagueCategory $category) {}
 
+    public function getTeamsInDivision(string $division) {}
+
+    // League filtering
+    public function getTeamsInLevel(LeagueLevel $level) {}
+
+    // Season based filtering
+    public function getTeamsInSeason(Season $season) {}
+
+    public function getTeamsInSeasonsRange(Season $start, Season $end) {}
+
+    public function getTeamsNextSeason() {}
+
+    public function getTeamsNotInClub() {}
+
+    public function getTeamsPreviousSeason() {}
+
+    // Captain filtering
+    public function getTeamsWithCaptain(User $captain) {}
+
+    public function getTeamsWithoutCaptain(User $captain) {}
+
+    public function getTeamsWithoutPlayers() {}
+
+    // Players fitlering
+    public function getTeamsWithPlayers() {}
+
+    public function removePlayerFromTeam(User $player) {}
+
+    public function removePlayersFromTeam(array $players) {}
+
+    public function setTeamActive() {}
+
+    public function setTeamCaptain() {}
+
+    public function setTeamClub() {}
+
+    public function setTeamInactive() {}
+
+    public function setTeamLeague(LeagueLevel $level, LeagueCategory $category, string $division) {}
+
+    public function setTeamSeason() {}
 }

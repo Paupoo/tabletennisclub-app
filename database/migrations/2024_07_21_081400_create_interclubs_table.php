@@ -1,16 +1,25 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Enums\InterclubResult;
 use App\Models\League;
 use App\Models\Room;
 use App\Models\Season;
-use App\Models\Team;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('interclubs');
+    }
+
     /**
      * Run the migrations.
      */
@@ -34,13 +43,5 @@ return new class extends Migration
             $table->foreign('visited_team_id')->references('id')->on('users');
             $table->foreign('visiting_team_id')->references('id')->on('users');
         });
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('interclubs');
     }
 };

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Factories;
 
 use Carbon\Carbon;
@@ -26,7 +28,7 @@ class TournamentFactory extends Factory
             'start_date' => $start_date,
             'end_date' => $end_date,
             'max_users' => fake()->randomNumber(2),
-            'price' => fake()->randomFloat(2,10,30)
+            'price' => fake()->randomFloat(2, 10, 30),
         ];
     }
 }

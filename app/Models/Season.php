@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -10,16 +12,16 @@ class Season extends Model
 {
     use HasFactory;
 
+    protected $casts = [
+        'name' => 'string',
+        'start_year' => 'integer',
+        'end_year' => 'integer',
+    ];
+
     protected $fillable = [
         'name',
         'start_year',
         'end_year',
-    ];
-
-    protected $casts = [
-        'name' => 'string',
-        'start_year' => 'integer',
-        'end_year' => 'integer',        
     ];
 
     public function interclubs(): HasMany
@@ -27,14 +29,14 @@ class Season extends Model
         return $this->hasMany(Interclub::class);
     }
 
-    public function teams(): HasMany
-    {
-        return $this->hasMany(Team::class);
-    }
-
     public function leagues(): HasMany
     {
         return $this->hasMany(League::class);
+    }
+
+    public function teams(): HasMany
+    {
+        return $this->hasMany(Team::class);
     }
 
     public function trainings(): HasMany

@@ -10,11 +10,11 @@
                             class="inline-block px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md transition duration-200 text-center">
                             &larr; Retour
                         </a>
-                        <a href="{{ route('tournamentSetup', $tournament) }}"
+                        <a href="{{ route('tournament.edit', $tournament) }}"
                             class="inline-block px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition duration-200 text-center">
                             Configurer le tournoi
                         </a>
-                        <a href="{{ route('tournamentSetup', $tournament) }}"
+                        <a href="{{ route('tournament.edit', $tournament) }}"
                             class="inline-block px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition duration-200 text-center">
                             Démarrer le tournoi
                         </a>

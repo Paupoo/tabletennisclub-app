@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests;
 
 use App\Enums\LeagueCategory;
@@ -10,7 +12,6 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
-
 class StoreOrUpdateTeamRequest extends FormRequest
 {
     /**
@@ -19,6 +20,35 @@ class StoreOrUpdateTeamRequest extends FormRequest
     public function authorize(): bool
     {
         return $this->user()->is_admin || $this->user()->is_comittee_member;
+    }
+
+    /**
+     * Checks that no team with the same letter is already existing in the league.
+     *
+     * @throws ValidationException
+     */
+    public function isDuplicatedTeam(): void
+    {
+        $team = Team::select('teams.*')->join('leagues', 'teams.league_id', 'leagues.id')
+            ->where('teams.name', $this->name)
+            ->where('teams.season_id', $this->season_id)
+            ->where('leagues.category', $this->category)
+            ->where('leagues.division', $this->division)
+            ->where('leagues.level', $this->level)
+            ->first();
+
+        if ($team !== null) {
+            throw ValidationException::withMessages([
+                'name' => __('This team already exists in this league.'),
+            ]);
+        }
+    }
+
+    public function messages(): array
+    {
+        return [
+            'players' => __('At least 5 players must be selected'),
+        ];
     }
 
     /**
@@ -32,7 +62,7 @@ class StoreOrUpdateTeamRequest extends FormRequest
             'season_id' => [
                 'required',
                 'integer',
-                'exists:seasons,id'
+                'exists:seasons,id',
             ],
             'category' => [
                 'required',
@@ -52,7 +82,7 @@ class StoreOrUpdateTeamRequest extends FormRequest
                 'required',
                 Rule::in(collect(TeamName::cases())->pluck('name')),
                 Rule::unique('teams', 'name')
-                    ->where('league_id', $this->input('league_id'))
+                    ->where('league_id', $this->input('league_id')),
             ],
             'players' => [
                 'required',
@@ -69,35 +99,5 @@ class StoreOrUpdateTeamRequest extends FormRequest
                 'exists:users,id',
             ],
         ];
-    }
-
-    public function messages(): array
-    {
-        return [
-            'players' => __('At least 5 players must be selected'),
-        ];
-    }
-
-    /**
-     * Checks that no team with the same letter is already existing in the league.
-     *
-     * @return void
-     * @throws ValidationException
-     */
-    public function isDuplicatedTeam(): void
-    {
-        $team = Team::select('teams.*')->join('leagues', 'teams.league_id', 'leagues.id')
-            ->where('teams.name', $this->name)
-            ->where('teams.season_id', $this->season_id)
-            ->where('leagues.category', $this->category)
-            ->where('leagues.division', $this->division)
-            ->where('leagues.level', $this->level)
-            ->first();
-    
-        if ($team !== null) {
-            throw ValidationException::withMessages([
-                'name' => __('This team already exists in this league.')
-            ]);
-        }
     }
 }

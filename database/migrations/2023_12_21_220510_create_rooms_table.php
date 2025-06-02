@@ -1,12 +1,21 @@
 <?php
 
-use App\Models\Club;
+declare(strict_types=1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('rooms');
+    }
+
     /**
      * Run the migrations.
      */
@@ -27,13 +36,5 @@ return new class extends Migration
             $table->integer('total_playable_tables')->default(0);
             $table->timestamps();
         });
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('rooms');
     }
 };

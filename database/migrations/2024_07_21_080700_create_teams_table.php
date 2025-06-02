@@ -1,6 +1,7 @@
 <?php
 
-use App\Models\Captain;
+declare(strict_types=1);
+
 use App\Models\Club;
 use App\Models\League;
 use App\Models\Season;
@@ -11,6 +12,14 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('teams');
+    }
+
     /**
      * Run the migrations.
      */
@@ -25,13 +34,5 @@ return new class extends Migration
             $table->foreignIdFor(Season::class)->constrained();
             $table->timestamps();
         });
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('teams');
     }
 };

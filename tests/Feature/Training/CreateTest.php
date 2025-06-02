@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\Training;
 
 use App\Enums\Recurrence;
@@ -14,16 +16,25 @@ class CreateTest extends TestCase
 {
     use CreateUser;
 
-    private array $valid_request_only_one_training = [];
-    private array $valid_request_5_daily_trainings = [];
-    private array $valid_request_4_weekly_trainings = [];
-    private array $valid_request_4_biweekly_trainings = [];
-    private array $invalid_request_training_starting_in_the_past = [];
-    private array $invalid_request_training_ending_in_the_past = [];
-    private array $invalid_request_training_date_starting_after_end = [];
-    private array $invalid_request_training_time_starting_after_end = [];
     private array $invalid_request_directed_training_without_trainer = [];
+
     private array $invalid_request_supervised_training_without_trainer = [];
+
+    private array $invalid_request_training_date_starting_after_end = [];
+
+    private array $invalid_request_training_ending_in_the_past = [];
+
+    private array $invalid_request_training_starting_in_the_past = [];
+
+    private array $invalid_request_training_time_starting_after_end = [];
+
+    private array $valid_request_4_biweekly_trainings = [];
+
+    private array $valid_request_4_weekly_trainings = [];
+
+    private array $valid_request_5_daily_trainings = [];
+
+    private array $valid_request_only_one_training = [];
 
     protected function setUp(): void
     {
@@ -166,35 +177,20 @@ class CreateTest extends TestCase
         ];
     }
 
-    // Functional tests
-
-    public function test_only_one_training_is_created(): void
-    {
-        $this->assertDatabaseEmpty('trainings');
-        $this->actingAs($this->createFakeAdmin())
-            ->from(route('trainings.create'))
-            ->post(route('trainings.store'), $this->valid_request_only_one_training)
-            ->assertValid()
-            ->assertRedirect(route('trainings.index'))
-            ->assertSessionHas('success');
-
-        $this->assertEquals(1, Training::count());
-    }
-
-    public function test_5_daily_trainings_are_created_with_5_distinct_dates(): void
+    public function test_4_biweekly_trainings_are_created_with_4_distinct_dates(): void
     {
         $this->assertDatabaseEmpty('trainings');
 
         $this->actingAs($this->createFakeAdmin())
             ->from(route('trainings.create'))
-            ->post(route('trainings.store'), $this->valid_request_5_daily_trainings)
+            ->post(route('trainings.store'), $this->valid_request_4_biweekly_trainings)
             ->assertValid()
             ->assertRedirect(route('trainings.index'))
             ->assertSessionHas('success');
 
-        $this->assertDatabaseCount('trainings', 5);
+        $this->assertDatabaseCount('trainings', 4);
 
-        $this->assertEquals(5, Training::distinct('start')->count());
+        $this->assertEquals(4, Training::distinct('start')->count());
     }
 
     public function test_4_weekly_trainings_are_created_with_4_distinct_dates(): void
@@ -213,30 +209,103 @@ class CreateTest extends TestCase
         $this->assertEquals(4, Training::distinct('start')->count());
     }
 
-    public function test_4_biweekly_trainings_are_created_with_4_distinct_dates(): void
+    public function test_5_daily_trainings_are_created_with_5_distinct_dates(): void
     {
         $this->assertDatabaseEmpty('trainings');
 
         $this->actingAs($this->createFakeAdmin())
             ->from(route('trainings.create'))
-            ->post(route('trainings.store'), $this->valid_request_4_biweekly_trainings)
+            ->post(route('trainings.store'), $this->valid_request_5_daily_trainings)
             ->assertValid()
             ->assertRedirect(route('trainings.index'))
             ->assertSessionHas('success');
 
-        $this->assertDatabaseCount('trainings', 4);
+        $this->assertDatabaseCount('trainings', 5);
 
-        $this->assertEquals(4, Training::distinct('start')->count());
+        $this->assertEquals(5, Training::distinct('start')->count());
     }
 
-    public function test_validation_prevents_from_creating_trainings_starting_in_the_past(): void
+    public function test_admin_or_comitte_members_can_create_training(): void
+    {
+        $this->actingAs($this->createFakeAdmin())
+            ->get(route('trainings.create'))
+            ->assertStatus(200);
+
+        $this->actingAs($this->createFakeComitteeMember())
+            ->get(route('trainings.create'))
+            ->assertStatus(200);
+    }
+
+    public function test_members_cant_create_training(): void
+    {
+        $this->actingAs($this->createFakeUser())
+            ->get(route('trainings.create'))
+            ->assertStatus(403);
+    }
+
+    public function test_newly_created_trainings_are_publish_into_public_site(): void
     {
         $this->actingAs($this->createFakeAdmin())
             ->from(route('trainings.create'))
-            ->post(route('trainings.store'), $this->invalid_request_training_starting_in_the_past)
-            ->assertInvalid()
+            ->post(route('trainings.store'), $this->valid_request_only_one_training);
+
+        $room = Room::find(1);
+        $this->get('/')
+            ->assertSee(TrainingLevel::BEGINNERS->value)
+            ->assertSee(TrainingType::DIRECTED->value)
+            ->assertSee('21:30 - 22:00')
+            ->assertSee($room->name);
+    }
+
+    // Functional tests
+
+    public function test_only_one_training_is_created(): void
+    {
+        $this->assertDatabaseEmpty('trainings');
+        $this->actingAs($this->createFakeAdmin())
+            ->from(route('trainings.create'))
+            ->post(route('trainings.store'), $this->valid_request_only_one_training)
+            ->assertValid()
+            ->assertRedirect(route('trainings.index'))
+            ->assertSessionHas('success');
+
+        $this->assertEquals(1, Training::count());
+    }
+
+    public function test_trainer_is_required_if_training_is_not_free(): void
+    {
+        $this->actingAs($this->createFakeAdmin())
+            ->from(route('trainings.create'))
+            ->post(route('trainings.store'), $this->invalid_request_directed_training_without_trainer)
+            ->assertInvalid([
+                'trainer_id',
+            ])
             ->assertRedirect(route('trainings.create'))
-            ->assertSessionHasErrors('start_date');
+            ->assertSessionHasErrors([
+                'trainer_id',
+            ]);
+
+        $this->actingAs($this->createFakeAdmin())
+            ->from(route('trainings.create'))
+            ->post(route('trainings.store'), $this->invalid_request_supervised_training_without_trainer)
+            ->assertInvalid([
+                'trainer_id',
+            ])
+            ->assertRedirect(route('trainings.create'))
+            ->assertSessionHasErrors([
+                'trainer_id',
+            ]);
+    }
+
+    // Access & policy tests
+
+    public function test_unlogged_users_cant_create_trainings(): void
+    {
+        $this->get(route('trainings.create'))
+            ->assertRedirect('/login');
+
+        $this->post(route('trainings.store'))
+            ->assertRedirect('/login');
     }
 
     public function test_validation_prevents_from_creating_trainings_ending_in_the_past(): void
@@ -244,6 +313,16 @@ class CreateTest extends TestCase
         $this->actingAs($this->createFakeAdmin())
             ->from(route('trainings.create'))
             ->post(route('trainings.store'), $this->invalid_request_training_ending_in_the_past)
+            ->assertInvalid()
+            ->assertRedirect(route('trainings.create'))
+            ->assertSessionHasErrors('start_date');
+    }
+
+    public function test_validation_prevents_from_creating_trainings_starting_in_the_past(): void
+    {
+        $this->actingAs($this->createFakeAdmin())
+            ->from(route('trainings.create'))
+            ->post(route('trainings.store'), $this->invalid_request_training_starting_in_the_past)
             ->assertInvalid()
             ->assertRedirect(route('trainings.create'))
             ->assertSessionHasErrors('start_date');
@@ -279,74 +358,5 @@ class CreateTest extends TestCase
                 'start_time',
                 'end_time',
             ]);
-    }
-
-
-    public function test_trainer_is_required_if_training_is_not_free(): void
-    {
-        $this->actingAs($this->createFakeAdmin())
-            ->from(route('trainings.create'))
-            ->post(route('trainings.store'), $this->invalid_request_directed_training_without_trainer)
-            ->assertInvalid([
-                'trainer_id',
-            ])
-            ->assertRedirect(route('trainings.create'))
-            ->assertSessionHasErrors([
-                'trainer_id',
-            ]);
-
-        $this->actingAs($this->createFakeAdmin())
-            ->from(route('trainings.create'))
-            ->post(route('trainings.store'), $this->invalid_request_supervised_training_without_trainer)
-            ->assertInvalid([
-                'trainer_id',
-            ])
-            ->assertRedirect(route('trainings.create'))
-            ->assertSessionHasErrors([
-                'trainer_id',
-            ]);
-    }
-
-    public function test_newly_created_trainings_are_publish_into_public_site(): void
-    {
-        $this->actingAs($this->createFakeAdmin())
-            ->from(route('trainings.create'))
-            ->post(route('trainings.store'), $this->valid_request_only_one_training);
-        
-        $room = Room::find(1);
-        $this->get('/')
-            ->assertSee(TrainingLevel::BEGINNERS->value)
-            ->assertSee(TrainingType::DIRECTED->value)
-            ->assertSee('21:30 - 22:00')
-            ->assertSee($room->name);
-    }
-
-    // Access & policy tests
-
-    public function test_unlogged_users_cant_create_trainings(): void
-    {
-        $this->get(route('trainings.create'))
-            ->assertRedirect('/login');
-
-        $this->post(route('trainings.store'))
-            ->assertRedirect('/login');
-    }
-
-    public function test_members_cant_create_training(): void
-    {
-        $this->actingAs($this->createFakeUser())
-            ->get(route('trainings.create'))
-            ->assertStatus(403);
-    }
-
-    public function test_admin_or_comitte_members_can_create_training(): void
-    {
-        $this->actingAs($this->createFakeAdmin())
-            ->get(route('trainings.create'))
-            ->assertStatus(200);
-
-        $this->actingAs($this->createFakeComitteeMember())
-            ->get(route('trainings.create'))
-            ->assertStatus(200);
     }
 }

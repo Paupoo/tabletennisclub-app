@@ -1,15 +1,24 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Enums\Ranking;
 use App\Enums\Sex;
 use App\Models\Club;
-use App\Models\Team;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('users');
+    }
+
     /**
      * Run the migrations.
      */
@@ -40,13 +49,5 @@ return new class extends Migration
             $table->unsignedTinyInteger('force_list')->nullable();
             $table->foreignIdFor(Club::class)->default(1);
         });
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('users');
     }
 };

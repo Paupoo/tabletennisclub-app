@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Enums\InterclubType;
@@ -11,18 +13,15 @@ class TestController extends Controller
 {
     //
 
-    public function __construct(private InterclubService $interclubService)
-    {
-        
-    }
+    public function __construct(private InterclubService $interclubService) {}
 
     public function test(): View
     {
 
-        $test = new Interclub();
+        $test = new Interclub;
         $test->setTotalPlayersPerteam(InterclubType::MEN->name);
         $test->setWeekNumber();
-;
+
         return View('/test', [
             'test' => $test,
         ]);

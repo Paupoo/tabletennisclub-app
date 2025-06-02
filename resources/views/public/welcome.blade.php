@@ -33,10 +33,16 @@
                 {{-- Normal Menu --}}
                 <ul class="flex flex-row gap-8 max-lg:hidden">
                     <li>
-                        <x-button class="text-lg font-semibold ">{{ __('Sport Offer') }}</x-button>
+                        <x-button class="text-lg font-semibold ">{{ __('Home') }}</x-button>
                     </li>
                     <li>
-                        <x-button class="text-lg font-semibold">{{ __('Our Club') }}</x-button>
+                        <x-button class="text-lg font-semibold">{{ __('The Club') }}</x-button>
+                    </li>
+                    <li>
+                        <x-button class="text-lg font-semibold">{{ __('Trainings') }}</x-button>
+                    </li>
+                    <li>
+                        <x-button class="text-lg font-semibold">{{ __('Competitions') }}</x-button>
                     </li>
                     <li>
                         <x-button class="text-lg font-semibold"> {{ __('Contact') }}</x-button>

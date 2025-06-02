@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Models\Interclub;
 use App\Models\User;
 use Illuminate\Database\Migrations\Migration;
@@ -8,6 +10,14 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('interclub_user');
+    }
+
     /**
      * Run the migrations.
      */
@@ -22,13 +32,5 @@ return new class extends Migration
             $table->boolean('has_played')->default(false);
             $table->timestamps();
         });
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('interclub_user');
     }
 };

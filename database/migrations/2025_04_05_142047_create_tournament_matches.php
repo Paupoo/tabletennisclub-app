@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Models\Pool;
 use App\Models\Table;
 use App\Models\Tournament;
@@ -9,6 +11,14 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('tournament_matches');
+    }
+
     /**
      * Run the migrations.
      */
@@ -35,13 +45,5 @@ return new class extends Migration
             $table->boolean('is_bronze_match')->default(false);
             $table->timestamps();
         });
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('tournament_matches');
     }
 };

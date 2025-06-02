@@ -24,7 +24,7 @@
                 @endcan
             </div>
 
-            @if (session('success'))
+            {{-- @if (session('success'))
                 <div class="mt-4 bg-green-500 rounded-lg pl-3">
                     {{ session('success') }}
                 </div>
@@ -36,7 +36,7 @@
                 <div class=" mt-4 bg-red-500 rounded-lg pl-3">
                     {{ session('error') }}
                 </div>
-            @endif
+            @endif --}}
         </div>
     </div>
 
@@ -45,4 +45,5 @@
             <livewire:users-table>
         </div>
     </div>
+
 </x-app-layout>

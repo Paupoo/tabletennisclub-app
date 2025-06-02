@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -8,6 +10,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Table extends Model
 {
+    protected $casts = [
+        'name' => 'string',
+        'purchased_on' => 'date',
+        'state' => 'string',
+    ];
+
     protected $fillable = [
         'name',
         'purchased_on',
@@ -15,11 +23,10 @@ class Table extends Model
         'room_id',
     ];
 
-    protected $casts = [
-        'name' => 'string',
-        'purchased_on' => 'date',
-        'state' => 'string',
-    ];
+    public function match(): BelongsToMany
+    {
+        return $this->belongsToMany(TournamentMatch::class, 'table_tournament');
+    }
 
     public function room(): BelongsTo
     {
@@ -36,10 +43,5 @@ class Table extends Model
             ])
             ->using(TableTournament::class)
             ->withTimestamps();
-    }
-
-    public function match(): BelongsToMany
-    {
-        return $this->belongsToMany(TournamentMatch::class, 'table_tournament');
     }
 }

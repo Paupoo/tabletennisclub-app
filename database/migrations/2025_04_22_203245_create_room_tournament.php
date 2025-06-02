@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Models\Room;
 use App\Models\Tournament;
 use Illuminate\Database\Migrations\Migration;
@@ -8,6 +10,14 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('room_tournament');
+    }
+
     /**
      * Run the migrations.
      */
@@ -20,13 +30,5 @@ return new class extends Migration
             $table->foreignIdFor(Room::class)->constrained()->cascadeOnDelete();
             $table->integer('total_tables')->default(0);
         });
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('room_tournament');
     }
 };

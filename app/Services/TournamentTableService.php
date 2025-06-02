@@ -4,27 +4,35 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Models\Tournament;
-use App\Models\Pool;
 use App\Models\Room;
-use Exception;
-use Illuminate\Support\Collection;
+use App\Models\Tournament;
+use App\Models\TournamentMatch;
 
 class TournamentTableService
 {
+    public function freeUsedTable(TournamentMatch $match): void
+    {
+        $tournament = $match->tournament()->first();
+        $table = $tournament->tables()->wherePivot('tournament_match_id', $match->id)->first();
+        $tournament->tables()->updateExistingPivot($table->id, [
+            'is_table_free' => true,
+            'match_ended_at' => now(),
+        ]);
+    }
+
     /**
      * Lie les tables de chaque salle déjà liés à un tournoi
      *
-     * @param Tournament $tournament Le tournoi concerné
+     * @param  Tournament  $tournament  Le tournoi concerné
      * @return array Les pools créées avec leurs joueurs
      */
     public function linkAvailableTables(Tournament $tournament): void
     {
         $tablesToSync = []; // Collect tables to keep or add to the tournament
-        
-        foreach($tournament->rooms as $room){
-            foreach($room->tables as $table){
-                if($table->state !== 'oos'){
+
+        foreach ($tournament->rooms as $room) {
+            foreach ($room->tables as $table) {
+                if ($table->state !== 'oos') {
                     $tablesToSync[] = $table->id;
                 }
             }

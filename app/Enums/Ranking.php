@@ -1,10 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Enums;
 
 enum Ranking
 {
-    case NA;
     case B0;
     case B2;
     case B4;
@@ -21,5 +22,6 @@ enum Ranking
     case E2;
     case E4;
     case E6;
+    case NA;
     case NC;
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Models\Table;
 use App\Models\Tournament;
 use App\Models\TournamentMatch;
@@ -9,6 +11,14 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('table_tournament');
+    }
+
     /**
      * Run the migrations.
      */
@@ -24,13 +34,5 @@ return new class extends Migration
             $table->dateTime('match_ended_at')->nullable()->default(null);
             $table->timestamps();
         });
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('table_tournament');
     }
 };

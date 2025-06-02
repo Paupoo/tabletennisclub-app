@@ -1,16 +1,25 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Enums\TrainingLevel;
 use App\Enums\TrainingType;
 use App\Models\Room;
 use App\Models\Season;
-use App\Models\User;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('trainings');
+    }
+
     /**
      * Run the migrations.
      */
@@ -29,13 +38,5 @@ return new class extends Migration
 
             $table->foreign('trainer_id')->references('id')->on('users')->nullable()->constrained();
         });
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('trainings');
     }
 };

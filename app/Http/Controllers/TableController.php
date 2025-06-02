@@ -1,35 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreOrUpdateTableRequest;
 use App\Models\Room;
 use App\Models\Table;
 use App\Models\Tournament;
-use App\Models\TournamentMatch;
 use App\Services\TournamentTableService;
-use Illuminate\Http\Request;
 
 class TableController extends Controller
 {
-
-    public function __construct(private TournamentTableService $tableService)
-    {
-
-    }
-
-
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        $this->authorize('viewAny', Table::class);
-
-        return view('admin.tables.index', [
-            'tables' => Table::orderByRaw('name * 1 ASC')->paginate(10),
-        ]);
-    }
+    public function __construct(private TournamentTableService $tableService) {}
 
     /**
      * Show the form for creating a new resource.
@@ -37,70 +20,14 @@ class TableController extends Controller
     public function create()
     {
         $this->authorize('create', Table::class);
-        
-        $table = new Table();
+
+        $table = new Table;
         $rooms = Room::orderBy('name')->get();
 
         return view('admin.tables.create', [
             'table' => $table,
             'rooms' => $rooms,
         ]);
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StoreOrUpdateTableRequest $request)
-    {
-        $this->authorize('create', Table::class);
-
-        $validated = $request->validated();
-        
-        $table = Table::create($validated);
-        $room = Room::find($table->room_id);
-        $this->tableService->updateTablesCount($room);
-
-        return redirect()->route('tables.index')->with('success', 'The table ' . $table->name . ' has been added.');
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Table $table)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Table $table)
-    {
-        $this->authorize('create', Table::class);
-
-        $rooms = Room::orderBy('name')->get();
-
-        return view('admin.tables.edit', [
-            'table' => $table,
-            'rooms' => $rooms,
-        ]);
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(StoreOrUpdateTableRequest $request, Table $table)
-    {
-        $validated = $request->validated();
-
-        $table->fill($validated);
-
-        $table->save();
-        
-        $room = Room::find($table->room_id);
-        $this->tableService->updateTablesCount($room);
-
-        return redirect()->route('tables.index')->with('success', 'The table ' . $table->name . ' has been updated.');
     }
 
     /**
@@ -120,6 +47,57 @@ class TableController extends Controller
     }
 
     /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(Table $table)
+    {
+        $this->authorize('create', Table::class);
+
+        $rooms = Room::orderBy('name')->get();
+
+        return view('admin.tables.edit', [
+            'table' => $table,
+            'rooms' => $rooms,
+        ]);
+    }
+
+    /**
+     * Display a listing of the resource.
+     */
+    public function index()
+    {
+        $this->authorize('viewAny', Table::class);
+
+        return view('admin.tables.index', [
+            'tables' => Table::orderByRaw('name * 1 ASC')->paginate(10),
+        ]);
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(Table $table)
+    {
+        //
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(StoreOrUpdateTableRequest $request)
+    {
+        $this->authorize('create', Table::class);
+
+        $validated = $request->validated();
+
+        $table = Table::create($validated);
+        $room = Room::find($table->room_id);
+        $this->tableService->updateTablesCount($room);
+
+        return redirect()->route('tables.index')->with('success', 'The table ' . $table->name . ' has been added.');
+    }
+
+    /**
      *  Show tables and their current status for a given tournament
      */
     public function tableOverview(Tournament $tournament)
@@ -136,6 +114,24 @@ class TableController extends Controller
                 ->orderBy('match_started_at')
                 ->orderByRaw('name')
                 ->get(),
-        ]); 
+            'tournament' => $tournament,
+        ]);
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(StoreOrUpdateTableRequest $request, Table $table)
+    {
+        $validated = $request->validated();
+
+        $table->fill($validated);
+
+        $table->save();
+
+        $room = Room::find($table->room_id);
+        $this->tableService->updateTablesCount($room);
+
+        return redirect()->route('tables.index')->with('success', 'The table ' . $table->name . ' has been updated.');
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests;
 
 use App\Enums\Ranking;
@@ -21,10 +23,10 @@ class StoreUserRequest extends FormRequest
     public function prepareForValidation(): void
     {
         $this->merge([
-            'is_active' => null !== $this->input('is_active'),
-            'is_admin' => null !== $this->input('is_admin'),
-            'is_comittee_member' => null !== $this->input('is_comittee_member'),
-            'is_competitor' => null !== $this->input('is_competitor'),
+            'is_active' => $this->input('is_active') !== null,
+            'is_admin' => $this->input('is_admin') !== null,
+            'is_comittee_member' => $this->input('is_comittee_member') !== null,
+            'is_competitor' => $this->input('is_competitor') !== null,
         ]);
     }
 
@@ -36,7 +38,7 @@ class StoreUserRequest extends FormRequest
     public function rules(): array
     {
         $rankings_enum = collect(Ranking::cases())->pluck('name');
-        
+
         return [
             'birthdate' => ['sometimes', 'date'],
             'city_code' => ['sometimes', 'string', 'digits:4'],
@@ -55,7 +57,7 @@ class StoreUserRequest extends FormRequest
                 'nullable',
                 'required_if:is_competitor,true',
                 Rule::when(
-                    $this->input('is_competitor'),              // If the "is_competitor" is true
+                    $this->input('ranking') !== null,              // If the "is_competitor" is true
                     Rule::in($rankings_enum->reject('NA')),     // Don't allow NA as the player must have a ranking...
                     Rule::in($rankings_enum),
                 ),

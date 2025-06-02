@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Models\Pool;
 use App\Models\Tournament;
 use App\Models\User;
@@ -9,6 +11,14 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('tournament_user');
+    }
+
     /**
      * Run the migrations.
      */
@@ -26,13 +36,5 @@ return new class extends Migration
             $table->timestamps();
             $table->unique(['user_id', 'tournament_id', 'pool_id']);
         });
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('tournament_user');
     }
 };

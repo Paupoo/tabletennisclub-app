@@ -1,8 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
-use App\Enums\Recurrence;
 use App\Enums\TrainingLevel;
 use App\Enums\TrainingType;
 use App\Http\Requests\StoreTrainingRequest;
@@ -18,14 +19,80 @@ use Illuminate\Http\Request;
 
 class TrainingController extends Controller
 {
+    protected TrainingBuilder $builder;
 
     protected TrainingDateGenerator $dateGenerator;
-    protected TrainingBuilder $builder;
 
     public function __construct(TrainingDateGenerator $training_date_generator, TrainingBuilder $training_builder)
     {
         $this->dateGenerator = $training_date_generator;
         $this->builder = $training_builder;
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        $this->authorize('create', Training::class);
+
+        $training = new Training;
+
+        return view('admin.trainings.create', [
+            'levels' => TrainingLevel::cases(),
+            'rooms' => Room::all(),
+            'seasons' => Season::where('start_year', '>=', now()->format('Y') - 1)->orderBy('start_year')->get(),
+            'training' => $training,
+            'types' => TrainingType::cases(),
+            'users' => User::select('id', 'last_name', 'first_name')->orderBy('last_name', 'asc')->orderBy('first_name', 'asc')->get(),
+        ]);
+    }
+
+    /**
+     * Get all dates for a specific weekday between 2 dates
+     */
+    public function daysBetweenTwoDate(string $start_date, string $end_date, int $week_day): array
+    {
+
+        $dates = [];
+        // Make sure end time is always after start time.
+        if (strtotime($start_date) > strtotime($end_date)) {
+            throw new Exception('The end date cannot be before the start date.');
+        } else {
+            while (strtotime($start_date) <= strtotime($end_date)) {
+
+                // If the day number matches the date's date number, add it into the array, otherwise do nothing.
+                if (date('N', strtotime($start_date)) === $week_day) {
+                    $dates[] = $start_date;
+                } else {
+                }
+
+                // Then add 24h.
+                $start_date = date('d-m-Y', strtotime('+1 day', strtotime($start_date)));
+            }
+        }
+
+        return $dates;
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(Training $training)
+    {
+        //
+
+        $training->delete();
+
+        return redirect()->route('trainings.index')->with('deleted', 'The training has been deleted.');
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(Training $training)
+    {
+        //
     }
 
     /**
@@ -41,22 +108,11 @@ class TrainingController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Display the specified resource.
      */
-    public function create()
+    public function show(Training $training)
     {
-        $this->authorize('create', Training::class);
-
-        $training = new Training();
-
-        return view('admin.trainings.create', [
-            'levels' => TrainingLevel::cases(),
-            'rooms' => Room::all(),
-            'seasons' => Season::where('start_year', '>=', now()->format('Y') - 1)->orderBy('start_year')->get(),
-            'training' => $training,
-            'types' => TrainingType::cases(),
-            'users' => User::select('id', 'last_name', 'first_name')->orderBy('last_name', 'asc')->orderBy('first_name', 'asc')->get(),
-        ]);
+        //
     }
 
     /**
@@ -79,25 +135,9 @@ class TrainingController extends Controller
                 ->setSeason($validated['season_id'])
                 ->setTrainer($validated['trainer_id'])
                 ->buildAndSave();
-        }        
+        }
 
         return redirect()->route('trainings.index')->with('success', 'The training has been created.');
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Training $training)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Training $training)
-    {
-        //
     }
 
     /**
@@ -106,46 +146,5 @@ class TrainingController extends Controller
     public function update(Request $request, Training $training)
     {
         //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Training $training)
-    {
-        //
-
-        $training->delete();
-
-        return redirect()->route('trainings.index')->with('deleted','The training has been deleted.');
-    }
-
-    /**
-     * Get all dates for a specific weekday between 2 dates
-     *
-     * @return array
-     */
-    public function daysBetweenTwoDate(string $start_date, string $end_date, int $week_day): array
-    {
-
-        $dates = [];
-        // Make sure end time is always after start time.
-        if (strtotime($start_date) > strtotime($end_date)) {
-            throw new Exception('The end date cannot be before the start date.');
-        } else {
-            while (strtotime($start_date) <= strtotime($end_date)) {
-
-                //If the day number matches the date's date number, add it into the array, otherwise do nothing.
-                if (date('N', strtotime($start_date)) == $week_day) {
-                    $dates[] = $start_date;
-                } else {
-                }
-
-                // Then add 24h.
-                $start_date = date('d-m-Y', strtotime("+1 day", strtotime($start_date)));
-            }
-        }
-
-        return $dates;
     }
 }

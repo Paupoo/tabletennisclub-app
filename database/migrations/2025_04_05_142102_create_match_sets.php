@@ -1,11 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('match_sets');
+    }
+
     /**
      * Run the migrations.
      */
@@ -20,13 +30,5 @@ return new class extends Migration
             $table->foreignId('winner_id')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();
         });
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('match_sets');
     }
 };

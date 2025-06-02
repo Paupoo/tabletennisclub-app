@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,24 +13,19 @@ class League extends Model
 {
     use HasFactory;
 
-    protected $fillable = [ 
+    protected $casts = [
+        'division' => 'string',
+        'level' => 'string',
+        'category' => 'string',
+        'season_id' => 'integer',
+    ];
+
+    protected $fillable = [
         'division',
         'level',
         'category',
         'season_id',
     ];
-
-    protected $casts = [
-        'division' => 'string',
-        'level' => 'string',
-        'category' => 'string',
-        'season_id' => 'integer'
-    ];
-
-    public function teams(): HasMany
-    {
-        return $this->hasMany(Team::class);
-    }
 
     public function interclubs(): HasMany
     {
@@ -38,5 +35,10 @@ class League extends Model
     public function season(): BelongsTo
     {
         return $this->belongsTo(Season::class);
+    }
+
+    public function teams(): HasMany
+    {
+        return $this->hasMany(Team::class);
     }
 }

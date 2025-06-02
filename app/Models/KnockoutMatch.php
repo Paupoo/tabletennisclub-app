@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
@@ -17,12 +19,47 @@ class KnockoutMatch extends Model
         'status',
         'table_number',
         'next_match_id',
-        'is_bronze_match'
+        'is_bronze_match',
     ];
 
-    public function tournament(): BelongsTo
+    public function getSetsWon($playerId): int
     {
-        return $this->belongsTo(Tournament::class);
+        return $this->sets->where('winner_id', $playerId)->count();
+    }
+
+    public function getTotalPoints($playerId): int
+    {
+        $totalPoints = 0;
+
+        foreach ($this->sets as $set) {
+            if ($set->player1_id === $playerId) {
+                $totalPoints += $set->player1_score;
+            } elseif ($set->player2_id === $playerId) {
+                $totalPoints += $set->player2_score;
+            }
+        }
+
+        return $totalPoints;
+    }
+
+    public function isCompleted(): bool
+    {
+        return $this->status === 'completed';
+    }
+
+    public function isInProgress(): bool
+    {
+        return $this->status === 'in_progress';
+    }
+
+    public function isScheduled(): bool
+    {
+        return $this->status === 'scheduled';
+    }
+
+    public function nextMatch(): BelongsTo
+    {
+        return $this->belongsTo(TournamentMatch::class, 'next_match_id');
     }
 
     public function player1(): BelongsTo
@@ -35,53 +72,18 @@ class KnockoutMatch extends Model
         return $this->belongsTo(User::class, 'player2_id');
     }
 
-    public function winner(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'winner_id');
-    }
-
-    public function nextMatch(): BelongsTo
-    {
-        return $this->belongsTo(TournamentMatch::class, 'next_match_id');
-    }
-
     public function sets()
     {
         return $this->hasMany(MatchSet::class, 'tournament_match_id');
     }
 
-    public function isCompleted(): bool
+    public function tournament(): BelongsTo
     {
-        return $this->status === 'completed';
+        return $this->belongsTo(Tournament::class);
     }
 
-    public function isScheduled(): bool
+    public function winner(): BelongsTo
     {
-        return $this->status === 'scheduled';
-    }
-
-    public function isInProgress(): bool
-    {
-        return $this->status === 'in_progress';
-    }
-
-    public function getSetsWon($playerId): int
-    {
-        return $this->sets->where('winner_id', $playerId)->count();
-    }
-
-    public function getTotalPoints($playerId): int
-    {
-        $totalPoints = 0;
-        
-        foreach ($this->sets as $set) {
-            if ($set->player1_id == $playerId) {
-                $totalPoints += $set->player1_score;
-            } elseif ($set->player2_id == $playerId) {
-                $totalPoints += $set->player2_score;
-            }
-        }
-        
-        return $totalPoints;
+        return $this->belongsTo(User::class, 'winner_id');
     }
 }

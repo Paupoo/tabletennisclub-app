@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreOrUpdateRoomRequest;
@@ -10,50 +12,30 @@ use Illuminate\Http\Request;
 class RoomController extends Controller
 {
     /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        $this->authorize('viewAny', Room::class);
-
-        return view('admin.rooms.index', [
-            'rooms' => Room::orderBy('name')->paginate(10),
-        ]);
-    }
-
-    /**
      * Show the form for creating a new resource.
      */
     public function create()
     {
         $this->authorize('create', Room::class);
-        $room = new Room();
+        $room = new Room;
+
         return view('admin.rooms.create', [
             'room' => $room,
         ]);
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Remove the specified resource from storage.
+     *
+     * @param  string  $id
+     * @return void
      */
-    public function store(StoreOrUpdateRoomRequest $request)
+    public function destroy(Room $room)
     {
-        //
-        $validated = $request->validated();
+        $this->authorize('delete', $room);
+        $room->delete();
 
-        $room = new Room();
-        
-        $room = Room::create($validated);
-
-        return redirect()->route('rooms.index')->with('success', 'The room ' . $room->name . ' has been added.');
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Room $room)
-    {
-        $this->authorize('view', Room::class);
+        return redirect()->route('rooms.index')->with('deleted', 'The room ' . $room->name . ' has been deleted.');
     }
 
     /**
@@ -67,6 +49,41 @@ class RoomController extends Controller
         return view('admin.rooms.edit', [
             'room' => $room,
         ]);
+    }
+
+    /**
+     * Display a listing of the resource.
+     */
+    public function index()
+    {
+        $this->authorize('viewAny', Room::class);
+
+        return view('admin.rooms.index', [
+            'rooms' => Room::orderBy('name')->paginate(10),
+        ]);
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(Room $room)
+    {
+        $this->authorize('view', Room::class);
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(StoreOrUpdateRoomRequest $request)
+    {
+        //
+        $validated = $request->validated();
+
+        $room = new Room;
+
+        $room = Room::create($validated);
+
+        return redirect()->route('rooms.index')->with('success', 'The room ' . $room->name . ' has been added.');
     }
 
     /**
@@ -85,24 +102,7 @@ class RoomController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
-     * 
-     * @param string $id
-     * @return void
-     */
-    public function destroy(Room $room)
-    {
-        $this->authorize('delete', $room);
-        $room->delete();
-
-        return redirect()->route('rooms.index')->with('deleted', 'The room ' . $room->name . ' has been deleted.');
-    }
-
-    /**
      * Check if a room has enough capacity for a specific activity (training or match)
-     *
-     * @param Request $request
-     * @return boolean
      */
     protected function checkCapacity(Request $request): bool
     {

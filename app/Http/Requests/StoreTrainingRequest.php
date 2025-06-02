@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests;
 
 use App\Enums\Recurrence;
@@ -18,14 +20,20 @@ class StoreTrainingRequest extends FormRequest
         return $this->user()->is_admin || $this->user()->is_comittee_member;
     }
 
+    public function messages(): array
+    {
+        return [
+            //
+        ];
+    }
+
     public function prepareForValidation(): void
     {
-        if ($this->input('trainer_id') === null)
-        {
-            $this->merge([
-                'trainer_id' => null,
-            ]);
-        }
+        $this->merge([
+            'room_id' => (int) $this->input('room_id'),
+            'season_id' => (int) $this->input('season_id'),
+            'trainer_id' => $this->filled('trainer_id') ? (int) $this->input('trainer_id') : null,
+        ]);
     }
 
     /**
@@ -93,13 +101,6 @@ class StoreTrainingRequest extends FormRequest
                 'string',
                 Rule::in(collect(TrainingType::cases())->pluck('name')),
             ],
-        ];
-    }
-
-    public function messages(): array
-    {
-        return [
-            //
         ];
     }
 }

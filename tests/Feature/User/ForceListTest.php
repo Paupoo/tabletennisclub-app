@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature\User;
 
 use App\Models\User;
@@ -10,9 +12,107 @@ class ForceListTest extends TestCase
 {
     use CreateUser;
 
+    public function test_force_list_are_calculated_only_for_competitors(): void
+    {
+        $admin = $this->createFakeAdmin();
+        $response = $this->actingAs($admin)
+            ->get(route('setForceList'));
+
+        foreach (User::where('is_competitor', true)->get() as $competitor) {
+            $this->assertIsInt($competitor->force_list);
+        }
+
+        foreach (User::where('is_competitor', false)->get() as $competitor) {
+            $this->assertNull($competitor->force_list);
+        }
+
+        $response->assertRedirect(route('users.index'));
+    }
+
+    public function test_force_list_can_be_deleted_by_admin_or_comittee_member(): void
+    {
+        $admin = $this->createFakeAdmin();
+
+        $comittee_member = $this->createFakeComitteeMember();
+
+        $this->actingAs($admin)
+            ->get(route('deleteForceList'))
+            ->assertRedirect(route('users.index'));
+
+        $this->actingAs($comittee_member)
+            ->get(route('deleteForceList'))
+            ->assertRedirect(route('users.index'));
+    }
+
+    public function test_force_list_can_be_set_or_updated_by_admin_or_comittee_member(): void
+    {
+        $admin = $this->createFakeAdmin();
+
+        $comittee_member = $this->createFakeComitteeMember();
+
+        $this->actingAs($admin)
+            ->get(route('setForceList'))
+            ->assertRedirect(route('users.index'));
+
+        $this->actingAs($comittee_member)
+            ->get(route('setForceList'))
+            ->assertRedirect(route('users.index'));
+    }
+
+    public function test_force_list_cant_be_deleted_by_members(): void
+    {
+        $user = $this->createFakeUser();
+
+        $this->actingAs($user)
+            ->get(route('deleteForceList'))
+            ->assertStatus(403);
+    }
+
+    public function test_force_list_cant_be_deleted_by_unlogged_users(): void
+    {
+        $this->get(route('deleteForceList'))
+            ->assertRedirect(route('login'));
+    }
+
+    public function test_force_list_cant_be_set_or_updated_by_members(): void
+    {
+        $user = $this->createFakeUser();
+
+        $this->actingAs($user)
+            ->get(route('setForceList'))
+            ->assertStatus(403);
+    }
+
+    public function test_force_list_cant_be_set_or_updated_by_unlogged_users(): void
+    {
+        $this->get(route('setForceList'))
+            ->assertRedirect(route('login'));
+    }
+
+    public function test_force_list_delete_method_removes_all_force_lists_from_db(): void
+    {
+        $admin = $this->createFakeAdmin();
+
+        // Check start status
+        $totalForceListBeforeDelete = User::whereNotNull('force_list')->count();
+        $this->assertEquals(11, $totalForceListBeforeDelete);
+
+        // Act: Call the delete method
+        $this
+            ->actingAs($admin)
+            ->get(route('deleteForceList'));
+
+        // Check end status
+        $totalForceListAfterlete = User::whereNotNull('force_list')->count();
+        $this->assertEquals(0, $totalForceListAfterlete);
+
+        $totalNoForceListAfterlete = User::whereNull('force_list')->count();
+        $this->assertDatabaseCount('users', $totalNoForceListAfterlete);
+    }
+
     /**
      * Post seed expected status : (select id, force_list from `users` ORDER BY force_list ASC, id asc;)
-     * 
+     *
      * |id |force_list|
      * |---|----------|
      * |10 |          |
@@ -34,7 +134,6 @@ class ForceListTest extends TestCase
      * |15 |11        |
      * |16 |11        |
      */
-
     public function test_set_force_list_are_correctly_calculated(): void
     {
         /**
@@ -46,7 +145,6 @@ class ForceListTest extends TestCase
          * 2 E6 => 11   (+4)
          * 2 NC => 11   (included with E6)
          */
-
         $checkReferences = [
             'D4' => 1,
             'D6' => 2,
@@ -62,103 +160,5 @@ class ForceListTest extends TestCase
                 $this->assertEquals($force_list, $user->force_list);
             }
         }
-    }
-
-    public function test_force_list_are_calculated_only_for_competitors(): void
-    {
-        $admin = $this->createFakeAdmin();
-        $response = $this->actingAs($admin)
-            ->get(route('setForceList'));
-
-        foreach (User::where('is_competitor', true)->get() as $competitor) {
-            $this->assertIsInt($competitor->force_list);
-        }
-
-        foreach (User::where('is_competitor', false)->get() as $competitor) {
-            $this->assertNull($competitor->force_list);
-        }
-
-        $response->assertRedirect(route('users.index'));
-    }
-
-    public function test_force_list_cant_be_deleted_by_unlogged_users(): void
-    {
-        $this->get(route('deleteForceList'))
-            ->assertRedirect(route('login'));
-    }
-
-    public function test_force_list_cant_be_deleted_by_members(): void
-    {
-        $user = $this->createFakeUser();
-
-        $this->actingAs($user)
-            ->get(route('deleteForceList'))
-            ->assertStatus(403);
-    }
-
-    public function test_force_list_can_be_deleted_by_admin_or_comittee_member(): void
-    {
-        $admin = $this->createFakeAdmin();
-
-        $comittee_member = $this->createFakeComitteeMember();
-
-        $this->actingAs($admin)
-            ->get(route('deleteForceList'))
-            ->assertRedirect(route('users.index'));
-
-        $this->actingAs($comittee_member)
-            ->get(route('deleteForceList'))
-            ->assertRedirect(route('users.index'));
-    }
-
-    public function test_force_list_delete_method_removes_all_force_lists_from_db(): void
-    {
-        $admin = $this->createFakeAdmin();
-
-        // Check start status
-        $totalForceListBeforeDelete = User::whereNotNull('force_list')->count();
-        $this->assertEquals(11, $totalForceListBeforeDelete);
-        
-        // Act: Call the delete method
-        $this
-            ->actingAs($admin)
-            ->get(route('deleteForceList'));
-        
-        // Check end status
-        $totalForceListAfterlete = User::whereNotNull('force_list')->count();
-        $this->assertEquals(0, $totalForceListAfterlete);
-
-        $totalNoForceListAfterlete = User::whereNull('force_list')->count();
-        $this->assertDatabaseCount('users', $totalNoForceListAfterlete);
-    }
-
-    public function test_force_list_cant_be_set_or_updated_by_unlogged_users(): void
-    {
-        $this->get(route('setForceList'))
-            ->assertRedirect(route('login'));
-    }
-
-    public function test_force_list_cant_be_set_or_updated_by_members(): void
-    {
-        $user = $this->createFakeUser();
-
-        $this->actingAs($user)
-            ->get(route('setForceList'))
-            ->assertStatus(403);
-    }
-
-    public function test_force_list_can_be_set_or_updated_by_admin_or_comittee_member(): void
-    {
-        $admin = $this->createFakeAdmin();
-
-        $comittee_member = $this->createFakeComitteeMember();
-
-        $this->actingAs($admin)
-            ->get(route('setForceList'))
-            ->assertRedirect(route('users.index'));
-
-        $this->actingAs($comittee_member)
-            ->get(route('setForceList'))
-            ->assertRedirect(route('users.index'));
     }
 }

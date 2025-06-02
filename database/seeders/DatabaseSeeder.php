@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Seeders;
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -8,7 +10,6 @@ use App\Enums\LeagueCategory;
 use App\Enums\LeagueLevel;
 use App\Enums\Ranking;
 use App\Enums\Sex;
-use Illuminate\Database\Seeder;
 use App\Models\Club;
 use App\Models\League;
 use App\Models\Room;
@@ -21,13 +22,12 @@ use App\Services\ForceList;
 use App\Services\TournamentMatchService;
 use App\Services\TournamentPoolService;
 use App\Services\TournamentTableService;
-use Carbon\Carbon;
+use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
-
     private Tournament $tournament;
 
     public function __construct(
@@ -35,7 +35,7 @@ class DatabaseSeeder extends Seeder
         private TournamentTableService $tableService,
         private TournamentPoolService $poolService,
         private TournamentMatchService $matchService,
-        ){}
+    ) {}
 
     /**
      * Seed the application's database.
@@ -130,12 +130,10 @@ class DatabaseSeeder extends Seeder
             'season_id' => 5,
         ]);
 
-
-
         // Create Z team team
         $teamZ = Team::make([
             'name' => 'Z',
-            ])
+        ])
             ->club()->associate(Club::firstWhere('licence', config('app.club_licence')))
             ->league()->associate(League::find(1))
             ->season()->associate(Season::find(1));
@@ -144,11 +142,11 @@ class DatabaseSeeder extends Seeder
         // Create F team team
         $teamF = Team::make([
             'name' => 'F',
-            ])
+        ])
             ->club()->associate(Club::find(1))
             ->league()->associate(League::firstWhere('division', '4B'))
             ->season()->associate(Season::find(1));
-            $teamF->save();
+        $teamF->save();
 
         // // Create some matches for Z team
 
@@ -171,22 +169,22 @@ class DatabaseSeeder extends Seeder
             'licence' => '114399',
         ])->club()->associate(Club::firstWhere('licence', config('app.club_licence')));
         $admin->save();
-        $admin->teams()->attach(Team::firstWhere('name', 'Z'));     
-        
+        $admin->teams()->attach(Team::firstWhere('name', 'Z'));
+
         // Create test dream team
 
         $password = Hash::make('password');
         // the players
         $players = [
-            ['Olivier', 'Tilmans', Ranking::E6->name, '223344', 'olivier.tilmans@test.com',Sex::MEN->name],
-            ['Xavier', 'Coenen', Ranking::E6->name, '123123', 'xavier.coenen@test.com',Sex::MEN->name],
-            ['Arnaud', 'Ghysens', Ranking::E2->name, '112233', 'arnaud.ghysens@test.com',Sex::MEN->name],
-            ['Éric', 'Godart', Ranking::E0->name, '443211', 'eric.godart@test.com',Sex::MEN->name],
-            ['Sébastien', 'Vandevyver', Ranking::E2->name, '987654', 'seba.vande@test.com',Sex::MEN->name],
-            ['Dariusz', 'Sekula', Ranking::E2->name, '332211', 'dariusz.sekula@test.com',Sex::MEN->name],
+            ['Olivier', 'Tilmans', Ranking::E6->name, '223344', 'olivier.tilmans@test.com', Sex::MEN->name],
+            ['Xavier', 'Coenen', Ranking::E6->name, '123123', 'xavier.coenen@test.com', Sex::MEN->name],
+            ['Arnaud', 'Ghysens', Ranking::E2->name, '112233', 'arnaud.ghysens@test.com', Sex::MEN->name],
+            ['Éric', 'Godart', Ranking::E0->name, '443211', 'eric.godart@test.com', Sex::MEN->name],
+            ['Sébastien', 'Vandevyver', Ranking::E2->name, '987654', 'seba.vande@test.com', Sex::MEN->name],
+            ['Dariusz', 'Sekula', Ranking::E2->name, '332211', 'dariusz.sekula@test.com', Sex::MEN->name],
         ];
 
-        foreach($players as $player) {
+        foreach ($players as $player) {
             $player = User::make([
                 'is_active' => true,
                 'is_admin' => false,
@@ -202,20 +200,19 @@ class DatabaseSeeder extends Seeder
                 'street' => fake()->streetAddress(),
                 'city_code' => fake()->postcode(),
                 'city_name' => fake()->city(),
-                'ranking' =>  $player[2],
+                'ranking' => $player[2],
                 'licence' => $player[3],
             ])->club()->associate(Club::firstWhere('licence', config('app.club_licence')));
             $player->save();
             $player->teams()->attach(Team::firstWhere('name', 'Z'));
-            
+
             // Promote Oliver captain of team Z
             if ($player->licence === '223344') {
                 $teamZ->update([
-                    'captain_id' => $player->id
+                    'captain_id' => $player->id,
                 ]);
             }
         }
-
 
         // Add some random users
 
@@ -234,7 +231,7 @@ class DatabaseSeeder extends Seeder
             'street' => fake()->streetAddress(),
             'city_code' => fake()->postcode(),
             'city_name' => fake()->city(),
-            'ranking' =>  Ranking::D6->name,
+            'ranking' => Ranking::D6->name,
             'licence' => '154856',
         ])->club()->associate(Club::firstWhere('licence', config('app.club_licence')))->save();
 
@@ -253,7 +250,7 @@ class DatabaseSeeder extends Seeder
             'street' => fake()->streetAddress(),
             'city_code' => fake()->postcode(),
             'city_name' => fake()->city(),
-            'ranking' =>  Ranking::D4->name,
+            'ranking' => Ranking::D4->name,
             'licence' => '852364',
         ])->club()->associate(Club::first())->save();
 
@@ -263,12 +260,12 @@ class DatabaseSeeder extends Seeder
 
         User::factory()->count(2)->create([
             'is_competitor' => true,
-            'ranking' => 'NC'
+            'ranking' => 'NC',
         ]);
 
         User::factory()->count(2)->create([
             'is_competitor' => false,
-            'ranking' => 'NC'
+            'ranking' => 'NC',
         ]);
 
         // Set ForceIndexes
@@ -309,9 +306,9 @@ class DatabaseSeeder extends Seeder
             'capacity_for_interclubs' => 0,
         ])->clubs()->attach(1);
 
-        for($i=0; $i<15; $i++){
+        for ($i = 0; $i < 15; $i++) {
             Table::create([
-                'name' => $i+1,
+                'name' => $i + 1,
                 'purchased_on' => fake()->dateTimeBetween('-10 years', '-1 year'),
                 'state' => 'used',
                 'room_id' => Room::inRandomOrder()->first()->id,
@@ -319,9 +316,9 @@ class DatabaseSeeder extends Seeder
         }
 
         $rooms = Room::all();
-        foreach($rooms as $room) {
+        foreach ($rooms as $room) {
             $this->tableService->updateTablesCount($room);
-        }    
+        }
 
         User::factory()
             ->count(50)
@@ -331,14 +328,33 @@ class DatabaseSeeder extends Seeder
         Tournament::factory(3)->create();
         $this->tournament = Tournament::find(1);
         $this->tournament->name = 'Tournoi des crêpes';
-        
+
         $this->tournament->save();
 
         $this->tournament = Tournament::find(2);
-        $this->tournament->name = 'Vieux tournoi';
+        $this->tournament->name = 'Petit tournoi amical';
+        $this->tournament->total_users = 16;
+        $this->tournament->max_users = 16;
+        $this->tournament->has_handicap_points = true;
         $this->tournament->save();
+        $this->tournament->rooms()->sync([1, 2]);
 
+        // Link tables
+        $this->tableService->linkAvailableTables($this->tournament);
 
+        // Add users
+        for ($i = 1; $i < 17; $i++) {
+            $user = User::find($i);
+            $this->tournament->users()->attach($user);
+        }
+
+        // Generate pools
+        $this->poolService->distributePlayersInPools($this->tournament, 4);
+
+        // Generate matches
+        foreach ($this->tournament->pools as $pool) {
+            $this->matchService->generateMatches($pool);
+        }
 
         $this->tournament = Tournament::find(3);
         $this->tournament->name = 'Tournoi de doubles';
@@ -346,14 +362,14 @@ class DatabaseSeeder extends Seeder
         $this->tournament->total_users = 24;
         $this->tournament->has_handicap_points = true;
         $this->tournament->save();
-        $this->tournament->rooms()->sync([1,2]);
+        $this->tournament->rooms()->sync([1, 2]);
 
         // Link tables
         $this->tableService->linkAvailableTables($this->tournament);
-        
+
         // Add users
 
-        for ($i=1; $i < 25; $i++){
+        for ($i = 1; $i < 25; $i++) {
             $user = User::find($i);
             $this->tournament->users()->attach($user);
         }
@@ -362,7 +378,7 @@ class DatabaseSeeder extends Seeder
         $this->poolService->distributePlayersInPools($this->tournament, 6);
 
         // Generate matches
-        foreach($this->tournament->pools as $pool){
+        foreach ($this->tournament->pools as $pool) {
             $this->matchService->generateMatches($pool);
         }
     }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
@@ -14,38 +16,23 @@ class Pool extends Model
     /** @use HasFactory<\Database\Factories\PoolFactory> */
     use HasFactory;
 
-    protected $fillable = [
-        'name',
-    ];
-
     protected $casts = [
         'name' => 'string',
     ];
 
-    public function tournament(): BelongsTo
-    {
-        return $this->belongsTo(Tournament::class);
-    }
-
-    public function users(): BelongsToMany
-    {
-        return $this->belongsToMany(User::class, 'pool_user');
-    }
-
-    public function tournamentmatches(): HasMany
-    {
-        return $this->hasMany(TournamentMatch::class);
-    }
+    protected $fillable = [
+        'name',
+    ];
 
     /**
-     * Utiliser les événements du modèle pour intercepter 
+     * Utiliser les événements du modèle pour intercepter
      * les attachements d'utilisateurs via la relation
      */
     public function attachUser(User $user)
     {
         // Vérifier si l'utilisateur est déjà dans un pool de ce tournoi
         $existingPool = $this->tournament->pools()
-            ->whereHas('users', function (Builder $query) use ($user) {
+            ->whereHas('users', function (Builder $query) use ($user): void {
                 $query->where('users.id', $user->id);
             })
             ->where('pools.id', '!=', $this->id)
@@ -57,5 +44,20 @@ class Pool extends Model
 
         // Si non, attacher l'utilisateur à ce pool
         return $this->users()->attach($user->id);
+    }
+
+    public function tournament(): BelongsTo
+    {
+        return $this->belongsTo(Tournament::class);
+    }
+
+    public function tournamentmatches(): HasMany
+    {
+        return $this->hasMany(TournamentMatch::class);
+    }
+
+    public function users(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'pool_user');
     }
 }

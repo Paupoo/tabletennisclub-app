@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -10,18 +12,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 class Training extends Model
 {
     use HasFactory;
-
-    /**
-     * The attributes that are mass assignable
-     *
-     * @var array
-     */
-    protected $fillable = [
-        'end',
-        'level',
-        'start',
-        'type',
-    ];
 
     /**
      * The attributes with their data type in the application.
@@ -38,26 +28,26 @@ class Training extends Model
         'type' => 'string',
     ];
 
+    /**
+     * The attributes that are mass assignable
+     *
+     * @var array
+     */
+    protected $fillable = [
+        'end',
+        'level',
+        'start',
+        'type',
+    ];
+
     // Relationships
-    
+
     /**
      * Relationship belongs to 1 room.
-     *
-     * @return BelongsTo
      */
     public function room(): BelongsTo
     {
         return $this->belongsTo(Room::class);
-    }
-
-    public function trainees(): BelongsToMany
-    {
-        return $this->belongsToMany(User::class);
-    }
-
-    public function trainer(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
     }
 
     public function season(): BelongsTo
@@ -78,6 +68,16 @@ class Training extends Model
         $this->attributes['trainer_name'] = mb_convert_case($value, MB_CASE_TITLE);
     }
 
+    public function trainees(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class);
+    }
+
+    public function trainer(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
     // Accessors
-    
+
 }

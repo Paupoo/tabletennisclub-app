@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreCaptainRequest;
@@ -9,14 +11,6 @@ use App\Models\Captain;
 class CaptainController extends Controller
 {
     /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        //
-    }
-
-    /**
      * Show the form for creating a new resource.
      */
     public function create()
@@ -25,17 +19,9 @@ class CaptainController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Remove the specified resource from storage.
      */
-    public function store(StoreCaptainRequest $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Captain $captain)
+    public function destroy(Captain $captain)
     {
         //
     }
@@ -49,17 +35,33 @@ class CaptainController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Display a listing of the resource.
      */
-    public function update(UpdateCaptainRequest $request, Captain $captain)
+    public function index()
     {
         //
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Display the specified resource.
      */
-    public function destroy(Captain $captain)
+    public function show(Captain $captain)
+    {
+        //
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(StoreCaptainRequest $request)
+    {
+        //
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(UpdateCaptainRequest $request, Captain $captain)
     {
         //
     }

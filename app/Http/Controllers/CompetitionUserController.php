@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreCompetitionUserRequest;
@@ -11,14 +13,6 @@ use App\Models\User;
 class CompetitionUserController extends Controller
 {
     /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        //
-    }
-
-    /**
      * Show the form for creating a new resource.
      */
     public function create()
@@ -27,17 +21,9 @@ class CompetitionUserController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Remove the specified resource from storage.
      */
-    public function store(StoreCompetitionUserRequest $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(CompetitionUser $competitionUser)
+    public function destroy(CompetitionUser $competitionUser)
     {
         //
     }
@@ -51,17 +37,33 @@ class CompetitionUserController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Display a listing of the resource.
      */
-    public function update(UpdateCompetitionUserRequest $request, CompetitionUser $competitionUser)
+    public function index()
+    {
+        //
+    }
+
+    public function markSelectedPlayerAbsentFromCompetition() {}
+
+    public function markSelectedPlayerPresentToCompetition() {}
+
+    public function searchForAvailablePlayers() {}
+
+    public function selectPlayerForCompetition() {}
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(CompetitionUser $competitionUser)
     {
         //
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Store a newly created resource in storage.
      */
-    public function destroy(CompetitionUser $competitionUser)
+    public function store(StoreCompetitionUserRequest $request)
     {
         //
     }
@@ -74,32 +76,15 @@ class CompetitionUserController extends Controller
         $user->competition()->attach($competition);
     }
 
-    public function unsubscribeToCompetition()
+    public function unselectPlayerForCompetition() {}
+
+    public function unsubscribeToCompetition() {}
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(UpdateCompetitionUserRequest $request, CompetitionUser $competitionUser)
     {
-
-    }
-
-    public function selectPlayerForCompetition()
-    {
-
-    }
-
-    public function unselectPlayerForCompetition()
-    {
-
-    }
-
-    public function searchForAvailablePlayers()
-    {
-
-    }
-
-    public function markSelectedPlayerPresentToCompetition()
-    {
-
-    }
-    public function markSelectedPlayerAbsentFromCompetition()
-    {
-
+        //
     }
 }

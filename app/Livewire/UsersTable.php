@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Livewire;
 
 use App\Models\User;
@@ -12,30 +14,21 @@ class UsersTable extends Component
 {
     use WithPagination;
 
-    protected ForceList $forceList;
-    
+    public string $competitor = '';
+
     public int $perPage = 10;
 
     public string $search = '';
-
-    public string $competitor = '';
 
     public string $sortByField = '';
 
     public string $sortDirection = 'desc';
 
+    protected ForceList $forceList;
+
     public function boot(ForceList $forceList)
     {
         $this->forceList = $forceList;
-    }
-
-    public function sortBy($field)
-    {
-        if($this->sortByField === $field) {
-            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
-        };
-
-        $this->sortByField = $field;
     }
 
     /**
@@ -48,40 +41,49 @@ class UsersTable extends Component
         try {
             $user->delete();
             $this->forceList->setOrUpdateAll();
-            session()->flash('deleted', __('User ' . $user->first_name . ' ' . $user->last_name . ' has been deleted'));
+            session()->flash('warning', __('User ' . $user->first_name . ' ' . $user->last_name . ' has been deleted'));
             $this->redirectRoute('users.index');
         } catch (QueryException $e) {
-            if ($e->getCode() === '23000') {
-                session()->flash('error', __('User ' . $user->first_name . ' ' . $user->last_name . ' is captain of a team and cannot be deleted'));
+            if ($user->tournaments()->whereIn('status', ['draft', 'open', 'pending'])->count() > 0) {
+                session()->flash('error', __('Cannot delete ' . $user->first_name . ' ' . $user->last_name . ' because he subscribed to one or more tournaments'));
                 $this->redirectRoute('users.index');
-
             }
+            // if ($e->getCode() === '23000') {
+            //     dd($e);
+            // }
         }
 
-
-        
     }
 
     public function render()
     {
         return view('livewire.users-table', [
             'users' => User::search($this->search)
-                ->when($this->competitor !== '', function($query) {
+                ->when($this->competitor !== '', function ($query): void {
                     $query->where('is_competitor', $this->competitor);
                 })
-                ->when($this->sortByField === '', function($query) {
+                ->when($this->sortByField === '', function ($query): void {
                     $query->orderby('is_competitor', 'desc')
-                    ->orderby('force_list')
-                    ->orderBy('ranking')
-                    ->orderby('last_name')
-                    ->orderby('first_name')
-                    ->with('teams');
+                        ->orderby('force_list')
+                        ->orderBy('ranking')
+                        ->orderby('last_name')
+                        ->orderby('first_name')
+                        ->with('teams');
                 })
-                ->when($this->sortByField !== '', function($query) {
+                ->when($this->sortByField !== '', function ($query): void {
                     $query->orderBy($this->sortByField, $this->sortDirection);
                 })
                 ->paginate(20),
             'user_model' => User::class,
         ]);
+    }
+
+    public function sortBy($field)
+    {
+        if ($this->sortByField === $field) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        }
+
+        $this->sortByField = $field;
     }
 }

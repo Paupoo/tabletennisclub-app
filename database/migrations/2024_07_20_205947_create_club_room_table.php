@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Models\Club;
 use App\Models\Room;
 use Illuminate\Database\Migrations\Migration;
@@ -8,6 +10,14 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('club_room');
+    }
+
     /**
      * Run the migrations.
      */
@@ -19,13 +29,5 @@ return new class extends Migration
             $table->foreignIdFor(Room::class)->constrained()->onDelete('cascade');
             $table->timestamps();
         });
-    }
-
-   /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('club_room');
     }
 };

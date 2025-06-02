@@ -124,6 +124,7 @@ class UpdateUserTest extends TestCase
         $this->actingAs($admin)
             ->from(route('users.edit', $user))
             ->put(route('users.update', $user), [
+                'is_active' => false,
                 'first_name' => 'Jean',
                 'last_name' => 'Lechat',
                 'sex' => 'MEN',
@@ -166,6 +167,7 @@ class UpdateUserTest extends TestCase
                 'is_admin' => 'false',
                 'is_comittee_member' => null,
                 'licence' => '114399',
+                'is_competitor' => true,
                 'ranking' => 'E5',
             ])
             ->assertInvalid([

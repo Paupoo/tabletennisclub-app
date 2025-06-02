@@ -68,7 +68,7 @@ class DeleteUserTest extends TestCase
 
         $response
             ->assertRedirect(route('users.index'))
-            ->assertSessionHas('deleted');
+            ->assertSessionHas('success');
 
         $response = $this
             ->actingAs($comitteeMember)
@@ -77,7 +77,7 @@ class DeleteUserTest extends TestCase
 
         $response
             ->assertRedirect(route('users.index'))
-            ->assertSessionHas('deleted');
+            ->assertSessionHas('success');
 
         $this->assertDatabaseCount('users', $totalUsers - 2);
     }

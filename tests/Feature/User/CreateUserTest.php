@@ -58,7 +58,7 @@ class CreateUserTest extends TestCase
                 'first_name' => 'Destrée',
                 'sex' => 'MEN',
                 'email' => 'aurelien.paulus@gmail.com',
-                'password' => 'z8XDbhN5sFHjWv',
+                'password' => 'z8XDbhN5sFHjWv!',
                 'password_confirmation' => 'z8XDbhN5sFHjWv!',
                 'licence' => 123456,
                 'ranking' => 'B2',

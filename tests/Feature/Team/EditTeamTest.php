@@ -74,16 +74,19 @@ class EditTeamTest extends TestCase
         $this->member = User::factory()->create([
             'is_admin' => false,
             'is_comittee_member' => false,
+            'is_competitor' => false,
         ]);
 
         $this->committee_member = User::factory()->create([
             'is_admin' => false,
             'is_comittee_member' => true,
+            'is_competitor' => false,
         ]);
 
         $this->admin = User::factory()->create([
             'is_admin' => true,
             'is_comittee_member' => false,
+            'is_competitor' => false,
         ]);
     }
 

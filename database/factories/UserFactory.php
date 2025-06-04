@@ -24,6 +24,21 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
+
+        $licencesToExclude = [
+            223344,
+            123123,
+            112233,
+            443211,
+            987654,
+            332211,
+            154856,
+            852364,
+            124599,
+            111952,
+            123456,
+        ];
+
         return [
             'is_active' => true,
             'is_admin' => false,
@@ -43,7 +58,7 @@ class UserFactory extends Factory
             'city_code' => fake()->postcode(),
             'city_name' => fake()->city(),
             'ranking' => fake()->randomElement(array_column(Ranking::cases(), 'name')),
-            'licence' => fake()->unique()->numberBetween(95000, 170000),
+            'licence' => fake()->unique()->numberBetweenNot(95000, 170000, $licencesToExclude),
             'club_id' => 1,
         ];
     }

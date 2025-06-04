@@ -185,6 +185,7 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($players as $player) {
+            
             $player = User::make([
                 'is_active' => true,
                 'is_admin' => false,
@@ -322,7 +323,9 @@ class DatabaseSeeder extends Seeder
 
         User::factory()
             ->count(50)
-            ->create();
+            ->create([
+                'is_competitor' => false,
+            ]);
 
         // Gestion du tournoi
         Tournament::factory(3)->create();
@@ -358,8 +361,8 @@ class DatabaseSeeder extends Seeder
 
         $this->tournament = Tournament::find(3);
         $this->tournament->name = 'Tournoi de doubles';
-        $this->tournament->max_users = 24;
-        $this->tournament->total_users = 24;
+        $this->tournament->max_users = 250;
+        $this->tournament->total_users = 250;
         $this->tournament->has_handicap_points = true;
         $this->tournament->save();
         $this->tournament->rooms()->sync([1, 2]);
@@ -369,13 +372,13 @@ class DatabaseSeeder extends Seeder
 
         // Add users
 
-        for ($i = 1; $i < 25; $i++) {
+        for ($i = 1; $i < 50; $i++) {
             $user = User::find($i);
             $this->tournament->users()->attach($user);
         }
 
         // Generate pools
-        $this->poolService->distributePlayersInPools($this->tournament, 6);
+        $this->poolService->distributePlayersInPools($this->tournament, 10);
 
         // Generate matches
         foreach ($this->tournament->pools as $pool) {

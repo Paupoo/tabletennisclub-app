@@ -140,6 +140,8 @@
                     @endforeach
                 </tbody>
             </table>
+
+            {{ $matches->links('custom-paginate') }}
         @else
             <p class="text-left text-gray-500 italic">{{ __('No match generated yet.') }}</p>
             <div class="my-6">

@@ -397,6 +397,7 @@ class TournamentController extends Controller
         $matches = TournamentMatch::where('tournament_id', $tournament->id)->ordered()->get();
 
         $unregisteredUsers = User::unregisteredUsers($tournament)->get();
+        
 
         return view('admin.tournaments.show', [
             'matches' => $matches,
@@ -404,7 +405,7 @@ class TournamentController extends Controller
             'tables' => $tables,
             'tournament' => $tournament,
             'unregisteredUsers' => $unregisteredUsers,
-            'statusesAllowed' => new TournamentStatusManager($tournament)->getAllowedNextStatuses()
+            'statusesAllowed' => new TournamentStatusManager($tournament)->getAllowedNextStatuses(),
         ]);
     }
 
@@ -426,7 +427,7 @@ class TournamentController extends Controller
             ->orderByRaw('name * 1 ASC')
             ->get();
 
-        $matches = TournamentMatch::where('tournament_id', $tournament->id)->ordered()->get();
+        $matches = TournamentMatch::where('tournament_id', $tournament->id)->ordered()->paginate(50);
 
         $unregisteredUsers = User::unregisteredUsers($tournament)->get();
 
@@ -436,6 +437,7 @@ class TournamentController extends Controller
             'tables' => $tables,
             'tournament' => $tournament,
             'unregisteredUsers' => $unregisteredUsers,
+            'statusesAllowed' => new TournamentStatusManager($tournament)->getAllowedNextStatuses(),
         ]);
     }
 
@@ -459,14 +461,19 @@ class TournamentController extends Controller
 
         $matches = TournamentMatch::where('tournament_id', $tournament->id)->ordered()->get();
 
-        $unregisteredUsers = User::unregisteredUsers($tournament)->get();
+        $users = $tournament->users()
+                    ->orderBy('ranking','asc')
+                    ->orderBy('last_name', 'asc')
+                    ->orderBy('first_name', 'asc')
+                    ->paginate(50);
 
         return view('admin.tournaments.show-players', [
             'matches' => $matches,
             'rooms' => $rooms,
             'tables' => $tables,
             'tournament' => $tournament,
-            'unregisteredUsers' => $unregisteredUsers,
+            'users' => $users,  
+            'statusesAllowed' => new TournamentStatusManager($tournament)->getAllowedNextStatuses(),
         ]);
     }
 
@@ -492,37 +499,25 @@ class TournamentController extends Controller
             'matches' => $matches,
             'standings' => $standings,
             'tables' => $tables,
+            'statusesAllowed' => new TournamentStatusManager($tournament)->getAllowedNextStatuses(),
         ]);
     }
 
     public function showPools(string $id): View
     {
-        $tournament = Tournament::findorFail($id);
-
-        $rooms = Room::orderBy('name')->get();
-
-        $tables = $tournament
-            ->tables()
-            ->withPivot([
-                'is_table_free',
-                'match_started_at',
-            ])
-            ->with('match.player1', 'match.player2')
-            ->orderBy('is_table_free')
-            ->orderBy('match_started_at')
-            ->orderByRaw('name * 1 ASC')
-            ->get();
-
-        $matches = TournamentMatch::where('tournament_id', $tournament->id)->ordered()->get();
-
-        $unregisteredUsers = User::unregisteredUsers($tournament)->get();
+        $tournament = Tournament::with([
+            'pools' => function($query) {
+                $query->orderBy('name'); // Optionnel: ordonner les pools
+            },
+            'pools.users' => function($query) {
+                // Charger les users de chaque pool, déjà triés par ranking
+                $query->orderBy('ranking');
+            }
+        ])->findOrFail($id);
 
         return view('admin.tournaments.show-pools', [
-            'matches' => $matches,
-            'rooms' => $rooms,
-            'tables' => $tables,
             'tournament' => $tournament,
-            'unregisteredUsers' => $unregisteredUsers,
+            'statusesAllowed' => new TournamentStatusManager($tournament)->getAllowedNextStatuses(),
         ]);
     }
 
@@ -554,6 +549,7 @@ class TournamentController extends Controller
             'tables' => $tables,
             'tournament' => $tournament,
             'unregisteredUsers' => $unregisteredUsers,
+            'statusesAllowed' => new TournamentStatusManager($tournament)->getAllowedNextStatuses(),
         ]);
     }
 

@@ -20,7 +20,7 @@
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
             @if (count($tournament->users()->get()) > 0)
-                @foreach ($tournament->users()->get() as $user)
+                @foreach ($users as $user)
                     <tr class="hover:bg-gray-50">
                         <td class="px-4 py-3 whitespace-nowrap">
                             <span
@@ -100,4 +100,6 @@
             @endif
         </tbody>
     </table>
+
+    {{ $users->links() }}
 </div>

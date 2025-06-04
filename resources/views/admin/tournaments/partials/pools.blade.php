@@ -41,7 +41,7 @@
                                 </a>
                             </div>
                             <ul class="divide-y divide-gray-200">
-                                @forelse ($pool->users->sortBy('ranking') as $user)
+                                @forelse ($pool->users as $user)
                                     <li class="px-4 py-3">
                                         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center">
                                             <div class="flex items-center mb-2 sm:mb-0">

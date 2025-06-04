@@ -116,10 +116,12 @@ class TournamentController extends Controller
 
     public function edit(Tournament $tournament): View
     {
+        $manager =  new TournamentStatusManager($tournament);
+
         return view('admin.tournaments.edit', [
             'tournament' => $tournament->load(['pools.users']),
             'rooms' => Room::orderBy('name')->get(),
-            'statusesAllowed' => new TournamentStatusManager($tournament)->getAllowedNextStatuses(),
+            'statusesAllowed' => $manager->getAllowedNextStatuses(),
         ]);
     }
 
@@ -398,6 +400,7 @@ class TournamentController extends Controller
 
         $unregisteredUsers = User::unregisteredUsers($tournament)->get();
         
+        $manager = new TournamentStatusManager($tournament);
 
         return view('admin.tournaments.show', [
             'matches' => $matches,
@@ -405,7 +408,7 @@ class TournamentController extends Controller
             'tables' => $tables,
             'tournament' => $tournament,
             'unregisteredUsers' => $unregisteredUsers,
-            'statusesAllowed' => new TournamentStatusManager($tournament)->getAllowedNextStatuses(),
+            'statusesAllowed' => $manager->getAllowedNextStatuses(),
         ]);
     }
 
@@ -434,12 +437,13 @@ class TournamentController extends Controller
 
         $unregisteredUsers = User::unregisteredUsers($tournament)->get();
 
+        $manager = new TournamentStatusManager($tournament);
         return view('admin.tournaments.show-matches', [
             'matches' => $matches,
             'rooms' => $rooms,
             'tables' => $tables,
             'tournament' => $tournament,
-            'statusesAllowed' => new TournamentStatusManager($tournament)->getAllowedNextStatuses(),
+            'statusesAllowed' => $manager->getAllowedNextStatuses(),
         ]);
     }
 
@@ -469,13 +473,15 @@ class TournamentController extends Controller
                     ->orderBy('first_name', 'asc')
                     ->paginate(50);
 
+        $manager = new TournamentStatusManager($tournament);
+        
         return view('admin.tournaments.show-players', [
             'matches' => $matches,
             'rooms' => $rooms,
             'tables' => $tables,
             'tournament' => $tournament,
             'users' => $users,  
-            'statusesAllowed' => new TournamentStatusManager($tournament)->getAllowedNextStatuses(),
+            'statusesAllowed' => $manager->getAllowedNextStatuses(),
         ]);
     }
 
@@ -495,13 +501,15 @@ class TournamentController extends Controller
             ->orderByRaw('name')
             ->get();
 
+        $manager = new TournamentStatusManager($tournament)
+
         return view('admin.tournaments.pool-matches', [
             'pool' => $pool,
             'tournament' => $tournament,
             'matches' => $matches,
             'standings' => $standings,
             'tables' => $tables,
-            'statusesAllowed' => new TournamentStatusManager($tournament)->getAllowedNextStatuses(),
+            'statusesAllowed' => $manager->getAllowedNextStatuses(),
         ]);
     }
 
@@ -517,9 +525,11 @@ class TournamentController extends Controller
             }
         ])->findOrFail($id);
 
+        $manager = new TournamentStatusManager($tournament);
+
         return view('admin.tournaments.show-pools', [
             'tournament' => $tournament,
-            'statusesAllowed' => new TournamentStatusManager($tournament)->getAllowedNextStatuses(),
+            'statusesAllowed' => $manager->getAllowedNextStatuses(),
         ]);
     }
 
@@ -545,13 +555,15 @@ class TournamentController extends Controller
 
         $unregisteredUsers = User::unregisteredUsers($tournament)->get();
 
+        $manager = new TournamentStatusManager($tournament);
+
         return view('admin.tournaments.show-tables', [
             'matches' => $matches,
             'rooms' => $rooms,
             'tables' => $tables,
             'tournament' => $tournament,
             'unregisteredUsers' => $unregisteredUsers,
-            'statusesAllowed' => new TournamentStatusManager($tournament)->getAllowedNextStatuses(),
+            'statusesAllowed' =>$manager->getAllowedNextStatuses(),
         ]);
     }
 

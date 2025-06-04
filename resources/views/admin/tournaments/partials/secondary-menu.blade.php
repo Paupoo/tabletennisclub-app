@@ -25,7 +25,7 @@
                         :iconName="'files'">
                             {{ __('Pools') }}
                             <span class="ml-2 px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-800">
-                                {{ count($tournament->pools) }}
+                                {{ $tournament->pools()->count() }}
                             </span>
                     </x-sub-nav-link>
                     <x-sub-nav-link
@@ -34,7 +34,7 @@
                         :iconName="'list'">
                             {{ __('Matches') }}
                             <span class="ml-2 px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-800">
-                                {{ count($matches) }}
+                                {{ $tournament->matches()->count() }}
                             </span>
                     </x-sub-nav-link>
                     <x-sub-nav-link
@@ -43,7 +43,7 @@
                         :iconName="'table'">
                             {{ __('Tables') }}
                             <span class="ml-2 px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-800">
-                                {{ count($tables) }}
+                                {{ count($tournament->tables) }}
                             </span>
                     </x-sub-nav-link>
                     <x-sub-nav-link class="text-red-700"

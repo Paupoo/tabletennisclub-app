@@ -501,7 +501,7 @@ class TournamentController extends Controller
             ->orderByRaw('name')
             ->get();
 
-        $manager = new TournamentStatusManager($tournament)
+        $manager = new TournamentStatusManager($tournament);
 
         return view('admin.tournaments.pool-matches', [
             'pool' => $pool,

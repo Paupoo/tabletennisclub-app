@@ -156,7 +156,6 @@ class TournamentController extends Controller
         }
 
         $tournament->pools()->delete();
-        // dd($tournament->tables);
 
         return redirect()
             ->back()
@@ -722,7 +721,6 @@ class TournamentController extends Controller
             $minScore = (int) min($player1Score, $player2Score);
 
             // Vérifier que le gagnant a au moins 11 points
-            // dd($setsWithResults);
             if ($maxScore < 11) {
                 return redirect()->route('editMatch', $match)
                     ->withInput()

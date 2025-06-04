@@ -119,6 +119,7 @@ class TournamentController extends Controller
         return view('admin.tournaments.edit', [
             'tournament' => $tournament->load(['pools.users']),
             'rooms' => Room::orderBy('name')->get(),
+            'statusesAllowed' => new TournamentStatusManager($tournament)->getAllowedNextStatuses(),
         ]);
     }
 
@@ -426,7 +427,10 @@ class TournamentController extends Controller
             ->orderByRaw('name * 1 ASC')
             ->get();
 
-        $matches = TournamentMatch::where('tournament_id', $tournament->id)->ordered()->paginate(50);
+        $matches = TournamentMatch::where('tournament_id', $tournament->id)
+            ->where('round', null)
+            ->ordered()
+            ->paginate(50);
 
         $unregisteredUsers = User::unregisteredUsers($tournament)->get();
 
@@ -435,7 +439,6 @@ class TournamentController extends Controller
             'rooms' => $rooms,
             'tables' => $tables,
             'tournament' => $tournament,
-            'unregisteredUsers' => $unregisteredUsers,
             'statusesAllowed' => new TournamentStatusManager($tournament)->getAllowedNextStatuses(),
         ]);
     }
@@ -792,7 +795,7 @@ class TournamentController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function updatePoolPlayers(Request $request, Tournament $tournament)
+    public function updatePoolPlayers(Request $request, Tournament $tournament): RedirectResponse
     {
         // Vérifier l'autorisation
         $this->authorize('update', $tournament);

@@ -5,7 +5,7 @@
             <div class="w-full max-w-8xl">
                 <div class="bg-white rounded-lg shadow-lg overflow-hidden">
                     <div class="p-6">
-                        <a href="{{ route('tournament.edit', $tournament) }}" 
+                        <a href="{{ route('tournamentShow', $tournament) }}" 
                            class="inline-block mb-6 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md transition duration-200">
                             &larr; Retour au tournoi
                         </a>
@@ -13,18 +13,6 @@
                         <div class="border-b pb-4 mb-6">
                             <h3 class="text-2xl font-bold text-gray-800">{{ __('Phase finale') }} - {{ $tournament->name }}</h3>
                         </div>
-
-                        @if(session('success'))
-                            <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6" role="alert">
-                                <p>{{ session('success') }}</p>
-                            </div>
-                        @endif
-
-                        @if(session('error'))
-                            <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
-                                <p>{{ session('error') }}</p>
-                            </div>
-                        @endif
 
                         <div class="knockout-bracket bg-gray-50 rounded-lg p-6 text-gray-500">
                             @php

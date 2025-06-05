@@ -14,7 +14,7 @@ class RoomPolicy
      */
     public function create(User $user): bool
     {
-        return $user->is_admin || $user->is_comittee_member;
+        return $user->is_admin || $user->is_committee_member;
     }
 
     /**
@@ -22,7 +22,7 @@ class RoomPolicy
      */
     public function delete(User $user, Room $room): bool
     {
-        return $user->is_admin || $user->is_comittee_member;
+        return $user->is_admin || $user->is_committee_member;
     }
 
     /**
@@ -30,7 +30,7 @@ class RoomPolicy
      */
     public function forceDelete(User $user, Room $room): bool
     {
-        return $user->is_admin || $user->is_comittee_member;
+        return $user->is_admin || $user->is_committee_member;
     }
 
     /**
@@ -38,7 +38,7 @@ class RoomPolicy
      */
     public function restore(User $user, Room $room): bool
     {
-        return $user->is_admin || $user->is_comittee_member;
+        return $user->is_admin || $user->is_committee_member;
     }
 
     /**
@@ -46,7 +46,7 @@ class RoomPolicy
      */
     public function update(User $user, Room $room): bool
     {
-        return $user->is_admin || $user->is_comittee_member;
+        return $user->is_admin || $user->is_committee_member;
     }
 
     /**

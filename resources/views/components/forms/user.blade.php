@@ -156,9 +156,9 @@
         <x-input-error class="mt-2" :messages="$errors->get('is_admin')" />
     </div>
     <div class="flex gap-4">
-        <x-input-label for="is_comittee_member" :value="__('Is comittee member')" />
-        <input id="is_comittee_member" name="is_comittee_member" type="checkbox" class="block mt-1"
-            @checked(old('is_comittee_member', $user?->is_comittee_member)) autofocus></input>
-        <x-input-error class="mt-2" :messages="$errors->get('is_comittee_member')" />
+        <x-input-label for="is_committee_member" :value="__('Is committee member')" />
+        <input id="is_committee_member" name="is_committee_member" type="checkbox" class="block mt-1"
+            @checked(old('is_committee_member', $user?->is_committee_member)) autofocus></input>
+        <x-input-error class="mt-2" :messages="$errors->get('is_committee_member')" />
     </div>
 </div>

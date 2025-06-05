@@ -14,7 +14,7 @@ class TeamPolicy
      */
     public function create(User $user): bool
     {
-        return $user->is_admin || $user->is_comittee_member;
+        return $user->is_admin || $user->is_committee_member;
     }
 
     /**
@@ -47,7 +47,7 @@ class TeamPolicy
      */
     public function update(?User $user = null, ?Team $team = null): bool
     {
-        return $user->is_admin || $user->is_comittee_member;
+        return $user->is_admin || $user->is_committee_member;
     }
 
     /**

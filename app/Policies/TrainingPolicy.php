@@ -14,7 +14,7 @@ class TrainingPolicy
      */
     public function create(User $user): bool
     {
-        return $user->is_admin || $user->is_comittee_member;
+        return $user->is_admin || $user->is_committee_member;
     }
 
     /**
@@ -22,7 +22,7 @@ class TrainingPolicy
      */
     public function delete(User $user, Training $training): bool
     {
-        return $user->is_admin || $user->is_comittee_member;
+        return $user->is_admin || $user->is_committee_member;
     }
 
     /**
@@ -30,7 +30,7 @@ class TrainingPolicy
      */
     public function forceDelete(User $user, Training $training): bool
     {
-        return $user->is_admin || $user->is_comittee_member;
+        return $user->is_admin || $user->is_committee_member;
     }
 
     /**
@@ -38,7 +38,7 @@ class TrainingPolicy
      */
     public function restore(User $user, Training $training): bool
     {
-        return $user->is_admin || $user->is_comittee_member;
+        return $user->is_admin || $user->is_committee_member;
     }
 
     /**
@@ -46,7 +46,7 @@ class TrainingPolicy
      */
     public function update(User $user, Training $training): bool
     {
-        return $user->is_admin || $user->is_comittee_member;
+        return $user->is_admin || $user->is_committee_member;
     }
 
     /**

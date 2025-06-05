@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Factories;
 
 use App\Models\User;
@@ -21,7 +23,7 @@ class TournamentMatchFactory extends Factory
             'pool_id' => 1,
             'table_id' => 1,
             'player1_id' => User::inRandomOrder()->first(),
-            'player2_id'=> User::inRandomOrder()->first(),
+            'player2_id' => User::inRandomOrder()->first(),
             'player1_handicap_points' => 0,
             'player2_handicap_points' => 0,
             'winner_id' => null,

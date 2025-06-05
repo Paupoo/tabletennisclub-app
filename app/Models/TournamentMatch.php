@@ -9,6 +9,67 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
+/**
+ * 
+ *
+ * @property int $id
+ * @property int|null $pool_id
+ * @property int|null $tournament_id
+ * @property int|null $table_id
+ * @property int|null $player1_id
+ * @property int $player1_handicap_points
+ * @property int|null $player2_id
+ * @property int $player2_handicap_points
+ * @property int|null $winner_id
+ * @property string|null $round
+ * @property string $status
+ * @property string|null $started_ad
+ * @property int $match_order
+ * @property \Illuminate\Support\Carbon|null $scheduled_time
+ * @property int|null $table_number
+ * @property int|null $next_match_id
+ * @property int|null $bronze_match_id
+ * @property int $is_bronze_match
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\User|null $player1
+ * @property-read \App\Models\User|null $player2
+ * @property-read \App\Models\Pool|null $pool
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\MatchSet> $sets
+ * @property-read int|null $sets_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Table> $table
+ * @property-read int|null $table_count
+ * @property-read \App\Models\Tournament|null $tournament
+ * @property-read \App\Models\User|null $winner
+ * @method static \Database\Factories\TournamentMatchFactory factory($count = null, $state = [])
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch fromBracket()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch fromPools()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch ordered()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch whereBronzeMatchId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch whereIsBronzeMatch($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch whereMatchOrder($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch whereNextMatchId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch wherePlayer1HandicapPoints($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch wherePlayer1Id($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch wherePlayer2HandicapPoints($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch wherePlayer2Id($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch wherePoolId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch whereRound($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch whereScheduledTime($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch whereStartedAd($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch whereTableId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch whereTableNumber($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch whereTournamentId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch whereWinnerId($value)
+ * @mixin \Eloquent
+ */
 class TournamentMatch extends Model
 {
     //

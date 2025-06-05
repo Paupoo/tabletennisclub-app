@@ -1,54 +1,40 @@
 <?php
 
 declare(strict_types=1);
-
-namespace Tests\Unit;
-
 use App\Models\User;
 use Carbon\Carbon;
-use PHPUnit\Framework\TestCase;
 
-class UserTest extends TestCase
-{
-    public function test_method_set_age(): void
-    {
-        // Start
-        $user = new User;
-        $user->birthdate = '1988-08-17';
-        $age = Carbon::parse($user->birthdate)->age;
+test('method set age', function () {
+    // Start
+    $user = new User;
+    $user->birthdate = '1988-08-17';
+    $age = Carbon::parse($user->birthdate)->age;
 
-        // Change
-        $user->setAge();
+    // Change
+    $user->setAge();
 
-        // Assert
-        $this->assertEquals($age, $user->age);
-    }
+    // Assert
+    expect($user->age)->toEqual($age);
+});
+test('method set age without birthdate', function () {
+    // Start
+    $user = new User;
 
-    public function test_method_set_age_without_birthdate(): void
-    {
-        // Start
-        $user = new User;
+    // Change
+    $user->setAge();
 
-        // Change
-        $user->setAge();
+    // Assert
+    expect($user->age)->toEqual('Unknown');
+});
+test('method set first name attribute', function () {
+    $user = new User;
+    $user->first_name = 'aURÉliEN';
 
-        // Assert
-        $this->assertEquals('Unknown', $user->age);
-    }
+    expect($user->first_name)->toEqual('Aurélien');
+});
+test('method set last name attribute', function () {
+    $user = new User;
+    $user->first_name = 'pAULUS';
 
-    public function test_method_set_first_name_attribute(): void
-    {
-        $user = new User;
-        $user->first_name = 'aURÉliEN';
-
-        $this->assertEquals('Aurélien', $user->first_name);
-    }
-
-    public function test_method_set_last_name_attribute(): void
-    {
-        $user = new User;
-        $user->first_name = 'pAULUS';
-
-        $this->assertEquals('Paulus', $user->first_name);
-    }
-}
+    expect($user->first_name)->toEqual('Paulus');
+});

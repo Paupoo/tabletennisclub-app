@@ -15,6 +15,81 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
+/**
+ * 
+ *
+ * @property int $id
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property bool $is_active
+ * @property bool $is_admin
+ * @property bool $is_committee_member
+ * @property bool $is_competitor
+ * @property bool $has_debt
+ * @property string $email
+ * @property string|null $email_verified_at
+ * @property string $password
+ * @property string|null $remember_token
+ * @property string $first_name
+ * @property string $last_name
+ * @property string $sex
+ * @property string|null $phone_number
+ * @property \Illuminate\Support\Carbon|null $birthdate
+ * @property string|null $street
+ * @property string|null $city_code
+ * @property string|null $city_name
+ * @property string $ranking
+ * @property string|null $licence
+ * @property int|null $force_list
+ * @property int $club_id
+ * @property-read \App\Models\Team|null $captainOf
+ * @property-read \App\Models\Club|null $club
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Interclub> $interclubs
+ * @property-read int|null $interclubs_count
+ * @property-read \Illuminate\Notifications\DatabaseNotificationCollection<int, \Illuminate\Notifications\DatabaseNotification> $notifications
+ * @property-read int|null $notifications_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Pool> $pools
+ * @property-read int|null $pools_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Team> $teams
+ * @property-read int|null $teams_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \Laravel\Sanctum\PersonalAccessToken> $tokens
+ * @property-read int|null $tokens_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Tournament> $tournaments
+ * @property-read int|null $tournaments_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Training> $trainings
+ * @property-read int|null $trainings_count
+ * @method static \Database\Factories\UserFactory factory($count = null, $state = [])
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User search($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User unregisteredUsers($tournament)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereBirthdate($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereCityCode($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereCityName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereClubId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereEmail($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereEmailVerifiedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereFirstName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereForceList($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereHasDebt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereIsActive($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereIsAdmin($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereIsCommitteeMember($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereIsCompetitor($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereLastName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereLicence($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User wherePassword($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User wherePhoneNumber($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereRanking($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereRememberToken($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereSex($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereStreet($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereUpdatedAt($value)
+ * @mixin \Eloquent
+ */
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
@@ -27,7 +102,7 @@ class User extends Authenticatable
     protected $casts = [
         'is_active' => 'boolean',
         'is_admin' => 'boolean',
-        'is_comittee_member' => 'boolean',
+        'is_committee_member' => 'boolean',
         'is_competitor' => 'boolean',
         'has_debt' => 'boolean',
         'email' => 'string',
@@ -58,7 +133,7 @@ class User extends Authenticatable
         'first_name',
         'is_active',
         'is_admin',
-        'is_comittee_member',
+        'is_committee_member',
         'is_competitor',
         'last_name',
         'licence',

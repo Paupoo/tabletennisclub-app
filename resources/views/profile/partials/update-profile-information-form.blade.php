@@ -47,7 +47,7 @@
             <x-input-label for="roles" :value="__('Roles')" />
             <div class="flex gap-4" id="roles">
                 <x-tag :class="'bg-blue-300'">{{ __('Admin') }}</x-tag>
-                <x-tag :class="'bg-orange-600'">{{ __('Comittee Member') }}</x-tag>
+                <x-tag :class="'bg-orange-600'">{{ __('Committee Member') }}</x-tag>
                 <x-tag :class="'bg-pink-600'">{{ __('Competitor') }}</x-tag>
             </div>
         </div>

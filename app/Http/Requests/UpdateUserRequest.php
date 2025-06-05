@@ -16,7 +16,7 @@ class UpdateUserRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()->is_admin || $this->user()->is_comittee_member;
+        return $this->user()->is_admin || $this->user()->is_committee_member;
     }
 
     /**
@@ -48,7 +48,7 @@ class UpdateUserRequest extends FormRequest
             'first_name' => ['required', 'string', 'max:255'],
             'is_active' => ['required', 'boolean'],
             'is_admin' => ['required', 'boolean'],
-            'is_comittee_member' => ['required', 'boolean'],
+            'is_committee_member' => ['required', 'boolean'],
             'is_competitor' => ['required', 'boolean'],
             'last_name' => ['required', 'string', 'max:255'],
             'licence' => ['nullable', 'required_if:is_competitor,true', 'unique:users,licence,' . $this->route()->user->id, 'size:6'],
@@ -83,7 +83,7 @@ class UpdateUserRequest extends FormRequest
         $this->merge([
             'is_active' => $this->input('is_active') !== null,
             'is_admin' => $this->input('is_admin') !== null,
-            'is_comittee_member' => $this->input('is_comittee_member') !== null,
+            'is_committee_member' => $this->input('is_committee_member') !== null,
             'is_competitor' => $this->input('is_competitor') !== null,
         ]);
     }

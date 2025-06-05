@@ -185,7 +185,7 @@ class DatabaseSeeder extends Seeder
         ];
 
         foreach ($players as $player) {
-            
+
             $player = User::make([
                 'is_active' => true,
                 'is_admin' => false,
@@ -220,7 +220,7 @@ class DatabaseSeeder extends Seeder
         User::make([
             'is_active' => true,
             'is_admin' => false,
-            'is_comittee_member' => true,
+            'is_committee_member' => true,
             'is_competitor' => true,
             'email' => 'thierry.regnier@gmail.com',
             'password' => $password,
@@ -239,7 +239,7 @@ class DatabaseSeeder extends Seeder
         User::make([
             'is_active' => true,
             'is_admin' => false,
-            'is_comittee_member' => true,
+            'is_committee_member' => true,
             'is_competitor' => true,
             'email' => 'manon.patigny@gmail.com',
             'password' => $password,
@@ -255,17 +255,13 @@ class DatabaseSeeder extends Seeder
             'licence' => '852364',
         ])->club()->associate(Club::first())->save();
 
-        User::factory()->count(5)->create([
-            'is_competitor' => false,
-        ]);
+        User::factory()->isNotCompetitor()->count(5)->create();
 
-        User::factory()->count(2)->create([
-            'is_competitor' => true,
+        User::factory()->isCompetitor()->count(2)->create([
             'ranking' => 'NC',
         ]);
 
-        User::factory()->count(2)->create([
-            'is_competitor' => false,
+        User::factory()->isNotCompetitor()->count(2)->create([
             'ranking' => 'NC',
         ]);
 
@@ -322,10 +318,9 @@ class DatabaseSeeder extends Seeder
         }
 
         User::factory()
-            ->count(50)
-            ->create([
-                'is_competitor' => false,
-            ]);
+            ->isNotCompetitor()
+            ->count(5000)
+            ->create();
 
         // Gestion du tournoi
         Tournament::factory(3)->create();
@@ -372,7 +367,7 @@ class DatabaseSeeder extends Seeder
 
         // Add users
 
-        for ($i = 1; $i < 50; $i++) {
+        for ($i = 1; $i < 80; $i++) {
             $user = User::find($i);
             $this->tournament->users()->attach($user);
         }

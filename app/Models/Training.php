@@ -9,6 +9,40 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
+/**
+ * 
+ *
+ * @property int $id
+ * @property string $level
+ * @property string $type
+ * @property \Illuminate\Support\Carbon $start
+ * @property \Illuminate\Support\Carbon $end
+ * @property int $room_id
+ * @property int|null $trainer_id
+ * @property int $season_id
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\Room $room
+ * @property-read \App\Models\Season|null $season
+ * @property-write mixed $trainer_name
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $trainees
+ * @property-read int|null $trainees_count
+ * @property-read \App\Models\User|null $trainer
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Training newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Training newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Training query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereEnd($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereLevel($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereRoomId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereSeasonId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereStart($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereTrainerId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereUpdatedAt($value)
+ * @mixin \Eloquent
+ */
 class Training extends Model
 {
     use HasFactory;

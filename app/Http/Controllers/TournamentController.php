@@ -73,8 +73,9 @@ class TournamentController extends Controller
         $manager = new TournamentStatusManager($tournament);
 
         try {
-            //code...
+            // code...
             $manager->setStatus($newStatus);
+
             return redirect()
                 ->back()
                 ->with('success', __('Status for tournament ' . $tournament->name . ' has been updated to ' . $newStatus->value));
@@ -116,7 +117,7 @@ class TournamentController extends Controller
 
     public function edit(Tournament $tournament): View
     {
-        $manager =  new TournamentStatusManager($tournament);
+        $manager = new TournamentStatusManager($tournament);
 
         return view('admin.tournaments.edit', [
             'tournament' => $tournament->load(['pools.users']),
@@ -399,7 +400,7 @@ class TournamentController extends Controller
         $matches = TournamentMatch::where('tournament_id', $tournament->id)->ordered()->get();
 
         $unregisteredUsers = User::unregisteredUsers($tournament)->get();
-        
+
         $manager = new TournamentStatusManager($tournament);
 
         return view('admin.tournaments.show', [
@@ -438,6 +439,7 @@ class TournamentController extends Controller
         $unregisteredUsers = User::unregisteredUsers($tournament)->get();
 
         $manager = new TournamentStatusManager($tournament);
+
         return view('admin.tournaments.show-matches', [
             'matches' => $matches,
             'rooms' => $rooms,
@@ -468,19 +470,19 @@ class TournamentController extends Controller
         $matches = TournamentMatch::where('tournament_id', $tournament->id)->ordered()->get();
 
         $users = $tournament->users()
-                    ->orderBy('ranking','asc')
-                    ->orderBy('last_name', 'asc')
-                    ->orderBy('first_name', 'asc')
-                    ->paginate(50);
+            ->orderBy('ranking', 'asc')
+            ->orderBy('last_name', 'asc')
+            ->orderBy('first_name', 'asc')
+            ->paginate(50);
 
         $manager = new TournamentStatusManager($tournament);
-        
+
         return view('admin.tournaments.show-players', [
             'matches' => $matches,
             'rooms' => $rooms,
             'tables' => $tables,
             'tournament' => $tournament,
-            'users' => $users,  
+            'users' => $users,
             'statusesAllowed' => $manager->getAllowedNextStatuses(),
         ]);
     }
@@ -516,13 +518,13 @@ class TournamentController extends Controller
     public function showPools(string $id): View
     {
         $tournament = Tournament::with([
-            'pools' => function($query) {
+            'pools' => function ($query) {
                 $query->orderBy('name'); // Optionnel: ordonner les pools
             },
-            'pools.users' => function($query) {
+            'pools.users' => function ($query) {
                 // Charger les users de chaque pool, déjà triés par ranking
                 $query->orderBy('ranking');
-            }
+            },
         ])->findOrFail($id);
 
         $manager = new TournamentStatusManager($tournament);
@@ -563,7 +565,7 @@ class TournamentController extends Controller
             'tables' => $tables,
             'tournament' => $tournament,
             'unregisteredUsers' => $unregisteredUsers,
-            'statusesAllowed' =>$manager->getAllowedNextStatuses(),
+            'statusesAllowed' => $manager->getAllowedNextStatuses(),
         ]);
     }
 

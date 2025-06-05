@@ -1,114 +1,88 @@
 <?php
 
 declare(strict_types=1);
+uses(\Tests\Trait\CreateUser::class);
 
-namespace Tests\Feature\User;
+test('admin and committee members can see create member and force index buttons from index', function () {
+    $admin = $this->createFakeAdmin();
+    $committee_member = $this->createFakeCommitteeMember();
 
-use App\Models\User;
-use Tests\TestCase;
-use Tests\Trait\CreateUser;
+    $response = $this->actingAs($admin)
+        ->get(route('users.index'))
+        ->assertSee([
+            'Create new user',
+            'Set Force Index',
+            'Delete Force Index',
+        ]);
 
-class ViewAnyUserTest extends TestCase
-{
-    use CreateUser;
+    $response = $this->actingAs($committee_member)
+        ->get(route('users.index'))
+        ->assertSee([
+            'Create new user',
+            'Set Force Index',
+            'Delete Force Index',
+        ]);
+});
+test('admin and committee members can see edit and delete member buttons from index', function () {
+    $user = $this->createFakeAdmin();
 
-    public function test_admin_and_comittee_members_can_see_create_member_and_force_index_buttons_from_index(): void
-    {
-        $admin = $this->createFakeAdmin();
-        $comittee_member = $this->createFakeComitteeMember();
+    $response = $this->actingAs($user)
+        ->get(route('users.index'))
+        ->assertSee([
+            'Contact',
+            'Edit',
+            'Delete',
+        ]);
 
-        $response = $this->actingAs($admin)
-            ->get(route('users.index'))
-            ->assertSee([
-                'Create new user',
-                'Set Force Index',
-                'Delete Force Index',
-            ]);
+    $user = $this->createFakeCommitteeMember();
 
-        $response = $this->actingAs($comittee_member)
-            ->get(route('users.index'))
-            ->assertSee([
-                'Create new user',
-                'Set Force Index',
-                'Delete Force Index',
-            ]);
-    }
+    $response = $this->actingAs($user)
+        ->get(route('users.index'))
+        ->assertSee([
+            'Contact',
+            'Edit',
+            'Delete',
+        ]);
+});
+test('logged user can access members index', function () {
+    $user = $this->createFakeUser();
 
-    public function test_admin_and_comittee_members_can_see_edit_and_delete_member_buttons_from_index(): void
-    {
-        $user = $this->createFakeAdmin();
+    $response = $this->actingAs($user)
+        ->get(route('users.index'))
+        ->assertOk();
+});
+test('member cannot access create member page', function () {
+    $user = $this->createFakeUser();
 
-        $response = $this->actingAs($user)
-            ->get(route('users.index'))
-            ->assertSee([
-                'Contact',
-                'Edit',
-                'Delete',
-            ]);
+    $response = $this->actingAs($user)
+        ->get(route('users.create'))
+        ->assertStatus(403);
+});
+test('member cannot see create member and force index buttons', function () {
+    $user = $this->createFakeUser();
 
-        $user = $this->createFakeComitteeMember();
+    $response = $this->actingAs($user)
+        ->get(route('users.index'))
+        ->assertDontSee([
+            'Create new user',
+            'Set Force Index',
+            'Delete Force Index',
+        ]);
+});
+test('member cannot see edit and delete member buttons from index', function () {
+    $user = $this->createFakeUser();
 
-        $response = $this->actingAs($user)
-            ->get(route('users.index'))
-            ->assertSee([
-                'Contact',
-                'Edit',
-                'Delete',
-            ]);
-    }
-
-    public function test_logged_user_can_access_members_index(): void
-    {
-        $user = $this->createFakeUser();
-
-        $response = $this->actingAs($user)
-            ->get(route('users.index'))
-            ->assertOk();
-    }
-
-    public function test_member_cannot_access_create_member_page(): void
-    {
-        $user = $this->createFakeUser();
-
-        $response = $this->actingAs($user)
-            ->get(route('users.create'))
-            ->assertStatus(403);
-    }
-
-    public function test_member_cannot_see_create_member_and_force_index_buttons(): void
-    {
-        $user = $this->createFakeUser();
-
-        $response = $this->actingAs($user)
-            ->get(route('users.index'))
-            ->assertDontSee([
-                'Create new user',
-                'Set Force Index',
-                'Delete Force Index',
-            ]);
-    }
-
-    public function test_member_cannot_see_edit_and_delete_member_buttons_from_index(): void
-    {
-        $user = $this->createFakeUser();
-
-        $response = $this->actingAs($user)
-            ->get(route('users.index'))
-            ->assertDontSee([
-                'Edit',
-                'Delete',
-            ])
-            ->assertSee([
-                'Contact',
-            ]);
-    }
-
-    /**
-     * User management
-     */
-    public function test_unlogged_user_cannot_access_members_index(): void
-    {
-        $response = $this->get(route('users.index'))
-            ->assertRedirect('/login');
-    }
-}
+    $response = $this->actingAs($user)
+        ->get(route('users.index'))
+        ->assertDontSee([
+            'Edit',
+            'Delete',
+        ])
+        ->assertSee([
+            'Contact',
+        ]);
+});
+test('unlogged user cannot access members index', function () {
+    $response = $this->get(route('users.index'))
+        ->assertRedirect('/login');
+});

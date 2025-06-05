@@ -1,15 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Seeders;
 
 use App\Models\TournamentMatch;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Collection;
 
 class TournamentMatchSeeder extends Seeder
 {
-
     // Valid sets should look like this :
     // 'sets' => [
     //     ['player1_score' => '11', 'player2_score' => '8'],
@@ -37,8 +36,6 @@ class TournamentMatchSeeder extends Seeder
 
     /**
      * Get random points
-     *
-     * @return integer
      */
     private function diceRoll(): int
     {
@@ -47,8 +44,6 @@ class TournamentMatchSeeder extends Seeder
 
     /**
      * Generate a set result
-     *
-     * @return array
      */
     private function generateValidSet(): array
     {
@@ -74,30 +69,30 @@ class TournamentMatchSeeder extends Seeder
 
     /**
      * Determine who wins the set
-     * @param array $set
-     * @return string
      */
-    private function getSetWinner(array $set): string {
+    private function getSetWinner(array $set): string
+    {
 
         return $set['player1_score'] > $set['player2_score']
-            ? "player1"
-            : "player2";
+            ? 'player1'
+            : 'player2';
     }
 
     /**
      * Simulate a full match, with sets until there is a winner
-     * @param int $setsToWin
+     *
      * @return array[]
      */
-    private function playMatch(int $setsToWin = 3): array {
+    private function playMatch(int $setsToWin = 3): array
+    {
         $sets = [];
         $player1WonSetsCount = 0;
         $player2WonSetsCount = 0;
 
-        while($player1WonSetsCount < $setsToWin && $player2WonSetsCount < $setsToWin) {
+        while ($player1WonSetsCount < $setsToWin && $player2WonSetsCount < $setsToWin) {
             $set = $this->generateValidSet();
-            
-            $this->getSetWinner($set) === "player1"
+
+            $this->getSetWinner($set) === 'player1'
                 ? $player1WonSetsCount++
                 : $player2WonSetsCount++;
 

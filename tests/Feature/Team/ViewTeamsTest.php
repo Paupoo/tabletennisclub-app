@@ -1,27 +1,17 @@
 <?php
 
 declare(strict_types=1);
-
-namespace Tests\Feature\Team;
-
 use App\Models\User;
-use Tests\TestCase;
 
-class ViewTeamsTest extends TestCase
-{
-    public function test_logged_user_can_see_teams_index(): void
-    {
-        $user = User::find(1);
-        $response = $this->actingAs($user)
-            ->get(route('teams.index'));
+test('logged user can see teams index', function () {
+    $user = User::find(1);
+    $response = $this->actingAs($user)
+        ->get(route('teams.index'));
 
-        $response->assertStatus(200);
-    }
+    $response->assertStatus(200);
+});
+test('unlogged user cant see teams index', function () {
+    $response = $this->get(route('teams.index'));
 
-    public function test_unlogged_user_cant_see_teams_index(): void
-    {
-        $response = $this->get(route('teams.index'));
-
-        $response->assertRedirect('/login');
-    }
-}
+    $response->assertRedirect('/login');
+});

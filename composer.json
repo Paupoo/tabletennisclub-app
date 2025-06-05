@@ -16,13 +16,15 @@
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.13",
+        "barryvdh/laravel-ide-helper": "^3.5",
         "fakerphp/faker": "^1.9.1",
         "laravel/breeze": "^2.0",
         "laravel/pint": "^1.0",
         "mockery/mockery": "^1.4.4",
         "nunomaduro/collision": "^8.1",
+        "pestphp/pest": "^2.36",
+        "pestphp/pest-plugin-drift": "^2.6",
         "phpunit/php-code-coverage": "^10.1",
-        "phpunit/phpunit": "^10.1",
         "rector/rector": "^2.0",
         "spatie/laravel-ignition": "^2.0"
     },

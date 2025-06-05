@@ -15,7 +15,7 @@ class InterclubPolicy
     public function create(User $user): bool
     {
         //
-        return ($user->is_admin || $user->is_comittee_member) || $user->captainOf()->exists();
+        return ($user->is_admin || $user->is_committee_member) || $user->captainOf()->exists();
     }
 
     /**

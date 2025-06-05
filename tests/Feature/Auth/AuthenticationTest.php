@@ -1,54 +1,40 @@
 <?php
 
 declare(strict_types=1);
-
-namespace Tests\Feature\Auth;
-
 use App\Models\User;
 use App\Providers\RouteServiceProvider;
-use Tests\TestCase;
 
-class AuthenticationTest extends TestCase
-{
-    public function test_login_screen_can_be_rendered(): void
-    {
-        $response = $this->get('/login');
+test('login screen can be rendered', function () {
+    $response = $this->get('/login');
 
-        $response->assertStatus(200);
-    }
+    $response->assertStatus(200);
+});
+test('users can authenticate using the login screen', function () {
+    $user = User::factory()->create();
 
-    public function test_users_can_authenticate_using_the_login_screen(): void
-    {
-        $user = User::factory()->create();
+    $response = $this->post('/login', [
+        'email' => $user->email,
+        'password' => 'password',
+    ]);
 
-        $response = $this->post('/login', [
-            'email' => $user->email,
-            'password' => 'password',
-        ]);
+    $this->assertAuthenticated();
+    $response->assertRedirect(RouteServiceProvider::HOME);
+});
+test('users can logout', function () {
+    $user = User::factory()->create();
 
-        $this->assertAuthenticated();
-        $response->assertRedirect(RouteServiceProvider::HOME);
-    }
+    $response = $this->actingAs($user)->post('/logout');
 
-    public function test_users_can_logout(): void
-    {
-        $user = User::factory()->create();
+    $this->assertGuest();
+    $response->assertRedirect('/');
+});
+test('users can not authenticate with invalid password', function () {
+    $user = User::factory()->create();
 
-        $response = $this->actingAs($user)->post('/logout');
+    $this->post('/login', [
+        'email' => $user->email,
+        'password' => 'wrong-password',
+    ]);
 
-        $this->assertGuest();
-        $response->assertRedirect('/');
-    }
-
-    public function test_users_can_not_authenticate_with_invalid_password(): void
-    {
-        $user = User::factory()->create();
-
-        $this->post('/login', [
-            'email' => $user->email,
-            'password' => 'wrong-password',
-        ]);
-
-        $this->assertGuest();
-    }
-}
+    $this->assertGuest();
+});

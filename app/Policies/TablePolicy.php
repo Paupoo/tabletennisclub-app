@@ -22,7 +22,7 @@ class TablePolicy
      */
     public function create(User $user): bool
     {
-        return $user->is_admin || $user->is_comittee_member;
+        return $user->is_admin || $user->is_committee_member;
     }
 
     /**
@@ -30,7 +30,7 @@ class TablePolicy
      */
     public function delete(User $user, Table $table): bool
     {
-        return $user->is_admin || $user->is_comittee_member;
+        return $user->is_admin || $user->is_committee_member;
     }
 
     /**
@@ -38,7 +38,7 @@ class TablePolicy
      */
     public function forceDelete(User $user, Table $table): bool
     {
-        return $user->is_admin || $user->is_comittee_member;
+        return $user->is_admin || $user->is_committee_member;
     }
 
     /**
@@ -46,7 +46,7 @@ class TablePolicy
      */
     public function restore(User $user, Table $table): bool
     {
-        return $user->is_admin || $user->is_comittee_member;
+        return $user->is_admin || $user->is_committee_member;
     }
 
     /**
@@ -54,7 +54,7 @@ class TablePolicy
      */
     public function update(User $user, Table $table): bool
     {
-        return $user->is_admin || $user->is_comittee_member;
+        return $user->is_admin || $user->is_committee_member;
     }
 
     /**

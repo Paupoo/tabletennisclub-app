@@ -11,6 +11,30 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * 
+ *
+ * @property int $id
+ * @property string $name
+ * @property int $tournament_id
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\Tournament $tournament
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\TournamentMatch> $tournamentmatches
+ * @property-read int|null $tournamentmatches_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $users
+ * @property-read int|null $users_count
+ * @method static \Database\Factories\PoolFactory factory($count = null, $state = [])
+ * @method static Builder<static>|Pool newModelQuery()
+ * @method static Builder<static>|Pool newQuery()
+ * @method static Builder<static>|Pool query()
+ * @method static Builder<static>|Pool whereCreatedAt($value)
+ * @method static Builder<static>|Pool whereId($value)
+ * @method static Builder<static>|Pool whereName($value)
+ * @method static Builder<static>|Pool whereTournamentId($value)
+ * @method static Builder<static>|Pool whereUpdatedAt($value)
+ * @mixin \Eloquent
+ */
 class Pool extends Model
 {
     /** @use HasFactory<\Database\Factories\PoolFactory> */

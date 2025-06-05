@@ -13,6 +13,52 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * 
+ *
+ * @property int $id
+ * @property string $address
+ * @property \Illuminate\Support\Carbon $start_date_time
+ * @property int|null $week_number
+ * @property int $total_players
+ * @property string|null $score
+ * @property string|null $result
+ * @property int|null $visited_team_id
+ * @property int|null $visiting_team_id
+ * @property int|null $room_id
+ * @property int|null $league_id
+ * @property int|null $season_id
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\League|null $league
+ * @property-read \App\Models\Room|null $room
+ * @property-read \App\Models\Season|null $season
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Team> $teams
+ * @property-read int|null $teams_count
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $users
+ * @property-read int|null $users_count
+ * @property-read \App\Models\Team|null $visitedTeam
+ * @property-read \App\Models\Team|null $visitingTeam
+ * @method static \Database\Factories\InterclubFactory factory($count = null, $state = [])
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub whereAddress($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub whereLeagueId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub whereResult($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub whereRoomId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub whereScore($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub whereSeasonId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub whereStartDateTime($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub whereTotalPlayers($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub whereVisitedTeamId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub whereVisitingTeamId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub whereWeekNumber($value)
+ * @mixin \Eloquent
+ */
 class Interclub extends Model
 {
     use HasFactory;

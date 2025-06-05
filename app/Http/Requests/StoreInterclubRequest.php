@@ -15,7 +15,7 @@ class StoreInterclubRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()->is_admin || $this->user()->is_comittee_member || $this->user()->captainOf()->where('id', $this->input('team_id'))->exists();
+        return $this->user()->is_admin || $this->user()->is_committee_member || $this->user()->captainOf()->where('id', $this->input('team_id'))->exists();
     }
 
     public function messages(): array

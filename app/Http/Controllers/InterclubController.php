@@ -54,7 +54,7 @@ class InterclubController extends Controller
         $club = Club::OurClub()->first();
         $otherClubs = Club::OtherClubs()->orderBy('name')->get();
         $user = Auth::user();
-        $teams = ($user->is_admin || $user->is_comittee_member)
+        $teams = ($user->is_admin || $user->is_committee_member)
             ? $teams = Team::where('club_id', $club->id)->get()
             : $teams = Team::where('captain_id', $user->id)->get();
         $rooms = Room::select('id', 'name')

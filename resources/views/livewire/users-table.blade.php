@@ -24,7 +24,7 @@
         </thead>
         <tbody>
             @foreach ($users as $user)
-                <tr wire:key="{{ $user->id }}" class="border-b dark:border-neutral-500 {{ $user->is_admin ? 'text-green-500' : '' }} {{ $user->is_comittee_member ? 'text-blue-500' : ''}}">
+                <tr wire:key="{{ $user->id }}" class="border-b dark:border-neutral-500 {{ $user->is_admin ? 'text-green-500' : '' }} {{ $user->is_committee_member ? 'text-blue-500' : ''}}">
                     <td class="px-4 whitespace-nowrap">
                         @if ($user->sex === \App\Enums\Sex::MEN->name )
                             &#9794;

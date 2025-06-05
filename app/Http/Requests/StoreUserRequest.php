@@ -17,7 +17,7 @@ class StoreUserRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()->is_admin || $this->user()->is_comittee_member;
+        return $this->user()->is_admin || $this->user()->is_committee_member;
     }
 
     public function prepareForValidation(): void
@@ -25,7 +25,7 @@ class StoreUserRequest extends FormRequest
         $this->merge([
             'is_active' => $this->input('is_active') !== null,
             'is_admin' => $this->input('is_admin') !== null,
-            'is_comittee_member' => $this->input('is_comittee_member') !== null,
+            'is_committee_member' => $this->input('is_committee_member') !== null,
             'is_competitor' => $this->input('is_competitor') !== null,
         ]);
     }
@@ -47,7 +47,7 @@ class StoreUserRequest extends FormRequest
             'first_name' => ['required', 'string', 'max:255'],
             'is_active' => ['boolean'],
             'is_admin' => ['boolean'],
-            'is_comittee_member' => ['boolean'],
+            'is_committee_member' => ['boolean'],
             'is_competitor' => ['boolean'],
             'last_name' => ['required', 'string', 'max:255'],
             'licence' => ['nullable', 'required_if:is_competitor,true', 'unique:users,licence', 'size:6'],

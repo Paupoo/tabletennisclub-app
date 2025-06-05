@@ -6,6 +6,7 @@ namespace Database\Factories;
 
 use App\Enums\Ranking;
 use App\Enums\Sex;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -24,28 +25,14 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
-
-        $licencesToExclude = [
-            223344,
-            123123,
-            112233,
-            443211,
-            987654,
-            332211,
-            154856,
-            852364,
-            124599,
-            111952,
-            123456,
-        ];
-
+        $uniqueEmail = $this->uniqueEmail();
         return [
             'is_active' => true,
             'is_admin' => false,
-            'is_comittee_member' => false,
+            'is_committee_member' => false,
             'is_competitor' => fake()->randomElement([true, false]),
             'has_debt' => false,
-            'email' => fake()->unique()->safeEmail(),
+            'email' => $uniqueEmail,
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
@@ -58,7 +45,6 @@ class UserFactory extends Factory
             'city_code' => fake()->postcode(),
             'city_name' => fake()->city(),
             'ranking' => fake()->randomElement(array_column(Ranking::cases(), 'name')),
-            'licence' => fake()->unique()->numberBetweenNot(95000, 170000, $licencesToExclude),
             'club_id' => 1,
         ];
     }
@@ -71,5 +57,60 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
         ]);
+    }
+
+    public function isNotCompetitor(): static
+    {
+        return $this->state(fn(array $attributes): array => [
+            'is_competitor' => false,
+            'licence' => null,
+        ]);
+    }
+    public function isCompetitor(): static
+    {
+        
+        return $this->state(function (array $attributes) {
+            $unusedLicence = fake()->numberBetween(95000, 170000);
+    
+            while(User::where('licence', $unusedLicence)->exists()) {
+                $unusedLicence++;
+            }
+
+            return [
+                'is_competitor' => true,
+                'licence' => $unusedLicence,
+                'ranking' => fake()->randomElement(array_column(Ranking::cases(), 'name')),
+            ];
+        });
+    }
+    public function setRanking(Ranking $ranking): static
+    {
+        return $this->state(fn(array $attributes): array => [
+            'ranking' => $ranking,
+        ]);
+    }
+    public function isAdmin(): static
+    {
+        return $this->state(fn(array $attributes): array => [
+            'is_admin' => true,
+        ]);
+    }
+
+    public function isCommitteeMember(): static
+    {
+        return $this->state(fn(array $attributes): array => [
+            'is_committee_member' => true,
+        ]);
+    }
+
+    private function uniqueEmail(): string
+    {
+        $email = (string) fake()->unique()->safeEmail();
+
+        while(User::where('email', $email)->exists()){
+            $email = (string) fake()->unique()->safeEmail();
+        }
+
+        return $email;
     }
 }

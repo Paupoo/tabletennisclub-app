@@ -13,8 +13,8 @@ class UserPolicy
      */
     public function create(User $user): bool
     {
-        // Only allow admin & comittee mebers to create new users
-        return $user->is_admin || $user->is_comittee_member;
+        // Only allow admin & committee mebers to create new users
+        return $user->is_admin || $user->is_committee_member;
     }
 
     /**
@@ -23,7 +23,7 @@ class UserPolicy
     public function delete(User $user): bool
     {
         //
-        return $user->is_admin || $user->is_comittee_member;
+        return $user->is_admin || $user->is_committee_member;
     }
 
     /**
@@ -31,7 +31,7 @@ class UserPolicy
      */
     public function deleteForceList(User $user): bool
     {
-        return $user->is_admin || $user->is_comittee_member;
+        return $user->is_admin || $user->is_committee_member;
     }
 
     /**
@@ -64,7 +64,7 @@ class UserPolicy
      */
     public function setOrUpdateForceList(User $user): bool
     {
-        return $user->is_admin || $user->is_comittee_member;
+        return $user->is_admin || $user->is_committee_member;
     }
 
     /**
@@ -73,7 +73,7 @@ class UserPolicy
     public function update(User $user): bool
     {
         //
-        return $user->is_admin || $user->is_comittee_member;
+        return $user->is_admin || $user->is_committee_member;
     }
 
     /**

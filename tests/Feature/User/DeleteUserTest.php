@@ -1,120 +1,101 @@
 <?php
 
 declare(strict_types=1);
-
-namespace Tests\Feature\User;
-
 use App\Models\User;
-use Tests\TestCase;
-use Tests\Trait\CreateUser;
 
-class DeleteUserTest extends TestCase
-{
-    use CreateUser;
+uses(\Tests\Trait\CreateUser::class);
 
-    public function test_admin_and_comittee_member_can_see_delete_button_from_users_index_view(): void
-    {
-        $admin = $this->createFakeAdmin();
-        $comitteeMember = $this->createFakeComitteeMember();
-
-        $response = $this
-            ->actingAs($admin)
-            ->get(route('users.index'));
-
-        $response->assertSee('Delete');
-
-        $response = $this
-            ->actingAs($comitteeMember)
-            ->get(route('users.index'));
-
-        $response->assertSee('Delete');
+beforeEach(function () {
+    $this->admin = User::factory()
+        ->isAdmin()
+        ->create();
+    $this->committeeMember = User::factory()
+        ->isCommitteeMember()
+        ->create();
+    $this->user = User::factory()
+        ->create();
     }
+);
 
-    public function test_admin_and_comittee_member_can_see_delete_button_from_users_show_view(): void
-    {
-        $admin = $this->createFakeAdmin();
-        $comitteeMember = $this->createFakeComitteeMember();
+test('admin and committee member can see delete button from users index view', function () {
+    
+    $response = $this
+        ->actingAs($this->admin)
+        ->get(route('users.index'));
 
-        $response = $this
-            ->actingAs($admin)
-            ->get(route('users.show', $admin));
+    $response->assertSee('Delete');
 
-        $response->assertSee('Delete');
+    $response = $this
+        ->actingAs($this->committeeMember)
+        ->get(route('users.index'));
 
-        $response = $this
-            ->actingAs($comitteeMember)
-            ->get(route('users.show', $comitteeMember));
+    $response->assertSee('Delete');
+});
+test('admin and committee member can see delete button from users show view', function () {
 
-        $response->assertSee('Delete');
-    }
+    $response = $this
+        ->actingAs($this->admin)
+        ->get(route('users.show', $this->admin));
 
-    /**
-     * A basic feature test example.
-     */
-    public function test_admin_or_comittee_member_delete_a_user_from_users_index_view(): void
-    {
-        $admin = $this->createFakeAdmin();
-        $comitteeMember = $this->createFakeComitteeMember();
+    $response->assertSee('Delete');
 
-        $userToDelete1 = User::factory()->create();
-        $userToDelete2 = User::factory()->create();
+    $response = $this
+        ->actingAs($this->committeeMember)
+        ->get(route('users.show', $this->committeeMember));
 
-        $totalUsers = User::count();
+    $response->assertSee('Delete');
+});
+test('admin or committee member delete a user from users index view', function () {
 
-        $response = $this
-            ->actingAs($admin)
-            ->from(route('users.index'))
-            ->delete(route('users.destroy', $userToDelete1));
+    $userToDelete1 = User::factory()->create();
+    $userToDelete2 = User::factory()->create();
 
-        $response
-            ->assertRedirect(route('users.index'))
-            ->assertSessionHas('success');
+    $totalUsers = User::count();
 
-        $response = $this
-            ->actingAs($comitteeMember)
-            ->from(route('users.index'))
-            ->delete(route('users.destroy', $userToDelete2));
+    $response = $this
+        ->actingAs($this->admin)
+        ->from(route('users.index'))
+        ->delete(route('users.destroy', $userToDelete1));
 
-        $response
-            ->assertRedirect(route('users.index'))
-            ->assertSessionHas('success');
+    $response
+        ->assertRedirect(route('users.index'))
+        ->assertSessionHas('success');
 
-        $this->assertDatabaseCount('users', $totalUsers - 2);
-    }
+    $response = $this
+        ->actingAs($this->committeeMember)
+        ->from(route('users.index'))
+        ->delete(route('users.destroy', $userToDelete2));
 
-    public function test_user_cant_delete_any_user(): void
-    {
-        $user = $this->createFakeUser();
-        $userToDelete = User::find(1);
+    $response
+        ->assertRedirect(route('users.index'))
+        ->assertSessionHas('success');
 
-        $response = $this
-            ->actingAs($user)
-            ->from(route('users.index'))
-            ->delete(route('users.destroy', $userToDelete));
+    $this->assertDatabaseCount('users', $totalUsers - 2);
+});
+test('user cant delete any user', function () {
+    $userToDelete = User::find(1);
 
-        $response
-            ->assertStatus(403);
-    }
+    $response = $this
+        ->actingAs($this->user)
+        ->from(route('users.index'))
+        ->delete(route('users.destroy', $userToDelete));
 
-    public function test_user_cant_see_delete_button_from_users_index_view(): void
-    {
-        $user = $this->createFakeUser();
+    $response
+        ->assertStatus(403);
+});
+test('user cant see delete button from users index view', function () {
 
-        $response = $this
-            ->actingAs($user)
-            ->get(route('users.index'));
+    $response = $this
+        ->actingAs($this->user)
+        ->get(route('users.index'));
 
-        $response->assertDontSee('Delete');
-    }
+    $response->assertDontSee('Delete');
+});
+test('user cant see delete button from users show view', function () {
 
-    public function test_user_cant_see_delete_button_from_users_show_view(): void
-    {
-        $user = $this->createFakeUser();
+    $response = $this
+        ->actingAs($this->user)
+        ->get(route('users.show', $this->user));
 
-        $response = $this
-            ->actingAs($user)
-            ->get(route('users.show', $user));
-
-        $response->assertDontSee('Delete');
-    }
-}
+    $response->assertDontSee('Delete');
+});

@@ -14,7 +14,7 @@ class TournamentPolicy
      */
     public function create(User $user): bool
     {
-        return $user->is_admin || $user->is_comittee_member;
+        return $user->is_admin || $user->is_committee_member;
     }
 
     /**
@@ -30,7 +30,7 @@ class TournamentPolicy
      */
     public function forceDelete(User $user, Tournament $tournament): bool
     {
-        return ($user->is_admin || $user->is_comittee_member) && $tournament->status !== 'pending';
+        return ($user->is_admin || $user->is_committee_member) && $tournament->status !== 'pending';
     }
 
     /**
@@ -48,7 +48,7 @@ class TournamentPolicy
     {
         $tournamentIsNotStartedOrFinished = ($tournament->status !== 'pending' && $tournament->status !== 'closed');
 
-        return ($user->is_admin || $user->is_comittee_member) && $tournamentIsNotStartedOrFinished;
+        return ($user->is_admin || $user->is_committee_member) && $tournamentIsNotStartedOrFinished;
     }
 
     /**

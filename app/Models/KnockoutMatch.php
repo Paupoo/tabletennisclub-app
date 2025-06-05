@@ -7,6 +7,21 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * 
+ *
+ * @property-read \App\Models\TournamentMatch|null $nextMatch
+ * @property-read \App\Models\User|null $player1
+ * @property-read \App\Models\User|null $player2
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\MatchSet> $sets
+ * @property-read int|null $sets_count
+ * @property-read \App\Models\Tournament|null $tournament
+ * @property-read \App\Models\User|null $winner
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|KnockoutMatch newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|KnockoutMatch newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|KnockoutMatch query()
+ * @mixin \Eloquent
+ */
 class KnockoutMatch extends Model
 {
     protected $fillable = [

@@ -8,6 +8,32 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * 
+ *
+ * @property int $id
+ * @property int|null $tournament_match_id
+ * @property int $set_number
+ * @property int $player1_score
+ * @property int $player2_score
+ * @property int|null $winner_id
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Models\TournamentMatch|null $poolMatch
+ * @property-read \App\Models\User|null $winner
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MatchSet newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MatchSet newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MatchSet query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MatchSet whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MatchSet whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MatchSet wherePlayer1Score($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MatchSet wherePlayer2Score($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MatchSet whereSetNumber($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MatchSet whereTournamentMatchId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MatchSet whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MatchSet whereWinnerId($value)
+ * @mixin \Eloquent
+ */
 class MatchSet extends Model
 {
     //

@@ -13,7 +13,7 @@ class StoreOrUpdateTournamentRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()->is_admin || $this->user()->is_comittee_member;
+        return $this->user()->is_admin || $this->user()->is_committee_member;
     }
 
     /**

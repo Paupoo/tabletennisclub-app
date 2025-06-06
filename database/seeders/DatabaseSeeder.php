@@ -319,7 +319,7 @@ class DatabaseSeeder extends Seeder
 
         User::factory()
             ->isNotCompetitor()
-            ->count(5000)
+            ->count(500)
             ->create();
 
         // Gestion du tournoi

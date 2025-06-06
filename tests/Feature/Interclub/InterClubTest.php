@@ -46,13 +46,13 @@ test('admin or committee member can store interclub', function () {
 });
 test('captains are able to create an interclub', function () {
     // to do
-});
+})->todo();
 test('captains are able to store an interclub', function () {
     // to do
-});
+})->todo();
 test('invalid request', function () {
     // to do
-});
+})->todo();
 test('route index', function () {
     $user = $this->createFakeUser();
 

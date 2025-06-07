@@ -1,7 +1,7 @@
 <div x-data="{ show: @entangle('showModal') }" x-init="$watch('show', value => { if (value) $nextTick(() => $refs.search.focus()) })">
     <!-- Bouton pour ouvrir le modal -->
     <button wire:click="openModal" 
-            class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+            class="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
         <x-ui.icon name="plus" class="mr-2" />
         {{ __('Register a user') }}
     </button>

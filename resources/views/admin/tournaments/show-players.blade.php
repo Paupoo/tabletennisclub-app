@@ -14,7 +14,8 @@
 
 
         <!-- Contenu de l'onglet: Joueurs inscrits -->
-        @include('admin.tournaments.partials.registered-players')
+        @livewire('tournament.registered-players', ['tournament' => $tournament])
+
 
     </x-admin-block>
 </x-app-layout>

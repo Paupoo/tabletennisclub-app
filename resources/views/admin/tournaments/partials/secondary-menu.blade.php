@@ -16,8 +16,8 @@
                         :iconName="'people'">
                             {{ __('Players') }}
                             <span class="ml-2 px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-800">
-                                {{ $tournament->users()->wherepivot('has_paid', true)->count() }} / 
-                                {{ $tournament->users()->count() }}
+                                {{ $tournament->users()->count() }} / 
+                                {{ $tournament->max_users }}
                             </span>
                     </x-sub-nav-link>
                     <x-sub-nav-link 

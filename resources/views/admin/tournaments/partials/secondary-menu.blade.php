@@ -16,6 +16,7 @@
                         :iconName="'people'">
                             {{ __('Players') }}
                             <span class="ml-2 px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-800">
+                                {{ $tournament->users()->wherepivot('has_paid', true)->count() }} / 
                                 {{ $tournament->users()->count() }}
                             </span>
                     </x-sub-nav-link>
@@ -34,6 +35,7 @@
                         :iconName="'list'">
                             {{ __('Matches') }}
                             <span class="ml-2 px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-800">
+                                {{ $tournament->matches()->where('status', 'completed')->count() }} / 
                                 {{ $tournament->matches()->count() }}
                             </span>
                     </x-sub-nav-link>
@@ -43,6 +45,7 @@
                         :iconName="'table'">
                             {{ __('Tables') }}
                             <span class="ml-2 px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-800">
+                                {{ $tournament->tables()->where('is_table_free', false)->count() }} / 
                                 {{ count($tournament->tables) }}
                             </span>
                     </x-sub-nav-link>

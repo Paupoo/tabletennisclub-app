@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Livewire;
+namespace App\Livewire\Tournament;
 
 use App\Models\Tournament;
 use App\Models\User;
@@ -124,7 +124,7 @@ class PlayerRegistration extends Component
 
     public function render()
     {
-        return view('livewire.player-registration', [
+        return view('livewire.tournament.player-registration', [
             'filteredPlayers' => $this->getFilteredPlayers(),
             'selectedPlayer' => $this->getSelectedPlayer(),
         ]);

@@ -3,15 +3,6 @@
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            @if (session()->has('success'))
-                <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-8" role="alert">
-                    <p>{{ session()->get('success') }}</p>
-                </div>
-            @elseif(session()->has('error'))
-                <div class="bg-red-100 border-l-4 border-Red-500 text-red-700 p-4 mb-8" role="alert">
-                    <p>{{ session()->get('error') }}</p>
-                </div>
-            @endif
             
             <!-- Classement de la poule -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">

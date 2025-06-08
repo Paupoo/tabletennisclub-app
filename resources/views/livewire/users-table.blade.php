@@ -7,18 +7,33 @@
             <x-forms.search-input placeholder="{{ __('Search users...') }}" wire:model.live.debounce.500ms="search" />
 
             <div class="flex items-center gap-3 ml-auto">
-                <x-forms.select-input wire:model.live="competitor">
-                    <option value="">{{ __('All') }}</option>
-                    <option value="1">{{ __('Competitor') }}</option>
-                    <option value="0">{{ __('Casual') }}</option>
-                </x-forms.select-input>
+                <label class="flex flex-row text-xs">
+                    <p class="my-auto mr-2">{{ ('Type') }}</p>
+                    <x-forms.select-input wire:model.live="competitor">
+                        <option value="">{{ __('All') }}</option>
+                        <option value="1">{{ __('Competitor') }}</option>
+                        <option value="0">{{ __('Casual') }}</option>
+                    </x-forms.select-input>
+                </label>
 
-                <x-forms.select-input wire:model.live="perPage">
-                    <option value="10">10 par page</option>
-                    <option value="20">20 par page</option>
-                    <option value="50">50 par page</option>
-                    <option value="0">Tous</option>
-                </x-forms.select-input>
+                <label class="flex flex-row text-xs">
+                    <p class="my-auto mr-2">{{ ('Sex') }}</p>
+                    <x-forms.select-input wire:model.live="sex">
+                        <option value="">{{ __('All') }}</option>
+                        <option value="{{ \App\Enums\Sex::WOMEN->name }}">{{ __('Women') }}</option>
+                        <option value="{{ \App\Enums\Sex::MEN->name }}">{{ __('Men') }}</option>
+                        <option value="{{ \App\Enums\Sex::OTHER->name }}">{{ __('Others') }}</option>
+                    </x-forms.select-input>
+                </label>
+                <label class="flex flex-row text-xs">
+                    <p class="my-auto mr-2">{{ ('Pagination') }}</p>
+                    <x-forms.select-input wire:model.live="perPage">
+                        <option value="10">10 par page</option>
+                        <option value="20">20 par page</option>
+                        <option value="50">50 par page</option>
+                        <option value="0">Tous</option>
+                    </x-forms.select-input>
+                </label>
             </div>
         </div>
 

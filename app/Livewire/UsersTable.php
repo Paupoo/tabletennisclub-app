@@ -16,6 +16,8 @@ class UsersTable extends Component
 
     public string $competitor = '';
 
+    public string $sex = '';
+
     public int $perPage = 20;
 
     public string $search = '';
@@ -58,6 +60,9 @@ class UsersTable extends Component
             'users' => User::search($this->search)
                 ->when($this->competitor !== '', function ($query): void {
                     $query->where('is_competitor', $this->competitor);
+                })
+                ->when($this->sex !== '', function ($query): void {
+                    $query->where('sex', $this->sex);
                 })
                 ->when($this->sortByField === '', function ($query): void {
                     $query->orderby('is_competitor', 'desc')

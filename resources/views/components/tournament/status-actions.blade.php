@@ -1,6 +1,12 @@
 @props(['tournament'])
 
 <div class="flex justify-end space-x-2">
+    <x-ui.action-button 
+        variant="default" 
+        icon="view" 
+        tooltip="Voir les résultats"
+        onclick="window.location.href='{{ route('tournamentShow', $tournament) }}'"
+    />
     @if($tournament->status === 'open')
         <x-ui.action-button 
             variant="default" 
@@ -18,45 +24,41 @@
             onclick="window.location.href='{{ route('publishTournament', $tournament) }}'"
         />
     @endif
-
-    @if($tournament->status === 'closed')
-        <x-ui.action-button 
-            variant="primary" 
-            icon="view" 
-            tooltip="Voir les résultats"
-            onclick="window.location.href='{{ route('tournamentShow', $tournament) }}'"
-        />
-    @else
+    @can('update', $tournament)
         <x-ui.action-button 
             variant="default" 
             icon="edit" 
             tooltip="Modifier"
             onclick="window.location.href='{{ route('tournament.edit', $tournament) }}'"
         />
-    @endif
+    @endcan
 
-    @if($tournament->users->contains(auth()->user()->id) && $tournament->status === App\Enums\TournamentStatusEnum::PUBLISHED)
+    @can('updateSubscriptionAsUser', $tournament)
+    @if($tournament->users->contains(auth()->user()->id))
     <a href="/admin/tournament/unregister/{{$tournament->id}}/{{auth()->user()->id}}">
         <x-ui.action-button 
-        variant="warning" 
+        variant="danger" 
         icon="leave" 
+        tooltip="{{ __('Unregister from tournament') }}"
+        />
+    </a>
+    @endif
+    @if(!$tournament->users->contains(auth()->user()->id))
+    <a href="/admin/tournament/register/{{$tournament->id}}/{{auth()->user()->id}}">
+        <x-ui.action-button 
+        variant="default" 
+        icon="join" 
         tooltip="{{ __('Register to tournament') }}"
         />
     </a>
     @endif
-    @if(!$tournament->users->contains(auth()->user()->id) && $tournament->status === App\Enums\TournamentStatusEnum::PUBLISHED)
-        <a href="/admin/tournament/register/{{$tournament->id}}/{{auth()->user()->id}}">
-            <x-ui.action-button 
-            variant="default" 
-            icon="join" 
-            tooltip="{{ __('Register to tournament') }}"
-            />
-        </a>
-    @endif
+    @endcan
+    @can('delete',  $tournament)
     <x-ui.action-button 
         variant="danger" 
         icon="delete" 
         tooltip="Supprimer"
         onclick="if(confirm('Êtes-vous sûr de vouloir supprimer ce tournoi ?')) { window.location.href='{{ route('deleteTournament', $tournament) }}' }"
     />
+    @endcan
 </div>

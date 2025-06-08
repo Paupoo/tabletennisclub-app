@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Actions\Tournament\ToggleHasPaidTournamentAction;
 use App\Enums\TournamentStatusEnum;
 use App\Http\Requests\StartTournamentMatch;
 use App\Http\Requests\StoreOrUpdateTournamentRequest;
@@ -636,18 +637,12 @@ class TournamentController extends Controller
 
     public function toggleHasPaid(Tournament $tournament, User $user): RedirectResponse
     {
-        $hasPaid = $tournament->users()->where('user_id', $user->id)->first()->pivot->has_paid;
-
-        $tournament->users()->updateExistingPivot($user->id, [
-            'has_paid' => ! $hasPaid,
-        ]);
-
+        $this->authorize('updatesBeforeStart', $tournament);
+        $action = new ToggleHasPaidTournamentAction($user);
+        $action->toggleHasPaid($tournament);
+        
         return redirect()
-            ->route('tournamentShow', $tournament)
-            ->with([
-                $hasPaid ? 'warning' : 'success' => 'Le paiement de ' . $user->first_name . ' ' . $user->last_name . ' a bien été ' . (($hasPaid) ? 'supprimé' : 'enregistré'),
-            ]);
-
+            ->back();
     }
 
     public function unpublish(Tournament $tournament): RedirectResponse
@@ -674,7 +669,7 @@ class TournamentController extends Controller
 
         return redirect()
             ->back()
-            ->with('success', $user->first_name . ' ' . $user->last_name . ' has been unregistered to the tournament');
+            ->with('success', $user->first_name . ' ' . $user->last_name . ' has been unregistered from the tournament');
     }
 
     public function update(StoreOrUpdateTournamentRequest $request, Tournament $tournament): RedirectResponse

@@ -18,8 +18,27 @@
             x-transition:leave-end="transform opacity-0 scale-95"
             class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50">
             <div class="py-1">
+                <!-- Update subscription as a user -->
+                @can('updateSubscriptionAsUser', $tournament)
+                @if(!$tournament->users->contains(auth()->user()->id))
+                <a href="/admin/tournament/register/{{$tournament->id}}/{{auth()->user()->id}}"
+                    class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                    <x-ui.icon name="join" class="mr-2" />
+                    {{ __('Register') }}
+                </a>
+                @elseif($tournament->users->contains(auth()->user()->id))
+                <a href="/admin/tournament/unregister/{{$tournament->id}}/{{auth()->user()->id}}"
+                    class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+                    <x-ui.icon name="leave" class="mr-2" />
+                    {{ __('Unregister') }}
+                </a>
+                @endif
+                @endcan
+                {{-- Updates --}}
+                @can('update', $tournament)
                 <!-- Composant Livewire pour l'inscription de joueur -->
                 <livewire:tournament.player-registration :tournament="$tournament" />
+                
 
                 <a href="{{ route('tournament.edit', $tournament) }}"
                     class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
@@ -39,13 +58,6 @@
                     {{ __('Draft') }}
                 </a>
                 @endif
-                {{-- @if(in_array(\App\Enums\TournamentStatusEnum::PUBLISHED, $statusesAllowed))
-                <a href="{{ route('tournamentSetStatus', [$tournament, \App\Enums\TournamentStatusEnum::PUBLISHED]) }}"
-                    class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
-                    <x-ui.icon name="duplicate" class="mr-2" />
-                    {{ __('Publish') }}
-                </a>
-                @endif --}}
                 @if(in_array(\App\Enums\TournamentStatusEnum::LOCKED, $statusesAllowed))
                 <a href="{{ route('tournamentSetStatus', [$tournament, \App\Enums\TournamentStatusEnum::LOCKED]) }}"
                     class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
@@ -81,14 +93,20 @@
                     {{ __('Cancel') }}
                 </a>
                 @endif
+                @endcan
+
+                <!-- Deletion -->
+                @can('delete', $tournament)
                 <div class="border-t border-gray-200"></div>
+                    
                 <button @click="$dispatch('open-modal', 'confirm-tournament-deletion')"
                     class="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100 hover:text-red-700">
                     <x-ui.icon name="delete" class="mr-2" />
                     {{ __('Delete') }}
                 </button>
-
-                <!-- Modal to confirm delete tournament -->
+                @endcan
+            
+            <!-- Modal to confirm delete tournament -->
                 <x-modal name="confirm-tournament-deletion" focusable>
                     <form method="get" action="{{ route('deleteTournament', $tournament) }}" class="p-6">
                         @csrf

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Actions\User\ToggleHasPaidMembershipAction;
 use App\Enums\Ranking;
 use App\Enums\Sex;
 use App\Http\Requests\StoreUserRequest;
@@ -159,5 +160,15 @@ class UserController extends Controller
         return redirect()
             ->route('users.index')
             ->with('success', __('Member ' . $user->first_name . ' ' . $user->last_name . ' has been updated.'));
+    }
+
+    public function toggleHasPaid(User $user): RedirectResponse
+    {
+        $this->authorize('update');
+        $action = new ToggleHasPaidMembershipAction($user);
+        $action->toggleHasPaid($user);
+
+        return redirect()
+            ->back();
     }
 }

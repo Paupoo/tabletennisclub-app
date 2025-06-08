@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Enums\TournamentStatusEnum;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreOrUpdateTournamentRequest extends FormRequest
 {
@@ -31,6 +33,7 @@ class StoreOrUpdateTournamentRequest extends FormRequest
             'max_users' => 'required|integer|min:10',
             'price' => 'decimal:0,2',
             'has_handicap_points' => 'required|bool',
+            'status' => ['required', Rule::enum(TournamentStatusEnum::class)],
         ];
     }
 }

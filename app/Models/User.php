@@ -25,7 +25,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property bool $is_admin
  * @property bool $is_committee_member
  * @property bool $is_competitor
- * @property bool $has_debt
+ * @property bool $has_paid
  * @property string $email
  * @property string|null $email_verified_at
  * @property string $password
@@ -104,7 +104,7 @@ class User extends Authenticatable
         'is_admin' => 'boolean',
         'is_committee_member' => 'boolean',
         'is_competitor' => 'boolean',
-        'has_debt' => 'boolean',
+        'has_paid' => 'boolean',
         'email' => 'string',
         'password' => 'string',
         'first_name' => 'string',
@@ -131,6 +131,7 @@ class User extends Authenticatable
         'city_name',
         'email',
         'first_name',
+        'has_paid',
         'is_active',
         'is_admin',
         'is_committee_member',

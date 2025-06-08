@@ -52,10 +52,7 @@
                     
                     <x-table.cell>
                         <div class="text-sm font-medium text-gray-900">
-                            <a href="{{ route('tournamentShow', $tournament) }}" 
-                               class="text-indigo-600 hover:text-indigo-900">
                                 {{ $tournament->name }}
-                            </a>
                         </div>
                     </x-table.cell>
                     

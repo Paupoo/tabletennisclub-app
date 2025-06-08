@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
+use App\Enums\TournamentStatusEnum;
 use App\Models\Tournament;
 use App\Models\User;
 
@@ -22,7 +23,7 @@ class TournamentPolicy
      */
     public function delete(User $user, Tournament $tournament): bool
     {
-        return false;
+        return ($user->is_admin || $user->is_committee_member);
     }
 
     /**
@@ -44,11 +45,25 @@ class TournamentPolicy
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, Tournament $tournament): bool
+    public function update(User $user): bool
     {
-        $tournamentIsNotStartedOrFinished = ($tournament->status !== 'pending' && $tournament->status !== 'closed');
+        return $user->is_admin || $user->is_committee_member;
+    }
 
-        return ($user->is_admin || $user->is_committee_member) && $tournamentIsNotStartedOrFinished;
+    /**
+     * Determine whether the user can update the model.
+     */
+    public function updateSubscriptionAsUser(User $user, Tournament $tournament): bool
+    {
+        return $tournament->status->value === TournamentStatusEnum::PUBLISHED->value;
+    }
+
+    /**
+     * Determine whether the user can update the model.
+     */
+    public function updatesBeforeStart(User $user, Tournament $tournament): bool
+    {
+        return ($user->is_admin || $user->is_committee_member) && $tournament->status->value === TournamentStatusEnum::PUBLISHED->value;
     }
 
     /**

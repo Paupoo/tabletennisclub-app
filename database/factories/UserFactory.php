@@ -31,7 +31,7 @@ class UserFactory extends Factory
             'is_admin' => false,
             'is_committee_member' => false,
             'is_competitor' => fake()->randomElement([true, false]),
-            'has_debt' => false,
+            'has_paid' => false,
             'email' => $uniqueEmail,
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),

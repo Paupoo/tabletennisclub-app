@@ -49,7 +49,7 @@
                 <x-table.header-cell wire:click="sortBy('is_active')">{{ __('Active') }}</x-table.header-cell>
                 <x-table.header-cell
                     wire:click="sortBy('is_competitor')">{{ __('Competitor') }}</x-table.header-cell>
-                <x-table.header-cell wire:click="sortBy('has_debt')">{{ __('Has Debts') }}</x-table.header-cell>
+                <x-table.header-cell wire:click="sortBy('has_paid')">{{ __('Has Paid') }}</x-table.header-cell>
                 <x-table.header-cell>{{ __('Actions') }}</x-table.header-cell>
             </x-table.row>
         </x-table.header>
@@ -98,10 +98,14 @@
                         @endif
                     </x-table.cell>
                     <x-table.cell>
-                        @if ($user->has_debt == false)
-                            {{ __('No') }}
+                        @if ($user->has_paid == false)
+                            <x-ui.badge :variant="'warning'">
+                                {{ __('No') }}
+                            </x-ui.badge>
                         @else
-                            {{ __('Yes') }}
+                            <x-ui.badge :variant="'success'">
+                                {{ __('Yes') }}
+                            </x-ui.badge>
                         @endif
                     </x-table.cell>
                     <x-table.cell>
@@ -118,6 +122,12 @@
                                 icon="modify" 
                                 tooltip="{{ __('Modify user details') }}"
                                 onclick="window.location.href='{{ route('users.edit', $user) }}'">
+                            </x-ui.action-button>
+                            <x-ui.action-button 
+                                variant="default" 
+                                icon="euro" 
+                                tooltip="{{ __('Update subscription payment status') }}"
+                                onclick="window.location.href='{{ route('users.toggleHaspaid', $user) }}'">
                             </x-ui.action-button>
                             @endcan
                             @can('delete', $user_model)

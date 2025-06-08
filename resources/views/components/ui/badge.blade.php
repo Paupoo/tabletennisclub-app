@@ -14,6 +14,8 @@ $classes = [
     'pending' => 'bg-green-100 text-green-800',
     'closed' => 'bg-yellow-100 text-yellow-800',
     'cancelled' => 'bg-red-100 text-red-800',
+    'success' => 'bg-green-100 text-green-800',
+    'warning' => 'bg-orange-100 text-orange-800',
 ];
 @endphp
 

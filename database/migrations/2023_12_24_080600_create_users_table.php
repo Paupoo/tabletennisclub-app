@@ -31,7 +31,7 @@ return new class extends Migration
             $table->boolean('is_admin')->default(false);
             $table->boolean('is_committee_member')->default(false);
             $table->boolean('is_competitor')->default(false);
-            $table->boolean('has_debt')->default(false);
+            $table->boolean('has_paid')->default(false);
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');

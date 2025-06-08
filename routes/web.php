@@ -143,12 +143,10 @@ Route::get('/admin/users/deleteForceList', [
     'deleteForceList',
 ])->middleware(['auth', 'verified'])->name('deleteForceList');
 
-Route::resource('admin/users', UserController::class)->middleware(['auth', 'verified']);
+Route::get('/admin/{user}/subscription', [UserController::class, 'toggleHasPaid'])->name('users.toggleHaspaid');
 
-Route::get('/test', [
-    TestController::class,
-    'test',
-]);
+
+Route::resource('admin/users', UserController::class)->middleware(['auth', 'verified']);
 
 // Tournaments
 Route::middleware(['auth', 'verified'])

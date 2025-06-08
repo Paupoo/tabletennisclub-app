@@ -11,7 +11,7 @@ test('admin and committee members can see create member and force index buttons 
         ->get(route('users.index'))
         ->assertSee([
             'Create new user',
-            'Set Force Index',
+            'Reset Force Index',
             'Delete Force Index',
         ]);
 
@@ -19,7 +19,7 @@ test('admin and committee members can see create member and force index buttons 
         ->get(route('users.index'))
         ->assertSee([
             'Create new user',
-            'Set Force Index',
+            'Reset Force Index',
             'Delete Force Index',
         ]);
 });
@@ -29,9 +29,9 @@ test('admin and committee members can see edit and delete member buttons from in
     $response = $this->actingAs($user)
         ->get(route('users.index'))
         ->assertSee([
-            'Contact',
-            'Edit',
-            'Delete',
+            'Modify user details',
+            'Update subscription payment status',
+            'Delete user',
         ]);
 
     $user = $this->createFakeCommitteeMember();
@@ -39,9 +39,9 @@ test('admin and committee members can see edit and delete member buttons from in
     $response = $this->actingAs($user)
         ->get(route('users.index'))
         ->assertSee([
-            'Contact',
-            'Edit',
-            'Delete',
+            'Modify user details',
+            'Update subscription payment status',
+            'Delete user',
         ]);
 });
 test('logged user can access members index', function () {
@@ -65,7 +65,7 @@ test('member cannot see create member and force index buttons', function () {
         ->get(route('users.index'))
         ->assertDontSee([
             'Create new user',
-            'Set Force Index',
+            'Reset Force Index',
             'Delete Force Index',
         ]);
 });
@@ -75,11 +75,11 @@ test('member cannot see edit and delete member buttons from index', function () 
     $response = $this->actingAs($user)
         ->get(route('users.index'))
         ->assertDontSee([
-            'Edit',
-            'Delete',
+            'Modify user details',
+            'Delete user',
         ])
         ->assertSee([
-            'Contact',
+            'Check details',
         ]);
 });
 test('unlogged user cannot access members index', function () {

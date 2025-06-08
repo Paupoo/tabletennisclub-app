@@ -48,9 +48,6 @@ class UsersTable extends Component
                 session()->flash('error', __('Cannot delete ' . $user->first_name . ' ' . $user->last_name . ' because he subscribed to one or more tournaments'));
                 $this->redirectRoute('users.index');
             }
-            // if ($e->getCode() === '23000') {
-            //     dd($e);
-            // }
         }
 
     }
@@ -73,7 +70,7 @@ class UsersTable extends Component
                 ->when($this->sortByField !== '', function ($query): void {
                     $query->orderBy($this->sortByField, $this->sortDirection);
                 })
-                ->paginate(20),
+                ->paginate($this->perPage),
             'user_model' => User::class,
         ]);
     }

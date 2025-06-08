@@ -92,11 +92,9 @@
             @endforelse
         </x-table.body>
         
-        @if($tournaments->hasPages())
         <x-slot name="pagination">
             {{ $tournaments->links() }}
         </x-slot>
-        @endif
     </x-table.container>
 
     <!-- Légende -->

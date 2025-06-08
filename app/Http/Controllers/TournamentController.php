@@ -311,7 +311,7 @@ class TournamentController extends Controller
         $this->tournamentService->countRegisteredUsers($tournament);
 
         return redirect()
-            ->route('tournamentShowPlayers', [$tournament])
+            ->back()
             ->with('success', $user->first_name . ' ' . $user->last_name . ' has been registered to the tournament');
     }
 
@@ -673,7 +673,7 @@ class TournamentController extends Controller
         $this->tournamentService->countRegisteredUsers($tournament);
 
         return redirect()
-            ->route('tournamentShowPlayers', [$tournament])
+            ->back()
             ->with('success', $user->first_name . ' ' . $user->last_name . ' has been unregistered to the tournament');
     }
 

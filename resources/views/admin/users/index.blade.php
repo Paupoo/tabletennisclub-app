@@ -50,7 +50,7 @@
 
                             <!-- Modal to confirm reset force index -->
                             <x-modal name="confirm-forceList-reset" focusable>
-                                <form method="get" action="{{ route('setForceList') }}" class="p-6">
+                                <form method="get" action="{{ route('setForceList') }}" class="p-6" x-data="{ confirmText: '', isValid() { return this.confirmText === 'RESET_FI' } }" >
                                     <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">
                                         {{ __('Are you sure you want to reset the users force index?') }}
                                     </h2>
@@ -62,13 +62,13 @@
                                     <!-- Champ de confirmation -->
                                     <div class="mt-4">
                                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                            {{ __('To confirm, type') }} <strong>"UPDATE_FI"</strong> {{ __('in the box below') }}:
+                                            {{ __('To confirm, type') }} <strong>"RESET_FI"</strong> {{ __('in the box below') }}:
                                         </label>
                                         <input 
                                             type="text" 
                                             x-model="confirmText"
                                             class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                            placeholder="UPDATE_FI"
+                                            placeholder="RESET_FI"
                                             autocomplete="off"
                                         >
                                     </div>
@@ -90,8 +90,8 @@
                             </x-modal>
 
                             <!-- Modal to confirm delete force index -->
-                            <x-modal name="confirm-forceList-deletion" focusable>
-                                <form method="get" action="{{ route('deleteForceList') }}" class="p-6">
+                            <x-modal name="confirm-forceList-deletion" focusable >
+                                <form method="get" action="{{ route('deleteForceList') }}" x-data="{ confirmText: '', isValid() { return this.confirmText === 'DELETE_FI' } }" class="p-6">
                                     <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">
                                         {{ __('Are you sure you want to delete all the users force index?') }}
                                     </h2>

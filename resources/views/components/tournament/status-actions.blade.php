@@ -1,8 +1,3 @@
-<?php
-// ===========================================
-// 17. resources/views/components/tournament/status-actions.blade.php
-// ===========================================
-?>
 @props(['tournament'])
 
 <div class="flex justify-end space-x-2">
@@ -33,13 +28,31 @@
         />
     @else
         <x-ui.action-button 
-            variant="primary" 
+            variant="default" 
             icon="edit" 
             tooltip="Modifier"
             onclick="window.location.href='{{ route('tournament.edit', $tournament) }}'"
         />
     @endif
 
+    @if($tournament->users->contains(auth()->user()->id) && $tournament->status === App\Enums\TournamentStatusEnum::PUBLISHED)
+    <a href="/admin/tournament/unregister/{{$tournament->id}}/{{auth()->user()->id}}">
+        <x-ui.action-button 
+        variant="warning" 
+        icon="leave" 
+        tooltip="{{ __('Register to tournament') }}"
+        />
+    </a>
+    @endif
+    @if(!$tournament->users->contains(auth()->user()->id) && $tournament->status === App\Enums\TournamentStatusEnum::PUBLISHED)
+        <a href="/admin/tournament/register/{{$tournament->id}}/{{auth()->user()->id}}">
+            <x-ui.action-button 
+            variant="default" 
+            icon="join" 
+            tooltip="{{ __('Register to tournament') }}"
+            />
+        </a>
+    @endif
     <x-ui.action-button 
         variant="danger" 
         icon="delete" 

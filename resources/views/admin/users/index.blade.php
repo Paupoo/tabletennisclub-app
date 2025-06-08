@@ -3,7 +3,7 @@
         {{-- Header --}}
         <div class="flex">
             <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
-                {{ __('Tournaments list') }}
+                {{ __('Members') }}
             </h2>
             <!-- Menu d'actions -->
             <div class="ml-auto mt-4 md:mt-0 flex flex-wrap gap-3" x-data="{ showMenu: false }">

@@ -11,7 +11,7 @@
         variant="{{ $user->pivot->has_paid ? 'success' : 'warning'}}" 
         icon="euro" 
         tooltip="{{ $user->pivot->has_paid ? __('Mark as unpaid') : __('Mark as paid') }}"
-        onclick="window.location.href='{{ route('tournamentToggleHasPaid', [$tournament, $user]) }}'"
+        onclick="window.location.href='{{ route('tournaments.toggleHasPaid', [$tournament, $user]) }}'"
     />
     @endcan
     <x-ui.action-button 

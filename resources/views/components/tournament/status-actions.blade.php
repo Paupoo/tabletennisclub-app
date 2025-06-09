@@ -5,7 +5,7 @@
         variant="default" 
         icon="view" 
         tooltip="Voir les résultats"
-        onclick="window.location.href='{{ route('tournamentShow', $tournament) }}'"
+        onclick="window.location.href='{{ route('tournaments.show', $tournament) }}'"
     />
     @if($tournament->status === 'open')
         <x-ui.action-button 
@@ -58,7 +58,7 @@
         variant="danger" 
         icon="delete" 
         tooltip="Supprimer"
-        onclick="if(confirm('Êtes-vous sûr de vouloir supprimer ce tournoi ?')) { window.location.href='{{ route('deleteTournament', $tournament) }}' }"
+        onclick="if(confirm('Êtes-vous sûr de vouloir supprimer ce tournoi ?')) { window.location.href='{{ route('tournaments.destroy', $tournament) }}' }"
     />
     @endcan
 </div>

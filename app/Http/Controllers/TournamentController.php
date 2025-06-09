@@ -112,7 +112,7 @@ class TournamentController extends Controller
         $tournament->delete();
 
         return redirect()
-            ->route('tournamentsIndex')
+            ->route('tournaments.index')
             ->with('success', __('The tournament ' . $tournament->name . ' has been deleted.'));
     }
 
@@ -631,7 +631,7 @@ class TournamentController extends Controller
         $this->tableService->linkAvailableTables($tournament);
 
         return redirect()
-            ->route('tournamentsIndex')
+            ->route('tournaments.index')
             ->with('success', __('The tournament ' . $tournament->name . ' has been created.'));
     }
 
@@ -685,7 +685,7 @@ class TournamentController extends Controller
         $this->tableService->linkAvailableTables($tournament);
 
         return redirect()
-            ->route('tournamentsIndex')
+            ->route('tournaments.index')
             ->with('success', __('The tournament ' . $tournament->name . ' has been updated.'));
     }
 

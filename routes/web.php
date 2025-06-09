@@ -10,7 +10,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\TableController;
 use App\Http\Controllers\TeamController;
-use App\Http\Controllers\TestController;
+use App\Http\Controllers\Tournament\ToggleHasPaidController;
 use App\Http\Controllers\TournamentController;
 use App\Http\Controllers\TrainingController;
 use App\Http\Controllers\UserController;
@@ -151,27 +151,31 @@ Route::resource('admin/users', UserController::class)->middleware(['auth', 'veri
 // Tournaments
 Route::middleware(['auth', 'verified'])
     ->group(function (): void {
-        // Routes pour les tournois
-        Route::get('/admin/tournaments', [TournamentController::class, 'index'])->name('tournamentsIndex');
-        Route::get('/admin/tournaments/create', [TournamentController::class, 'create'])->name('createTournament');
-        Route::post('/admin/tournaments/store', [TournamentController::class, 'store'])->name('storeTournament');
-        Route::put('/admin/tournaments/{tournament}/update', [TournamentController::class, 'update'])->name('updateTournament');
-        Route::get('/admin/tournament/{id}', [TournamentController::class, 'show'])->name('tournamentShow');
+        // Tournament CRUD
+        Route::get('/admin/tournaments', [TournamentController::class, 'index'])->name('tournaments.index');
+        Route::get('/admin/tournaments/create', [TournamentController::class, 'create'])->name('tournaments.create');
+        Route::post('/admin/tournaments/store', [TournamentController::class, 'store'])->name('tournaments.store');
+        Route::put('/admin/tournaments/{tournament}/update', [TournamentController::class, 'update'])->name('tournaments.update');
+        Route::get('/admin/tournament/{id}', [TournamentController::class, 'show'])->name('tournaments.show');
+        Route::get('/admin/tournament/{tournament}/edit', [TournamentController::class, 'edit'])->name('tournament.edit');
+        Route::get('/admin/tournament/{tournament}/delete', [TournamentController::class, 'destroy'])->name('tournaments.destroy');
+
+        // Tournament Actions
+        Route::get('/admin/tournament/register/{tournament}/{user}', [TournamentController::class, 'registrerUser'])->name('tournamentRegister');
+        Route::get('/admin/tournament/unregister/{tournament}/{user}', [TournamentController::class, 'unregistrerUser'])->name('tournamentUnregister');
+        Route::get('/admin/tournament/payment/{tournament}/{user}', [ToggleHasPaidController::class])->name('tournaments.toggleHasPaid');
+        
+        // Others to sort
         Route::get('/admin/tournament/{id}/players', [TournamentController::class, 'showPlayers'])->name('tournamentShowPlayers');
         Route::get('/admin/tournament/{id}/pools', [TournamentController::class, 'showPools'])->name('tournamentShowPools');
         Route::get('/admin/tournament/{id}/matches', [TournamentController::class, 'showMatches'])->name('tournamentShowMatches');
         Route::get('/admin/tournament/{id}/tables', [TournamentController::class, 'showTables'])->name('tournamentShowTables');
-        Route::get('/admin/tournament/{tournament}/delete', [TournamentController::class, 'destroy'])->name('deleteTournament');
         Route::get('/admin/tournament/{tournament}/erasePools', [TournamentController::class, 'erasePools'])->name('erasePools');
         Route::get('/admin/tournament/{tournament}/updateStatus/{newStatus}', [TournamentController::class, 'changeStatus'])->name('tournamentSetStatus');
         Route::get('/admin/tournament/{tournament}/draft', [TournamentController::class, 'unpublish'])->name('unpublishTournament');
         Route::get('/admin/tournament/{tournament}/publish', [TournamentController::class, 'publish'])->name('publishTournament');
         Route::get('/admin/tournament/{tournament}/start', [TournamentController::class, 'startTournament'])->name('startTournament');
         Route::get('/admin/tournament/{tournament}/closed', [TournamentController::class, 'closeTournament'])->name('closeTournament');
-        Route::get('/admin/tournament/register/{tournament}/{user}', [TournamentController::class, 'registrerUser'])->name('tournamentRegister');
-        Route::get('/admin/tournament/unregister/{tournament}/{user}', [TournamentController::class, 'unregistrerUser'])->name('tournamentUnregister');
-        Route::get('/admin/tournament/payment/{tournament}/{user}', [TournamentController::class, 'toggleHasPaid'])->name('tournamentToggleHasPaid');
-        Route::get('/admin/tournament/{tournament}/edit', [TournamentController::class, 'edit'])->name('tournament.edit');
         Route::get('/admin/tournament/{tournament}/set_max_players', [TournamentController::class, 'setMaxPlayers'])->name('tournamentSetMaxPlayers');
         Route::get('/admin/tournament/{tournament}/set_start_date', [TournamentController::class, 'setStartTime'])->name('tournamentSetStartTime');
         Route::get('/admin/tournament/{tournament}/set_end_date', [TournamentController::class, 'setEndTime'])->name('tournamentSetEndTime');

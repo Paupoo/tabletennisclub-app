@@ -38,7 +38,7 @@
                     {{ __('Configuration de la phase finale') }} - {{ $tournament->name }}
                 </h2>
                 <div>
-                    <a href="{{ route('tournamentShow', $tournament) }}" class="text-blue-600 hover:underline">
+                    <a href="{{ route('tournaments.show', $tournament) }}" class="text-blue-600 hover:underline">
                         &larr; Retour au tournoi
                     </a>
                 </div>

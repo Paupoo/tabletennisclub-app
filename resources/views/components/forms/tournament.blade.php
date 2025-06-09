@@ -1,4 +1,4 @@
-<form action="{{ $tournament->id === null ? route('storeTournament') : route('updateTournament', $tournament) }}" method="post" class="space-y-4">
+<form action="{{ $tournament->id === null ? route('tournaments.store') : route('tournaments.update', $tournament) }}" method="post" class="space-y-4">
     @csrf
     @method($tournament->id === null ? "POST" : "PUT")
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4"

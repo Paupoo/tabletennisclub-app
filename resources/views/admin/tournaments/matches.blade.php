@@ -6,7 +6,7 @@
                 <div class="flex flex-col md:flex-row md:justify-between md:items-center mb-6">
                     <h1 class="text-2xl font-bold text-gray-800 mb-4 md:mb-0">{{ $tournament->name }}</h1>
                     <div class="flex flex-col sm:flex-row gap-3">
-                        <a href="{{ route('tournamentsIndex') }}"
+                        <a href="{{ route('tournaments.index') }}"
                             class="inline-block px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-md transition duration-200 text-center">
                             &larr; Retour
                         </a>
@@ -137,7 +137,7 @@
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap">
                                             <div>
-                                                <a href="{{ route('tournamentToggleHasPaid', [$tournament, $user]) }}">
+                                                <a href="{{ route('tournaments.toggleHasPaid', [$tournament, $user]) }}">
                                                     @if(!$user->pivot->has_paid)
                                                     <!-- Marquer comme payé -->
                                                     <button class="inline-flex items-center p-2 border border-transparent rounded-full text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500" title="Marquer comme payé">

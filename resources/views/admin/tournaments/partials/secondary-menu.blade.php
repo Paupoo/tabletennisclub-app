@@ -5,8 +5,8 @@
             <div class="flex flex-wrap gap-2 hidden sm:block">
                 <!-- Navigation Links -->
                     <x-sub-nav-link 
-                        :href="route('tournamentShow', $tournament)"
-                        :active="request()->routeIs('tournamentShow')"
+                        :href="route('tournaments.show', $tournament)"
+                        :active="request()->routeIs('tournaments.show')"
                         :iconName="'details'">
                             {{ __('Details') }}
                     </x-sub-nav-link>
@@ -76,7 +76,7 @@
     <!-- Responsive Navigation Menu -->
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
-            <x-responsive-nav-link :href="route('tournamentShow', $tournament)" :active="request()->routeIs('tournamentShow')">
+            <x-responsive-nav-link :href="route('tournaments.show', $tournament)" :active="request()->routeIs('tournaments.show')">
                 {{ __('Details') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('tournamentShowPlayers', $tournament)" :active="request()->routeIs('tournamentShowPlayers')">

@@ -108,7 +108,7 @@
             
             <!-- Modal to confirm delete tournament -->
                 <x-modal name="confirm-tournament-deletion" focusable>
-                    <form method="get" action="{{ route('deleteTournament', $tournament) }}" class="p-6">
+                    <form method="get" action="{{ route('tournaments.destroy', $tournament) }}" class="p-6">
                         @csrf
 
                         <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">
@@ -135,7 +135,7 @@
         </div>
     </div>
     <!-- Boutons d'accès rapide -->
-    <a href="{{ route('tournamentsIndex') }}">
+    <a href="{{ route('tournaments.index') }}">
         <x-primary-button type="button"
             >
                 <span class="mr-2">{{ __('Tournaments list') }}</span>

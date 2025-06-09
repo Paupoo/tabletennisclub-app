@@ -30,7 +30,7 @@
                         x-transition:leave-end="transform opacity-0 scale-95"
                         class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50">
                         <div class="py-1">
-                            <a href="{{ route('createTournament') }}"
+                            <a href="{{ route('tournaments.create') }}"
                                 class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
                                 <x-ui.icon name="plus"/>
                                 {{ __('Create tournament') }}

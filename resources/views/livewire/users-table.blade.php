@@ -28,10 +28,9 @@
             <label class="flex flex-row text-xs">
                 <p class="my-auto mr-2">{{ ('Pagination') }}</p>
                 <x-forms.select-input wire:model.live="perPage">
-                    <option value="10">10 par page</option>
-                    <option value="20">20 par page</option>
+                    <option value="25">25 par page</option>
                     <option value="50">50 par page</option>
-                    <option value="0">Tous</option>
+                    <option value="100">100 par page</option>
                 </x-forms.select-input>
             </label>
         </div>
@@ -119,7 +118,7 @@
                             @can('update', $user_model)
                             <x-ui.action-button 
                                 variant="default" 
-                                icon="modify" 
+                                icon="edit" 
                                 tooltip="{{ __('Modify user details') }}"
                                 onclick="window.location.href='{{ route('users.edit', $user) }}'">
                             </x-ui.action-button>
@@ -156,17 +155,25 @@
     <!-- Légende -->
     <x-ui.legend>
         
-        <x-ui.legend-item icon="draft" icon-class="text-gray-400">
-            Mettre en brouillon
+        <x-ui.legend-item icon="inspect" icon-class="text-gray-400">
+            {{ __('Show details') }}
+        </x-ui.legend-item>
+        
+        @can('update', $user)
+        <x-ui.legend-item icon="edit" icon-class="text-gray-400">
+            {{ __('Update user details') }}
         </x-ui.legend-item>
 
-        <x-ui.legend-item icon="edit" icon-class="text-indigo-600">
-            Modifier
+        <x-ui.legend-item icon="euro" icon-class="text-gray-400">
+            {{ __('Toggle payment') }}
         </x-ui.legend-item>
+        @endcannot
 
+        @can('delete', $user)
         <x-ui.legend-item icon="delete" icon-class="text-red-600">
-            Supprimer
+            {{ __('Delete user') }}
         </x-ui.legend-item>
+        @endcan
     </x-ui.legend>
 
     <!-- Modal to confirm reset force index -->

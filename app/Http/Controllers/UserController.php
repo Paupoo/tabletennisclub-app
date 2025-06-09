@@ -164,7 +164,7 @@ class UserController extends Controller
 
     public function toggleHasPaid(User $user): RedirectResponse
     {
-        $this->authorize('update');
+        $this->authorize('update', User::class);
         $action = new ToggleHasPaidMembershipAction($user);
         $action->toggleHasPaid($user);
 

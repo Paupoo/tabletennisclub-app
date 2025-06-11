@@ -9,7 +9,7 @@
     <title>{{ config('app.name', 'Laravel') }}</title>
 
     <!-- Scripts -->
-    @livewireScripts()
+    @livewireStyles()
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
@@ -37,6 +37,7 @@
         </main>
     </div>
     <x-growler />
+    @livewireScriptConfig 
 </body>
 
 </html>

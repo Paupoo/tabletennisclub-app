@@ -218,4 +218,8 @@ Route::middleware(['auth', 'verified'])
             ->name('resetKnockoutMatch');
     });
 
+Route::get('/test', function() {
+    return view('test');
+});
+
 require __DIR__ . '/auth.php';

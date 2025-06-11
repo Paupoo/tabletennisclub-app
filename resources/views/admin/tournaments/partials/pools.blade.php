@@ -27,7 +27,7 @@
                 @method('PUT')
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     @foreach ($tournament->pools as $pool)
-                        <div class="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                        <div x-data class="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
                             <div class="bg-gray-50 px-4 py-3 border-b">
                                 <h3 class="text-lg font-medium text-gray-800">
                                     {{ $pool->name }}
@@ -40,12 +40,12 @@
                                     {{ $pool->name }}
                                 </a>
                             </div>
-                            <ul class="divide-y divide-gray-200">
+                            <ul x-sort x-sort:group="pools" class="divide-y divide-gray-200">
                                 @forelse ($pool->users as $user)
-                                    <li class="px-4 py-3">
+                                    <li x-sort:item="{{ $loop->iteration }}" class="px-4 py-3">
                                         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center">
                                             <div class="flex items-center mb-2 sm:mb-0">
-                                                <span
+                                                <span x-sort:handle
                                                     class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-blue-100 text-blue-800 font-medium text-sm mr-3">
                                                     {{ $loop->iteration }}
                                                 </span>

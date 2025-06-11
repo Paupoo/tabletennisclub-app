@@ -6,6 +6,7 @@
 @props(['tournament', 'user'])
 
 <div class="flex justify-end space-x-2">
+    @if($tournament->price > 0)
     @can('updatesBeforeStart', $tournament)
     <x-ui.action-button 
         variant="{{ $user->pivot->has_paid ? 'success' : 'warning'}}" 
@@ -14,6 +15,7 @@
         onclick="window.location.href='{{ route('tournaments.toggleHasPaid', [$tournament, $user]) }}'"
     />
     @endcan
+    @endif
     <x-ui.action-button 
         variant="danger" 
         icon="delete" 

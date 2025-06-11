@@ -163,7 +163,7 @@ Route::middleware(['auth', 'verified'])
         // Tournament Actions
         Route::get('/admin/tournament/register/{tournament}/{user}', [TournamentController::class, 'registrerUser'])->name('tournamentRegister');
         Route::get('/admin/tournament/unregister/{tournament}/{user}', [TournamentController::class, 'unregistrerUser'])->name('tournamentUnregister');
-        Route::get('/admin/tournament/payment/{tournament}/{user}', [ToggleHasPaidController::class])->name('tournaments.toggleHasPaid');
+        Route::get('/admin/tournament/payment/{tournament}/{user}', ToggleHasPaidController::class)->name('tournaments.toggleHasPaid');
         
         // Others to sort
         Route::get('/admin/tournament/{id}/players', [TournamentController::class, 'showPlayers'])->name('tournamentShowPlayers');

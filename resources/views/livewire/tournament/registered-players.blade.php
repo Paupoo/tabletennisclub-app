@@ -17,9 +17,11 @@
                     <x-table.header-cell
                         class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase x-table.rowacking-wider">
                         Date d'inscription</x-table.header-cell>
+                    @if($tournament->price > 0)
                     <x-table.header-cell
                         class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase x-table.rowacking-wider">
                         Paiement</x-table.header-cell>
+                    @endif
                     <x-table.header-cell
                         class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase x-table.rowacking-wider">
                         Actions</x-table.header-cell>
@@ -45,6 +47,7 @@
                                 <span
                                     class="text-sm text-gray-900">{{ $user->pivot->updated_at->format('d/m/Y') }}</span>
                             </x-table.cell>
+                            @if($tournament->price > 0)
                             <x-table.cell>
                                 <span
                                     class="px-2 inline-flex text-xs font-sm leading-5 font-semibold rounded-full bg-{{ $user->pivot->has_paid ? 'green' : 'red' }}-100 text-{{ $user->pivot->has_paid ? 'green' : 'red' }}-800">
@@ -55,6 +58,7 @@
                                     @endif
                                 </span>
                             </x-table.cell>
+                            @endif
                             <x-table.cell class="text-right">
                                 <x-tournament.user-actions :tournament="$tournament" :user="$user" />
                             </x-table.cell>

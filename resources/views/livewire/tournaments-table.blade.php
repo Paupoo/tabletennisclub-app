@@ -61,9 +61,12 @@
                             {{ $tournament->start_date->format('d M Y à H:i') }}
                         </span>
                     </x-table.cell>
-                    
                     <x-table.cell>
-                        <span class="text-sm text-gray-900">{{ $tournament->price }} €</span>
+                        @if($tournament->price > 0)
+                        <span class="text-sm text-right text-gray-900">{{ $tournament->price }}&nbsp;€</span>
+                        @else
+                        <x-ui.badge variant="success">{{ __('Free') }}</x-ui.badge>
+                        @endif
                     </x-table.cell>
                     
                     <x-table.cell>

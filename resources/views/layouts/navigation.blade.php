@@ -12,42 +12,42 @@
 
                 <!-- Navigation Links -->
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" wire:navigate>
                         {{ __('Dashboard') }}
                     </x-nav-link>
                 </div>
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('users.index')" :active="request()->routeIs('users.index')">
+                    <x-nav-link :href="route('users.index')" :active="request()->routeIs('users.index')" wire:navigate>
                         {{ __('Members') }}
                     </x-nav-link>
                 </div>
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('teams.index')" :active="request()->routeIs('teams.index')">
+                    <x-nav-link :href="route('teams.index')" :active="request()->routeIs('teams.index')" wire:navigate>
                         {{ __('Teams') }}
                     </x-nav-link>
                 </div>
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('rooms.index')" :active="request()->routeIs('rooms.index')">
+                    <x-nav-link :href="route('rooms.index')" :active="request()->routeIs('rooms.index')" wire:navigate>
                         {{ __('Rooms') }}
                     </x-nav-link>
                 </div>
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('tables.index')" :active="request()->routeIs('tables.index')">
+                    <x-nav-link :href="route('tables.index')" :active="request()->routeIs('tables.index')" wire:navigate>
                         {{ __('Tables') }}
                     </x-nav-link>
                 </div>
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('trainings.index')" :active="request()->routeIs('trainings.index')">
+                    <x-nav-link :href="route('trainings.index')" :active="request()->routeIs('trainings.index')" wire:navigate>
                         {{ __('Trainings') }}
                     </x-nav-link>
                 </div>
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('interclubs.index')" :active="request()->routeIs('interclubs.index')">
+                    <x-nav-link :href="route('interclubs.index')" :active="request()->routeIs('interclubs.index')" wire:navigate>
                         {{ __('Matches') }}
                     </x-nav-link>
                 </div>
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('tournaments.index')" :active="request()->routeIs('tournaments.index')">
+                    <x-nav-link :href="route('tournaments.index')" :active="request()->routeIs('tournaments.index')" wire:navigate>
                         {{ __('Tournaments') }}
                     </x-nav-link>
                 </div>
@@ -69,7 +69,7 @@
                     </x-slot>
 
                     <x-slot name="content">
-                        <x-dropdown-link :href="route('profile.edit')">
+                        <x-dropdown-link :href="route('profile.edit')" wire:navigate>
                             {{ __('Profile') }}
                         </x-dropdown-link>
 
@@ -102,31 +102,31 @@
     <!-- Responsive Navigation Menu -->
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
-            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" wire:navigate>
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('users.index')" :active="request()->routeIs('users.index')">
+            <x-responsive-nav-link :href="route('users.index')" :active="request()->routeIs('users.index')" wire:navigate>
                 {{ __('Members') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('roles.index')" :active="request()->routeIs('roles.index')">
+            <x-responsive-nav-link :href="route('roles.index')" :active="request()->routeIs('roles.index')" wire:navigate>
                 {{ __('Roles') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('teams.index')" :active="request()->routeIs('teams.index')">
+            <x-responsive-nav-link :href="route('teams.index')" :active="request()->routeIs('teams.index')" wire:navigate>
                 {{ __('Teams') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('rooms.index')" :active="request()->routeIs('rooms.index')">
+            <x-responsive-nav-link :href="route('rooms.index')" :active="request()->routeIs('rooms.index')" wire:navigate>
                 {{ __('Rooms') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('tables.index')" :active="request()->routeIs('tables.index')">
+            <x-responsive-nav-link :href="route('tables.index')" :active="request()->routeIs('tables.index')" wire:navigate>
                 {{ __('Tables') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('welcome')" :active="request()->routeIs('welcome')">
+            <x-responsive-nav-link :href="route('welcome')" :active="request()->routeIs('welcome')" wire:navigate>
                 {{ __('Trainings') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('interclubs.index')" :active="request()->routeIs('interclubs.index')">
+            <x-responsive-nav-link :href="route('interclubs.index')" :active="request()->routeIs('interclubs.index')" wire:navigate>
                 {{ __('Matches') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('tournaments.index')" :active="request()->routeIs('tournaments.index')">
+            <x-responsive-nav-link :href="route('tournaments.index')" :active="request()->routeIs('tournaments.index')" wire:navigate>
                 {{ __('Tournaments') }}
             </x-responsive-nav-link>
         </div>
@@ -139,7 +139,7 @@
             </div>
 
             <div class="mt-3 space-y-1">
-                <x-responsive-nav-link :href="route('profile.edit')">
+                <x-responsive-nav-link :href="route('profile.edit')" wire:navigate>
                     {{ __('Profile') }}
                 </x-responsive-nav-link>
 

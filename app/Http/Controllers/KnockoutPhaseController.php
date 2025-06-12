@@ -8,6 +8,7 @@ use App\Models\MatchSet;
 use App\Models\Tournament;
 use App\Models\TournamentMatch;
 use App\Services\TournamentFinalPhaseService;
+use App\Services\TournamentStatusManager;
 use Illuminate\Http\Request;
 
 class KnockoutPhaseController extends Controller
@@ -103,7 +104,11 @@ class KnockoutPhaseController extends Controller
             ->orderByRaw('name * 1 ASC')
             ->get();
 
-        return view('admin.tournaments.knockout-bracket', compact('tournament', 'rounds', 'tables'));
+        $manager = new TournamentStatusManager($tournament);
+        $statusesAllowed = $manager->getAllowedNextStatuses();
+
+
+        return view('admin.tournaments.knockout-bracket', compact('tournament', 'rounds', 'tables', 'statusesAllowed'));
     }
 
     /**

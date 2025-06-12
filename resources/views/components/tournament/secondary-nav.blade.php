@@ -7,13 +7,15 @@
                     <x-sub-nav-link 
                         :href="route('tournaments.show', $tournament)"
                         :active="request()->routeIs('tournaments.show')"
-                        :iconName="'details'">
+                        :iconName="'details'"
+                        wire:navigate>
                             {{ __('Details') }}
                     </x-sub-nav-link>
                     <x-sub-nav-link 
                         :href="route('tournamentShowPlayers', $tournament)"
                         :active="request()->routeIs('tournamentShowPlayers')"
-                        :iconName="'people'">
+                        :iconName="'people'"
+                        wire:navigate>
                             {{ __('Players') }}
                             <span class="ml-2 px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-800">
                                 {{ $tournament->users()->count() }} / 
@@ -23,7 +25,8 @@
                     <x-sub-nav-link 
                         :href="route('tournamentShowPools', $tournament)"
                         :active="request()->routeIs('tournamentShowPools')"
-                        :iconName="'files'">
+                        :iconName="'files'"
+                        wire:navigate>
                             {{ __('Pools') }}
                             <span class="ml-2 px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-800">
                                 {{ $tournament->pools()->count() }}
@@ -32,7 +35,8 @@
                     <x-sub-nav-link
                         :href="route('tournamentShowMatches', $tournament)"
                         :active="request()->routeIs('tournamentShowMatches')"
-                        :iconName="'list'">
+                        :iconName="'list'"
+                        wire:navigate>
                             {{ __('Matches') }}
                             <span class="ml-2 px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-800">
                                 {{ $tournament->matches()->where('status', 'completed')->count() }} / 
@@ -42,7 +46,8 @@
                     <x-sub-nav-link
                         :href="route('tournamentShowTables', $tournament)"
                         :active="request()->routeIs('tournamentShowTables')"
-                        :iconName="'table'">
+                        :iconName="'table'"
+                        wire:navigate>
                             {{ __('Tables') }}
                             <span class="ml-2 px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-800">
                                 {{ $tournament->tables()->where('is_table_free', false)->count() }} / 
@@ -50,9 +55,17 @@
                             </span>
                     </x-sub-nav-link>
                     <x-sub-nav-link class="text-red-700"
+                        :href="route('knockoutBracket', $tournament)"
+                        :active="''"
+                        :iconName="'graph'"
+                        wire:navigate>
+                            {{ __('Final Bracket') }}
+                    </x-sub-nav-link>
+                    <x-sub-nav-link class="text-red-700"
                         :href="'#'"
                         :active="''"
-                        :iconName="'graph'">
+                        :iconName="'graph'"
+                        wire:navigate>
                             {{ __('Standings (TO DO)') }}
                     </x-sub-nav-link>
                 
@@ -76,25 +89,24 @@
     <!-- Responsive Navigation Menu -->
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
-            <x-responsive-nav-link :href="route('tournaments.show', $tournament)" :active="request()->routeIs('tournaments.show')">
+            <x-responsive-nav-link :href="route('tournaments.show', $tournament)" :active="request()->routeIs('tournaments.show')" wire:navigate>
                 {{ __('Details') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('tournamentShowPlayers', $tournament)" :active="request()->routeIs('tournamentShowPlayers')">
+            <x-responsive-nav-link :href="route('tournamentShowPlayers', $tournament)" :active="request()->routeIs('tournamentShowPlayers')" wire:navigate>
                 {{ __('Players') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('tournamentShowPools', $tournament)" :active="request()->routeIs('tournamentShowPools')">
+            <x-responsive-nav-link :href="route('tournamentShowPools', $tournament)" :active="request()->routeIs('tournamentShowPools')" wire:navigate>
                 {{ __('Pools') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('tournamentShowMatches', $tournament)" :active="request()->routeIs('tournamentShowMatches')">
+            <x-responsive-nav-link :href="route('tournamentShowMatches', $tournament)" :active="request()->routeIs('tournamentShowMatches')" wire:navigate>
                 {{ __('Matches') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('tournamentShowTables', $tournament)" :active="request()->routeIs('tournamentShowTables')">
+            <x-responsive-nav-link :href="route('tournamentShowTables', $tournament)" :active="request()->routeIs('tournamentShowTables')" wire:navigate>
                 {{ __('Tables') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('welcome')" :active="request()->routeIs('welcome')">
+            <x-responsive-nav-link :href="route('welcome')" :active="request()->routeIs('welcome')" wire:navigate>
                 {{ __('Standings (TO DO)') }}
             </x-responsive-nav-link>
         </div>
     </div>
 </nav>
-        <div class="border-t border-gray-300 my-6"></div>

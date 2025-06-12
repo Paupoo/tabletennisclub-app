@@ -3,7 +3,9 @@
 // 18. resources/views/components/tournament/status-badge.blade.php
 // ===========================================
 ?>
-@props(['status'])
+@props([
+    'status' => '',
+    ])
 
 
 @php

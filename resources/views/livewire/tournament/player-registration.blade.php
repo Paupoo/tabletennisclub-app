@@ -1,3 +1,4 @@
+@props(['tournament'])
 <div x-data="{ show: @entangle('showModal') }" x-init="$watch('show', value => { if (value) $nextTick(() => $refs.search.focus()) })">
     <!-- Bouton pour ouvrir le modal -->
     <button wire:click="openModal" 

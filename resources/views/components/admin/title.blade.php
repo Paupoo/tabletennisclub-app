@@ -1,7 +1,7 @@
 @props([
-    'title' => __('Page Title'),
+    'pageTitle' => __('Page Title'),
     ])
 
 <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
-    {{ $title }}
+    {{ $pageTitle }}
 </h2>

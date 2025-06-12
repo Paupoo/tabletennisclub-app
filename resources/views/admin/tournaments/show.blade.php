@@ -1,18 +1,31 @@
-<x-app-layout>
-    <x-slot name="header">
-        {{-- Header --}}
-        <div class="flex flex-row gap-2 items-center">
-            <x-admin.title :title="$tournament->name" />
-            <x-tournament.status-badge :status="$tournament->status" />
-            <x-admin.action-menu :tournament="$tournament" :statusesAllowed="$statusesAllowed"/>
-        </div>
-    </x-slot>
-    <x-admin-block>
-        <!-- Menu secondaire pour tournoi sélectionné -->
-        @include('admin.tournaments.partials.secondary-menu')
+<x-tournament.tournament-layout :tournament="$tournament" :statusesAllowed="$statusesAllowed">
 
-        <!-- Informations sur le tournoi -->
-        @include('admin.tournaments.partials.details')
+    @include('admin.tournaments.partials.details')
 
-    </x-admin-block>
-</x-app-layout>
+    @push('modals')
+    <!-- Modal de confirmation (à placer en dehors du push) -->
+    <x-modal name="confirm-tournament-deletion" focusable>
+        <form method="get" action="{{ route('tournaments.destroy', $tournament) }}" class="p-6">
+            @csrf
+
+            <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">
+                {{ __('Are you sure you want to delete this tournament?') }}
+            </h2>
+
+            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                {{ __('This action is irreversible. All associated data will be permanently removed.') }}
+            </p>
+
+            <div class="mt-6 flex justify-end">
+                <x-secondary-button x-on:click="$dispatch('close')">
+                    {{ __('Cancel') }}
+                </x-secondary-button>
+
+                <x-danger-button class="ms-3">
+                    {{ __('Delete') }}
+                </x-danger-button>
+            </div>
+        </form>
+    </x-modal>
+    @endpush
+</x-tournament.tournament-layout>

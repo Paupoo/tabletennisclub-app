@@ -1,3 +1,8 @@
+@props([
+    'pageTitle' => __('Page title'),
+    'tournamentStatus' => null,
+])
+
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
@@ -16,20 +21,8 @@
 <body class="font-sans antialiased">
     <div class="min-h-screen bg-gray-100 dark:bg-gray-900 pb-6">
         @include('layouts.navigation')
-
-        <!-- Page Heading -->
-        @if (isset($header))
-            {{-- Bandeau blanc --}}
-            <header class="bg-white shadow dark:bg-gray-800">
-                {{-- Espace et taille du menu --}}
-                <div class="px-4 py-6 mx-auto max-w-7xl sm:px-6 lg:px-8">
-                    {{ $header }}
-                </div>
-            </header>
-        @endif
-
-
-            
+        
+        <x-header :pageTitle="$pageTitle" :tournamentStatus="$tournamentStatus"/>
 
         <!-- Page Content -->
         <main>
@@ -37,7 +30,7 @@
         </main>
     </div>
     <x-growler />
-    @livewireScriptConfig 
+    @livewireScriptConfig
 </body>
 
 </html>

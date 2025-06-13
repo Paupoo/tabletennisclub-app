@@ -5,7 +5,7 @@
                             :icon="'join'"
                             :text="__('Register')" />
                     @elseif($tournament->users->contains(auth()->user()->id))
-                        <x-menus.action-menu-item :href="route('tournament.register', [$tournament->id, auth()->user()->id])"
+                        <x-menus.action-menu-item :href="route('tournament.unregister', [$tournament->id, auth()->user()->id])"
                             :icon="'leave'"
                             :text="__('Unregister')"/>
                             

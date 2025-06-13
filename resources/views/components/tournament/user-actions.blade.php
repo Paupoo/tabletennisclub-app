@@ -20,6 +20,6 @@
         variant="danger" 
         icon="delete" 
         tooltip="{{ __('Unregister User') }}"
-        onclick="if(confirm('Are you sure you want to unregisteR this user from the tournament?')) { window.location.href='{{ route('tournamentUnregister', [$tournament, $user]) }}' }"
+        onclick="if(confirm('Are you sure you want to unregisteR this user from the tournament?')) { window.location.href='{{ route('tournament.unregister', [$tournament, $user]) }}' }"
     />
 </div>

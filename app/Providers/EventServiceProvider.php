@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Events\NewTournamentPublished;
+use App\Events\UserRegisteredToTournament;
 use App\Listeners\SendPublishedTournamentNotification;
+use App\Listeners\UserRegisteredToTournamentToTournament;
+use App\Notifications\UserRegisteredToTournament as NotificationsUserRegisteredToTournament;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
@@ -24,6 +27,9 @@ class EventServiceProvider extends ServiceProvider
         ],
         NewTournamentPublished::class => [
             SendPublishedTournamentNotification::class,
+        ],
+        UserRegisteredToTournament::class => [
+            UserRegisteredToTournamentToTournament::class,
         ]
     ];
 

@@ -31,7 +31,7 @@ class StoreOrUpdateTournamentRequest extends FormRequest
             'end_date' => 'required|date|after:start_date',
             'room_ids' => 'required|array|min:1',
             'max_users' => 'required|integer|min:10',
-            'price' => 'decimal:0,2',
+            'price' => 'decimal:0,2|min:0',
             'has_handicap_points' => 'required|bool',
             'status' => ['required', Rule::enum(TournamentStatusEnum::class)],
         ];

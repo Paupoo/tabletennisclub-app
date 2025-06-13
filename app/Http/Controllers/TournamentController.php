@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\Tournament\ToggleHasPaidTournamentAction;
 use App\Enums\TournamentStatusEnum;
+use App\Events\UserRegisteredToTournament;
 use App\Http\Requests\StartTournamentMatch;
 use App\Http\Requests\StoreOrUpdateTournamentRequest;
 use App\Models\Pool;
@@ -21,6 +22,7 @@ use App\Services\TournamentService;
 use App\Services\TournamentStatusManager;
 use App\Services\TournamentTableService;
 use Carbon\Carbon;
+use Event;
 use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -290,7 +292,7 @@ class TournamentController extends Controller
             ->with('success', __('Tournament ' . $tournament->name . ' has been published.'));
     }
 
-    public function registrerUser(Tournament $tournament, User $user): RedirectResponse
+    public function registerUser(Tournament $tournament, User $user): RedirectResponse
     {
 
         if ($this->tournamentService->IsFull($tournament)) {
@@ -310,6 +312,8 @@ class TournamentController extends Controller
             ->attach($user);
 
         $this->tournamentService->countRegisteredUsers($tournament);
+
+        Event::dispatch(new UserRegisteredToTournament($tournament, $user));
 
         return redirect()
             ->back()
@@ -662,7 +666,7 @@ class TournamentController extends Controller
             ->with('success', __('Tournament ' . $tournament->name . ' has been unpublished.'));
     }
 
-    public function unregistrerUser(Tournament $tournament, User $user): RedirectResponse
+    public function unregisterUser(Tournament $tournament, User $user): RedirectResponse
     {
         $tournament->users()->detach($user);
         $this->tournamentService->countRegisteredUsers($tournament);

@@ -22,13 +22,5 @@
 
             </div>
         </div>
-    </div>
-    <!-- Boutons d'accès rapide -->
-    <a href="{{ route('tournaments.index') }}">
-        <x-primary-button type="button"
-            >
-                <span class="mr-2">{{ __('Tournaments list') }}</span>
-                <x-ui.icon name="arrow-left"/>
-        </x-primary-button>
-    </a>
+    </div>  
 </div>

@@ -1,5 +1,11 @@
 <x-tournament.tournament-layout :tournament="$tournament" :statusesAllowed="$statusesAllowed">
 
+           {{-- actions menu --}}
+    @push('header-actions')
+    <x-tournament.actions-menu :tournament="$tournament" :statusesAllowed="$statusesAllowed ?? []">    
+        @include('admin.tournaments.partials.action-menu')
+    </x-tournament.actions-menu>
+    @endpush
 
     <div class="border-b pb-4 mb-6">
         <h3 class="text-2xl font-bold text-gray-800">{{ __('Phase finale') }} - {{ $tournament->name }}</h3>

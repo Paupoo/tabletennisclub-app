@@ -205,7 +205,7 @@
                                             <div class="text-gray-900">{{ $user->ranking }}</div>
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap">
-                                            <a href="{{ route('tournamentRegister', [$tournament, $user]) }}"
+                                            <a href="{{ route('tournament.register', [$tournament, $user]) }}"
                                                 class="inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                                                 Inscrire
                                             </a>

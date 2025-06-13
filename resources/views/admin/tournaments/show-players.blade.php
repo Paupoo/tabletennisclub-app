@@ -1,5 +1,13 @@
 <x-tournament.tournament-layout :tournament="$tournament" :statusesAllowed="$statusesAllowed">
 
+    {{-- actions menu --}}
+    @push('header-actions')
+    <x-tournament.actions-menu :tournament="$tournament" :statusesAllowed="$statusesAllowed ?? []">
+        @include('admin.tournaments.partials.action-menu')
+    </x-tournament.actions-menu>
+    @endpush
+
+    
     @livewire('tournament.registered-players', ['tournament' => $tournament])
 
     @push('modals')

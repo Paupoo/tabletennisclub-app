@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Casts\MoneyCast;
 use App\Enums\TournamentStatusEnum;
+use App\Events\NewTournamentPublished;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -80,6 +81,10 @@ class Tournament extends Model
         'max_users',
         'status',
         'has_handicap_points',
+    ];
+
+    protected $dispatchesEvents = [
+        'created' => NewTournamentPublished::class,
     ];
 
     public function matches(): HasMany

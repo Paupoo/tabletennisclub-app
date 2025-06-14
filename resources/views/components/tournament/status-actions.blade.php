@@ -35,7 +35,7 @@
 
     @can('updateSubscriptionAsUser', $tournament)
     @if($tournament->users->contains(auth()->user()->id))
-    <a href="/admin/tournament/unregister/{{$tournament->id}}/{{auth()->user()->id}}">
+    <a href="{{ route('tournament.unregister', [$tournament->id, auth()->user()->id]) }}">
         <x-ui.action-button 
         variant="danger" 
         icon="leave" 
@@ -44,7 +44,7 @@
     </a>
     @endif
     @if(!$tournament->users->contains(auth()->user()->id))
-    <a href="/admin/tournament/register/{{$tournament->id}}/{{auth()->user()->id}}">
+    <a href={{ route('tournament.register', [$tournament->id, auth()->user()->id]) }}">
         <x-ui.action-button 
         variant="default" 
         icon="join" 

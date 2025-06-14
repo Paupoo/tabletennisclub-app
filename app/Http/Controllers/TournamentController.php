@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Actions\Tournament\ToggleHasPaidTournamentAction;
 use App\Enums\TournamentStatusEnum;
 use App\Events\Tournament\UserRegisteredToTournament;
+use App\Events\Tournament\UserUnregisteredFromTournament;
 use App\Http\Requests\StartTournamentMatch;
 use App\Http\Requests\StoreOrUpdateTournamentRequest;
 use App\Models\Pool;
@@ -670,6 +671,8 @@ class TournamentController extends Controller
     {
         $tournament->users()->detach($user);
         $this->tournamentService->countRegisteredUsers($tournament);
+
+        Event::dispatch(new UserUnregisteredFromTournament($tournament, $user));
 
         return redirect()
             ->back()

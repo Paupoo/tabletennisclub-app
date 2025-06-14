@@ -6,9 +6,10 @@ namespace App\Providers;
 
 use App\Events\Tournament\NewTournamentPublished;
 use App\Events\Tournament\UserRegisteredToTournament;
+use App\Events\Tournament\UserUnregisteredFromTournament;
 use App\Listeners\Tournament\SendPublishedTournamentNotification;
 use App\Listeners\Tournament\UserRegisteredToTournamentToTournament;
-use App\Notifications\UserRegisteredToTournament as NotificationsUserRegisteredToTournament;
+use App\Listeners\Tournament\UserUnregisteredToTournamentToTournament;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
@@ -30,6 +31,9 @@ class EventServiceProvider extends ServiceProvider
         ],
         UserRegisteredToTournament::class => [
             UserRegisteredToTournamentToTournament::class,
+        ],
+        UserUnregisteredFromTournament::class => [
+            UserUnregisteredToTournamentToTournament::class,
         ]
     ];
 

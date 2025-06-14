@@ -23,7 +23,7 @@
                 <option disabled selected>{{ __('Please select a status') }}</option>
                 @endif
                 @foreach (App\Enums\TournamentStatusEnum::values() as $statusEnum)
-                    <option value="{{ $statusEnum }}" @selected(old('status', $tournament->status === $statusEnum))>{{ ucfirst($statusEnum) }}</option>
+                    <option value="{{ $statusEnum }}" @selected(old('status', $tournament->status->value) === $statusEnum)>{{ ucfirst($statusEnum) }}</option>
                 @endforeach
             </select>
             <x-input-error class="mt-2" :messages="$errors->get('status')" />

@@ -6,7 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\Tournament\ToggleHasPaidTournamentAction;
 use App\Enums\TournamentStatusEnum;
-use App\Events\UserRegisteredToTournament;
+use App\Events\Tournament\UserRegisteredToTournament;
 use App\Http\Requests\StartTournamentMatch;
 use App\Http\Requests\StoreOrUpdateTournamentRequest;
 use App\Models\Pool;

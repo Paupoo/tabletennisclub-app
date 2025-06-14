@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
-use App\Events\NewTournamentPublished;
-use App\Events\UserRegisteredToTournament;
-use App\Listeners\SendPublishedTournamentNotification;
-use App\Listeners\UserRegisteredToTournamentToTournament;
+use App\Events\Tournament\NewTournamentPublished;
+use App\Events\Tournament\UserRegisteredToTournament;
+use App\Listeners\Tournament\SendPublishedTournamentNotification;
+use App\Listeners\Tournament\UserRegisteredToTournamentToTournament;
 use App\Notifications\UserRegisteredToTournament as NotificationsUserRegisteredToTournament;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;

@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Listeners;
+namespace App\Listeners\Tournament;
 
-use App\Events\NewTournamentPublished;
+use App\Events\Tournament\NewTournamentPublished;
 use App\Models\User;
-use App\Notifications\NewTournamentPublishedNotification;
+use App\Notifications\Tournament\NewTournamentPublishedNotification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 

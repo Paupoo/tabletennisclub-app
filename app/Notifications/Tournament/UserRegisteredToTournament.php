@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Notifications;
+namespace App\Notifications\Tournament;
 
 use App\Models\Tournament;
 use App\Models\User;

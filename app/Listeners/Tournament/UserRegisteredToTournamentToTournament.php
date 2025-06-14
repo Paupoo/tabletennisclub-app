@@ -1,15 +1,15 @@
 <?php
 
-namespace App\Listeners;
+namespace App\Listeners\Tournament;
 
-use App\Events\UserRegisteredToTournament;
+use App\Events\Tournament\UserRegisteredToTournament;
 use App\Models\Tournament;
 use App\Models\User;
 use App\Notifications\UserRegisteredToTournament as NotificationsUserRegisteredToTournament;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 
-class UserRegisteredToTournamentToTournament
+class UserRegisteredToTournamentToTournament implements ShouldQueue
 {
     /**
      * Create the event listener.

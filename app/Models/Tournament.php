@@ -6,7 +6,7 @@ namespace App\Models;
 
 use App\Casts\MoneyCast;
 use App\Enums\TournamentStatusEnum;
-use App\Events\NewTournamentPublished;
+use App\Events\Tournament\NewTournamentPublished;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;

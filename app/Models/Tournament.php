@@ -7,6 +7,8 @@ namespace App\Models;
 use App\Casts\MoneyCast;
 use App\Enums\TournamentStatusEnum;
 use App\Events\Tournament\NewTournamentPublished;
+use App\Observers\TournamentObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -55,6 +57,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Tournament whereUpdatedAt($value)
  * @mixin \Eloquent
  */
+#[ObservedBy(TournamentObserver::class)]
 class Tournament extends Model
 {
     /** @use HasFactory<\Database\Factories\TournamentFactory> */

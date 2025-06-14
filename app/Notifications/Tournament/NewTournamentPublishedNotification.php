@@ -3,6 +3,7 @@
 namespace App\Notifications\Tournament;
 
 use App\Models\Tournament;
+use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -15,7 +16,7 @@ class NewTournamentPublishedNotification extends Notification
     /**
      * Create a new notification instance.
      */
-    public function __construct(public Tournament $tournament)
+    public function __construct(public Tournament $tournament, public User $user)
     {
         //
     }
@@ -36,10 +37,11 @@ class NewTournamentPublishedNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject(__('Register to ' . $this->tournament->name . ' on the ' . $this->tournament->start_date->format('d/m/Y')))
-            ->greeting(__('Register to ' . $this->tournament->name . ' on the ' . $this->tournament->start_date->format('d/m/Y')))
-            ->line(__('Please click on the button below to join us and play some table tennis!'))
-            ->action('Notification Action', 'http://localhost:8000/admin/tournament/' . $this->tournament->id)
+            ->subject(__('Join us at ' . $this->tournament->name . ' on the ' . $this->tournament->start_date->format('d/m/Y')))
+            ->greeting(__('Hi ' . $this->user->first_name . ' !'))
+            ->line(__('Join us at ' . $this->tournament->name . ' on the ' . $this->tournament->start_date->format('d/m/Y')))
+            ->line(__('Click on the button below to join us and play your best table tennis!'))
+            ->action('I want to play', 'http://localhost:8000/admin/tournament/' . $this->tournament->id . '/register/' . $this->user->id)
             ->line(__('We are looking forward to see you there!'));
     }
 

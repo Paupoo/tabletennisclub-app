@@ -23,8 +23,11 @@ class SendPublishedTournamentNotification implements ShouldQueue
      */
     public function handle(NewTournamentPublished $event): void
     {
-        foreach (User::where('is_committee_member', true)->cursor() as $user) {
-            $user->notify(new NewTournamentPublishedNotification($event->tournament));
+        // foreach (User::where('is_committee_member', true)->cursor() as $user) {
+        //     $user->notify(new NewTournamentPublishedNotification($event->tournament, $user));
+        // }
+        foreach (User::cursor() as $user) {
+            $user->notify(new NewTournamentPublishedNotification($event->tournament, $user));
         }
     }
 }

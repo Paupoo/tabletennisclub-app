@@ -161,8 +161,8 @@ Route::middleware(['auth', 'verified'])
         Route::get('/admin/tournament/{tournament}/delete', [TournamentController::class, 'destroy'])->name('tournaments.destroy');
 
         // Tournament Actions
-        Route::get('/admin/tournament/register/{tournament}/{user}', [TournamentController::class, 'registerUser'])->name('tournament.register');
-        Route::get('/admin/tournament/unregister/{tournament}/{user}', [TournamentController::class, 'unregisterUser'])->name('tournament.unregister');
+        Route::get('/admin/tournament/{tournament}/register/{user}', [TournamentController::class, 'registerUser'])->name('tournament.register');
+        Route::get('/admin/tournament/{tournament}/unregister/{user}', [TournamentController::class, 'unregisterUser'])->name('tournament.unregister');
         Route::get('/admin/tournament/payment/{tournament}/{user}', ToggleHasPaidController::class)->name('tournaments.toggleHasPaid');
         
         // Others to sort

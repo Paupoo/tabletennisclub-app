@@ -26,7 +26,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property bool $has_handicap_points
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
- * @property mixed $0
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\TournamentMatch> $matches
  * @property-read int|null $matches_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Pool> $pools

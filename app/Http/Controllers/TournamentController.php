@@ -91,7 +91,7 @@ class TournamentController extends Controller
 
     public function closeTournament(Tournament $tournament): RedirectResponse
     {
-        $tournament->status = TournamentStatusEnum::CLOSED->value;
+        $tournament->status = TournamentStatusEnum::CLOSED;
         $tournament->update();
 
         return redirect()
@@ -284,7 +284,7 @@ class TournamentController extends Controller
             }
         }
 
-        $tournament->status = TournamentStatusEnum::PUBLISHED->value;
+        $tournament->status = TournamentStatusEnum::PUBLISHED;
         $tournament->update();
 
         return redirect()
@@ -612,7 +612,7 @@ class TournamentController extends Controller
                 ->with('warning', __('Please generate the matches first'));
         }
 
-        $tournament->status = 'pending';
+        $tournament->status = TournamentStatusEnum::PENDING;
         $tournament->update();
 
         return redirect()
@@ -658,7 +658,7 @@ class TournamentController extends Controller
                     ->with('error', __('Tournament ' . $tournament->name . ' has pending or completed matches and can\'t be unpublished.'));
             }
         }
-        $tournament->status = 'draft';
+        $tournament->status = TournamentStatusEnum::DRAFT;
         $tournament->update();
 
         return redirect()

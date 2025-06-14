@@ -5,7 +5,7 @@ namespace App\Listeners\Tournament;
 use App\Events\Tournament\UserRegisteredToTournament;
 use App\Models\Tournament;
 use App\Models\User;
-use App\Notifications\UserRegisteredToTournament as NotificationsUserRegisteredToTournament;
+use App\Notifications\Tournament\UserRegisteredToTournament as NotificationsUserRegisteredToTournament;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 

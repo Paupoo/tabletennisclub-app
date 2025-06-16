@@ -358,6 +358,7 @@
             </section>
 
             {{-- News --}}
+            @if($articles->count() > 0)
             <section class="px-8">
                 <h1 class="mt-4 text-2xl font-bold indent-4">{{ __('News of the club') }}</h1>
                 <div class="grid grid-flow-row grid-cols-3 gap-6 my-4 max-lg:grid-cols-2 max-sm:grid-cols-1">
@@ -367,8 +368,12 @@
                             <h2 class="text-lg font-semibold text-center">{{ $article->title }}</h2>
                             <p class="mt-2 text-justify indent-3">{{ Str::of($article->content)->limit(255) }}</p>
                             <div class="grid items-end grid-cols-4 gap-2">
-                                <x-published-date-indicator class="col-start-1 col-end-3">{{ __('Published:') }}
-                                    {{ fake()->date() }}</x-published-date-indicator>
+                                <div class="flex flex-col w-72">
+                                    <x-published-date-indicator class="col-start-1 col-end-3">{{ __('Published at:') }}
+                                        {{ $article->created_at->format('d/m/Y') }}</x-published-date-indicator>
+                                    <x-published-date-indicator class="col-start-1 col-end-3">{{ __('Author:') }}
+                                        {{ $article->user->first_name }}</x-published-date-indicator>
+                                </div>
                                 <x-button type="button"
                                     class="col-start-4 col-end-5 px-4 py-2 mt-2 text-sm font-medium text-blue-900 bg-indigo-300 place-self-end w-36">{{ __('Read more') }}</x-button>
                             </div>
@@ -382,6 +387,7 @@
 
 
             </section>
+            @endif
 
 
 

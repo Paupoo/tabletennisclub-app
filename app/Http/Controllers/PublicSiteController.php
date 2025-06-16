@@ -18,7 +18,7 @@ class PublicSiteController extends Controller
         $now = now();
 
         return view('/public/welcome', [
-            'articles' => Article::latest()->take(5)->get(),
+            'articles' => Article::latest()->with('user')->take(3)->get(),
             'trainings' => Training::where('start', '>=', $now)->orderBy('start', 'asc')->take(5)->get(),
             'training_levels' => collect(TrainingLevel::cases()),
             'training_types' => collect(TrainingType::cases()),

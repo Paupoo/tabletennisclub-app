@@ -18,7 +18,7 @@ class StoreArticleRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->merge([
-            'author' => Auth::user()->id,
+            'user_id' => Auth::user()->id,
         ]);
     }
 
@@ -31,7 +31,7 @@ class StoreArticleRequest extends FormRequest
     {
         return [
             'title' => 'string|required',
-            'author' => 'exists:users,id|required',
+            'user_id' => 'exists:users,id|required',
             'content' => 'string|required',
         ];
     }

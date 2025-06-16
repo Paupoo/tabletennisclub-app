@@ -13,14 +13,14 @@ class Article extends Model
     protected $fillable = [
         'title',
         'content',
-        'author',
+        'user_id',
         'status',
     ];
 
     protected $casts = [
         'title' => 'string',
         'content' => 'string',
-        'author' => 'string',
+        'user_id' => 'string',
     ];
 
     public function scopeSearch($query, $value): void

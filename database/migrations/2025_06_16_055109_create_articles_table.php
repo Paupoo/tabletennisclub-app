@@ -16,7 +16,7 @@ return new class extends Migration
             $table->id();
             $table->string('title')->required();
             $table->text('content')->required();
-            $table->foreignIdFor(User::class, 'author');
+            $table->foreignIdFor(User::class);
             $table->softDeletes();
             $table->timestamps();
         });

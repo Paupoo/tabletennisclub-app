@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\InterclubController;
 use App\Http\Controllers\KnockoutPhaseController;
 use App\Http\Controllers\ProfileController;
@@ -217,6 +218,9 @@ Route::middleware(['auth', 'verified'])
         Route::delete('/knockout-matches/{match}/reset', [KnockoutPhaseController::class, 'resetMatch'])
             ->name('resetKnockoutMatch');
     });
+
+// Articles
+Route::resource('/admin/articles', ArticleController::class)->middleware(['auth', 'verified']);
 
 Route::get('/test', function() {
     return view('test');

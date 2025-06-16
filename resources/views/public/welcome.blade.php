@@ -362,14 +362,25 @@
                 <h1 class="mt-4 text-2xl font-bold indent-4">{{ __('News of the club') }}</h1>
                 <div class="grid grid-flow-row grid-cols-3 gap-6 my-4 max-lg:grid-cols-2 max-sm:grid-cols-1">
 
-                    @for ($i = 0; $i < 6; $i++)
-                        <x-cards.article class="dark:bg-gray-700" />
-                    @endfor
-
-                    <x-button>{{ __('Older news') }}</x-button>
-
-
+                    @foreach ($articles as $article)
+                        <x-cards.article class="dark:bg-gray-700">
+                            <h2 class="text-lg font-semibold text-center">{{ $article->title }}</h2>
+                            <p class="mt-2 text-justify indent-3">{{ Str::of($article->content)->limit(255) }}</p>
+                            <div class="grid items-end grid-cols-4 gap-2">
+                                <x-published-date-indicator class="col-start-1 col-end-3">{{ __('Published:') }}
+                                    {{ fake()->date() }}</x-published-date-indicator>
+                                <x-button type="button"
+                                    class="col-start-4 col-end-5 px-4 py-2 mt-2 text-sm font-medium text-blue-900 bg-indigo-300 place-self-end w-36">{{ __('Read more') }}</x-button>
+                            </div>
+                        </x-cards.article>
+                    @endforeach
                 </div>
+
+                <div class="mx-auto my-4 w-fit">
+                    <x-primary-button class="bg-indigo-700">{{ __('Older news') }}</x-button>
+                </div>
+
+
             </section>
 
 

@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\TrainingLevel;
 use App\Enums\TrainingType;
+use App\Models\Article;
 use App\Models\Tournament;
 use App\Models\Training;
 
@@ -17,6 +18,7 @@ class PublicSiteController extends Controller
         $now = now();
 
         return view('/public/welcome', [
+            'articles' => Article::latest()->take(5)->get(),
             'trainings' => Training::where('start', '>=', $now)->orderBy('start', 'asc')->take(5)->get(),
             'training_levels' => collect(TrainingLevel::cases()),
             'training_types' => collect(TrainingType::cases()),

@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -187,7 +188,7 @@ class User extends Authenticatable
      * @param [type] $value
      * @return void
      */
-    public function scopeSearch($query, $value)
+    public function scopeSearch($query, $value): void
     {
         $query->where('last_name', 'like', '%' . $value . '%')
             ->orWhere('first_name', 'like', '%' . $value . '%');
@@ -253,5 +254,10 @@ class User extends Authenticatable
     public function trainings(): BelongsToMany
     {
         return $this->belongsToMany(Training::class);
+    }
+
+    public function articles(): HasMany
+    {
+        return $this->hasMany(Article::class);
     }
 }

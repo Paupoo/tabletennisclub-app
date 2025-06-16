@@ -51,31 +51,32 @@ class UsersTable extends Component
                 $this->redirectRoute('users.index');
             }
         }
-
     }
 
     public function render()
     {
+        $users = User::search($this->search)
+            ->when($this->competitor !== '', function ($query): void {
+                $query->where('is_competitor', $this->competitor);
+            })
+            ->when($this->sex !== '', function ($query): void {
+                $query->where('sex', $this->sex);
+            })
+            ->when($this->sortByField === '', function ($query): void {
+                $query->orderby('is_competitor', 'desc')
+                    ->orderby('force_list')
+                    ->orderBy('ranking')
+                    ->orderby('last_name')
+                    ->orderby('first_name')
+                    ->with('teams');
+            })
+            ->when($this->sortByField !== '', function ($query): void {
+                $query->orderBy($this->sortByField, $this->sortDirection);
+            })
+            ->paginate($this->perPage);
+
         return view('livewire.users-table', [
-            'users' => User::search($this->search)
-                ->when($this->competitor !== '', function ($query): void {
-                    $query->where('is_competitor', $this->competitor);
-                })
-                ->when($this->sex !== '', function ($query): void {
-                    $query->where('sex', $this->sex);
-                })
-                ->when($this->sortByField === '', function ($query): void {
-                    $query->orderby('is_competitor', 'desc')
-                        ->orderby('force_list')
-                        ->orderBy('ranking')
-                        ->orderby('last_name')
-                        ->orderby('first_name')
-                        ->with('teams');
-                })
-                ->when($this->sortByField !== '', function ($query): void {
-                    $query->orderBy($this->sortByField, $this->sortDirection);
-                })
-                ->paginate($this->perPage),
+            'users' => $users,
             'user_model' => User::class,
         ]);
     }

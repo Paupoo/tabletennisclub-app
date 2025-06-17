@@ -52,42 +52,42 @@
                 </a>
                 <div class="border-t border-gray-200"></div>
                 @if(in_array(\App\Enums\TournamentStatusEnum::DRAFT, $statusesAllowed))
-                <a href="{{ route('tournamentSetStatus', [$tournament, \App\Enums\TournamentStatusEnum::DRAFT]) }}"
+                <a href="{{ route('tournament.changeStatus', [$tournament, \App\Enums\TournamentStatusEnum::DRAFT]) }}"
                     class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
                     <x-ui.icon name="pen" class="mr-2" />
                     {{ __('Draft') }}
                 </a>
                 @endif
                 @if(in_array(\App\Enums\TournamentStatusEnum::LOCKED, $statusesAllowed))
-                <a href="{{ route('tournamentSetStatus', [$tournament, \App\Enums\TournamentStatusEnum::LOCKED]) }}"
+                <a href="{{ route('tournament.changeStatus', [$tournament, \App\Enums\TournamentStatusEnum::LOCKED]) }}"
                     class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
                     <x-ui.icon name="locked" class="mr-2" />
                     {{ __('Lock') }}
                 </a>
                 @endif
                 @if(in_array(\App\Enums\TournamentStatusEnum::PUBLISHED, $statusesAllowed))
-                <a href="{{ route('tournamentSetStatus', [$tournament, \App\Enums\TournamentStatusEnum::PUBLISHED]) }}"
+                <a href="{{ route('tournament.changeStatus', [$tournament, \App\Enums\TournamentStatusEnum::PUBLISHED]) }}"
                     class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
                     <x-ui.icon name="unlocked" class="mr-2" />
                     {{ __('Publish/Unlock') }}
                 </a>
                 @endif
                 @if(in_array(\App\Enums\TournamentStatusEnum::PENDING, $statusesAllowed))
-                <a href="{{ route('tournamentSetStatus', [$tournament, \App\Enums\TournamentStatusEnum::PENDING]) }}"
+                <a href="{{ route('tournament.changeStatus', [$tournament, \App\Enums\TournamentStatusEnum::PENDING]) }}"
                     class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
                     <x-ui.icon name="rocket-launch" class="mr-2" />
                     {{ __('Start') }}
                 </a>
                 @endif
                 @if(in_array(\App\Enums\TournamentStatusEnum::CLOSED, $statusesAllowed))
-                <a href="{{ route('tournamentSetStatus', [$tournament, \App\Enums\TournamentStatusEnum::CLOSED]) }}"
+                <a href="{{ route('tournament.changeStatus', [$tournament, \App\Enums\TournamentStatusEnum::CLOSED]) }}"
                     class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900">
                     <x-ui.icon name="flag" class="mr-2" />
                     {{ __('Close') }}
                 </a>
                 @endif
                 @if(in_array(\App\Enums\TournamentStatusEnum::CANCELLED, $statusesAllowed))
-                <a href="{{ route('tournamentSetStatus', [$tournament, \App\Enums\TournamentStatusEnum::CANCELLED]) }}"
+                <a href="{{ route('tournament.changeStatus', [$tournament, \App\Enums\TournamentStatusEnum::CANCELLED]) }}"
                     class="flex items-center px-4 py-2 text-sm text-red-700 hover:bg-gray-100 hover:text-red-900">
                     <x-ui.icon name="cancel" class="mr-2" />
                     {{ __('Cancel') }}

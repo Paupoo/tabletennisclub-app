@@ -24,4 +24,14 @@ class TournamentService
     {
         return $tournament->total_users >= $tournament->max_users;
     }
+
+    /**
+     * Unregister all the users and returns how many users were detached from the tournament.
+     * @param \App\Models\Tournament $tournament
+     * @return int
+     */
+    public function unregisterAllUsers(Tournament $tournament): int
+    {
+        return $tournament->users()->detach();
+    }
 }

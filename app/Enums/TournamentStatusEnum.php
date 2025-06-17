@@ -9,6 +9,7 @@ enum TournamentStatusEnum: string
     case DRAFT = 'draft';
     case PUBLISHED = 'published';
     case LOCKED = 'locked';
+    case SETUP = 'setup';
     case PENDING = 'pending';
     case CLOSED = 'closed';
     case CANCELLED = 'cancelled';

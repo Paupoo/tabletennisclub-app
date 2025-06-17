@@ -22,34 +22,34 @@
                     <x-menus.action-menu-item :icon="'duplicate'"
                             :text="__('Duplicate (TO DO)')"/>
                     @if (in_array(\App\Enums\TournamentStatusEnum::DRAFT, $statusesAllowed))
-                        <x-menus.action-menu-item :href="route('tournamentSetStatus', [$tournament, \App\Enums\TournamentStatusEnum::DRAFT])"
+                        <x-menus.action-menu-item :href="route('tournament.changeStatus', [$tournament, \App\Enums\TournamentStatusEnum::DRAFT])"
                                 :icon="'pen'"
                                 :text="__('Draft')"/>    
                     @endif
-                    @if (in_array(\App\Enums\TournamentStatusEnum::LOCKED, $statusesAllowed))
-                        <x-menus.action-menu-item :href="route('tournamentSetStatus', [$tournament, \App\Enums\TournamentStatusEnum::LOCKED])"
+                    @if (in_array(\App\Enums\TournamentStatusEnum::SETUP, $statusesAllowed))
+                        <x-menus.action-menu-item :href="route('tournament.changeStatus', [$tournament, \App\Enums\TournamentStatusEnum::SETUP])"
                             :icon="'locked'"
-                            :text="__('Lock')" />
+                            :text="__('Lock and setup')" />
                         </a>
                     @endif
                     @if (in_array(\App\Enums\TournamentStatusEnum::PUBLISHED, $statusesAllowed))
-                        <x-menus.action-menu-item :href="route('tournamentSetStatus', [$tournament, \App\Enums\TournamentStatusEnum::PUBLISHED])"
+                        <x-menus.action-menu-item :href="route('tournament.changeStatus', [$tournament, \App\Enums\TournamentStatusEnum::PUBLISHED])"
                             :icon="'unlocked'"
                             :text="__('Publish/Unlock')"/>
                     @endif
                     @if (in_array(\App\Enums\TournamentStatusEnum::PENDING, $statusesAllowed))
-                        <x-menus.action-menu-item :href="route('tournamentSetStatus', [$tournament, \App\Enums\TournamentStatusEnum::PENDING])"
+                        <x-menus.action-menu-item :href="route('tournament.changeStatus', [$tournament, \App\Enums\TournamentStatusEnum::PENDING])"
                             :icon="'rocket-launch'"
                             :text="__('Start')" />
                         </a>
                     @endif
                     @if (in_array(\App\Enums\TournamentStatusEnum::CLOSED, $statusesAllowed))
-                        <x-menus.action-menu-item :href="route('tournamentSetStatus', [$tournament, \App\Enums\TournamentStatusEnum::CLOSED])"
+                        <x-menus.action-menu-item :href="route('tournament.changeStatus', [$tournament, \App\Enums\TournamentStatusEnum::CLOSED])"
                             :icon="'flag'"
                             :text="__('Close')" />
                     @endif
                     @if (in_array(\App\Enums\TournamentStatusEnum::CANCELLED, $statusesAllowed))
-                        <x-menus.action-menu-item :href="route('tournamentSetStatus', [$tournament, \App\Enums\TournamentStatusEnum::CANCELLED])"
+                        <x-menus.action-menu-item :href="route('tournament.changeStatus', [$tournament, \App\Enums\TournamentStatusEnum::CANCELLED])"
                             :icon="'cancel'"
                             :textColor="'text-red-600'"
                             :textHover="'text-red-700'"

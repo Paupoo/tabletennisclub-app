@@ -22,6 +22,7 @@ use App\Services\TournamentPoolService;
 use App\Services\TournamentService;
 use App\Services\TournamentStatusManager;
 use App\Services\TournamentTableService;
+use App\States\Tournament\TournamentStateMachine;
 use Carbon\Carbon;
 use Event;
 use Exception;
@@ -70,34 +71,6 @@ class TournamentController extends Controller
 
         $match->table_id = $table->id;
         $match->save();
-    }
-
-    public function changeStatus(Tournament $tournament, TournamentStatusEnum $newStatus): RedirectResponse
-    {
-        $manager = new TournamentStatusManager($tournament);
-
-        try {
-            // code...
-            $manager->setStatus($newStatus);
-
-            return redirect()
-                ->back()
-                ->with('success', __('Status for tournament ' . $tournament->name . ' has been updated to ' . $newStatus->value));
-        } catch (\Throwable $th) {
-            return redirect()
-                ->back()
-                ->with('error', __($th->getMessage()));
-        }
-    }
-
-    public function closeTournament(Tournament $tournament): RedirectResponse
-    {
-        $tournament->status = TournamentStatusEnum::CLOSED;
-        $tournament->update();
-
-        return redirect()
-            ->back()
-            ->with('success', __('Tournament ' . $tournament->name . ' has been closed.'));
     }
 
     public function create(): View
@@ -407,7 +380,8 @@ class TournamentController extends Controller
 
         $unregisteredUsers = User::unregisteredUsers($tournament)->get();
 
-        $manager = new TournamentStatusManager($tournament);
+        // $manager = new TournamentStatusManager($tournament);
+        $state = new TournamentStateMachine($tournament);
 
         return view('admin.tournaments.show', [
             'matches' => $matches,
@@ -415,7 +389,7 @@ class TournamentController extends Controller
             'tables' => $tables,
             'tournament' => $tournament,
             'unregisteredUsers' => $unregisteredUsers,
-            'statusesAllowed' => $manager->getAllowedNextStatuses(),
+            'statusesAllowed' => $state->getAllowedTransitions(),
         ]);
     }
 
@@ -599,28 +573,6 @@ class TournamentController extends Controller
             ->with('success', 'Le match est en cours.');
     }
 
-    public function startTournament(Tournament $tournament): RedirectResponse
-    {
-        if ($tournament->pools()->count() === 0) {
-            return redirect()
-                ->back()
-                ->with('error', __('Please generate the pools first'));
-        }
-
-        if ($tournament->matches()->count() === 0) {
-            return redirect()
-                ->back()
-                ->with('warning', __('Please generate the matches first'));
-        }
-
-        $tournament->status = TournamentStatusEnum::PENDING;
-        $tournament->update();
-
-        return redirect()
-            ->back()
-            ->with('success', __('Tournament ' . $tournament->name . ' has been started.'));
-    }
-
     public function store(StoreOrUpdateTournamentRequest $request): RedirectResponse
     {
         $this->authorize('create', Tournament::class);
@@ -648,23 +600,6 @@ class TournamentController extends Controller
         
         return redirect()
             ->back();
-    }
-
-    public function unpublish(Tournament $tournament): RedirectResponse
-    {
-        foreach ($tournament->matches as $match) {
-            if ($match->status === 'in_progress' || $match->status === 'completed') {
-                return redirect()
-                    ->back()
-                    ->with('error', __('Tournament ' . $tournament->name . ' has pending or completed matches and can\'t be unpublished.'));
-            }
-        }
-        $tournament->status = TournamentStatusEnum::DRAFT;
-        $tournament->update();
-
-        return redirect()
-            ->back()
-            ->with('success', __('Tournament ' . $tournament->name . ' has been unpublished.'));
     }
 
     public function unregisterUser(Tournament $tournament, User $user): RedirectResponse

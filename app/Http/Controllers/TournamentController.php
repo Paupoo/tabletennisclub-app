@@ -94,12 +94,12 @@ class TournamentController extends Controller
 
     public function edit(Tournament $tournament): View
     {
-        $manager = new TournamentStatusManager($tournament);
+        $stateMachine = new TournamentStateMachine($tournament);
 
         return view('admin.tournaments.edit', [
             'tournament' => $tournament->load(['pools.users']),
             'rooms' => Room::orderBy('name')->get(),
-            'statusesAllowed' => $manager->getAllowedNextStatuses(),
+            'statusesAllowed' => $stateMachine->getAllowedTransitions(),
         ]);
     }
 
@@ -380,7 +380,6 @@ class TournamentController extends Controller
 
         $unregisteredUsers = User::unregisteredUsers($tournament)->get();
 
-        // $manager = new TournamentStatusManager($tournament);
         $state = new TournamentStateMachine($tournament);
 
         return view('admin.tournaments.show', [
@@ -418,14 +417,14 @@ class TournamentController extends Controller
 
         $unregisteredUsers = User::unregisteredUsers($tournament)->get();
 
-        $manager = new TournamentStatusManager($tournament);
+        $stateMachine = new TournamentStateMachine($tournament);
 
         return view('admin.tournaments.show-matches', [
             'matches' => $matches,
             'rooms' => $rooms,
             'tables' => $tables,
             'tournament' => $tournament,
-            'statusesAllowed' => $manager->getAllowedNextStatuses(),
+            'statusesAllowed' => $stateMachine->getAllowedTransitions(),
         ]);
     }
 
@@ -455,7 +454,7 @@ class TournamentController extends Controller
             ->orderBy('first_name', 'asc')
             ->paginate(50);
 
-        $manager = new TournamentStatusManager($tournament);
+        $stateMachine = new TournamentStateMachine($tournament);
 
         return view('admin.tournaments.show-players', [
             'matches' => $matches,
@@ -463,7 +462,7 @@ class TournamentController extends Controller
             'tables' => $tables,
             'tournament' => $tournament,
             'users' => $users,
-            'statusesAllowed' => $manager->getAllowedNextStatuses(),
+            'statusesAllowed' => $stateMachine->getAllowedTransitions(),
         ]);
     }
 
@@ -483,7 +482,7 @@ class TournamentController extends Controller
             ->orderByRaw('name')
             ->get();
 
-        $manager = new TournamentStatusManager($tournament);
+    $stateMachine = new TournamentStateMachine($tournament);
 
         return view('admin.tournaments.pool-matches', [
             'pool' => $pool,
@@ -491,7 +490,7 @@ class TournamentController extends Controller
             'matches' => $matches,
             'standings' => $standings,
             'tables' => $tables,
-            'statusesAllowed' => $manager->getAllowedNextStatuses(),
+            'statusesAllowed' => $stateMachine->getAllowedTransitions(),
         ]);
     }
 
@@ -507,11 +506,11 @@ class TournamentController extends Controller
             },
         ])->findOrFail($id);
 
-        $manager = new TournamentStatusManager($tournament);
+        $stateMachine = new TournamentStateMachine($tournament);
 
         return view('admin.tournaments.show-pools', [
             'tournament' => $tournament,
-            'statusesAllowed' => $manager->getAllowedNextStatuses(),
+            'statusesAllowed' => $stateMachine->getAllowedTransitions(),
         ]);
     }
 
@@ -537,7 +536,7 @@ class TournamentController extends Controller
 
         $unregisteredUsers = User::unregisteredUsers($tournament)->get();
 
-        $manager = new TournamentStatusManager($tournament);
+        $stateMachine = new TournamentStateMachine($tournament);
 
         return view('admin.tournaments.show-tables', [
             'matches' => $matches,
@@ -545,7 +544,7 @@ class TournamentController extends Controller
             'tables' => $tables,
             'tournament' => $tournament,
             'unregisteredUsers' => $unregisteredUsers,
-            'statusesAllowed' => $manager->getAllowedNextStatuses(),
+            'statusesAllowed' => $stateMachine->getAllowedTransitions(),
         ]);
     }
 

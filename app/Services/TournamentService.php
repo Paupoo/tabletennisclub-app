@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Events\Tournament\UserRegisteredToTournament;
 use App\Models\Tournament;
+use App\Models\User;
+use Event;
+use LogicException;
 
 class TournamentService
 {
@@ -33,5 +37,25 @@ class TournamentService
     public function unregisterAllUsers(Tournament $tournament): int
     {
         return $tournament->users()->detach();
+    }
+
+    public function registerUser(Tournament $tournament, User $user)
+    {
+
+        if ($this->IsFull($tournament)) {
+            throw new LogicException('Sorry, the tournament is full, you cannot register more players.');
+        }
+
+        // Vérifier si le joueur n'est pas déjà inscrit
+        if ($tournament->users->contains($user)) {
+            throw new LogicException('This player is already registered to this tournament.');
+        }
+
+        $tournament->users()
+            ->attach($user);
+
+        $this->countRegisteredUsers($tournament);
+
+        Event::dispatch(new UserRegisteredToTournament($tournament, $user));
     }
 }

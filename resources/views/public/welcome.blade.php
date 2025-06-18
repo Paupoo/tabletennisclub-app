@@ -8,6 +8,7 @@
     <title>{{ config('app.name') }}</title>
 
     @vite('resources/css/app.css')
+    @livewireStyles()
 
 </head>
 
@@ -302,91 +303,67 @@
                     </div>
                 </div>
 
-                {{-- Upcoming tournaments --}}
-                <div>
-                    <h1 class="mt-4 text-2xl font-bold indent-4">{{ __('Upcoming tournaments') }}</h1>
-                    <div class="container">
-                        <div class="relative p-4 my-4 bg-white rounded-lg pb-14 max-sm:w-fit w-96 dark:bg-gray-700">
+                <div class="container mx-auto px-4 py-8">
+                    <h1 class="text-3xl font-bold text-gray-900 mb-8">Tournaments</h1>
 
-                            @if ($tournaments->count() > 0)
-                                @foreach ($tournaments as $tournament)
-                                {{-- {{ $tournament }} --}}
-                                    <div
-                                        class="flex flex-row items-start gap-2 p-2 mt-2 bg-gray-100 rounded-md hover:bg-gray-200">
-                                        
-                                        <div class="w-full">
-                                            <div class="flex flex-row justify-between">
-                                                <div class="text-sm text-left font-base">
-                                                    {{ $tournament->start_date->format('l d F Y') }}</div>
-                                                <div class="text-sm text-right font-extralight">
-                                                    {{ $tournament->start_date->format('H:i') . ' - ' . $tournament->end_date?->format('H:i') }}
-                                                </div>
-                                            </div>
-                                            <div class="flex flex-row justify-between">
-                                                <div class="text-sm italic text-left font-base">
-                                                    {{ $tournament->name }}
-                                                </div>
-                                                <div class="text-sm text-right font-extralight">
-                                                    @foreach ($tournament->rooms as $room)
-                                                        {{ $room->name }} 
-                                                    @endforeach
-                                                </div>
-                                            </div>
-                                            <div class="flex flex-row justify-between">
-                                                <div class="text-sm italic text-left font-base">
-                                                    {{-- {{ __('Type : ' . $training_types->firstWhere('name', $training->type)->value) }} --}}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endforeach
-                            @else
-                                <div
-                                    class="flex flex-row items-start gap-2 p-2 mt-2 bg-gray-100 rounded-md hover:bg-gray-200 dark:bg-gray-400">
-                                    {{ __('No upcoming training. Please come back later.') }}
-                                </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- Using Blade Component -->
+                        {{-- <x-public.tournament-card /> --}}
 
-                            @endif
-
-                            <x-button
-                                class="absolute py-2 text-sm font-medium text-blue-900 -translate-x-1/2 bg-indigo-300 w-36 bottom-2 left-1/2">
-                                More
-                            </x-button>
-                        </div>
+                        <!-- Using Livewire Component -->
+                        @foreach ($tournaments as $tournament)
+                            <livewire:public.tournament-card :tournament="$tournament" />
+                        @endforeach
+                        {{-- @livewire('public.tournament-card', ['tournament' => [
+                            'name' => 'Winter League 2024',
+                            'category' => 'FPS Tournament',
+                            'date' => 'December 20-22, 2024',
+                            'time' => '10:00 AM - 8:00 PM EST',
+                            'location' => 'New York Gaming Arena',
+                            'participants' => '64 / 128 participants',
+                            'prize_pool' => '$25,000',
+                            'entry_fee' => '$15',
+                            'status' => 'Open',
+                            'format' => 'Double elimination with best-of-5 finals.'
+                        ]]) --}}
                     </div>
                 </div>
+
+                {{-- Upcoming tournaments --}}
+
             </section>
 
             {{-- News --}}
-            @if($articles->count() > 0)
-            <section class="px-8">
-                <h1 class="mt-4 text-2xl font-bold indent-4">{{ __('News of the club') }}</h1>
-                <div class="grid grid-flow-row grid-cols-3 gap-6 my-4 max-lg:grid-cols-2 max-sm:grid-cols-1">
+            @if ($articles->count() > 0)
+                <section class="px-8">
+                    <h1 class="mt-4 text-2xl font-bold indent-4">{{ __('News of the club') }}</h1>
+                    <div class="grid grid-flow-row grid-cols-3 gap-6 my-4 max-lg:grid-cols-2 max-sm:grid-cols-1">
 
-                    @foreach ($articles as $article)
-                        <x-cards.article class="dark:bg-gray-700">
-                            <h2 class="text-lg font-semibold text-center">{{ $article->title }}</h2>
-                            <p class="mt-2 text-justify indent-3">{{ Str::of($article->content)->limit(255) }}</p>
-                            <div class="grid items-end grid-cols-4 gap-2">
-                                <div class="flex flex-col w-72">
-                                    <x-published-date-indicator class="col-start-1 col-end-3">{{ __('Published at:') }}
-                                        {{ $article->created_at->format('d/m/Y') }}</x-published-date-indicator>
-                                    <x-published-date-indicator class="col-start-1 col-end-3">{{ __('Author:') }}
-                                        {{ $article->user->first_name }}</x-published-date-indicator>
+                        @foreach ($articles as $article)
+                            <x-cards.article class="dark:bg-gray-700">
+                                <h2 class="text-lg font-semibold text-center">{{ $article->title }}</h2>
+                                <p class="mt-2 text-justify indent-3">{{ Str::of($article->content)->limit(255) }}</p>
+                                <div class="grid items-end grid-cols-4 gap-2">
+                                    <div class="flex flex-col w-72">
+                                        <x-published-date-indicator
+                                            class="col-start-1 col-end-3">{{ __('Published at:') }}
+                                            {{ $article->created_at->format('d/m/Y') }}</x-published-date-indicator>
+                                        <x-published-date-indicator class="col-start-1 col-end-3">{{ __('Author:') }}
+                                            {{ $article->user->first_name }}</x-published-date-indicator>
+                                    </div>
+                                    <x-button type="button"
+                                        class="col-start-4 col-end-5 px-4 py-2 mt-2 text-sm font-medium text-blue-900 bg-indigo-300 place-self-end w-36">{{ __('Read more') }}</x-button>
                                 </div>
-                                <x-button type="button"
-                                    class="col-start-4 col-end-5 px-4 py-2 mt-2 text-sm font-medium text-blue-900 bg-indigo-300 place-self-end w-36">{{ __('Read more') }}</x-button>
-                            </div>
-                        </x-cards.article>
-                    @endforeach
-                </div>
+                            </x-cards.article>
+                        @endforeach
+                    </div>
 
-                <div class="mx-auto my-4 w-fit">
-                    <x-primary-button class="bg-indigo-700">{{ __('Older news') }}</x-button>
-                </div>
+                    <div class="mx-auto my-4 w-fit">
+                        <x-primary-button class="bg-indigo-700">{{ __('Older news') }}</x-button>
+                    </div>
 
 
-            </section>
+                </section>
             @endif
 
 
@@ -443,5 +420,7 @@
 
         </footer>
     </div>
-
+    @livewireScripts()  
 </body>
+
+</html>

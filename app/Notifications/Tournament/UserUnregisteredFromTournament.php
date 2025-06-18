@@ -36,9 +36,10 @@ class UserUnregisteredFromTournament extends Notification
      */
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)->markdown('mail.user-unregistered-from-tournament', [
-            'tournament' => $this->tournament,
-            'user' => $this->user,
+        return (new MailMessage)->subject('Confirmation : you are unregistered from ' . $this->tournament->name)
+            ->markdown('mail.user-unregistered-from-tournament', [
+                'tournament' => $this->tournament,
+                'user' => $this->user,
         ]);
     }
 

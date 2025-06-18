@@ -36,9 +36,10 @@ class UserRegisteredToTournament extends Notification implements ShouldQueue
      */
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)->markdown('mail.user-registered-to-tournament', [
-            'user' => $this->user,
-            'tournament' => $this->tournament,
+        return (new MailMessage)->subject('Confirmation : you are registered to ' . $this->tournament->name)
+            ->markdown('mail.user-registered-to-tournament', [
+                'user' => $this->user,
+                'tournament' => $this->tournament,
         ]);
     }
 

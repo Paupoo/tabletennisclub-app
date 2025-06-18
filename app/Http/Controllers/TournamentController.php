@@ -268,26 +268,13 @@ class TournamentController extends Controller
 
     public function registerUser(Tournament $tournament, User $user): RedirectResponse
     {
-
-        if ($this->tournamentService->IsFull($tournament)) {
+        try {
+             $this->tournamentService->registerUser($tournament, $user);
+        } catch (\Throwable $th) {
             return redirect()
-                ->route('tournamentShowPlayers', $tournament)
-                ->with('error', 'Sorry, the tournament is full, you cannot register more players.');
+                ->back()
+                ->with('error', $th->getMessage());
         }
-
-        // Vérifier si le joueur n'est pas déjà inscrit
-        if ($tournament->users()->where('user_id', $user->id)->exists()) {
-            return redirect()
-                ->route('tournamentShowPlayers', $tournament)
-                ->with('error', 'This player is already registered to this tournament.');
-        }
-
-        $tournament->users()
-            ->attach($user);
-
-        $this->tournamentService->countRegisteredUsers($tournament);
-
-        Event::dispatch(new UserRegisteredToTournament($tournament, $user));
 
         return redirect()
             ->back()

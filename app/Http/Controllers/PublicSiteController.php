@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Enums\TournamentStatusEnum;
 use App\Enums\TrainingLevel;
 use App\Enums\TrainingType;
 use App\Models\Article;
@@ -22,7 +23,7 @@ class PublicSiteController extends Controller
             'trainings' => Training::where('start', '>=', $now)->orderBy('start', 'asc')->take(5)->get(),
             'training_levels' => collect(TrainingLevel::cases()),
             'training_types' => collect(TrainingType::cases()),
-            'tournaments' => Tournament::where('start_date', '>', today())->where('status', 'open')->with('rooms')->get(),
+            'tournaments' => Tournament::where('start_date', '>', today())->where('status', TournamentStatusEnum::PUBLISHED)->with('rooms')->orderBy('start_date', 'asc')->get(),
         ]);
     }
 }

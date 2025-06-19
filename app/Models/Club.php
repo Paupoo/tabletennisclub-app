@@ -11,8 +11,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * 
- *
  * @property int $id
  * @property string $name
  * @property int $is_active
@@ -28,6 +26,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read int|null $teams_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $users
  * @property-read int|null $users_count
+ *
  * @method static \Database\Factories\ClubFactory factory($count = null, $state = [])
  * @method static Builder<static>|Club newModelQuery()
  * @method static Builder<static>|Club newQuery()
@@ -43,6 +42,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static Builder<static>|Club whereName($value)
  * @method static Builder<static>|Club whereStreet($value)
  * @method static Builder<static>|Club whereUpdatedAt($value)
+ *
  * @mixin \Eloquent
  */
 class Club extends Model

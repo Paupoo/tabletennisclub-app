@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Livewire\Admin\Articles;
 
 use App\Models\Article;
@@ -11,12 +13,12 @@ class Create extends Component
 
     public function mount()
     {
-        $this->article = new Article();
+        $this->article = new Article;
     }
 
     public function render()
     {
-        return view('livewire.admin.articles.create',[
+        return view('livewire.admin.articles.create', [
             'article' => $this->article,
         ]);
     }

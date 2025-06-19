@@ -16,11 +16,11 @@ class UsersTable extends Component
 
     public string $competitor = '';
 
-    public string $sex = '';
-
     public int $perPage = 20;
 
     public string $search = '';
+
+    public string $sex = '';
 
     public string $sortByField = '';
 

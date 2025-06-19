@@ -12,8 +12,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * 
- *
  * @property int $id
  * @property string $name
  * @property int $tournament_id
@@ -24,6 +22,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read int|null $tournamentmatches_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $users
  * @property-read int|null $users_count
+ *
  * @method static \Database\Factories\PoolFactory factory($count = null, $state = [])
  * @method static Builder<static>|Pool newModelQuery()
  * @method static Builder<static>|Pool newQuery()
@@ -33,6 +32,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static Builder<static>|Pool whereName($value)
  * @method static Builder<static>|Pool whereTournamentId($value)
  * @method static Builder<static>|Pool whereUpdatedAt($value)
+ *
  * @mixin \Eloquent
  */
 class Pool extends Model

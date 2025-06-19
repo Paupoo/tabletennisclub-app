@@ -9,8 +9,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * 
- *
  * @property int $id
  * @property int|null $tournament_match_id
  * @property int $set_number
@@ -21,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \App\Models\TournamentMatch|null $poolMatch
  * @property-read \App\Models\User|null $winner
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MatchSet newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MatchSet newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MatchSet query()
@@ -32,6 +31,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MatchSet whereTournamentMatchId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MatchSet whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MatchSet whereWinnerId($value)
+ *
  * @mixin \Eloquent
  */
 class MatchSet extends Model

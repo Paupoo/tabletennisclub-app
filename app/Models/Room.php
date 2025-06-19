@@ -10,8 +10,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * 
- *
  * @property int $id
  * @property string $name
  * @property string|null $building_name
@@ -36,6 +34,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read int|null $tournaments_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Training> $training
  * @property-read int|null $training_count
+ *
  * @method static \Database\Factories\RoomFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Room newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Room newQuery()
@@ -54,6 +53,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Room whereTotalPlayableTables($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Room whereTotalTables($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Room whereUpdatedAt($value)
+ *
  * @mixin \Eloquent
  */
 class Room extends Model

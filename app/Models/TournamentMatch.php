@@ -10,8 +10,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 /**
- * 
- *
  * @property int $id
  * @property int|null $pool_id
  * @property int|null $tournament_id
@@ -41,6 +39,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property-read int|null $table_count
  * @property-read \App\Models\Tournament|null $tournament
  * @property-read \App\Models\User|null $winner
+ *
  * @method static \Database\Factories\TournamentMatchFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch fromBracket()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch fromPools()
@@ -68,6 +67,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch whereTournamentId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch whereWinnerId($value)
+ *
  * @mixin \Eloquent
  */
 class TournamentMatch extends Model

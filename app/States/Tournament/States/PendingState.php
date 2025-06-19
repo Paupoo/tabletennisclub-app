@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\States\Tournament\States;
 
 use App\Enums\TournamentStatusEnum;
@@ -10,41 +11,6 @@ use LogicException;
 
 final class PendingState extends AbstractTournamentState
 {
-    public function getStatus(): TournamentStatusEnum
-    {
-        return TournamentStatusEnum::PENDING;
-    }
-    public function getAllowedTransitions(): array
-    {
-        return [
-            TournamentStatusEnum::SETUP,
-            TournamentStatusEnum::CLOSED,
-            TournamentStatusEnum::CANCELLED,
-        ];
-    }
-    
-    // Actions spécifiques selon l'état
-    public function canRegisterUsers(): bool
-    {
-        return false;
-    }
-    public function canCreatePools(): bool
-    {
-        return false;
-    }
-    public function canModifyPools(): bool
-    {
-        return false;
-    }
-    public function canGenerateMatches(): bool
-    {
-        return false;
-    }
-    public function canStartMatches(): bool
-    {
-        return true;
-    }
-
     public function setUp(Tournament $tournament): void
     {
         // Check that there is no pending matches
@@ -60,11 +26,45 @@ final class PendingState extends AbstractTournamentState
         $tournament->save();
     }
 
+    public function cancel(Tournament $tournament): void
+    {
+        // TO DO : warns registered users.
+
+        $tournament->status = TournamentStatusEnum::CANCELLED;
+        $tournament->save();
+    }
+
+    public function canCreatePools(): bool
+    {
+        return false;
+    }
+
+    public function canGenerateMatches(): bool
+    {
+        return false;
+    }
+
+    public function canModifyPools(): bool
+    {
+        return false;
+    }
+
+    // Actions spécifiques selon l'état
+    public function canRegisterUsers(): bool
+    {
+        return false;
+    }
+
+    public function canStartMatches(): bool
+    {
+        return true;
+    }
+
     public function close(Tournament $tournament): void
     {
         // Check that every matches have been played.
         $totalMatchesNotCompleted = $tournament->matches()
-            ->whereNot( 'completed')
+            ->whereNot('completed')
             ->count();
 
         if ($totalMatchesNotCompleted > 0) {
@@ -74,12 +74,18 @@ final class PendingState extends AbstractTournamentState
         $tournament->status = TournamentStatusEnum::CLOSED;
         $tournament->save();
     }
-    
-    public function cancel(Tournament $tournament): void
-    {
-        // TO DO : warns registered users.
 
-        $tournament->status = TournamentStatusEnum::CANCELLED;
-        $tournament->save();
+    public function getAllowedTransitions(): array
+    {
+        return [
+            TournamentStatusEnum::SETUP,
+            TournamentStatusEnum::CLOSED,
+            TournamentStatusEnum::CANCELLED,
+        ];
+    }
+
+    public function getStatus(): TournamentStatusEnum
+    {
+        return TournamentStatusEnum::PENDING;
     }
 }

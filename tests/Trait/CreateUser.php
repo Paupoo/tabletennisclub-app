@@ -8,7 +8,6 @@ use App\Models\User;
 
 trait CreateUser
 {
-
     public function createFakeAdmin(): User
     {
         return User::factory()->isAdmin()->create();

@@ -12,8 +12,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * 
- *
  * @property int $id
  * @property string $name
  * @property int|null $league_id
@@ -30,6 +28,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read \App\Models\Season $season
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $users
  * @property-read int|null $users_count
+ *
  * @method static \Database\Factories\TeamFactory factory($count = null, $state = [])
  * @method static Builder<static>|Team inClub()
  * @method static Builder<static>|Team newModelQuery()
@@ -44,6 +43,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static Builder<static>|Team whereName($value)
  * @method static Builder<static>|Team whereSeasonId($value)
  * @method static Builder<static>|Team whereUpdatedAt($value)
+ *
  * @mixin \Eloquent
  */
 class Team extends Model

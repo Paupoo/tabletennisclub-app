@@ -147,7 +147,6 @@ Route::get('/admin/users/deleteForceList', [
 
 Route::get('/admin/{user}/subscription', [UserController::class, 'toggleHasPaid'])->name('users.toggleHaspaid');
 
-
 Route::resource('admin/users', UserController::class)->middleware(['auth', 'verified']);
 
 // Tournaments
@@ -166,7 +165,7 @@ Route::middleware(['auth', 'verified'])
         Route::get('/admin/tournament/{tournament}/register/{user}', [TournamentController::class, 'registerUser'])->name('tournament.register');
         Route::get('/admin/tournament/{tournament}/unregister/{user}', [TournamentController::class, 'unregisterUser'])->name('tournament.unregister');
         Route::get('/admin/tournament/payment/{tournament}/{user}', ToggleHasPaidController::class)->name('tournaments.toggleHasPaid');
-        
+
         // Others to sort
         Route::get('/admin/tournament/{id}/players', [TournamentController::class, 'showPlayers'])->name('tournamentShowPlayers');
         Route::get('/admin/tournament/{id}/pools', [TournamentController::class, 'showPools'])->name('tournamentShowPools');
@@ -223,7 +222,7 @@ Route::middleware(['auth', 'verified'])
 // Articles
 Route::resource('/admin/articles', ArticleController::class)->middleware(['auth', 'verified']);
 
-Route::get('/test', function() {
+Route::get('/test', function () {
     return view('test');
 });
 

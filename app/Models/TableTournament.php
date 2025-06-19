@@ -7,8 +7,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
 /**
- * 
- *
  * @property int $id
  * @property int|null $tournament_id
  * @property int|null $table_id
@@ -18,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
  * @property string|null $match_ended_at
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TableTournament newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TableTournament newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TableTournament query()
@@ -30,6 +29,7 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TableTournament whereTournamentId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TableTournament whereTournamentMatchId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TableTournament whereUpdatedAt($value)
+ *
  * @mixin \Eloquent
  */
 class TableTournament extends Pivot

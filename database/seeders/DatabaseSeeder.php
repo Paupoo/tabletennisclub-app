@@ -319,7 +319,7 @@ class DatabaseSeeder extends Seeder
 
         User::factory()
             ->isNotCompetitor()
-            ->count(500)
+            ->count(100)
             ->create();
 
         // Gestion du tournoi
@@ -356,8 +356,8 @@ class DatabaseSeeder extends Seeder
 
         $this->tournament = Tournament::find(3);
         $this->tournament->name = 'Tournoi de doubles';
-        $this->tournament->max_users = 250;
-        $this->tournament->total_users = 250;
+        $this->tournament->max_users = 50;
+        $this->tournament->total_users = 50;
         $this->tournament->has_handicap_points = true;
         $this->tournament->save();
         $this->tournament->rooms()->sync([1, 2]);
@@ -367,7 +367,7 @@ class DatabaseSeeder extends Seeder
 
         // Add users
 
-        for ($i = 1; $i < 80; $i++) {
+        for ($i = 1; $i < 50; $i++) {
             $user = User::find($i);
             $this->tournament->users()->attach($user);
         }

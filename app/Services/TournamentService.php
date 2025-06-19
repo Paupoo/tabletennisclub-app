@@ -29,20 +29,10 @@ class TournamentService
         return $tournament->total_users >= $tournament->max_users;
     }
 
-    /**
-     * Unregister all the users and returns how many users were detached from the tournament.
-     * @param \App\Models\Tournament $tournament
-     * @return int
-     */
-    public function unregisterAllUsers(Tournament $tournament): int
-    {
-        return $tournament->users()->detach();
-    }
-
     public function registerUser(Tournament $tournament, User $user)
     {
 
-        if ($this->IsFull($tournament)) {
+        if ($this->isFull($tournament)) {
             throw new LogicException('Sorry, the tournament is full, you cannot register more players.');
         }
 
@@ -57,5 +47,13 @@ class TournamentService
         $this->countRegisteredUsers($tournament);
 
         Event::dispatch(new UserRegisteredToTournament($tournament, $user));
+    }
+
+    /**
+     * Unregister all the users and returns how many users were detached from the tournament.
+     */
+    public function unregisterAllUsers(Tournament $tournament): int
+    {
+        return $tournament->users()->detach();
     }
 }

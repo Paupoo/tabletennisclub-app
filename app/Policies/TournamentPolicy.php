@@ -23,7 +23,7 @@ class TournamentPolicy
      */
     public function delete(User $user, Tournament $tournament): bool
     {
-        return ($user->is_admin || $user->is_committee_member);
+        return $user->is_admin || $user->is_committee_member;
     }
 
     /**
@@ -31,7 +31,7 @@ class TournamentPolicy
      */
     public function forceDelete(User $user, Tournament $tournament): bool
     {
-        return ($user->is_admin || $user->is_committee_member) && $tournament->status !== 'pending';
+        return ($user->is_admin || $user->is_committee_member) && $tournament->status !== TournamentStatusEnum::PENDING;
     }
 
     /**
@@ -53,17 +53,17 @@ class TournamentPolicy
     /**
      * Determine whether the user can update the model.
      */
-    public function updateSubscriptionAsUser(User $user, Tournament $tournament): bool
+    public function updatesBeforeStart(User $user, Tournament $tournament): bool
     {
-        return $tournament->status->value === TournamentStatusEnum::PUBLISHED->value;
+        return ($user->is_admin || $user->is_committee_member) && $tournament->status->value === TournamentStatusEnum::PUBLISHED->value;
     }
 
     /**
      * Determine whether the user can update the model.
      */
-    public function updatesBeforeStart(User $user, Tournament $tournament): bool
+    public function updateSubscriptionAsUser(User $user, Tournament $tournament): bool
     {
-        return ($user->is_admin || $user->is_committee_member) && $tournament->status->value === TournamentStatusEnum::PUBLISHED->value;
+        return $tournament->status->value === TournamentStatusEnum::PUBLISHED->value;
     }
 
     /**

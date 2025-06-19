@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Notifications\Tournament;
 
 use App\Models\Tournament;
@@ -22,13 +24,15 @@ class UserRegisteredToTournament extends Notification implements ShouldQueue
     }
 
     /**
-     * Get the notification's delivery channels.
+     * Get the array representation of the notification.
      *
-     * @return array<int, string>
+     * @return array<string, mixed>
      */
-    public function via(object $notifiable): array
+    public function toArray(object $notifiable): array
     {
-        return ['mail'];
+        return [
+            //
+        ];
     }
 
     /**
@@ -40,18 +44,16 @@ class UserRegisteredToTournament extends Notification implements ShouldQueue
             ->markdown('mail.user-registered-to-tournament', [
                 'user' => $this->user,
                 'tournament' => $this->tournament,
-        ]);
+            ]);
     }
 
     /**
-     * Get the array representation of the notification.
+     * Get the notification's delivery channels.
      *
-     * @return array<string, mixed>
+     * @return array<int, string>
      */
-    public function toArray(object $notifiable): array
+    public function via(object $notifiable): array
     {
-        return [
-            //
-        ];
+        return ['mail'];
     }
 }

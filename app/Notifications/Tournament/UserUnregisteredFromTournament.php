@@ -1,11 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Notifications\Tournament;
 
 use App\Models\Tournament;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -22,13 +23,15 @@ class UserUnregisteredFromTournament extends Notification
     }
 
     /**
-     * Get the notification's delivery channels.
+     * Get the array representation of the notification.
      *
-     * @return array<int, string>
+     * @return array<string, mixed>
      */
-    public function via(object $notifiable): array
+    public function toArray(object $notifiable): array
     {
-        return ['mail'];
+        return [
+            //
+        ];
     }
 
     /**
@@ -40,18 +43,16 @@ class UserUnregisteredFromTournament extends Notification
             ->markdown('mail.user-unregistered-from-tournament', [
                 'tournament' => $this->tournament,
                 'user' => $this->user,
-        ]);
+            ]);
     }
 
     /**
-     * Get the array representation of the notification.
+     * Get the notification's delivery channels.
      *
-     * @return array<string, mixed>
+     * @return array<int, string>
      */
-    public function toArray(object $notifiable): array
+    public function via(object $notifiable): array
     {
-        return [
-            //
-        ];
+        return ['mail'];
     }
 }

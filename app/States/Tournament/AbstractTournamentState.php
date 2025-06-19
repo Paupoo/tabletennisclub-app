@@ -10,9 +10,29 @@ use App\States\Tournament\Contracts\TournamentStateInterface;
 
 abstract class AbstractTournamentState implements TournamentStateInterface
 {
-    public function canTransitionTo(TournamentStatusEnum $newStatus): bool
+    public function setUp(Tournament $tournament): void
     {
-        return in_array($newStatus, $this->getAllowedTransitions());
+        throw new \InvalidArgumentException('Cannot set up tournament from ' . $this->getStatus()->value . ' state');
+    }
+
+    public function cancel(Tournament $tournament): void
+    {
+        throw new \InvalidArgumentException('Cannot cancel tournament from ' . $this->getStatus()->value . ' state');
+    }
+
+    public function canCreatePools(): bool
+    {
+        return false;
+    }
+
+    public function canGenerateMatches(): bool
+    {
+        return false;
+    }
+
+    public function canModifyPools(): bool
+    {
+        return false;
     }
 
     // Comportements par défaut (peuvent être surchargés)
@@ -20,51 +40,35 @@ abstract class AbstractTournamentState implements TournamentStateInterface
     {
         return false;
     }
-    public function canCreatePools(): bool
-    {
-        return false;
-    }
-    public function canModifyPools(): bool
-    {
-        return false;
-    }
+
     public function canStartMatches(): bool
     {
         return false;
     }
-    public function canGenerateMatches(): bool
+
+    public function canTransitionTo(TournamentStatusEnum $newStatus): bool
     {
-        return false;
+        return in_array($newStatus, $this->getAllowedTransitions());
+    }
+
+    public function close(Tournament $tournament): void
+    {
+        throw new \InvalidArgumentException('Cannot close tournament from ' . $this->getStatus()->value . ' state');
     }
 
     // Transitions par défaut (lèvent des exceptions)
     public function publish(Tournament $tournament): void
     {
-        throw new \InvalidArgumentException("Cannot publish tournament from " . $this->getStatus()->value . " state");
-    }
-
-    public function unpublish(Tournament $tournament): void
-    {
-        throw new \InvalidArgumentException("Cannot unpublish tournament from " . $this->getStatus()->value . " state");
+        throw new \InvalidArgumentException('Cannot publish tournament from ' . $this->getStatus()->value . ' state');
     }
 
     public function start(Tournament $tournament): void
     {
-        throw new \InvalidArgumentException("Cannot start tournament from " . $this->getStatus()->value . " state");
+        throw new \InvalidArgumentException('Cannot start tournament from ' . $this->getStatus()->value . ' state');
     }
 
-    public function setUp(Tournament $tournament): void
+    public function unpublish(Tournament $tournament): void
     {
-        throw new \InvalidArgumentException("Cannot set up tournament from " . $this->getStatus()->value . " state");
-    }
-
-    public function close(Tournament $tournament): void
-    {
-        throw new \InvalidArgumentException("Cannot close tournament from " . $this->getStatus()->value . " state");
-    }
-
-    public function cancel(Tournament $tournament): void
-    {
-        throw new \InvalidArgumentException("Cannot cancel tournament from " . $this->getStatus()->value . " state");
+        throw new \InvalidArgumentException('Cannot unpublish tournament from ' . $this->getStatus()->value . ' state');
     }
 }

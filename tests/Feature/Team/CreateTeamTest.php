@@ -120,7 +120,7 @@ test('validation should fail in case of duplicate teams into same league', funct
         ->assertSessionHasErrors('name');
 });
 test('validation should fail in case of invalid parameters', function () {
-    $invalidUserId = (int) User::orderByDesc('id')->first()->id+10;
+    $invalidUserId = (int) User::orderByDesc('id')->first()->id + 10;
     $invalid_request = [
         'captain_id' => $invalidUserId,
         'category' => 'somethingWrong',
@@ -129,8 +129,8 @@ test('validation should fail in case of invalid parameters', function () {
         'name' => 'AA',
         'players' => [
             0 => $invalidUserId,
-            1 => $invalidUserId+1,
-            2 => $invalidUserId+2,
+            1 => $invalidUserId + 1,
+            2 => $invalidUserId + 2,
             3 => '1',       // this one is correct.
         ],
         'season_id' => 99,

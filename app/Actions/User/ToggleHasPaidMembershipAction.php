@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Actions\User;
@@ -11,7 +12,7 @@ final class ToggleHasPaidMembershipAction extends ToggleHasPaidAction
     public function toggleHasPaid(Model $model): bool
     {
         $this->user->update([
-            'has_paid' => !$this->user->has_paid,
+            'has_paid' => ! $this->user->has_paid,
         ]);
 
         return true;

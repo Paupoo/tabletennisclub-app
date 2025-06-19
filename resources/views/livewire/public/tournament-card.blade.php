@@ -1,4 +1,4 @@
-<div class="w-full max-w-md bg-white rounded-lg border border-gray-200 shadow-sm">
+<div class="w-full max-w-md bg-white rounded-lg border border-gray-200 shadow-sm hover:outline hover:outline-blue-800">
 
 
     <!-- Header -->
@@ -8,7 +8,7 @@
                 <h3 class="text-xl font-semibold text-gray-900">{{ $tournament->name }}</h3>
                 <span
                     class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                    TO DO// Tournament
+                    TO DO// Tournam ent
                 </span>
             </div>
             <x-bi-trophy class=" fill-amber-700"/>
@@ -66,15 +66,17 @@
 
     <!-- Footer -->
     <div class="px-6 pb-6 flex gap-2">
-        <button wire:click="register"
-            class="flex-1 {{ $isRegistered ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700' }} text-white font-medium py-2 px-4 rounded-md transition-colors duration-200"
-            {{ $isRegistered ? 'disabled' : '' }}>
-            {{ $isRegistered ? 'Registered ✓' : 'Register Now' }}
-        </button>
-        <button wire:click="viewDetails"
-            class="flex-1 border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium py-2 px-4 rounded-md transition-colors duration-200">
-            {{ __('View Details') }}
-        </button>
+        @auth    
+            <button wire:click="register"
+                class="flex-1 {{ $isRegistered ? 'bg-green-600 hover:bg-green-700' : 'bg-blue-600 hover:bg-blue-700' }} text-white font-medium py-2 px-4 rounded-md transition-colors duration-200"
+                {{ $isRegistered ? 'disabled' : '' }}>
+                {{ $isRegistered ? 'Registered ✓' : 'Register Now' }}
+                </button>
+                <button wire:click="viewDetails"
+                class="flex-1 border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium py-2 px-4 rounded-md transition-colors duration-200">
+                {{ __('View Details') }}
+            </button>
+        @endauth
     </div>
         @if (session()->has('message'))
         <div class="p-4 mt-4 text-sm text-green-800 bg-green-100 rounded-t-lg">

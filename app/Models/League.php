@@ -10,8 +10,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * 
- *
  * @property int $id
  * @property string $division
  * @property string $level
@@ -24,6 +22,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read \App\Models\Season $season
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Team> $teams
  * @property-read int|null $teams_count
+ *
  * @method static \Database\Factories\LeagueFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|League newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|League newQuery()
@@ -35,6 +34,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|League whereLevel($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|League whereSeasonId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|League whereUpdatedAt($value)
+ *
  * @mixin \Eloquent
  */
 class League extends Model

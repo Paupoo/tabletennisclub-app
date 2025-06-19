@@ -17,13 +17,13 @@ final class TournamentStateFactory
 {
     public static function create(TournamentStatusEnum $status): TournamentStateInterface
     {
-        return match($status) {
-            TournamentStatusEnum::DRAFT => new DraftState(),
-            TournamentStatusEnum::PUBLISHED => new PublishedState(),
-            TournamentStatusEnum::SETUP => new SetUpState(),
-            TournamentStatusEnum::PENDING => new PendingState(),
-            TournamentStatusEnum::CLOSED => new ClosedState(),
-            TournamentStatusEnum::CANCELLED => new CancelledState(),
+        return match ($status) {
+            TournamentStatusEnum::DRAFT => new DraftState,
+            TournamentStatusEnum::PUBLISHED => new PublishedState,
+            TournamentStatusEnum::SETUP => new SetUpState,
+            TournamentStatusEnum::PENDING => new PendingState,
+            TournamentStatusEnum::CLOSED => new ClosedState,
+            TournamentStatusEnum::CANCELLED => new CancelledState,
         };
     }
 }

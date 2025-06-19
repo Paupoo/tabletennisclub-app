@@ -9,8 +9,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 /**
- * 
- *
  * @property int $id
  * @property string $name
  * @property \Illuminate\Support\Carbon|null $purchased_on
@@ -24,6 +22,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property-read \App\Models\TableTournament|null $pivot
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Tournament> $tournaments
  * @property-read int|null $tournaments_count
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Table newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Table newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Table query()
@@ -34,6 +33,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Table whereRoomId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Table whereState($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Table whereUpdatedAt($value)
+ *
  * @mixin \Eloquent
  */
 class Table extends Model

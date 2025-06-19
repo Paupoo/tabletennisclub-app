@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests;
 
 use Auth;
@@ -15,13 +17,6 @@ class StoreArticleRequest extends FormRequest
         return true;
     }
 
-    protected function prepareForValidation(): void
-    {
-        $this->merge([
-            'user_id' => Auth::user()->id,
-        ]);
-    }
-
     /**
      * Get the validation rules that apply to the request.
      *
@@ -34,5 +29,12 @@ class StoreArticleRequest extends FormRequest
             'user_id' => 'exists:users,id|required',
             'content' => 'string|required',
         ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'user_id' => Auth::user()->id,
+        ]);
     }
 }

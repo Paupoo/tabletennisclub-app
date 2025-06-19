@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Observers;
 
 use App\Enums\TournamentStatusEnum;
@@ -19,19 +21,17 @@ class TournamentObserver implements ShouldHandleEventsAfterCommit
     }
 
     /**
-     * Handle the Tournament "updated" event.
-     */
-    public function updated(Tournament $tournament): void
-    {
-        if ($tournament->getOriginal('status') === TournamentStatusEnum::DRAFT && $tournament->status === TournamentStatusEnum::PUBLISHED) {
-            Event::dispatch(new NewTournamentPublished($tournament));
-        }
-    }
-
-    /**
      * Handle the Tournament "deleted" event.
      */
     public function deleted(Tournament $tournament): void
+    {
+        //
+    }
+
+    /**
+     * Handle the Tournament "force deleted" event.
+     */
+    public function forceDeleted(Tournament $tournament): void
     {
         //
     }
@@ -45,10 +45,12 @@ class TournamentObserver implements ShouldHandleEventsAfterCommit
     }
 
     /**
-     * Handle the Tournament "force deleted" event.
+     * Handle the Tournament "updated" event.
      */
-    public function forceDeleted(Tournament $tournament): void
+    public function updated(Tournament $tournament): void
     {
-        //
+        if ($tournament->getOriginal('status') === TournamentStatusEnum::DRAFT && $tournament->status === TournamentStatusEnum::PUBLISHED) {
+            Event::dispatch(new NewTournamentPublished($tournament));
+        }
     }
 }

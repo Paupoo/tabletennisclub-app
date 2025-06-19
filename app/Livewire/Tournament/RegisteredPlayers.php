@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Livewire\Tournament;
 
 use App\Models\Tournament;
@@ -8,6 +10,8 @@ use Livewire\Component;
 class RegisteredPlayers extends Component
 {
     public Tournament $tournament;
+
+    protected $listeners = ['playerRegistered' => '$refresh'];
 
     public function mount(Tournament $tournament)
     {
@@ -20,6 +24,4 @@ class RegisteredPlayers extends Component
             'users' => $this->tournament->users()->paginate(),
         ]);
     }
-
-    protected $listeners = ['playerRegistered' => '$refresh'];
 }

@@ -1,9 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
@@ -22,13 +23,13 @@ class TournamentPublishedMail extends Mailable
     }
 
     /**
-     * Get the message envelope.
+     * Get the attachments for the message.
+     *
+     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
      */
-    public function envelope(): Envelope
+    public function attachments(): array
     {
-        return new Envelope(
-            subject: 'Tournament Published Mial',
-        );
+        return [];
     }
 
     /**
@@ -42,12 +43,12 @@ class TournamentPublishedMail extends Mailable
     }
 
     /**
-     * Get the attachments for the message.
-     *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
+     * Get the message envelope.
      */
-    public function attachments(): array
+    public function envelope(): Envelope
     {
-        return [];
+        return new Envelope(
+            subject: 'Tournament Published Mial',
+        );
     }
 }

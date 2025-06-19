@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\States\Tournament\States;
 
 use App\Enums\TournamentStatusEnum;
@@ -8,9 +9,29 @@ use App\States\Tournament\AbstractTournamentState;
 
 final class ClosedState extends AbstractTournamentState
 {
-    public function getStatus(): TournamentStatusEnum
+    public function canCreatePools(): bool
     {
-        return TournamentStatusEnum::CLOSED;
+        return false;
+    }
+
+    public function canGenerateMatches(): bool
+    {
+        return false;
+    }
+
+    public function canModifyPools(): bool
+    {
+        return false;
+    }
+
+    public function canRegisterUsers(): bool
+    {
+        return false;
+    }
+
+    public function canStartMatches(): bool
+    {
+        return false;
     }
 
     public function getAllowedTransitions(): array
@@ -18,24 +39,8 @@ final class ClosedState extends AbstractTournamentState
         return [];
     }
 
-    public function canRegisterUsers(): bool
+    public function getStatus(): TournamentStatusEnum
     {
-        return false;
-    }
-    public function canCreatePools(): bool
-    {
-        return false;
-    }
-    public function canModifyPools(): bool
-    {
-        return false;
-    }
-    public function canGenerateMatches(): bool
-    {
-        return false;
-    }
-    public function canStartMatches(): bool
-    {
-        return false;
+        return TournamentStatusEnum::CLOSED;
     }
 }

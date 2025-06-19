@@ -1,12 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Listeners\Tournament;
 
 use App\Events\Tournament\NewTournamentPublished;
 use App\Models\User;
 use App\Notifications\Tournament\NewTournamentPublishedNotification;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Queue\InteractsWithQueue;
 
 class SendPublishedTournamentNotification implements ShouldQueue
 {

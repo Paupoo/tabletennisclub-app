@@ -14,11 +14,11 @@ beforeEach(function () {
         ->create();
     $this->user = User::factory()
         ->create();
-    }
+}
 );
 
 test('admin and committee member can see delete button from users index view', function () {
-    
+
     $response = $this
         ->actingAs($this->admin)
         ->get(route('users.index'));

@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\States\Tournament\States;
 
 use App\Enums\TournamentStatusEnum;
@@ -10,10 +11,40 @@ use InvalidArgumentException;
 
 final class SetUpState extends AbstractTournamentState
 {
-    public function getStatus(): TournamentStatusEnum
+    public function cancel(Tournament $tournament): void
     {
-        return TournamentStatusEnum::SETUP;
+        // TO DO : inform registered users.
+
+        $tournament->status = TournamentStatusEnum::CANCELLED;
+        $tournament->save();
     }
+
+    public function canCreatePools(): bool
+    {
+        return true;
+    }
+
+    public function canGenerateMatches(): bool
+    {
+        return true;
+    }
+
+    public function canModifyPools(): bool
+    {
+        return true;
+    }
+
+    // Actions spécifiques selon l'état
+    public function canRegisterUsers(): bool
+    {
+        return false;
+    }
+
+    public function canStartMatches(): bool
+    {
+        return false;
+    }
+
     public function getAllowedTransitions(): array
     {
         return [
@@ -23,29 +54,12 @@ final class SetUpState extends AbstractTournamentState
         ];
     }
 
-    // Actions spécifiques selon l'état
-    public function canRegisterUsers(): bool
+    public function getStatus(): TournamentStatusEnum
     {
-        return false;
-    }
-    public function canCreatePools(): bool
-    {
-        return true;
-    }
-    public function canModifyPools(): bool
-    {
-        return true;
-    }
-    public function canGenerateMatches(): bool
-    {
-        return true;
-    }
-    public function canStartMatches(): bool
-    {
-        return false;
+        return TournamentStatusEnum::SETUP;
     }
 
-    public function publish (Tournament $tournament): void
+    public function publish(Tournament $tournament): void
     {
         $tournament->status = TournamentStatusEnum::PUBLISHED;
         $tournament->save();
@@ -62,14 +76,6 @@ final class SetUpState extends AbstractTournamentState
         }
 
         $tournament->status = TournamentStatusEnum::PENDING;
-        $tournament->save();
-    }
-
-    public function cancel(Tournament $tournament): void
-    {
-        // TO DO : inform registered users.
-
-        $tournament->status = TournamentStatusEnum::CANCELLED;
         $tournament->save();
     }
 }

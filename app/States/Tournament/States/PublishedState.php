@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\States\Tournament\States;
 
 use App\Enums\TournamentStatusEnum;
@@ -12,12 +13,53 @@ use InvalidArgumentException;
 final class PublishedState extends AbstractTournamentState
 {
     private TournamentService $tournamentService;
-    public function __construct() {
-        $this->tournamentService = new TournamentService();
-    }
-    public function getStatus(): TournamentStatusEnum
+
+    public function __construct()
     {
-        return TournamentStatusEnum::PUBLISHED;
+        $this->tournamentService = new TournamentService;
+    }
+
+    public function setUp(Tournament $tournament): void
+    {
+        if ($tournament->users()->count() === 0) {
+            throw new InvalidArgumentException('Cannot setup a tournament without players');
+        }
+
+        $tournament->status = TournamentStatusEnum::SETUP;
+        $tournament->save();
+    }
+
+    public function cancel(Tournament $tournament): void
+    {
+        // TO DO : inform registered users.
+
+        $tournament->status = TournamentStatusEnum::CANCELLED;
+        $tournament->save();
+    }
+
+    public function canCreatePools(): bool
+    {
+        return false;
+    }
+
+    public function canGenerateMatches(): bool
+    {
+        return false;
+    }
+
+    public function canModifyPools(): bool
+    {
+        return false;
+    }
+
+    public function canRegisterUsers(): bool
+    {
+        return true;
+    }
+
+    public function canStartMatches(): bool
+    {
+        return false;
     }
 
     public function getAllowedTransitions(): array
@@ -29,25 +71,9 @@ final class PublishedState extends AbstractTournamentState
         ];
     }
 
-    public function canRegisterUsers(): bool
+    public function getStatus(): TournamentStatusEnum
     {
-        return true;
-    }
-    public function canCreatePools(): bool
-    {
-        return false;
-    }
-    public function canModifyPools(): bool
-    {
-        return false;
-    }
-    public function canGenerateMatches(): bool
-    {
-        return false;
-    }
-    public function canStartMatches(): bool
-    {
-        return false;
+        return TournamentStatusEnum::PUBLISHED;
     }
 
     public function unpublish(Tournament $tournament): void
@@ -57,23 +83,4 @@ final class PublishedState extends AbstractTournamentState
         $tournament->status = TournamentStatusEnum::DRAFT;
         $tournament->save();
     }
-
-    public function setUp(Tournament $tournament): void
-    {
-        if ($tournament->users()->count() === 0) {
-            throw new InvalidArgumentException('Cannot setup a tournament without players');
-        }
-        
-        $tournament->status = TournamentStatusEnum::SETUP;
-        $tournament->save();
-    }
-
-    public function cancel(Tournament $tournament): void
-    {
-        // TO DO : inform registered users.
-        
-        $tournament->status = TournamentStatusEnum::CANCELLED;
-        $tournament->save();
-    }
-
 }

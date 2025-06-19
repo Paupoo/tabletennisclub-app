@@ -9,8 +9,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * 
- *
  * @property int $id
  * @property string $name
  * @property int $start_year
@@ -25,6 +23,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read int|null $teams_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Training> $trainings
  * @property-read int|null $trainings_count
+ *
  * @method static \Database\Factories\SeasonFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Season newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Season newQuery()
@@ -35,6 +34,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Season whereName($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Season whereStartYear($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Season whereUpdatedAt($value)
+ *
  * @mixin \Eloquent
  */
 class Season extends Model

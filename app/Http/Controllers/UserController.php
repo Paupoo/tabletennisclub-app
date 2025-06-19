@@ -140,6 +140,16 @@ class UserController extends Controller
             ->with('success', __('New member ' . $user->first_name . ' ' . $user->last_name . ' created'));
     }
 
+    public function toggleHasPaid(User $user): RedirectResponse
+    {
+        $this->authorize('update', User::class);
+        $action = new ToggleHasPaidMembershipAction($user);
+        $action->toggleHasPaid($user);
+
+        return redirect()
+            ->back();
+    }
+
     /**
      * Update the specified resource in storage.
      */
@@ -160,15 +170,5 @@ class UserController extends Controller
         return redirect()
             ->route('users.index')
             ->with('success', __('Member ' . $user->first_name . ' ' . $user->last_name . ' has been updated.'));
-    }
-
-    public function toggleHasPaid(User $user): RedirectResponse
-    {
-        $this->authorize('update', User::class);
-        $action = new ToggleHasPaidMembershipAction($user);
-        $action->toggleHasPaid($user);
-
-        return redirect()
-            ->back();
     }
 }

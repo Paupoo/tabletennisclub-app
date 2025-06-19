@@ -14,8 +14,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * 
- *
  * @property int $id
  * @property string $address
  * @property \Illuminate\Support\Carbon $start_date_time
@@ -39,6 +37,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read int|null $users_count
  * @property-read \App\Models\Team|null $visitedTeam
  * @property-read \App\Models\Team|null $visitingTeam
+ *
  * @method static \Database\Factories\InterclubFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub newQuery()
@@ -57,6 +56,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub whereVisitedTeamId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub whereVisitingTeamId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub whereWeekNumber($value)
+ *
  * @mixin \Eloquent
  */
 class Interclub extends Model

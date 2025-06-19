@@ -17,8 +17,6 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
 /**
- * 
- *
  * @property int $id
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
@@ -59,6 +57,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property-read int|null $tournaments_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Training> $trainings
  * @property-read int|null $trainings_count
+ *
  * @method static \Database\Factories\UserFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User newQuery()
@@ -89,6 +88,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereSex($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereStreet($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereUpdatedAt($value)
+ *
  * @mixin \Eloquent
  */
 class User extends Authenticatable
@@ -156,6 +156,11 @@ class User extends Authenticatable
         'remember_token',
     ];
 
+    public function articles(): HasMany
+    {
+        return $this->hasMany(Article::class);
+    }
+
     public function captainOf(): HasOne
     {
         return $this->hasOne(Team::class, 'captain_id');
@@ -186,7 +191,6 @@ class User extends Authenticatable
      *
      * @param [type] $query
      * @param [type] $value
-     * @return void
      */
     public function scopeSearch($query, $value): void
     {
@@ -254,10 +258,5 @@ class User extends Authenticatable
     public function trainings(): BelongsToMany
     {
         return $this->belongsToMany(Training::class);
-    }
-
-    public function articles(): HasMany
-    {
-        return $this->hasMany(Article::class);
     }
 }

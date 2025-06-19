@@ -26,6 +26,7 @@ class UserFactory extends Factory
     public function definition(): array
     {
         $uniqueEmail = $this->uniqueEmail();
+
         return [
             'is_active' => true,
             'is_admin' => false,
@@ -49,30 +50,27 @@ class UserFactory extends Factory
         ];
     }
 
-    /**
-     * Indicate that the model's email address should be unverified.
-     */
-    public function unverified(): static
+    public function isAdmin(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'email_verified_at' => null,
+        return $this->state(fn (array $attributes): array => [
+            'is_admin' => true,
         ]);
     }
 
-    public function isNotCompetitor(): static
+    public function isCommitteeMember(): static
     {
-        return $this->state(fn(array $attributes): array => [
-            'is_competitor' => false,
-            'licence' => null,
+        return $this->state(fn (array $attributes): array => [
+            'is_committee_member' => true,
         ]);
     }
+
     public function isCompetitor(): static
     {
-        
+
         return $this->state(function (array $attributes) {
             $unusedLicence = fake()->numberBetween(95000, 170000);
-    
-            while(User::where('licence', $unusedLicence)->exists()) {
+
+            while (User::where('licence', $unusedLicence)->exists()) {
                 $unusedLicence++;
             }
 
@@ -83,23 +81,29 @@ class UserFactory extends Factory
             ];
         });
     }
-    public function setRanking(Ranking $ranking): static
+
+    public function isNotCompetitor(): static
     {
-        return $this->state(fn(array $attributes): array => [
-            'ranking' => $ranking,
-        ]);
-    }
-    public function isAdmin(): static
-    {
-        return $this->state(fn(array $attributes): array => [
-            'is_admin' => true,
+        return $this->state(fn (array $attributes): array => [
+            'is_competitor' => false,
+            'licence' => null,
         ]);
     }
 
-    public function isCommitteeMember(): static
+    public function setRanking(Ranking $ranking): static
     {
-        return $this->state(fn(array $attributes): array => [
-            'is_committee_member' => true,
+        return $this->state(fn (array $attributes): array => [
+            'ranking' => $ranking,
+        ]);
+    }
+
+    /**
+     * Indicate that the model's email address should be unverified.
+     */
+    public function unverified(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'email_verified_at' => null,
         ]);
     }
 
@@ -107,7 +111,7 @@ class UserFactory extends Factory
     {
         $email = (string) fake()->unique()->safeEmail();
 
-        while(User::where('email', $email)->exists()){
+        while (User::where('email', $email)->exists()) {
             $email = (string) fake()->unique()->safeEmail();
         }
 

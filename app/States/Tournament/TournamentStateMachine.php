@@ -17,9 +17,37 @@ final class TournamentStateMachine
         $this->state = TournamentStateFactory::create($tournament->status);
     }
 
-    public function getCurrentState(): TournamentStateInterface
+    public function setUp(): void
     {
-        return $this->state;
+        $this->state->setUp($this->tournament);
+        $this->refreshState();
+    }
+
+    public function cancel(): void
+    {
+        $this->state->cancel($this->tournament);
+        $this->refreshState();
+    }
+
+    public function canGenerateMatches(): bool
+    {
+        return $this->state->canGenerateMatches();
+    }
+
+    public function canModifyPools(): bool
+    {
+        return $this->state->canModifyPools();
+    }
+
+    // Méthodes de vérification
+    public function canRegisterUsers(): bool
+    {
+        return $this->state->canRegisterUsers();
+    }
+
+    public function canStartMatches(): bool
+    {
+        return $this->state->canStartMatches();
     }
 
     public function canTransitionTo(TournamentStatusEnum $newStatus): bool
@@ -27,9 +55,20 @@ final class TournamentStateMachine
         return $this->state->canTransitionTo($newStatus);
     }
 
+    public function close(): void
+    {
+        $this->state->close($this->tournament);
+        $this->refreshState();
+    }
+
     public function getAllowedTransitions(): array
     {
         return $this->state->getAllowedTransitions();
+    }
+
+    public function getCurrentState(): TournamentStateInterface
+    {
+        return $this->state;
     }
 
     // Actions
@@ -40,55 +79,16 @@ final class TournamentStateMachine
         $this->refreshState();
     }
 
-    public function unpublish(): void
-    {
-        $this->state->unpublish($this->tournament);
-        $this->refreshState();
-    }
-
-    public function setUp(): void
-    {
-        $this->state->setUp($this->tournament);
-        $this->refreshState();
-    }
-
     public function start(): void
     {
         $this->state->start($this->tournament);
         $this->refreshState();
     }
 
-    public function close(): void
+    public function unpublish(): void
     {
-        $this->state->close($this->tournament);
+        $this->state->unpublish($this->tournament);
         $this->refreshState();
-    }
-
-    public function cancel(): void
-    {
-        $this->state->cancel($this->tournament);
-        $this->refreshState();
-    }
-
-    // Méthodes de vérification
-    public function canRegisterUsers(): bool
-    {
-        return $this->state->canRegisterUsers();
-    }
-
-    public function canModifyPools(): bool
-    {
-        return $this->state->canModifyPools();
-    }
-
-    public function canStartMatches(): bool
-    {
-        return $this->state->canStartMatches();
-    }
-
-    public function canGenerateMatches(): bool
-    {
-        return $this->state->canGenerateMatches();
     }
 
     /** Sauvegarder le nouvel état dans la DB */

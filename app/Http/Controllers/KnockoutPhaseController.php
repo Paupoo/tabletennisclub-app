@@ -107,7 +107,6 @@ class KnockoutPhaseController extends Controller
         $manager = new TournamentStatusManager($tournament);
         $statusesAllowed = $manager->getAllowedNextStatuses();
 
-
         return view('admin.tournaments.knockout-bracket', compact('tournament', 'rounds', 'tables', 'statusesAllowed'));
     }
 

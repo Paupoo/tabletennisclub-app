@@ -6,7 +6,6 @@ namespace App\Http\Controllers;
 
 use App\Actions\Tournament\ToggleHasPaidTournamentAction;
 use App\Enums\TournamentStatusEnum;
-use App\Events\Tournament\UserRegisteredToTournament;
 use App\Events\Tournament\UserUnregisteredFromTournament;
 use App\Http\Requests\StartTournamentMatch;
 use App\Http\Requests\StoreOrUpdateTournamentRequest;
@@ -20,7 +19,6 @@ use App\Services\TournamentFinalPhaseService;
 use App\Services\TournamentMatchService;
 use App\Services\TournamentPoolService;
 use App\Services\TournamentService;
-use App\Services\TournamentStatusManager;
 use App\Services\TournamentTableService;
 use App\States\Tournament\TournamentStateMachine;
 use Carbon\Carbon;
@@ -269,7 +267,7 @@ class TournamentController extends Controller
     public function registerUser(Tournament $tournament, User $user): RedirectResponse
     {
         try {
-             $this->tournamentService->registerUser($tournament, $user);
+            $this->tournamentService->registerUser($tournament, $user);
         } catch (\Throwable $th) {
             return redirect()
                 ->back()
@@ -469,7 +467,7 @@ class TournamentController extends Controller
             ->orderByRaw('name')
             ->get();
 
-    $stateMachine = new TournamentStateMachine($tournament);
+        $stateMachine = new TournamentStateMachine($tournament);
 
         return view('admin.tournaments.pool-matches', [
             'pool' => $pool,
@@ -583,7 +581,7 @@ class TournamentController extends Controller
         $this->authorize('updatesBeforeStart', $tournament);
         $action = new ToggleHasPaidTournamentAction($user);
         $action->toggleHasPaid($tournament);
-        
+
         return redirect()
             ->back();
     }

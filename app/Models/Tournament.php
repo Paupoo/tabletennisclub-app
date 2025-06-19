@@ -15,8 +15,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * 
- *
  * @property int $id
  * @property string $name
  * @property \Illuminate\Support\Carbon|null $start_date
@@ -39,6 +37,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read int|null $tables_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $users
  * @property-read int|null $users_count
+ *
  * @method static \Database\Factories\TournamentFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Tournament newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Tournament newQuery()
@@ -55,6 +54,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Tournament whereStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Tournament whereTotalUsers($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Tournament whereUpdatedAt($value)
+ *
  * @mixin \Eloquent
  */
 #[ObservedBy(TournamentObserver::class)]
@@ -74,6 +74,10 @@ class Tournament extends Model
         'has_handicap_points' => 'boolean',
     ];
 
+    protected $dispatchesEvents = [
+        'created' => NewTournamentPublished::class,
+    ];
+
     protected $fillable = [
         'name',
         'start_date',
@@ -83,10 +87,6 @@ class Tournament extends Model
         'max_users',
         'status',
         'has_handicap_points',
-    ];
-
-    protected $dispatchesEvents = [
-        'created' => NewTournamentPublished::class,
     ];
 
     public function matches(): HasMany
@@ -109,8 +109,7 @@ class Tournament extends Model
     /**
      * Scope search to search by last or first name
      *
-     * @param [type] $query
-     * @param [type] $value
+     * @param  string  $value
      * @return void
      */
     public function scopeSearch($query, $value)

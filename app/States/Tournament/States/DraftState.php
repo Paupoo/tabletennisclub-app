@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+
 namespace App\States\Tournament\States;
 
 use App\Enums\TournamentStatusEnum;
@@ -10,27 +11,7 @@ use InvalidArgumentException;
 
 final class DraftState extends AbstractTournamentState
 {
-    public function getStatus(): TournamentStatusEnum
-    {
-        return TournamentStatusEnum::DRAFT;
-    }
-
-    public function getAllowedTransitions(): array
-    {
-        return [TournamentStatusEnum::PUBLISHED];
-    }
-
-    public function canRegisterUsers(): bool
-    {
-        return false;
-    }
-
     public function canCreatePools(): bool
-    {
-        return false;
-    }
-
-    public function canModifyPools(): bool
     {
         return false;
     }
@@ -40,9 +21,29 @@ final class DraftState extends AbstractTournamentState
         return false;
     }
 
+    public function canModifyPools(): bool
+    {
+        return false;
+    }
+
+    public function canRegisterUsers(): bool
+    {
+        return false;
+    }
+
     public function canStartMatches(): bool
     {
         return false;
+    }
+
+    public function getAllowedTransitions(): array
+    {
+        return [TournamentStatusEnum::PUBLISHED];
+    }
+
+    public function getStatus(): TournamentStatusEnum
+    {
+        return TournamentStatusEnum::DRAFT;
     }
 
     public function publish(Tournament $tournament): void

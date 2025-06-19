@@ -10,8 +10,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 /**
- * 
- *
  * @property int $id
  * @property string $level
  * @property string $type
@@ -28,6 +26,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $trainees
  * @property-read int|null $trainees_count
  * @property-read \App\Models\User|null $trainer
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Training newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Training newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Training query()
@@ -41,6 +40,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereTrainerId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereType($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereUpdatedAt($value)
+ *
  * @mixin \Eloquent
  */
 class Training extends Model

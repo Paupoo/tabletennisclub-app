@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Tournament;
 
 use App\Actions\Tournament\ToggleHasPaidTournamentAction;
@@ -15,10 +17,10 @@ class ToggleHasPaidController extends Controller
      */
     public function __invoke(Tournament $tournament, User $user): RedirectResponse
     {
-       $this->authorize('updatesBeforeStart', $tournament);
+        $this->authorize('updatesBeforeStart', $tournament);
         $action = new ToggleHasPaidTournamentAction($user);
         $action->toggleHasPaid($tournament);
-        
+
         return redirect()
             ->back();
     }

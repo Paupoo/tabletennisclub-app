@@ -3,7 +3,7 @@
 declare(strict_types=1);
 uses(\Tests\Trait\CreateUser::class);
 
-test('admin and committee members can see create member and force index buttons from index', function () {
+test('admin and committee members can see create member and force index buttons from index', function (): void {
     $admin = $this->createFakeAdmin();
     $committee_member = $this->createFakeCommitteeMember();
 
@@ -23,7 +23,7 @@ test('admin and committee members can see create member and force index buttons 
             'Delete Force Index',
         ]);
 });
-test('admin and committee members can see edit and delete member buttons from index', function () {
+test('admin and committee members can see edit and delete member buttons from index', function (): void {
     $user = $this->createFakeAdmin();
 
     $response = $this->actingAs($user)
@@ -44,21 +44,21 @@ test('admin and committee members can see edit and delete member buttons from in
             'Delete user',
         ]);
 });
-test('logged user can access members index', function () {
+test('logged user can access members index', function (): void {
     $user = $this->createFakeUser();
 
     $response = $this->actingAs($user)
         ->get(route('users.index'))
         ->assertOk();
 });
-test('member cannot access create member page', function () {
+test('member cannot access create member page', function (): void {
     $user = $this->createFakeUser();
 
     $response = $this->actingAs($user)
         ->get(route('users.create'))
         ->assertStatus(403);
 });
-test('member cannot see create member and force index buttons', function () {
+test('member cannot see create member and force index buttons', function (): void {
     $user = $this->createFakeUser();
 
     $response = $this->actingAs($user)
@@ -69,7 +69,7 @@ test('member cannot see create member and force index buttons', function () {
             'Delete Force Index',
         ]);
 });
-test('member cannot see edit and delete member buttons from index', function () {
+test('member cannot see edit and delete member buttons from index', function (): void {
     $user = $this->createFakeUser();
 
     $response = $this->actingAs($user)
@@ -82,7 +82,7 @@ test('member cannot see edit and delete member buttons from index', function () 
             'Check details',
         ]);
 });
-test('unlogged user cannot access members index', function () {
+test('unlogged user cannot access members index', function (): void {
     $response = $this->get(route('users.index'))
         ->assertRedirect('/login');
 });

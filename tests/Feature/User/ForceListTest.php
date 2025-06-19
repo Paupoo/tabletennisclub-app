@@ -5,7 +5,7 @@ use App\Models\User;
 
 uses(\Tests\Trait\CreateUser::class);
 
-test('force list are calculated only for competitors', function () {
+test('force list are calculated only for competitors', function (): void {
     $admin = $this->createFakeAdmin();
     $response = $this->actingAs($admin)
         ->get(route('setForceList'));
@@ -20,7 +20,7 @@ test('force list are calculated only for competitors', function () {
 
     $response->assertRedirect(route('users.index'));
 });
-test('force list can be deleted by admin or committee member', function () {
+test('force list can be deleted by admin or committee member', function (): void {
     $admin = $this->createFakeAdmin();
 
     $committee_member = $this->createFakeCommitteeMember();
@@ -33,7 +33,7 @@ test('force list can be deleted by admin or committee member', function () {
         ->get(route('deleteForceList'))
         ->assertRedirect(route('users.index'));
 });
-test('force list can be set or updated by admin or committee member', function () {
+test('force list can be set or updated by admin or committee member', function (): void {
     $admin = $this->createFakeAdmin();
 
     $committee_member = $this->createFakeCommitteeMember();
@@ -46,29 +46,29 @@ test('force list can be set or updated by admin or committee member', function (
         ->get(route('setForceList'))
         ->assertRedirect(route('users.index'));
 });
-test('force list cant be deleted by members', function () {
+test('force list cant be deleted by members', function (): void {
     $user = $this->createFakeUser();
 
     $this->actingAs($user)
         ->get(route('deleteForceList'))
         ->assertStatus(403);
 });
-test('force list cant be deleted by unlogged users', function () {
+test('force list cant be deleted by unlogged users', function (): void {
     $this->get(route('deleteForceList'))
         ->assertRedirect(route('login'));
 });
-test('force list cant be set or updated by members', function () {
+test('force list cant be set or updated by members', function (): void {
     $user = $this->createFakeUser();
 
     $this->actingAs($user)
         ->get(route('setForceList'))
         ->assertStatus(403);
 });
-test('force list cant be set or updated by unlogged users', function () {
+test('force list cant be set or updated by unlogged users', function (): void {
     $this->get(route('setForceList'))
         ->assertRedirect(route('login'));
 });
-test('force list delete method removes all force lists from db', function () {
+test('force list delete method removes all force lists from db', function (): void {
     $admin = $this->createFakeAdmin();
 
     // Check start status
@@ -87,7 +87,7 @@ test('force list delete method removes all force lists from db', function () {
     $totalNoForceListAfterlete = User::whereNull('force_list')->count();
     $this->assertDatabaseCount('users', $totalNoForceListAfterlete);
 });
-test('set force list are correctly calculated', function () {
+test('set force list are correctly calculated', function (): void {
     /**
      * 1 D4 => 1
      * 1 D6 => 2    (+1)

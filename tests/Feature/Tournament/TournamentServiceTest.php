@@ -6,7 +6,7 @@ use App\Models\Tournament;
 use App\Models\User;
 use App\Services\TournamentService;
 
-it('counts registered users and returns correct user count', function () {
+it('counts registered users and returns correct user count', function (): void {
     $tournament = Tournament::factory()->create();
 
     $users = User::factory()->count(5)->create();
@@ -20,7 +20,7 @@ it('counts registered users and returns correct user count', function () {
 
 });
 
-it('checks if a tournament is full', function () {
+it('checks if a tournament is full', function (): void {
     $tournament = new Tournament;
     $tournament->total_users = 20;
     $tournament->max_users = 25;

@@ -5,7 +5,7 @@ use App\Enums\Recurrence;
 use App\Services\TrainingDateGenerator;
 use Carbon\Carbon;
 
-test('biweekly currence is returning expected items', function () {
+test('biweekly currence is returning expected items', function (): void {
     // test on 12 weeks (6 biweekly)
     $expected_array = [
         Carbon::parse('2024-08-06'),
@@ -26,7 +26,7 @@ test('biweekly currence is returning expected items', function () {
     expect($total_dates)->toEqual(6);
     expect($array_of_dates)->toEqual($expected_array);
 });
-test('daily recurrence is returning expected items', function () {
+test('daily recurrence is returning expected items', function (): void {
     // test on 5 days
     $expected_array = [
         Carbon::parse('2024-08-19'),
@@ -47,7 +47,7 @@ test('daily recurrence is returning expected items', function () {
     expect($total_dates)->toEqual(5);
     expect($array_of_dates)->toEqual($expected_array);
 });
-test('exception is returned when no endate with recurrent', function () {
+test('exception is returned when no endate with recurrent', function (): void {
     $date_generator = new TrainingDateGenerator;
     $start_date = '2024-08-06';
     $end_date = null;
@@ -58,7 +58,7 @@ test('exception is returned when no endate with recurrent', function () {
 
     $date_generator->generateDates($start_date, $end_date, $recurrence);
 });
-test('no occurence positive test case', function () {
+test('no occurence positive test case', function (): void {
     $start_date = '2024-08-14';
     $recurrence = Recurrence::NONE->name;
 
@@ -69,7 +69,7 @@ test('no occurence positive test case', function () {
     $date_generator = new TrainingDateGenerator;
     expect($date_generator->generateDates($start_date, null, $recurrence))->toEqual($expected_answer);
 });
-test('no occurence with unexpected recurrence', function () {
+test('no occurence with unexpected recurrence', function (): void {
     $start_date = '2024-08-14';
     $recurrence = Recurrence::DAILY->name;
     $date_generator = new TrainingDateGenerator;
@@ -79,7 +79,7 @@ test('no occurence with unexpected recurrence', function () {
 
     $date_generator->generateDates($start_date, null, $recurrence);
 });
-test('recurrence not existing in enum returns an exception', function () {
+test('recurrence not existing in enum returns an exception', function (): void {
     $date_generator = new TrainingDateGenerator;
     $start_date = '2024-08-06';
     $end_date = '2024-08-06';
@@ -89,7 +89,7 @@ test('recurrence not existing in enum returns an exception', function () {
 
     $date_generator->generateDates($start_date, $end_date, $recurrence);
 });
-test('start date is not smaller or equal to end date', function () {
+test('start date is not smaller or equal to end date', function (): void {
     $start_date = '2024-08-17';
     $end_date = '1988-08-17';
 
@@ -101,7 +101,7 @@ test('start date is not smaller or equal to end date', function () {
 
     $date_generator->generateDates($start_date, $end_date, $recurrence);
 });
-test('weekly currence is returning expected items', function () {
+test('weekly currence is returning expected items', function (): void {
     // test on 4 weeks
     $expected_array = [
         Carbon::parse('2024-08-06'),

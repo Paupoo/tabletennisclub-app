@@ -4,7 +4,7 @@ declare(strict_types=1);
 use App\Enums\LeagueCategory;
 use App\Models\Interclub;
 
-test('method set total players per team positive tests', function () {
+test('method set total players per team positive tests', function (): void {
     $interclub = new Interclub;
 
     $interclub->setTotalPlayersPerteam(LeagueCategory::MEN->name);
@@ -16,7 +16,7 @@ test('method set total players per team positive tests', function () {
     $interclub->setTotalPlayersPerteam(LeagueCategory::VETERANS->name);
     expect($interclub->total_players)->toEqual(3);
 });
-test('method set total players per team with invalid string', function () {
+test('method set total players per team with invalid string', function (): void {
     $interclub = new Interclub;
 
     $this->expectException('Exception');
@@ -24,14 +24,14 @@ test('method set total players per team with invalid string', function () {
 
     $interclub->setTotalPlayersPerteam('Homme');
 });
-test('method set total players per team without empty string', function () {
+test('method set total players per team without empty string', function (): void {
     $interclub = new Interclub;
 
     $this->expectException('Exception');
     $this->expectExceptionMessage('This category is unknown and not allowed.');
     $interclub->setTotalPlayersPerteam('');
 });
-test('method set week number positive tests', function () {
+test('method set week number positive tests', function (): void {
     $interclub = new Interclub;
 
     $interclub->setWeekNumber('2024-08-21');
@@ -40,7 +40,7 @@ test('method set week number positive tests', function () {
     $interclub->setWeekNumber('2025-03-23');
     expect($interclub->week_number)->toEqual(12);
 });
-test('method set week number wrong date', function () {
+test('method set week number wrong date', function (): void {
     $interclub = new Interclub;
 
     $this->expectException('Exception');

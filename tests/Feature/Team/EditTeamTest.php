@@ -7,7 +7,7 @@ use App\Enums\LeagueLevel;
 use App\Models\Team;
 use App\Models\User;
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->member = User::factory()->create([
         'is_admin' => false,
         'is_committee_member' => false,
@@ -77,7 +77,7 @@ beforeEach(function () {
         'season_id' => 1,
     ];
 });
-test('admin and committee members can see edit button from team show view', function () {
+test('admin and committee members can see edit button from team show view', function (): void {
     $this->actingAs($this->admin)
         ->get(route('teams.show', 1))
         ->assertSee('Edit');
@@ -86,7 +86,7 @@ test('admin and committee members can see edit button from team show view', func
         ->get(route('teams.show', 1))
         ->assertSee('Edit');
 });
-test('admin or committee member can edit a team', function () {
+test('admin or committee member can edit a team', function (): void {
     $admin = User::where('is_admin', true)
         ->where('is_committee_member', false)
         ->first();
@@ -110,7 +110,7 @@ test('admin or committee member can edit a team', function () {
         ->assertInvalid()
         ->assertSessionHasErrors();
 });
-test('member cannot see delete team button', function () {
+test('member cannot see delete team button', function (): void {
     $user = User::factory()->create([
         'is_admin' => false,
         'is_committee_member' => false,
@@ -120,7 +120,7 @@ test('member cannot see delete team button', function () {
         ->get(route('teams.index'))
         ->assertDontSee('Delete');
 });
-test('member cannot see edit team button', function () {
+test('member cannot see edit team button', function (): void {
     $user = User::factory()->create([
         'is_admin' => false,
         'is_committee_member' => false,
@@ -130,7 +130,7 @@ test('member cannot see edit team button', function () {
         ->get(route('teams.index'))
         ->assertDontSee('Edit');
 });
-test('member cant edit a team', function () {
+test('member cant edit a team', function (): void {
     $user = User::factory()->create([
         'is_admin' => false,
         'is_committee_member' => false,
@@ -141,12 +141,12 @@ test('member cant edit a team', function () {
         ->get(route('teams.edit', $team->id))
         ->assertStatus(403);
 });
-test('member cant see edit button from team show view', function () {
+test('member cant see edit button from team show view', function (): void {
     $this->actingAs($this->member)
         ->get(route('teams.show', 1))
         ->assertDontSee('Edit');
 });
-test('team should contains minimum 5 players', function () {
+test('team should contains minimum 5 players', function (): void {
     $team = Team::firstwhere('name', 'Z');
 
     $this->actingAs($this->admin)
@@ -156,14 +156,14 @@ test('team should contains minimum 5 players', function () {
         ->assertRedirect(route('teams.edit', $team))
         ->assertSessionHasErrorsIn('players');
 });
-test('unlogged user cant edit a team', function () {
+test('unlogged user cant edit a team', function (): void {
     $team = Team::first();
 
     $response = $this->get(route('teams.edit', $team->id));
 
     $response->assertRedirect('/login');
 });
-test('updates are correctly stored', function () {
+test('updates are correctly stored', function (): void {
     $totalTeams = Team::count();
 
     $team = Team::first();
@@ -186,7 +186,7 @@ test('updates are correctly stored', function () {
     expect($total_players_final_count)->toEqual(--$total_players);
     expect($storeTeam->captain_id)->toEqual(5);
 });
-test('validation should fail in case of duplicate teams into same league', function () {
+test('validation should fail in case of duplicate teams into same league', function (): void {
     // Create 2 different teams
     $this->actingAs($this->committee_member)
         ->from(route('teams.create'))

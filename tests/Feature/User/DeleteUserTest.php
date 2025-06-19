@@ -5,7 +5,7 @@ use App\Models\User;
 
 uses(\Tests\Trait\CreateUser::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->admin = User::factory()
         ->isAdmin()
         ->create();
@@ -17,7 +17,7 @@ beforeEach(function () {
 }
 );
 
-test('admin and committee member can see delete button from users index view', function () {
+test('admin and committee member can see delete button from users index view', function (): void {
 
     $response = $this
         ->actingAs($this->admin)
@@ -31,7 +31,7 @@ test('admin and committee member can see delete button from users index view', f
 
     $response->assertSee('Delete');
 });
-test('admin and committee member can see delete button from users show view', function () {
+test('admin and committee member can see delete button from users show view', function (): void {
 
     $response = $this
         ->actingAs($this->admin)
@@ -45,7 +45,7 @@ test('admin and committee member can see delete button from users show view', fu
 
     $response->assertSee('Delete');
 });
-test('admin or committee member delete a user from users index view', function () {
+test('admin or committee member delete a user from users index view', function (): void {
 
     $userToDelete1 = User::factory()->create();
     $userToDelete2 = User::factory()->create();
@@ -72,7 +72,7 @@ test('admin or committee member delete a user from users index view', function (
 
     $this->assertDatabaseCount('users', $totalUsers - 2);
 });
-test('user cant delete any user', function () {
+test('user cant delete any user', function (): void {
     $userToDelete = User::find(1);
 
     $response = $this
@@ -83,7 +83,7 @@ test('user cant delete any user', function () {
     $response
         ->assertStatus(403);
 });
-test('user cant see delete button from users index view', function () {
+test('user cant see delete button from users index view', function (): void {
 
     $response = $this
         ->actingAs($this->user)
@@ -91,7 +91,7 @@ test('user cant see delete button from users index view', function () {
 
     $response->assertDontSee('Delete user');
 });
-test('user cant see delete button from users show view', function () {
+test('user cant see delete button from users show view', function (): void {
 
     $response = $this
         ->actingAs($this->user)

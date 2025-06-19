@@ -5,7 +5,7 @@ use App\Models\Room;
 
 uses(\Tests\Trait\CreateUser::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->valid_room_request = [
         'name' => 'Jules Demeester 0',
         'street' => 'Rue de l\'invastion 80',
@@ -39,7 +39,7 @@ beforeEach(function () {
         'capacity_for_interclubs' => null,
     ];
 });
-test('add a room adds an entry into the db', function () {
+test('add a room adds an entry into the db', function (): void {
     $total_rooms_in_db = Room::count();
 
     $this->actingAs($this->createFakeAdmin())
@@ -48,7 +48,7 @@ test('add a room adds an entry into the db', function () {
 
     $this->assertDatabaseCount('rooms', $total_rooms_in_db + 1);
 });
-test('admin and committee member can see create or edit buttons', function () {
+test('admin and committee member can see create or edit buttons', function (): void {
     $this->actingAs($this->createFakeAdmin())
         ->get(route('rooms.index'))
         ->assertSee('Create a new room')
@@ -61,7 +61,7 @@ test('admin and committee member can see create or edit buttons', function () {
         ->assertSee('Edit')
         ->assertSee('Delete');
 });
-test('admin or committee member can create a room', function () {
+test('admin or committee member can create a room', function (): void {
     $this->actingAs($this->createFakeAdmin())
         ->from(route('rooms.create'))
         ->post(route('rooms.store', $this->valid_room_request))
@@ -76,7 +76,7 @@ test('admin or committee member can create a room', function () {
         ->assertRedirect(route('rooms.index'))
         ->assertSessionHasNoErrors();
 });
-test('admin or committee member can delete a room', function () {
+test('admin or committee member can delete a room', function (): void {
     $room = Room::find(1);
 
     $this->actingAs($this->createFakeAdmin())
@@ -91,7 +91,7 @@ test('admin or committee member can delete a room', function () {
         ->assertRedirect(route('rooms.index'))
         ->assertSessionHasNoErrors();
 });
-test('admin or committee member can update a room', function () {
+test('admin or committee member can update a room', function (): void {
     $room = Room::find(1);
 
     $this->actingAs($this->createFakeAdmin())
@@ -108,7 +108,7 @@ test('admin or committee member can update a room', function () {
         ->assertRedirect(route('rooms.index'))
         ->assertSessionHasNoErrors();
 });
-test('delete a room removes an entry into the db', function () {
+test('delete a room removes an entry into the db', function (): void {
     $total_rooms_in_db = Room::count();
 
     $room = Room::find(1);
@@ -118,7 +118,7 @@ test('delete a room removes an entry into the db', function () {
 
     $this->assertDatabaseCount('rooms', $total_rooms_in_db - 1);
 });
-test('invalid data are returning error during creation', function () {
+test('invalid data are returning error during creation', function (): void {
     $this->actingAs($this->createFakeAdmin())
         ->from(route('rooms.create'))
         ->post(route('rooms.store', $this->invalid_room_request))
@@ -140,7 +140,7 @@ test('invalid data are returning error during creation', function () {
             'capacity_for_interclubs',
         ]);
 });
-test('member cant create nor edit nor delete rooms', function () {
+test('member cant create nor edit nor delete rooms', function (): void {
     $room = Room::find(1);
     $this->actingAs($this->createFakeUser())
         ->get(route('rooms.create'))
@@ -162,14 +162,14 @@ test('member cant create nor edit nor delete rooms', function () {
         ->delete(route('rooms.destroy', $room))
         ->assertStatus(403);
 });
-test('members cant see create nor edit buttons', function () {
+test('members cant see create nor edit buttons', function (): void {
     $this->actingAs($this->createFakeUser())
         ->get(route('rooms.index'))
         ->assertDontSee('Create a new room')
         ->assertDontSee('Edit')
         ->assertDontSee('Delete');
 });
-test('unlogged users cant access room resource', function () {
+test('unlogged users cant access room resource', function (): void {
     $room = Room::find(1);
 
     $this->get(route('rooms.index'))

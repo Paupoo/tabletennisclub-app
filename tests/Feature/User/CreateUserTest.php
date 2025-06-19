@@ -14,10 +14,10 @@ use Illuminate\Support\Str;
 
 uses(\Tests\Trait\CreateUser::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->password = Hash::make('password');
 });
-test('create method returning expected view and data', function () {
+test('create method returning expected view and data', function (): void {
     $admin = $this->createFakeAdmin();
 
     $response = $this->actingAs($admin)
@@ -32,7 +32,7 @@ test('create method returning expected view and data', function () {
             'sexes' => collect(Sex::cases())->pluck('name')->toArray(),
         ]);
 });
-test('email is not already taken', function () {
+test('email is not already taken', function (): void {
     $admin = $this->createFakeAdmin();
 
     $this->actingAs($admin)
@@ -55,7 +55,7 @@ test('email is not already taken', function () {
             'email' => 'The email has already been taken.',
         ]);
 });
-test('force list service is injected', function () {
+test('force list service is injected', function (): void {
     // Create a mock to use ForceList service
     $forceListMock = $this->createMock(ForceList::class);
 
@@ -72,7 +72,7 @@ test('force list service is injected', function () {
 
     expect($property->getValue($controller))->toBe($forceListMock);
 });
-test('licence is not already taken', function () {
+test('licence is not already taken', function (): void {
     $admin = $this->createFakeAdmin();
     $licenceAlreadyUsed = User::firstWhere('licence', '!=', null)->licence;
 
@@ -96,14 +96,14 @@ test('licence is not already taken', function () {
             'licence' => 'The licence has already been taken.',
         ]);
 });
-test('member cannot create new member', function () {
+test('member cannot create new member', function (): void {
     $user = $this->createFakeUser();
 
     $this->actingAs($user)
         ->post('/admin/users/create')
         ->assertStatus(405);
 });
-test('new member creation positive case', function () {
+test('new member creation positive case', function (): void {
     $totalMembers = User::count();
     $admin = $this->createFakeAdmin();
 
@@ -134,7 +134,7 @@ test('new member creation positive case', function () {
 
     $this->assertDatabaseCount('users', $totalMembers + 2);
 });
-test('new member creation with invalid paramaters returns errors in the session', function () {
+test('new member creation with invalid paramaters returns errors in the session', function (): void {
     $admin = $this->createFakeAdmin();
 
     $this->actingAs($admin)
@@ -175,7 +175,7 @@ test('new member creation with invalid paramaters returns errors in the session'
             'phone_number',
         ]);
 });
-test('new member is competitor with valid ranking and licence', function () {
+test('new member is competitor with valid ranking and licence', function (): void {
     $admin = $this->createFakeAdmin();
 
     $this->actingAs($admin)
@@ -198,7 +198,7 @@ test('new member is competitor with valid ranking and licence', function () {
         ->assertSessionHasNoErrors()
         ->assertSessionHas('success');
 });
-test('new member is competitor without ranking and licence', function () {
+test('new member is competitor without ranking and licence', function (): void {
     $admin = $this->createFakeAdmin();
 
     $this->actingAs($admin)
@@ -224,12 +224,12 @@ test('new member is competitor without ranking and licence', function () {
             'ranking',
         ]);
 });
-test('new nember created is automatically linked to the club', function () {
+test('new nember created is automatically linked to the club', function (): void {
     $user = User::factory()->create();
     $club = Club::firstWhere('licence', config('app.club_licence'));
     expect($user->club_id)->toEqual($club->id);
 });
-test('ranking is invalid', function () {
+test('ranking is invalid', function (): void {
     $admin = $this->createFakeAdmin();
 
     $this->actingAs($admin)

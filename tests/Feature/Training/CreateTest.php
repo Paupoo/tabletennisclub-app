@@ -9,7 +9,7 @@ use App\Models\Training;
 
 uses(\Tests\Trait\CreateUser::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     $date_in_the_past = today()->subDay()->format('Y-m-d');
     $today = now()->format('Y-m-d');
     $today_plus_5_days = now()->addDays(4)->format('Y-m-d');
@@ -146,7 +146,7 @@ beforeEach(function () {
         'type' => TrainingType::SUPERVISED->name,
     ];
 });
-test('4 biweekly trainings are created with 4 distinct dates', function () {
+test('4 biweekly trainings are created with 4 distinct dates', function (): void {
     $this->assertDatabaseEmpty('trainings');
 
     $this->actingAs($this->createFakeAdmin())
@@ -160,7 +160,7 @@ test('4 biweekly trainings are created with 4 distinct dates', function () {
 
     expect(Training::distinct('start')->count())->toEqual(4);
 });
-test('4 weekly trainings are created with 4 distinct dates', function () {
+test('4 weekly trainings are created with 4 distinct dates', function (): void {
     $this->assertDatabaseEmpty('trainings');
 
     $this->actingAs($this->createFakeAdmin())
@@ -174,7 +174,7 @@ test('4 weekly trainings are created with 4 distinct dates', function () {
 
     expect(Training::distinct('start')->count())->toEqual(4);
 });
-test('5 daily trainings are created with 5 distinct dates', function () {
+test('5 daily trainings are created with 5 distinct dates', function (): void {
     $this->assertDatabaseEmpty('trainings');
 
     $this->actingAs($this->createFakeAdmin())
@@ -188,7 +188,7 @@ test('5 daily trainings are created with 5 distinct dates', function () {
 
     expect(Training::distinct('start')->count())->toEqual(5);
 });
-test('admin or comitte members can create training', function () {
+test('admin or comitte members can create training', function (): void {
     $this->actingAs($this->createFakeAdmin())
         ->get(route('trainings.create'))
         ->assertStatus(200);
@@ -197,12 +197,12 @@ test('admin or comitte members can create training', function () {
         ->get(route('trainings.create'))
         ->assertStatus(200);
 });
-test('members cant create training', function () {
+test('members cant create training', function (): void {
     $this->actingAs($this->createFakeUser())
         ->get(route('trainings.create'))
         ->assertStatus(403);
 });
-test('newly created trainings are publish into public site', function () {
+test('newly created trainings are publish into public site', function (): void {
     $this->actingAs($this->createFakeAdmin())
         ->from(route('trainings.create'))
         ->post(route('trainings.store'), $this->valid_request_only_one_training);
@@ -214,7 +214,7 @@ test('newly created trainings are publish into public site', function () {
         ->assertSee('21:30 - 22:00')
         ->assertSee($room->name);
 });
-test('only one training is created', function () {
+test('only one training is created', function (): void {
     $this->assertDatabaseEmpty('trainings');
     $this->actingAs($this->createFakeAdmin())
         ->from(route('trainings.create'))
@@ -225,7 +225,7 @@ test('only one training is created', function () {
 
     expect(Training::count())->toEqual(1);
 });
-test('trainer is required if training is not free', function () {
+test('trainer is required if training is not free', function (): void {
     $this->actingAs($this->createFakeAdmin())
         ->from(route('trainings.create'))
         ->post(route('trainings.store'), $this->invalid_request_directed_training_without_trainer)
@@ -248,14 +248,14 @@ test('trainer is required if training is not free', function () {
             'trainer_id',
         ]);
 });
-test('unlogged users cant create trainings', function () {
+test('unlogged users cant create trainings', function (): void {
     $this->get(route('trainings.create'))
         ->assertRedirect('/login');
 
     $this->post(route('trainings.store'))
         ->assertRedirect('/login');
 });
-test('validation prevents from creating trainings ending in the past', function () {
+test('validation prevents from creating trainings ending in the past', function (): void {
     $this->actingAs($this->createFakeAdmin())
         ->from(route('trainings.create'))
         ->post(route('trainings.store'), $this->invalid_request_training_ending_in_the_past)
@@ -263,7 +263,7 @@ test('validation prevents from creating trainings ending in the past', function 
         ->assertRedirect(route('trainings.create'))
         ->assertSessionHasErrors('start_date');
 });
-test('validation prevents from creating trainings starting in the past', function () {
+test('validation prevents from creating trainings starting in the past', function (): void {
     $this->actingAs($this->createFakeAdmin())
         ->from(route('trainings.create'))
         ->post(route('trainings.store'), $this->invalid_request_training_starting_in_the_past)
@@ -271,7 +271,7 @@ test('validation prevents from creating trainings starting in the past', functio
         ->assertRedirect(route('trainings.create'))
         ->assertSessionHasErrors('start_date');
 });
-test('validation start date and end date are impossible', function () {
+test('validation start date and end date are impossible', function (): void {
     $this->actingAs($this->createFakeAdmin())
         ->from(route('trainings.create'))
         ->post(route('trainings.store'), $this->invalid_request_training_date_starting_after_end)
@@ -285,7 +285,7 @@ test('validation start date and end date are impossible', function () {
             'end_date',
         ]);
 });
-test('validation start time and end time are impossible', function () {
+test('validation start time and end time are impossible', function (): void {
     $this->actingAs($this->createFakeAdmin())
         ->from(route('trainings.create'))
         ->post(route('trainings.store'), $this->invalid_request_training_time_starting_after_end)

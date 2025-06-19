@@ -482,10 +482,10 @@ class TournamentController extends Controller
     public function showPools(string $id): View
     {
         $tournament = Tournament::with([
-            'pools' => function ($query) {
+            'pools' => function ($query): void {
                 $query->orderBy('name'); // Optionnel: ordonner les pools
             },
-            'pools.users' => function ($query) {
+            'pools.users' => function ($query): void {
                 // Charger les users de chaque pool, déjà triés par ranking
                 $query->orderBy('ranking');
             },

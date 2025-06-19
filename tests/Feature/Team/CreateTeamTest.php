@@ -7,7 +7,7 @@ use App\Enums\LeagueLevel;
 use App\Models\Team;
 use App\Models\User;
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->user = User::factory()
         ->isNotCompetitor()
         ->make();
@@ -53,7 +53,7 @@ beforeEach(function () {
         'season_id' => 1,
     ];
 });
-test('admin or committee member can create a team', function () {
+test('admin or committee member can create a team', function (): void {
     $admin = User::firstWhere('is_admin', true)
         ->firstWhere('is_committee_member', false);
     $response = $this->actingAs($admin)
@@ -73,14 +73,14 @@ test('admin or committee member can create a team', function () {
         ->post(route('teams.store'), $this->valid_request)
         ->assertRedirectToRoute('teams.index');
 });
-test('creation of a team creates one new entry in the database', function () {
+test('creation of a team creates one new entry in the database', function (): void {
     $totalTeams = Team::count();
 
     Team::factory()->create();
 
     $this->assertDatabaseCount('teams', ++$totalTeams);
 });
-test('member cant create a team', function () {
+test('member cant create a team', function (): void {
     $this->actingAs($this->user)
         ->get(route('teams.create'))
         ->assertStatus(403);
@@ -89,24 +89,24 @@ test('member cant create a team', function () {
         ->post(route('teams.store'))
         ->assertStatus(403);
 });
-test('members dont see create teams button', function () {
+test('members dont see create teams button', function (): void {
     $this->actingAs($this->user)
         ->get(route('teams.index'))
         ->assertDontSee('Create new team')
         ->assertDontSee('Team Builder');
 });
-test('team should contains minimum 5 players', function () {
+test('team should contains minimum 5 players', function (): void {
     $this->actingAs($this->admin)
         ->from('teams.create')
         ->post(route('teams.store'), $this->less_than_5_players_request)
         ->assertInvalid(['players'])
         ->assertSessionHasErrors(['players']);
 });
-test('unlogged user cant create a team', function () {
+test('unlogged user cant create a team', function (): void {
     $this->get(route('teams.create'))
         ->assertRedirect('/login');
 });
-test('validation should fail in case of duplicate teams into same league', function () {
+test('validation should fail in case of duplicate teams into same league', function (): void {
     $this->actingAs($this->committee_member)
         ->from('teams.create')
         ->post(route('teams.store'), $this->valid_request)
@@ -119,7 +119,7 @@ test('validation should fail in case of duplicate teams into same league', funct
         ->assertRedirect('teams.create')
         ->assertSessionHasErrors('name');
 });
-test('validation should fail in case of invalid parameters', function () {
+test('validation should fail in case of invalid parameters', function (): void {
     $invalidUserId = (int) User::orderByDesc('id')->first()->id + 10;
     $invalid_request = [
         'captain_id' => $invalidUserId,

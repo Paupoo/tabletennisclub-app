@@ -8,7 +8,7 @@ use App\Services\TournamentStatusManager;
 
 uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
 
-test('can cancel from pending', function () {
+test('can cancel from pending', function (): void {
     $tournament = Tournament::factory()->create([
         'status' => TournamentStatusEnum::PENDING,
     ]);
@@ -18,7 +18,7 @@ test('can cancel from pending', function () {
 
     expect($tournament->fresh()->status)->toEqual(TournamentStatusEnum::CANCELLED);
 });
-test('can change status from draft to published', function () {
+test('can change status from draft to published', function (): void {
     $tournament = Tournament::factory()->create([
         'status' => TournamentStatusEnum::DRAFT,
     ]);
@@ -28,7 +28,7 @@ test('can change status from draft to published', function () {
 
     expect($tournament->fresh()->status)->toEqual(TournamentStatusEnum::PUBLISHED);
 });
-test('can change status from published to locked', function () {
+test('can change status from published to locked', function (): void {
     $tournament = Tournament::factory()->create([
         'status' => TournamentStatusEnum::PUBLISHED,
     ]);
@@ -38,7 +38,7 @@ test('can change status from published to locked', function () {
 
     expect($tournament->fresh()->status)->toEqual(TournamentStatusEnum::LOCKED);
 });
-test('cannot change status from draft to closed', function () {
+test('cannot change status from draft to closed', function (): void {
     $tournament = Tournament::factory()->create([
         'status' => TournamentStatusEnum::DRAFT,
     ]);
@@ -48,7 +48,7 @@ test('cannot change status from draft to closed', function () {
     $this->expectException(InvalidArgumentException::class);
     $manager->setStatus(TournamentStatusEnum::CLOSED);
 });
-test('cannot lock pending tournament with started matches', function () {
+test('cannot lock pending tournament with started matches', function (): void {
     $tournament = Tournament::factory()
         // ->hasTournamentMatches(1, ['status' => 'in_progress'])
         ->create([
@@ -68,7 +68,7 @@ test('cannot lock pending tournament with started matches', function () {
 
     $manager->setStatus(TournamentStatusEnum::LOCKED);
 });
-test('get allowed next statuses returns expected list', function () {
+test('get allowed next statuses returns expected list', function (): void {
     $tournament = Tournament::factory()->create([
         'status' => TournamentStatusEnum::LOCKED,
     ]);
@@ -82,7 +82,7 @@ test('get allowed next statuses returns expected list', function () {
 
     expect($manager->getAllowedNextStatuses())->toEqualCanonicalizing($expected);
 });
-test('throws exception on invalid status transition', function () {
+test('throws exception on invalid status transition', function (): void {
     $tournament = Tournament::factory()->create([
         'status' => TournamentStatusEnum::DRAFT,
     ]);

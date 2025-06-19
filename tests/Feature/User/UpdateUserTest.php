@@ -5,7 +5,7 @@ use App\Models\User;
 
 uses(\Tests\Trait\CreateUser::class);
 
-test('admin and committee members can access edit member page', function () {
+test('admin and committee members can access edit member page', function (): void {
     $admin = $this->createFakeAdmin();
     $committee_member = $this->createFakeCommitteeMember();
     $user = $this->createFakeUser();
@@ -18,7 +18,7 @@ test('admin and committee members can access edit member page', function () {
         ->get(route('users.edit', $user))
         ->assertOK();
 });
-test('member can be casual with no ranking and no licence', function () {
+test('member can be casual with no ranking and no licence', function (): void {
     $admin = $this->createFakeAdmin();
     $user = $this->createFakeUser();
 
@@ -39,7 +39,7 @@ test('member can be casual with no ranking and no licence', function () {
         ->assertRedirect(route('users.index'))
         ->assertSessionHasNoErrors();
 });
-test('member can be casual with valid licence and ranking', function () {
+test('member can be casual with valid licence and ranking', function (): void {
     $admin = $this->createFakeAdmin();
     $user = $this->createFakeUser();
 
@@ -61,14 +61,14 @@ test('member can be casual with valid licence and ranking', function () {
         ->assertRedirect(route('users.index'))
         ->assertSessionHasNoErrors();
 });
-test('member cannot access edit member page', function () {
+test('member cannot access edit member page', function (): void {
     $user = $this->createFakeUser();
 
     $this->actingAs($user)
         ->get(route('users.edit', 1))
         ->assertStatus(403);
 });
-test('member cant be competitor without valid licence and ranking', function () {
+test('member cant be competitor without valid licence and ranking', function (): void {
     $admin = $this->createFakeAdmin();
     $user = $this->createFakeUser();
 
@@ -97,7 +97,7 @@ test('member cant be competitor without valid licence and ranking', function () 
             'ranking',
         ]);
 });
-test('member update doesnt change entries in the database', function () {
+test('member update doesnt change entries in the database', function (): void {
     $admin = $this->createFakeAdmin();
     $user = $this->createFakeUser();
 
@@ -129,7 +129,7 @@ test('member update doesnt change entries in the database', function () {
 
     $this->assertDatabaseCount('users', $totalUsers);
 });
-test('member update with invalid data is returning errors', function () {
+test('member update with invalid data is returning errors', function (): void {
     $admin = $this->createFakeAdmin();
     $user = $this->createFakeUser();
 
@@ -168,7 +168,7 @@ test('member update with invalid data is returning errors', function () {
             'ranking',
         ]);
 });
-test('members cant access edit member page', function () {
+test('members cant access edit member page', function (): void {
     $user = $this->createFakeUser();
 
     $this->actingAs($user)
@@ -179,7 +179,7 @@ test('members cant access edit member page', function () {
         ->get(route('users.edit', $user))
         ->assertStatus(403);
 });
-test('unlogged user cannot access members edit', function () {
+test('unlogged user cannot access members edit', function (): void {
     $this->get(route('users.edit', 1))
         ->assertRedirect('/login');
 });

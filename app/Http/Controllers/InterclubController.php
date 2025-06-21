@@ -12,6 +12,7 @@ use App\Models\Room;
 use App\Models\Team;
 use App\Models\User;
 use App\Services\InterclubService;
+use App\Support\Breadcrumb;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -51,6 +52,13 @@ class InterclubController extends Controller
     {
         //
         $this->authorize('create', Interclub::class);
+
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->matches()
+            ->add('Create')
+            ->toArray();
+
         $club = Club::OurClub()->first();
         $otherClubs = Club::OtherClubs()->orderBy('name')->get();
         $user = Auth::user();
@@ -66,6 +74,7 @@ class InterclubController extends Controller
             'rooms' => $rooms,
             'teams' => $teams,
             'interclubTypes' => collect(LeagueCategory::cases()),
+            'breadcrumbs' => $breadcrumbs,
         ]);
     }
 
@@ -90,11 +99,16 @@ class InterclubController extends Controller
      */
     public function index(): View
     {
-        //
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->matches()
+            ->toArray();
+
         $interclubs = Interclub::orderBy('start_date_time', 'asc')->paginate(10);
 
         return view('admin.interclubs.index', [
             'interclubs' => $interclubs,
+            'breadcrumbs' => $breadcrumbs,
         ]);
     }
 
@@ -104,6 +118,12 @@ class InterclubController extends Controller
     public function show(Interclub $interclub): View
     {
         $this->authorize('view', Auth::user(), Interclub::class);
+
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->matches()
+            ->add('Edit')
+            ->toArray();
 
         $selectedUsers = $interclub
             ->users()
@@ -135,16 +155,23 @@ class InterclubController extends Controller
             'selectedUsers' => $selectedUsers,
             'subscribedUsers' => $subscribedUsers,
             'users' => $users,
+            'breadcrumbs' => $breadcrumbs,
         ]);
     }
 
     public function showSelections(): View
     {
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->matches()
+            ->add('Selections')
+            ->toArray();
+
         $interclubs = Interclub::all();
 
         return View('admin.interclubs.selections', [
             'interclubs' => $interclubs,
-
+            'breadcrumbs' => $breadcrumbs,
         ]);
     }
 

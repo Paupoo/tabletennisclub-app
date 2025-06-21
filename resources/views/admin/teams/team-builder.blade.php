@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout :breadcrumbs="$breadcrumbs">
     <x-slot name="header">
         <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
             {{ __('Create a member') }}
@@ -24,7 +24,7 @@
     <div class="mt-6">
 
         <x-admin-block>
-            <form class="flex flex-col" action="{{ route('teamBuilder') }}" method="POST">
+            <form class="flex flex-col" action="{{ route('teamBuilder.create') }}" method="POST">
                 @csrf
                 <x-input-label for="season">{{ __('Pick up a season') }}</x-input-label>
                 <x-select-input class="mt-2 w-1/2 w-min-sm" id="season" name="season_id">

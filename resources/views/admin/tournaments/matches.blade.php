@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout :breadcrumbs="$breadcrumbs">
     <div class="container mx-auto px-4 py-8">
         <!-- En-tête du tournoi -->
         <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8">

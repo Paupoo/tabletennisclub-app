@@ -6,7 +6,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreOrUpdateRoomRequest;
 use App\Models\Room;
+use App\Support\Breadcrumb;
 use Exception;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class RoomController extends Controller
@@ -17,10 +19,18 @@ class RoomController extends Controller
     public function create()
     {
         $this->authorize('create', Room::class);
+
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->rooms()
+            ->add('Create')
+            ->toArray();
+
         $room = new Room;
 
         return view('admin.rooms.create', [
             'room' => $room,
+            'breadcrumbs' => $breadcrumbs,
         ]);
     }
 
@@ -30,7 +40,7 @@ class RoomController extends Controller
      * @param  string  $id
      * @return void
      */
-    public function destroy(Room $room)
+    public function destroy(Room $room): RedirectResponse
     {
         $this->authorize('delete', $room);
         $room->delete();
@@ -44,10 +54,17 @@ class RoomController extends Controller
     public function edit(Room $room)
     {
 
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->rooms()
+            ->add('Edit ' . $room->name)
+            ->toArray();
+
         $this->authorize('create', Room::class);
 
         return view('admin.rooms.edit', [
             'room' => $room,
+            'breadcrumbs'=> $breadcrumbs,
         ]);
     }
 
@@ -56,10 +73,17 @@ class RoomController extends Controller
      */
     public function index()
     {
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->teams()
+            ->add('Edit team')
+            ->toArray();
+
         $this->authorize('viewAny', Room::class);
 
         return view('admin.rooms.index', [
             'rooms' => Room::orderBy('name')->paginate(10),
+            'breadcrumbs' => $breadcrumbs,
         ]);
     }
 

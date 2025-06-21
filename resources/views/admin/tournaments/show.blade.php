@@ -1,4 +1,4 @@
-<x-tournament.tournament-layout :tournament="$tournament">
+<x-tournament.tournament-layout :tournament="$tournament" :breadcrumbs="$breadcrumbs">
 
            {{-- actions menu --}}
     @push('header-actions')

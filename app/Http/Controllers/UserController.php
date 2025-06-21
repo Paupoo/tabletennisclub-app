@@ -12,6 +12,7 @@ use App\Http\Requests\UpdateUserRequest;
 use App\Models\Team;
 use App\Models\User;
 use App\Services\ForceList;
+use App\Support\Breadcrumb;
 use Illuminate\Http\RedirectResponse;
 
 class UserController extends Controller
@@ -28,7 +29,12 @@ class UserController extends Controller
      */
     public function create()
     {
-        //
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->Users()
+            ->add('Create')
+            ->toArray();
+
         $this->authorize('create', User::class);
 
         return View('admin.users.create', [
@@ -36,6 +42,7 @@ class UserController extends Controller
             'teams' => Team::with('league')->get(),
             'rankings' => collect(Ranking::cases())->pluck('name')->toArray(),
             'sexes' => collect(Sex::cases())->pluck('name')->toArray(),
+            'breadcrumbs' => $breadcrumbs,
         ]);
     }
 
@@ -74,7 +81,13 @@ class UserController extends Controller
      */
     public function edit(User $user)
     {
-        //
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->users()
+            ->add('Edit')
+            ->add($user->first_name . ' ' . $user->last_name)
+            ->toArray();
+
         $this->authorize('update', User::class);
 
         return view('admin.users.edit', [
@@ -82,7 +95,7 @@ class UserController extends Controller
             'teams' => Team::all(),
             'rankings' => array_column(Ranking::cases(), 'name'),
             'sexes' => array_column(Sex::cases(), 'name'),
-
+            'breadcrumbs' => $breadcrumbs,
         ]);
     }
 
@@ -91,11 +104,16 @@ class UserController extends Controller
      */
     public function index()
     {
-        //
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->users()
+            ->toArray();
+
         $this->authorize('index', User::class);
 
         return View('admin.users.index', [
             'user_model' => User::class,
+            'breadcrumbs' => $breadcrumbs,
         ]);
     }
 
@@ -115,8 +133,16 @@ class UserController extends Controller
         //
         $user->setAge();
 
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->users()
+            ->add('Profile')
+            ->add($user->first_name . ' ' . $user->last_name)
+            ->toArray();
+
         return view('admin.users.show', [
             'user' => $user,
+            'breadcrumbs' => $breadcrumbs,
         ]);
     }
 

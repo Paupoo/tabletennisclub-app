@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout :breadcrumbs="$breadcrumbs">
     <x-admin-block>
         <livewire:admin.articles.index />
     </x-admin-block>

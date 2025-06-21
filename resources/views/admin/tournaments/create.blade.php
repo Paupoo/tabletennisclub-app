@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout :breadcrumbs="$breadcrumbs">
 
     <x-slot name="header">
         <div class="flex">

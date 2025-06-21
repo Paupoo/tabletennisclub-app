@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout :breadcrumbs="$breadcrumbs">
     
 
     <div class="py-12">

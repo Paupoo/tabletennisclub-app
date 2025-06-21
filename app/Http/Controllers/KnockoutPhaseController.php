@@ -8,7 +8,8 @@ use App\Models\MatchSet;
 use App\Models\Tournament;
 use App\Models\TournamentMatch;
 use App\Services\TournamentFinalPhaseService;
-use App\Services\TournamentStatusManager;
+use App\States\Tournament\TournamentStateMachine;
+use App\Support\Breadcrumb;
 use Illuminate\Http\Request;
 
 class KnockoutPhaseController extends Controller
@@ -91,6 +92,12 @@ class KnockoutPhaseController extends Controller
      */
     public function showBracket(Tournament $tournament)
     {
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->tournaments()
+            ->current('Create new tournament')
+            ->toArray();
+
         $rounds = $this->knockoutService->getKnockoutMatches($tournament);
         $tables = $tournament
             ->tables()
@@ -104,10 +111,10 @@ class KnockoutPhaseController extends Controller
             ->orderByRaw('name * 1 ASC')
             ->get();
 
-        $manager = new TournamentStatusManager($tournament);
-        $statusesAllowed = $manager->getAllowedNextStatuses();
+        
+        $statusesAllowed = (new TournamentStateMachine($tournament))->getAllowedTransitions();
 
-        return view('admin.tournaments.knockout-bracket', compact('tournament', 'rounds', 'tables', 'statusesAllowed'));
+        return view('admin.tournaments.knockout-bracket', compact('tournament', 'rounds', 'tables', 'statusesAllowed', 'breadcrumbs'));
     }
 
     /**

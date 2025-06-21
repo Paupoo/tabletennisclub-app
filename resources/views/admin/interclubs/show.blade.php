@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout :breadcrumbs="$breadcrumbs">
 
     @if (session('success'))
                 <div class="mt-4 bg-green-500 rounded-lg pl-3">

@@ -9,6 +9,7 @@ use App\Models\Room;
 use App\Models\Table;
 use App\Models\Tournament;
 use App\Services\TournamentTableService;
+use App\Support\Breadcrumb;
 
 class TableController extends Controller
 {
@@ -21,12 +22,19 @@ class TableController extends Controller
     {
         $this->authorize('create', Table::class);
 
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->tables()
+            ->add('Create')
+            ->toArray();
+
         $table = new Table;
         $rooms = Room::orderBy('name')->get();
 
         return view('admin.tables.create', [
             'table' => $table,
             'rooms' => $rooms,
+            'breadcrumbs' => $breadcrumbs,
         ]);
     }
 
@@ -53,11 +61,17 @@ class TableController extends Controller
     {
         $this->authorize('create', Table::class);
 
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->tables()
+            ->add('Edit')
+            ->toArray();
         $rooms = Room::orderBy('name')->get();
 
         return view('admin.tables.edit', [
             'table' => $table,
             'rooms' => $rooms,
+            'breadcrumbs' => $breadcrumbs,
         ]);
     }
 
@@ -68,8 +82,14 @@ class TableController extends Controller
     {
         $this->authorize('viewAny', Table::class);
 
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->tables()
+            ->toArray();
+
         return view('admin.tables.index', [
             'tables' => Table::orderByRaw('name * 1 ASC')->paginate(10),
+            'breadcrumbs' => $breadcrumbs,
         ]);
     }
 
@@ -102,6 +122,12 @@ class TableController extends Controller
      */
     public function tableOverview(Tournament $tournament)
     {
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->tables()
+            ->add(title: 'Overview')
+            ->toArray();
+
         return view('tables.overview', [
             'tables' => $tournament
                 ->tables()
@@ -115,6 +141,7 @@ class TableController extends Controller
                 ->orderByRaw('name')
                 ->get(),
             'tournament' => $tournament,
+            'breadcrumbs' => $breadcrumbs,
         ]);
     }
 

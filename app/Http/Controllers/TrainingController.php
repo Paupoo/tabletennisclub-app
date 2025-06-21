@@ -13,6 +13,7 @@ use App\Models\Training;
 use App\Models\User;
 use App\Services\TrainingBuilder;
 use App\Services\TrainingDateGenerator;
+use App\Support\Breadcrumb;
 use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -36,6 +37,12 @@ class TrainingController extends Controller
     {
         $this->authorize('create', Training::class);
 
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->trainings()
+            ->add('Create')
+            ->toArray();
+
         $training = new Training;
 
         return view('admin.trainings.create', [
@@ -45,6 +52,7 @@ class TrainingController extends Controller
             'training' => $training,
             'types' => TrainingType::cases(),
             'users' => User::select('id', 'last_name', 'first_name')->orderBy('last_name', 'asc')->orderBy('first_name', 'asc')->get(),
+            'breadcrumbs' => $breadcrumbs,
         ]);
     }
 
@@ -102,8 +110,14 @@ class TrainingController extends Controller
     {
         $this->authorize('viewAny', Training::class);
 
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->trainings()
+            ->toArray();
+
         return view('admin.trainings.index', [
             'trainings' => Training::orderBy('start')->paginate(10),
+            'breadcrumbs' => $breadcrumbs,
         ]);
     }
 

@@ -51,9 +51,13 @@ Route::get('/admin/dashboard', function () {
         'rooms' => Room::orderby('name')->get(),
         'trainings' => Training::latest()->take(5)->get(),
         'teams' => Team::all()->load(['captain', 'users']),
+        'breadcrumbs' => [
+            ['title' => 'Home', 'url' => route('dashboard'), 'icon' => 'home'],
+            ['title' => 'Dashboard', 'url' => route('dashboard'), 'icon' => 'home']
+        ],
     ]);
-})->middleware(['auth', 'verified'])->name('dashboard');
-
+})->middleware(['auth', 'verified'])
+    ->name('dashboard');
 /**
  * Roles management
  */
@@ -84,12 +88,12 @@ Route::resource('/admin/tables', TableController::class)->middleware(['auth', 'v
 Route::get('/admin/teams/team-builder', [
     TeamController::class,
     'initiateTeamsBuilder',
-])->middleware(['auth', 'verified'])->name('teamBuilder');
+])->middleware(['auth', 'verified'])->name('teamBuilder.prepare');
 
 Route::post('/admin/teams/team-builder', [
     TeamController::class,
     'validateTeamsBuilder',
-])->middleware(['auth', 'verified'])->name('teamBuilder');
+])->middleware(['auth', 'verified'])->name('teamBuilder.create');
 
 Route::post('/admin/teams/saveTeams', [
     TeamController::class,
@@ -224,6 +228,9 @@ Route::resource('/admin/articles', ArticleController::class)->middleware(['auth'
 
 Route::get('/test', function () {
     return view('test');
+});
+Route::get('/results', function () {
+    return view('public.results');
 });
 
 require __DIR__ . '/auth.php';

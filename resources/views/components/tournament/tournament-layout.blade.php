@@ -1,11 +1,15 @@
-@props(['tournament', 'statusesAllowed', 'pageTitle' => null])
+@props([
+    'tournament',
+    'statusesAllowed',
+    'breadcrumbs' => []
+    ])
 
-<x-app-layout :pageTitle="$pageTitle ?? $tournament->name" :tournamentStatus="$tournament->status">
+<x-app-layout :breadcrumbs="$breadcrumbs">
   
     <!-- Contenu principal -->
     <x-admin-block>
         <!-- Menu de navigation secondaire pour les tournois -->
-        <x-tournament.secondary-nav :tournament="$tournament" />
+        <x-tournament.secondary-nav :tournament="$tournament"/>
         {{ $slot }}
     </x-admin-block>
 

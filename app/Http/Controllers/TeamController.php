@@ -14,6 +14,7 @@ use App\Models\League;
 use App\Models\Season;
 use App\Models\Team;
 use App\Models\User;
+use App\Support\Breadcrumb;
 use Carbon\Carbon;
 use Doctrine\Common\Cache\Psr6\InvalidArgument;
 use Illuminate\Database\Eloquent\Collection;
@@ -42,6 +43,12 @@ class TeamController extends Controller
     {
         $this->authorize('create', Team::class);
 
+        $breadcrumps = Breadcrumb::make()
+            ->home()
+            ->teams()
+            ->add('Create')
+            ->toArray();
+
         $team = new Team;
         $date = Carbon::now();
         $date->format('m') <= 8
@@ -58,6 +65,7 @@ class TeamController extends Controller
             'team' => $team,
             'team_names' => TeamName::cases(),
             'users' => User::where('is_competitor', true)->orderby('force_list')->orderby('last_name')->orderby('first_name')->get(),
+            'breadcrumbs' => $breadcrumps,
         ]);
     }
 
@@ -84,6 +92,11 @@ class TeamController extends Controller
 
         $team = Team::findOrFail($id);
 
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->teams()
+            ->add('Edit team')
+            ->toArray();
         //
         return view('admin.teams.edit', [
             'attachedUsers' => $team->users->pluck('id')->toArray(),
@@ -99,6 +112,7 @@ class TeamController extends Controller
             'team' => $team,
             'team_names' => TeamName::cases(),
             'users' => User::where('is_competitor', true)->orderby('force_list')->orderby('last_name')->orderby('first_name')->get(),
+            'breadcrumbs' => $breadcrumbs,
         ]);
     }
 
@@ -122,6 +136,11 @@ class TeamController extends Controller
      */
     public function index()
     {
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->teams()
+            ->toArray();
+
         return view('admin.teams.index', [
             'teamsInClub' => Team::select('teams.*')
                 ->InClub()
@@ -136,13 +155,21 @@ class TeamController extends Controller
                 ->orderBy('seasons.start_year')
                 ->orderBy('teams.name')
                 ->paginate(10),
+            'breadcrumbs' => $breadcrumbs,
         ]);
     }
 
     public function initiateTeamsBuilder(): View
     {
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->teams()
+            ->add('Team Builder')
+            ->toArray();
+
         return view('admin/teams/team-builder', [
             'seasons' => $this->getUpToDateSeasons('asc'),
+            'breadcrumbs' => $breadcrumbs,
         ]);
     }
 
@@ -152,7 +179,6 @@ class TeamController extends Controller
     public function saveTeams(Request $request): RedirectResponse
     {
         $seasonId = $request->season_id;
-
         // Looping for each team
         foreach ($request->teams as $teamName => $data) {
             $team = new Team([
@@ -171,7 +197,6 @@ class TeamController extends Controller
             foreach ($data['players_id'] as $player_id) {
                 $team->users()->attach($player_id);
             }
-
             // FindOrCreate League and add it
             $level = $data['level_id'];
             $category = $data['category_id'];
@@ -194,9 +219,15 @@ class TeamController extends Controller
      */
     public function show(Team $team)
     {
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->teams()
+            ->add($team->name)
+            ->toArray();
         //
         return view('admin.teams.show', [
             'team' => $team->load('users'),
+            'breadcrumbs' => $breadcrumbs,
         ]);
     }
 
@@ -269,7 +300,14 @@ class TeamController extends Controller
 
     public function validateTeamsBuilder(ValidateTeamBuilderRequest $request): View
     {
-        $playersPerTeam = $request->safe()->playersPerTeam;
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->teams()
+            ->add('Team Builder')
+            ->toArray();
+
+        $playersPerTeam = (int) $request->safe()->playersPerTeam;
+        
         $this->getCompetitors()
             ->countCompetitors()
             ->countTotalTeams($playersPerTeam)
@@ -283,6 +321,7 @@ class TeamController extends Controller
             'leagueCategory' => LeagueCategory::cases(),
             'playersPerTeam' => $playersPerTeam,
             'teamsWithPlayers' => $this->teamsWithPlayers,
+            'breadcrumbs' => $breadcrumbs,
         ]);
     }
 

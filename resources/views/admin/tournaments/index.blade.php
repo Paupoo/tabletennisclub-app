@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout :breadcrumbs="$breadcrumbs">
 
     @push('header-actions')
         <x-tournament.actions-menu>

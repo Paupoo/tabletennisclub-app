@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout :breadcrumbs="$breadcrumbs">
     <x-slot name="header">
         <h2 class="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
             {{ __('Teams') }}
@@ -12,7 +12,7 @@
                     <x-primary-button>{{ __('Dashboard') }}</x-primary-button>
                 </form>
                 @can('create', $teamModel)
-                    <form action="{{ route('teamBuilder') }}" method="GET">
+                    <form action="{{ route('teamBuilder.prepare') }}" method="GET">
                         <x-primary-button>{{ __('Team Builder') }}</x-primary-button>
                     </form>
                     <form action="{{ route('teams.create') }}" method="GET">

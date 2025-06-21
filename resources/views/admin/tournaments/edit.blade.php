@@ -1,4 +1,4 @@
-<x-app-layout>
+<x-app-layout :breadcrumbs="$breadcrumbs">
     <x-slot name="header">
         {{-- Header --}}
         <div class="flex flex-row gap-2 items-center">

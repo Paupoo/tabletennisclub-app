@@ -1,5 +1,5 @@
 <!-- Vue Blade avec intégration Livewire et Alpine.js -->
-<x-app-layout>
+<x-app-layout :breadcrumbs="$breadcrumbs">
     <!-- Container principal avec animation d'apparition -->
     <div class="max-w-7xl mx-auto p-6">
       <h1 class="text-2xl font-bold text-white mb-6">État des tables</h1>

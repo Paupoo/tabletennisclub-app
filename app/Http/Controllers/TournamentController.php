@@ -21,6 +21,7 @@ use App\Services\TournamentPoolService;
 use App\Services\TournamentService;
 use App\Services\TournamentTableService;
 use App\States\Tournament\TournamentStateMachine;
+use App\Support\Breadcrumb;
 use Carbon\Carbon;
 use Event;
 use Exception;
@@ -73,9 +74,17 @@ class TournamentController extends Controller
 
     public function create(): View
     {
+
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->tournaments()
+            ->current('Create new tournament')
+            ->toArray();
+
         return view('admin.tournaments.create', [
             'tournament' => new Tournament,
             'rooms' => Room::all(),
+            'breadcrumbs' => $breadcrumbs,
         ]);
     }
 
@@ -92,12 +101,19 @@ class TournamentController extends Controller
 
     public function edit(Tournament $tournament): View
     {
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->tournaments()
+            ->current('Edit :: ' . $tournament->name)
+            ->toArray();
+
         $stateMachine = new TournamentStateMachine($tournament);
 
         return view('admin.tournaments.edit', [
             'tournament' => $tournament->load(['pools.users']),
             'rooms' => Room::orderBy('name')->get(),
             'statusesAllowed' => $stateMachine->getAllowedTransitions(),
+            'breadcrumbs' => $breadcrumbs,
         ]);
     }
 
@@ -237,11 +253,17 @@ class TournamentController extends Controller
 
     public function index(): View
     {
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->tournaments()
+            ->toArray();
+
         $tournament = new Tournament;
 
         return view('admin.tournaments.index', [
             'rooms' => Room::orderBy('name')->get(),
             'tournament' => $tournament,
+            'breadcrumbs' => $breadcrumbs,
         ]);
     }
 
@@ -367,6 +389,12 @@ class TournamentController extends Controller
 
         $state = new TournamentStateMachine($tournament);
 
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->tournaments()
+            ->tournament($tournament) // Ajoutez cette méthode ou utilisez current avec le nom du tournoi
+            ->toArray();
+
         return view('admin.tournaments.show', [
             'matches' => $matches,
             'rooms' => $rooms,
@@ -374,6 +402,7 @@ class TournamentController extends Controller
             'tournament' => $tournament,
             'unregisteredUsers' => $unregisteredUsers,
             'statusesAllowed' => $state->getAllowedTransitions(),
+            'breadcrumbs' => $breadcrumbs,
         ]);
     }
 
@@ -381,35 +410,24 @@ class TournamentController extends Controller
     {
         $tournament = Tournament::findorFail($id);
 
-        $rooms = Room::orderBy('name')->get();
-
-        $tables = $tournament
-            ->tables()
-            ->withPivot([
-                'is_table_free',
-                'match_started_at',
-            ])
-            ->with('match.player1', 'match.player2')
-            ->orderBy('is_table_free')
-            ->orderBy('match_started_at')
-            ->orderByRaw('name * 1 ASC')
-            ->get();
-
         $matches = TournamentMatch::where('tournament_id', $tournament->id)
             ->where('round', null)
             ->ordered()
             ->paginate(50);
 
-        $unregisteredUsers = User::unregisteredUsers($tournament)->get();
-
         $stateMachine = new TournamentStateMachine($tournament);
+
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->tournaments()
+            ->current($tournament->name)
+            ->toArray();
 
         return view('admin.tournaments.show-matches', [
             'matches' => $matches,
-            'rooms' => $rooms,
-            'tables' => $tables,
             'tournament' => $tournament,
             'statusesAllowed' => $stateMachine->getAllowedTransitions(),
+            'breadcrumbs' => $breadcrumbs,
         ]);
     }
 
@@ -441,6 +459,13 @@ class TournamentController extends Controller
 
         $stateMachine = new TournamentStateMachine($tournament);
 
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->tournaments()
+            ->current($tournament->name)
+            ->toArray();
+
+
         return view('admin.tournaments.show-players', [
             'matches' => $matches,
             'rooms' => $rooms,
@@ -448,6 +473,7 @@ class TournamentController extends Controller
             'tournament' => $tournament,
             'users' => $users,
             'statusesAllowed' => $stateMachine->getAllowedTransitions(),
+            'breadcrumbs' => $breadcrumbs,
         ]);
     }
 
@@ -469,6 +495,12 @@ class TournamentController extends Controller
 
         $stateMachine = new TournamentStateMachine($tournament);
 
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->tournaments()
+            ->current($tournament->name)
+            ->toArray();
+
         return view('admin.tournaments.pool-matches', [
             'pool' => $pool,
             'tournament' => $tournament,
@@ -476,6 +508,7 @@ class TournamentController extends Controller
             'standings' => $standings,
             'tables' => $tables,
             'statusesAllowed' => $stateMachine->getAllowedTransitions(),
+            'breadcrumbs' => $breadcrumbs,
         ]);
     }
 
@@ -491,17 +524,30 @@ class TournamentController extends Controller
             },
         ])->findOrFail($id);
 
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->tournaments()
+            ->current($tournament->name)
+            ->toArray();
+
         $stateMachine = new TournamentStateMachine($tournament);
 
         return view('admin.tournaments.show-pools', [
             'tournament' => $tournament,
             'statusesAllowed' => $stateMachine->getAllowedTransitions(),
+            'breadcrumbs' => $breadcrumbs,
         ]);
     }
 
     public function showTables(string $id): View
     {
         $tournament = Tournament::findorFail($id);
+
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->tournaments()
+            ->current($tournament->name)
+            ->toArray();
 
         $rooms = Room::orderBy('name')->get();
 
@@ -530,6 +576,7 @@ class TournamentController extends Controller
             'tournament' => $tournament,
             'unregisteredUsers' => $unregisteredUsers,
             'statusesAllowed' => $stateMachine->getAllowedTransitions(),
+            'breadcrumbs' => $breadcrumbs,
         ]);
     }
 

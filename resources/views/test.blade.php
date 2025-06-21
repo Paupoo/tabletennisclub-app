@@ -1,4 +1,4 @@
-    <x-app-layout>
+    <x-app-layout :breadcrumbs="$breadcrumbs">
         <div x-data="tournament()" x-init="init" class="relative w-max-7xl container rounded-xl p-10 bg-white m-auto mt-20">
             <svg class="absolute top-0 left-0 w-full h-full pointer-events-none z-0" x-ref="svg"></svg>
 

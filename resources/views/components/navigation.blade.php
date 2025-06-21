@@ -1,8 +1,8 @@
-<nav class="{{ $fixed ?? true ? 'fixed' : '' }} w-full bg-white/95 backdrop-blur-sm z-50 shadow-sm" x-data="navigation">
+<nav class="{{ $fixed ?? true ? 'fixed' : '' }} w-full bg-white/95 backdrop-blur-xs z-50 shadow-xs" x-data="navigation">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
             <div class="flex items-center">
-                <div class="flex-shrink-0">
+                <div class="shrink-0">
                     <a href="{{ route('home') }}">
                         <h1 class="text-2xl md:text-xl lg:text-2xl font-bold text-club-blue">🏓 CTT Ottignies-Blocry</h1>
                     </a>

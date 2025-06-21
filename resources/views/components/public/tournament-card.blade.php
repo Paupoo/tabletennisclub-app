@@ -13,7 +13,7 @@
     ]
 ])
 
-<div class="w-full max-w-md bg-white rounded-lg border border-gray-200 shadow-sm" x-data="{ showDetails: false }">
+<div class="w-full max-w-md bg-white rounded-lg border border-gray-200 shadow-xs" x-data="{ showDetails: false }">
     <!-- Header -->
     <div class="p-6 space-y-1">
         <div class="flex items-start justify-between">

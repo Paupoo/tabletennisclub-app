@@ -8,7 +8,7 @@
         </div>
 
         <!-- Avantages de l'adhésion -->
-        <div class="bg-gradient-to-r from-club-blue to-club-blue-light rounded-2xl p-8 text-white mb-12 animate-on-scroll">
+        <div class="bg-linear-to-r from-club-blue to-club-blue-light rounded-2xl p-8 text-white mb-12 animate-on-scroll">
             <div class="text-center mb-8">
                 <h3 class="text-2xl font-bold mb-4">Avantages de l'affilation</h3>
             </div>
@@ -206,7 +206,7 @@
         <!-- Informations complémentaires -->
         <div class="mt-12 bg-blue-50 rounded-lg p-6 animate-on-scroll">
             <div class="flex items-start">
-                <div class="flex-shrink-0">
+                <div class="shrink-0">
                     <svg class="w-6 h-6 text-club-blue mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>

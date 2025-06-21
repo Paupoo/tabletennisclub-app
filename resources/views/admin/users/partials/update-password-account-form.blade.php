@@ -1,4 +1,4 @@
-<div class="mt-8 overflow-hidden bg-white shadow-sm dark:bg-gray-800 sm:rounded-lg">
+<div class="mt-8 overflow-hidden bg-white shadow-xs dark:bg-gray-800 sm:rounded-lg">
     <div class="w-full p-6 text-gray-900 dark:text-gray-100 lg:w-1/2">
         <header>
             <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">

@@ -1,4 +1,4 @@
-<div class="w-full max-w-md bg-white rounded-lg border border-gray-200 shadow-sm hover:outline hover:outline-blue-800">
+<div class="w-full max-w-md bg-white rounded-lg border border-gray-200 shadow-xs hover:outline-solid hover:outline-blue-800">
 
 
     <!-- Header -->

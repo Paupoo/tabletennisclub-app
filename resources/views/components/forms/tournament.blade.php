@@ -8,7 +8,7 @@
         <div>
             <label for="name" class="block text-sm font-medium text-gray-700 mb-1">{{ __('Tournament Name')}}</label>
             <input type="text" name="name" id="name" placeholder="Nom du tournoi"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-blue-500 focus:border-blue-500"
                 value="{{ old('name', $tournament->name)}}"
                 >
             <x-input-error class="mt-2" :messages="$errors->get('name')" />
@@ -18,7 +18,7 @@
         <div>
             <label for="status" class="block text-sm font-medium text-gray-700 mb-1">{{ __('Status')}}</label>
             <select name="status" id="status"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-blue-500 focus:border-blue-500">
                 @if($tournament->id === null)
                 <option disabled selected>{{ __('Please select a status') }}</option>
                 @endif
@@ -38,7 +38,7 @@
                 placeholder="{{ __('Price') }}"
                 step="0.01"
                 value="{{ old('price', $tournament->price)}}"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-blue-500 focus:border-blue-500">
             <x-input-error class="mt-2" :messages="$errors->get('price')" />
         </div>
         
@@ -46,7 +46,7 @@
         <div>
             <label for="start_date" class="block text-sm font-medium text-gray-700 mb-1" >{{ __('Start Date') }}</label>
             <input 
-                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-blue-500 focus:border-blue-500"
                 type="datetime-local"
                 name="start_date"
                 id="start_date"
@@ -60,7 +60,7 @@
         <div>
             <label for="end_date" class="block text-sm font-medium text-gray-700 mb-1">{{ __('End Date') }}</label>
             <input 
-            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-blue-500 focus:border-blue-500"
                 type="datetime-local"
                 name="end_date"
                 id="end_date"
@@ -73,7 +73,7 @@
         <div>
             <label for="room_ids" class="block text-sm font-medium text-gray-700 mb-1">{{ __('Rooms') }}</label>
             <select multiple name="room_ids[]" id="room_ids"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-blue-500 focus:border-blue-500">
                 @foreach($rooms as $room)
                 @if($room->total_playable_tables > 0)
                 <option value="{{ $room->id }}"
@@ -93,14 +93,14 @@
             <input type="number" name="max_users" id="max_users"
                 value="{{ old('max_users', $tournament->max_users) }}"
                 placeholder="Nombre max. de joueurs"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-blue-500 focus:border-blue-500">
             <x-input-error class="mt-2" :messages="$errors->get('max_users')" />
         </div>
         {{-- Points d'handicap --}}
         <div>
             <label for="has_handicap_points" class="block text-sm font-medium text-gray-700 mb-1">{{ __('Handicap Points') }}</label>
             <select name="has_handicap_points" id="has_handicap_points"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-blue-500 focus:border-blue-500">
                 <option disabled selected>{{ __('Please make a choice') }}</option>
                 <option value="1" @selected(old('has_handicap_points', $tournament->has_handicap_points) == true)>{{ __('With handicap points (friendly tournament)')}}</option>
                 <option value="0" @selected(old('has_handicap_points', $tournament->has_handicap_points) == false)>{{ __('Without handicap points')}}</option>
@@ -111,7 +111,7 @@
 
     <div class=" pt-2 mt-6 flex justify-start">
         <x-primary-button type="submit"
-        class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+        class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-xs text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
             @if($tournament->id === null)
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20"
                 fill="currentColor">

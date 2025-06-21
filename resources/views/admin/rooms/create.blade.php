@@ -19,7 +19,7 @@
 
     <x-admin-block class="pt-12">
         <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
-            <div class="overflow-hidden bg-white shadow-sm dark:bg-gray-800 sm:rounded-lg">
+            <div class="overflow-hidden bg-white shadow-xs dark:bg-gray-800 sm:rounded-lg">
                 @if (session('success'))
                     <x-notification-success>{{ session('success') }}</x-notification-success>
                 @endif

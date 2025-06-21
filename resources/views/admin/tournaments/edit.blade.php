@@ -49,7 +49,7 @@
                     <label for="starting_round" class="block text-sm font-medium text-gray-700">Phase de
                         départ</label>
                     <select id="starting_round" name="starting_round"
-                        class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-xs focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         <option value="round_16">16ème de finale (16 joueurs)</option>
                         <option value="round_8">8ème de finale (8 joueurs)</option>
                         <option value="round_4">Quart de finale (4 joueurs)</option>
@@ -61,7 +61,7 @@
                 </div>
                 <div class="bg-gray-50 px-4 py-3 text-right sm:px-6">
                     <button type="submit"
-                        class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        class="inline-flex justify-center py-2 px-4 border border-transparent shadow-xs text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                         Configurer la phase finale
                     </button>
                 </div>

@@ -34,7 +34,7 @@
 
     <div class="py-6">
         <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
-            <div class="overflow-hidden bg-white shadow-sm dark:bg-gray-800 sm:rounded-lg">
+            <div class="overflow-hidden bg-white shadow-xs dark:bg-gray-800 sm:rounded-lg">
 
                 <table class="min-w-full text-sm font-light text-left dark:bg-neutral-300">
                     <thead class="font-medium border-b dark:border-neutral-500">

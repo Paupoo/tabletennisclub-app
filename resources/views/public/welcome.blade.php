@@ -17,7 +17,7 @@
 
         {{-- HEADER --}}
         <header
-            class="sticky top-0 z-10 flex flex-row items-center justify-between h-24 px-12 py-8 mt-4 text-blue-800 bg-yellow-400 border-b border-blue-600 border-dotted shadow-sm max-sm:py-2 max-sm:px-4">
+            class="sticky top-0 z-10 flex flex-row items-center justify-between h-24 px-12 py-8 mt-4 text-blue-800 bg-yellow-400 border-b border-blue-600 border-dotted shadow-xs max-sm:py-2 max-sm:px-4">
 
             <div class="grid h-12 grid-cols-3 mx-4 w-fit">
                 <div class="col-span-1 w-36 max-sm:w-fit">

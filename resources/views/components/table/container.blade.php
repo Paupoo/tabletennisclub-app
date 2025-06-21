@@ -3,7 +3,7 @@
 // 7. resources/views/components/table/container.blade.php
 // ===========================================
 ?>
-<div class="bg-white shadow overflow-hidden sm:rounded-lg">
+<div class="bg-white shadow-sm overflow-hidden sm:rounded-lg">
     <table class="min-w-full divide-y divide-gray-200">
         {{ $slot }}
     </table>

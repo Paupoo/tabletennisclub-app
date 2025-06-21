@@ -192,7 +192,7 @@
         
         <!-- Call to Action -->
         <div class="text-center mt-12 animate-on-scroll">
-            <div class="bg-gradient-to-r from-club-blue to-club-blue-light rounded-2xl p-8 text-white">
+            <div class="bg-linear-to-r from-club-blue to-club-blue-light rounded-2xl p-8 text-white">
                 <h3 class="text-2xl font-bold mb-4">Prêt à Commencer ?</h3>
                 <p class="text-xl mb-6 opacity-90">
                     Rejoignez-nous pour une séance d'essai gratuite !

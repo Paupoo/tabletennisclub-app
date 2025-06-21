@@ -10,7 +10,7 @@
         <button class="px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-100 transition">Disponibles</button>
         <button class="px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-100 transition">Occupées</button>
         <div class="ml-auto">
-          <input type="text" placeholder="Rechercher..." class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          <input type="text" placeholder="Rechercher..." class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-hidden">
         </div>
       </div>
       <!-- Grille des tables avec espacement et responsive améliorés -->
@@ -19,7 +19,7 @@
         @foreach ($tables as $table)
         @if($table->pivot->is_table_free)
         <!-- Table 1 - Disponible -->
-        <div class="group relative rounded-xl border border-green-400 bg-gradient-to-br from-green-50 to-green-100 p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+        <div class="group relative rounded-xl border border-green-400 bg-linear-to-br from-green-50 to-green-100 p-5 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
           <div class="absolute top-3 right-3">
             <span class="flex h-3 w-3">
               <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
@@ -53,7 +53,7 @@
         @endphp
 
         <!-- Table 2 - Occupée -->
-        <div class="group relative rounded-xl border border-{{ $percent < 100 ? 'gray' : 'red'}}-400 bg-gradient-to-br from-{{ $percent < 100 ? 'gray' : 'red'}}-50 to-{{ $percent < 100 ? 'gray' : 'red'}}-100 p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+        <div class="group relative rounded-xl border border-{{ $percent < 100 ? 'gray' : 'red'}}-400 bg-linear-to-br from-{{ $percent < 100 ? 'gray' : 'red'}}-50 to-{{ $percent < 100 ? 'gray' : 'red'}}-100 p-5 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
           <div class="absolute top-3 right-3">
             <span class="flex h-3 w-3">
               <span class="relative inline-flex rounded-full h-3 w-3 bg-{{ $percent < 100 ? 'gray' : 'red'}}-500"></span>
@@ -70,7 +70,7 @@
             </div>
           </div>
           
-          <div class="mt-4 bg-white rounded-lg p-4 shadow-sm">
+          <div class="mt-4 bg-white rounded-lg p-4 shadow-xs">
             <div class="flex items-center justify-between mb-2">
               <div class="flex items-center">
                 <svg class="w-4 h-4 text-gray-600 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

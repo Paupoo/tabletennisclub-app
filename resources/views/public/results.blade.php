@@ -23,11 +23,11 @@
 </head>
 <body class="bg-gray-50 text-gray-900" x-data="{ mobileMenuOpen: false, selectedSeason: '2024' }">
     <!-- Navigation -->
-    <nav class="bg-white shadow-sm">
+    <nav class="bg-white shadow-xs">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <div class="flex items-center">
-                    <a href="index.html" class="flex-shrink-0">
+                    <a href="index.html" class="shrink-0">
                         <h1 class="text-2xl font-bold text-club-blue">🏓 Ace TTC</h1>
                     </a>
                 </div>
@@ -65,7 +65,7 @@
     </nav>
 
     <!-- Header -->
-    <div class="bg-gradient-to-r from-club-blue to-club-blue-light text-white py-16">
+    <div class="bg-linear-to-r from-club-blue to-club-blue-light text-white py-16">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h1 class="text-4xl md:text-5xl font-bold mb-4">Competition Results</h1>
             <p class="text-xl opacity-90">Track our teams' performance across all competitions</p>
@@ -91,7 +91,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
         <!-- Team A Results -->
         <div class="mb-12">
-            <div class="bg-white rounded-lg shadow-sm border p-6">
+            <div class="bg-white rounded-lg shadow-xs border p-6">
                 <div class="flex items-center justify-between mb-6">
                     <h3 class="text-2xl font-bold text-club-blue">Team A - Premier Division</h3>
                     <div class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
@@ -117,7 +117,7 @@
                                 <td class="py-3 px-4">Home</td>
                                 <td class="py-3 px-4 font-mono">8-2</td>
                                 <td class="py-3 px-4">
-                                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-sm font-medium">Win</span>
+                                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded-sm text-sm font-medium">Win</span>
                                 </td>
                             </tr>
                             <tr class="border-b border-gray-100 hover:bg-gray-50">
@@ -126,7 +126,7 @@
                                 <td class="py-3 px-4">Away</td>
                                 <td class="py-3 px-4 font-mono">6-4</td>
                                 <td class="py-3 px-4">
-                                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-sm font-medium">Win</span>
+                                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded-sm text-sm font-medium">Win</span>
                                 </td>
                             </tr>
                             <tr class="border-b border-gray-100 hover:bg-gray-50">
@@ -135,7 +135,7 @@
                                 <td class="py-3 px-4">Home</td>
                                 <td class="py-3 px-4 font-mono">3-7</td>
                                 <td class="py-3 px-4">
-                                    <span class="bg-red-100 text-red-800 px-2 py-1 rounded text-sm font-medium">Loss</span>
+                                    <span class="bg-red-100 text-red-800 px-2 py-1 rounded-sm text-sm font-medium">Loss</span>
                                 </td>
                             </tr>
                             <tr class="border-b border-gray-100 hover:bg-gray-50">
@@ -144,7 +144,7 @@
                                 <td class="py-3 px-4">Away</td>
                                 <td class="py-3 px-4 font-mono">7-3</td>
                                 <td class="py-3 px-4">
-                                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-sm font-medium">Win</span>
+                                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded-sm text-sm font-medium">Win</span>
                                 </td>
                             </tr>
                         </tbody>
@@ -174,7 +174,7 @@
 
         <!-- Team B Results -->
         <div class="mb-12">
-            <div class="bg-white rounded-lg shadow-sm border p-6">
+            <div class="bg-white rounded-lg shadow-xs border p-6">
                 <div class="flex items-center justify-between mb-6">
                     <h3 class="text-2xl font-bold text-club-blue">Team B - Division 1</h3>
                     <div class="bg-club-yellow text-club-blue px-3 py-1 rounded-full text-sm font-medium">
@@ -200,7 +200,7 @@
                                 <td class="py-3 px-4">Home</td>
                                 <td class="py-3 px-4 font-mono">9-1</td>
                                 <td class="py-3 px-4">
-                                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-sm font-medium">Win</span>
+                                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded-sm text-sm font-medium">Win</span>
                                 </td>
                             </tr>
                             <tr class="border-b border-gray-100 hover:bg-gray-50">
@@ -209,7 +209,7 @@
                                 <td class="py-3 px-4">Away</td>
                                 <td class="py-3 px-4 font-mono">8-2</td>
                                 <td class="py-3 px-4">
-                                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-sm font-medium">Win</span>
+                                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded-sm text-sm font-medium">Win</span>
                                 </td>
                             </tr>
                             <tr class="border-b border-gray-100 hover:bg-gray-50">
@@ -218,7 +218,7 @@
                                 <td class="py-3 px-4">Home</td>
                                 <td class="py-3 px-4 font-mono">7-3</td>
                                 <td class="py-3 px-4">
-                                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-sm font-medium">Win</span>
+                                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded-sm text-sm font-medium">Win</span>
                                 </td>
                             </tr>
                             <tr class="border-b border-gray-100 hover:bg-gray-50">
@@ -227,7 +227,7 @@
                                 <td class="py-3 px-4">Away</td>
                                 <td class="py-3 px-4 font-mono">6-4</td>
                                 <td class="py-3 px-4">
-                                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-sm font-medium">Win</span>
+                                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded-sm text-sm font-medium">Win</span>
                                 </td>
                             </tr>
                         </tbody>
@@ -257,7 +257,7 @@
 
         <!-- Team C Results -->
         <div class="mb-12">
-            <div class="bg-white rounded-lg shadow-sm border p-6">
+            <div class="bg-white rounded-lg shadow-xs border p-6">
                 <div class="flex items-center justify-between mb-6">
                     <h3 class="text-2xl font-bold text-club-blue">Team C - Division 2</h3>
                     <div class="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">
@@ -283,7 +283,7 @@
                                 <td class="py-3 px-4">Home</td>
                                 <td class="py-3 px-4 font-mono">5-5</td>
                                 <td class="py-3 px-4">
-                                    <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-sm font-medium">Draw</span>
+                                    <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded-sm text-sm font-medium">Draw</span>
                                 </td>
                             </tr>
                             <tr class="border-b border-gray-100 hover:bg-gray-50">
@@ -292,7 +292,7 @@
                                 <td class="py-3 px-4">Away</td>
                                 <td class="py-3 px-4 font-mono">7-3</td>
                                 <td class="py-3 px-4">
-                                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-sm font-medium">Win</span>
+                                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded-sm text-sm font-medium">Win</span>
                                 </td>
                             </tr>
                             <tr class="border-b border-gray-100 hover:bg-gray-50">
@@ -301,7 +301,7 @@
                                 <td class="py-3 px-4">Home</td>
                                 <td class="py-3 px-4 font-mono">4-6</td>
                                 <td class="py-3 px-4">
-                                    <span class="bg-red-100 text-red-800 px-2 py-1 rounded text-sm font-medium">Loss</span>
+                                    <span class="bg-red-100 text-red-800 px-2 py-1 rounded-sm text-sm font-medium">Loss</span>
                                 </td>
                             </tr>
                             <tr class="border-b border-gray-100 hover:bg-gray-50">
@@ -310,7 +310,7 @@
                                 <td class="py-3 px-4">Away</td>
                                 <td class="py-3 px-4 font-mono">6-4</td>
                                 <td class="py-3 px-4">
-                                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-sm font-medium">Win</span>
+                                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded-sm text-sm font-medium">Win</span>
                                 </td>
                             </tr>
                         </tbody>

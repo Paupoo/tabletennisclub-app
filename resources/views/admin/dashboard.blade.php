@@ -7,7 +7,7 @@
 
     <div class="pt-12">
         <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
-            <div class="overflow-hidden bg-white shadow-sm dark:bg-gray-800 sm:rounded-lg">
+            <div class="overflow-hidden bg-white shadow-xs dark:bg-gray-800 sm:rounded-lg">
                 <div class="p-6 italic text-gray-900 dark:text-gray-100">
                     <p>Here you can manage the club's affairs.</p>
                 </div>
@@ -18,7 +18,7 @@
     {{-- Members management --}}
     <div class="pt-6">
         <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
-            <div class="overflow-hidden bg-white shadow-sm dark:bg-gray-800 sm:rounded-lg">
+            <div class="overflow-hidden bg-white shadow-xs dark:bg-gray-800 sm:rounded-lg">
                 <div class="p-6 text-gray-900 dark:text-gray-100">
                     <h2 class="pb-2 text-lg font-semibold">Members</h2>
                     <div class="flex justify-around w-full gap-4">
@@ -91,7 +91,7 @@
     {{-- Rooms management --}}
     <div class="pt-6">
         <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
-            <div class="overflow-hidden bg-white shadow-sm dark:bg-gray-800 sm:rounded-lg">
+            <div class="overflow-hidden bg-white shadow-xs dark:bg-gray-800 sm:rounded-lg">
                 <div class="p-6 text-gray-900 dark:text-gray-100">
                     <h2 class="pb-2 text-lg font-semibold">Rooms</h2>
 
@@ -161,7 +161,7 @@
     {{-- Training management --}}
     <div class="pt-6">
         <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
-            <div class="overflow-hidden bg-white shadow-sm dark:bg-gray-800 sm:rounded-lg">
+            <div class="overflow-hidden bg-white shadow-xs dark:bg-gray-800 sm:rounded-lg">
                 <div class="p-6 text-gray-900 dark:text-gray-100">
                     <h2 class="pb-2 text-lg font-semibold">Trainings</h2>
                     
@@ -206,7 +206,7 @@
     {{-- Teams management --}}
     <div class="pt-6">
         <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
-            <div class="overflow-hidden bg-white shadow-sm dark:bg-gray-800 sm:rounded-lg">
+            <div class="overflow-hidden bg-white shadow-xs dark:bg-gray-800 sm:rounded-lg">
                 <div class="p-6 text-gray-900 dark:text-gray-100">
                     <h2 class="pb-2 text-lg font-semibold">Teams</h2>
 
@@ -253,7 +253,7 @@
     {{-- Matches management --}}
     <div class="pt-6">
         <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
-            <div class="overflow-hidden bg-white shadow-sm dark:bg-gray-800 sm:rounded-lg">
+            <div class="overflow-hidden bg-white shadow-xs dark:bg-gray-800 sm:rounded-lg">
                 <div class="p-6 text-gray-900 dark:text-gray-100">
                     <h2 class="pb-2 text-lg font-semibold">Matches</h2>
 

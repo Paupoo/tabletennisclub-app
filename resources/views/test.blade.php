@@ -16,7 +16,7 @@
 
                         <ul class="flex flex-col gap-2 items-center justify-around h-dvh">
                             <template x-for="match in Math.pow(2, round)/2" :key="match">
-                                <li :data-match="match" class="flex flex-row relative h-12 w-48 rounded-xl text-center justify-center items-center shadow">
+                                <li :data-match="match" class="flex flex-row relative h-12 w-48 rounded-xl text-center justify-center items-center shadow-sm">
                                     <div x-text="match" class="flex w-1/6 h-full text-md items-center justify-center font-semibold bg-indigo-500 rounded-l-lg text"></div>
                                     <div class="w-5/6">
                                         <span class="flex rounded-tr-lg h-1/2 w-full bg-indigo-200 items-center justify-center  ">{{ fake()->firstName . ' ' . fake()->lastName()}}</span>

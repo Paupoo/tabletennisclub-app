@@ -1,4 +1,4 @@
-<div class="mt-8 overflow-hidden bg-white shadow-sm dark:bg-gray-800 sm:rounded-lg">
+<div class="mt-8 overflow-hidden bg-white shadow-xs dark:bg-gray-800 sm:rounded-lg">
     @if (session('success'))
         <x-notification-success>{{ session('success') }}</x-notification-success>
     @endif

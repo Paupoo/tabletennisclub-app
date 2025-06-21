@@ -68,7 +68,7 @@
 
                     @foreach ($rounds[$roundName] as $match)
                         <div
-                            class="match-box border border-gray-200 mb-{{ $spacing }} p-4 rounded-lg shadow-sm bg-white">
+                            class="match-box border border-gray-200 mb-{{ $spacing }} p-4 rounded-lg shadow-xs bg-white">
                             @include('admin.tournaments.partials.knockout-match', ['match' => $match])
                         </div>
                     @endforeach

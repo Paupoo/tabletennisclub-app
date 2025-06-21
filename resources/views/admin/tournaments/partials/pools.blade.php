@@ -11,7 +11,7 @@
                 <form method="POST" action="{{ route('generatePoolMatches', $tournament) }}">
                     @csrf
                     <button type="submit"
-                        class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                        class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-hidden focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
                         Générer tous les matches de poules
                     </button>
                 </form>
@@ -27,7 +27,7 @@
                 @method('PUT')
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     @foreach ($tournament->pools as $pool)
-                        <div x-data class="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                        <div x-data class="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-xs">
                             <div class="bg-gray-50 px-4 py-3 border-b">
                                 <h3 class="text-lg font-medium text-gray-800">
                                     {{ $pool->name }}
@@ -61,7 +61,7 @@
                                                 </div>
                                             </div>
                                             <select name="player_moves[{{ $user->id }}]"
-                                                class="mt-2 sm:mt-0 block w-full sm:w-auto pl-3 pr-10 py-2 text-base text-gray-500 border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                                                class="mt-2 sm:mt-0 block w-full sm:w-auto pl-3 pr-10 py-2 text-base text-gray-500 border-gray-300 focus:outline-hidden focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
                                                 <option value="">Déplacer
                                                     vers...</option>
                                                 @foreach ($tournament->pools as $targetPool)
@@ -85,7 +85,7 @@
                 </div>
                 <div class="mt-8 flex justify-end">
                     <button type="submit"
-                        class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md shadow-sm transition duration-200">
+                        class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md shadow-xs transition duration-200">
                         Enregistrer les modifications
                     </button>
                 </div>

@@ -75,7 +75,7 @@
     }
 }"
     @notify.window="add($event.detail.message || $event.detail[0].message, $event.detail.type || $event.detail[0].type)"
-    class="fixed bottom-8 right-8 z-50 flex flex-col gap-2 w-144">
+    class="fixed bottom-8 right-8 z-50 flex flex-col gap-2 w-xl">
 
     <!-- Template pour chaque notification -->
     <template x-for="notification in notifications" :key="notification.id">
@@ -108,7 +108,7 @@
 
                 <!-- Bouton de fermeture -->
                 <button @click="remove(notification.id)"
-                    class="text-gray-400 hover:text-gray-600 focus:outline-none ml-4">
+                    class="text-gray-400 hover:text-gray-600 focus:outline-hidden ml-4">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
                         </path>

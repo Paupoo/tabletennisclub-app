@@ -23,7 +23,7 @@
 
                 <!-- Messages d'erreur globaux -->
                 @if (session()->has('message'))
-                    <div class="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
+                    <div class="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded-sm">
                         {{ session('message') }}
                     </div>
                 @endif
@@ -43,7 +43,7 @@
                                 id="player-search" 
                                 wire:model.live.debounce.300ms="searchQuery"
                                 wire:focus="$set('showDropdown', true)"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 @error('selectedPlayerId') border-red-500 @enderror"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-1 focus:ring-blue-500 focus:border-blue-500 @error('selectedPlayerId') border-red-500 @enderror"
                                 placeholder="{{ __('Type the name of a player') }}..." 
                                 autocomplete="off">
 

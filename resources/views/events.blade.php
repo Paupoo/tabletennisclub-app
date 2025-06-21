@@ -2,7 +2,7 @@
     <x-navigation :fixed="false" />
     
     <!-- Header -->
-    <div class="bg-gradient-to-r from-club-blue to-club-blue-light text-white py-16">
+    <div class="bg-linear-to-r from-club-blue to-club-blue-light text-white py-16">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h1 class="text-4xl md:text-5xl font-bold mb-4">Événements à Venir</h1>
             <p class="text-xl opacity-90">Rejoignez-nous pour des tournois, des séances d'entraînement et des événements communautaires</p>

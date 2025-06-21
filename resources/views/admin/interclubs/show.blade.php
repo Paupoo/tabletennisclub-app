@@ -79,14 +79,14 @@
             <div>
                 <div class="mt-6 w-fit h-fit mr-auto p-1">
                     <div
-                        class="flex flex-row space-around w-fit -mt-5 -ml-5 rounded-sm bg-indigo-500 text-white text-lg font-bold text-left py-1 px-3 shadow-md relative">
+                        class="flex flex-row space-around w-fit -mt-5 -ml-5 rounded-xs bg-indigo-500 text-white text-lg font-bold text-left py-1 px-3 shadow-md relative">
                         {{ __('Selected players') }}
                     </div>
 
                     <div class="flex flex-wrap">
                     @foreach ($selectedUsers as $user)
-                    <div class="w-fit ml-5 mt-2 rounded-sm bg-white">
-                        <ul class="mt-5 border border-gray-200 rounded overflow-hidden shadow-md w-80 mx-auto">
+                    <div class="w-fit ml-5 mt-2 rounded-xs bg-white">
+                        <ul class="mt-5 border border-gray-200 rounded-sm overflow-hidden shadow-md w-80 mx-auto">
                             <li
                                 class="flex justify-center align-middle gap-1 px-4 py-2 bg-white hover:bg-sky-100 hover:text-sky-900 border-b last:border-none border-gray-200 transition-all duration-300 ease-in-out">
                                 <img class="rounded-full w-12 h-12 border-4 border-indigo-200 object-cover"
@@ -173,15 +173,15 @@
                 </div>
                 <div class="mt-6 w-fit h-fit mr-auto p-1">
                     <div
-                        class="flex flex-row space-around w-fit -mt-5 -ml-5 rounded-sm bg-indigo-500 text-white text-lg font-bold text-left py-1 px-3 shadow-md relative">
+                        class="flex flex-row space-around w-fit -mt-5 -ml-5 rounded-xs bg-indigo-500 text-white text-lg font-bold text-left py-1 px-3 shadow-md relative">
                         {{ __('Available Players') }}
                     </div>
 
                     <div class="flex flex-wrap">
                     @foreach ($subscribedUsers as $user)
                         
-                    <div class="w-fit ml-5 mt-2 rounded-sm bg-white">
-                        <ul class="mt-5 border border-gray-200 rounded overflow-hidden shadow-md w-80 mx-auto">
+                    <div class="w-fit ml-5 mt-2 rounded-xs bg-white">
+                        <ul class="mt-5 border border-gray-200 rounded-sm overflow-hidden shadow-md w-80 mx-auto">
                             <li
                                 class="flex justify-center align-middle gap-1 px-4 py-2 bg-white hover:bg-sky-100 hover:text-sky-900 border-b last:border-none border-gray-200 transition-all duration-300 ease-in-out">
                                 <img class="rounded-full w-12 h-12 border-4 border-indigo-200 object-cover"
@@ -269,15 +269,15 @@
 
                 <div class="mt-6 w-fit h-fit mr-auto p-1">
                     <div
-                        class="flex flex-row space-around w-fit -mt-5 -ml-5 rounded-sm bg-indigo-500 text-white text-lg font-bold text-left py-1 px-3 shadow-md relative">
+                        class="flex flex-row space-around w-fit -mt-5 -ml-5 rounded-xs bg-indigo-500 text-white text-lg font-bold text-left py-1 px-3 shadow-md relative">
                         {{ __('Other players') }}
                     </div>
 
                     <div class="flex flex-wrap">
                     @foreach ($users as $user)
                         
-                    <div class="w-fit ml-5 mt-2 rounded-sm bg-white">
-                        <ul class="mt-5 border border-gray-200 rounded overflow-hidden shadow-md w-80 mx-auto">
+                    <div class="w-fit ml-5 mt-2 rounded-xs bg-white">
+                        <ul class="mt-5 border border-gray-200 rounded-sm overflow-hidden shadow-md w-80 mx-auto">
                             <li
                                 class="flex justify-center align-middle gap-1 px-4 py-2 bg-white hover:bg-sky-100 hover:text-sky-900 border-b last:border-none border-gray-200 transition-all duration-300 ease-in-out">
                                 <img class="rounded-full w-12 h-12 border-4 border-indigo-200 object-cover"

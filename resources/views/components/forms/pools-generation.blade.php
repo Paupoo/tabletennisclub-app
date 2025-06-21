@@ -19,7 +19,7 @@
             :</label>
         <div class="relative">
             <x-select-input name="number_of_pools" id="number_of_pools"
-                class="block w-full appearance-none px-3 py-2 pr-8 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-500"
+                class="block w-full appearance-none px-3 py-2 pr-8 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-blue-500 focus:border-blue-500 text-gray-500"
                 >
                 @for ($i = 2; $i <= 8; $i++)
                     <option value="{{ $i }}">{{ $i }} pools
@@ -43,7 +43,7 @@
             minimum de matches joués&nbsp;:</label>
         <div class="relative">
             <select name="number_of_pools" id="number_of_pools"
-                class="block w-full appearance-none px-3 py-2 pr-8 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-500">
+                class="block w-full appearance-none px-3 py-2 pr-8 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-blue-500 focus:border-blue-500 text-gray-500">
                 @for ($i = 2; $i <= 8; $i++)
                     <option value="{{ $i }}">{{ $i }} matches
                     </option>

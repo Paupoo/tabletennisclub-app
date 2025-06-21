@@ -9,14 +9,14 @@
                     </h2>
                     <div>
                         @if(isset($pool))
-                        <a href="{{ route('showPoolMatches', $pool) }}" class="inline-flex items-center px-4 py-2 bg-gray-100 border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-200 transition ease-in-out duration-150">
+                        <a href="{{ route('showPoolMatches', $pool) }}" class="inline-flex items-center px-4 py-2 bg-gray-100 border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-xs hover:bg-gray-200 transition ease-in-out duration-150">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                             </svg>
                             Retour aux matches de la poule
                         </a>
                         @else
-                        <a href="{{ route('knockoutBracket', $tournament) }}" class="inline-flex items-center px-4 py-2 bg-gray-100 border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-200 transition ease-in-out duration-150">
+                        <a href="{{ route('knockoutBracket', $tournament) }}" class="inline-flex items-center px-4 py-2 bg-gray-100 border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-xs hover:bg-gray-200 transition ease-in-out duration-150">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                             </svg>
@@ -28,7 +28,7 @@
                 
                 <div class="p-6 text-gray-900">
                     <!-- En-tête du match -->
-                    <div class="bg-amber-100 p-4 rounded-lg shadow-sm mb-6">
+                    <div class="bg-amber-100 p-4 rounded-lg shadow-xs mb-6">
                         <div class="text-sm text-gray-600 mb-2">Match #{{ $match->match_order }}</div>
                         <div class="flex flex-col md:flex-row items-start justify-between">
                             <div class="flex-1 text-center md:text-right mb-4 md:mb-0">
@@ -55,7 +55,7 @@
                                 </div>
                             </div>
                             
-                            <div class="flex-shrink-0 mx-4 my-2">
+                            <div class="shrink-0 mx-4 my-2">
                                 <div class="bg-gray-200 text-gray-700 rounded-full w-12 h-12 flex items-center justify-center font-bold text-lg">VS</div>
                             </div>
                             
@@ -109,7 +109,7 @@
                                     <div class="col-span-1 font-medium">Set {{ $i+1 }}</div>
                                     <div class="col-span-3">
                                         <input type="number" min="0" name="sets[{{ $i }}][player1_score]" value="{{ old('sets.'.$i.'.player1_score', $player1Score) }}" 
-                                              class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                                              class="w-full rounded-md border-gray-300 shadow-xs focus:border-indigo-500 focus:ring-3 focus:ring-indigo-200 focus:ring-opacity-50"
                                               placeholder="{{ $match->player1_handicap_points > 0 ? '+ ' . $match->player1_handicap_points . ' handicap points': '' }}" >
                                         @error('sets.' . $i . '.player1_score')
                                             <div class="text-red-700 text-sm mt-1" role="alert">{{ $message }}</div>
@@ -117,7 +117,7 @@
                                     </div>
                                     <div class="col-span-3">
                                         <input type="number" min="0" name="sets[{{ $i }}][player2_score]" value="{{ old('sets.'.$i.'.player2_score', $player2Score) }}" 
-                                              class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                                              class="w-full rounded-md border-gray-300 shadow-xs focus:border-indigo-500 focus:ring-3 focus:ring-indigo-200 focus:ring-opacity-50"
                                               placeholder="{{ $match->player2_handicap_points > 0 ? '+ ' . $match->player2_handicap_points . ' handicap points' : '' }}" >
                                               @error('sets.' . $i . '.player2_score')
                                               <div class="text-red-700 text-sm mt-1" role="alert">{{ $message }}</div>

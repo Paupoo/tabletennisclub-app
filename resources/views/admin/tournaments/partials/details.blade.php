@@ -4,7 +4,7 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         <!-- Horaires -->
         <div class="flex items-start space-x-4">
-            <div class="flex-shrink-0">
+            <div class="shrink-0">
                 <div class="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
                     <x-ui.icon name="calendar" class="h-6 w-6 text-purple-600"/>
                 </div>
@@ -20,7 +20,7 @@
 
         <!-- Salles -->
         <div class="flex items-start space-x-4">
-            <div class="flex-shrink-0">
+            <div class="shrink-0">
                 <div class="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center">
                     <x-ui.icon name="building" class="h-6 w-6 text-orange-600" />
                 </div>
@@ -37,7 +37,7 @@
 
         <!-- Nombre de poules -->
         <div class="flex items-start space-x-4">
-            <div class="flex-shrink-0">
+            <div class="shrink-0">
                 <div class="w-12 h-12 rounded-full bg-violet-100 flex items-center justify-center">
                     <x-ui.icon name="results" class="h-6 w-6 text-violet-600" />
                 </div>
@@ -50,7 +50,7 @@
 
         <!-- Joueurs inscrits -->
         <div class="flex items-start space-x-4">
-            <div class="flex-shrink-0">
+            <div class="shrink-0">
                 <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
                     <x-ui.icon name="people" class="h-6 w-6 text-red-600" />
                 </div>
@@ -64,7 +64,7 @@
 
         <!-- Nombre de tables -->
         <div class="flex items-start space-x-4">
-            <div class="flex-shrink-0">
+            <div class="shrink-0">
                 <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
                     <x-ui.icon name="table" class="h-6 w-6 text-green-600" />
                 </div>
@@ -78,7 +78,7 @@
 
         <!-- Points handicap -->
         <div class="flex items-start space-x-4">
-            <div class="flex-shrink-0">
+            <div class="shrink-0">
                 <div class="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-600" fill="none"
                         viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round"

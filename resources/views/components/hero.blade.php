@@ -1,4 +1,4 @@
-<section id="home" class="h-auto pt-16 bg-gradient-to-br from-club-blue to-club-blue-light text-white flex items-center">
+<section id="home" class="h-auto pt-16 bg-linear-to-br from-club-blue to-club-blue-light text-white flex items-center">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div class="text-center">
             <h1 class="text-5xl md:text-7xl font-bold mb-6 fade-in-up">

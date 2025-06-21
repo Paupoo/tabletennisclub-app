@@ -5,7 +5,7 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             
             <!-- Classement de la poule -->
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
+            <div class="bg-white overflow-hidden shadow-xs sm:rounded-lg mb-6">
                 <div class="p-6 text-gray-900">
                     
                         <div class="flex justify-between mt-2 my-8">
@@ -58,7 +58,7 @@
             </div>
 
             <!-- Liste des matches -->
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="bg-white overflow-hidden shadow-xs sm:rounded-lg">
                 <div class="p-6 text-gray-900">
                     <h3 class="text-lg font-medium mb-4">{{ __('Liste des matches') }}</h3>
                     <div class="overflow-x-auto">
@@ -155,7 +155,7 @@
                                             @elseif($tables->count() == 0)
                                             <a href="{{ route('tablesOverview', $tournament) }}"><p class="text-gray-600">{{ __('All the tables are currently used') }}</p></a>
                                             @else
-                                            <div class="flex items-center p-2 bg-gray-50 rounded-lg shadow-sm hover:bg-gray-100 transition">
+                                            <div class="flex items-center p-2 bg-gray-50 rounded-lg shadow-xs hover:bg-gray-100 transition">
                                                 <form action="{{ route('startMatch', $match) }}" method="POST" class="flex w-full items-center space-x-2">
                                                     @csrf
                                                   <div class="flex items-center space-x-2">
@@ -165,14 +165,14 @@
                                                     <label for="table_id" class="text-sm font-medium text-gray-700">Table</label>
                                                   </div>
                                                   
-                                                  <select name="table_id" id="table_id" class="pl-3 pr-10 py-1 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md shadow-sm">
+                                                  <select name="table_id" id="table_id" class="pl-3 pr-10 py-1 text-base border-gray-300 focus:outline-hidden focus:ring-indigo-500 focus:border-indigo-500 rounded-md shadow-xs">
                                                       <option selected value="" disabled>{{ __('Select a table') }}</option>
                                                       @foreach($tables as $table)
                                                       <option value="{{ $table->id }}">{{ $table->name }} ==> {{ $table->room->name }}</option>
                                                       @endforeach
                                                     </select>
                                                     
-                                                    <button type="submit" class="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition">
+                                                    <button type="submit" class="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md shadow-xs text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition">
                                                         <span>Démarrer</span>
                                                         <svg xmlns="http://www.w3.org/2000/svg" class="ml-1 h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                                                             <path fill-rule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />

@@ -1,4 +1,4 @@
-<x-app-layout title="Actualités - Ace Table Tennis Club">
+<x-guest-layout title="Actualités - Ace Table Tennis Club">
     <x-navigation :fixed="false" />
     
     <!-- Header -->
@@ -18,7 +18,7 @@
                     <div class="flex items-center space-x-2">
                         <label for="year" class="text-sm font-medium text-gray-700">Année:</label>
                         <select x-model="selectedYear" @change="updateFilters()" 
-                                class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
+                                class="px-3 text-xs py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
                             <option value="">Toutes les années</option>
                             @foreach($years ?? ['2024', '2023', '2022'] as $year)
                                 <option value="{{ $year }}" {{ request('year') == $year ? 'selected' : '' }}>{{ $year }}</option>
@@ -29,7 +29,7 @@
                     <div class="flex items-center space-x-2">
                         <label for="month" class="text-sm font-medium text-gray-700">Mois:</label>
                         <select x-model="selectedMonth" @change="updateFilters()" 
-                                class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
+                                class="text-xs px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
                             <option value="">Tous les mois</option>
                             <option value="01" {{ request('month') == '01' ? 'selected' : '' }}>Janvier</option>
                             <option value="02" {{ request('month') == '02' ? 'selected' : '' }}>Février</option>
@@ -49,7 +49,7 @@
                     <div class="flex items-center space-x-2">
                         <label for="category" class="text-sm font-medium text-gray-700">Catégorie:</label>
                         <select x-model="selectedCategory" @change="updateFilters()" 
-                                class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
+                                class="text-xs px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
                             <option value="">Toutes les catégories</option>
                             <option value="Compétition" {{ request('category') == 'Compétition' ? 'selected' : '' }}>Compétition</option>
                             <option value="Formation" {{ request('category') == 'Formation' ? 'selected' : '' }}>Formation</option>
@@ -67,7 +67,7 @@
                         {{ count($articles ?? []) }} article{{ count($articles ?? []) > 1 ? 's' : '' }} trouvé{{ count($articles ?? []) > 1 ? 's' : '' }}
                     </span>
                     <select x-model="sortOrder" @change="updateFilters()" 
-                            class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent text-sm">
+                            class="text-xs px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent text-sm">
                         <option value="desc" {{ request('sort') == 'desc' ? 'selected' : '' }}>Plus récent</option>
                         <option value="asc" {{ request('sort') == 'asc' ? 'selected' : '' }}>Plus ancien</option>
                     </select>
@@ -151,4 +151,4 @@
             </form>
         </div>
     </div>
-</x-app-layout>
+</x-guest-layout>

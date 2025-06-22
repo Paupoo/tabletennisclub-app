@@ -1,4 +1,4 @@
-<x-app-layout :title="($article['title'] ?? 'Article') . ' - Ace Table Tennis Club'">
+<x-guest-layout :title="($article['title'] ?? 'Article') . ' - Ace Table Tennis Club'">
     <x-navigation :fixed="false" />
     
     <!-- Article Header -->
@@ -161,4 +161,4 @@
             });
         }
     </script>
-</x-app-layout>
+</x-guest-layout>

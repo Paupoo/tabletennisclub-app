@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\ArticlesCategoryEnum;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,15 +16,24 @@ class Article extends Model
 
     protected $casts = [
         'title' => 'string',
+        'slug' => 'string',
         'content' => 'string',
-        'user_id' => 'string',
+        'category' => ArticlesCategoryEnum::class,
+        'image' => 'string',
+        'tags' => 'string',
+        'status' => 'string',
+        'is_public' => 'boolean',
     ];
 
     protected $fillable = [
         'title',
+        'slug',
         'content',
-        'user_id',
+        'category',
+        'image',
+        'tags',
         'status',
+        'is_public',
     ];
 
     public function scopeSearch($query, $value): void

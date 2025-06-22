@@ -109,11 +109,22 @@ class UserController extends Controller
             ->users()
             ->toArray();
 
+        $actions = [
+            [
+                'href' => '#',
+                'icon' => 'plus',
+                'textColor' => 'text-gray-700',
+                'hoverColor' => 'text-gray-900',
+                'text' => __('Create User')
+            ],
+        ];
+
         $this->authorize('index', User::class);
 
         return View('admin.users.index', [
             'user_model' => User::class,
             'breadcrumbs' => $breadcrumbs,
+            'actions' => $actions,
         ]);
     }
 

@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreArticleRequest;
 use App\Models\Article;
+use App\Support\Breadcrumb;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -17,9 +18,15 @@ class ArticleController extends Controller
      */
     public function create(): View
     {
-        return view('admin.articles.create', [
-            'article' => new Article,
-        ]);
+        $breadcrubs = Breadcrumb::make()
+            ->home()
+            ->articles()
+            ->add('Create')
+            ->toArray();
+
+        $article = new Article;
+
+        return view('admin.articles.create', compact('articles', 'breadcrumbs'));
     }
 
     /**
@@ -43,9 +50,14 @@ class ArticleController extends Controller
      */
     public function index(): View
     {
-        return View('admin.articles.index', [
-            'articles' => Article::orderByDesc('created_at')->paginate(20),
-        ]);
+        $articles = Article::orderByDesc('created_at')->paginate(20);
+
+        $breadcrumbs = Breadcrumb::make()
+            ->make()
+            ->articles()
+            ->toArray();
+
+        return View('admin.articles.index', compact('articles', 'breadcrumbs'));
     }
 
     /**

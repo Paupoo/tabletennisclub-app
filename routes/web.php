@@ -39,13 +39,15 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
-Route::get('/resultats', [ResultsController::class, 'index'])->name('results');
-Route::get('/evenements', [EventsController::class, 'index'])->name('events');
+Route::get('/results', [ResultsController::class, 'index'])->name('results');
+Route::get('/events', [EventsController::class, 'index'])->name('events');
 Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
 
 // Routes pour les actualités
-Route::get('/actualites', [NewsController::class, 'index'])->name('news.index');
-Route::get('/actualites/{slug}', [NewsController::class, 'show'])->name('news.show');
+Route::get('/news', [NewsController::class, 'index'])->name('articles.index');
+Route::get('/news/{slug}', [NewsController::class, 'show'])->name('articles.show');
+Route::resource('/admin/articles', ArticleController::class)->middleware(['auth', 'verified']);
+
 
 /**
  * Dashboard with sample of most data
@@ -232,14 +234,9 @@ Route::middleware(['auth', 'verified'])
             ->name('resetKnockoutMatch');
     });
 
-// Articles
-Route::resource('/admin/articles', ArticleController::class)->middleware(['auth', 'verified']);
-
 Route::get('/test', function () {
     return view('test');
 });
-Route::get('/results', function () {
-    return view('public.results');
-});
+
 
 require __DIR__ . '/auth.php';

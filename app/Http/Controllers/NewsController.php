@@ -178,7 +178,7 @@ class NewsController extends Controller
             $pagination['page_urls'][$pageNum] = request()->fullUrlWithQuery(['page' => $pageNum]);
         }
 
-        return view('news.index', compact('articles', 'years', 'pagination'));
+        return view('articles.index', compact('articles', 'years', 'pagination'));
     }
 
     public function show($slug)
@@ -226,7 +226,7 @@ class NewsController extends Controller
             ->take(3)
             ->values();
 
-        return view('news.show', compact('article', 'relatedArticles'));
+        return view('articles.show', compact('article', 'relatedArticles'));
     }
 
     private function getFullArticleContent($slug)

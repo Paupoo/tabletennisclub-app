@@ -17,6 +17,10 @@ class Breadcrumb
         return $this;
     }
     
+    public function articles($url = null)
+    {
+        return $this->add('Articles', $url ?: route('articles.index'), 'home');
+    }
     public function home($url = null)
     {
         return $this->add('Admin', $url ?: route('dashboard'), 'home');

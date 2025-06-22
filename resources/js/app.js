@@ -1,7 +1,6 @@
 import "./bootstrap"
 import "./news-filter"
 
-window.Alpine = Alpine
 // Configuration Alpine.js pour les animations
 Alpine.data("scrollAnimations", () => ({
   init() {
@@ -32,7 +31,7 @@ Alpine.data("priceCalculator", () => ({
 
         if (this.trainingSessions > 0) {
             if (this.trainingSessions == 1) {
-              if (this.familyMembers > 1) {
+              if (this.familyMembers > 1 || this.trainingSessions > 1 ) {
                 training += 80;
               } else {
                 training += 90;
@@ -90,7 +89,7 @@ Alpine.data("contactForm", () => ({
 // Configuration pour les filtres d'événements
 Alpine.data("eventFilters", () => ({
   selectedCategory: "all",
-
+  
   filterEvents(category) {
     this.selectedCategory = category
   },
@@ -99,7 +98,7 @@ Alpine.data("eventFilters", () => ({
 // Configuration pour la navigation mobile
 Alpine.data("navigation", () => ({
   mobileMenuOpen: false,
-
+  
   toggleMobileMenu() {
     this.mobileMenuOpen = !this.mobileMenuOpen
   },

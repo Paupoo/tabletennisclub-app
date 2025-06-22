@@ -14,7 +14,7 @@
         </div>
         
         <h3 class="text-xl font-bold text-gray-900 mb-3 group-hover:text-club-blue transition-colors">
-            <a href="{{ route('articles.show', $article['slug']) ?? '#' }}">
+            <a href="{{ route('public.articles.show', $article['slug']) ?? '#' }}">
                 {{ $article['title'] }}
             </a>
         </h3>
@@ -23,7 +23,7 @@
             {{ $article['excerpt'] }}
         </p>
         
-        <a href="{{ route('articles.show', $article['slug']) ?? '#' }}" class="text-club-blue hover:text-club-blue-light font-semibold text-sm inline-flex items-center">
+        <a href="{{ route('public.articles.show', $article['slug']) ?? '#' }}" class="text-club-blue hover:text-club-blue-light font-semibold text-sm inline-flex items-center">
             Lire la suite
             <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>

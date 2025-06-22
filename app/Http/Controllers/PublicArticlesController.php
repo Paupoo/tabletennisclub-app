@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 
-class NewsController extends Controller
+class PublicArticlesController extends Controller
 {
-    public function index(Request $request)
+        public function index(Request $request)
     {
         // Récupérer les paramètres de filtrage
         $year = $request->get('year');

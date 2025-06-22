@@ -10,6 +10,7 @@ use App\Http\Controllers\InterclubController;
 use App\Http\Controllers\KnockoutPhaseController;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PublicArticlesController;
 use App\Http\Controllers\PublicSiteController;
 use App\Http\Controllers\ResultsController;
 use App\Http\Controllers\RoleController;
@@ -46,7 +47,6 @@ Route::post('/contact', [ContactController::class, 'store'])->name('contact.stor
 // Routes pour les actualités
 Route::get('/news', [NewsController::class, 'index'])->name('articles.index');
 Route::get('/news/{slug}', [NewsController::class, 'show'])->name('articles.show');
-Route::resource('/admin/articles', ArticleController::class)->middleware(['auth', 'verified']);
 
 
 /**
@@ -78,6 +78,21 @@ Route::resource('admin/roles', RoleController::class)->middleware(['auth', 'veri
  * Rooms management
  */
 Route::resource('/admin/rooms', RoomController::class)->middleware(['auth', 'verified']);
+
+/**
+ * Articles management
+ */
+
+Route::get('/articles', [PublicArticlesController::class, 'index'])->name('public.articles.index');
+Route::get('/articles/{slug}', [PublicArticlesController::class, 'show'])->name('public.articles.show');
+
+ /**
+ * This route is used to manage articles in the admin panel.
+ * It allows authenticated and verified users to perform CRUD operations on articles.
+ * The articles are stored in the database and can be created, read, updated, and deleted through this interface.
+ * This route is protected by authentication and verification middleware. 
+ */
+Route::resource('/admin/articles', ArticleController::class)->middleware(['auth', 'verified']);
 
 /**
  * Profile management

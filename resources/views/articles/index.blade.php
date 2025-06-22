@@ -1,4 +1,4 @@
-<x-guest-layout title="Actualités - Ace Table Tennis Club">
+<x-guest-layout>
     <x-navigation :fixed="false" />
     
     <!-- Header -->

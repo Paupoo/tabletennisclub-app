@@ -56,7 +56,7 @@
                 </div>
                 
                 <div class="text-center">
-                    <button type="submit" class="bg-club-blue text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-club-blue-light transition-colors transform hover:scale-105" :class="{ 'bg-green-500 hover:bg-green-500': submitted }">
+                    <button type="submit" class="bg-club-blue text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-club-blue-light transition-colors transform hover:scale-105" :class="{ 'bg-club-yellow hover:bg-club-yellow': submitted }">
                         <span x-show="!submitted">Envoyer le Message</span>
                         <span x-show="submitted">Message Envoyé ! ✓</span>
                     </button>

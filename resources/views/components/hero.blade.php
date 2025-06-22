@@ -1,4 +1,4 @@
-<section id="home" class="h-auto pt-16 bg-linear-to-br from-club-blue to-club-blue-light text-white flex items-center">
+<section id="home" class="relative h-auto pt-16 bg-linear-to-br from-club-blue to-club-blue-light text-white flex items-center">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div class="text-center">
             <h1 class="text-5xl md:text-7xl font-bold mb-6 fade-in-up">
@@ -17,11 +17,12 @@
             </div>
         </div>
     </div>
-    <div class="text-center pb-8">
+    {{-- <div class="absolute bottom-2 left-1/2 transform -translate-x-1/2">
         <div class="animate-bounce">
-            <svg class="w-6 h-6 mx-auto text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="h-10 text-club-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
             </svg>
         </div>
-    </div>
+    </div> --}}
+
 </section>

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "5580b1778aff79999d282b6876edbae5",
+    "content-hash": "daa7467a3aa3bc17b3120ac924cc1842",
     "packages": [
         {
             "name": "blade-ui-kit/blade-icons",
@@ -2630,59 +2630,6 @@
                 }
             ],
             "time": "2025-04-12T22:26:52+00:00"
-        },
-        {
-            "name": "mkocansey/bladewind",
-            "version": "v3.0.8",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/mkocansey/bladewind.git",
-                "reference": "707ebeacc99a6c211e8c1d7c067bd6fa0e1823b1"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/mkocansey/bladewind/zipball/707ebeacc99a6c211e8c1d7c067bd6fa0e1823b1",
-                "reference": "707ebeacc99a6c211e8c1d7c067bd6fa0e1823b1",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=8.0"
-            },
-            "type": "library",
-            "extra": {
-                "laravel": {
-                    "providers": [
-                        "Mkocansey\\Bladewind\\BladewindServiceProvider"
-                    ]
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "Mkocansey\\Bladewind\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Michael K. Ocansey",
-                    "email": "mike@bladewindui.com"
-                }
-            ],
-            "description": "Laravel UI Components using TailwindCSS, Blade Templates and vanilla Javascript",
-            "keywords": [
-                "Ui Components",
-                "blade components",
-                "laravel",
-                "tailwindcss"
-            ],
-            "support": {
-                "issues": "https://github.com/mkocansey/bladewind/issues",
-                "source": "https://github.com/mkocansey/bladewind/tree/v3.0.8"
-            },
-            "time": "2025-06-15T08:52:14+00:00"
         },
         {
             "name": "monolog/monolog",

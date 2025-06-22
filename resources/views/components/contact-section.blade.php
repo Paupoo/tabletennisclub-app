@@ -146,7 +146,7 @@
                         <button type="submit" 
                                 :disabled="loading"
                                 class="w-full bg-club-blue text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-club-blue-light transition-colors transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none" 
-                                :class="{ 'bg-green-500 hover:bg-green-500': submitted }">
+                                :class="{ 'bg-club-yellow hover:bg-club-yellow': submitted }">
                             <span x-show="!loading && !submitted" class="flex items-center justify-center">
                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>

@@ -138,8 +138,6 @@ class HomeController extends Controller
             ],
         ];
         
-        $schedules = [];
-
         return view('home', compact('sponsors', 'articles', 'schedules'));
     }
 }

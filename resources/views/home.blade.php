@@ -16,7 +16,7 @@
     </section>
 
     <section id="schedules">
-        <x-schedule-section />
+        <x-schedule-section :schedules="$schedules ?? []"/>
     </section>
     
     <section id="contact">

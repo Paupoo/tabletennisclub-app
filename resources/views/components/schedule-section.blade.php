@@ -6,7 +6,22 @@
                 Rejoignez-nous pour nos séances d'entraînement régulières et nos tournois, bienvenues à tous les supporters les vendredis soir.
             </p>
         </div>
-        
+
+        <!-- Affiché uniquement sur les smartphones -->
+        <div class="block md:hidden">
+            <x-schedule-mini-overview :schedules="$schedules ?? []" :compact="true" />
+        </div>
+
+        <!-- Affiché uniquement sur les tablettes (iPad par ex.) -->
+        <div class="hidden md:block lg:hidden">
+            <x-schedule-week-overview :schedules="$schedules ?? []" />
+        </div>
+
+        <!-- Affiché uniquement sur les ordinateurs -->
+        <div class="hidden lg:block">
+            <x-schedule-calendar-view :schedules="$schedules ?? []" />
+        </div>
+
         <div class="max-w-4xl mx-auto">
             <div class="grid gap-4">
                 @forelse($schedules ?? [] as $index => $schedule)
@@ -83,109 +98,7 @@
                         @endif
                     </div>
                 @empty
-                    <!-- Horaires par défaut si aucune donnée fournie -->
-                    <x-schedule-card :schedule="[
-                        'day' => 'Lundi',
-                        'time' => '20h00 - 22h00',
-                        'activity' => 'Entraînement Libre',
-                        'location' => 'Demeester 0',
-                        'level' => 'Tous Niveaux',
-                        'capacity' => 8,
-                        'description' => 'Séance libre pour tous les membres du club'
-                    ]" :index="0" />
-
-                    <x-schedule-card :schedule="[
-                        'day' => 'Lundi',
-                        'time' => '20h30 - 22h00',
-                        'activity' => 'Entraînement Libre',
-                        'location' => 'Demeester -1',
-                        'level' => 'Tous Niveaux',
-                        'capacity' => 10,
-                        'description' => 'Séance libre pour tous les membres du club'
-                    ]" :index="1" />
-
-                    <x-schedule-card :schedule="[
-                        'day' => 'Lundi',
-                        'time' => '18h00 - 20h00',
-                        'activity' => 'Entraînement encadré',
-                        'location' => 'Blocry G3',
-                        'level' => 'Débutant',
-                        'capacity' => 10,
-                        'description' => 'Séance d\'entraînement encadrée pour les jeunes'
-                    ]" :index="2" />
-
-                    <x-schedule-card :schedule="[
-                        'day' => 'Lundi',
-                        'time' => '20h00 - 22h00',
-                        'activity' => 'Entraînement encadré',
-                        'location' => 'Blocry G3',
-                        'level' => 'Tous Niveaux',
-                        'capacity' => 10,
-                        'description' => 'Séance d\'entraînement encadrée pour les adultes'
-                    ]" :index="3" />
-                    
-                    <x-schedule-card :schedule="[
-                        'day' => 'Mardi',
-                        'time' => '20h30 - 22h00',
-                        'activity' => 'Entraînement dirigé',
-                        'location' => 'Demeester -1',
-                        'level' => 'Intermédiaire',
-                        'coach' => 'Aloïse Lejeune',
-                        'capacity' => 10,
-                        'description' => 'Perfectionnement pour les joueurs classés'
-                    ]" :index="4" />
-                    
-                    <x-schedule-card :schedule="[
-                        'day' => 'Mercredi',
-                        'time' => '13h00 - 13h30',
-                        'activity' => 'Entraînement dirigé',
-                        'location' => 'Demeester -1',
-                        'level' => 'Débutant',
-                        'coach' => 'Éric Filée',
-                        'capacity' => 8,
-                        'description' => 'Initiation pour les jeunes'
-                    ]" :index="5" />
-                    
-                    <x-schedule-card :schedule="[
-                        'day' => 'Mercredi',
-                        'time' => '13h30 - 15h00',
-                        'activity' => 'Entraînement dirigé',
-                        'location' => 'Demeester -1',
-                        'level' => 'Intermédiaire',
-                        'coach' => 'Éric Filée',
-                        'capacity' => 8,
-                        'description' => 'Perfectionnement pour les jeunes'
-                    ]" :index="6" />
-                    
-                    <x-schedule-card :schedule="[
-                        'day' => 'Vendredi',
-                        'time' => '19h00 - 23h30',
-                        'activity' => 'Interclubs',
-                        'location' => 'Demeester (0 et -1)',
-                        'description' => 'Matches de compétition à domicile. Venez nous supporter ! Chouette ambiance et beau jeu au programme'
-                    ]" :index="7" />
-                    
-                    <x-schedule-card :schedule="[
-                        'day' => 'Samedi',
-                        'time' => '09h00 - 10h30',
-                        'activity' => 'Entraînement dirigé',
-                        'location' => 'Demeester -1',
-                        'level' => 'Débutant',
-                        'coach' => 'Jean-Pierre Fikany',
-                        'capacity' => 8,
-                        'description' => 'Initiation pour les jeunes'
-                    ]" :index="8" />
-                    
-                    <x-schedule-card :schedule="[
-                        'day' => 'Samedi',
-                        'time' => '10h30 - 12h00',
-                        'activity' => 'Entraînement dirigé',
-                        'location' => 'Demeester -1',
-                        'level' => 'Débutant',
-                        'coach' => 'Jean-Pierre Fikany',
-                        'capacity' => 8,
-                        'description' => 'Perfectionnement pour les jeunes'
-                    ]" :index="9" />
+                    <x-bladewind.empty-state />
                 @endforelse
             </div>
         </div>

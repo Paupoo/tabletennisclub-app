@@ -3,10 +3,15 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\ArticleController;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\EventsController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InterclubController;
 use App\Http\Controllers\KnockoutPhaseController;
+use App\Http\Controllers\NewsController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicSiteController;
+use App\Http\Controllers\ResultsController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\TableController;
@@ -33,10 +38,14 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', [
-    PublicSiteController::class,
-    'homePage',
-])->name('welcome');
+Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/resultats', [ResultsController::class, 'index'])->name('results');
+Route::get('/evenements', [EventsController::class, 'index'])->name('events');
+Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
+
+// Routes pour les actualités
+Route::get('/actualites', [NewsController::class, 'index'])->name('news.index');
+Route::get('/actualites/{slug}', [NewsController::class, 'show'])->name('news.show');
 
 /**
  * Dashboard with sample of most data

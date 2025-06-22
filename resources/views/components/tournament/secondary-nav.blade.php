@@ -104,7 +104,7 @@
             <x-responsive-nav-link :href="route('tournamentShowTables', $tournament)" :active="request()->routeIs('tournamentShowTables')" wire:navigate>
                 {{ __('Tables') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('welcome')" :active="request()->routeIs('welcome')" wire:navigate>
+            <x-responsive-nav-link :href="route('home')" :active="request()->routeIs('home')" wire:navigate>
                 {{ __('Standings (TO DO)') }}
             </x-responsive-nav-link>
         </div>

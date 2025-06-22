@@ -1,5 +1,5 @@
 <!-- Menu d'actions -->
-<div class="ml-auto mt-4 md:mt-0 flex flex-wrap gap-3" x-data="{ showMenu: false }">
+<div class="ml-auto mt-4 md:mt-0 flex flex-wrap gap-3" x-data="{ showMenu: false }" x-init="console.log('Alpine initialized', $data)">
     <!-- Bouton principal avec dropdown -->
     <div class="relative">
         <x-primary-button @click="showMenu = !showMenu"

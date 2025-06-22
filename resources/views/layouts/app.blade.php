@@ -13,8 +13,8 @@
     <title>{{ config('app.name', 'Laravel') }}</title>
 
     <!-- Scripts -->
-    @livewireStyles()
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @livewireStyles
 </head>
 
 <body class="font-sans antialiased">
@@ -29,7 +29,7 @@
         </main>
     </div>
     <x-growler />
-    @livewireScriptConfig
+    @livewireScripts
 </body>
 
 </html>

@@ -1,4 +1,4 @@
-<x-layouts.app title="Résultats - Ace Table Tennis Club">
+<x-guest-layout title="Résultats - Ace Table Tennis Club">
     <x-navigation :fixed="false" />
     
     <!-- Header -->
@@ -43,4 +43,4 @@
             ]" />
         @endforelse
     </div>
-</x-layouts.app>
+</x-guest-layout>

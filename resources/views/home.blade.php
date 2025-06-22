@@ -1,4 +1,4 @@
-<x-app-layout title="Accueil - CTT Ottignies">
+<x-guest-layout title="Accueil - CTT Ottignies">
     <section id="home">
         <x-hero />
     </section>

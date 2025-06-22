@@ -5,7 +5,7 @@
             <div class="flex">
                 <!-- Logo -->
                 <div class="flex items-center shrink-0">
-                    <a href="{{ route('welcome') }}">
+                    <a href="{{ route('home') }}">
                         <x-logo class="block w-auto text-gray-800 fill-current h-9 dark:text-gray-200" />
                     </a>
                 </div>
@@ -120,7 +120,7 @@
             <x-responsive-nav-link :href="route('tables.index')" :active="request()->routeIs('tables.index')" wire:navigate>
                 {{ __('Tables') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('welcome')" :active="request()->routeIs('welcome')" wire:navigate>
+            <x-responsive-nav-link :href="route('home')" :active="request()->routeIs('home')" wire:navigate>
                 {{ __('Trainings') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('interclubs.index')" :active="request()->routeIs('interclubs.index')" wire:navigate>

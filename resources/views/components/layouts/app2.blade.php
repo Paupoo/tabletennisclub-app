@@ -9,6 +9,7 @@
     <title>{{ $title ?? 'CTT Ottignies-Blocry' }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
+
 </head>
 
 <body class="bg-white text-gray-900 relative" x-data="{ mobileMenuOpen: false }">

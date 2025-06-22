@@ -1,4 +1,4 @@
-<x-guest-layout title="Résultats - Ace Table Tennis Club">
+<x-guest-layout title="Résultats - {{ config('app.name') }}">
     <x-navigation :fixed="false" />
     
     <!-- Header -->

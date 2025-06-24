@@ -2,11 +2,22 @@
 
 namespace App\Enums;
 
-enum ArticlesStatusEnum: string
+use Filament\Support\Contracts\HasLabel;
+
+enum ArticlesStatusEnum: string implements HasLabel
 {
-    case DRAFT = __('Draft');
-    case PUBLISHED = __('Published');
-    case ARCHIVED = __('Archived');
+    case DRAFT = 'Draft';
+    case PUBLISHED = 'Published';
+    case ARCHIVED = 'Archived';
+
+    public function getLabel(): string
+    {
+        return match ($this) {
+            self::DRAFT => __('Draft'),
+            self::PUBLISHED => __('Published'),
+            self::ARCHIVED => __('Archived'),
+        };
+    }
 
     /**
      * Return the values of the enum into an array

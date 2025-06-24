@@ -7,6 +7,9 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
 use Carbon\Carbon;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Models\Contracts\HasName;
+use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -91,7 +94,7 @@ use Laravel\Sanctum\HasApiTokens;
  *
  * @mixin \Eloquent
  */
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser, HasName
 {
     use HasApiTokens, HasFactory, Notifiable;
 
@@ -155,6 +158,17 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
+
+    public function canAccessPanel(Panel $panel): bool
+    {
+        // Autoriser par exemple les utilisateurs avec le rôle "admin"
+        return true;
+    }
+
+    public function getFilamentName(): string
+    {
+        return "{$this->first_name} {$this->last_name}";
+    }
 
     public function articles(): HasMany
     {
@@ -225,7 +239,7 @@ class User extends Authenticatable
      * @param [type] $value
      * @return void
      */
-    public function setFirstNameAttribute($value)
+    public function setFirstNameAttribute($value):string
     {
         $cleaned_name = mb_convert_case($value, MB_CASE_TITLE);
 
@@ -238,7 +252,7 @@ class User extends Authenticatable
      * @param [type] $value
      * @return void
      */
-    public function setLastNameAttribute($value)
+    public function setLastNameAttribute($value): string
     {
         $cleaned_name = mb_convert_case($value, MB_CASE_TITLE);
 

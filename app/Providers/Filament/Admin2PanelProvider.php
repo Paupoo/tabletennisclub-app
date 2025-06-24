@@ -2,14 +2,19 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Pages\Settings;
+use Filament\Actions\Action;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\MenuItem;
+use Filament\Navigation\NavigationGroup;
 use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\Support\Icons\Heroicon;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -54,6 +59,33 @@ class Admin2PanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+            ])
+            ->unsavedChangesAlerts()
+            ->databaseTransactions()
+            ->colors([
+                'primary' => '#1e40af',
+                'secondary' => '#fbbf24',
+                'success' => Color::Green,
+                'danger' => Color::Red,
+                'warning' => Color::Yellow,
+                'info' => Color::Blue,
+            ])
+            ->font('manrope')
+            ->userMenuItems([
+                Action::make('settings')
+                    ->url(fn (): string => Settings::getUrl())
+                    ->icon(Heroicon::OutlinedCog6Tooth),
+                'profile' => MenuItem::make()
+                    ->label('Edit profile')
+                    ->icon(Heroicon::UserCircle),
+            ])
+            ->navigationGroups([
+                NavigationGroup::make('Interclubs')
+                    ->label('Interclubs'),
+                NavigationGroup::make('Events')
+                    ->label('Events'),
+                NavigationGroup::make('Club settings')
+                    ->label('Club settings')
             ]);
     }
 }

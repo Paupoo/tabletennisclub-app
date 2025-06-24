@@ -2,14 +2,28 @@
 
 namespace App\Enums;
 
-enum ArticlesCategoryEnum: string
+use Filament\Support\Contracts\HasLabel;
+
+enum ArticlesCategoryEnum: string implements HasLabel
 {
-    case COMPETITION = __('Compétition');
-    case PARTNERSHIP = __('Partnership');
-    case PORTRAIT = __('Portrait');
-    case EVENEMENT = __('Events');
-    case TRAINING = __('Training');
-    case NEWS = __('News');
+    case COMPETITION = 'Compétition';
+    case PARTNERSHIP = 'Partnership';
+    case PORTRAIT = 'Portrait';
+    case EVENEMENT = 'Events';
+    case TRAINING = 'Training';
+    case NEWS = 'News';
+
+    public function getLabel(): string
+    {
+        return match ($this) {
+            self::COMPETITION => __('Compétition'),
+            self::PARTNERSHIP => __('Partnership'),
+            self::PORTRAIT => __('Portrait'),
+            self::EVENEMENT => __('Events'),
+            self::TRAINING => __('Training'),
+            self::NEWS => __('News'),
+        };
+    }
 
     /**
      * Return the values of the enum into an array

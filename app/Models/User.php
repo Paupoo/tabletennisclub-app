@@ -198,6 +198,19 @@ class User extends Authenticatable
             ->orWhere('first_name', 'like', '%' . $value . '%');
     }
 
+    public function scopeSearchTerms($query, string $search): void
+    {
+        $terms = collect(explode(' ', strtolower($search)))
+            ->filter();
+
+        foreach ($terms as $term) {
+            $query->where(function ($subQuery) use ($term) {
+                $subQuery->whereRaw('LOWER(first_name) LIKE ?', ["%{$term}%"])
+                        ->orWhereRaw('LOWER(last_name) LIKE ?', ["%{$term}%"]);
+            });
+        }
+    }
+
     public function scopeUnregisteredUsers($query, $tournament)
     {
         return $query->whereDoesntHave('tournaments', function ($query) use ($tournament): void {

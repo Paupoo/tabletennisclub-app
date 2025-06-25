@@ -23,6 +23,7 @@ class Article extends Model
         'tags' => 'string',
         'status' => 'string',
         'is_public' => 'boolean',
+        'user_id' => 'integer',
     ];
 
     protected $fillable = [
@@ -34,6 +35,7 @@ class Article extends Model
         'tags',
         'status',
         'is_public',
+        'user_id',
     ];
 
     public function scopeSearch($query, $value): void

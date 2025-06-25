@@ -106,6 +106,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         @if(count($articles ?? []) > 0)
             <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {{-- {{ dd($articles) }} --}}
                 @foreach($articles as $index => $article)
                     <x-news-card-full :article="$article" :index="$index" />
                 @endforeach

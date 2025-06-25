@@ -25,9 +25,15 @@ class StoreArticleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => 'string|required',
-            'user_id' => 'exists:users,id|required',
-            'content' => 'string|required',
+            'title' => 'required|string',
+            'slug' => 'required|string',
+            'content' => 'required|string',
+            'category' => 'required|string',
+            'image' => 'required|string', // pas 'image'
+            'user_id' => 'required|exists:users,id',
+            'tags' => 'nullable|string',
+            'status' => 'required|in:Draft,Published,Archived',
+            'is_public' => 'required|boolean',
         ];
     }
 

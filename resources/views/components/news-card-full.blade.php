@@ -3,7 +3,7 @@
 <article class="bg-white rounded-lg border border-gray-200 overflow-hidden hover:border-club-blue hover:shadow-lg transition-all duration-300 animate-on-scroll group" 
          style="transition-delay: {{ $index * 0.1 }}s;">
     <div class="aspect-video bg-gray-100 overflow-hidden">
-        <img src="{{ $article['image'] }}" alt="{{ $article['title'] }}" 
+        <img src="{{ url('storage/app/articles/images/01JYHXG6X6ER7SP635064JW54B.png') }}" alt="{{ $article['title'] }}" 
              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
     </div>
     

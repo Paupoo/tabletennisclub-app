@@ -43,7 +43,7 @@
         <div class="flex flex-col items-start sm:items-end space-y-2">
             <span class="text-club-blue font-semibold text-lg">{{ $schedule['activity'] }}</span>
             @if(isset($schedule['level']))
-                <span class="@if($schedule['level'] === 'Débutant') bg-green-100 text-green-800 @elseif($schedule['level'] === 'Intermédiaire') bg-yellow-100 text-yellow-800 @elseif($schedule['level'] === 'Jeunes') bg-purple-100 text-purple-800 @elseif($schedule['level'] === 'Compétition') bg-red-100 text-red-800 @else bg-blue-100 text-blue-800 @endif text-xs font-medium px-3 py-1 rounded-full">
+                <span class="@if($schedule['level'] === 'Débutant') bg-green-100 text-green-800 @elseif($schedule['level'] === 'Débutant+') bg-yellow-100 text-yellow-800 @elseif($schedule['level'] === 'Débutant+ / Confirmé') bg-pink-100 text-pink-800 @elseif($schedule['level'] === 'Compétition') bg-red-100 text-red-800 @else bg-blue-100 text-blue-800 @endif text-xs font-medium px-3 py-1 rounded-full">
                     {{ $schedule['level'] }}
                 </span>
             @endif

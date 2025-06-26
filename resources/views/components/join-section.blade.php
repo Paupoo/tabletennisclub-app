@@ -131,9 +131,10 @@
 
             <div class="grid md:grid-cols-2 gap-8">
                 <div class="space-y-6">
+                    <!-- Nombre de membres -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Nombre de membres de la famille</label>
-                        <select x-model="familyMembers"
+                        <select x-model="familyMembers" @change="validateCompetitors()"
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
                             <option value="1">1 personne</option>
                             <option value="2">2 personnes</option>
@@ -143,9 +144,27 @@
                         </select>
                     </div>
 
+                    <!-- Nombre de compétiteurs -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Nombre de séances d'entraînement
-                            souhaitées</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Nombre de membres souhaitant participer aux compétitions
+                        </label>
+                        <select x-model="competitors"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
+                            <template x-for="i in parseInt(familyMembers) + 1" :key="i-1">
+                                <option :value="i-1" x-text="i-1 === 0 ? 'Aucun compétiteur' : (i-1) + ' compétiteur' + (i-1 > 1 ? 's' : '')"></option>
+                            </template>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1">
+                            Licence récréative : 60€ | Licence compétitive : 125€
+                        </p>
+                    </div>
+
+                    <!-- Séances d'entraînement -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Nombre de séances d'entraînement souhaitées
+                        </label>
                         <select x-model="trainingSessions"
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
                             <option value="0">Aucune séance d'entraînement</option>

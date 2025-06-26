@@ -18,7 +18,7 @@
                         </div>
                         <div class="ml-4">
                             <h3 class="text-lg font-semibold text-gray-900">Adresse</h3>
-                            <p class="text-gray-600">{{ config('club.address', '123 Avenue du Centre Sportif') }}</p>
+                            <p class="text-gray-600">123 Avenue du Centre Sportif</p>
                             <p class="text-gray-600">75001 Paris, France</p>
                         </div>
                     </div>
@@ -31,7 +31,7 @@
                         </div>
                         <div class="ml-4">
                             <h3 class="text-lg font-semibold text-gray-900">Téléphone</h3>
-                            <p class="text-gray-600">{{ config('club.phone', '(555) 123-4567') }}</p>
+                            <p class="text-gray-600">(555) 123-4567</p>
                             <p class="text-sm text-gray-500">Lun-Ven: 9h-18h</p>
                         </div>
                     </div>
@@ -44,7 +44,7 @@
                         </div>
                         <div class="ml-4">
                             <h3 class="text-lg font-semibold text-gray-900">Email</h3>
-                            <p class="text-gray-600">{{ config('club.email', 'info@acettc.com') }}</p>
+                            <p class="text-gray-600">info@acettc.com</p>
                             <p class="text-sm text-gray-500">Réponse sous 24h</p>
                         </div>
                     </div>
@@ -71,26 +71,7 @@
                 <div class="bg-white rounded-2xl shadow-lg p-8 border border-gray-200">
                     <h3 class="text-2xl font-bold text-gray-900 mb-6">Envoyez-nous un Message</h3>
                     
-                    <form action="{{ route('contact.store') }}" method="POST" x-data="{ submitted: false, loading: false }" @submit.prevent="
-                        loading = true;
-                        fetch('{{ route('contact.store') }}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                            },
-                            body: JSON.stringify(Object.fromEntries(new FormData($event.target)))
-                        }).then(response => response.json()).then(data => {
-                            loading = false;
-                            submitted = true;
-                            setTimeout(() => submitted = false, 5000);
-                            $event.target.reset();
-                        }).catch(error => {
-                            loading = false;
-                            console.error('Error:', error);
-                        });
-                    ">
-                        @csrf
+                    <form x-data="contactForm" @submit.prevent="submitForm">
                         <div class="grid md:grid-cols-2 gap-6 mb-6">
                             <div>
                                 <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Nom Complet *</label>
@@ -115,7 +96,8 @@
                         
                         <div class="mb-6">
                             <label for="interest" class="block text-sm font-medium text-gray-700 mb-2">Je suis intéressé par *</label>
-                            <select id="interest" name="interest" required 
+                            <select id="interest" name="interest" required @change="onRequestTypeChange"
+                                    x-model="selectedInterest"
                                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent transition-colors">
                                 <option value="">Sélectionnez une option</option>
                                 <option value="membership">Devenir membre</option>
@@ -125,6 +107,92 @@
                                 <option value="partnership">Partenariat/Sponsoring</option>
                                 <option value="other">Autre</option>
                             </select>
+                        </div>
+
+                        <!-- Champs d'adhésion (affichés conditionnellement) -->
+                        <div x-show="showMembershipFields" x-transition class="mb-6 bg-blue-50 p-6 rounded-lg space-y-4 border border-blue-200">
+                            <h4 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                                <svg class="w-5 h-5 mr-2 text-club-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                </svg>
+                                Informations sur votre adhésion
+                            </h4>
+                            
+                            <!-- Nombre de membres -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Nombre de membres de la famille</label>
+                                <select x-model="familyMembers" @change="validateCompetitors()" name="membership_family_members"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
+                                    <option value="1">1 personne</option>
+                                    <option value="2">2 personnes</option>
+                                    <option value="3">3 personnes</option>
+                                    <option value="4">4 personnes</option>
+                                    <option value="5">5 personnes ou plus</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Nombre de compétiteurs -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Nombre de membres souhaitant participer aux compétitions
+                                </label>
+                                <select x-model="competitors" name="membership_competitors"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
+                                    <template x-for="i in parseInt(familyMembers) + 1" :key="i-1">
+                                        <option :value="i-1" x-text="i-1 === 0 ? 'Aucun compétiteur' : (i-1) + ' compétiteur' + (i-1 > 1 ? 's' : '')"></option>
+                                    </template>
+                                </select>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    Licence récréative : 60€ | Licence compétition : 125€
+                                </p>
+                            </div>
+                            
+                            <!-- Séances d'entraînement -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Nombre de séances d'entraînement souhaitées
+                                </label>
+                                <select x-model="trainingSessions" name="membership_training_sessions"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
+                                    <option value="0">Aucune séance d'entraînement</option>
+                                    <option value="1">1 séance par semaine</option>
+                                    <option value="2">2 séances par semaine</option>
+                                    <option value="3">3 séances par semaine</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Aperçu du coût -->
+                            <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                                <h5 class="font-semibold text-gray-900 mb-3 flex items-center">
+                                    Estimation du coût annuel
+                                </h5>
+                                
+                                <!-- Détail des coûts -->
+                                <div class="space-y-2 mb-3 text-sm text-gray-600">
+                                    <div x-show="getRecreationalMembers() > 0" class="flex justify-between">
+                                        <span>Licence récréative (<span x-text="getRecreationalMembers()"></span> membre<span x-show="getRecreationalMembers() > 1">s</span>)</span>
+                                        <span x-text="(getRecreationalMembers() * 60) + '€'"></span>
+                                    </div>
+                                    <div x-show="competitors > 0" class="flex justify-between">
+                                        <span>Licence compétition (<span x-text="competitors"></span> membre<span x-show="competitors > 1">s</span>)</span>
+                                        <span x-text="(competitors * 125) + '€'"></span>
+                                    </div>
+                                    <div x-show="trainingSessions > 0" class="flex justify-between">
+                                        <span>Séances d'entraînement (<span x-text="trainingSessions"></span> séance<span x-show="trainingSessions > 1">s</span>)</span>
+                                        <span x-text="calculateTrainingCost() + '€'"></span>
+                                    </div>
+                                </div>
+                                
+                                <div class="border-t pt-3">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-xl font-bold text-club-blue">Total annuel</span>
+                                        <span class="text-2xl font-bold text-club-blue" x-text="calculateTotal() + '€'"></span>
+                                    </div>
+                                    {{-- <p class="text-sm text-gray-600 mt-1">
+                                        Soit environ <span class="font-semibold" x-text="Math.round(calculateTotal() / 12) + '€'"></span> par mois
+                                    </p> --}}
+                                </div>
+                            </div>
                         </div>
                         
                         <div class="mb-6">
@@ -142,11 +210,14 @@
                                 </span>
                             </label>
                         </div>
+
+                        <!-- Champs cachés pour les données calculées -->
+                        <input type="hidden" name="membership_total_cost" :value="showMembershipFields ? calculateTotal() : 0">
                         
                         <button type="submit" 
                                 :disabled="loading"
-                                class="w-full bg-club-blue text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-club-blue-light transition-colors transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none" 
-                                :class="{ 'bg-club-yellow hover:bg-club-yellow': submitted }">
+                                class="w-full bg-club-blue text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none" 
+                                :class="{ 'bg-green-600 hover:bg-green-600': submitted }">
                             <span x-show="!loading && !submitted" class="flex items-center justify-center">
                                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
@@ -176,4 +247,12 @@
             </div>
         </div>
     </div>
+
+    <style>
+        .club-blue { color: #1e40af; }
+        .bg-club-blue { background-color: #1e40af; }
+        .bg-club-yellow { background-color: #fbbf24; }
+        .text-club-blue { color: #1e40af; }
+        .focus\:ring-club-blue:focus { --tw-ring-color: #1e40af; }
+    </style>
 </section>

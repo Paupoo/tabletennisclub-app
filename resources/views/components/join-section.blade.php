@@ -202,23 +202,23 @@
                             <span>Total annuel</span>
                             <span x-text="calculateTotal() + '€'"></span>
                         </div>
-                        <p class="text-sm text-gray-600 mt-1">
+                        {{-- <p class="text-sm text-gray-600 mt-1">
                             Soit <span class="font-semibold" x-text="Math.round(calculateTotal() / 12) + '€'"></span> par mois
-                        </p>
+                        </p> --}}
                     </div>
                 </div>
             </div>
 
             <div class="text-center mt-8">
-                <a href="#contact"
-                    class="bg-club-blue text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-club-blue-light transition-colors inline-flex items-center">
+                <button @click="goToContactWithData()"
+                    class="bg-club-blue text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-club-blue-light transition-colors inline-flex items-center cursor-pointer">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-3.582 8-8 8a8.955 8.955 0 01-2.697-.413l-2.725.688c-.442.111-.905-.111-.905-.666L7 17c-2.611-2.226-4-5.269-4-8.5C3 4.358 7.358 0 12 0s9 4.358 9 8.5z">
                         </path>
                     </svg>
                     Nous Contacter pour S'inscrire
-                </a>
+                </button>
             </div>
         </div>
 

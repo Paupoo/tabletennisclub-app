@@ -12,12 +12,14 @@ class UserInfolist
     {
         return $schema
             ->components([
+                TextEntry::make('force_list')
+                    ->numeric(),
+                TextEntry::make('first_name'),
+                TextEntry::make('last_name'),
                 TextEntry::make('created_at')
                     ->dateTime(),
-                TextEntry::make('updated_at')
-                    ->dateTime(),
-                IconEntry::make('is_active')
-                    ->boolean(),
+                TextEntry::make('ranking'),
+                TextEntry::make('email'),
                 IconEntry::make('is_admin')
                     ->boolean(),
                 IconEntry::make('is_committee_member')
@@ -26,11 +28,8 @@ class UserInfolist
                     ->boolean(),
                 IconEntry::make('has_paid')
                     ->boolean(),
-                TextEntry::make('email'),
                 TextEntry::make('email_verified_at')
                     ->dateTime(),
-                TextEntry::make('first_name'),
-                TextEntry::make('last_name'),
                 TextEntry::make('sex'),
                 TextEntry::make('phone_number'),
                 TextEntry::make('birthdate')
@@ -38,12 +37,13 @@ class UserInfolist
                 TextEntry::make('street'),
                 TextEntry::make('city_code'),
                 TextEntry::make('city_name'),
-                TextEntry::make('ranking'),
                 TextEntry::make('licence'),
-                TextEntry::make('force_list')
-                    ->numeric(),
                 TextEntry::make('club.name')
                     ->numeric(),
+                TextEntry::make('updated_at')
+                    ->dateTime(),
+                IconEntry::make('is_active')
+                    ->boolean(),
             ]);
     }
 }

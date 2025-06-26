@@ -3,11 +3,14 @@
 namespace App\Filament\Resources\Users\Tables;
 
 use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\Filter;
+use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 
 class UsersTable
@@ -16,6 +19,61 @@ class UsersTable
     {
         return $table
             ->columns([
+                TextColumn::make('force_list')
+                    ->numeric()
+                    ->sortable(),
+                TextColumn::make('first_name')
+                    ->searchable(),
+                TextColumn::make('last_name')
+                    ->searchable(),
+                TextColumn::make('email')
+                    ->searchable()
+                    ->toggledHiddenByDefault(true),
+                IconColumn::make('is_active')
+                    ->boolean()
+                    ->toggledHiddenByDefault(true),
+                IconColumn::make('is_admin')
+                    ->boolean()
+                    ->toggledHiddenByDefault(true),
+                IconColumn::make('is_committee_member')
+                    ->boolean()
+                    ->toggledHiddenByDefault(true),
+                IconColumn::make('is_competitor')
+                    ->boolean()
+                    ->toggledHiddenByDefault(true),
+                IconColumn::make('has_paid')
+                    ->boolean()
+                    ->toggledHiddenByDefault(true),
+                TextColumn::make('email_verified_at')
+                    ->dateTime()
+                    ->sortable()
+                    ->toggledHiddenByDefault(true),
+                TextColumn::make('sex')
+                    ->sortable()
+                    ->toggledHiddenByDefault(true),
+                TextColumn::make('phone_number')
+                    ->searchable()
+                    ->toggledHiddenByDefault(true),
+                TextColumn::make('birthdate')
+                    ->date()
+                    ->sortable()
+                    ->toggledHiddenByDefault(true),
+                TextColumn::make('street')
+                    ->searchable()
+                    ->toggledHiddenByDefault(true),
+                TextColumn::make('city_code')
+                    ->searchable()
+                    ->toggledHiddenByDefault(true),
+                TextColumn::make('city_name')
+                    ->searchable()
+                    ->toggledHiddenByDefault(true),
+                TextColumn::make('ranking'),
+                TextColumn::make('licence')
+                    ->searchable(),
+                TextColumn::make('club.name')
+                    ->numeric()
+                    ->sortable()
+                    ->toggledHiddenByDefault(),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -24,53 +82,29 @@ class UsersTable
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                IconColumn::make('is_active')
-                    ->boolean(),
-                IconColumn::make('is_admin')
-                    ->boolean(),
-                IconColumn::make('is_committee_member')
-                    ->boolean(),
-                IconColumn::make('is_competitor')
-                    ->boolean(),
-                IconColumn::make('has_paid')
-                    ->boolean(),
-                TextColumn::make('email')
-                    ->searchable(),
-                TextColumn::make('email_verified_at')
-                    ->dateTime()
-                    ->sortable(),
-                TextColumn::make('first_name')
-                    ->searchable(),
-                TextColumn::make('last_name')
-                    ->searchable(),
-                TextColumn::make('sex'),
-                TextColumn::make('phone_number')
-                    ->searchable(),
-                TextColumn::make('birthdate')
-                    ->date()
-                    ->sortable(),
-                TextColumn::make('street')
-                    ->searchable(),
-                TextColumn::make('city_code')
-                    ->searchable(),
-                TextColumn::make('city_name')
-                    ->searchable(),
-                TextColumn::make('ranking'),
-                TextColumn::make('licence')
-                    ->searchable(),
-                TextColumn::make('force_list')
-                    ->numeric()
-                    ->sortable(),
-                TextColumn::make('club.name')
-                    ->numeric()
-                    ->sortable(),
             ])
             ->filters([
-                //
+                TernaryFilter::make('is_competitor'),
+                TernaryFilter::make('is_committee_member')
+                    ->label('Committee member')
+                    ->nullable()
+                    ->placeholder('All users')
+                    ->trueLabel('Committee members')
+                    ->falseLabel('Members'),
+                TernaryFilter::make('is_active'),
+                TernaryFilter::make('is_admin'),
+                TernaryFilter::make('has_paid'),                
+                TernaryFilter::make('email_verified_at')
+                    ->label('Email verification')
+                    ->nullable()
+                    ->placeholder('All users')
+                    ->trueLabel('Verified users')
+                    ->falseLabel('Not verified users')
             ])
             ->recordActions([
                 ViewAction::make(),
                 EditAction::make(),
+                DeleteAction::make(),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

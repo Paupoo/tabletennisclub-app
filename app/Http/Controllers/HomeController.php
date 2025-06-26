@@ -45,10 +45,19 @@ class HomeController extends Controller
         $schedules = [
             [
                 'day' => 'Lundi',
-                'time' => '20h00 - 22h00',
+                'time' => '18h00 - 20h00',
+                'activity' => 'Entraînement dirigé',
+                'location' => 'Blocry - salle G3',
+                'level' => 'Tous niveaux',
+                'capacity' => 10,
+                'description' => 'Séance d\'entraînement encadrée pour les jeunes'
+            ],
+            [
+                'day' => 'Lundi',
+                'time' => '20h00 - 22h30',
                 'activity' => 'Entraînement Libre',
                 'location' => 'Demeester 0',
-                'level' => 'Tous Niveaux',
+                'level' => 'Tous niveaux',
                 'capacity' => 8,
                 'description' => 'Séance libre pour tous les membres du club'
             ],
@@ -57,41 +66,23 @@ class HomeController extends Controller
                 'time' => '20h30 - 22h00',
                 'activity' => 'Entraînement Libre',
                 'location' => 'Demeester -1',
-                'level' => 'Tous Niveaux',
+                'level' => 'Tous niveaux',
                 'capacity' => 10,
                 'description' => 'Séance libre pour tous les membres du club'
-            ],
-            [
-                'day' => 'Lundi',
-                'time' => '18h00 - 20h00',
-                'activity' => 'Entraînement encadré',
-                'location' => 'Blocry G3',
-                'level' => 'Débutant',
-                'capacity' => 10,
-                'description' => 'Séance d\'entraînement encadrée pour les jeunes'
-            ],
-            [
-                'day' => 'Lundi',
-                'time' => '20h00 - 22h00',
-                'activity' => 'Entraînement encadré',
-                'location' => 'Blocry G3',
-                'level' => 'Tous Niveaux',
-                'capacity' => 10,
-                'description' => 'Séance d\'entraînement encadrée pour les adultes'
             ],
             [
                 'day' => 'Mardi',
                 'time' => '20h30 - 22h00',
                 'activity' => 'Entraînement dirigé',
                 'location' => 'Demeester -1',
-                'level' => 'Intermédiaire',
+                'level' => 'Débutant+ / Confirmé',
                 'coach' => 'Aloïse Lejeune',
                 'capacity' => 10,
                 'description' => 'Perfectionnement pour les joueurs classés'
             ],
             [
                 'day' => 'Mercredi',
-                'time' => '13h00 - 13h30',
+                'time' => '15h00 - 16h30',
                 'activity' => 'Entraînement dirigé',
                 'location' => 'Demeester -1',
                 'level' => 'Débutant',
@@ -101,10 +92,10 @@ class HomeController extends Controller
             ],
             [
                 'day' => 'Mercredi',
-                'time' => '13h30 - 15h00',
+                'time' => '16h30 - 18h00',
                 'activity' => 'Entraînement dirigé',
                 'location' => 'Demeester -1',
-                'level' => 'Intermédiaire',
+                'level' => 'Débutant+',
                 'coach' => 'Éric Filée',
                 'capacity' => 8,
                 'description' => 'Perfectionnement pour les jeunes'
@@ -131,7 +122,7 @@ class HomeController extends Controller
                 'time' => '10h30 - 12h00',
                 'activity' => 'Entraînement dirigé',
                 'location' => 'Demeester -1',
-                'level' => 'Débutant',
+                'level' => 'Débutant+',
                 'coach' => 'Jean-Pierre Fikany',
                 'capacity' => 8,
                 'description' => 'Perfectionnement pour les jeunes'

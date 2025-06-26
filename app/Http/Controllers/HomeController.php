@@ -9,10 +9,10 @@ class HomeController extends Controller
     public function index()
     {
         $sponsors = [
-            ['name' => 'Eric Filée', 'logo' => asset('images/sponsors/ericfilee.png')],
-            ['name' => 'GD Tax & Account', 'logo' => asset('images/sponsors/gd_tax_account.png')],
-            ['name' => 'La maison de Malou', 'logo' => asset('images/sponsors/malou.png')],
-            ['name' => 'Artadom SPRL', 'logo' => null],
+            // ['name' => 'Eric Filée', 'logo' => asset('images/sponsors/ericfilee.png'), 'url' => null],
+            // ['name' => 'GD Tax & Account', 'logo' => asset('images/sponsors/gd_tax_account.png'), 'url' => null],
+            ['name' => 'La maison de Malou', 'logo' => asset('images/sponsors/malou.png'), 'url' => 'https://www.lamaisondemalou.be/'],
+            // ['name' => 'Artadom SPRL', 'logo' => null, 'url' => null],
         ];
 
         $articles = [

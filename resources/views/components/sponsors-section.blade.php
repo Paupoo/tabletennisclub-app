@@ -10,10 +10,16 @@
         <div class="grid grid-cols-2 md:grid-cols-4 gap-8 items-center animate-on-scroll">
             @forelse($sponsors ?? [] as $sponsor)
                 <div class="bg-gray-800 rounded-lg p-6 text-center h-24 flex items-center justify-center">
-                    @if($sponsor['logo'])
-                        <img src="{{ $sponsor['logo'] }}" alt="{{ $sponsor['name'] }}" class="max-h-20 max-w-full">
-                    @else
-                        <span class="text-gray-400 font-medium">{{ $sponsor['name'] }}</span>
+                    @if($sponsor['url'])
+                    <a href="{{ $sponsor['url'] }}" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center">
+                    @endif
+                        @if($sponsor['logo'])
+                            <img src="{{ $sponsor['logo'] }}" alt="{{ $sponsor['name'] }}" class="max-h-20 max-w-full">
+                        @else
+                            <span class="text-gray-400 font-medium">{{ $sponsor['name'] }}</span>
+                        @endif
+                    @if($sponsor['url'])
+                    </a>
                     @endif
                 </div>
             @empty

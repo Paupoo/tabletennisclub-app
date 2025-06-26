@@ -26,21 +26,22 @@
                             📍
                         </p>
                         <div class="flex flex-col gap-1">
-                            <p>
-                                {{ config('club.street', '123 Avenue du Centre Sportif') }}
+                            <a href="{{ config('app.club_osm_link') }}" target="_blank" rel="noopener noreferrer"><p>
+                                {{ config('app.club_street', 'some street 123') }}
                             </p>
                             <p>
-                                {{ config('club.city', '1234 SomeTown') }}</p>
+                                {{ config('app.club_zip_code', '0000') }} {{ config('app.club_city', 'Somewhere') }}</p>
                             </p>
+                            </a>
                         </div>
                     </div>
-                    <div class="flex gap-4 items-start">
+                    <div class="flex gap-4 items-start" inert>
                         <p>📞</p>
-                        <p> {{ config('club.phone', '(555) 123-4567') }}</p>
+                        <p> {{ config('app.club_phone_number', '+32 123 12 34 56') }}</p>
                     </div>
                     <div class="flex gap-4 items-start">
                         <p>✉️</p>
-                        <p>{{ config('club.email', 'info@cttottigniesblocry.be') }}</p>
+                        <p><a href="mailto:{{ config('app.club_email', 'nomail@nomail.com') }}">{{ config('app.club_email', 'nomail@nomail.com') }}</a></p>
                     </div>  
                 </div>
             </div>

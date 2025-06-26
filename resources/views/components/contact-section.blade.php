@@ -18,8 +18,8 @@
                         </div>
                         <div class="ml-4">
                             <h3 class="text-lg font-semibold text-gray-900">Adresse</h3>
-                            <p class="text-gray-600">123 Avenue du Centre Sportif</p>
-                            <p class="text-gray-600">75001 Paris, France</p>
+                            <p class="text-gray-600">{{ config('app.club_street') }}</p>
+                            <p class="text-gray-600">{{ config('app.club_zip_code') }} {{ config('app.club_city') }}</p>
                         </div>
                     </div>
                     
@@ -31,25 +31,25 @@
                         </div>
                         <div class="ml-4">
                             <h3 class="text-lg font-semibold text-gray-900">Téléphone</h3>
-                            <p class="text-gray-600">(555) 123-4567</p>
+                            <p inert class="text-gray-600">{{ config('app.club_phone_number') }}</p>
                             <p class="text-sm text-gray-500">Lun-Ven: 9h-18h</p>
                         </div>
                     </div>
                     
                     <div class="flex items-start">
-                        <div class="shrink-0 w-12 h-12 bg-club-blue rounded-lg flex items-center justify-center">
+                        <div class="shrink-0 w-12 h-12 bg-club-yellow rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                             </svg>
                         </div>
                         <div class="ml-4">
                             <h3 class="text-lg font-semibold text-gray-900">Email</h3>
-                            <p class="text-gray-600">info@acettc.com</p>
-                            <p class="text-sm text-gray-500">Réponse sous 24h</p>
+                            <p class="text-gray-600">{{ config('app.club_email') }}</p>
+                            <p class="text-sm text-gray-500">Réponse en général dans les 48h</p>
                         </div>
                     </div>
                     
-                    <div class="flex items-start">
+                    {{-- <div class="flex items-start">
                         <div class="shrink-0 w-12 h-12 bg-club-yellow rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-club-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -62,7 +62,7 @@
                                 <p>Sam-Dim: 9h-18h</p>
                             </div>
                         </div>
-                    </div>
+                    </div> --}}
                 </div>
             </div>
             

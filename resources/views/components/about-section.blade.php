@@ -1,7 +1,7 @@
 <section id="about" class="h-auto py-20 bg-gray-50 flex items-center">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16 animate-on-scroll">
-            <h2 class="text-4xl font-bold text-gray-900 mb-4">Pourquoi choisir le CTT Ottignies-Blocrry&nbsp;?</h2>
+            <h2 class="text-4xl font-bold text-gray-900 mb-4">Pourquoi choisir le CTT Ottignies-Blocry&nbsp;?</h2>
             <p class="text-xl text-gray-600 max-w-3xl mx-auto">
                 Nous sommes plus qu'un simple club – nous sommes une communauté dédiée au sport que nous aimons.
             </p>

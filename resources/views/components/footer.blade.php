@@ -19,19 +19,23 @@
             </div>
             
             <div>
-                <h4 class="text-lg font-semibold mb-4">Informations de Contact</h4>
+                <h4 class="text-lg font-semibold mb-4">Informations de contact</h4>
                 <div class="space-y-2 text-gray-400">
                     <div class="flex gap-4 items-start">
                         <p>
                             📍
                         </p>
                         <div class="flex flex-col gap-1">
-                            <a href="{{ config('app.club_osm_link') }}" target="_blank" rel="noopener noreferrer"><p>
-                                {{ config('app.club_street', 'some street 123') }}
-                            </p>
-                            <p>
-                                {{ config('app.club_zip_code', '0000') }} {{ config('app.club_city', 'Somewhere') }}</p>
-                            </p>
+                            <a href="{{ config('app.club_osm_link') }}" target="_blank" rel="noopener noreferrer">
+                                <p>
+                                    {{ config('app.club_building_name', 'sport center') }}
+                                </p>
+                                <p>
+                                    {{ config('app.club_street', 'some street 123') }}
+                                </p>
+                                <p>
+                                    {{ config('app.club_zip_code', '0000') }} {{ config('app.club_city', 'Somewhere') }}</p>
+                                </p>
                             </a>
                         </div>
                     </div>

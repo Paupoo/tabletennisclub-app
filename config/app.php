@@ -214,6 +214,7 @@ return [
      |
      */
     'club_licence' => env('APP_CLUB_LICENCE', 'BBW214'),
+    'club_building_name' => env('APP_CLUB_BUILDING_NAME', 'Centre Sportif du village'),
     'club_street' => env('APP_CLUB_STREET', 'Rue de la Station 1'),
     'club_zip_code' => env('APP_CLUB_ZIP_CODE', '7700'),
     'club_city' => env('APP_CLUB_CITY', 'Léglise'),

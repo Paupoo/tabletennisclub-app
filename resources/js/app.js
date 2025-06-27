@@ -1,5 +1,6 @@
 import "./bootstrap"
 import "./news-filter"
+import "./footer"
 
 // Configuration Alpine.js pour les animations
 Alpine.data("scrollAnimations", () => ({

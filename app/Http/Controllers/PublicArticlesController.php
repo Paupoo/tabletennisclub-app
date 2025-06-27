@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Article;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class PublicArticlesController extends Controller
 {
@@ -188,49 +189,50 @@ class PublicArticlesController extends Controller
     public function show($slug)
     {
         // Données d'exemple - à remplacer par une vraie requête de base de données
-        $articles = [
-            'victoire-championnat-regional' => [
-                'title' => 'Victoire Éclatante en Championnat Régional',
-                'excerpt' => 'Notre équipe A remporte le championnat régional avec un score impressionnant de 8-2 contre les favoris de Thunder TTC.',
-                'content' => $this->getFullArticleContent('victoire-championnat-regional'),
-                'date' => '15 Décembre 2024',
-                'category' => 'Compétition',
-                'image' => '/placeholder.svg?height=600&width=1200',
-                'image_caption' => 'L\'équipe A célèbre sa victoire au championnat régional',
-                'slug' => 'victoire-championnat-regional',
-                'author' => 'Pierre Martin',
-                'reading_time' => 3,
-                'tags' => ['championnat', 'victoire', 'équipe-a', 'régional', 'thunder-ttc']
-            ],
-            'partenariat-sporttech' => [
-                'title' => 'Nouveau Partenariat avec SportTech',
-                'excerpt' => 'Nous sommes fiers d\'annoncer notre nouveau partenariat avec SportTech pour l\'équipement de nos joueurs.',
-                'content' => $this->getFullArticleContent('partenariat-sporttech'),
-                'date' => '10 Décembre 2024',
-                'category' => 'Partenariat',
-                'image' => '/placeholder.svg?height=600&width=1200',
-                'slug' => 'partenariat-sporttech',
-                'author' => 'Sophie Dubois',
-                'reading_time' => 2,
-                'tags' => ['partenariat', 'équipement', 'sporttech', 'matériel']
-            ],
-            // Ajouter d'autres articles...
-        ];
+        // $articles = [
+        //     'victoire-championnat-regional' => [
+        //         'title' => 'Victoire Éclatante en Championnat Régional',
+        //         'excerpt' => 'Notre équipe A remporte le championnat régional avec un score impressionnant de 8-2 contre les favoris de Thunder TTC.',
+        //         'content' => $this->getFullArticleContent('victoire-championnat-regional'),
+        //         'date' => '15 Décembre 2024',
+        //         'category' => 'Compétition',
+        //         'image' => '/placeholder.svg?height=600&width=1200',
+        //         'image_caption' => 'L\'équipe A célèbre sa victoire au championnat régional',
+        //         'slug' => 'victoire-championnat-regional',
+        //         'author' => 'Pierre Martin',
+        //         'reading_time' => 3,
+        //         'tags' => ['championnat', 'victoire', 'équipe-a', 'régional', 'thunder-ttc']
+        //     ],
+        //     'partenariat-sporttech' => [
+        //         'title' => 'Nouveau Partenariat avec SportTech',
+        //         'excerpt' => 'Nous sommes fiers d\'annoncer notre nouveau partenariat avec SportTech pour l\'équipement de nos joueurs.',
+        //         'content' => $this->getFullArticleContent('partenariat-sporttech'),
+        //         'date' => '10 Décembre 2024',
+        //         'category' => 'Partenariat',
+        //         'image' => '/placeholder.svg?height=600&width=1200',
+        //         'slug' => 'partenariat-sporttech',
+        //         'author' => 'Sophie Dubois',
+        //         'reading_time' => 2,
+        //         'tags' => ['partenariat', 'équipement', 'sporttech', 'matériel']
+        //     ],
+        //     // Ajouter d'autres articles...
+        // ];
 
-        $article = $articles[$slug] ?? null;
+        // $article = $articles[$slug] ?? null;
+
+        $article = Article::whereSlug($slug)->firstOrFail();
 
         if (!$article) {
             abort(404);
         }
 
         // Articles similaires (même catégorie)
-        $relatedArticles = collect($articles)
-            ->where('category', $article['category'])
+        $relatedArticles = Article::where('category', $article->category)
             ->where('slug', '!=', $slug)
             ->take(3)
-            ->values();
+            ->get();
 
-        return view('articles.show', compact('article', 'relatedArticles'));
+            return view('articles.show', compact('article', 'relatedArticles'));
     }
 
     private function getFullArticleContent($slug)

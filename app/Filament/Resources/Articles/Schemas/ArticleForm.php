@@ -8,6 +8,7 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\MarkdownEditor;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
@@ -47,7 +48,7 @@ class ArticleForm
                     ->required(),
                 FileUpload::make('image')
                     ->image()
-                    ->directory('articles/images')
+                    ->directory('public/articles/images')
                     ->visibility('public')
                     ->required(),
                 Select::make('user_id')
@@ -56,7 +57,7 @@ class ArticleForm
                     ->getOptionLabelFromRecordUsing(fn (Model $record) => "{$record->first_name} {$record->last_name}")
                     ->searchable(['first_name', 'last_name'])
                     ->preload(),
-                TextInput::make('tags')
+                TagsInput::make('tags')
                     ->default(null),
                 Select::make('status')
                     ->options(['Draft' => 'Draft', 'Published' => 'Published', 'Archived' => 'Archived'])

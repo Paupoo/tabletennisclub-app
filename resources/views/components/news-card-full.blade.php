@@ -3,10 +3,9 @@
 <article class="bg-white rounded-lg border border-gray-200 overflow-hidden hover:border-club-blue hover:shadow-lg transition-all duration-300 animate-on-scroll group" 
          style="transition-delay: {{ $index * 0.1 }}s;">
     <div class="aspect-video bg-gray-100 overflow-hidden">
-        <img src="{{ url('storage/app/articles/images/01JYHXG6X6ER7SP635064JW54B.png') }}" alt="{{ $article['title'] }}" 
+        <img src="{{ Storage::url($article->image) }}" alt="{{ $article['title'] }}" 
              class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
     </div>
-    
     <div class="p-6">
         <div class="flex items-center justify-between mb-3">
             <span class="@if($article['category'] === 'Compétition') bg-club-blue text-white @elseif($article['category'] === 'Formation') bg-club-yellow text-club-blue @else bg-gray-100 text-gray-800 @endif text-xs font-medium px-3 py-1 rounded-full">

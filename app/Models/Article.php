@@ -8,6 +8,7 @@ use App\Enums\ArticlesCategoryEnum;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Article extends Model
@@ -20,7 +21,7 @@ class Article extends Model
         'content' => 'string',
         'category' => ArticlesCategoryEnum::class,
         'image' => 'string',
-        'tags' => 'string',
+        'tags' => 'array',
         'status' => 'string',
         'is_public' => 'boolean',
         'user_id' => 'integer',
@@ -47,5 +48,10 @@ class Article extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(Tag::class);
     }
 }

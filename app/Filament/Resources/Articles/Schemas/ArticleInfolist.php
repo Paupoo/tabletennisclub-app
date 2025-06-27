@@ -19,7 +19,7 @@ class ArticleInfolist
                 ImageEntry::make('image'),
                 TextEntry::make('user.id')
                     ->numeric(),
-                TextEntry::make('tags'),
+                TextEntry::make('tags.name'),
                 TextEntry::make('status'),
                 IconEntry::make('is_public')
                     ->boolean(),

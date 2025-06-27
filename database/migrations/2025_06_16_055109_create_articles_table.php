@@ -27,7 +27,7 @@ return new class extends Migration
         Schema::create('articles', function (Blueprint $table) {
             $table->id();
             $table->string('title');
-            $table->slug('slug')->unique();
+            $table->string('slug')->unique();
             $table->text('content');
             $table->enum('category', ArticlesCategoryEnum::values());
             $table->string('image')->nullable();

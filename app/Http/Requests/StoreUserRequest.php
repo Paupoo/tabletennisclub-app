@@ -8,7 +8,7 @@ use App\Enums\Ranking;
 use App\Enums\Sex;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password as RulesPassword;
+use Illuminate\Validation\Rules\Password;
 
 class StoreUserRequest extends FormRequest
 {
@@ -51,7 +51,7 @@ class StoreUserRequest extends FormRequest
             'is_competitor' => ['boolean'],
             'last_name' => ['required', 'string', 'max:255'],
             'licence' => ['nullable', 'required_if:is_competitor,true', 'unique:users,licence', 'size:6'],
-            'password' => ['required', 'confirmed', 'min:8', RulesPassword::min(8)->letters()->mixedCase()->numbers()->symbols()->uncompromised()],
+            'password' => ['required', 'confirmed', 'min:8', Password::min(8)->letters()->mixedCase()->numbers()->symbols()->uncompromised()],
             'phone_number' => ['sometimes', 'string', 'digits_between:9,20'],
             'ranking' => [
                 'nullable',

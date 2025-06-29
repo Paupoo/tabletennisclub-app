@@ -27,6 +27,7 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->timestamps();
+            $table->string('avatar_url', 255)->nullable();
             $table->boolean('is_active')->default(false);
             $table->boolean('is_admin')->default(false);
             $table->boolean('is_committee_member')->default(false);
@@ -48,6 +49,7 @@ return new class extends Migration
             $table->string('licence', 6)->unique()->nullable()->default(null);
             $table->unsignedTinyInteger('force_list')->nullable();
             $table->foreignIdFor(Club::class)->default(1);
+            $table->boolean('emails_notifications')->default(true);
         });
     }
 };

@@ -8,6 +8,7 @@ namespace App\Models;
 
 use Carbon\Carbon;
 use Filament\Models\Contracts\FilamentUser;
+use Filament\Models\Contracts\HasAvatar;
 use Filament\Models\Contracts\HasName;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -94,7 +95,7 @@ use Laravel\Sanctum\HasApiTokens;
  *
  * @mixin \Eloquent
  */
-class User extends Authenticatable implements FilamentUser, HasName
+class User extends Authenticatable implements FilamentUser, HasName, HasAvatar
 {
     use HasApiTokens, HasFactory, Notifiable;
 
@@ -110,7 +111,7 @@ class User extends Authenticatable implements FilamentUser, HasName
         'is_competitor' => 'boolean',
         'has_paid' => 'boolean',
         'email' => 'string',
-        'password' => 'string',
+        'password' => 'hashed',
         'first_name' => 'string',
         'last_name' => 'string',
         'sex' => 'string',
@@ -122,6 +123,7 @@ class User extends Authenticatable implements FilamentUser, HasName
         'ranking' => 'string',
         'licence' => 'string',
         'force_list' => 'integer',
+        'avatar_url' => 'string'
     ];
 
     /**
@@ -147,6 +149,7 @@ class User extends Authenticatable implements FilamentUser, HasName
         'ranking',
         'sex',
         'street',
+        'avatar_url',
     ];
 
     /**
@@ -166,6 +169,14 @@ class User extends Authenticatable implements FilamentUser, HasName
     }
 
     public function getFilamentName(): string
+    {
+        return "{$this->first_name} {$this->last_name}";
+    }
+
+        /**
+     * Get the user's full name.
+     */
+    public function getFullNameAttribute(): string
     {
         return "{$this->first_name} {$this->last_name}";
     }
@@ -293,4 +304,31 @@ class User extends Authenticatable implements FilamentUser, HasName
     {
         return $this->belongsToMany(Training::class);
     }
+
+    public function guardians(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            User::class,
+            'user_guardian',
+            'user_id',
+            'guardian_id'
+        );
+    }
+
+    public function dependents(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            User::class,
+            'user_guardian',
+            'guardian_id',
+            'user_id'
+        );
+    }
+
+
+    public function getFilamentAvatarUrl(): ?string
+    {
+        return $this->avatar_url;
+    }
+
 }

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Users\Tables;
 
 use App\Enums\Sex;
+use App\Models\User;
 use App\Services\ForceList;
 use Filament\Actions\Action;
 use Filament\Actions\ActionGroup;
@@ -15,6 +16,8 @@ use Filament\Actions\ViewAction;
 use Filament\Notifications\Notification;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Columns\TagsColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\TernaryFilter;
@@ -28,6 +31,14 @@ class UsersTable
     {
         return $table
             ->columns([
+                ImageColumn::make('avatar_url')
+                    ->label('Avatar')
+                    ->circular()
+                    ->defaultImageUrl(fn ($record): string =>
+                    $record->avatar_url
+                        ? asset('storage/' . $record->avatar_url)
+                        : 'https://ui-avatars.com/api/?name=' . urlencode($record->getFilamentName()) . '&color=FFFFFF&background=000000'
+                    ),
                 TextColumn::make('first_name')
                     ->searchable()
                     ->sortable(),
@@ -111,6 +122,8 @@ class UsersTable
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('guardians.first_name')
+                    ->label(__('Responsible Persons')),
             ])
             ->filters([
                 TernaryFilter::make('is_competitor'),
@@ -120,7 +133,8 @@ class UsersTable
                     ->placeholder('All users')
                     ->trueLabel('Committee members')
                     ->falseLabel('Members'),
-                TernaryFilter::make('is_active'),
+                TernaryFilter::make('is_active')
+                    ->default(true),
                 TernaryFilter::make('is_admin'),
                 TernaryFilter::make('has_paid'),
                 TernaryFilter::make('email_verified_at')

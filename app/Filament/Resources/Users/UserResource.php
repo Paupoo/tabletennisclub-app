@@ -9,8 +9,10 @@ use App\Filament\Resources\Users\Pages\ViewUser;
 use App\Filament\Resources\Users\Schemas\UserForm;
 use App\Filament\Resources\Users\Schemas\UserInfolist;
 use App\Filament\Resources\Users\Tables\UsersTable;
+use App\Http\Requests\StoreUserRequest;
 use App\Models\User;
 use BackedEnum;
+use Dotenv\Exception\ValidationException;
 use Filament\Forms\Components\Builder;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -56,5 +58,16 @@ class UserResource extends Resource
             'view' => ViewUser::route('/{record}'),
             'edit' => EditUser::route('/{record}/edit'),
         ];
+    }
+
+    protected function beforeValidate(): void
+    {
+        $request = StoreUserRequest::createFrom(request());
+        $request->setContainer(app());
+        $validator = $request->getValidatorInstance();
+        
+        if ($validator->fails()) {
+            throw new ValidationException($validator);
+        }
     }
 }

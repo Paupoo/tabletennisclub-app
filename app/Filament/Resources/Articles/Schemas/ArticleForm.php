@@ -24,12 +24,12 @@ class ArticleForm
             ->components([
                 TextInput::make('title')
                     ->required()
+                    ->live(onBlur:true)
                     ->afterStateUpdated(function ($get, $set, $state) {
                         if (! $get('is_slug_changed_manually') && filled($state)) {
                             $set('slug', Str::slug($state));
                         }
-                    })
-                    ->reactive(),
+                    }),
                 TextInput::make('slug')
                     ->afterStateUpdated(function ($set) {
                         $set('is_slug_changed_manually', true);

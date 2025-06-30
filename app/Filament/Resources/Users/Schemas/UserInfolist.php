@@ -158,7 +158,7 @@ class UserInfolist
                                             ->boolean()
                                             ->trueIcon(Heroicon::UserGroup)
                                             ->falseIcon(Heroicon::User)
-                                            ->trueColor('info')
+                                            ->trueColor('primary')
                                             ->falseColor('gray')
                                             ->tooltip(fn ($state): string => $state ? 'Est membre du comité' : 'N\'est pas membre du comité'),
                                         IconEntry::make('has_paid')

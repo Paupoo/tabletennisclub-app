@@ -18,11 +18,30 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 class UserResource extends Resource
 {
     protected static ?string $model = User::class;
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['first_name', 'last_name', 'licence', 'ranking'];
+    }
+
+    public static function getGlobalSearchResultTitle(Model $record): string
+    {
+        return $record->first_name . ' ' . $record->last_name;
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return [
+            $record->ranking,
+            $record->licence,
+        ];
+    }
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::Users;
 

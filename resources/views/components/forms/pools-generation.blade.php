@@ -15,7 +15,7 @@
         </x-select-input>
 
 
-        {{-- <label for="number_of_pools" class="block text-sm font-medium text-gray-700 mb-2">Nombre de pools à créer
+        <label for="number_of_pools" class="block text-sm font-medium text-gray-700 mb-2">Nombre de pools à créer
             :</label>
         <div class="relative">
             <x-select-input name="number_of_pools" id="number_of_pools"
@@ -27,7 +27,7 @@
                 @endfor
             </x-select-input>
             <input type="hidden" name="minMatches" value=0>
-        </div> --}}
+        </div>
     </div>
 
     <x-primary-button type="submit" :disabled="$tournament->status === 'draft'">

@@ -48,7 +48,7 @@ class TableController extends Controller
         $table->delete();
 
         $room = Room::find($table->room_id);
-        $this->updateTablesCount($room);
+        $this->tableService->updateTablesCount($room);
 
         return redirect()->route('tables.index')->with('success', 'The table ' . $table->name . ' has been deleted.');
 

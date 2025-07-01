@@ -250,7 +250,7 @@ Route::middleware(['auth', 'verified'])
     });
 
 Route::get('/test', function () {
-    return view('test');
+    return view('test', ['breadcrumbs' => []]);
 });
 
 

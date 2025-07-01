@@ -7,7 +7,7 @@
     </x-tournament.actions-menu>
     @endpush
     
-    @include('admin.tournaments.partials.matches-list')
+    @include('admin.tournaments.partials.matches-list', ['tables' => $tables])
 
 
     @push('modals')

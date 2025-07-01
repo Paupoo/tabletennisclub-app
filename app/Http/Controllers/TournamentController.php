@@ -127,10 +127,17 @@ class TournamentController extends Controller
             ? $tournament = $match->pool->tournament
             : $tournament = $match->tournament_id;
 
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->tournaments()
+            ->current('Edit Match')
+            ->toArray();
+
         return view('admin.tournaments.edit-match', [
             'match' => $match->load(['player1', 'player2', 'sets']),
             'pool' => $match->pool,
             'tournament' => $tournament,
+            'breadcrumbs' => $breadcrumbs,
         ]);
     }
 
@@ -417,6 +424,18 @@ class TournamentController extends Controller
 
         $stateMachine = new TournamentStateMachine($tournament);
 
+        $tables = $tournament
+            ->tables()
+            ->withPivot([
+                'is_table_free',
+                'match_started_at',
+            ])
+            ->with('match.player1', 'match.player2')
+            ->orderBy('is_table_free')
+            ->orderBy('match_started_at')
+            ->orderByRaw('name * 1 ASC')
+            ->get();
+
         $breadcrumbs = Breadcrumb::make()
             ->home()
             ->tournaments()
@@ -428,6 +447,7 @@ class TournamentController extends Controller
             'tournament' => $tournament,
             'statusesAllowed' => $stateMachine->getAllowedTransitions(),
             'breadcrumbs' => $breadcrumbs,
+            'tables' => $tables,
         ]);
     }
 

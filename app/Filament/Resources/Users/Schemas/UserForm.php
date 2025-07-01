@@ -102,6 +102,7 @@ class UserForm
                                                     ->unique()
                                                     ->required(),
                                                 TextInput::make('password')
+                                                    ->hint(__('Min 8 characters, including special characters, numbers and mixed case'))
                                                     ->password()
                                                     ->confirmed()
                                                     ->rules(['confirmed', 'min:8', Password::min(8)->letters()->mixedCase()->numbers()->symbols()->uncompromised()])
@@ -176,6 +177,7 @@ class UserForm
                                         ->confirmed()
                                         ->rules(['confirmed', 'min:8', Password::min(8)->letters()->mixedCase()->numbers()->symbols()->uncompromised()])
                                         ->revealable()
+                                        ->hint(__('Min 8 characters, including special characters, numbers and mixed case'))
                                         // ->dehydrateStateUsing(fn (string $state): string => Hash::make($state)) // Not needed because I already hash the password in the casts
                                         ->dehydrated(fn (?string $state): bool => filled($state))
                                         ->required(fn (string $operation): bool => $operation === 'create'),

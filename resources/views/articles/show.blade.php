@@ -10,7 +10,7 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                 </svg>
-                <a href="{{ route('articles.index') }}" class="hover:text-club-blue transition-colors">Actualités</a>
+                <a href="{{ route('public.articles.index') }}" class="hover:text-club-blue transition-colors">Actualités</a>
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                 </svg>
@@ -77,10 +77,13 @@
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="prose prose-lg max-w-none">
             <div class="text-gray-700 leading-relaxed">
-                {!! $article['content'] ?? '<p>Contenu de l\'article à venir...</p>' !!}
+                {!! Str::markdown($article->content, [
+                    'html_input' => 'strip', // Allow HTML tags
+                ]) ?? '<p>Contenu de l\'article à venir...</p>' !!}
             </div>
         </div>
-        
+
+
         <!-- Tags -->
         @if(isset($article['tags']) && count($article['tags']) > 0)
             <div class="mt-12 pt-8 border-t border-gray-200">
@@ -93,6 +96,17 @@
                         @endforeach
                 </div>
             </div>
+        @else
+            <div class="mt-12 pt-8 border-t border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Tags</h3>
+                <div class="flex flex-wrap gap-2">
+                    @foreach ($article->tags()->get() as $tag)
+                        <span class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm hover:bg-gray-200 transition-colors cursor-pointer">
+                                    #{{ $tag->name }}
+                        </span>
+                    @endforeach
+                </div>
+           </div>
         @endif
         
         <!-- Share -->

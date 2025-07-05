@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Articles\Tables;
 
+use App\Enums\ArticlesStatusEnum;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -10,6 +11,7 @@ use Filament\Actions\RestoreBulkAction;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Columns\SelectColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
@@ -29,9 +31,8 @@ class ArticlesTable
                 TextColumn::make('user.id')
                     ->numeric()
                     ->sortable(),
-                TextColumn::make('tags')
-                    ->searchable(),
-                TextColumn::make('status'),
+                SelectColumn::make('status')
+                    ->options(ArticlesStatusEnum::class),
                 IconColumn::make('is_public')
                     ->boolean(),
                 TextColumn::make('deleted_at')

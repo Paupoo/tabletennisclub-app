@@ -31,7 +31,6 @@ class StoreArticleRequest extends FormRequest
             'category' => 'required|string',
             'image' => 'required|string', // pas 'image'
             'user_id' => 'required|exists:users,id',
-            'tags' => 'nullable|string',
             'status' => 'required|in:Draft,Published,Archived',
             'is_public' => 'required|boolean',
         ];

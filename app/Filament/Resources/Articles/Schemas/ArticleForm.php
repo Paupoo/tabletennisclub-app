@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Filament\Resources\Articles\Schemas;
 
 use App\Enums\ArticlesCategoryEnum;
@@ -24,12 +23,13 @@ class ArticleForm
             ->components([
                 TextInput::make('title')
                     ->required()
-                    ->live(onBlur:true)
+                    ->live(onBlur: true)
                     ->afterStateUpdated(function ($get, $set, $state) {
                         if (! $get('is_slug_changed_manually') && filled($state)) {
                             $set('slug', Str::slug($state));
                         }
                     }),
+                
                 TextInput::make('slug')
                     ->afterStateUpdated(function ($set) {
                         $set('is_slug_changed_manually', true);
@@ -37,32 +37,34 @@ class ArticleForm
                     ->required()
                     ->disabled()
                     ->dehydrated(),
+                
                 Hidden::make('is_slug_changed_manually')
                     ->default(false)
                     ->dehydrated(false),
+                
                 MarkdownEditor::make('content')
                     ->required()
                     ->columnSpanFull(),
+                
                 Select::make('category')
                     ->options(ArticlesCategoryEnum::class)
                     ->required(),
+                
                 FileUpload::make('image')
                     ->image()
                     ->directory('public/articles/images')
                     ->visibility('public')
-                    ->required(),
-                Select::make('user_id')
-                    ->relationship('user', 'id')
+                    ->nullable(),
+                
+                Hidden::make('user_id')
                     ->required()
-                    ->getOptionLabelFromRecordUsing(fn (Model $record) => "{$record->first_name} {$record->last_name}")
-                    ->searchable(['first_name', 'last_name'])
-                    ->preload(),
-                TagsInput::make('tags')
-                    ->default(null),
+                    ->default(auth()->id()),
+                
                 Select::make('status')
                     ->options(['Draft' => 'Draft', 'Published' => 'Published', 'Archived' => 'Archived'])
                     ->default('Draft')
                     ->required(),
+                
                 Toggle::make('is_public')
                     ->required(),
             ]);

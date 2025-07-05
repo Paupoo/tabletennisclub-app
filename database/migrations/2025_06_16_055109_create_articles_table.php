@@ -32,7 +32,6 @@ return new class extends Migration
             $table->enum('category', ArticlesCategoryEnum::values());
             $table->string('image')->nullable();
             $table->foreignIdFor(User::class)->constrained()->cascadeOnDelete();
-            $table->string('tags')->nullable();
             $table->enum('status', ArticlesStatusEnum::values())->default(ArticlesStatusEnum::DRAFT->value);
             $table->boolean('is_public')->default(false);
             $table->softDeletes();

@@ -82,32 +82,6 @@
                 ]) ?? '<p>Contenu de l\'article à venir...</p>' !!}
             </div>
         </div>
-
-
-        <!-- Tags -->
-        @if(isset($article['tags']) && count($article['tags']) > 0)
-            <div class="mt-12 pt-8 border-t border-gray-200">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Tags</h3>
-                <div class="flex flex-wrap gap-2">
-                    @foreach($article['tags'] as $tag)
-                        <span class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm hover:bg-gray-200 transition-colors cursor-pointer">
-                            #{{ $tag }}
-                        </span>
-                        @endforeach
-                </div>
-            </div>
-        @else
-            <div class="mt-12 pt-8 border-t border-gray-200">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Tags</h3>
-                <div class="flex flex-wrap gap-2">
-                    @foreach ($article->tags()->get() as $tag)
-                        <span class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm hover:bg-gray-200 transition-colors cursor-pointer">
-                                    #{{ $tag->name }}
-                        </span>
-                    @endforeach
-                </div>
-           </div>
-        @endif
         
         <!-- Share -->
         <div class="mt-12 pt-8 border-t border-gray-200">

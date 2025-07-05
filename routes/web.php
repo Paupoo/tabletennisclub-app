@@ -44,11 +44,6 @@ Route::get('/results', [ResultsController::class, 'index'])->name('results');
 Route::get('/events', [EventsController::class, 'index'])->name('events');
 Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
 
-// Routes pour les actualités
-Route::get('/news', [NewsController::class, 'index'])->name('articles.index');
-Route::get('/news/{slug}', [NewsController::class, 'show'])->name('articles.show');
-
-
 /**
  * Dashboard with sample of most data
  */

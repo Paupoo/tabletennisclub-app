@@ -11,12 +11,7 @@ class PublicArticlesController extends Controller
 {
         public function index(Request $request)
     {
-        
-        $articles = Article::where('status', 'published')
-            ->orderBy('created_at', 'desc')
-            ->paginate(9);
-
-        return view('articles.index', compact('articles'));
+        return view('public.articles.index');
     }
 
     public function show($slug)
@@ -32,7 +27,7 @@ class PublicArticlesController extends Controller
             ->take(3)
             ->get();
 
-            return view('articles.show', compact('article', 'relatedArticles'));
+            return view('livewire.public.articles.show', compact('article', 'relatedArticles'));
     }
 
     private function getFullArticleContent($slug)

@@ -1,6 +1,6 @@
 @props(['article', 'index' => 0])
 
-<article class="bg-white rounded-lg border border-gray-200 overflow-hidden hover:border-club-blue hover:shadow-lg transition-all duration-300 animate-on-scroll group" 
+<article class="bg-white rounded-lg border border-gray-200 overflow-hidden hover:border-club-blue hover:shadow-lg transition-all duration-300 group" 
          style="transition-delay: {{ $index * 0.1 }}s;">
     <div class="aspect-video bg-gray-100 overflow-hidden">
         <img src="{{ Storage::url($article->image) }}" alt="{{ $article['title'] }}" 

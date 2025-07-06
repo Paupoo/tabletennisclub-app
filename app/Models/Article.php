@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\ArticlesCategoryEnum;
+use App\Enums\ArticlesStatusEnum;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -20,7 +21,7 @@ class Article extends Model
         'content' => 'string',
         'category' => ArticlesCategoryEnum::class,
         'image' => 'string',
-        'status' => 'string',
+        'status' => ArticlesStatusEnum::class,
         'is_public' => 'boolean',
         'user_id' => 'integer',
     ];

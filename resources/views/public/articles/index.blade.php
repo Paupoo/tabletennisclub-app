@@ -10,7 +10,7 @@
             </div>
         </div>
 
-        @livewire('public.articles.article-list')
+        <livewire:public.articles.article-list />
 
         <!-- Newsletter Signup -->
         <div class="bg-gray-50 py-16">

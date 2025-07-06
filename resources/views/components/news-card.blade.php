@@ -2,7 +2,7 @@
 
 <article class="bg-white rounded-lg border border-gray-200 overflow-hidden hover:border-club-blue transition-colors animate-on-scroll group">
     <div class="aspect-video bg-gray-100 overflow-hidden">
-        <img src="{{ asset($article['image']) }}" alt="{{ $article['title'] }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+        <img src="{{ Storage::url($article['image']) }}" alt="{{ $article['title'] }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
     </div>
     
     <div class="p-6">

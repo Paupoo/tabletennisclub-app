@@ -9,7 +9,7 @@ use League\CommonMark\MarkdownConverter;
 
 class PublicArticlesController extends Controller
 {
-        public function index(Request $request)
+    public function index(Request $request)
     {
         return view('public.articles.index');
     }
@@ -27,7 +27,7 @@ class PublicArticlesController extends Controller
             ->take(3)
             ->get();
 
-            return view('livewire.public.articles.show', compact('article', 'relatedArticles'));
+            return view('public.articles.show', compact('article', 'relatedArticles'));
     }
 
     private function getFullArticleContent($slug)

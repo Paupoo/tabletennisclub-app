@@ -10,7 +10,7 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                 </svg>
-                <a href="{{ route('news.index') }}" class="hover:text-club-blue transition-colors">Actualités</a>
+                <a href="{{ route('articles.index') }}" class="hover:text-club-blue transition-colors">Actualités</a>
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                 </svg>
@@ -64,7 +64,7 @@
     @if(isset($article['image']))
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
             <div class="aspect-video bg-gray-100 rounded-2xl overflow-hidden">
-                <img src="{{ $article['image'] }}" alt="{{ $article['title'] ?? 'Image de l\'article' }}" 
+                <img src="{{ Storage::url($article->image) }}" alt="{{ $article['title'] ?? 'Image de l\'article' }}" 
                      class="w-full h-full object-cover">
             </div>
             @if(isset($article['image_caption']))

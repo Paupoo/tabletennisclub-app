@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Article;
 use App\Models\User;
 use App\Enums\ArticlesCategoryEnum;
+use App\Enums\ArticlesStatusEnum;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
@@ -41,7 +42,7 @@ class ArticleSeeder extends Seeder
             [
                 'title' => 'Tournoi de Noël : une belle réussite',
                 'content' => 'Le traditionnel tournoi de Noël du CTT s\'est déroulé dans une ambiance chaleureuse le 15 décembre. Plus de 50 participants se sont affrontés dans différentes catégories. Le buffet préparé par les bénévoles a été très apprécié, ainsi que la tombola qui a permis de récolter 800 euros pour l\'achat de nouveau matériel. Rendez-vous l\'année prochaine pour une nouvelle édition !',
-                'category' => ArticlesCategoryEnum::EVENEMENT,
+                'category' => ArticlesCategoryEnum::EVENT,
             ],
             [
                 'title' => 'Stage d\'été : perfectionnement technique au programme',
@@ -71,7 +72,7 @@ class ArticleSeeder extends Seeder
             [
                 'title' => 'Soirée karaoké : ambiance garantie !',
                 'content' => 'La soirée karaoké du 8 février a fait salle comble. Entre deux chansons, les membres ont pu participer à des défis ping-pong amusants. Le duo surprise formé par le président et le trésorier sur "Les Lacs du Connemara" restera dans les mémoires ! Cette soirée conviviale a permis de renforcer les liens entre les générations du club.',
-                'category' => ArticlesCategoryEnum::EVENEMENT,
+                'category' => ArticlesCategoryEnum::EVENT,
             ],
             [
                 'title' => 'Nouveau cours débutants le mercredi',
@@ -101,7 +102,7 @@ class ArticleSeeder extends Seeder
             [
                 'title' => 'Portes ouvertes : le club se dévoile',
                 'content' => 'Les portes ouvertes du 12 mars ont attiré plus de 80 visiteurs. Démonstrations, initiations gratuites et présentation des équipes ont ponctué cette journée. Quinze nouvelles inscriptions ont été enregistrées, preuve de l\'attractivité de notre club. Les parents ont particulièrement apprécié l\'accueil chaleureux et les explications détaillées sur l\'organisation.',
-                'category' => ArticlesCategoryEnum::EVENEMENT,
+                'category' => ArticlesCategoryEnum::EVENT,
             ],
             [
                 'title' => 'Stage de perfectionnement avec un champion',
@@ -150,7 +151,7 @@ class ArticleSeeder extends Seeder
                 'content' => $articleData['content'],
                 'category' => $articleData['category'],
                 'image' => 'public/articles/images/' . fake()->randomElement($images),
-                'status' => 'published',
+                'status' => ArticlesStatusEnum::PUBLISHED,
                 'is_public' => true,
                 'user_id' => $user->id,
                 'created_at' => $createdAt,

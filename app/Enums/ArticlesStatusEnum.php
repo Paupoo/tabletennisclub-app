@@ -6,9 +6,9 @@ use Filament\Support\Contracts\HasLabel;
 
 enum ArticlesStatusEnum: string implements HasLabel
 {
-    case DRAFT = 'Draft';
-    case PUBLISHED = 'Published';
-    case ARCHIVED = 'Archived';
+    case DRAFT = 'draft';
+    case PUBLISHED = 'dublished';
+    case ARCHIVED = 'archived';
 
     public function getLabel(): string
     {

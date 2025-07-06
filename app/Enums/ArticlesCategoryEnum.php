@@ -9,7 +9,7 @@ enum ArticlesCategoryEnum: string implements HasLabel
     case COMPETITION = 'Compétition';
     case PARTNERSHIP = 'Partnership';
     case PORTRAIT = 'Portrait';
-    case EVENEMENT = 'Events';
+    case EVENT = 'Events';
     case TRAINING = 'Training';
     case NEWS = 'News';
 
@@ -19,7 +19,7 @@ enum ArticlesCategoryEnum: string implements HasLabel
             self::COMPETITION => __('Compétition'),
             self::PARTNERSHIP => __('Partnership'),
             self::PORTRAIT => __('Portrait'),
-            self::EVENEMENT => __('Events'),
+            self::EVENT => __('Events'),
             self::TRAINING => __('Training'),
             self::NEWS => __('News'),
         };

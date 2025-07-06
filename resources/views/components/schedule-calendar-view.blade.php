@@ -119,9 +119,10 @@
                                 @if(isset($activity['level']))
                                     <div class="mt-1">
                                         <span class="inline-block px-1 py-0.5 text-xs rounded
-                                            @if($activity['level'] === 'Débutant') bg-green-100 text-green-700
-                                            @elseif($activity['level'] === 'Intermédiaire') bg-yellow-100 text-yellow-700
-                                            @elseif($activity['level'] === 'Jeunes') bg-purple-100 text-purple-700
+                                            @if($activity['level'] === 'Tous niveaux') bg-blue-100 text-blue-700
+                                            @elseif($activity['level'] === 'Débutant') bg-green-100 text-green-700
+                                            @elseif($activity['level'] === 'Débutant+') bg-yellow-100 text-yellow-700
+                                            @elseif($activity['level'] === 'Débutant+ / Confirmé') bg-pink-100 text-pink-700
                                             @else bg-red-100 text-red-700 @endif">
                                             {{ $activity['level'] }}
                                         </span>

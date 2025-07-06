@@ -20,6 +20,8 @@ class UsersTable extends Component
 
     public string $search = '';
 
+    public ?int $selectedUserId = null;
+
     public string $sex = '';
 
     public string $sortByField = '';
@@ -55,7 +57,7 @@ class UsersTable extends Component
 
     public function render()
     {
-        $users = User::search($this->search)
+        $users = User::searchTerms($this->search)
             ->when($this->competitor !== '', function ($query): void {
                 $query->where('is_competitor', $this->competitor);
             })
@@ -88,5 +90,18 @@ class UsersTable extends Component
         }
 
         $this->sortByField = $field;
+    }
+
+    private function applySearch($query, string $search): void
+    {
+        $terms = collect(explode(' ', strtolower($search)))
+            ->filter();
+
+        foreach ($terms as $term) {
+            $query->where(function ($subQuery) use ($term) {
+                $subQuery->whereRaw('LOWER(first_name) LIKE ?', ["%{$term}%"])
+                    ->orWhereRaw('LOWER(last_name) LIKE ?', ["%{$term}%"]);
+            });
+        }
     }
 }

@@ -115,7 +115,8 @@
                                 tooltip="{{ __('Check details') }}"
                                 onclick="window.location.href='{{ route('users.show', $user->id) }}'">
                             </x-ui.action-button>
-                            @can('update', $user_model)
+                            @can('update', Auth()->user())
+                            {{-- Only show these buttons if the user has permission to update --}}
                             <x-ui.action-button 
                                 variant="default" 
                                 icon="edit" 
@@ -129,14 +130,13 @@
                                 onclick="window.location.href='{{ route('users.toggleHaspaid', $user) }}'">
                             </x-ui.action-button>
                             @endcan
-                            @can('delete', $user_model)
+                            @can('delete', Auth()->user())
                                 <x-ui.action-button
                                     type="button"
                                     variant="danger"
                                     icon="delete"
                                     tooltip="{{ __('Delete user') }}"
-                                    @click="$dispatch('open-modal', 'confirm-delete-user')">
-                                    {{-- wire:click="destroy({{ $user }})"
+ @click="$wire.selectedUserId = {{ $user->id }}; $dispatch('open-modal', 'confirm-delete-user')">                                    {{-- wire:click="destroy({{ $user }})"
                                     wire:confirm.prompt="Are you sure you want to delete {{ $user->first_name }} {{ $user->last_name }}? Type DELETE if you are sure.|DELETE"> --}}
                                 </x-ui.action-button>
                             @endcan
@@ -159,7 +159,7 @@
             {{ __('Show details') }}
         </x-ui.legend-item>
         
-        @can('update', $user)
+        @can('update', Auth()->user())
         <x-ui.legend-item icon="edit" icon-class="text-gray-400">
             {{ __('Update user details') }}
         </x-ui.legend-item>
@@ -167,9 +167,9 @@
         <x-ui.legend-item icon="euro" icon-class="text-gray-400">
             {{ __('Toggle payment') }}
         </x-ui.legend-item>
-        @endcannot
+        @endcan
 
-        @can('delete', $user)
+        @can('delete', auth()->user())
         <x-ui.legend-item icon="delete" icon-class="text-red-600">
             {{ __('Delete user') }}
         </x-ui.legend-item>
@@ -177,7 +177,7 @@
     </x-ui.legend>
 
     <!-- Modal to confirm reset force index -->
-    <x-modal name="confirm-delete-user" focusable>
+    {{-- <x-modal name="confirm-delete-user" focusable>
         <form method="get" wire:submit="destroy({{ $user }})" class="p-6" x-data="{ confirmText: '', isValid() { return this.confirmText === 'DELETE' } }">
             <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">
                 {{ __('Are you sure you want to delete ' . $user->first_name . ' ' . $user->last_name) }}
@@ -215,5 +215,47 @@
                 </x-danger-button>
             </div>
         </form>
+    </x-modal> --}}
+
+    <x-modal name="confirm-delete-user" focusable>
+        <form wire:submit.prevent="destroy" class="p-6" x-data="{ confirmText: '', isValid() { return this.confirmText === 'DELETE' } }">
+            <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">
+                {{ __('Are you sure you want to delete this user?') }}
+            </h2>
+
+            <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                {{ __('This action is irreversible. All associated data will be permanently deleted.') }}
+            </p>
+
+            <!-- Champ de confirmation -->
+            <div class="mt-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    {{ __('To confirm, type') }} <strong>"DELETE"</strong> {{ __('in the box below') }}:
+                </label>
+                <input 
+                    type="text" 
+                    x-model="confirmText"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    placeholder="DELETE"
+                    autocomplete="off"
+                >
+            </div>
+
+            <div class="mt-6 flex justify-end">
+                <x-secondary-button x-on:click="$dispatch('close')">
+                    {{ __('Cancel') }}
+                </x-secondary-button>
+
+                <x-danger-button 
+                    class="ms-3" 
+                    x-bind:disabled="!isValid()"
+                    x-bind:class="{ 'opacity-50 cursor-not-allowed': !isValid() }"
+                    type="submit"
+                >
+                    {{ __('Delete') }}
+                </x-danger-button>
+            </div>
+        </form>
     </x-modal>
+
 </div>

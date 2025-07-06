@@ -49,7 +49,7 @@
             <a href="{{ route('home') }}" @click="closeMobileMenu()" class="block text-gray-900 hover:text-club-blue px-3 py-2 rounded-md text-base font-medium">Accueil</a>
             <a href="{{ route('results') }}" @click="closeMobileMenu()" class="block text-gray-900 hover:text-club-blue px-3 py-2 rounded-md text-base font-medium">Résultats</a>
             <a href="{{ route('events') }}" @click="closeMobileMenu()" class="block text-gray-900 hover:text-club-blue px-3 py-2 rounded-md text-base font-medium">Événements</a>
-            <a href="{{ route('articles.index') }}" @click="closeMobileMenu()" class="block text-gray-900 hover:text-club-blue px-3 py-2 rounded-md text-base font-medium">Nouvelles</a>
+            <a href="{{ route('public.articles.index') }}" @click="closeMobileMenu()" class="block text-gray-900 hover:text-club-blue px-3 py-2 rounded-md text-base font-medium">Nouvelles</a>
             <a href="{{ route('home') }}#contact" @click="closeMobileMenu()" class="block text-gray-900 hover:text-club-blue px-3 py-2 rounded-md text-base font-medium">Contact</a>
             <a href="{{ route('home') }}#join" @click="closeMobileMenu()" class="block bg-club-blue text-white px-3 py-2 rounded-md text-base font-medium">Rejoindre</a>
         </div>

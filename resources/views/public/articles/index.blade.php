@@ -1,14 +1,22 @@
 <div>
-    <x-guest-layout title="Actualités - Ace Table Tennis Club">
+    <x-guest-layout title="Actualités - CTT Ottignies-Blocry">
         <x-navigation :fixed="false" />
         
         <!-- Header -->
-        <div class="bg-linear-to-r from-club-blue to-club-blue-light text-white py-16">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <h1 class="text-4xl md:text-5xl font-bold mb-4">Actualités du Club</h1>
-                <p class="text-xl opacity-90">Toutes les dernières nouvelles et événements d'Ace TTC</p>
-            </div>
-        </div>
+<div class="relative h-auto pt-16 text-white flex items-center overflow-hidden">
+    <!-- Image de fond -->
+    <div class="absolute inset-0">
+        <img src="{{ asset('images/background_news.jpg') }}" alt="Tennis table background" class="w-full h-full object-cover">
+        <!-- Overlay avec votre dégradé + opacité -->
+        <div class="absolute inset-0 bg-gradient-to-br from-club-blue/85 via-club-blue/80 to-club-blue-light/85"></div>
+    </div>
+    
+    <!-- Contenu -->
+    <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <h1 class="text-4xl md:text-5xl font-bold mb-4 drop-shadow-lg">Actualités du Club</h1>
+        <p class="text-xl opacity-90 drop-shadow-md">Toutes les dernières nouvelles et infos</p>
+    </div>
+</div>
 
         <livewire:public.articles.article-list />
 

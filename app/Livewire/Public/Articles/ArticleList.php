@@ -4,7 +4,9 @@ declare(strict_types=1);
 namespace App\Livewire\Public\Articles;
 
 use App\Enums\ArticlesCategoryEnum;
+use App\Enums\ArticlesStatusEnum;
 use App\Models\Article;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -79,7 +81,7 @@ class ArticleList extends Component
     public function getArticlesProperty(): LengthAwarePaginator
     {
         $query = Article::query()
-            ->where('status', 'published');
+            ->where('status', ArticlesStatusEnum::PUBLISHED->value);
 
         $this->applyFilters($query);
 
@@ -87,7 +89,7 @@ class ArticleList extends Component
             ->paginate(9);
     }
 
-    private function applyFilters(\Illuminate\Database\Eloquent\Builder $query): void
+    private function applyFilters(Builder $query): void
     {
         if ($this->category) {
             $query->where('category', $this->category);

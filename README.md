@@ -84,6 +84,12 @@ Si vous trouvez un problème, merci de le signaler par mail à aurelien.paulus@g
 
 Aucun problème connu pour l'instant. Veuillez noter que ce projet est encore inachevé.
 
+### Todo's
+- remplacer "en savoir plus" par resultats
+- logo + titre à revoir
+- ajouter menu "contact"
+- réduire les entrées stupides de mock dans le formulaire
+
 ## Technologies
 
 - [Laravel](https://laravel.com/)

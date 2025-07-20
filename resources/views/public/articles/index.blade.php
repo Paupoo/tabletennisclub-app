@@ -6,7 +6,7 @@
 <div class="relative h-auto pt-16 text-white flex items-center overflow-hidden">
     <!-- Image de fond -->
     <div class="absolute inset-0">
-        <img src="{{ asset('images/background_news.jpg') }}" alt="Tennis table background" class="w-full h-full object-cover">
+        <img src="{{ asset('images/background_news.webp') }}" alt="Tennis table background" class="w-full h-full object-cover">
         <!-- Overlay avec votre dégradé + opacité -->
         <div class="absolute inset-0 bg-gradient-to-br from-club-blue/85 via-club-blue/80 to-club-blue-light/85"></div>
     </div>

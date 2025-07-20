@@ -22,7 +22,7 @@
                             <p class="text-gray-600">{{ config('app.club_street') }}</p>
                             <p class="text-gray-600">{{ config('app.club_zip_code') }} {{ config('app.club_city') }}</p>
                             <div class="mt-2 text-sm font-medium text-gray-500">
-                                <iframe width="425" height="350" src="https://www.openstreetmap.org/export/embed.html?bbox=4.585273861885072%2C50.665709466584%2C4.593122005462647%2C50.66949034073618&amp;layer=mapnik" style="border: 1px solid black"></iframe><br/><a href="https://www.openstreetmap.org/?#map=18/50.667600/4.589198&amp;layers=N" target="_blank" rel="noopener noreferrer">Afficher une carte plus grande</a>
+                                <iframe lg:width="425" lg:height="350" width="255" height="210" src="https://www.openstreetmap.org/export/embed.html?bbox=4.585273861885072%2C50.665709466584%2C4.593122005462647%2C50.66949034073618&amp;layer=mapnik" style="border: 1px solid black"></iframe><br/><a href="https://www.openstreetmap.org/?#map=18/50.667600/4.589198&amp;layers=N" target="_blank" rel="noopener noreferrer">Afficher une carte plus grande</a>
                             </div>
                         </div>
                     </div>

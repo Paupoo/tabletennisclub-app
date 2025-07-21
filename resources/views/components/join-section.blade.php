@@ -3,7 +3,7 @@
         <div class="text-center mb-16 animate-on-scroll">
             <h2 class="text-4xl font-bold text-gray-900 mb-4">Prêt à nous rejoindre ?</h2>
             <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-                Devenez membre de notre famille de tennis de table dès aujourd'hui. Tous les niveaux sont les bienvenus !
+                Devenez membre de notre famille de tennis de table dès aujourd'hui. Tous les niveaux sont les bienvenus&nbsp;!
             </p>
         </div>
 
@@ -47,41 +47,85 @@
                 <div class="text-center mb-6">
                     <div class="w-16 h-16 bg-club-blue rounded-full flex items-center justify-center mx-auto mb-4">
                         <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
+                            </path>
                         </svg>
                     </div>
-                    <h3 class="text-2xl font-bold text-gray-900 mb-2">Affiliation Annuelle</h3>
-                    <p class="text-gray-600 mb-4">Obligatoire pour tous les membres</p>
-                    <div class="text-4xl font-bold text-club-blue mb-2">160€</div>
-                    <p class="text-sm text-gray-500">Par an et par personne</p>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-2">Affiliations</h3>
+                    <p class="text-gray-600 mb-4">Minimum - Licence récréative</p>
+                    <!-- Nouvelle présentation des tarifs -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-lg mx-auto">
+                        <!-- Licence Récréative -->
+                        <div
+                            class="bg-club-yellow/10 border-1 border-club-yellow rounded-xl p-4 hover:shadow-md transition-shadow">
+                            <div class="font-semibold text-black mb-1">
+                                Licence Récréative
+                            </div>
+                            <div class="text-3xl font-bold text-club-blue mb-1">60€</div>
+                            <p class="text-xs text-gray-600">Par an et par personne</p>
+                        </div>
+                        <!-- Licence Compétitive -->
+                        <div
+                            class="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                            <div class="font-semibold text-black mb-1">
+                                Licence Compétitive
+                            </div>
+                            <div class="text-3xl font-bold text-club-blue mb-1">125€</div>
+                            <p class="text-xs text-gray-600">Par an et par personne</p>
+                        </div>
+                        <div class="space-y-3 mb-6 text-left">
+                            <div class="flex items-center text-sm">
+                                <span class="text-club-blue mr-2">•</span>
+                                <span>Licence récréative de l'AFTT </span>
+                            </div>
+                            <div class="flex items-center text-sm">
+                                <span class="text-club-blue mr-2">•</span>
+                                <span>Assurance responsabilité civile</span>
+                            </div>
+                            <div class="flex items-center text-sm">
+                                <span class="text-club-blue mr-2">•</span>
+                                <span>Accès libre aux créneaux libres</span>
+                            </div>
+                        </div>
+                        <div class="space-y-3 mb-6 text-left">
+                            <div class="flex items-center text-sm">
+                                <span class="text-club-blue mr-2">•</span>
+                                <span>Licence compétitive de l'AFTT</span>
+                            </div>
+                            <div class="flex items-center text-sm">
+                                <span class="text-club-blue mr-2">•</span>
+                                <span>Assurance responsabilité civile</span>
+                            </div>
+                            <div class="flex items-center text-sm">
+                                <span class="text-club-blue mr-2">•</span>
+                                <span>Accès libre aux créneaux libres</span>
+                            </div>
+                            <div class="flex items-center text-sm">
+                                <span class="text-club-blue mr-2">•</span>
+                                <span>Accès prioritaire aux entraînements dirigés</span>
+                            </div>
+                            <div class="flex items-center text-sm">
+                                <span class="text-club-blue mr-2">•</span>
+                                <span>Participation aux compétitions</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="space-y-3 mb-6">
-                    <div class="flex items-center text-sm">
-                        <span class="text-club-blue mr-2">•</span>
-                        <span>Licence de l'Aile Francophone </span>
-                    </div>
-                    <div class="flex items-center text-sm">
-                        <span class="text-club-blue mr-2">•</span>
-                        <span>Assurance responsabilité civile</span>
-                    </div>
-                    <div class="flex items-center text-sm">
-                        <span class="text-club-blue mr-2">•</span>
-                        <span>Accès libre aux créneaux libres</span>
-                    </div>
-                    <div class="flex items-center text-sm">
-                        <span class="text-club-blue mr-2">•</span>
-                        <span>Participation aux compétitions</span>
-                    </div>
-                </div>
+                
             </div>
+
+
+
 
             <!-- Entraînements optionnels -->
             <div class="bg-white rounded-2xl shadow-lg border-2 border-club-yellow p-8 animate-on-scroll">
                 <div class="text-center mb-6">
                     <div class="w-16 h-16 bg-club-yellow rounded-full flex items-center justify-center mx-auto mb-4">
                         <svg class="w-8 h-8 text-club-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                         </svg>
                     </div>
                     <h3 class="text-2xl font-bold text-gray-900 mb-2">Entraînements Dirigés</h3>
@@ -133,7 +177,8 @@
                 <div class="space-y-6">
                     <!-- Nombre de membres -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Nombre de membres de la famille</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Nombre de membres de la
+                            famille</label>
                         <select x-model="familyMembers" @change="validateCompetitors()"
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
                             <option value="1">1 personne</option>
@@ -151,8 +196,10 @@
                         </label>
                         <select x-model="competitors"
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
-                            <template x-for="i in parseInt(familyMembers) + 1" :key="i-1">
-                                <option :value="i-1" x-text="i-1 === 0 ? 'Aucun compétiteur' : (i-1) + ' compétiteur' + (i-1 > 1 ? 's' : '')"></option>
+                            <template x-for="i in parseInt(familyMembers) + 1" :key="i - 1">
+                                <option :value="i - 1"
+                                    x-text="i-1 === 0 ? 'Aucun compétiteur' : (i-1) + ' compétiteur' + (i-1 > 1 ? 's' : '')">
+                                </option>
                             </template>
                         </select>
                         <p class="text-xs text-gray-500 mt-1">
@@ -163,7 +210,7 @@
                     <!-- Séances d'entraînement -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Nombre de séances d'entraînement souhaitées
+                            Nombre de séances d'entraînement dirigé souhaitées
                         </label>
                         <select x-model="trainingSessions"
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
@@ -182,7 +229,7 @@
                         <div class="flex justify-between">
                             <span>Affiliation (<span x-text="familyMembers"></span> membre<span
                                     x-show="familyMembers > 1">s</span>)</span>
-                            <span class="font-semibold" x-text="(familyMembers * 160) + '€'"></span>
+                            <span class="font-semibold" x-text="calculateBase() + '€'"></span>
                         </div>
 
                         <div x-show="trainingSessions > 0">
@@ -226,14 +273,17 @@
         <div class="mt-12 bg-blue-50 rounded-lg p-6 animate-on-scroll">
             <div class="flex items-start">
                 <div class="shrink-0">
-                    <svg class="w-6 h-6 text-club-blue mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    <svg class="w-6 h-6 text-club-blue mt-1" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                 </div>
                 <div class="ml-3">
                     <h4 class="text-lg font-semibold text-gray-900 mb-2">Informations importantes</h4>
                     <ul class="text-sm text-gray-600 space-y-1">
-                        <li>• L'affiliation annuelle est obligatoire et inclut la licence fédérale. Il n'est pas obligatoire de participer aux championnats (licence récréative)</li>
+                        <li>• L'affiliation annuelle est obligatoire et inclut la licence fédérale. Il n'est pas
+                            obligatoire de participer aux championnats (licence récréative)</li>
                         <li>• Les entraînements dirigés sont optionnels et se déroulent en groupes</li>
                         <li>• Réduction automatique à partir de la 2ème séance ou du 2ème membre de famille</li>
                         <li>• Possibilité de paiement échelonné (nous contacter)</li>

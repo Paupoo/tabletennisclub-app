@@ -40,6 +40,16 @@ Alpine.data("priceCalculator", () => ({
   },
 
   // Calcule le total
+  calculateBase() {
+    // Licences : récréatives (60€) + compétition (125€)
+    const recreationalCost = this.getRecreationalMembers() * 60;
+    const competitionCost = this.competitors * 125;
+    const base = recreationalCost + competitionCost;
+
+    return base;
+  },
+
+  // Calcule le total
   calculateTotal() {
     // Licences : récréatives (60€) + compétition (125€)
     const recreationalCost = this.getRecreationalMembers() * 60;
@@ -49,7 +59,7 @@ Alpine.data("priceCalculator", () => ({
     // Séances d'entraînement
     let training = 0;
     if (this.trainingSessions > 0) {
-      if (this.trainingSessions === 1) {
+      if (this.trainingSessions == 1) {
         training += this.familyMembers > 1 ? 80 : 90;
       } else if (this.trainingSessions > 1) {
         const firstSession = this.familyMembers > 1 ? 80 : 90;

@@ -75,14 +75,12 @@ class RoomController extends Controller
     {
         $breadcrumbs = Breadcrumb::make()
             ->home()
-            ->teams()
-            ->add('Edit team')
+            ->rooms()
             ->toArray();
 
         $this->authorize('viewAny', Room::class);
 
         return view('admin.rooms.index', [
-            'rooms' => Room::orderBy('name')->paginate(10),
             'breadcrumbs' => $breadcrumbs,
         ]);
     }

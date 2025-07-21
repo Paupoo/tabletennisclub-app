@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Livewire;
+namespace App\Livewire\Admin\Users;
 
 use App\Models\User;
 use App\Services\ForceList;
@@ -77,7 +77,7 @@ class UsersTable extends Component
             })
             ->paginate($this->perPage);
 
-        return view('livewire.users-table', [
+        return view('livewire.admin.users.users-table', [
             'users' => $users,
             'user_model' => User::class,
         ]);

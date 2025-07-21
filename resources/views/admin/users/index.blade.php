@@ -137,7 +137,7 @@
     </x-slot>
 
     <x-admin-block>
-        <livewire:users-table>
+        <livewire:admin.users.users-table>
     </x-admin-block>
 
 </x-app-layout>

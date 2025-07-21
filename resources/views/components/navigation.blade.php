@@ -26,9 +26,19 @@
                         Nouvelles
                     </a>
                     <a href="{{ route('home') }}#contact" class="text-gray-900 hover:text-club-blue px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                    <a href="{{ route('home') }}#join" class="bg-club-blue text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-club-blue-light transition-colors">
+                    @auth
+                        <a href="{{ route('dashboard') }}" class="bg-club-yellow text-black px-4 py-2 rounded-md text-sm font-medium hover:bg-club-yellow-light transition-colors">
+                        {{ __('My account') }}
+                        </a>
+                    @endauth
+                    @guest
+                        <a href="{{ route('home') }}#join" class="bg-club-blue text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-club-blue-light transition-colors">
                         Rejoindre
-                    </a>
+                        </a>
+                        <a href="{{ route('login') }}" class="bg-club-yellow text-black px-4 py-2 rounded-md text-sm font-medium hover:bg-club-yellow-light transition-colors">
+                        {{ __('Login') }}
+                        </a>
+                    @endguest
                 </div>
             </div>
             
@@ -51,7 +61,13 @@
             <a href="{{ route('events') }}" @click="closeMobileMenu()" class="block text-gray-900 hover:text-club-blue px-3 py-2 rounded-md text-base font-medium">Événements</a>
             <a href="{{ route('public.articles.index') }}" @click="closeMobileMenu()" class="block text-gray-900 hover:text-club-blue px-3 py-2 rounded-md text-base font-medium">Nouvelles</a>
             <a href="{{ route('home') }}#contact" @click="closeMobileMenu()" class="block text-gray-900 hover:text-club-blue px-3 py-2 rounded-md text-base font-medium">Contact</a>
-            <a href="{{ route('home') }}#join" @click="closeMobileMenu()" class="block bg-club-blue text-white px-3 py-2 rounded-md text-base font-medium">Rejoindre</a>
+            @guest
+                <a href="{{ route('home') }}#join" @click="closeMobileMenu()" class="block bg-club-blue text-white px-3 py-2 rounded-md text-base font-medium">Rejoindre</a>
+                <a href="{{ route('login') }}" @click="closeMobileMenu()" class="block bg-club-yellow text-black px-3 py-2 rounded-md text-base font-medium">{{ __('Login') }}</a>
+            @endguest
+            @auth
+                <a href="{{ route('dashboard') }}" @click="closeMobileMenu()" class="block bg-club-yellow text-black px-3 py-2 rounded-md text-base font-medium">{{ __('My Account') }}</a>
+            @endauth
         </div>
     </div>
 </nav>

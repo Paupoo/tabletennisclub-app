@@ -26,6 +26,8 @@
                         Nouvelles
                     </a>
                     <a href="{{ route('home') }}#contact" class="text-gray-900 hover:text-club-blue px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        {{ __('Contact') }}
+                    </a>
                     @auth
                         <a href="{{ route('dashboard') }}" class="bg-club-yellow text-black px-4 py-2 rounded-md text-sm font-medium hover:bg-club-yellow-light transition-colors">
                         {{ __('My account') }}

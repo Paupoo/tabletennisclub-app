@@ -74,7 +74,7 @@ Alpine.data("priceCalculator", () => ({
   // Nouvelle méthode pour naviguer vers le contact avec les données
   goToContactWithData() {
     const params = new URLSearchParams({
-      interest: 'membership',
+      interest: 'join',
       familyMembers: this.familyMembers,
       competitors: this.competitors,
       trainingSessions: this.trainingSessions
@@ -97,7 +97,7 @@ Alpine.data("priceCalculator", () => ({
       // Déclencher l'événement pour mettre à jour le formulaire
       window.dispatchEvent(new CustomEvent('prepopulateContact', {
         detail: {
-          interest: 'membership',
+          interest: 'join',
           familyMembers: this.familyMembers,
           competitors: this.competitors,
           trainingSessions: this.trainingSessions
@@ -134,7 +134,7 @@ Alpine.data("contactForm", () => ({
     const urlParams = new URLSearchParams(window.location.search);
     const interest = urlParams.get('interest');
 
-    if (interest === 'membership') {
+    if (interest === 'join') {
       const familyMembers = urlParams.get('familyMembers');
       const competitors = urlParams.get('competitors');
       const trainingSessions = urlParams.get('trainingSessions');
@@ -156,7 +156,7 @@ Alpine.data("contactForm", () => ({
     this.trainingSessions = data.trainingSessions;
 
     // Déclencher l'affichage des champs d'adhésion
-    this.showMembershipFields = data.interest === 'membership';
+    this.showMembershipFields = data.interest === 'join';
 
     // Mettre à jour le select dans le DOM
     this.$nextTick(() => {
@@ -170,7 +170,7 @@ Alpine.data("contactForm", () => ({
 
   // Méthode appelée quand le type de demande change
   onRequestTypeChange(event) {
-    this.showMembershipFields = event.target.value === 'membership';
+    this.showMembershipFields = event.target.value === 'join';
     // Réinitialiser les valeurs si on change d'option
     if (!this.showMembershipFields) {
       this.familyMembers = 1;
@@ -224,46 +224,63 @@ Alpine.data("contactForm", () => ({
   async submitForm(event) {
     this.loading = true
     try {
-      const formData = new FormData(event.target)
-      const data = Object.fromEntries(formData)
+        const formData = new FormData(event.target)
+        
+        // Ajouter les données d'adhésion si applicable
+        if (this.showMembershipFields) {
+            formData.append('membership_family_members', this.familyMembers);
+            formData.append('membership_competitors', this.competitors);
+            formData.append('membership_training_sessions', this.trainingSessions);
+            formData.append('membership_total_cost', this.calculateTotal());
+        }
 
-      // Ajouter les données d'adhésion si applicable
-      if (this.showMembershipFields) {
-        data.membership_family_members = this.familyMembers;
-        data.membership_competitors = this.competitors;
-        data.membership_training_sessions = this.trainingSessions;
-        data.membership_total_cost = this.calculateTotal();
-      }
+        console.log('Envoi vers:', event.target.action);
+        console.log('Données à envoyer:', Object.fromEntries(formData));
 
-      const response = await fetch(event.target.action, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content"),
-        },
-        body: JSON.stringify(data),
-      })
-      const result = await response.json()
-      if (result.success) {
-        this.submitted = true
-        event.target.reset()
-        // Réinitialiser aussi les champs d'adhésion
-        this.showMembershipFields = false;
-        this.familyMembers = 1;
-        this.competitors = 0;
-        this.trainingSessions = 0;
-        setTimeout(() => (this.submitted = false), 5000)
-      } else {
-        console.error("Erreur:", result.message)
-        alert("Une erreur est survenue. Veuillez réessayer.")
-      }
+        const response = await fetch(event.target.action, {
+            method: "POST",
+            headers: {
+                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content"),
+                "Accept": "application/json", // Important !
+            },
+            body: formData,
+        })
+        
+        console.log('Status de la réponse:', response.status);
+        console.log('Headers de la réponse:', response.headers);
+        
+        // Vérifier le type de contenu avant de parser
+        const contentType = response.headers.get('content-type');
+        console.log('Content-Type:', contentType);
+        
+        if (!contentType || !contentType.includes('application/json')) {
+            // Si ce n'est pas du JSON, lire comme texte pour voir l'erreur
+            const text = await response.text();
+            console.error('Réponse non-JSON reçue:', text);
+            throw new Error('Le serveur a renvoyé du HTML au lieu de JSON. Voir la console pour les détails.');
+        }
+        
+        const result = await response.json()
+        
+        if (result.success) {
+            this.submitted = true
+            event.target.reset()
+            this.showMembershipFields = false;
+            this.familyMembers = 1;
+            this.competitors = 0;
+            this.trainingSessions = 0;
+            setTimeout(() => (this.submitted = false), 5000)
+        } else {
+            console.error("Erreur dans la réponse:", result)
+            alert("Erreur: " + (result.message || 'Erreur inconnue'))
+        }
     } catch (error) {
-      console.error("Erreur:", error)
-      alert("Une erreur est survenue. Veuillez réessayer.")
+        console.error("Erreur complète:", error)
+        alert("Erreur: " + error.message)
     } finally {
-      this.loading = false
+        this.loading = false
     }
-  },
+},
 }))
 
 // Configuration pour les filtres d'événements

@@ -28,13 +28,13 @@ Vous avez reçu un message depuis le formulaire de contact du site {{ config('ap
 @endif
 
 <x-mail::button :url="'https://www.google.com'">
-Gérer la demande
+Gérer la demande sur le site
 </x-mail::button>
 <x-mail::button :url="''" color="success">
-Clôturer la demande positivement
+Créer un compte et envoyer l'invitation
 </x-mail::button>
 <x-mail::button :url="''" color="error">
-Rejeter/marquer comme spam
+Rejeter / Ignorer cette demande
 </x-mail::button>
 
 Envoyé le {{ now()->format('d-m-Y H:i') }}<br>

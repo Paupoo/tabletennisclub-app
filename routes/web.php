@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\ArticleController;
+use App\Http\Controllers\ContactAdminController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\EventsController;
 use App\Http\Controllers\HomeController;
@@ -87,7 +88,7 @@ Route::get('/articles/{slug}', [PublicArticlesController::class, 'show'])->name(
  * The articles are stored in the database and can be created, read, updated, and deleted through this interface.
  * This route is protected by authentication and verification middleware. 
  */
-Route::resource('/admin/articles', ArticleController::class)->middleware(['auth', 'verified']);
+Route::resource('/admin/articles', ArticleController::class)->middleware(['auth', 'verified'])->names('admin.articles');
 
 /**
  * Profile management
@@ -243,6 +244,10 @@ Route::middleware(['auth', 'verified'])
         Route::delete('/knockout-matches/{match}/reset', [KnockoutPhaseController::class, 'resetMatch'])
             ->name('resetKnockoutMatch');
     });
+
+Route::prefix('admin')->middleware(['auth'])->group(function () {
+    Route::resource('contacts', ContactAdminController::class)->names('admin.contacts');
+});
 
 Route::get('/test', function () {
     return view('test', ['breadcrumbs' => []]);

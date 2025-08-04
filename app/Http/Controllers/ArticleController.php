@@ -57,7 +57,9 @@ class ArticleController extends Controller
             ->articles()
             ->toArray();
 
-        return View('admin.articles.index', compact('articles', 'breadcrumbs'));
+        $actions = '';
+
+        return View('admin.articles.index', compact('articles', 'breadcrumbs', 'actions'));
     }
 
     /**
@@ -76,7 +78,7 @@ class ArticleController extends Controller
 
         Article::create($request->validated());
 
-        return redirect()->route('articles.index');
+        return redirect()->route('admin.articles.show');
     }
 
     /**

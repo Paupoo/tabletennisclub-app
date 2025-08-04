@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreContactRequest;
 use App\Mail\ContactFormMail;
+use App\Models\Contact;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -20,6 +21,7 @@ class ContactController extends Controller
             // Ici vous pouvez sauvegarder en base de données
             // Contact::create($validated);
 
+            Contact::create($validated);
             // Mail::to(config('app.club_email'))->send(new ContactFormMail($validated));
             Mail::to('aurelien.paulus@gmail.com')->send(new ContactFormMail($validated));
             // Ou envoyer un email

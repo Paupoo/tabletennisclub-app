@@ -19,7 +19,7 @@ class Breadcrumb
     
     public function articles($url = null)
     {
-        return $this->add('Articles', $url ?: route('articles.index'), 'home');
+        return $this->add('Articles', $url ?: route('admin.articles.index'), 'home');
     }
     public function home($url = null)
     {
@@ -64,6 +64,16 @@ class Breadcrumb
     public function tournament($tournament)
     {
         return $this->add($tournament->name, route('tournaments.show', $tournament));
+    }
+
+    public function profile($url = null)
+    {
+        return $this->add('Profile', $url ?: route('profile.edit'));
+    }
+
+    public function contacts($url = null)
+    {
+        return $this->add('Contacts', $url ?: route('admin.contacts.index'));
     }
     
     public function current($title)

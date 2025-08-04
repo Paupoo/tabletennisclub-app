@@ -52,6 +52,20 @@ class ContactFormMail extends Mailable implements ShouldQueue
                 'membership_competitors' => $this->formData['membership_competitors'] ?? '',
                 'membership_training_sessions' => $this->formData['membership_training_sessions'] ?? '',
                 'membership_total_cost' => $this->formData['membership_total_cost'] ?? '',
+                'tableData' => [
+                    [
+                        'Type' => 'Licence(s) récréatives',
+                        'Quantité' => $this->formData['membership_family_members'] ?? 0,
+                    ],
+                    [
+                        'Type' => 'Licence(s) sportive(s)',
+                        'Quantité' => $this->formData['membership_competitors'] ?? 0,
+                    ],
+                    [
+                        'Type' => 'Entrainement(s) dirigé(s)',
+                        'Quantité' => $this->formData['membership_training_sessions'] ?? 0,
+                    ],
+                ],
             ]
         );
     }

@@ -17,7 +17,7 @@ class Index extends Component
     {
         $articles = Article::search($this->search)->get();
 
-        return view('livewire.admin.articles.index', [
+        return view('admin.articles.index', [
             'articles' => $articles,
         ]);
     }

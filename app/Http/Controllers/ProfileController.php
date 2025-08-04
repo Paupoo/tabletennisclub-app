@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\Sex;
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Support\Breadcrumb;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -40,9 +41,15 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View
     {
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->profile()
+            ->toArray();
+
         return view('profile.edit', [
             'user' => $request->user(),
             'sexes' => Sex::cases(),
+            'breadcrumbs' => $breadcrumbs,
         ]);
     }
 

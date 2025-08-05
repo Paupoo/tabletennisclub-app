@@ -20,7 +20,7 @@
 <body class="font-sans antialiased">
     <div class="min-h-screen bg-gray-100 dark:bg-gray-900 pb-6">
         @include('layouts.navigation')
-        
+
         <x-header :breadcrumbs="$breadcrumbs" />
 
         <!-- Page Content -->

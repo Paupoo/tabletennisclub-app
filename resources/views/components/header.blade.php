@@ -7,8 +7,8 @@
         <div class="flex flex-col space-y-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0 sm:gap-4">
             
             <!-- Breadcrumb Section -->
-            <div class="flex-1 min-w-0">
-                <x-breadcrumbs :breadcrumbs="$breadcrumbs" class="truncate"/>
+            <div class="hidden md:flex flex-1 min-w-0">
+                <x-breadcrumbs :breadcrumbs="$breadcrumbs" class="truncate" />
             </div>
             
             <!-- Header Actions Section -->

@@ -25,7 +25,14 @@ class ContactAdminController extends Controller
 
     public function show(Contact $contact)
     {
-        return view('admin.contacts.show', compact('contact'));
+
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->contacts()
+            ->current($contact->interest . ' - ' . $contact->first_name . ' ' . $contact->last_name)
+            ->toArray();
+
+        return view('admin.contacts.show', compact('contact', 'breadcrumbs'));
     }
 
     public function update(Request $request, Contact $contact)

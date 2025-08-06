@@ -78,24 +78,36 @@
             <!-- Changement de statut -->
             <div class="bg-white rounded-lg shadow-lg p-4 sm:p-6">
                 <h3 class="text-lg sm:text-xl font-bold text-club-blue mb-4">Gestion du statut</h3>
-                <form action="#" method="POST">
+
+                {{-- Affichage des erreurs de validation --}}
+                @if ($errors->any())
+                    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4" role="alert">
+                        <strong class="font-bold">Erreur{{ $errors->count() > 1 ? 's' : '' }} :</strong>
+                        <ul class="mt-2 list-disc list-inside text-sm">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+                <form action="{{ route('admin.contacts.update', $contact) }}" method="POST">
                     @csrf
                     @method('PATCH')
                     <div class="space-y-3">
                         <label class="flex items-center space-x-2 cursor-pointer">
-                            <input type="radio" name="status" value="nouveau" class="text-blue-600" {{ $contact->status === 'new' ? 'checked' : '' }}>
+                            <input type="radio" name="status" value="new" class="text-blue-600" {{ $contact->status === 'new' ? 'checked' : '' }}>
                             <span class="text-xs sm:text-sm font-medium text-blue-700">Nouveau</span>
                         </label>
                         <label class="flex items-center space-x-2 cursor-pointer">
-                            <input type="radio" name="status" value="en_cours" class="text-yellow-600" {{ $contact->status === 'pending' ? 'checked' : '' }}>
+                            <input type="radio" name="status" value="pending" class="text-yellow-600" {{ $contact->status === 'pending' ? 'checked' : '' }}>
                             <span class="text-xs sm:text-sm font-medium text-yellow-700">En cours</span>
                         </label>
                         <label class="flex items-center space-x-2 cursor-pointer">
-                            <input type="radio" name="status" value="traite" class="text-green-600" {{ $contact->status === 'processed' ? 'checked' : '' }}>
+                            <input type="radio" name="status" value="processed" class="text-green-600" {{ $contact->status === 'processed' ? 'checked' : '' }}>
                             <span class="text-xs sm:text-sm font-medium text-green-700">Traité</span>
                         </label>
                         <label class="flex items-center space-x-2 cursor-pointer">
-                            <input type="radio" name="status" value="refuse" class="text-red-600" {{ $contact->status === 'rejected' ? 'checked' : '' }}>
+                            <input type="radio" name="status" value="rejected" class="text-red-600" {{ $contact->status === 'rejected' ? 'checked' : '' }}>
                             <span class="text-xs sm:text-sm font-medium text-red-700">Refusé</span>
                         </label>
                     </div>

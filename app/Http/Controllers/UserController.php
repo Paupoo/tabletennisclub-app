@@ -84,8 +84,8 @@ class UserController extends Controller
         $breadcrumbs = Breadcrumb::make()
             ->home()
             ->users()
-            ->add('Edit')
-            ->add($user->first_name . ' ' . $user->last_name)
+            ->add($user->first_name . ' ' . $user->last_name, route('users.show', $user))
+            ->add(__('Edit'))
             ->toArray();
 
         $this->authorize('update', User::class);
@@ -119,12 +119,37 @@ class UserController extends Controller
             ],
         ];
 
+        $stats = collect([
+            'totalActiveUsers' => User::isActive()->count(),
+            'totalCompetitors' => User::isCompetitor()->count(),
+            'totalUsersCreatedLastYear' => User::isActive()
+                ->where('created_at', '>=', now()->subDays(365))
+                ->count(),
+            'totalUnpaidUsers' => User::isActive()
+                ->where('has_paid', false)
+                ->count(),
+            'totalUnderagedUsers' => User::isActive()
+                ->where('birthdate', '>', now()->subYears(18))
+                ->count(),
+            'totalWomen' => User::isActive()
+                ->where('sex', Sex::WOMEN)
+                ->count(),
+            'totalMen' => User::isActive()
+                ->where('sex', Sex::MEN)
+                ->count(),
+            'totalVeterans' => User::isActive()
+                ->isCompetitor()
+                ->where('birthdate', '>', now()->subYears(40))
+                ->count(),
+        ]);
+
         $this->authorize('index', User::class);
 
         return View('admin.users.index', [
             'user_model' => User::class,
             'breadcrumbs' => $breadcrumbs,
             'actions' => $actions,
+            'stats' => $stats,
         ]);
     }
 
@@ -147,7 +172,6 @@ class UserController extends Controller
         $breadcrumbs = Breadcrumb::make()
             ->home()
             ->users()
-            ->add('Profile')
             ->add($user->first_name . ' ' . $user->last_name)
             ->toArray();
 

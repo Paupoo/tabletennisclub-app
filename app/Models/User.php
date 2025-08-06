@@ -7,10 +7,8 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
 use Carbon\Carbon;
-use Filament\Models\Contracts\FilamentUser;
-use Filament\Models\Contracts\HasAvatar;
-use Filament\Models\Contracts\HasName;
 use Filament\Panel;
+use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -95,7 +93,7 @@ use Laravel\Sanctum\HasApiTokens;
  *
  * @mixin \Eloquent
  */
-class User extends Authenticatable implements FilamentUser, HasName, HasAvatar
+class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
@@ -250,6 +248,21 @@ class User extends Authenticatable implements FilamentUser, HasName, HasAvatar
         })->orderBy('last_name')->orderBy('first_name');
     }
 
+    public function scopeIsActive($query): Builder
+    {
+        return $query->where('is_active', true);
+    }
+
+    public function scopeIsCompetitor($query): Builder
+    {
+        return $query->where('is_competitor', true);
+    }
+
+    public function scopeHasPaid($query): Builder
+    {
+        return $query->where('has_paid', true);
+    }
+    
     /**
      * Calculate user's age and store it into ->age attribute.
      */

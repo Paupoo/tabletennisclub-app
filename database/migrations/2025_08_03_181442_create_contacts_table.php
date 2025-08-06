@@ -24,7 +24,7 @@ return new class extends Migration
             $table->unsignedTinyInteger('membership_competitors')->nullable();
             $table->unsignedTinyInteger('membership_training_sessions')->nullable();
             $table->unsignedInteger('membership_total_cost')->nullable();
-            $table->enum('status', ['pending', 'processed', 'rejected'])->default('pending');
+            $table->enum('status', ['new', 'pending', 'processed', 'rejected'])->default('new');
             $table->foreignIdFor(User::class, 'owner_id')->nullable();
             $table->timestamps();
         });

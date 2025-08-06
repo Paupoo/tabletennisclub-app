@@ -84,27 +84,77 @@
             </div>
         </div>
 
-        <!-- Statistiques rapides (optionnel) -->
-        <div class="bg-white rounded-lg shadow-lg p-4 sm:p-6 mb-6">
-            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                <div class="bg-club-blue bg-opacity-10 rounded-lg p-4 text-center border border-club-blue border-opacity-20">
-                    <div class="text-xl sm:text-2xl font-bold text-club-blue">{{ $totalUsers ?? 0 }}</div>
-                    <div class="text-xs sm:text-sm text-club-blue font-medium">Total Membres</div>
-                </div>
-                <div class="bg-green-50 rounded-lg p-4 text-center border border-green-200">
-                    <div class="text-xl sm:text-2xl font-bold text-green-600">{{ $activeUsers ?? 0 }}</div>
-                    <div class="text-xs sm:text-sm text-green-700 font-medium">Actifs</div>
-                </div>
-                <div class="bg-blue-50 rounded-lg p-4 text-center border border-blue-200">
-                    <div class="text-xl sm:text-2xl font-bold text-blue-600">{{ $newThisMonth ?? 0 }}</div>
-                    <div class="text-xs sm:text-sm text-blue-700 font-medium">Nouveaux ce mois</div>
-                </div>
-                <div class="bg-yellow-50 rounded-lg p-4 text-center border border-yellow-200">
-                    <div class="text-xl sm:text-2xl font-bold text-yellow-600">{{ $pendingUsers ?? 0 }}</div>
-                    <div class="text-xs sm:text-sm text-yellow-700 font-medium">En attente</div>
-                </div>
+<!-- Conteneur principal avec Alpine.js -->
+<div x-data="{ showStats: false }" class="mb-6">
+    <!-- Bouton toggle -->
+    <div class="mb-4">
+        <button 
+            @click="showStats = !showStats"
+            class="flex items-center gap-2 px-4 py-2 bg-club-blue text-white rounded-lg hover:bg-club-blue/90 transition-colors duration-200"
+        >
+            <!-- Icône qui tourne selon l'état -->
+            <svg 
+                x-bind:class="showStats ? 'rotate-180' : 'rotate-0'"
+                class="w-4 h-4 transition-transform duration-200" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+            >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+            
+            <!-- Texte du bouton qui change selon l'état -->
+            <span x-text="showStats ? '{{ __('Hide Statistics') }}' : '{{ __('Show Statistics') }}'"></span>
+        </button>
+    </div>
+
+    <!-- Bloc des statistiques avec transition -->
+    <div 
+        x-show="showStats"
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 transform -translate-y-2"
+        x-transition:enter-end="opacity-100 transform translate-y-0"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100 transform translate-y-0"
+        x-transition:leave-end="opacity-0 transform -translate-y-2"
+        class="bg-white rounded-lg shadow-lg p-4 sm:p-6"
+    >
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div class="bg-club-blue bg-opacity-10 rounded-lg p-4 text-center border border-club-blue border-opacity-20">
+                <div class="text-xl sm:text-2xl font-bold text-club-yellow">{{ $stats->get('totalActiveUsers') ?? 0 }}</div>
+                <div class="text-xs sm:text-sm text-club-yellow font-medium">{{ __('Active Members') }}</div>
+            </div>
+            <div class="bg-club-yellow rounded-lg p-4 text-center border border-club-yellow">
+                <div class="text-xl sm:text-2xl font-bold text-club-blue">{{ $stats->get('totalCompetitors') ?? 0 }}</div>
+                <div class="text-xs sm:text-sm text-club-blue font-medium">{{ __('Competitors') }}</div>
+            </div>
+            <div class="bg-blue-50 rounded-lg p-4 text-center border border-blue-200">
+                <div class="text-xl sm:text-2xl font-bold text-blue-600">{{ $stats->get('totalUsersCreatedLastYear') ?? 0 }}</div>
+                <div class="text-xs sm:text-sm text-blue-700 font-medium">{{ __('Since less than a year') }}</div>
+            </div>
+            <div class="bg-yellow-50 rounded-lg p-4 text-center border border-yellow-200">
+                <div class="text-xl sm:text-2xl font-bold text-yellow-600">{{ $stats->get('totalUnpaidUsers') ?? 0 }}</div>
+                <div class="text-xs sm:text-sm text-yellow-700 font-medium">{{ __('Unpaid Subscription') }}</div>
+            </div>
+            <div class="bg-gray-100 rounded-lg p-4 text-center border border-gray-300">
+                <div class="text-xl sm:text-2xl font-bold text-gray-600">{{ $stats->get('totalUnderagedUsers') ?? 0 }}</div>
+                <div class="text-xs sm:text-sm text-gray-600 font-medium">{{ __('Young people') }}</div>
+            </div>
+            <div class="bg-gray-100 rounded-lg p-4 text-center border border-gray-300">
+                <div class="text-xl sm:text-2xl font-bold text-gray-600">{{ $stats->get('totalWomen') ?? 0 }}</div>
+                <div class="text-xs sm:text-sm text-gray-600 font-medium">{{ __('Women') }}</div>
+            </div>
+            <div class="bg-gray-100 rounded-lg p-4 text-center border border-gray-300">
+                <div class="text-xl sm:text-2xl font-bold text-gray-600">{{ $stats->get('totalMen') ?? 0 }}</div>
+                <div class="text-xs sm:text-sm text-gray-600 font-medium">{{ __('Men') }}</div>
+            </div>
+            <div class="bg-gray-100 rounded-lg p-4 text-center border border-gray-300">
+                <div class="text-xl sm:text-2xl font-bold text-gray-600">{{ $stats->get('totalVeterans') ?? 0 }}</div>
+                <div class="text-xs sm:text-sm text-gray-600 font-medium">{{ __('Veterans') }}</div>
             </div>
         </div>
+    </div>
+</div>
 
         <!-- Table des utilisateurs -->
         <div class="bg-white rounded-lg shadow-lg overflow-hidden">

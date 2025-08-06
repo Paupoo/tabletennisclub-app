@@ -83,19 +83,19 @@
                     @method('PATCH')
                     <div class="space-y-3">
                         <label class="flex items-center space-x-2 cursor-pointer">
-                            <input type="radio" name="status" value="nouveau" class="text-blue-600" {{ $contact->status === 'nouveau' ? 'checked' : '' }}>
+                            <input type="radio" name="status" value="nouveau" class="text-blue-600" {{ $contact->status === 'new' ? 'checked' : '' }}>
                             <span class="text-xs sm:text-sm font-medium text-blue-700">Nouveau</span>
                         </label>
                         <label class="flex items-center space-x-2 cursor-pointer">
-                            <input type="radio" name="status" value="en_cours" class="text-yellow-600" {{ $contact->status === 'en_cours' ? 'checked' : '' }}>
+                            <input type="radio" name="status" value="en_cours" class="text-yellow-600" {{ $contact->status === 'pending' ? 'checked' : '' }}>
                             <span class="text-xs sm:text-sm font-medium text-yellow-700">En cours</span>
                         </label>
                         <label class="flex items-center space-x-2 cursor-pointer">
-                            <input type="radio" name="status" value="traite" class="text-green-600" {{ $contact->status === 'traite' ? 'checked' : '' }}>
+                            <input type="radio" name="status" value="traite" class="text-green-600" {{ $contact->status === 'processed' ? 'checked' : '' }}>
                             <span class="text-xs sm:text-sm font-medium text-green-700">Traité</span>
                         </label>
                         <label class="flex items-center space-x-2 cursor-pointer">
-                            <input type="radio" name="status" value="refuse" class="text-red-600" {{ $contact->status === 'refuse' ? 'checked' : '' }}>
+                            <input type="radio" name="status" value="refuse" class="text-red-600" {{ $contact->status === 'rejected' ? 'checked' : '' }}>
                             <span class="text-xs sm:text-sm font-medium text-red-700">Refusé</span>
                         </label>
                     </div>
@@ -116,21 +116,21 @@
                     @if($contact->membership_family_members)
                         <div class="bg-gray-50 rounded-lg p-4 text-center">
                             <div class="text-xl sm:text-2xl font-bold text-club-blue">{{ $contact->membership_family_members }}</div>
-                            <div class="text-xs sm:text-sm text-gray-600">Membres famille</div>
+                            <div class="text-xs sm:text-sm text-gray-600">Licence{{ $contact->membership_family_members > 1 ? 's' : '' }} récréative{{ $contact->membership_family_members > 1 ? 's' : '' }}</div>
                         </div>
                     @endif
                     
                     @if($contact->membership_competitors)
                         <div class="bg-gray-50 rounded-lg p-4 text-center">
                             <div class="text-xl sm:text-2xl font-bold text-green-600">{{ $contact->membership_competitors }}</div>
-                            <div class="text-xs sm:text-sm text-gray-600">Compétiteurs</div>
+                            <div class="text-xs sm:text-sm text-gray-600">Licence{{ $contact->membership_competitors > 1 ? 's' : '' }} compétitive{{ $contact->membership_family_members > 1 ? 's' : '' }}</div>
                         </div>
                     @endif
                     
                     @if($contact->membership_training_sessions)
                         <div class="bg-gray-50 rounded-lg p-4 text-center">
                             <div class="text-xl sm:text-2xl font-bold text-club-yellow">{{ $contact->membership_training_sessions }}</div>
-                            <div class="text-xs sm:text-sm text-gray-600">Séances d'entraînement</div>
+                            <div class="text-xs sm:text-sm text-gray-600">Séance{{ $contact->membership_training_sessions > 1 ? 's' : '' }} d'entraînement</div>
                         </div>
                     @endif
                     

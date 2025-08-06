@@ -11,19 +11,19 @@
                 <!-- Statistiques rapides -->
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
                     <div class="bg-blue-50 rounded-lg p-3 text-center border border-blue-200">
-                        <div class="text-lg sm:text-xl font-bold text-blue-600">{{ $contacts->where('status', 'nouveau')->count() }}</div>
+                        <div class="text-lg sm:text-xl font-bold text-blue-600">{{ $contacts->where('status', 'new')->count() }}</div>
                         <div class="text-xs text-blue-700">Nouveaux</div>
                     </div>
                     <div class="bg-yellow-50 rounded-lg p-3 text-center border border-yellow-200">
-                        <div class="text-lg sm:text-xl font-bold text-yellow-600">{{ $contacts->where('status', 'en_cours')->count() }}</div>
+                        <div class="text-lg sm:text-xl font-bold text-yellow-600">{{ $contacts->where('status', 'pending')->count() }}</div>
                         <div class="text-xs text-yellow-700">En cours</div>
                     </div>
                     <div class="bg-green-50 rounded-lg p-3 text-center border border-green-200">
-                        <div class="text-lg sm:text-xl font-bold text-green-600">{{ $contacts->where('status', 'traite')->count() }}</div>
+                        <div class="text-lg sm:text-xl font-bold text-green-600">{{ $contacts->where('status', 'processed')->count() }}</div>
                         <div class="text-xs text-green-700">Traités</div>
                     </div>
                     <div class="bg-red-50 rounded-lg p-3 text-center border border-red-200">
-                        <div class="text-lg sm:text-xl font-bold text-red-600">{{ $contacts->where('status', 'refuse')->count() }}</div>
+                        <div class="text-lg sm:text-xl font-bold text-red-600">{{ $contacts->where('status', 'rejected')->count() }}</div>
                         <div class="text-xs text-red-700">Refusés</div>
                     </div>
                 </div>
@@ -56,10 +56,10 @@
                         <label class="text-sm font-medium text-gray-700 whitespace-nowrap">{{ __('Status') }}</label>
                         <select wire:model.live="status" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-club-blue focus:border-club-blue">
                             <option value="">{{ __('All') }}</option>
-                            <option value="nouveau">{{ __('New') }}</option>
-                            <option value="en_cours">{{ __('In Progress') }}</option>
-                            <option value="traite">{{ __('Processed') }}</option>
-                            <option value="refuse">{{ __('Refused') }}</option>
+                            <option value="new">{{ __('New') }}</option>
+                            <option value="pending">{{ __('In Progress') }}</option>
+                            <option value="processed">{{ __('Processed') }}</option>
+                            <option value="rejected">{{ __('Refused') }}</option>
                         </select>
                     </div>
 
@@ -158,10 +158,10 @@
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     @php
                                         $statusConfig = [
-                                            'nouveau' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-800', 'label' => 'Nouveau'],
-                                            'en_cours' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-800', 'label' => 'En cours'],
-                                            'traite' => ['bg' => 'bg-green-100', 'text' => 'text-green-800', 'label' => 'Traité'],
-                                            'refuse' => ['bg' => 'bg-red-100', 'text' => 'text-red-800', 'label' => 'Refusé'],
+                                            'new' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-800', 'label' => 'Nouveau'],
+                                            'pending' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-800', 'label' => 'En cours'],
+                                            'processed' => ['bg' => 'bg-green-100', 'text' => 'text-green-800', 'label' => 'Traité'],
+                                            'rejected' => ['bg' => 'bg-red-100', 'text' => 'text-red-800', 'label' => 'Refusé'],
                                         ];
                                         $config = $statusConfig[$contact->status] ?? $statusConfig['nouveau'];
                                     @endphp

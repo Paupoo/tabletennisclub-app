@@ -8,6 +8,7 @@ use App\Models\Contact;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Validator;
 
 class ContactController extends Controller
@@ -29,7 +30,7 @@ class ContactController extends Controller
             // Log pour le développement
             Log::info('Nouveau message de contact', $validated);
             
-            return redirect()->back()
+            return redirect('/#contact')
                 ->with('success', 'Votre message a été envoyé avec succès ! Nous vous répondrons dans les plus brefs délais.');
                 
         } catch (\Exception $e) {
@@ -38,7 +39,7 @@ class ContactController extends Controller
                 'data' => $validated
             ]);
             
-            return redirect()->back()
+            return redirect('/#contact')
                 ->with('error', 'Une erreur est survenue lors de l\'envoi de votre message. Veuillez réessayer.')
                 ->withInput();
         }

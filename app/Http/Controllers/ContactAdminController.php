@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\UpdateContactRequest;
 use App\Models\Contact;
 use App\Support\Breadcrumb;
 use App\Support\TableBuilder;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class ContactAdminController extends Controller
@@ -19,8 +21,15 @@ class ContactAdminController extends Controller
             ->toArray();
 
         $contacts = Contact::first()->paginate(5);
+
+        $stats = collect([
+            'totalNew' => Contact::where('status', 'new')->count(),
+            'totalPending' => Contact::where('status', 'pending')->count(),
+            'totalProcessed' => Contact::where('status', 'processed')->count(),
+            'totalRejected' => Contact::where('status', 'rejected')->count(),
+        ]);
         
-        return view('admin.contacts.index', compact('contacts','breadcrumbs'));
+        return view('admin.contacts.index', compact('contacts','breadcrumbs', 'stats'));
     }
 
     public function show(Contact $contact)
@@ -35,12 +44,9 @@ class ContactAdminController extends Controller
         return view('admin.contacts.show', compact('contact', 'breadcrumbs'));
     }
 
-    public function update(Request $request, Contact $contact)
+    public function update(UpdateContactRequest $request, Contact $contact)
     {
-        $validated = $request->validate([
-            'status' => ['required', 'in:pending,processed,rejected'],
-        ]);
-
+        $validated = $request->validated();
         $contact->update($validated);
 
         return redirect()->back()->with('success', 'Statut mis à jour.');

@@ -27,14 +27,8 @@ Vous avez reçu un message depuis le formulaire de contact du site {{ config('ap
 </x-mail::table>
 @endif
 
-<x-mail::button :url="'https://www.google.com'">
+<x-mail::button :url="'http://localhost:8000/admin/contacts/'">
 Gérer la demande sur le site
-</x-mail::button>
-<x-mail::button :url="''" color="success">
-Créer un compte et envoyer l'invitation
-</x-mail::button>
-<x-mail::button :url="''" color="error">
-Rejeter / Ignorer cette demande
 </x-mail::button>
 
 Envoyé le {{ now()->format('d-m-Y H:i') }}<br>

@@ -2,9 +2,7 @@
 
 namespace App\Enums;
 
-use Filament\Support\Contracts\HasLabel;
-
-enum ArticlesCategoryEnum: string implements HasLabel
+enum ArticlesCategoryEnum: string
 {
     case COMPETITION = 'Compétition';
     case PARTNERSHIP = 'Partnership';

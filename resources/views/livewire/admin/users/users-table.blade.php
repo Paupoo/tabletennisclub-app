@@ -178,24 +178,17 @@
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex flex-col space-y-1">
                                     <!-- Statut actif -->
-                                    @if ($user->is_active)
+                                    @if ($user->is_active && $user->has_paid)
                                         <span class="inline-flex items-center px-2 py-1 rounded-full text-xs justify-center font-medium bg-green-100 text-green-800">
                                             {{ __('Active') }}
+                                        </span>
+                                    @elseif($user->is_active && !$user->has_paid)
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs justify-center font-medium bg-red-100 text-red-800">
+                                            ✗ {{ __('Unpaid') }}
                                         </span>
                                     @else
                                         <span class="inline-flex items-center px-2 py-1 rounded-full text-xs justify-center font-medium bg-gray-100 text-gray-800">
                                             {{ __('Inactive') }}
-                                        </span>
-                                    @endif
-
-                                    <!-- Statut paiement -->
-                                    @if ($user->has_paid)
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs justify-center font-medium bg-green-100 text-green-800">
-                                            ✓ {{ __('Paid') }}
-                                        </span>
-                                    @else
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs justify-center font-medium bg-red-100 text-red-800">
-                                            ✗ {{ __('Unpaid') }}
                                         </span>
                                     @endif
                                 </div>
@@ -225,9 +218,7 @@
                                         <a href="{{ route('users.toggleHaspaid', $user) }}" 
                                            class="bg-green-600 hover:bg-green-700 text-white p-2 rounded-lg transition-colors duration-200"
                                            title="{{ __('Update subscription payment status') }}">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                                            </svg>
+                                            €
                                         </a>
                                     @endcan
                                     

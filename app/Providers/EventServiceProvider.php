@@ -7,6 +7,7 @@ namespace App\Providers;
 use App\Events\Tournament\NewTournamentPublished;
 use App\Events\Tournament\UserRegisteredToTournament;
 use App\Events\Tournament\UserUnregisteredFromTournament;
+use App\Listeners\SendWelcomeEmail;
 use App\Listeners\Tournament\SendPublishedTournamentNotification;
 use App\Listeners\Tournament\UserRegisteredToTournamentToTournament;
 use App\Listeners\Tournament\UserUnregisteredToTournamentToTournament;
@@ -25,6 +26,7 @@ class EventServiceProvider extends ServiceProvider
     protected $listen = [
         Registered::class => [
             SendEmailVerificationNotification::class,
+            SendWelcomeEmail::class,
         ],
         NewTournamentPublished::class => [
             SendPublishedTournamentNotification::class,

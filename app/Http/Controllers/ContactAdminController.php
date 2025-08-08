@@ -4,12 +4,20 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\SendEmailRequest;
 use App\Http\Requests\UpdateContactRequest;
+use App\Mail\CustomEmail;
+use App\Mail\MembershipInfoDetailEmail;
+use App\Mail\PoliteDeclineEmail;
+use App\Mail\RequestInfoEmail;
+use App\Mail\WelcomeEmail;
 use App\Models\Contact;
 use App\Support\Breadcrumb;
 use App\Support\TableBuilder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class ContactAdminController extends Controller
 {
@@ -20,7 +28,7 @@ class ContactAdminController extends Controller
             ->contacts()
             ->toArray();
 
-        $contacts = Contact::first()->paginate(5);
+        $contacts = Contact::latest()->paginate(5);
 
         $stats = collect([
             'totalNew' => Contact::where('status', 'new')->count(),
@@ -38,7 +46,7 @@ class ContactAdminController extends Controller
         $breadcrumbs = Breadcrumb::make()
             ->home()
             ->contacts()
-            ->current($contact->interest . ' - ' . $contact->first_name . ' ' . $contact->last_name)
+            ->current('Détails du contact')
             ->toArray();
 
         return view('admin.contacts.show', compact('contact', 'breadcrumbs'));
@@ -57,5 +65,120 @@ class ContactAdminController extends Controller
         $contact->delete();
 
         return redirect()->route('admin.contacts.index')->with('success', 'Contact supprimé.');
+    }
+    public function sendEmail(SendEmailRequest $request, Contact $contact)
+    {
+        $template = $request->validated('template');
+        try {
+            switch ($template) {
+                case 'welcome':
+                    Mail::to($contact->email)->send(new WelcomeEmail($contact));
+                    $message = 'Email de bienvenue envoyé avec succès !';
+                    break;
+
+                case 'membership_info':
+                    Mail::to($contact->email)->send(new MembershipInfoDetailEmail($contact));
+                    $message = 'Informations d\'adhésion envoyées avec succès !';
+                    break;
+
+                case 'polite_decline':
+                    Mail::to($contact->email)->send(new PoliteDeclineEmail($contact));
+                    $message = 'Email de refus poli envoyé avec succès !';
+                    // Optionnellement, mettre à jour le statut
+                    $contact->update(['status' => 'rejected']);
+                    break;
+
+                case 'request_info':
+                    Mail::to($contact->email)->send(new RequestInfoEmail($contact));
+                    $message = 'Demande d\'informations envoyée avec succès !';
+                    break;
+
+                case 'custom':
+                    // Rediriger vers un formulaire de composition d'email personnalisé
+                    return redirect()->route('admin.contacts.compose-email', $contact);
+                    break;
+
+                default:
+                    throw new \Exception('Template non géré');
+            }
+
+            // Logger l'action
+            Log::info('Email envoyé', [
+                'contact_id' => $contact->id,
+                'template' => $template,
+                'admin_user' => auth()->user()->id
+            ]);
+
+            return redirect()->back()->with('success', $message);
+
+        } catch (\Exception $e) {
+            Log::error('Erreur envoi email', [
+                'contact_id' => $contact->id,
+                'template' => $template,
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect()->back()->with('error', 'Erreur lors de l\'envoi de l\'email : ' . $e->getMessage());
+        }
+    }
+
+    public function composeEmail(Contact $contact)
+    {
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->contacts()
+            ->current('Email personnalisé')
+            ->toArray();
+
+        return view('admin.contacts.compose-email', compact('contact', 'breadcrumbs'));
+    }
+
+    public function sendCustomEmail(Request $request, Contact $contact)
+    {
+        $request->validate([
+            'subject' => 'required|string|max:255',
+            'message' => 'required|string',
+            'send_copy' => 'boolean'
+        ]);
+
+        try {
+            $emailData = [
+                'subject' => $request->subject,
+                'message' => $request->message,
+                'contact' => $contact,
+                'sender_name' => auth()->user()->name,
+                'club_name' => config('app.name')
+            ];
+
+            // Envoi de l'email principal
+            Mail::to($contact->email)->send(new CustomEmail($emailData));
+
+            // Optionnel : envoyer une copie à l'administrateur
+            if ($request->boolean('send_copy')) {
+                Mail::to(auth()->user()->email)->send(new CustomEmail($emailData, true));
+            }
+
+            // Logger l'action
+            Log::info('Email personnalisé envoyé', [
+                'contact_id' => $contact->id,
+                'subject' => $request->subject,
+                'admin_user' => auth()->user()->id
+            ]);
+
+            return redirect()
+                ->route('admin.contacts.show', $contact)
+                ->with('success', 'Email personnalisé envoyé avec succès !');
+
+        } catch (\Exception $e) {
+            Log::error('Erreur envoi email personnalisé', [
+                'contact_id' => $contact->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'Erreur lors de l\'envoi de l\'email : ' . $e->getMessage());
+        }
     }
 }

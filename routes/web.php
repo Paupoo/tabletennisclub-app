@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\User\CreateNewUserAction;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\ContactAdminController;
 use App\Http\Controllers\ContactController;
@@ -247,6 +248,11 @@ Route::middleware(['auth', 'verified'])
 
 Route::prefix('admin')->middleware(['auth'])->group(function () {
     Route::resource('contacts', ContactAdminController::class)->names('admin.contacts');
+    Route::post('contacts/create-new-user', [CreateNewUserAction::class, 'handle'])->name('admin.contacts.invite-new-user');
+    Route::post('/{contact}/send-email', [ContactAdminController::class, 'sendEmail'])->name('admin.contacts.send-email');
+    Route::get('/{contact}/compose-email', [ContactAdminController::class, 'composeEmail'])->name('admin.contacts.compose-email');
+    Route::post('/{contact}/send-custom-email', [ContactAdminController::class, 'sendCustomEmail'])->name('admin.contacts.send-custom-email');
+   
 });
 
 Route::get('/test', function () {

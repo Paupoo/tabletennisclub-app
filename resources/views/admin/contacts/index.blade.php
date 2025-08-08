@@ -153,7 +153,7 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {{ $contact->created_at->format('d/m/Y') }}
-                                    <div class="text-xs text-gray-400">{{ $contact->created_at->format('H:i') }}</div>
+                                    <div class="text-xs text-gray-400">{{ $contact->created_at->timezone('Europe/Brussels')->format('H:i') }}</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     @php

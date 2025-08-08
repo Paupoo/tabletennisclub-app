@@ -40,11 +40,11 @@ class UsersTable extends Component
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(User $user)
+    public function destroy()
     {
         $this->authorize('delete', User::class);
-
         try {
+            $user = User::findOrFail($this->selectedUserId);
             $user->delete();
             $this->forceList->setOrUpdateAll();
             session()->flash('warning', __('User ' . $user->first_name . ' ' . $user->last_name . ' has been deleted'));
@@ -54,6 +54,11 @@ class UsersTable extends Component
                 session()->flash('error', __('Cannot delete ' . $user->first_name . ' ' . $user->last_name . ' because he subscribed to one or more tournaments'));
                 $this->redirectRoute('users.index');
             }
+            
+            $this->redirectRoute('users.index')
+                ->with([
+                    'error' => __('The user could not be deleted'),
+                ]);
         }
     }
 

@@ -353,7 +353,7 @@
         </div>
     @endif
 
-    <!-- Légende améliorée -->
+    <!-- Légende -->
     <div class="bg-white rounded-lg shadow-lg p-4 sm:p-6 mt-6">
         <h4 class="text-sm font-medium text-gray-900 mb-3">{{ __('Legend') }}</h4>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -401,7 +401,7 @@
 
     <!-- Modal de confirmation de suppression amélioré -->
     <x-modal name="confirm-delete-user" focusable>
-        <form wire:submit.prevent="destroy" class="p-6" x-data="{ confirmText: '', isValid() { return this.confirmText === 'DELETE' } }">
+        <form wire:submit.prevent="destroy({{ $user ?? null }})" class="p-6" x-data="{ confirmText: '', isValid() { return this.confirmText === 'DELETE' } }">
             <div class="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
                 <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>

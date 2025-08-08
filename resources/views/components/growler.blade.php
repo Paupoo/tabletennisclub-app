@@ -10,16 +10,17 @@
         });
     </script>
 @endif
-
-@if (session()->has('error'))
+@if ($errors->any())
     <script>
         window.addEventListener('DOMContentLoaded', () => {
-            window.dispatchEvent(new CustomEvent('notify', {
-                detail: {
-                    message: @json(session('error')),
-                    type: 'error'
-                }
-            }));
+            @foreach ($errors->all() as $error)
+                window.dispatchEvent(new CustomEvent('notify', {
+                    detail: {
+                        message: @json($error),
+                        type: 'error'
+                    }
+                }));
+            @endforeach
         });
     </script>
 @endif

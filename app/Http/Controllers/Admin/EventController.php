@@ -135,7 +135,7 @@ class EventController extends Controller
         $breadcrumbs = Breadcrumb::make()
             ->home()
             ->events()
-            ->current($event->name)
+            ->current($event->title)
             ->toArray();
 
         return view('admin.events.show', compact('event', 'breadcrumbs'));
@@ -146,7 +146,7 @@ class EventController extends Controller
         $breadcrumbs = Breadcrumb::make()
             ->home()
             ->events()
-            ->add($event->name, route('admin.events.show', $event))
+            ->add($event->title, route('admin.events.show', $event))
             ->current(__('Edit'))
             ->toArray();
 

@@ -38,7 +38,7 @@
             <button @click="selectedCategory = 'club-life'" 
                     :class="selectedCategory === 'club-life' ? 'bg-club-blue text-white' : 'bg-white text-gray-700 hover:bg-gray-50'"
                     class="px-4 py-2 rounded-lg border transition-colors">
-                Événements Sociaux
+                Vie du club
             </button>
         </div>
 

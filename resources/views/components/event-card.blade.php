@@ -10,6 +10,8 @@
                     Tournoi
                 @elseif($event['category'] === 'training')
                     Entraînement
+                @elseif($event['category'] === 'club-life')
+                    Vie du club
                 @else
                     Social
                 @endif

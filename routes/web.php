@@ -6,7 +6,7 @@ use App\Actions\User\CreateNewUserAction;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\ContactAdminController;
 use App\Http\Controllers\ContactController;
-use App\Http\Controllers\EventsController;
+use App\Http\Controllers\EventController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InterclubController;
 use App\Http\Controllers\KnockoutPhaseController;
@@ -43,7 +43,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/results', [ResultsController::class, 'index'])->name('results');
-Route::get('/events', [EventsController::class, 'index'])->name('events');
+Route::get('/events', [EventController::class, 'index'])->name('events');
 Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
 
 /**
@@ -253,6 +253,23 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
     Route::get('/{contact}/compose-email', [ContactAdminController::class, 'composeEmail'])->name('admin.contacts.compose-email');
     Route::post('/{contact}/send-custom-email', [ContactAdminController::class, 'sendCustomEmail'])->name('admin.contacts.send-custom-email');
    
+});
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    // ... autres routes admin existantes
+
+    Route::prefix('admin')->name('admin.')->group(function () {
+        // Routes événements
+        Route::resource('events', App\Http\Controllers\Admin\EventController::class);
+        
+        // Actions spéciales pour les événements
+        Route::patch('events/{event}/publish', [App\Http\Controllers\Admin\EventController::class, 'publish'])
+            ->name('events.publish');
+        Route::patch('events/{event}/archive', [App\Http\Controllers\Admin\EventController::class, 'archive'])
+            ->name('events.archive');
+        Route::post('events/{event}/duplicate', [App\Http\Controllers\Admin\EventController::class, 'duplicate'])
+            ->name('events.duplicate');
+    });
 });
 
 Route::get('/test', function () {

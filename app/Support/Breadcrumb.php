@@ -30,6 +30,11 @@ class Breadcrumb
     {
         return $this->add('Matches', $url ?: route('interclubs.index'), 'home');
     }
+
+    public function events($url = null)
+    {
+        return $this->add('Events', $url ?: route('admin.events.index'), 'home');
+    }
     
     public function rooms($url = null)
     {

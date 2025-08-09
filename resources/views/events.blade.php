@@ -35,8 +35,8 @@
                     class="px-4 py-2 rounded-lg border transition-colors">
                 Entraînement
             </button>
-            <button @click="selectedCategory = 'social'" 
-                    :class="selectedCategory === 'social' ? 'bg-club-blue text-white' : 'bg-white text-gray-700 hover:bg-gray-50'"
+            <button @click="selectedCategory = 'club-life'" 
+                    :class="selectedCategory === 'club-life' ? 'bg-club-blue text-white' : 'bg-white text-gray-700 hover:bg-gray-50'"
                     class="px-4 py-2 rounded-lg border transition-colors">
                 Événements Sociaux
             </button>
@@ -71,7 +71,7 @@
                 ]" />
                 
                 <x-event-card :event="[
-                    'category' => 'social',
+                    'category' => 'club-life',
                     'title' => 'Soirée Sociale Mensuelle',
                     'description' => 'Jeux décontractés, pizza et amusement ! Parfait pour rencontrer d\'autres membres et se détendre.',
                     'date' => 'Premier vendredi de chaque mois',

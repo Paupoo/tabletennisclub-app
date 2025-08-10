@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Admin\Articles;
 
 use App\Models\Article;
+use App\Support\Breadcrumb;
 use Livewire\Component;
 
 class Index extends Component
@@ -17,8 +18,18 @@ class Index extends Component
     {
         $articles = Article::search($this->search)->get();
 
-        return view('admin.articles.index', [
-            'articles' => $articles,
+        $breadcrumbs = Breadcrumb::make()
+            ->make()
+            ->articles()
+            ->toArray();
+
+        $stats = collect([
+            'totalPublished' => 0,
+            'totalDraft' => 0,
+            'totalPublic' => 0,
+            'totalPrivate' => 0,
         ]);
+
+        return view('livewire.admin.articles.index', compact('articles', 'breadcrumbs'));
     }
 }

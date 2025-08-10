@@ -89,7 +89,12 @@ Route::get('/articles/{slug}', [PublicArticlesController::class, 'show'])->name(
  * The articles are stored in the database and can be created, read, updated, and deleted through this interface.
  * This route is protected by authentication and verification middleware. 
  */
-Route::resource('/admin/articles', ArticleController::class)->middleware(['auth', 'verified'])->names('admin.articles');
+Route::prefix('admin')->middleware('auth')->group(function () {
+    Route::resource('articles', ArticleController::class)->names('admin.articles');
+    Route::patch('articles/{article}/publish', [ArticleController::class, 'publish'])->name('admin.articles.publish');
+    Route::patch('articles/{article}/archive', [ArticleController::class, 'archive'])->name('admin.articles.archive');
+    Route::post('articles/{article}/duplicate', [ArticleController::class, 'duplicate'])->name('admin.articles.duplicate');
+});
 
 /**
  * Profile management

@@ -5,7 +5,7 @@ namespace App\Enums;
 enum ArticlesStatusEnum: string
 {
     case DRAFT = 'draft';
-    case PUBLISHED = 'dublished';
+    case PUBLISHED = 'published';
     case ARCHIVED = 'archived';
 
     public function getLabel(): string

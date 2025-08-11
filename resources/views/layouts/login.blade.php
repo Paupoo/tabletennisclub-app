@@ -50,14 +50,14 @@
                             <a href="/" class="hover:text-club-blue dark:hover:text-club-yellow transition-colors duration-200">
                                 ← Retour au site
                             </a>
-                            <div class="flex space-x-4">
+                            {{-- <div class="flex space-x-4">
                                 <a href="#" class="hover:text-club-blue dark:hover:text-club-yellow transition-colors duration-200">
                                     Aide
                                 </a>
                                 <a href="#contact" class="hover:text-club-blue dark:hover:text-club-yellow transition-colors duration-200">
                                     Contact
                                 </a>
-                            </div>
+                            </div> --}}
                         </div>
                     </div>
                 </div>

@@ -29,16 +29,15 @@
                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
             @enderror
         </div>
-    </div>
-
-    <div class="mb-6">
-        <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">Numéro de Téléphone</label>
-        <input type="tel" id="phone" name="phone" value="{{ old('phone') }}"
-            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent transition-colors"
-            placeholder="06 12 34 56 78">
-        @error('phone')
-            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-        @enderror
+        <div class="mb-6">
+            <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">Numéro de Téléphone</label>
+            <input type="tel" id="phone" name="phone" value="{{ old('phone') }}"
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent transition-colors"
+                placeholder="06 12 34 56 78">
+            @error('phone')
+                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+            @enderror
+        </div>
     </div>
 
     <div class="mb-6">

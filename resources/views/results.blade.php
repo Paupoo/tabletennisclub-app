@@ -23,7 +23,7 @@
             <h2 class="text-2xl font-bold">Résultats des Équipes</h2>
             <div class="flex items-center gap-2">
                 <label for="season" class="text-sm font-medium">Saison:</label>
-                <select x-model="selectedSeason" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
+                <select x-model="selectedSeason" class="pr-8 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
                     @foreach($seasons ?? ['2024', '2023', '2022'] as $season)
                         <option value="{{ $season }}">{{ $season }}</option>
                     @endforeach

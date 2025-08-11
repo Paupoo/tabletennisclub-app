@@ -8,7 +8,7 @@
                     <div class="flex items-center space-x-2">
                         <label for="year" class="text-sm font-medium text-gray-700">Année:</label>
                         <select wire:model.live="year" id="year"
-                                class="px-3 text-xs py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
+                                class="px-3 text-xs pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
                             <option value="">Toutes les années</option>
                             @foreach($years as $yearOption)
                                 <option value="{{ $yearOption }}">{{ $yearOption }}</option>
@@ -19,7 +19,7 @@
                     <div class="flex items-center space-x-2">
                         <label for="month" class="text-sm font-medium text-gray-700">Mois:</label>
                         <select wire:model.live="month" id="month"
-                                class="text-xs px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
+                                class="text-xs px-3 py-2 pr-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
                             <option value="">Tous les mois</option>
                             @foreach($months as $monthValue => $monthName)
                                 <option value="{{ $monthValue }}">{{ $monthName }}</option>
@@ -30,7 +30,7 @@
                     <div class="flex items-center space-x-2">
                         <label for="category" class="text-sm font-medium text-gray-700">Catégorie:</label>
                         <select wire:model.live="category" id="category"
-                                class="text-xs px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
+                                class="text-xs px-3 py-2 pr-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
                             <option value="">Toutes les catégories</option>
                             @foreach($categories as $categoryOption)
                                 <option value="{{ $categoryOption }}">{{ $categoryOption }}</option>
@@ -45,7 +45,7 @@
                         {{ $articles->total() }} article{{ $articles->total() > 1 ? 's' : '' }} trouvé{{ $articles->total() > 1 ? 's' : '' }}
                     </span>
                     <select wire:model.live="sort"
-                            class="text-xs px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent text-sm">
+                            class="text-xs px-3 py-2 pr-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent text-sm">
                         <option value="desc">Plus récent</option>
                         <option value="asc">Plus ancien</option>
                     </select>

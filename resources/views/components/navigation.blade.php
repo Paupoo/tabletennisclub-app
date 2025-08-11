@@ -4,7 +4,12 @@
             <div class="flex items-center">
                 <div class="shrink-0">
                     <a href="{{ route('home') }}">
-                        <h1 class="text-2xl md:text-xl lg:text-2xl font-bold text-club-blue">🏓 CTT Ottignies-Blocry</h1>
+                        <div class="flex flex-row gap-2 align-items-center">
+
+                            <x-logo class="block w-auto text-club-blue fill-current h-9 dark:text-gray-200 group-hover:text-club-blue-light transition-colors duration-200" />
+                            
+                            <h1 class="text-2xl md:text-xl lg:text-2xl font-bold text-club-blue">CTT Ottignies-Blocry</h1>
+                        </div>
                     </a>
                 </div>
             </div>

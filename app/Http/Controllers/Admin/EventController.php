@@ -91,6 +91,7 @@ class EventController extends Controller
 
     public function create(): View
     {
+        $this->authorize('create');
         $breadcrumbs = Breadcrumb::make()
             ->home()
             ->events()
@@ -102,6 +103,7 @@ class EventController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $this->authorize('store');
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
@@ -143,6 +145,7 @@ class EventController extends Controller
 
     public function edit(Event $event): View
     {
+        $this->authorize('edit');
         $breadcrumbs = Breadcrumb::make()
             ->home()
             ->events()

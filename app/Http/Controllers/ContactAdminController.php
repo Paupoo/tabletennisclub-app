@@ -42,6 +42,8 @@ class ContactAdminController extends Controller
 
     public function show(Contact $contact)
     {
+        $this->authorize('view');
+
 
         $breadcrumbs = Breadcrumb::make()
             ->home()
@@ -54,6 +56,7 @@ class ContactAdminController extends Controller
 
     public function update(UpdateContactRequest $request, Contact $contact)
     {
+        $this->authorize('update');
         $validated = $request->validated();
         $contact->update($validated);
 
@@ -62,12 +65,16 @@ class ContactAdminController extends Controller
 
     public function destroy(Contact $contact)
     {
+        $this->authorize('destroy');
+
         $contact->delete();
 
         return redirect()->route('admin.contacts.index')->with('success', 'Contact supprimé.');
     }
     public function sendEmail(SendEmailRequest $request, Contact $contact)
     {
+        $this->authorize('sendEmail');
+
         $template = $request->validated('template');
         try {
             switch ($template) {
@@ -124,6 +131,8 @@ class ContactAdminController extends Controller
 
     public function composeEmail(Contact $contact)
     {
+        $this->authorize('sendEmail');
+
         $breadcrumbs = Breadcrumb::make()
             ->home()
             ->contacts()
@@ -135,6 +144,7 @@ class ContactAdminController extends Controller
 
     public function sendCustomEmail(Request $request, Contact $contact)
     {
+        $this->authorize('sendEmail');
         $request->validate([
             'subject' => 'required|string|max:255',
             'message' => 'required|string',

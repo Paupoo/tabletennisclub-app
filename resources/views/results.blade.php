@@ -9,7 +9,6 @@
             <!-- Overlay avec votre dégradé + opacité -->
             <div class="absolute inset-0 bg-gradient-to-br from-club-blue/85 via-club-blue/80 to-club-blue-light/85"></div>
         </div>
-        
         <!-- Contenu -->
         <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
             <h1 class="text-4xl md:text-5xl font-bold mb-4 drop-shadow-lg">Résultats des compétitions</h1>
@@ -37,18 +36,10 @@
         @forelse($teams ?? [] as $team)
             <x-team-results :team="$team" />
         @empty
-            <!-- Default teams if no data provided -->
-            <x-team-results :team="[
-                'name' => 'Équipe A - Division Premier',
-                'position' => '2ème Place',
-                'position_class' => 'bg-green-100 text-green-800',
-                'matches' => [
-                    ['date' => '15 Déc 2024', 'opponent' => 'Thunder TTC', 'venue' => 'Domicile', 'score' => '8-2', 'result' => 'Victoire'],
-                    ['date' => '8 Déc 2024', 'opponent' => 'Elite Paddles', 'venue' => 'Extérieur', 'score' => '6-4', 'result' => 'Victoire'],
-                    ['date' => '1 Déc 2024', 'opponent' => 'Spin Masters', 'venue' => 'Domicile', 'score' => '3-7', 'result' => 'Défaite'],
-                ],
-                'stats' => ['played' => 12, 'wins' => 9, 'losses' => 3, 'win_rate' => 75]
-            ]" />
+            <div class="text-center py-12 bg-gray-50 rounded-lg">
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Aucun résultat disponible</h3>
+                <p class="text-gray-600">Les résultats seront publiés après les premières compétitions.</p>
+            </div>
         @endforelse
     </div>
 </x-guest-layout>

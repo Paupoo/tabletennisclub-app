@@ -42,7 +42,7 @@ class ContactAdminController extends Controller
 
     public function show(Contact $contact)
     {
-        $this->authorize('view', Contact::class);
+        $this->authorize('view', $contact);
 
 
         $breadcrumbs = Breadcrumb::make()
@@ -56,7 +56,7 @@ class ContactAdminController extends Controller
 
     public function update(UpdateContactRequest $request, Contact $contact)
     {
-        $this->authorize('update', Contact::class);
+        $this->authorize('update', $contact);
         $validated = $request->validated();
         $contact->update($validated);
 
@@ -65,7 +65,7 @@ class ContactAdminController extends Controller
 
     public function destroy(Contact $contact)
     {
-        $this->authorize('destroy', Contact::class);
+        $this->authorize('destroy', $contact);
 
         $contact->delete();
 
@@ -73,7 +73,7 @@ class ContactAdminController extends Controller
     }
     public function sendEmail(SendEmailRequest $request, Contact $contact)
     {
-        $this->authorize('sendEmail', Contact::class);
+        $this->authorize('sendEmail', $contact);
 
         $template = $request->validated('template');
         try {
@@ -131,7 +131,7 @@ class ContactAdminController extends Controller
 
     public function composeEmail(Contact $contact)
     {
-        $this->authorize('sendEmail', Contact::class);
+        $this->authorize('sendEmail', $contact);
 
         $breadcrumbs = Breadcrumb::make()
             ->home()
@@ -144,7 +144,7 @@ class ContactAdminController extends Controller
 
     public function sendCustomEmail(Request $request, Contact $contact)
     {
-        $this->authorize('sendEmail', Contact::class);
+        $this->authorize('sendEmail', $contact);
         $request->validate([
             'subject' => 'required|string|max:255',
             'message' => 'required|string',

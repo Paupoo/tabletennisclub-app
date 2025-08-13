@@ -305,12 +305,6 @@
         <div class="bg-white rounded-lg shadow-lg p-4 sm:p-6 mt-6">
             <h3 class="text-lg sm:text-xl font-bold text-club-blue mb-4">Actions supplémentaires</h3>
             <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-                <button class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base w-full sm:w-auto">
-                    <svg class="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                    </svg>
-                    Modifier
-                </button>
                 <form action="{{ route('admin.contacts.destroy', $contact) }}" method="POST">
                     @csrf
                     @method('DELETE')
@@ -325,10 +319,57 @@
                     <svg class="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
-                    Générer PDF
+                    Générer PDF (MOCKUP)
                 </button>
             </div>
         </div>
     </x-admin-block>
+
+    <x-modal name="confirm-delete-contact" focusable>
+        <form wire:submit.prevent="destroy({{ $user ?? null }})" class="p-6" x-data="{ confirmText: '', isValid() { return this.confirmText === 'DELETE' } }">
+            <div class="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
+                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                </svg>
+            </div>
+            
+            <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100 text-center mb-2">
+                {{ __('Are you sure you want to delete this user?') }}
+            </h2>
+
+            <p class="text-sm text-gray-600 dark:text-gray-400 text-center mb-4">
+                {{ __('This action is irreversible. All associated data will be permanently deleted.') }}
+            </p>
+
+            <!-- Champ de confirmation -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    {{ __('To confirm, type') }} <strong>"DELETE"</strong> {{ __('in the box below') }}:
+                </label>
+                <input 
+                    type="text" 
+                    x-model="confirmText"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    placeholder="DELETE"
+                    autocomplete="off"
+                >
+            </div>
+
+            <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                <x-secondary-button @click="$dispatch('close')" class="flex-1">
+                    {{ __('Cancel') }}
+                </x-secondary-button>
+
+                <x-danger-button 
+                    class="flex-1" 
+                    x-bind:disabled="!isValid()"
+                    x-bind:class="{ 'opacity-50 cursor-not-allowed': !isValid() }"
+                    type="submit"
+                >
+                    {{ __('Delete permanently') }}
+                </x-danger-button>
+            </div>
+        </form>
+    </x-modal>
     
 </x-app-layout>

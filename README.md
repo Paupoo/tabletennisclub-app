@@ -49,6 +49,36 @@ No known issues at this time. Please note that this project is still incomplete.
 
 The project is open-source and licensed under the [MIT license](https://opensource.org/licenses/MIT).
 
+## Tâches
+
+### 🟥 High
+- [ ] Retirer les data mockup « résultats » <!-- labels: high, to do -->
+- [ ] Débugger l’effacement d’un article <!-- labels: high, to do -->
+- [ ] Vérifier les infos dans les mails (nom, info, ip, …) <!-- labels: high, to do -->
+
+### 🟧 Medium
+- [ ] Vérifier les liens dans les emails qui doivent ramener vers ctt ottignies <!-- labels: medium, to do -->
+- [ ] Coder une fonction pour envoyer une invitation à un utilisateur pour s’enregistrer et simplement confirmer son email <!-- labels: medium, to do -->
+- [ ] Ajouter disclaimer « rgpd » / « utilisation des données » <!-- labels: medium, to do -->
+- [ ] Ajouter gestion cookie légal avec législation <!-- labels: medium, to do -->
+- [ ] Ajouter une fonction pour « nettoyer » les utilisateurs qui ne sont plus « rgpd » compliant ou demandent d’effacer leurs données <!-- labels: medium, to do -->
+- [ ] Vérifier comment implémenter un système anti spam <!-- labels: medium, to do -->
+- [ ] Créer un model event / dériver les enfants (trainings / interclub / tournament…) et dédier leurs tables <!-- labels: medium, to do -->
+- [ ] Créer une vue globale par semaine pour voir s’il y a assez de joueur disponible ou pas <!-- labels: medium, to do -->
+- [ ] Créer une vue pour les joueurs qui veulent encoder leurs disponibilités <!-- labels: medium, to do -->
+- [ ] Créer une vue pour les capitaine lors de la composition des équipes <!-- labels: medium, to do -->
+- [ ] Créer une fonction pour confirmer les joueurs sélectionnés <!-- labels: medium, to do -->
+- [ ] Créer une vue pour s’enregistrer à un entraînement <!-- labels: medium, to do -->
+- [ ] Regarder s’il existe des méthode de paiement électronique vraiment pas chère <!-- labels: medium, to do -->
+- [ ] Ajouter bouton show/hide stats sur le dashboard <!-- labels: medium, to do -->
+- [ ] regrouper les couleurs des stats et des blocks par thème (users bleu, teams jaunes, etc.) <!-- labels: medium, to do -->
+- [ ] Ajouter les tournois dans le dashboard, ainsi que les contacts et les articles <!-- labels: medium, to do -->
+
+### 🟩 Low
+- [ ] Coder le CRUD pour mettre à jour les résultats <!-- labels: low, to do -->
+- [ ] Mettre à jour le growler pour qu’il soit responsive sur tel <!-- labels: low, to do -->
+
+
 # Table Tennis Club
 
 ## À propos du projet

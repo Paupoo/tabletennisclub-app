@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
@@ -31,7 +32,12 @@ class InviteNewUserMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Bienvenue au ' . config('app.name') . ' – Finalisez votre inscription'
+            subject: 'Bienvenue au ' . config('app.name') . ' – Finalisez votre inscription',
+            from: new Address(
+                address: config('mail.from.address'),
+                name: config('app.name') ?? config('mail.from.name')
+            ),
+            replyTo: config('mail.from.address'),
         );
     }
 

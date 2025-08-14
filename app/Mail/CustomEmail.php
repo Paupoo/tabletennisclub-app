@@ -32,7 +32,7 @@ class CustomEmail extends Mailable
             subject: $subject,
             from: new Address(
                 address: config('mail.from.address'),
-                name: $this->emailData['sender_name'] ?? config('mail.from.name')
+                name: config('app.name') ?? config('mail.from.name')
             ),
             replyTo: config('mail.from.address'),
         );

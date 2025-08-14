@@ -5,6 +5,7 @@ namespace App\Mail;
 use App\Models\Contact;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
@@ -21,7 +22,10 @@ class PoliteDeclineEmail extends Mailable
     {
         return new Envelope(
             subject: 'Nous ne pouvons donner suite à votre demande',
-            from: config('mail.from.address') ?? 'cttottigniesblocry@gmail.com',
+            from: new Address(
+                address: config('mail.from.address'),
+                name: config('app.name') ?? config('mail.from.name')
+            ),
             replyTo: config('mail.from.address') ?? 'cttottigniesblocry@gmail.com',
         );
     }

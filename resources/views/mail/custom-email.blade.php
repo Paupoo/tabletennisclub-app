@@ -8,7 +8,7 @@ Cordialement,
 <x-mail::subcopy>
 📞 **Nos coordonnées :**  
 📧 Email : {{ config('mail.from.address') }}  
-📞 Téléphone : [Votre numéro]  
+📞 Téléphone : {{ config('app.club_phone_number') }}  
 🌐 Site web : {{ config('app.url') }}
 
 ---

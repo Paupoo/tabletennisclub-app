@@ -77,7 +77,8 @@ Cordialement,
 ### 📞 Contact
 
 - **📧 Email :** {{ config('mail.from.address') }}
-- **📞 Téléphone :** [Votre numéro]
+- **📞 Téléphone :** {{ config('app.club_phone_number') }}
+- **📍 Adresse :** {{ config('app.club_street') . ', ' . config('app.club_zip_code') . ' ' . config('app.club_city') }}
 - **🌐 Site web :** {{ config('app.url') }}
 
 ---

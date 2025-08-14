@@ -86,26 +86,25 @@ Nous vous laissons **15 jours** pour nous transmettre ces éléments. Passé ce 
 Si vous avez des questions sur les documents à fournir ou sur la procédure, n'hésitez pas à nous contacter :
 
 - **📧 Email :** {{ config('mail.from.address') }}
-- **📞 Téléphone :** [Votre numéro]
-- **💬 Messagerie :** Répondez directement à cet email
+- **📞 Téléphone :** {{ config('app.club_phone_number') }}
+- **🌐 Site web :** {{ config('app.url') }}
 
 ---
 
 Nous avons hâte de vous compter parmi nos membres !
 
 Sportivement,  
-**L'équipe de {{ $clubName }}**
+**L'équipe de {{ config('app.name') }}**
 
 ---
 
-### 📍 Adresse du club
+### 🗺️ Accès au club
 
-**{{ config('app.name') }}**
-[Votre adresse complète]
-[Code postal] [Ville]
+**📍 Adresse :** {{ config('app.club_street') . ', ' . config('app.club_zip_code') . ' ' . config('app.club_city') }}
 
-**🚗 Parking :** Gratuit sur place  
-**🚌 Transports :** Ligne [X], arrêt [Nom de l'arrêt]
+- **🚲 Vélo :** Présence d'un parking vélo
+- **🚌 Transports :** Ligne 20, arrêt "OTTIGNIES Avenue des Bouvreuils"
+- **🚗 Parking :** Gratuit sur place  
 
 ---
 

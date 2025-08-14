@@ -27,7 +27,7 @@ Vous avez reçu un message depuis le formulaire de contact du site {{ config('ap
 </x-mail::table>
 @endif
 
-<x-mail::button :url="'http://localhost:8000/admin/contacts/'">
+<x-mail::button url="{{ route('admin.contacts.index') }}">
 Gérer la demande sur le site
 </x-mail::button>
 

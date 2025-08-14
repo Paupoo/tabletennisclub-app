@@ -50,8 +50,8 @@ N'hésitez pas à nous contacter si vous avez des questions. Nous sommes là pou
 ### 📞 Nos coordonnées :
 
 - **📧 Email :** {{ config('mail.from.address') }}
-- **📞 Téléphone :** [Votre numéro]
-- **📍 Adresse :** [Votre adresse]
+- **📞 Téléphone :** {{ config('app.club_phone_number') }}
+- **📍 Adresse :** {{ config('app.club_street') . ', ' . config('app.club_zip_code') . ' ' . config('app.club_city') }}
 - **🌐 Site web :** {{ config('app.url') }}
 
 ---

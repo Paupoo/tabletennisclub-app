@@ -1,6 +1,8 @@
 <form action="{{ route('contact.store') }}" method="POST" x-data="contactForm">
     @csrf
 
+    <x-forms.antispam-fields />
+    
     <div class="grid md:grid-cols-2 gap-6 mb-6">
         <div>
             <label for="first_name" class="block text-sm font-medium text-gray-700 mb-2">Prénom *</label>

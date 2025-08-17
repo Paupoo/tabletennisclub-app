@@ -24,6 +24,7 @@ use App\Http\Controllers\Tournament\ToggleHasPaidController;
 use App\Http\Controllers\TournamentController;
 use App\Http\Controllers\TrainingController;
 use App\Http\Controllers\UserController;
+use App\Http\Middleware\ProtectAgainstSpam;
 use App\Models\Room;
 use App\Models\Team;
 use App\Models\Training;
@@ -41,10 +42,15 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', [HomeController::class, 'index'])->name('home');
-Route::get('/results', [ResultsController::class, 'index'])->name('results');
-Route::get('/events', [EventController::class, 'index'])->name('events');
-Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
+Route::get('/', [HomeController::class, 'index'])
+    ->name('home');
+Route::get('/results', [ResultsController::class, 'index'])
+    ->name('results');
+Route::get('/events', [EventController::class, 'index'])
+    ->name('events');
+Route::post('/contact', [ContactController::class, 'store'])
+    ->middleware(ProtectAgainstSpam::class)
+    ->name('contact.store');
 
 /**
  * Dashboard with sample of most data

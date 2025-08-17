@@ -31,6 +31,18 @@ class EventPolicy
     {
         return $user->is_admin || $user->is_committee_member;
     }
+    public function archive(User $user): bool
+    {
+        return $user->is_admin || $user->is_committee_member;
+    }
+    public function publish(User $user): bool
+    {
+        return $user->is_admin || $user->is_committee_member;
+    }
+    public function duplicate(User $user): bool
+    {
+        return $user->is_admin || $user->is_committee_member;
+    }
 
     /**
      * Determine whether the user can update the model.

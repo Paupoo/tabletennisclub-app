@@ -91,7 +91,7 @@ class EventController extends Controller
 
     public function create(): View
     {
-        $this->authorize('create');
+        $this->authorize('create', Event::class);
         $breadcrumbs = Breadcrumb::make()
             ->home()
             ->events()
@@ -103,7 +103,7 @@ class EventController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $this->authorize('store');
+        $this->authorize('create', Event::class);
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
@@ -145,7 +145,7 @@ class EventController extends Controller
 
     public function edit(Event $event): View
     {
-        $this->authorize('edit');
+        $this->authorize('update', $event);
         $breadcrumbs = Breadcrumb::make()
             ->home()
             ->events()
@@ -158,6 +158,8 @@ class EventController extends Controller
 
     public function update(Request $request, Event $event): RedirectResponse
     {
+        $this->authorize('update', $event);
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
@@ -183,6 +185,7 @@ class EventController extends Controller
 
     public function destroy(Event $event): RedirectResponse
     {
+        $this->authorize('destroy', $event);
         if (!$event->canBeDeleted()) {
             return back()->with('error', 'Cet événement ne peut pas être supprimé.');
         }
@@ -197,18 +200,21 @@ class EventController extends Controller
     // Actions rapides pour changer le statut
     public function publish(Event $event): RedirectResponse
     {
+        $this->authorize('publish', $event);
         $event->update(['status' => 'published']);
         return back()->with('success', 'Événement publié !');
     }
 
     public function archive(Event $event): RedirectResponse
     {
+        $this->authorize('archive', $event);
         $event->update(['status' => 'archived']);
         return back()->with('success', 'Événement archivé !');
     }
 
     public function duplicate(Event $event): RedirectResponse
     {
+        $this->authorize('duplicated', $event);
         $newEvent = $event->replicate();
         $newEvent->title = $event->title . ' (Copie)';
         $newEvent->status = 'draft';

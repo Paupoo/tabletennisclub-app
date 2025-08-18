@@ -186,13 +186,23 @@
                                 Ils nous permettent de :
                             </p>
                             <ul class="list-disc list-inside space-y-1 ml-4">
-                                <li>mémoriser votre choix concernant le consentement aux cookies,</li>
-                                <li>vous connecter à votre espace membre,</li>
-                                <li>gérer les inscriptions aux événements et les équipes.</li>
+                                <li>mémoriser votre choix concernant le consentement aux cookies (sic)</li>
+                                <li>vous connecter à votre espace membre et utiliser toutes les fonctionnalités du site</li>
                             </ul>
                             <p>
                                 Nous n'utilisons pas de cookies publicitaires ni de traçage externe.
-                                Si vous avez la moindre question, vous pouvez simplement nous écrire via notre formulaire de contact.
+                            </p>
+                            <p>
+                                Actuellement, nous n'utilisons aucun système de mesures et analyse, de sorte que votre visite est totalement anonyme.
+                            </p>
+                            <p>
+                                Nous récupérons uniquement les adresses IP des robots qui spamment notre formulaire de contact afin de les bloquer au fur et à mesure.
+                            </p>
+                            <p>
+                                Le code de ce site est complètement open source et disponible ici (to do)
+                            </p>
+                            <p>
+                                Si vous avez la moindre question, vous pouvez simplement nous écrire via notre <a href="{{ route('home') . '#contact' }}">formulaire de contact</a>.
                             </p>
                         </div>
                     </div>

@@ -23,13 +23,7 @@
                 <h1 class="mt-4 text-2xl font-bold text-center text-gray-800 dark:text-gray-100">
                     CTT Ottignies-Blocry
                 </h1>
-                <p class="mt-1 text-sm text-center text-gray-600 dark:text-gray-400">
-                    @if(request()->routeIs('login') )
-                        {{ __('Connection to your member space') }}
-                    @elseif (request()->routeIs('register'))
-                        {{ __('Create your account. (Please contact us to validate it)') }}
-                    @endif
-                </p>
+                
             </div>
 
             <!-- Card de connexion avec design moderne -->
@@ -65,12 +59,29 @@
 
             <!-- Info supplémentaire -->
             <div class="mt-8 text-center">
+                @if(!request()->routeIs('register'))
                 <p class="text-sm text-gray-600 dark:text-gray-400">
                     Pas encore membre ? 
                     <a href="{{ route('register') }}" class="font-medium text-club-blue dark:text-club-yellow hover:underline transition-colors duration-200">
                         Rejoignez notre club !
                     </a>
                 </p>
+                @else
+                <p class="mt-1 text-sm text-center text-gray-600 dark:text-gray-400">
+                    @if(request()->routeIs('login') )
+                        {{ __('Connection to your member space') }}
+                    @elseif (request()->routeIs('register'))
+                        {{ __('Note that by registering, you consent to share some private data with us.') }}
+                        <br>
+                        {{ __('We commit to never share your data with any third party, ever.') }}
+                        <br>
+                        {{ __('We commit to respect best practice to encrypt your data and keep it safe the best we can.') }}
+                        <br>
+                        {{ __('Upon request or should you leave us, we commit to delete fully your data.') }}
+                        <br>
+                    @endif
+                </p>
+                @endif
             </div>
         </div>
 

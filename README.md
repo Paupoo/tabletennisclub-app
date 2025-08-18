@@ -56,6 +56,7 @@ The project is open-source and licensed under the [MIT license](https://opensour
 - [ ] Retirer les data mockup « résultats » <!-- labels: high, to do -->
 - [ ] Débugger l’effacement d’un article <!-- labels: high, to do -->
 - [ ] Vérifier les infos dans les mails (nom, info, ip, …) <!-- labels: high, to do -->
+- [ ] Débuguer la suppression des contacts
 
 ### 🟧 Medium
 - [ ] Vérifier les liens dans les emails qui doivent ramener vers ctt ottignies <!-- labels: medium, to do -->
@@ -78,6 +79,7 @@ The project is open-source and licensed under the [MIT license](https://opensour
 ### 🟩 Low
 - [ ] Coder le CRUD pour mettre à jour les résultats <!-- labels: low, to do -->
 - [ ] Mettre à jour le growler pour qu’il soit responsive sur tel <!-- labels: low, to do -->
+- [ ] Gérer les pluriels/singuliers dans le dashboard et dans chaque vue avec des stats <!-- labels: low, to do -->
 
 
 # Table Tennis Club

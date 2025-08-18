@@ -7,7 +7,6 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
 use Carbon\Carbon;
-use Filament\Panel;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -165,11 +164,6 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         // Autoriser par exemple les utilisateurs avec le rôle "admin"
         return true;
-    }
-
-    public function getFilamentName(): string
-    {
-        return "{$this->first_name} {$this->last_name}";
     }
 
         /**
@@ -337,12 +331,6 @@ class User extends Authenticatable implements MustVerifyEmail
             'guardian_id',
             'user_id'
         );
-    }
-
-
-    public function getFilamentAvatarUrl(): ?string
-    {
-        return $this->avatar_url;
     }
 
 }

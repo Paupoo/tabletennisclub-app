@@ -75,10 +75,11 @@
                         <br>
                         {{ __('We commit to never share your data with any third party, ever.') }}
                         <br>
-                        {{ __('We commit to respect best practice to encrypt your data and keep it safe the best we can.') }}
+                        {{ __('We commit to respect best practices to encrypt your data and keep it safe the best we can.') }}
                         <br>
                         {{ __('Upon request or should you leave us, we commit to delete fully your data.') }}
                         <br>
+                        {{ __('Should we be hacked or should our policy change, we will warn you via an official email.') }}
                     @endif
                 </p>
                 @endif

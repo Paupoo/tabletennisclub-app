@@ -59,11 +59,11 @@
         </x-table.body>
     </x-table.container>
     @else
-    <x-bladewind::empty-state
+    <x-empty-state
         image="{{ asset('images/empty-state.svg') }}"
         message="There are no articles yet, start with creating a first one !"
-        button_label="Create a first article"
+        buttonText="Create a first article"
         buttonLink="{{ route('articles.create') }}">
-    </x-bladewind::empty-state>
+    </x-empty-state>
     @endif
 </div>

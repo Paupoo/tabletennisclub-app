@@ -101,6 +101,6 @@ class EventController extends Controller
             })
             ->toArray();
 
-        return view('events', compact('events'));
+        return view('public.events', compact('events'));
     }
 }

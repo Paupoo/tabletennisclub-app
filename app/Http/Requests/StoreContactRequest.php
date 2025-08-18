@@ -52,7 +52,7 @@ class StoreContactRequest extends FormRequest
         ];
     }
 
-    protected function getRedirectUrl()
+    protected function getRedirectUrl(): string
     {
         return route('home') . '#contact';
     }

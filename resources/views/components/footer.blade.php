@@ -40,7 +40,6 @@
                                 <p>
                                     {{ config('app.club_zip_code', '0000') }} {{ config('app.club_city', 'Somewhere') }}
                                 </p>
-                                </p>
                             </a>
                         </div>
                     </div>
@@ -93,7 +92,33 @@
             </div>
         </div>
 
-        <!-- Modal de licence MIT -->
+        {{-- Cookies consent --}}
+        <div
+            x-data="{ show: !document.cookie.includes('cookie_consent=true') }"
+            x-show="show"
+            x-transition:enter="transition ease-out duration-500"
+            x-transition:enter-start="opacity-0 transform translate-y-full"
+            x-transition:enter-end="opacity-100 transform translate-y-0"
+            x-transition:leave="transition ease-in duration-300"
+            x-transition:leave-start="opacity-100 transform translate-y-0"
+            x-transition:leave-end="opacity-0 transform translate-y-full"
+            class="fixed bottom-0 left-0 w-full bg-white bg-opacity-95 backdrop-filter backdrop-blur-lg shadow-lg rounded-t-lg p-6 z-50 md:flex md:items-center md:justify-between"
+        >
+            <p class="text-sm text-gray-800 md:w-3/4">
+                Ce site utilise des cookies uniquement pour la gestion de la connexion. En continuant à utiliser ce site, vous acceptez cette utilisation. Pour plus d'informations, consultez notre
+                <button class="underline text-blue-600 font-semibold" @click="showPrivacyPolicy()">politique de confidentialité</button>.
+            </p>
+            <div class="mt-4 md:mt-0 md:w-1/4 md:text-right">
+                <button
+                    @click="document.cookie = 'cookie_consent=true; expires=' + new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toUTCString() + '; path=/; SameSite=Strict'; show = false"
+                    class="w-full md:w-auto px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50 font-bold"
+                >
+                    J'ai compris
+                </button>
+            </div>
+        </div>
+
+        <!-- Modal MIT licence -->
         <div id="licenseModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
             <div class="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
                 <div class="p-6">
@@ -140,5 +165,45 @@
             </div>
         </div>
 
+        <!-- Modal Privacy Policy -->
+        <div id="privacyModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
+            <div class="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-bold text-gray-900">Politique de Confidentialité</h3>
+                        <button onclick="hidePrivacyPolicy()" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="prose prose-sm max-w-none">
+                        <p class="text-gray-600 mb-4">{{ __('Dernière mise à jour: ') }} {{ date('d/m/Y') }}</p>
+                        <div class="text-gray-700 text-sm leading-relaxed space-y-4">
+                            <p>
+                                Nous utilisons uniquement des cookies essentiels au bon fonctionnement de notre site.
+                                Ils nous permettent de :
+                            </p>
+                            <ul class="list-disc list-inside space-y-1 ml-4">
+                                <li>mémoriser votre choix concernant le consentement aux cookies,</li>
+                                <li>vous connecter à votre espace membre,</li>
+                                <li>gérer les inscriptions aux événements et les équipes.</li>
+                            </ul>
+                            <p>
+                                Nous n'utilisons pas de cookies publicitaires ni de traçage externe.
+                                Si vous avez la moindre question, vous pouvez simplement nous écrire via notre formulaire de contact.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="mt-6 text-center">
+                        <button onclick="hidePrivacyPolicy()"
+                            class="bg-club-blue text-white px-6 py-2 rounded-lg hover:bg-club-blue-light transition-colors">
+                            Fermer
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </footer>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Article;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\View;
 
 class HomeController extends Controller
 {
@@ -108,6 +109,6 @@ class HomeController extends Controller
             ],
         ];
         
-        return view('home', compact('sponsors', 'articles', 'schedules'));
+        return view('public.home', compact('sponsors', 'articles', 'schedules'));
     }
 }

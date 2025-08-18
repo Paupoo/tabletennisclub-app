@@ -41,6 +41,6 @@ class ResultsController extends Controller
         
         $teams = [];
 
-        return view('results', compact('teams', 'seasons', 'selectedSeason'));
+        return view('public.results', compact('teams', 'seasons', 'selectedSeason'));
     }
 }

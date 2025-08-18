@@ -34,7 +34,8 @@ If you encounter any issues, please report them via email to aurelien.paulus@gma
 
 ### Known Issues
 
-No known issues at this time. Please note that this project is still incomplete.
+~~No known issues at this time. Please note that this project is still incomplete.~~~
+- Fix missing components (layouts.app and x::bladewind-empty-state). see in prod.
 
 ## Technologies
 

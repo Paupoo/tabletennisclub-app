@@ -61,8 +61,8 @@ The project is open-source and licensed under the [MIT license](https://opensour
 - [ ] Fix missing components (layouts.app and x::bladewind-empty-state). see in prod. <!-- labels: medium, to do -->
 - [ ] Vérifier les liens dans les emails qui doivent ramener vers ctt ottignies <!-- labels: medium, to do -->
 - [ ] Coder une fonction pour envoyer une invitation à un utilisateur pour s’enregistrer et simplement confirmer son email <!-- labels: medium, to do -->
-- [ ] Ajouter disclaimer « rgpd » / « utilisation des données » <!-- labels: medium, to do -->
-- [ ] Ajouter gestion cookie légal avec législation <!-- labels: medium, to do -->
+- [x] Ajouter disclaimer « rgpd » / « utilisation des données » <!-- labels: medium, to do -->
+- [x] Ajouter gestion cookie légal avec législation <!-- labels: medium, to do -->
 - [ ] Ajouter une fonction pour « nettoyer » les utilisateurs qui ne sont plus « rgpd » compliant ou demandent d’effacer leurs données <!-- labels: medium, to do -->
 - [ ] Vérifier comment implémenter un système anti spam <!-- labels: medium, to do -->
 - [ ] Créer un model event / dériver les enfants (trainings / interclub / tournament…) et dédier leurs tables <!-- labels: medium, to do -->
@@ -75,6 +75,7 @@ The project is open-source and licensed under the [MIT license](https://opensour
 - [ ] Ajouter bouton show/hide stats sur le dashboard <!-- labels: medium, to do -->
 - [ ] regrouper les couleurs des stats et des blocks par thème (users bleu, teams jaunes, etc.) <!-- labels: medium, to do -->
 - [ ] Ajouter les tournois dans le dashboard, ainsi que les contacts et les articles <!-- labels: medium, to do -->
+- [ ] Make all strings translatable and translate into English and into French all the strings.
 
 
 ### 🟩 Low

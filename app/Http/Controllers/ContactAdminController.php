@@ -156,7 +156,7 @@ class ContactAdminController extends Controller
                 'subject' => $request->subject,
                 'message' => $request->message,
                 'contact' => $contact,
-                'sender_name' => auth()->user()->name,
+                'sender_name' => auth()->user()->fullName,
                 'club_name' => config('app.name')
             ];
 

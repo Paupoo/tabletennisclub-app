@@ -55,7 +55,9 @@ The project is open-source and licensed under the [MIT license](https://opensour
 - [x] Retirer les data mockup « résultats » 
 - [ ] Débugger l’effacement d’un article 
 - [ ] Vérifier les infos dans les mails (nom, info, ip, …) 
-- [ ] Débuguer la suppression des contacts
+- [x] Débuguer la suppression des contacts
+- [ ] Implémenter la fonction de recherche avec livewire pour les contacts et les articles
+- [ ] Implémenter la fonction de filtres avec livewire pour les contacts et les articles
 
 ### 🟧 Medium
 - [x] Fix missing components (layouts.app and x::bladewind-empty-state). see in prod. 

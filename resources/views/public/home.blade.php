@@ -26,4 +26,4 @@
     <section id="sponsors">
         <x-sponsors-section :sponsors="$sponsors ?? []" />
     </section>
-</x-app-layout>
+</x-guest-layout>

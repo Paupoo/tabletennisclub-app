@@ -160,13 +160,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'remember_token',
     ];
 
-    public function canAccessPanel(Panel $panel): bool
-    {
-        // Autoriser par exemple les utilisateurs avec le rôle "admin"
-        return true;
-    }
-
-        /**
+    /**
      * Get the user's full name.
      */
     public function getFullNameAttribute(): string

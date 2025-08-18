@@ -52,36 +52,37 @@ The project is open-source and licensed under the [MIT license](https://opensour
 ## Tâches
 
 ### 🟥 High
-- [ ] Retirer les data mockup « résultats » <!-- labels: high, to do -->
-- [ ] Débugger l’effacement d’un article <!-- labels: high, to do -->
-- [ ] Vérifier les infos dans les mails (nom, info, ip, …) <!-- labels: high, to do -->
+- [x] Retirer les data mockup « résultats » 
+- [ ] Débugger l’effacement d’un article 
+- [ ] Vérifier les infos dans les mails (nom, info, ip, …) 
 - [ ] Débuguer la suppression des contacts
 
 ### 🟧 Medium
-- [ ] Fix missing components (layouts.app and x::bladewind-empty-state). see in prod. <!-- labels: medium, to do -->
-- [ ] Vérifier les liens dans les emails qui doivent ramener vers ctt ottignies <!-- labels: medium, to do -->
-- [ ] Coder une fonction pour envoyer une invitation à un utilisateur pour s’enregistrer et simplement confirmer son email <!-- labels: medium, to do -->
-- [x] Ajouter disclaimer « rgpd » / « utilisation des données » <!-- labels: medium, to do -->
-- [x] Ajouter gestion cookie légal avec législation <!-- labels: medium, to do -->
-- [ ] Ajouter une fonction pour « nettoyer » les utilisateurs qui ne sont plus « rgpd » compliant ou demandent d’effacer leurs données <!-- labels: medium, to do -->
-- [ ] Vérifier comment implémenter un système anti spam <!-- labels: medium, to do -->
-- [ ] Créer un model event / dériver les enfants (trainings / interclub / tournament…) et dédier leurs tables <!-- labels: medium, to do -->
-- [ ] Créer une vue globale par semaine pour voir s’il y a assez de joueur disponible ou pas <!-- labels: medium, to do -->
-- [ ] Créer une vue pour les joueurs qui veulent encoder leurs disponibilités <!-- labels: medium, to do -->
-- [ ] Créer une vue pour les capitaine lors de la composition des équipes <!-- labels: medium, to do -->
-- [ ] Créer une fonction pour confirmer les joueurs sélectionnés <!-- labels: medium, to do -->
-- [ ] Créer une vue pour s’enregistrer à un entraînement <!-- labels: medium, to do -->
-- [ ] Regarder s’il existe des méthode de paiement électronique vraiment pas chère <!-- labels: medium, to do -->
-- [ ] Ajouter bouton show/hide stats sur le dashboard <!-- labels: medium, to do -->
-- [ ] regrouper les couleurs des stats et des blocks par thème (users bleu, teams jaunes, etc.) <!-- labels: medium, to do -->
-- [ ] Ajouter les tournois dans le dashboard, ainsi que les contacts et les articles <!-- labels: medium, to do -->
+- [x] Fix missing components (layouts.app and x::bladewind-empty-state). see in prod. 
+- [x] Vérifier les liens dans les emails qui doivent ramener vers ctt ottignies 
+- [ ] Coder une fonction pour envoyer une invitation à un utilisateur pour s’enregistrer et simplement confirmer son email 
+- [x] Ajouter disclaimer « rgpd » / « utilisation des données » 
+- [x] Ajouter gestion cookie légal avec législation 
+- [ ] Ajouter une fonction pour « nettoyer » les utilisateurs qui ne sont plus « rgpd » compliant ou demandent d’effacer leurs données 
+- [x] Vérifier comment implémenter un système anti spam 
+- [ ] Créer un model event / dériver les enfants (trainings / interclub / tournament…) et dédier leurs tables 
+- [ ] Créer une vue globale par semaine pour voir s’il y a assez de joueur disponible ou pas 
+- [ ] Créer une vue pour les joueurs qui veulent encoder leurs disponibilités 
+- [ ] Créer une vue pour les capitaine lors de la composition des équipes 
+- [ ] Créer une fonction pour confirmer les joueurs sélectionnés 
+- [ ] Créer une vue pour s’enregistrer à un entraînement 
+- [ ] Regarder s’il existe des méthode de paiement électronique vraiment pas chère 
+- [ ] Ajouter bouton show/hide stats sur le dashboard 
+- [ ] regrouper les couleurs des stats et des blocks par thème (users bleu, teams jaunes, etc.) 
+- [ ] Ajouter les tournois dans le dashboard, ainsi que les contacts et les articles 
 - [ ] Make all strings translatable and translate into English and into French all the strings.
 
 
 ### 🟩 Low
-- [ ] Coder le CRUD pour mettre à jour les résultats <!-- labels: low, to do -->
-- [ ] Mettre à jour le growler pour qu’il soit responsive sur tel <!-- labels: low, to do -->
-- [ ] Gérer les pluriels/singuliers dans le dashboard et dans chaque vue avec des stats <!-- labels: low, to do -->
+- [ ] Coder le CRUD pour mettre à jour les résultats 
+- [ ] Mettre à jour le growler pour qu’il soit responsive sur tel 
+- [ ] Gérer les pluriels/singuliers dans le dashboard et dans chaque vue avec des stats 
+- [ ] Créer un système pour gérer les spams (vues, nombres, function pour bloquer des IP...) 
 
 
 # Table Tennis Club

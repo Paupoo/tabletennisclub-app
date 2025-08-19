@@ -54,7 +54,7 @@ The project is open-source and licensed under the [MIT license](https://opensour
 ### 🟥 High
 - [x] Retirer les data mockup « résultats » 
 - [ ] Débugger l’effacement d’un article 
-- [ ] Vérifier les infos dans les mails (nom, info, ip, …) 
+- [x] Vérifier les infos dans les mails (nom, info, ip, …) 
 - [x] Débuguer la suppression des contacts
 - [ ] Implémenter la fonction de recherche avec livewire pour les contacts et les articles
 - [ ] Implémenter la fonction de filtres avec livewire pour les contacts et les articles
@@ -66,6 +66,7 @@ The project is open-source and licensed under the [MIT license](https://opensour
 - [x] Ajouter disclaimer « rgpd » / « utilisation des données » 
 - [x] Ajouter gestion cookie légal avec législation
 - [ ] Ajouter une fonction pour envoyer un QR et payer la cotisation par mail, mais aussi depuis la page "profil" de l'utilisateur
+- [ ] Revoir la vue utilisateur (show/edit/profile...)
 - [ ] Ajouter une fonction pour « nettoyer » les utilisateurs qui ne sont plus « rgpd » compliant ou demandent d’effacer leurs données 
 - [x] Vérifier comment implémenter un système anti spam 
 - [ ] Créer un model event / dériver les enfants (trainings / interclub / tournament…) et dédier leurs tables 

@@ -20,10 +20,10 @@ class UserPolicy
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user): bool
+    public function delete(User $user, User $model): bool
     {
         //
-        return $user->is_admin || $user->is_committee_member;
+        return $user->is_admin || $user->is_committee_member || $user->is($model);
     }
 
     /**
@@ -86,4 +86,16 @@ class UserPolicy
         //
         return true;
     }
+
+    public function sendEmail(User $user): bool
+    {
+        return $user->is_admin || $user->is_committee_member;
+    }
+
+        public function updatePassword(User $user, User $model): bool
+    {
+        //
+        return $user->is_admin || $user->is_committee_member || $user->is($model);
+    }
+
 }

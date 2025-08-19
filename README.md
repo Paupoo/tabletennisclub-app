@@ -64,7 +64,8 @@ The project is open-source and licensed under the [MIT license](https://opensour
 - [x] Vérifier les liens dans les emails qui doivent ramener vers ctt ottignies 
 - [ ] Coder une fonction pour envoyer une invitation à un utilisateur pour s’enregistrer et simplement confirmer son email 
 - [x] Ajouter disclaimer « rgpd » / « utilisation des données » 
-- [x] Ajouter gestion cookie légal avec législation 
+- [x] Ajouter gestion cookie légal avec législation
+- [ ] Ajouter une fonction pour envoyer un QR et payer la cotisation par mail, mais aussi depuis la page "profil" de l'utilisateur
 - [ ] Ajouter une fonction pour « nettoyer » les utilisateurs qui ne sont plus « rgpd » compliant ou demandent d’effacer leurs données 
 - [x] Vérifier comment implémenter un système anti spam 
 - [ ] Créer un model event / dériver les enfants (trainings / interclub / tournament…) et dédier leurs tables 

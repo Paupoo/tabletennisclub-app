@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Enums\ArticlesCategoryEnum;
 use App\Enums\ArticlesStatusEnum;
+use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -46,5 +47,13 @@ class Article extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function scopeIsPublic($query): Builder {
+        return $query->where('is_public', true);
+    }
+
+    public function scopeIsPrivate($query): Builder {
+        return $query->where('is_public', false);
     }
 }

@@ -24,11 +24,11 @@ class UsersTable extends Component
 
     public string $sex = '';
 
-    public string $status = '';
-
     public string $sortByField = '';
 
     public string $sortDirection = 'desc';
+
+    public string $status = '';
 
     protected ForceList $forceList;
 
@@ -54,7 +54,7 @@ class UsersTable extends Component
                 session()->flash('error', __('Cannot delete ' . $user->first_name . ' ' . $user->last_name . ' because he subscribed to one or more tournaments'));
                 $this->redirectRoute('users.index');
             }
-            
+
             $this->redirectRoute('users.index')
                 ->with([
                     'error' => __('The user could not be deleted'),
@@ -71,25 +71,25 @@ class UsersTable extends Component
             ->when($this->sex !== '', function ($query): void {
                 $query->where('sex', $this->sex);
             })
-            ->when($this->status === 'active', function($query): void {
+            ->when($this->status === 'active', function ($query): void {
                 $query->isActive();
             })
-            ->when($this->status === 'inactive', function($query): void {
+            ->when($this->status === 'inactive', function ($query): void {
                 $query->where('is_active', false);
             })
-            ->when($this->status === 'paid', function($query): void {
+            ->when($this->status === 'paid', function ($query): void {
                 $query->where('has_paid', true);
             })
-            ->when($this->status === 'unpaid', function($query): void {
+            ->when($this->status === 'unpaid', function ($query): void {
                 $query->where('has_paid', false);
             })
             ->when($this->sortByField === '', function ($query): void {
-            $query->orderby('is_competitor', 'desc')
-                ->orderby('force_list')
-                ->orderBy('ranking')
-                ->orderby('last_name')
-                ->orderby('first_name')
-                ->with('teams');
+                $query->orderby('is_competitor', 'desc')
+                    ->orderby('force_list')
+                    ->orderBy('ranking')
+                    ->orderby('last_name')
+                    ->orderby('first_name')
+                    ->with('teams');
             })
             ->when($this->sortByField !== '', function ($query): void {
                 $query->orderBy($this->sortByField, $this->sortDirection);
@@ -117,7 +117,7 @@ class UsersTable extends Component
             ->filter();
 
         foreach ($terms as $term) {
-            $query->where(function ($subQuery) use ($term) {
+            $query->where(function ($subQuery) use ($term): void {
                 $subQuery->whereRaw('LOWER(first_name) LIKE ?', ["%{$term}%"])
                     ->orWhereRaw('LOWER(last_name) LIKE ?', ["%{$term}%"]);
             });

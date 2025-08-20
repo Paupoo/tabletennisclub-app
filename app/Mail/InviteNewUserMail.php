@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Mail;
 
 use App\Models\User;
@@ -15,9 +17,10 @@ class InviteNewUserMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
+    public int $timeout = 60;
+
     public int $tries = 3;
 
-    public int $timeout = 60;
     /**
      * Create a new message instance.
      */
@@ -27,18 +30,13 @@ class InviteNewUserMail extends Mailable implements ShouldQueue
     }
 
     /**
-     * Get the message envelope.
+     * Get the attachments for the message.
+     *
+     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
      */
-    public function envelope(): Envelope
+    public function attachments(): array
     {
-        return new Envelope(
-            subject: 'Bienvenue au ' . config('app.name') . ' – Finalisez votre inscription',
-            from: new Address(
-                address: config('mail.from.address'),
-                name: config('app.name') ?? config('mail.from.name')
-            ),
-            replyTo: config('mail.from.address'),
-        );
+        return [];
     }
 
     /**
@@ -56,12 +54,17 @@ class InviteNewUserMail extends Mailable implements ShouldQueue
     }
 
     /**
-     * Get the attachments for the message.
-     *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
+     * Get the message envelope.
      */
-    public function attachments(): array
+    public function envelope(): Envelope
     {
-        return [];
+        return new Envelope(
+            subject: 'Bienvenue au ' . config('app.name') . ' – Finalisez votre inscription',
+            from: new Address(
+                address: config('mail.from.address'),
+                name: config('app.name') ?? config('mail.from.name')
+            ),
+            replyTo: config('mail.from.address'),
+        );
     }
 }

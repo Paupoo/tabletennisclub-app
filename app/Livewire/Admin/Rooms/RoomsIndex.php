@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Livewire\Admin\Rooms;
 
 use App\Models\Room;
@@ -8,10 +10,11 @@ use Livewire\Component;
 
 class RoomsIndex extends Component
 {
-    public string $search = '';
     public string $building = '';
 
     public Collection $buildings;
+
+    public string $search = '';
 
     public function mount(): void
     {
@@ -20,10 +23,11 @@ class RoomsIndex extends Component
             ->sort()
             ->values();
     }
+
     public function render()
     {
         $rooms = Room::search($this->search)
-            ->when($this->building !== '', function ($query): void{
+            ->when($this->building !== '', function ($query): void {
                 $query->where('building_name', $this->building);
             })
             ->get();

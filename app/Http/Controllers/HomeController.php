@@ -1,10 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Models\Article;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\View;
 
 class HomeController extends Controller
 {
@@ -30,7 +30,7 @@ class HomeController extends Controller
                 'location' => 'Blocry - salle G3',
                 'level' => 'Tous niveaux',
                 'capacity' => 10,
-                'description' => 'Séance d\'entraînement encadrée pour les jeunes'
+                'description' => 'Séance d\'entraînement encadrée pour les jeunes',
             ],
             [
                 'day' => 'Lundi',
@@ -39,7 +39,7 @@ class HomeController extends Controller
                 'location' => 'Demeester 0',
                 'level' => 'Tous niveaux',
                 'capacity' => 8,
-                'description' => 'Séance libre pour tous les membres du club'
+                'description' => 'Séance libre pour tous les membres du club',
             ],
             [
                 'day' => 'Lundi',
@@ -48,7 +48,7 @@ class HomeController extends Controller
                 'location' => 'Demeester -1',
                 'level' => 'Tous niveaux',
                 'capacity' => 10,
-                'description' => 'Séance libre pour tous les membres du club'
+                'description' => 'Séance libre pour tous les membres du club',
             ],
             [
                 'day' => 'Mardi',
@@ -58,7 +58,7 @@ class HomeController extends Controller
                 'level' => 'Débutant+ / Confirmé',
                 'coach' => 'Aloïse Lejeune',
                 'capacity' => 10,
-                'description' => 'Perfectionnement pour les joueurs classés'
+                'description' => 'Perfectionnement pour les joueurs classés',
             ],
             [
                 'day' => 'Mercredi',
@@ -68,7 +68,7 @@ class HomeController extends Controller
                 'level' => 'Débutant',
                 'coach' => 'Éric Filée',
                 'capacity' => 8,
-                'description' => 'Initiation pour les jeunes'
+                'description' => 'Initiation pour les jeunes',
             ],
             [
                 'day' => 'Mercredi',
@@ -78,14 +78,14 @@ class HomeController extends Controller
                 'level' => 'Débutant+',
                 'coach' => 'Éric Filée',
                 'capacity' => 8,
-                'description' => 'Perfectionnement pour les jeunes'
+                'description' => 'Perfectionnement pour les jeunes',
             ],
             [
                 'day' => 'Vendredi',
                 'time' => '19h00 - 23h30',
                 'activity' => 'Interclubs',
                 'location' => 'Demeester (0 et -1)',
-                'description' => 'Matches de compétition à domicile. Venez nous supporter ! Chouette ambiance et beau jeu au programme'
+                'description' => 'Matches de compétition à domicile. Venez nous supporter ! Chouette ambiance et beau jeu au programme',
             ],
             [
                 'day' => 'Samedi',
@@ -95,7 +95,7 @@ class HomeController extends Controller
                 'level' => 'Débutant',
                 'coach' => 'Jean-Pierre Fikany',
                 'capacity' => 8,
-                'description' => 'Initiation pour les jeunes'
+                'description' => 'Initiation pour les jeunes',
             ],
             [
                 'day' => 'Samedi',
@@ -105,10 +105,10 @@ class HomeController extends Controller
                 'level' => 'Débutant+',
                 'coach' => 'Jean-Pierre Fikany',
                 'capacity' => 8,
-                'description' => 'Perfectionnement pour les jeunes'
+                'description' => 'Perfectionnement pour les jeunes',
             ],
         ];
-        
+
         return view('public.home', compact('sponsors', 'articles', 'schedules'));
     }
 }

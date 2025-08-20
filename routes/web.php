@@ -10,10 +10,8 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InterclubController;
 use App\Http\Controllers\KnockoutPhaseController;
-use App\Http\Controllers\NewsController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicArticlesController;
-use App\Http\Controllers\PublicSiteController;
 use App\Http\Controllers\ResultsController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\RoomController;
@@ -68,7 +66,7 @@ Route::get('/admin/dashboard', function () {
         'teams' => Team::all()->load(['captain', 'users']),
         'breadcrumbs' => [
             ['title' => 'Home', 'url' => route('dashboard'), 'icon' => 'home'],
-            ['title' => 'Dashboard', 'url' => route('dashboard'), 'icon' => 'home']
+            ['title' => 'Dashboard', 'url' => route('dashboard'), 'icon' => 'home'],
         ],
     ]);
 })->middleware(['auth', 'verified'])
@@ -86,17 +84,16 @@ Route::resource('/admin/rooms', RoomController::class)->middleware(['auth', 'ver
 /**
  * Articles management
  */
-
 Route::get('/articles', [PublicArticlesController::class, 'index'])->name('public.articles.index');
 Route::get('/articles/{slug}', [PublicArticlesController::class, 'show'])->name('public.articles.show');
 
- /**
+/**
  * This route is used to manage articles in the admin panel.
  * It allows authenticated and verified users to perform CRUD operations on articles.
  * The articles are stored in the database and can be created, read, updated, and deleted through this interface.
- * This route is protected by authentication and verification middleware. 
+ * This route is protected by authentication and verification middleware.
  */
-Route::prefix('admin')->middleware('auth')->group(function () {
+Route::prefix('admin')->middleware('auth')->group(function (): void {
     Route::resource('articles', ArticleController::class)->names('admin.articles');
     Route::patch('articles/{article}/publish', [ArticleController::class, 'publish'])->name('admin.articles.publish');
     Route::patch('articles/{article}/archive', [ArticleController::class, 'archive'])->name('admin.articles.archive');
@@ -258,22 +255,22 @@ Route::middleware(['auth', 'verified'])
             ->name('resetKnockoutMatch');
     });
 
-Route::prefix('admin')->middleware(['auth'])->group(function () {
+Route::prefix('admin')->middleware(['auth'])->group(function (): void {
     Route::resource('contacts', ContactAdminController::class)->names('admin.contacts');
     Route::post('contacts/create-new-user', [CreateNewUserAction::class, 'handle'])->name('admin.contacts.invite-new-user');
     Route::post('/{contact}/send-email', [ContactAdminController::class, 'sendEmail'])->name('admin.contacts.send-email');
     Route::get('/{contact}/compose-email', [ContactAdminController::class, 'composeEmail'])->name('admin.contacts.compose-email');
     Route::post('/{contact}/send-custom-email', [ContactAdminController::class, 'sendCustomEmail'])->name('admin.contacts.send-custom-email');
-   
+
 });
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified'])->group(function (): void {
     // ... autres routes admin existantes
 
-    Route::prefix('admin')->name('admin.')->group(function () {
+    Route::prefix('admin')->name('admin.')->group(function (): void {
         // Routes événements
         Route::resource('events', App\Http\Controllers\Admin\EventController::class);
-        
+
         // Actions spéciales pour les événements
         Route::patch('events/{event}/publish', [App\Http\Controllers\Admin\EventController::class, 'publish'])
             ->name('events.publish');
@@ -287,6 +284,5 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::get('/test', function () {
     return view('test', ['breadcrumbs' => []]);
 });
-
 
 require __DIR__ . '/auth.php';

@@ -1,14 +1,28 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreEventRequest extends FormRequest
 {
-public function authorize(): bool
+    public function authorize(): bool
     {
         return $this->user()->is_admin || $this->user()->is_committee_member;
+    }
+
+    public function messages(): array
+    {
+        return [
+            'title.required' => 'Le titre est obligatoire.',
+            'description.required' => 'La description est obligatoire.',
+            'event_date.after_or_equal' => 'La date de l\'événement ne peut pas être dans le passé.',
+            'end_time.after' => 'L\'heure de fin doit être après l\'heure de début.',
+            'max_participants.min' => 'Le nombre de participants doit être au moins 1.',
+            'max_participants.max' => 'Le nombre de participants ne peut pas dépasser 1000.',
+        ];
     }
 
     public function rules(): array
@@ -30,30 +44,18 @@ public function authorize(): bool
         ];
     }
 
-    public function messages(): array
-    {
-        return [
-            'title.required' => 'Le titre est obligatoire.',
-            'description.required' => 'La description est obligatoire.',
-            'event_date.after_or_equal' => 'La date de l\'événement ne peut pas être dans le passé.',
-            'end_time.after' => 'L\'heure de fin doit être après l\'heure de début.',
-            'max_participants.min' => 'Le nombre de participants doit être au moins 1.',
-            'max_participants.max' => 'Le nombre de participants ne peut pas dépasser 1000.',
-        ];
-    }
-
     protected function prepareForValidation(): void
     {
         // Si pas d'icône fournie, utiliser l'icône par défaut de la catégorie
         if (empty($this->icon) && $this->category) {
             $this->merge([
-                'icon' => Event::ICONS[$this->category] ?? '📅'
+                'icon' => Event::ICONS[$this->category] ?? '📅',
             ]);
         }
 
         // Convertir les checkbox en boolean
         $this->merge([
-            'featured' => $this->boolean('featured')
+            'featured' => $this->boolean('featured'),
         ]);
     }
 }

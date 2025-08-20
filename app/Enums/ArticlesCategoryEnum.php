@@ -1,15 +1,25 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Enums;
 
 enum ArticlesCategoryEnum: string
 {
     case COMPETITION = 'Compétition';
+    case EVENT = 'Events';
+    case NEWS = 'News';
     case PARTNERSHIP = 'Partnership';
     case PORTRAIT = 'Portrait';
-    case EVENT = 'Events';
     case TRAINING = 'Training';
-    case NEWS = 'News';
+
+    /**
+     * Return the values of the enum into an array
+     */
+    public static function values(): array
+    {
+        return array_column(self::cases(), 'value');
+    }
 
     public function getLabel(): string
     {
@@ -21,13 +31,5 @@ enum ArticlesCategoryEnum: string
             self::TRAINING => __('Training'),
             self::NEWS => __('News'),
         };
-    }
-
-    /**
-     * Return the values of the enum into an array
-     */
-    public static function values(): array
-    {
-        return array_column(self::cases(), 'value');
     }
 }

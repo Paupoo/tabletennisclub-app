@@ -61,6 +61,11 @@ class UserPolicy
         return false;
     }
 
+    public function sendEmail(User $user): bool
+    {
+        return $user->is_admin || $user->is_committee_member;
+    }
+
     /**
      * Determine wether the user can set or update force index.
      */
@@ -78,6 +83,12 @@ class UserPolicy
         return $user->is_admin || $user->is_committee_member;
     }
 
+    public function updatePassword(User $user, User $model): bool
+    {
+        //
+        return $user->is_admin || $user->is_committee_member || $user->is($model);
+    }
+
     /**
      * Determine whether the user can view the model.
      */
@@ -86,16 +97,4 @@ class UserPolicy
         //
         return true;
     }
-
-    public function sendEmail(User $user): bool
-    {
-        return $user->is_admin || $user->is_committee_member;
-    }
-
-        public function updatePassword(User $user, User $model): bool
-    {
-        //
-        return $user->is_admin || $user->is_committee_member || $user->is($model);
-    }
-
 }

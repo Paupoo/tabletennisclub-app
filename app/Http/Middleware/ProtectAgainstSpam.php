@@ -14,7 +14,6 @@ class ProtectAgainstSpam
     /**
      * Handle an incoming request.
      *
-     * @param  \Illuminate\Http\Request  $request
      * @param  \Closure(\Illuminate\Http\Request): \Symfony\Component\HttpFoundation\Response  $next
      */
     public function handle(Request $request, Closure $next): Response
@@ -24,6 +23,24 @@ class ProtectAgainstSpam
         }
 
         return $next($request);
+    }
+
+    /**
+     * Gérer un cas suspect de spam (log + réponse silencieuse).
+     */
+    private function blockSpam(Request $request): Response
+    {
+        // Logging basique (tu peux pousser ça en DB si besoin)
+        Log::warning('Spam attempt detected', [
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'inputs' => $request->except(['password']), // ne jamais loguer les mdp
+        ]);
+
+        // Réponse silencieuse : on redirige avec un message générique
+        return redirect()
+            ->back()
+            ->with('success', 'Votre demande est en cours de traitement.');
     }
 
     /**
@@ -43,23 +60,5 @@ class ProtectAgainstSpam
         }
 
         return false;
-    }
-
-    /**
-     * Gérer un cas suspect de spam (log + réponse silencieuse).
-     */
-    private function blockSpam(Request $request): Response
-    {
-        // Logging basique (tu peux pousser ça en DB si besoin)
-        Log::warning('Spam attempt detected', [
-            'ip' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-            'inputs' => $request->except(['password']), // ne jamais loguer les mdp
-        ]);
-
-        // Réponse silencieuse : on redirige avec un message générique
-        return redirect()
-            ->back()
-            ->with('success', 'Votre demande est en cours de traitement.');
     }
 }

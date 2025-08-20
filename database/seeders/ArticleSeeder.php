@@ -1,14 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Seeders;
 
-use App\Models\Article;
-use App\Models\User;
 use App\Enums\ArticlesCategoryEnum;
 use App\Enums\ArticlesStatusEnum;
+use App\Models\Article;
+use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
-use Carbon\Carbon;
 
 class ArticleSeeder extends Seeder
 {
@@ -144,7 +146,7 @@ class ArticleSeeder extends Seeder
 
         foreach ($articles as $index => $articleData) {
             $createdAt = $createdDates[$index];
-            
+
             Article::create([
                 'title' => $articleData['title'],
                 'slug' => Str::slug($articleData['title']),
@@ -168,31 +170,31 @@ class ArticleSeeder extends Seeder
     private function generateVariedDates(int $count): array
     {
         $dates = [];
-        
+
         // Définir la plage de dates (janvier 2023 à décembre 2024)
         $startDate = Carbon::create(2023, 1, 1);
         $endDate = Carbon::create(2024, 12, 31);
-        
+
         for ($i = 0; $i < $count; $i++) {
             // Générer une date aléatoire dans la plage
             $randomDate = Carbon::createFromTimestamp(
                 rand($startDate->timestamp, $endDate->timestamp)
             );
-            
+
             // Ajuster l'heure pour simuler une publication humaine
             $hour = $this->getRealisticPublicationHour();
             $minute = rand(0, 59);
-            
+
             $randomDate->setTime($hour, $minute);
-            
+
             $dates[] = $randomDate;
         }
-        
+
         // Trier les dates par ordre chronologique
-        usort($dates, function($a, $b) {
+        usort($dates, function ($a, $b) {
             return $a->timestamp - $b->timestamp;
         });
-        
+
         return $dates;
     }
 
@@ -222,7 +224,7 @@ class ArticleSeeder extends Seeder
             22 => 3,  // 22h - tard
             23 => 1,  // 23h - très tard
         ];
-        
+
         // Créer un tableau avec répétition selon les poids
         $weightedHours = [];
         foreach ($hourWeights as $hour => $weight) {
@@ -230,7 +232,7 @@ class ArticleSeeder extends Seeder
                 $weightedHours[] = $hour;
             }
         }
-        
+
         return $weightedHours[array_rand($weightedHours)];
     }
 }

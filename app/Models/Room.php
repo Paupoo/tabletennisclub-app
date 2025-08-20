@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -96,9 +95,23 @@ class Room extends Model
         return $this->belongsToMany(Club::class);
     }
 
+    public function getAddressAttribute(): string
+    {
+        return $this->street . ', ' . $this->city_code . ' ' . $this->city_name;
+    }
+
     public function interclubs(): HasMany
     {
         return $this->hasMany(Interclub::class);
+    }
+
+    public function scopeSearch($query, $value): void
+    {
+        $query->where('name', 'like', '%' . $value . '%')
+            ->orWhere('building_name', 'like', '%' . $value . '%')
+            ->orWhere('street', 'like', '%' . $value . '%')
+            ->orWhere('city_code', 'like', '%' . $value . '%')
+            ->orWhere('city_name', 'like', '%' . $value . '%');
     }
 
     public function tables(): HasMany
@@ -114,19 +127,5 @@ class Room extends Model
     public function training(): HasMany
     {
         return $this->hasMany(Training::class);
-    }
-
-    public function getAddressAttribute(): string
-    {
-        return $this->street . ', ' . $this->city_code . ' ' . $this->city_name;
-    }
-
-    public function scopeSearch($query, $value): void
-    {
-        $query->where('name', 'like', '%' . $value . '%')
-            ->orWhere('building_name', 'like', '%' . $value . '%')
-            ->orWhere('street', 'like', '%' . $value . '%')
-            ->orWhere('city_code', 'like', '%' . $value . '%')
-            ->orWhere('city_name', 'like', '%' . $value . '%');
     }
 }

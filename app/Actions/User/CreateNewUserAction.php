@@ -7,9 +7,7 @@ namespace App\Actions\User;
 use App\Http\Requests\StoreUserRequest;
 use App\Mail\InviteNewUserMail;
 use App\Models\User;
-use Exception;
 use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Str;
 
 class CreateNewUserAction
 {
@@ -17,7 +15,7 @@ class CreateNewUserAction
     {
         $user = User::create($request->validated());
 
-        // Mail::to($user->email)->send(new InviteNewUserMail($user, $request->password)); 
+        // Mail::to($user->email)->send(new InviteNewUserMail($user, $request->password));
 
         return redirect()
             ->back()

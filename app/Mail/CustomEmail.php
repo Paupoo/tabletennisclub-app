@@ -1,14 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Mail;
 
 use App\Models\Contact;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Mail\Mailables\Address;
 
 class CustomEmail extends Mailable
 {
@@ -19,23 +21,12 @@ class CustomEmail extends Mailable
         public bool $isCopy = false
     ) {}
 
-    public function envelope(): Envelope
+    public function attachments(): array
     {
-        $subject = $this->emailData['subject'];
-        
-        // Ajouter [COPIE] si c'est une copie pour l'admin
-        if ($this->isCopy) {
-            $subject = '[COPIE] ' . $subject;
-        }
-
-        return new Envelope(
-            subject: $subject,
-            from: new Address(
-                address: config('mail.from.address'),
-                name: config('app.name') ?? config('mail.from.name')
-            ),
-            replyTo: config('mail.from.address'),
-        );
+        return [
+            // Possibilité d'ajouter des pièces jointes dynamiques
+            // basées sur le contenu du message ou le type de contact
+        ];
     }
 
     public function content(): Content
@@ -53,12 +44,33 @@ class CustomEmail extends Mailable
         );
     }
 
-    public function attachments(): array
+    public function envelope(): Envelope
     {
-        return [
-            // Possibilité d'ajouter des pièces jointes dynamiques
-            // basées sur le contenu du message ou le type de contact
-        ];
+        $subject = $this->emailData['subject'];
+
+        // Ajouter [COPIE] si c'est une copie pour l'admin
+        if ($this->isCopy) {
+            $subject = '[COPIE] ' . $subject;
+        }
+
+        return new Envelope(
+            subject: $subject,
+            from: new Address(
+                address: config('mail.from.address'),
+                name: config('app.name') ?? config('mail.from.name')
+            ),
+            replyTo: config('mail.from.address'),
+        );
+    }
+
+    /**
+     * Convertit les URLs en liens cliquables
+     */
+    private function linkifyUrls(string $text): string
+    {
+        $pattern = '/((http|https|ftp|ftps)\:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,3}(\/\S*)?)/';
+
+        return preg_replace($pattern, '<a href="$1" target="_blank" style="color: #2980b9;">$1</a>', $text);
     }
 
     /**
@@ -67,7 +79,7 @@ class CustomEmail extends Mailable
     private function processMessage(string $message): string
     {
         $contact = $this->emailData['contact'];
-        
+
         // Remplacement des variables courantes
         $replacements = [
             '{{ $contact->first_name }}' => $contact->first_name,
@@ -90,14 +102,5 @@ class CustomEmail extends Mailable
         $message = $this->linkifyUrls($message);
 
         return $message;
-    }
-
-    /**
-     * Convertit les URLs en liens cliquables
-     */
-    private function linkifyUrls(string $text): string
-    {
-        $pattern = '/((http|https|ftp|ftps)\:\/\/[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,3}(\/\S*)?)/';
-        return preg_replace($pattern, '<a href="$1" target="_blank" style="color: #2980b9;">$1</a>', $text);
     }
 }

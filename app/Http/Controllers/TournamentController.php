@@ -487,7 +487,6 @@ class TournamentController extends Controller
             ->current($tournament->name)
             ->toArray();
 
-
         return view('admin.tournaments.show-players', [
             'matches' => $matches,
             'rooms' => $rooms,

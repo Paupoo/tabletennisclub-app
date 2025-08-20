@@ -121,7 +121,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'ranking' => 'string',
         'licence' => 'string',
         'force_list' => 'integer',
-        'avatar_url' => 'string'
+        'avatar_url' => 'string',
     ];
 
     /**
@@ -160,14 +160,6 @@ class User extends Authenticatable implements MustVerifyEmail
         'remember_token',
     ];
 
-    /**
-     * Get the user's full name.
-     */
-    public function getFullNameAttribute(): string
-    {
-        return "{$this->first_name} {$this->last_name}";
-    }
-
     public function articles(): HasMany
     {
         return $this->hasMany(Article::class);
@@ -183,6 +175,34 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsTo(Club::class);
     }
 
+    public function dependents(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            User::class,
+            'user_guardian',
+            'guardian_id',
+            'user_id'
+        );
+    }
+
+    /**
+     * Get the user's full name.
+     */
+    public function getFullNameAttribute(): string
+    {
+        return "{$this->first_name} {$this->last_name}";
+    }
+
+    public function guardians(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            User::class,
+            'user_guardian',
+            'user_id',
+            'guardian_id'
+        );
+    }
+
     public function interclubs(): BelongsToMany
     {
         return $this->belongsToMany(Interclub::class)
@@ -194,6 +214,21 @@ class User extends Authenticatable implements MustVerifyEmail
     public function pools(): BelongsToMany
     {
         return $this->belongsToMany(Pool::class, 'pool_user');
+    }
+
+    public function scopeHasPaid($query): Builder
+    {
+        return $query->where('has_paid', true);
+    }
+
+    public function scopeIsActive($query): Builder
+    {
+        return $query->where('is_active', true);
+    }
+
+    public function scopeIsCompetitor($query): Builder
+    {
+        return $query->where('is_competitor', true);
     }
 
     /** Scopes */
@@ -212,9 +247,8 @@ class User extends Authenticatable implements MustVerifyEmail
 
     /**
      * This scope allows searching for users by terms in their first or last name.
-     * @param mixed $query
-     * @param string $search
-     * @return void
+     *
+     * @param  mixed  $query
      */
     public function scopeSearchTerms($query, string $search): void
     {
@@ -222,13 +256,12 @@ class User extends Authenticatable implements MustVerifyEmail
             ->filter();
 
         foreach ($terms as $term) {
-            $query->where(function ($subQuery) use ($term) {
+            $query->where(function ($subQuery) use ($term): void {
                 $subQuery->whereRaw('LOWER(first_name) LIKE ?', ["%{$term}%"])
-                        ->orWhereRaw('LOWER(last_name) LIKE ?', ["%{$term}%"]);
+                    ->orWhereRaw('LOWER(last_name) LIKE ?', ["%{$term}%"]);
             });
         }
     }
-
 
     public function scopeUnregisteredUsers($query, $tournament)
     {
@@ -237,21 +270,6 @@ class User extends Authenticatable implements MustVerifyEmail
         })->orderBy('last_name')->orderBy('first_name');
     }
 
-    public function scopeIsActive($query): Builder
-    {
-        return $query->where('is_active', true);
-    }
-
-    public function scopeIsCompetitor($query): Builder
-    {
-        return $query->where('is_competitor', true);
-    }
-
-    public function scopeHasPaid($query): Builder
-    {
-        return $query->where('has_paid', true);
-    }
-    
     /**
      * Calculate user's age and store it into ->age attribute.
      */
@@ -272,7 +290,7 @@ class User extends Authenticatable implements MustVerifyEmail
      * @param [type] $value
      * @return void
      */
-    public function setFirstNameAttribute($value):string
+    public function setFirstNameAttribute($value): string
     {
         $cleaned_name = mb_convert_case($value, MB_CASE_TITLE);
 
@@ -306,25 +324,4 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->belongsToMany(Training::class);
     }
-
-    public function guardians(): BelongsToMany
-    {
-        return $this->belongsToMany(
-            User::class,
-            'user_guardian',
-            'user_id',
-            'guardian_id'
-        );
-    }
-
-    public function dependents(): BelongsToMany
-    {
-        return $this->belongsToMany(
-            User::class,
-            'user_guardian',
-            'guardian_id',
-            'user_id'
-        );
-    }
-
 }

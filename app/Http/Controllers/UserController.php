@@ -115,7 +115,7 @@ class UserController extends Controller
                 'icon' => 'plus',
                 'textColor' => 'text-gray-700',
                 'hoverColor' => 'text-gray-900',
-                'text' => __('Create User')
+                'text' => __('Create User'),
             ],
         ];
 

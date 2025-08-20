@@ -1,25 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Policies;
 
 use App\Models\Event;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class EventPolicy
 {
-    /**
-     * Determine whether the user can view any models.
-     */
-    public function viewAny(User $user): bool
-    {
-        return false;
-    }
-
-    /**
-     * Determine whether the user can view the model.
-     */
-    public function view(User $user, Event $event): bool
+    public function archive(User $user): bool
     {
         return $user->is_admin || $user->is_committee_member;
     }
@@ -31,31 +21,29 @@ class EventPolicy
     {
         return $user->is_admin || $user->is_committee_member;
     }
-    public function archive(User $user): bool
+
+    /**
+     * Determine whether the user can delete the model.
+     */
+    public function delete(User $user, Event $event): bool
     {
         return $user->is_admin || $user->is_committee_member;
     }
-    public function publish(User $user): bool
-    {
-        return $user->is_admin || $user->is_committee_member;
-    }
+
     public function duplicate(User $user): bool
     {
         return $user->is_admin || $user->is_committee_member;
     }
 
     /**
-     * Determine whether the user can update the model.
+     * Determine whether the user can permanently delete the model.
      */
-    public function update(User $user, Event $event): bool
+    public function forceDelete(User $user, Event $event): bool
     {
         return $user->is_admin || $user->is_committee_member;
     }
 
-    /**
-     * Determine whether the user can delete the model.
-     */
-    public function delete(User $user, Event $event): bool
+    public function publish(User $user): bool
     {
         return $user->is_admin || $user->is_committee_member;
     }
@@ -69,10 +57,26 @@ class EventPolicy
     }
 
     /**
-     * Determine whether the user can permanently delete the model.
+     * Determine whether the user can update the model.
      */
-    public function forceDelete(User $user, Event $event): bool
+    public function update(User $user, Event $event): bool
     {
         return $user->is_admin || $user->is_committee_member;
+    }
+
+    /**
+     * Determine whether the user can view the model.
+     */
+    public function view(User $user, Event $event): bool
+    {
+        return $user->is_admin || $user->is_committee_member;
+    }
+
+    /**
+     * Determine whether the user can view any models.
+     */
+    public function viewAny(User $user): bool
+    {
+        return false;
     }
 }

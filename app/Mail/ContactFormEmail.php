@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
@@ -13,9 +15,10 @@ class ContactFormEmail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
+    public int $timeout = 60;
+
     public int $tries = 3;
 
-    public int $timeout = 60;
     /**
      * Create a new message instance.
      */
@@ -25,13 +28,13 @@ class ContactFormEmail extends Mailable implements ShouldQueue
     }
 
     /**
-     * Get the message envelope.
+     * Get the attachments for the message.
+     *
+     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
      */
-    public function envelope(): Envelope
+    public function attachments(): array
     {
-        return new Envelope(
-            subject: 'Formulaire de contact - ' . ($this->formData['interest'] ?? 'Demande générale'),
-        );
+        return [];
     }
 
     /**
@@ -71,12 +74,12 @@ class ContactFormEmail extends Mailable implements ShouldQueue
     }
 
     /**
-     * Get the attachments for the message.
-     *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
+     * Get the message envelope.
      */
-    public function attachments(): array
+    public function envelope(): Envelope
     {
-        return [];
+        return new Envelope(
+            subject: 'Formulaire de contact - ' . ($this->formData['interest'] ?? 'Demande générale'),
+        );
     }
 }

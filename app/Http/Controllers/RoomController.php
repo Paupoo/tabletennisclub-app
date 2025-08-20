@@ -64,7 +64,7 @@ class RoomController extends Controller
 
         return view('admin.rooms.edit', [
             'room' => $room,
-            'breadcrumbs'=> $breadcrumbs,
+            'breadcrumbs' => $breadcrumbs,
         ]);
     }
 

@@ -111,7 +111,6 @@ class KnockoutPhaseController extends Controller
             ->orderByRaw('name * 1 ASC')
             ->get();
 
-        
         $statusesAllowed = (new TournamentStateMachine($tournament))->getAllowedTransitions();
 
         return view('admin.tournaments.knockout-bracket', compact('tournament', 'rounds', 'tables', 'statusesAllowed', 'breadcrumbs'));

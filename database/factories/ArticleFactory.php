@@ -22,6 +22,7 @@ class ArticleFactory extends Factory
     public function definition(): array
     {
         $title = fake()->sentence();
+
         return [
             'title' => $title,
             'slug' => Str::slug($title), // Génération du slug à partir du titre

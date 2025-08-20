@@ -1,11 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Models\Article;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use League\CommonMark\MarkdownConverter;
 
 class PublicArticlesController extends Controller
 {
@@ -16,7 +16,7 @@ class PublicArticlesController extends Controller
 
     public function show($slug)
     {
-       
+
         $article = Article::whereSlug($slug)
             ->with('user')
             ->firstOrFail();
@@ -27,7 +27,7 @@ class PublicArticlesController extends Controller
             ->take(3)
             ->get();
 
-            return view('public.articles.show', compact('article', 'relatedArticles'));
+        return view('public.articles.show', compact('article', 'relatedArticles'));
     }
 
     private function getFullArticleContent($slug)
@@ -78,7 +78,7 @@ class PublicArticlesController extends Controller
                 </ul>
                 
                 <p>Ce partenariat s\'inscrit dans notre volonté constante d\'offrir à nos membres les meilleures conditions de pratique et de progression.</p>
-            '
+            ',
         ];
 
         return $contents[$slug] ?? '<p>Contenu de l\'article en cours de rédaction...</p>';

@@ -97,6 +97,7 @@ class TeamController extends Controller
             ->teams()
             ->add('Edit team')
             ->toArray();
+
         //
         return view('admin.teams.edit', [
             'attachedUsers' => $team->users->pluck('id')->toArray(),
@@ -224,6 +225,7 @@ class TeamController extends Controller
             ->teams()
             ->add($team->name)
             ->toArray();
+
         //
         return view('admin.teams.show', [
             'team' => $team->load('users'),
@@ -307,7 +309,7 @@ class TeamController extends Controller
             ->toArray();
 
         $playersPerTeam = (int) $request->safe()->playersPerTeam;
-        
+
         $this->getCompetitors()
             ->countCompetitors()
             ->countTotalTeams($playersPerTeam)

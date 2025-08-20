@@ -1,14 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Seeders;
 
 use App\Models\Event;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class EventSeeder extends Seeder
 {
- public function run(): void
+    public function run(): void
     {
         // Créer quelques événements manuellement (basés sur tes données d'exemple)
         Event::create([
@@ -23,7 +24,7 @@ class EventSeeder extends Seeder
             'price' => 'Max 8 participants',
             'icon' => '🎯',
             'max_participants' => 8,
-            'notes' => 'Prévoir raquettes et tenues de sport'
+            'notes' => 'Prévoir raquettes et tenues de sport',
         ]);
 
         Event::create([
@@ -36,12 +37,12 @@ class EventSeeder extends Seeder
             'end_time' => '19:30',
             'location' => 'Court Débutant',
             'price' => 'Gratuit pour les membres',
-            'icon' => '🔰'
+            'icon' => '🔰',
         ]);
 
         // Créer des événements aléatoires pour les tests
         Event::factory(25)->create();
-        
+
         // Créer quelques événements spéciaux
         Event::factory(5)->published()->upcoming()->create();
         Event::factory(3)->featured()->create();

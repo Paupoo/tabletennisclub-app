@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
@@ -10,7 +12,7 @@ class ResultsController extends Controller
     {
         $selectedSeason = $request->get('season', '2024');
         $seasons = ['2025-2026', '2024-2025', '2023-2024'];
-        
+
         // $teams = [
         //     [
         //         'name' => 'Équipe A - Division Premier',
@@ -38,7 +40,6 @@ class ResultsController extends Controller
         //     ]
         // ];
 
-        
         $teams = [];
 
         return view('public.results', compact('teams', 'seasons', 'selectedSeason'));

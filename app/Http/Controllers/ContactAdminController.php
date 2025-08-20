@@ -13,14 +13,34 @@ use App\Mail\RequestInfoEmail;
 use App\Mail\WelcomeEmail;
 use App\Models\Contact;
 use App\Support\Breadcrumb;
-use App\Support\TableBuilder;
-use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class ContactAdminController extends Controller
 {
+    public function composeEmail(Contact $contact)
+    {
+        $this->authorize('sendEmail', $contact);
+
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->contacts()
+            ->current('Email personnalisé')
+            ->toArray();
+
+        return view('admin.contacts.compose-email', compact('contact', 'breadcrumbs'));
+    }
+
+    public function destroy(Contact $contact)
+    {
+        $this->authorize('destroy', $contact);
+
+        $contact->delete();
+
+        return redirect()->route('admin.contacts.index')->with('success', 'Contact supprimé.');
+    }
+
     public function index()
     {
         $breadcrumbs = Breadcrumb::make()
@@ -36,41 +56,60 @@ class ContactAdminController extends Controller
             'totalProcessed' => Contact::where('status', 'processed')->count(),
             'totalRejected' => Contact::where('status', 'rejected')->count(),
         ]);
-        
-        return view('admin.contacts.index', compact('contacts','breadcrumbs', 'stats'));
+
+        return view('admin.contacts.index', compact('contacts', 'breadcrumbs', 'stats'));
     }
 
-    public function show(Contact $contact)
+    public function sendCustomEmail(Request $request, Contact $contact)
     {
-        $this->authorize('view', $contact);
+        $this->authorize('sendEmail', $contact);
+        $request->validate([
+            'subject' => 'required|string|max:255',
+            'message' => 'required|string',
+            'send_copy' => 'boolean',
+        ]);
 
+        try {
+            $emailData = [
+                'subject' => $request->subject,
+                'message' => $request->message,
+                'contact' => $contact,
+                'sender_name' => auth()->user()->fullName,
+                'club_name' => config('app.name'),
+            ];
 
-        $breadcrumbs = Breadcrumb::make()
-            ->home()
-            ->contacts()
-            ->current('Détails du contact')
-            ->toArray();
+            // Envoi de l'email principal
+            Mail::to($contact->email)->send(new CustomEmail($emailData));
 
-        return view('admin.contacts.show', compact('contact', 'breadcrumbs'));
+            // Optionnel : envoyer une copie à l'administrateur
+            if ($request->boolean('send_copy')) {
+                Mail::to(auth()->user()->email)->send(new CustomEmail($emailData, true));
+            }
+
+            // Logger l'action
+            Log::info('Email personnalisé envoyé', [
+                'contact_id' => $contact->id,
+                'subject' => $request->subject,
+                'admin_user' => auth()->user()->id,
+            ]);
+
+            return redirect()
+                ->route('admin.contacts.show', $contact)
+                ->with('success', 'Email personnalisé envoyé avec succès !');
+
+        } catch (\Exception $e) {
+            Log::error('Erreur envoi email personnalisé', [
+                'contact_id' => $contact->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'Erreur lors de l\'envoi de l\'email : ' . $e->getMessage());
+        }
     }
 
-    public function update(UpdateContactRequest $request, Contact $contact)
-    {
-        $this->authorize('update', $contact);
-        $validated = $request->validated();
-        $contact->update($validated);
-
-        return redirect()->back()->with('success', 'Statut mis à jour.');
-    }
-
-    public function destroy(Contact $contact)
-    {
-        $this->authorize('destroy', $contact);
-
-        $contact->delete();
-
-        return redirect()->route('admin.contacts.index')->with('success', 'Contact supprimé.');
-    }
     public function sendEmail(SendEmailRequest $request, Contact $contact)
     {
         $this->authorize('sendEmail', $contact);
@@ -113,7 +152,7 @@ class ContactAdminController extends Controller
             Log::info('Email envoyé', [
                 'contact_id' => $contact->id,
                 'template' => $template,
-                'admin_user' => auth()->user()->id
+                'admin_user' => auth()->user()->id,
             ]);
 
             return redirect()->back()->with('success', $message);
@@ -122,73 +161,32 @@ class ContactAdminController extends Controller
             Log::error('Erreur envoi email', [
                 'contact_id' => $contact->id,
                 'template' => $template,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
 
             return redirect()->back()->with('error', 'Erreur lors de l\'envoi de l\'email : ' . $e->getMessage());
         }
     }
 
-    public function composeEmail(Contact $contact)
+    public function show(Contact $contact)
     {
-        $this->authorize('sendEmail', $contact);
+        $this->authorize('view', $contact);
 
         $breadcrumbs = Breadcrumb::make()
             ->home()
             ->contacts()
-            ->current('Email personnalisé')
+            ->current('Détails du contact')
             ->toArray();
 
-        return view('admin.contacts.compose-email', compact('contact', 'breadcrumbs'));
+        return view('admin.contacts.show', compact('contact', 'breadcrumbs'));
     }
 
-    public function sendCustomEmail(Request $request, Contact $contact)
+    public function update(UpdateContactRequest $request, Contact $contact)
     {
-        $this->authorize('sendEmail', $contact);
-        $request->validate([
-            'subject' => 'required|string|max:255',
-            'message' => 'required|string',
-            'send_copy' => 'boolean'
-        ]);
+        $this->authorize('update', $contact);
+        $validated = $request->validated();
+        $contact->update($validated);
 
-        try {
-            $emailData = [
-                'subject' => $request->subject,
-                'message' => $request->message,
-                'contact' => $contact,
-                'sender_name' => auth()->user()->fullName,
-                'club_name' => config('app.name')
-            ];
-
-            // Envoi de l'email principal
-            Mail::to($contact->email)->send(new CustomEmail($emailData));
-
-            // Optionnel : envoyer une copie à l'administrateur
-            if ($request->boolean('send_copy')) {
-                Mail::to(auth()->user()->email)->send(new CustomEmail($emailData, true));
-            }
-
-            // Logger l'action
-            Log::info('Email personnalisé envoyé', [
-                'contact_id' => $contact->id,
-                'subject' => $request->subject,
-                'admin_user' => auth()->user()->id
-            ]);
-
-            return redirect()
-                ->route('admin.contacts.show', $contact)
-                ->with('success', 'Email personnalisé envoyé avec succès !');
-
-        } catch (\Exception $e) {
-            Log::error('Erreur envoi email personnalisé', [
-                'contact_id' => $contact->id,
-                'error' => $e->getMessage()
-            ]);
-
-            return redirect()
-                ->back()
-                ->withInput()
-                ->with('error', 'Erreur lors de l\'envoi de l\'email : ' . $e->getMessage());
-        }
+        return redirect()->back()->with('success', 'Statut mis à jour.');
     }
 }

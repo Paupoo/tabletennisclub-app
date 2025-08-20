@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
@@ -15,6 +17,13 @@ class SendEmailRequest extends FormRequest
         return $this->user()->is_admin || $this->user()->is_committee_member;
     }
 
+    public function messages(): array
+    {
+        return [
+            'template' => __('Something went wrong with the templates.'),
+        ];
+    }
+
     /**
      * Get the validation rules that apply to the request.
      *
@@ -27,12 +36,6 @@ class SendEmailRequest extends FormRequest
                 'required',
                 Rule::in(['welcome', 'membership_info', 'polite_decline', 'request_info', 'custom']),
             ],
-        ];
-    }
-    public function messages(): array
-    {
-        return [
-            'template' => __('Something went wrong with the templates.'),
         ];
     }
 }

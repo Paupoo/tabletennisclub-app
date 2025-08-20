@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Models\Event;
@@ -73,7 +75,7 @@ class EventController extends Controller
 
     //     return view('events', compact('events'));
     // }
-   public function index()
+    public function index()
     {
         // Récupérer uniquement les événements publiés, triés par date
         $events = Event::published()
@@ -96,7 +98,7 @@ class EventController extends Controller
                     'time' => $event->formatted_time,
                     'location' => $event->location,
                     'price' => $event->price ?: 'Gratuit',
-                    'icon' => $event->icon
+                    'icon' => $event->icon,
                 ];
             })
             ->toArray();

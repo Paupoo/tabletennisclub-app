@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Mail;
 
 use App\Models\Contact;
@@ -18,16 +20,14 @@ class WelcomeEmail extends Mailable
         public Contact $contact
     ) {}
 
-    public function envelope(): Envelope
+    public function attachments(): array
     {
-        return new Envelope(
-            subject: 'Bienvenue dans notre club !',
-            from: new Address(
-                address: config('mail.from.address'),
-                name: config('app.name') ?? config('mail.from.name')
-            ),
-            replyTo: config('mail.from.address'),
-        );
+        return [
+            // Optionnel : joindre une brochure du club
+            // Attachment::fromPath('/path/to/brochure.pdf')
+            //     ->as('Brochure_Club.pdf')
+            //     ->withMime('application/pdf'),
+        ];
     }
 
     public function content(): Content
@@ -41,13 +41,15 @@ class WelcomeEmail extends Mailable
         );
     }
 
-    public function attachments(): array
+    public function envelope(): Envelope
     {
-        return [
-            // Optionnel : joindre une brochure du club
-            // Attachment::fromPath('/path/to/brochure.pdf')
-            //     ->as('Brochure_Club.pdf')
-            //     ->withMime('application/pdf'),
-        ];
+        return new Envelope(
+            subject: 'Bienvenue dans notre club !',
+            from: new Address(
+                address: config('mail.from.address'),
+                name: config('app.name') ?? config('mail.from.name')
+            ),
+            replyTo: config('mail.from.address'),
+        );
     }
 }

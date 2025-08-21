@@ -6,6 +6,7 @@ namespace App\Livewire\Admin\Users;
 
 use App\Models\User;
 use App\Services\ForceList;
+use Exception;
 use Illuminate\Database\QueryException;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -42,23 +43,22 @@ class UsersTable extends Component
      */
     public function destroy()
     {
-        $this->authorize('delete', User::class);
+        $user = User::findOrFail($this->selectedUserId);
+        $this->authorize('delete', [Auth()->user(), $user]);
         try {
-            $user = User::findOrFail($this->selectedUserId);
+            if ($user->tournaments()->whereIn('status', ['draft', 'open', 'pending'])->count() > 0) {
+                session()->flash('error', __('Cannot delete ' . $user->first_name . ' ' . $user->last_name . ' because he subscribed to one or more tournaments'));
+                $this->redirectRoute('users.index');
+            }
             $user->delete();
             $this->forceList->setOrUpdateAll();
             session()->flash('warning', __('User ' . $user->first_name . ' ' . $user->last_name . ' has been deleted'));
             $this->redirectRoute('users.index');
         } catch (QueryException $e) {
-            if ($user->tournaments()->whereIn('status', ['draft', 'open', 'pending'])->count() > 0) {
-                session()->flash('error', __('Cannot delete ' . $user->first_name . ' ' . $user->last_name . ' because he subscribed to one or more tournaments'));
-                $this->redirectRoute('users.index');
-            }
+            
 
-            $this->redirectRoute('users.index')
-                ->with([
-                    'error' => __('The user could not be deleted'),
-                ]);
+            session()->flash('error', __('The user could not be deleted'));
+            $this->redirectRoute('users.index');
         }
     }
 

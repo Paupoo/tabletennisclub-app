@@ -68,10 +68,11 @@ class Index extends Component
         $this->sortByField = $field;
     }
 
-    public function destroy(Article $article) {
+    public function deleteArticle() {
         
         $this->authorize('delete', Auth()->user());
 
+        $article = Article::find($this->selectedArticleId);
         $article->delete();
 
         session()->flash('success', __('The article ' . $article->title . ' has been deleted.'));

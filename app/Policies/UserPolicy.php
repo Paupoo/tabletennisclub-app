@@ -23,7 +23,15 @@ class UserPolicy
     public function delete(User $user, User $model): bool
     {
         //
-        return $user->is_admin || $user->is_committee_member || $user->is($model);
+        return $user->is_admin || $user->is_committee_member;
+    }
+
+    /**
+     * Determine whether the user can delete the model.
+     */public function selfDelete(User $user, User $model): bool
+    {
+        //
+        return $user->is($model);
     }
 
     /**

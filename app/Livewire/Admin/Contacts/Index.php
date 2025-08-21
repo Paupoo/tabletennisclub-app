@@ -57,6 +57,6 @@ class Index extends Component
         $article->delete();
 
         session()->flash('success', __('The contact has been deleted.'));
-        return $this->redirectRoute('admin.contacts .index');
+        return $this->redirectRoute('admin.contacts.index');
     }
 }

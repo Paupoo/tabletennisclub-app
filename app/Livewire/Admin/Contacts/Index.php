@@ -19,7 +19,7 @@ class Index extends Component
     public string $interest = '';
     public string $sortByField = '';
     public string $sortDirection = 'desc';
-    public ?int $selectedArticleId = null;
+    public ?int $selectedContactId = null;
 
 
     public function mount(): void {}
@@ -49,14 +49,14 @@ class Index extends Component
         $this->sortByField = $field;
     }
 
-    public function deleteArticle() {
+    public function deleteContact() {
         
         $this->authorize('delete', Auth()->user());
 
-        $article = Article::find($this->selectedArticleId);
+        $article = Contact::find($this->selectedContactId);
         $article->delete();
 
-        session()->flash('success', __('The article ' . $article->title . ' has been deleted.'));
-        return $this->redirectRoute('admin.articles.index');
+        session()->flash('success', __('The contact has been deleted.'));
+        return $this->redirectRoute('admin.contacts .index');
     }
 }

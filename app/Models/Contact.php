@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\ContactReasonEnum;
 use Illuminate\Database\Eloquent\Model;
 
 class Contact extends Model
@@ -21,4 +22,16 @@ class Contact extends Model
         'membership_total_cost',
         'status',
     ];
+
+    protected $casts = [
+        'interest' => ContactReasonEnum::class,
+    ];
+
+    public function scopeSearch($query, $value): void
+    {
+        $query->where('first_name', 'like', '%' . $value . '%')
+            ->orWhere('last_name', 'like', '%' . $value . '%')
+            ->orWhere('email', 'like', '%' . $value . '%')
+            ->orWhere('message', 'like', '%' . $value . '%');
+    }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Mail;
 
+use App\Enums\ContactReasonEnum;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -42,6 +43,10 @@ class ContactFormEmail extends Mailable implements ShouldQueue
      */
     public function content(): Content
     {
+        $interestEnum = isset($this->formData['interest'])
+            ? ContactReasonEnum::tryFrom($this->formData['interest'])
+            : null;
+
         return new Content(
             markdown: 'mail.contact-form-mail',
             with: [
@@ -49,7 +54,7 @@ class ContactFormEmail extends Mailable implements ShouldQueue
                 'last_name' => $this->formData['last_name'] ?? '',
                 'email' => $this->formData['email'] ?? '',
                 'phone' => $this->formData['phone'] ?? '',
-                'interest' => $this->formData['interest'] ?? '',
+                'interest' => $interestEnum?->getLabel() ?? 'Demande générale',
                 'message' => $this->formData['message'] ?? '',
                 'membership_family_members' => $this->formData['membership_family_members'] ?? '',
                 'membership_competitors' => $this->formData['membership_competitors'] ?? '',
@@ -78,8 +83,12 @@ class ContactFormEmail extends Mailable implements ShouldQueue
      */
     public function envelope(): Envelope
     {
+        $interestEnum = isset($this->formData['interest'])
+            ? ContactReasonEnum::tryFrom($this->formData['interest'])
+            : null;
+
         return new Envelope(
-            subject: 'Formulaire de contact - ' . ($this->formData['interest'] ?? 'Demande générale'),
+            subject: 'Formulaire de contact - ' . ($interestEnum->getLabel() ?? 'Demande générale'),
         );
     }
 }

@@ -86,7 +86,7 @@ class CustomEmail extends Mailable
             '{{ $contact->last_name }}' => $contact->last_name,
             '{{ $contact->email }}' => $contact->email,
             '{{ $contact->phone }}' => $contact->phone ?? 'Non renseigné',
-            '{{ $contact->interest }}' => $contact->interest ?? 'Non spécifié',
+            '{{ $contact->interest }}' => $contact->interest?->getLabel() ?? 'Non spécifié',
             '{{ config(\'app.name\') }}' => config('app.name'),
             '{{ date(\'Y\') }}' => date('Y'),
             '{{ date(\'d/m/Y\') }}' => date('d/m/Y'),

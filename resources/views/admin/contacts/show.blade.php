@@ -41,7 +41,7 @@
 
             <!-- Actions principales -->
             <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3" x-data="{ emailTemplateOpen: false }">
-                @if ($contact->interest === 'join' && !\App\Models\User::where('email', $contact->email)->exists())
+                @if ($contact->interest === \App\Enums\ContactReasonEnum::join && !\App\Models\User::where('email', $contact->email)->exists())
                     <form action="{{ route('admin.contacts.invite-new-user') }}" method="POST">
                         @csrf
                         @php
@@ -218,7 +218,7 @@
                 <div class="space-y-3">
                     <div class="border-b border-gray-100 pb-2">
                         <span class="text-xs sm:text-sm font-medium text-gray-500">Centre d'intérêt</span>
-                        <p class="text-sm sm:text-base text-gray-800 mt-1">{{ $contact->interest ?: 'Non spécifié' }}</p>
+                        <p class="text-sm sm:text-base text-gray-800 mt-1">{{ $contact->interest?->getLabel() ?? 'Non spécifié' }}</p>
                     </div>
                     
                     @if($contact->message)

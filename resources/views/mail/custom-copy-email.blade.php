@@ -31,7 +31,7 @@ Ceci est une copie de l'email envoyé au contact.
 - **Date d'envoi :** {{ now()->format('d/m/Y à H:i:s') }}
 - **Contact ID :** #{{ $contact->id }}
 - **Statut contact :** {{ ucfirst(str_replace('_', ' ', $contact->status)) }}
-- **Centre d'intérêt :** {{ $contact->interest ?: 'Non spécifié' }}
+- **Centre d'intérêt :** {{ $contact->interest?->getLabel() ?? 'Non spécifié' }}
 
 @if($contact->message)
 ## 💬 Message original du contact

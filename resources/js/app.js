@@ -108,18 +108,20 @@ Alpine.data("priceCalculator", () => ({
 }));
 
 // Configuration pour le formulaire de contact
-Alpine.data("contactForm", () => ({
+Alpine.data("contactForm", (oldInterest = '', oldFamily = 1, oldCompetitors = 0, oldSessions = 0) => ({
   submitted: false,
   loading: false,
   showMembershipFields: false,
-  selectedInterest: '',
+  selectedInterest: oldInterest,
 
   // Champs pour l'adhésion (réutilisation du calculateur)
-  familyMembers: 1,
-  competitors: 0,
-  trainingSessions: 0,
+  familyMembers: oldFamily,
+  competitors: oldCompetitors,
+  trainingSessions: oldSessions,
 
   init() {
+    // Initialiser en fonction de old() côté Blade
+    this.showMembershipFields = this.selectedInterest === 'join';
     // Vérifier les paramètres URL au chargement
     this.checkUrlParams();
 

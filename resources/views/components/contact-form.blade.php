@@ -1,4 +1,4 @@
-<form action="{{ route('contact.store') }}" method="POST" x-data="contactForm">
+<form action="{{ route('contact.store') }}" method="POST" x-data="contactForm('{{ old('interest') }}', {{ old('membership_family_members', 1) }}, {{ old('membership_competitors', 0) }}, {{ old('membership_training_sessions', 0) }})">
     @csrf
 
     <x-forms.antispam-fields />
@@ -42,26 +42,20 @@
         </div>
     </div>
 
-    <div class="mb-6">
+    <div class="mb-6" x-data="{ selectedInterest: '{{ old('interest') }}' }">
         <label for="interest" class="block text-sm font-medium text-gray-700 mb-2">Je suis intéressé par *</label>
         <select id="interest" name="interest" required @change="onRequestTypeChange" x-model="selectedInterest"
             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent transition-colors">
             <option value="">Sélectionnez une option</option>
-            <option value="join" {{ old('interest') == 'join' ? 'selected' : '' }}>Devenir membre</option>
-            <option value="discovery" {{ old('interest') == 'discovery' ? 'selected' : '' }}>Réserver un essai</option>
-            <option value="interclubs" {{ old('interest') == 'interclubs' ? 'selected' : '' }}>Informations sur les
-                compétitions</option>
-            <option value="supporter" {{ old('interest') == 'supporter' ? 'selected' : '' }}>Devenir supporter ?</option>
-            <option value="partnership" {{ old('interest') == 'partnership' ? 'selected' : '' }}>Partenariat/Sponsoring
-            </option>
-            <option value="other" {{ old('interest') == 'other' ? 'selected' : '' }}>Autre</option>
+            @foreach (\App\Enums\ContactReasonEnum::cases() as $contactReason)
+            <option value="{{ $contactReason->name }}" {{ old('interest') == $contactReason->name ? 'selected' : '' }}>{{ $contactReason->getLabel() }}</option>    
+            @endforeach
         </select>
         @error('interest')
             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
         @enderror
     </div>
 
-    <!-- CONSERVATION TOTALE DE LA LOGIQUE ALPINE.JS EXISTANTE -->
     <div x-show="showMembershipFields" x-transition
         class="mb-6 bg-blue-50 p-6 rounded-lg space-y-4 border border-blue-200">
         <h4 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">

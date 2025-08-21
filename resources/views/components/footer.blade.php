@@ -84,7 +84,7 @@
                 <div class="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4 text-sm">
                     <p>&copy; {{ date('Y') }} CTT Ottignies-Blocry. Tous droits réservés.</p>
                     <span class="hidden sm:inline text-gray-600">•</span>
-                    <a href="#" class="text-gray-400 hover:text-white transition-colors text-xs"
+                    <a href="#" class="text-gray-400 underline hover:text-white transition-colors text-xs"
                         onclick="showLicense(); return false;">
                         Licence MIT
                     </a>
@@ -102,7 +102,7 @@
             x-transition:leave="transition ease-in duration-300"
             x-transition:leave-start="opacity-100 transform translate-y-0"
             x-transition:leave-end="opacity-0 transform translate-y-full"
-            class="fixed bottom-0 left-0 w-full bg-white bg-opacity-95 backdrop-filter backdrop-blur-lg shadow-lg rounded-t-lg p-6 z-50 md:flex md:items-center md:justify-between"
+            class="fixed bottom-0 left-0 w-full bg-club-yellow-light opacity-95 backdrop-filter backdrop-blur-lg shadow-lg rounded-t-lg p-6 z-50 md:flex md:items-center md:justify-between"
         >
             <p class="text-sm text-gray-800 md:w-3/4">
                 Ce site utilise des cookies uniquement pour la gestion de la connexion. En continuant à utiliser ce site, vous acceptez cette utilisation. Pour plus d'informations, consultez notre
@@ -123,7 +123,7 @@
             <div class="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
                 <div class="p-6">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-xl font-bold text-gray-900">Licence MIT</h3>
+                        <h3 class="text-xl text-decoration-line font-bold text-gray-900">Licence MIT</h3>
                         <button onclick="hideLicense()" class="text-gray-400 hover:text-gray-600">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

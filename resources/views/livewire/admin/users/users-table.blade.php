@@ -201,8 +201,9 @@
                                     @endif
                                 </div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                {{ $user->created_at->timezone('Europe/Brussels')->format('d-m-Y H:i') }}
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ $user->created_at->format('d/m/Y') }}
+                                <div class="text-xs text-gray-400">{{ $user->created_at->timezone('Europe/Brussels')->format('H:i') }}</div>
                             </td>
 
 

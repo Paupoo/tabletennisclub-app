@@ -112,6 +112,14 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             {{ __('Status') }}
                         </th>
+                        <th wire:click="sortBy('created_at')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
+                            <div class="flex items-center space-x-1">
+                                <span>{{ __('Created at') }}</span>
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path>
+                                </svg>
+                            </div>
+                        </th>
                         <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                             {{ __('Actions') }}
                         </th>
@@ -193,6 +201,10 @@
                                     @endif
                                 </div>
                             </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {{ $user->created_at->timezone('Europe/Brussels')->format('d-m-Y H:i') }}
+                            </td>
+
 
                             <!-- Actions -->
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

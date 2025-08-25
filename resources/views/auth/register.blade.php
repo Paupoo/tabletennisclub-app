@@ -2,6 +2,8 @@
     <form method="POST" action="{{ route('register') }}">
         @csrf
 
+        <x-forms.antispam-fields />
+
         <!-- Last Name -->
         <div>
             <x-input-label for='last_name' :value="__('Last Name')" />

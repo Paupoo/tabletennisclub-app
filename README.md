@@ -49,7 +49,7 @@ No known issues at this time. Please note that this project is still incomplete.
 
 The project is open-source and licensed under the [MIT license](https://opensource.org/licenses/MIT).
 
-## Tâches
+## Tasks
 
 ### 🟥 High
 - [x] Retirer les data mockup « résultats » 

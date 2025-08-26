@@ -53,11 +53,11 @@ The project is open-source and licensed under the [MIT license](https://opensour
 
 ### 🟥 High
 - [x] Retirer les data mockup « résultats » 
-- [ ] Débugger l’effacement d’un article 
+- [x] Débugger l’effacement d’un article 
 - [x] Vérifier les infos dans les mails (nom, info, ip, …) 
 - [x] Débuguer la suppression des contacts
-- [ ] Implémenter la fonction de recherche avec livewire pour les contacts et les articles
-- [ ] Implémenter la fonction de filtres avec livewire pour les contacts et les articles
+- [x] Implémenter la fonction de recherche avec livewire pour les contacts et les articles
+- [x] Implémenter la fonction de filtres avec livewire pour les contacts et les articles
 - [ ] Remove mail when registering
 - [ ] fix function "create account" with force of reset password
 - [ ] Split again active/paid columns in users index

@@ -75,7 +75,7 @@ class TournamentController extends Controller
     public function create(): View
     {
 
-        $this->authorize('create');
+        $this->authorize('create', Tournament::class);
         $breadcrumbs = Breadcrumb::make()
             ->home()
             ->tournaments()
@@ -102,7 +102,7 @@ class TournamentController extends Controller
 
     public function edit(Tournament $tournament): View
     {
-        $this->authorize('edit');
+        $this->authorize('update', Tournament::class);
         $breadcrumbs = Breadcrumb::make()
             ->home()
             ->tournaments()

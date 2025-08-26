@@ -65,6 +65,7 @@ The project is open-source and licensed under the [MIT license](https://opensour
 - [ ] supprimer/corriger room checker qui pointe vers /test
 - [ ] corriger lien "create new room" from admin
 - [ ] clean all forbidden features pour les membres qui n'ont pas le droit
+- [ ] Écrire/compléter les tests cases
 
 ### 🟧 Medium
 - [x] Fix missing components (layouts.app and x::bladewind-empty-state). see in prod. 

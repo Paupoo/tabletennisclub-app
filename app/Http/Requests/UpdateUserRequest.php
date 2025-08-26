@@ -41,9 +41,9 @@ class UpdateUserRequest extends FormRequest
         $rankings_enum = collect(Ranking::cases())->pluck('name');
 
         return [
-            'birthdate' => ['sometimes', 'date'],
-            'city_code' => ['sometimes', 'string', 'digits:4'],
-            'city_name' => ['sometimes', 'string'],
+            'birthdate' => ['nullable', 'date'],
+            'city_code' => ['nullable', 'string', 'digits:4'],
+            'city_name' => ['nullable', 'string'],
             'email' => ['required', 'email:rfc,dns,spoof,filter_unicode', 'unique:users,email,' . $this->route()->user->id],
             'first_name' => ['required', 'string', 'max:255'],
             'is_active' => ['required', 'boolean'],
@@ -61,7 +61,7 @@ class UpdateUserRequest extends FormRequest
                 ),
             ],
             'sex' => ['required', Rule::in(collect(Sex::cases())->pluck('name'))],
-            'street' => ['sometimes', 'string'],
+            'street' => ['nullable', 'string'],
             'team_id' => ['nullable', 'exists:teams,id'],
         ];
     }

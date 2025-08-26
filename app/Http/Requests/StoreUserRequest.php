@@ -40,9 +40,9 @@ class StoreUserRequest extends FormRequest
         $rankings_enum = collect(Ranking::cases())->pluck('name');
 
         return [
-            'birthdate' => ['sometimes', 'date'],
-            'city_code' => ['sometimes', 'string', 'digits:4'],
-            'city_name' => ['sometimes', 'string'],
+            'birthdate' => ['nullable', 'date'],
+            'city_code' => ['nullable', 'string', 'digits:4'],
+            'city_name' => ['nullable', 'string'],
             'email' => ['required', 'email:rfc,dns,spoof,filter_unicode', 'unique:users,email'],
             'first_name' => ['required', 'string', 'max:255'],
             'is_active' => ['boolean'],
@@ -52,7 +52,7 @@ class StoreUserRequest extends FormRequest
             'last_name' => ['required', 'string', 'max:255'],
             'licence' => ['nullable', 'required_if:is_competitor,true', 'unique:users,licence', 'size:6'],
             'password' => ['required', 'confirmed', 'min:8', Password::min(8)->letters()->mixedCase()->numbers()->symbols()->uncompromised()],
-            'phone_number' => ['sometimes', 'string', 'digits_between:9,20'],
+            'phone_number' => ['nullable', 'string', 'digits_between:9,20'],
             'ranking' => [
                 'nullable',
                 'required_if:is_competitor,true',
@@ -63,7 +63,7 @@ class StoreUserRequest extends FormRequest
                 ),
             ],
             'sex' => ['required', Rule::in(collect(Sex::cases())->pluck('name'))],
-            'street' => ['sometimes', 'string'],
+            'street' => ['nullable', 'string'],
             'team_id' => ['nullable', 'exists:teams,id'],
         ];
     }

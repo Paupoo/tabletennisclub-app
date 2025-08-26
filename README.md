@@ -49,15 +49,23 @@ No known issues at this time. Please note that this project is still incomplete.
 
 The project is open-source and licensed under the [MIT license](https://opensource.org/licenses/MIT).
 
-## Tâches
+## Tasks
 
 ### 🟥 High
 - [x] Retirer les data mockup « résultats » 
-- [ ] Débugger l’effacement d’un article 
+- [x] Débugger l’effacement d’un article 
 - [x] Vérifier les infos dans les mails (nom, info, ip, …) 
 - [x] Débuguer la suppression des contacts
-- [ ] Implémenter la fonction de recherche avec livewire pour les contacts et les articles
-- [ ] Implémenter la fonction de filtres avec livewire pour les contacts et les articles
+- [x] Implémenter la fonction de recherche avec livewire pour les contacts et les articles
+- [x] Implémenter la fonction de filtres avec livewire pour les contacts et les articles
+- [ ] Remove mail when registering
+- [ ] fix function "create account" with force of reset password
+- [ ] Split again active/paid columns in users index
+- [ ] make Birthday & address fields nullable in edit/create
+- [ ] supprimer/corriger room checker qui pointe vers /test
+- [ ] corriger lien "create new room" from admin
+- [ ] clean all forbidden features pour les membres qui n'ont pas le droit
+- [ ] Écrire/compléter les tests cases
 
 ### 🟧 Medium
 - [x] Fix missing components (layouts.app and x::bladewind-empty-state). see in prod. 
@@ -80,13 +88,20 @@ The project is open-source and licensed under the [MIT license](https://opensour
 - [ ] regrouper les couleurs des stats et des blocks par thème (users bleu, teams jaunes, etc.) 
 - [ ] Ajouter les tournois dans le dashboard, ainsi que les contacts et les articles 
 - [ ] Make all strings translatable and translate into English and into French all the strings.
+- [ ] Add a profile picture for the user
+- [ ] vue gestion des clés (clés + owners)
+- [ ] vue gestion des entraînements
+- [ ] vue gestion des frais
+- [ ] vue pv des réunions
 
 
 ### 🟩 Low
 - [ ] Coder le CRUD pour mettre à jour les résultats 
 - [ ] Mettre à jour le growler pour qu’il soit responsive sur tel 
 - [ ] Gérer les pluriels/singuliers dans le dashboard et dans chaque vue avec des stats 
-- [ ] Créer un système pour gérer les spams (vues, nombres, function pour bloquer des IP...) 
+- [ ] Créer un système pour gérer les spams (vues, nombres, function pour bloquer des IP...)
+- [ ] Change all pagination to 10, 25 & 50
+- [ ] vue gestion du bar ?
 
 
 # Table Tennis Club
@@ -137,7 +152,6 @@ Aucun problème connu pour l'instant. Veuillez noter que ce projet est encore in
 - [Node.js](https://nodejs.org/fr)
 - [PHP](https://www.php.net/)
 - [TailwindCSS](https://tailwindcss.com/)
-- [Visual Studio Code](https://code.visualstudio.com/)
 
 ## Licence
 

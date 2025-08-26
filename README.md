@@ -146,7 +146,6 @@ Aucun problème connu pour l'instant. Veuillez noter que ce projet est encore in
 - [Node.js](https://nodejs.org/fr)
 - [PHP](https://www.php.net/)
 - [TailwindCSS](https://tailwindcss.com/)
-- [Visual Studio Code](https://code.visualstudio.com/)
 
 ## Licence
 

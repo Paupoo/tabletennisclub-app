@@ -58,6 +58,13 @@ The project is open-source and licensed under the [MIT license](https://opensour
 - [x] Débuguer la suppression des contacts
 - [ ] Implémenter la fonction de recherche avec livewire pour les contacts et les articles
 - [ ] Implémenter la fonction de filtres avec livewire pour les contacts et les articles
+- [ ] Remove mail when registering
+- [ ] fix function "create account" with force of reset password
+- [ ] Split again active/paid columns in users index
+- [ ] make Birthday & address fields nullable in edit/create
+- [ ] supprimer/corriger room checker qui pointe vers /test
+- [ ] corriger lien "create new room" from admin
+- [ ] clean all forbidden features pour les membres qui n'ont pas le droit
 
 ### 🟧 Medium
 - [x] Fix missing components (layouts.app and x::bladewind-empty-state). see in prod. 
@@ -80,13 +87,15 @@ The project is open-source and licensed under the [MIT license](https://opensour
 - [ ] regrouper les couleurs des stats et des blocks par thème (users bleu, teams jaunes, etc.) 
 - [ ] Ajouter les tournois dans le dashboard, ainsi que les contacts et les articles 
 - [ ] Make all strings translatable and translate into English and into French all the strings.
+- [ ] Add a profile picture for the user
 
 
 ### 🟩 Low
 - [ ] Coder le CRUD pour mettre à jour les résultats 
 - [ ] Mettre à jour le growler pour qu’il soit responsive sur tel 
 - [ ] Gérer les pluriels/singuliers dans le dashboard et dans chaque vue avec des stats 
-- [ ] Créer un système pour gérer les spams (vues, nombres, function pour bloquer des IP...) 
+- [ ] Créer un système pour gérer les spams (vues, nombres, function pour bloquer des IP...)
+- [ ] Change all pagination to 10, 25 & 50
 
 
 # Table Tennis Club

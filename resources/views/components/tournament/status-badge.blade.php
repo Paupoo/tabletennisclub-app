@@ -18,7 +18,7 @@ $statusMap = [
     \App\Enums\TournamentStatusEnum::CANCELLED->value => ['variant' => 'closed', 'label' => __('Cancelled')],
 ];
 
-$config = $statusMap[$status->value] ?? ['variant' => 'default', 'label' => ucfirst($status)];
+$config = $statusMap[$status->value] ?? ['variant' => 'default', 'label' => ucfirst($status->value)];
 @endphp
 
 <x-ui.badge {{ $attributes->merge(['class' => 'ml-2']) }} variant="{{ $config['variant'] }}">

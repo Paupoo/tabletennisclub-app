@@ -89,6 +89,10 @@ The project is open-source and licensed under the [MIT license](https://opensour
 - [ ] Ajouter les tournois dans le dashboard, ainsi que les contacts et les articles 
 - [ ] Make all strings translatable and translate into English and into French all the strings.
 - [ ] Add a profile picture for the user
+- [ ] vue gestion des clés (clés + owners)
+- [ ] vue gestion des entraînements
+- [ ] vue gestion des frais
+- [ ] vue pv des réunions
 
 
 ### 🟩 Low
@@ -97,6 +101,7 @@ The project is open-source and licensed under the [MIT license](https://opensour
 - [ ] Gérer les pluriels/singuliers dans le dashboard et dans chaque vue avec des stats 
 - [ ] Créer un système pour gérer les spams (vues, nombres, function pour bloquer des IP...)
 - [ ] Change all pagination to 10, 25 & 50
+- [ ] vue gestion du bar ?
 
 
 # Table Tennis Club

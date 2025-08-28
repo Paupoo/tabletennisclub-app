@@ -13,8 +13,6 @@ class SpamController extends Controller
      */
     public function index()
     {
-        $spams = Spam::paginate(50);
-
         $breadcrumbs = Breadcrumb::make()
             ->home()
             ->current('Spams')
@@ -27,7 +25,7 @@ class SpamController extends Controller
             'blockedIPs' => Spam::where('is_blocked', true)->count(),
         ]);
 
-        return view('admin.spams.index', compact('spams', 'breadcrumbs', 'stats'));
+        return view('admin.spams.index', compact('breadcrumbs', 'stats'));
     }
 
     /**

@@ -13,6 +13,7 @@ class Index extends Component
     use WithPagination;
 
     // Propriétés de recherche et filtrage
+    public string $perPage = '25';
     public string $search = '';
     public array $filters = [
         'period' => '',
@@ -44,7 +45,7 @@ class Index extends Component
         $spamsQuery = $this->getSpamsQuery();
         
         return view('livewire.admin.spams.index', [
-            'spams' => $spamsQuery->paginate(15),
+            'spams' => $spamsQuery->paginate($this->perPage),
             'stats' => $this->getStats(),
             'totalResults' => $spamsQuery->count(),
         ]);

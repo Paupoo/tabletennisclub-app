@@ -53,7 +53,16 @@
                     </svg>
                     {{ __('Export') }}
                 </button>
+                <div class="flex items-center space-x-2">
+                    <label class="text-sm font-medium text-gray-700 whitespace-nowrap">{{ __('Per page') }}</label>
+                    <select wire:model.live="perPage" class="border border-gray-300 rounded-lg px-3 py-2 pr-8 text-sm focus:ring-club-blue focus:border-club-blue">
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
             </div>
+            
         </div>
 
         <!-- Panneau de filtres avancés -->

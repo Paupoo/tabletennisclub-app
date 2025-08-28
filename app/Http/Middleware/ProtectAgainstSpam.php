@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Models\Spam;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -35,6 +36,12 @@ class ProtectAgainstSpam
             'ip' => $request->ip(),
             'user_agent' => $request->userAgent(),
             'inputs' => $request->except(['password']), // ne jamais loguer les mdp
+        ]);
+        
+        Spam::create([
+            'ip' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+            'inputs' => $request->except(['password']),
         ]);
 
         // Réponse silencieuse : on redirige avec un message générique

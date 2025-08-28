@@ -157,7 +157,7 @@ class Index extends Component
     {
         if ($this->selectAll) {
             $this->selectedItems = $this->getSpamsQuery()
-                ->paginate(15)
+                ->paginate($this->perPage)
                 ->pluck('id')
                 ->toArray();
         } else {

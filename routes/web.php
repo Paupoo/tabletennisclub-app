@@ -15,6 +15,7 @@ use App\Http\Controllers\PublicArticlesController;
 use App\Http\Controllers\ResultsController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\RoomController;
+use App\Http\Controllers\SpamController;
 use App\Http\Controllers\TableController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\Tournament\ChangeTournamentStatusController;
@@ -257,6 +258,15 @@ Route::middleware(['auth', 'verified'])
 
 Route::prefix('admin')->middleware(['auth'])->group(function (): void {
     Route::resource('contacts', ContactAdminController::class)->names('admin.contacts');
+    Route::post('contacts/create-new-user', [CreateNewUserAction::class, 'handle'])->name('admin.contacts.invite-new-user');
+    Route::post('/{contact}/send-email', [ContactAdminController::class, 'sendEmail'])->name('admin.contacts.send-email');
+    Route::get('/{contact}/compose-email', [ContactAdminController::class, 'composeEmail'])->name('admin.contacts.compose-email');
+    Route::post('/{contact}/send-custom-email', [ContactAdminController::class, 'sendCustomEmail'])->name('admin.contacts.send-custom-email');
+
+});
+
+Route::prefix('admin')->middleware(['auth'])->group(function (): void {
+    Route::get('spams', [SpamController::class, 'index'])->name('admin.spams.index');
     Route::post('contacts/create-new-user', [CreateNewUserAction::class, 'handle'])->name('admin.contacts.invite-new-user');
     Route::post('/{contact}/send-email', [ContactAdminController::class, 'sendEmail'])->name('admin.contacts.send-email');
     Route::get('/{contact}/compose-email', [ContactAdminController::class, 'composeEmail'])->name('admin.contacts.compose-email');

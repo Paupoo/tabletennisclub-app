@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('ip')->nullable();
             $table->text('user_agent')->nullable();
             $table->json('inputs')->nullable();
+            $table->boolean('is_blocked')->default(false);
             $table->timestamps();
         });
 

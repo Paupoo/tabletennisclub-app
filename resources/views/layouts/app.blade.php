@@ -1,5 +1,6 @@
 @props([
     'breadcrumbs' => [],
+    'newContactsCount' => \App\Models\Contact::where('status', 'new')->count(),
 ])
 
 <!DOCTYPE html>

@@ -43,33 +43,42 @@ final class ParseSpamLog extends Command
         }
 
         $count = 0;
+        $logDate = now()->toDateTimeString();
 
         while (($line = fgets($handle)) !== false) {
-    if (str_contains($line, 'Spam attempt detected')) {
-        $this->line("DEBUG: Ligne détectée -> " . substr($line, 0, 200));
-        
-        $parts = explode('Spam attempt detected', $line, 2);
+            if (str_contains($line, 'Spam attempt detected')) {
+                $this->line("DEBUG: Ligne détectée -> " . substr($line, 0, 200));
+                
+                $parts = explode('Spam attempt detected', $line, 2);
 
-        if (count($parts) === 2) {
-            $json = trim($parts[1]);
-            $this->line("DEBUG: JSON extrait -> " . substr($json, 0, 200));
+                if (count($parts) === 2) {
+                    $json = trim($parts[1]);
+                    $this->line("DEBUG: JSON extrait -> " . substr($json, 0, 200));
 
-            $data = json_decode($json, true);
+                    $data = json_decode($json, true);
 
-            if (json_last_error() === JSON_ERROR_NONE) {
-                Spam::create([
-                    'ip' => $data['ip'] ?? null,
-                    'user_agent' => $data['user_agent'] ?? null,
-                    'inputs' => $data['inputs'] ?? [],
-                ]);
+                    if (json_last_error() === JSON_ERROR_NONE) {
+                        preg_match('/\[(.*?)\]/', $line, $dateMatches)
+                            ? $logDate = $dateMatches[1] // "2025-08-17 20:59:51"
+                            : $logDate = now()->toDateTimeString();
+                        
+                        $spam = Spam::create([
+                            'ip' => $data['ip'] ?? null,
+                            'user_agent' => $data['user_agent'] ?? null,
+                            'inputs' => $data['inputs'] ?? [],
+                        ]);
 
-                $count++;
-            } else {
-                $this->error('JSON invalide : ' . json_last_error_msg());
+                        $spam->created_at = $logDate;
+                        $spam->updated_at = $logDate;
+                        $spam->save();
+
+                        $count++;
+                    } else {
+                        $this->error('JSON invalide : ' . json_last_error_msg());
+                    }
+                }
             }
         }
-    }
-}
 
 
         fclose($handle);

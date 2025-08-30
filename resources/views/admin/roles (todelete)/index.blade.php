@@ -67,7 +67,7 @@
                                             @method('delete')
                                             <button>
                                                 <img class="h-4 cursor-pointer"
-                                                    src="{{ asset('images/icons/delete.svg') }}" alt="Delete">
+                                                    src="{{ asset('images/icons/delete.svg') }}" alt="__('Delete')">
                                             </button>
                                         </form>
                                     </td>

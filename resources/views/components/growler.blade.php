@@ -53,6 +53,19 @@
     </script>
 @endif
 
+@if (session()->has('error'))
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            window.dispatchEvent(new CustomEvent('notify', {
+                detail: {
+                    message: @json(session('error')),
+                    type: 'error'
+                }
+            }));
+        });
+    </script>
+@endif
+
 {{-- Votre growler original avec améliorations responsive uniquement --}}
 <div x-data="{
     notifications: [],

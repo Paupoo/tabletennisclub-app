@@ -9,6 +9,7 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InterclubController;
+use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\KnockoutPhaseController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicArticlesController;
@@ -104,11 +105,17 @@ Route::prefix('admin')->middleware('auth')->group(function (): void {
 /**
  * Profile management
  */
-Route::middleware('auth')->group(function (): void {
+Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+
+Route::get('/invitation/accept/{user}', [InvitationController::class, 'showForm'])
+    ->name('invitation.accept')
+    ->middleware('signed');
+Route::post('/invitation/accept/{user}', [InvitationController::class, 'store'])
+    ->name('invitation.store');
 
 /**
  * Tables management

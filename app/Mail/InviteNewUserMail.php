@@ -24,7 +24,7 @@ class InviteNewUserMail extends Mailable implements ShouldQueue
     /**
      * Create a new message instance.
      */
-    public function __construct(private User $user, private string $tempPassword)
+    public function __construct(private User $user, private string $link)
     {
         //
     }
@@ -48,7 +48,7 @@ class InviteNewUserMail extends Mailable implements ShouldQueue
             markdown: 'mail.invite-new-user',
             with: [
                 'user' => $this->user,
-                'tempPassword' => $this->tempPassword,
+                'link' => $this->link,
             ]
         );
     }

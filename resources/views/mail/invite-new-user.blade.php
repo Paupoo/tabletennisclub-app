@@ -4,11 +4,10 @@ Bonjour {{ $user->first_name . ' ' . $user->last_name }},
 Nous sommes ravis de vous accueillir au **{{ config('app.name') }}** !
 
 Votre login est {{ $user->email }}.
-Votre mot de passe temporaire est {{ $tempPassword }}.
 
 Pour terminer la création de votre compte et renseigner vos informations personnelles, merci de cliquer sur le bouton ci-dessous :
 
-<x-mail::button :url="'http://localhost:8000/profile'" :color="'primary'">
+<x-mail::button :url="$link" :color="'primary'">
 Finaliser mon inscription
 </x-mail::button>
 

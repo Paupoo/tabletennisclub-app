@@ -59,13 +59,18 @@ class UserController extends Controller
      */
     public function destroy(User $user)
     {
-        $this->authorize('delete', User::class);
+        $this->authorize('delete', $user);
 
         if ($user->tournaments()->whereIn('status', ['draft', 'open', 'pending'])->count() > 0) {
+            $personalPronoum = $user->sex === Sex::WOMEN->name
+                ? 'she'
+                : 'he';
+                
             return redirect()
                 ->back()
-                ->with('error', __('Cannot delete ' . $user->first_name . ' ' . $user->last_name . ' because he subscribed to one or more tournaments'));
-        }
+                ->with('error', __('Cannot delete ' . $user->first_name . ' ' . $user->last_name . ' because ' . $personalPronoum . ' subscribed to one or more tournaments'));
+        }   
+
 
         $user->delete();
 

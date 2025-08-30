@@ -7,14 +7,14 @@ Vous avez reçu un message depuis le formulaire de contact du site {{ config('ap
 - Nom : {{ $last_name }}
 - Email : {{ $email }}
 - Téléphone : {{ $phone }}
-- Au sujet de : {{ $interest }}
+- Au sujet de : {{ $interest->getLabel() }}
  
 
 # Message : 
 
 <x-mail::panel>{{  $message }}</x-mail::panel>
 
-@if($interest === 'join')
+@if($interest == \App\Enums\ContactReasonEnum::join)
 
 # Récapitulatif de la demande :
 

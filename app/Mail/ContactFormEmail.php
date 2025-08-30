@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Mail;
 
 use App\Enums\ContactReasonEnum;
+use App\Models\Contact;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -23,7 +24,7 @@ class ContactFormEmail extends Mailable implements ShouldQueue
     /**
      * Create a new message instance.
      */
-    public function __construct(private array $formData)
+    public function __construct(private Contact $contact)
     {
         //
     }
@@ -43,37 +44,19 @@ class ContactFormEmail extends Mailable implements ShouldQueue
      */
     public function content(): Content
     {
-        $interestEnum = isset($this->formData['interest'])
-            ? ContactReasonEnum::tryFrom($this->formData['interest'])
-            : null;
-
         return new Content(
             markdown: 'mail.contact-form-mail',
             with: [
-                'first_name' => $this->formData['first_name'] ?? '',
-                'last_name' => $this->formData['last_name'] ?? '',
-                'email' => $this->formData['email'] ?? '',
-                'phone' => $this->formData['phone'] ?? '',
-                'interest' => $interestEnum?->getLabel() ?? 'Demande générale',
-                'message' => $this->formData['message'] ?? '',
-                'membership_family_members' => $this->formData['membership_family_members'] ?? '',
-                'membership_competitors' => $this->formData['membership_competitors'] ?? '',
-                'membership_training_sessions' => $this->formData['membership_training_sessions'] ?? '',
-                'membership_total_cost' => $this->formData['membership_total_cost'] ?? '',
-                'tableData' => [
-                    [
-                        'Type' => 'Licence(s) récréatives',
-                        'Quantité' => $this->formData['membership_family_members'] ?? 0,
-                    ],
-                    [
-                        'Type' => 'Licence(s) sportive(s)',
-                        'Quantité' => $this->formData['membership_competitors'] ?? 0,
-                    ],
-                    [
-                        'Type' => 'Entrainement(s) dirigé(s)',
-                        'Quantité' => $this->formData['membership_training_sessions'] ?? 0,
-                    ],
-                ],
+                'first_name' => $this->contact->first_name ?? '',
+                'last_name' => $this->contact->last_name ?? '',
+                'email' => $this->contact->email ?? '',
+                'phone' => $this->contact->phone ?? '',
+                'interest' => $this->contact->interest ?? 'Demande générale',
+                'message' => $this->contact->message ?? '',
+                'membership_family_members' => $this->contact->membership_family_members ?? '',
+                'membership_competitors' => $this->contact->membership_competitors ?? '',
+                'membership_training_sessions' => $this->contact->membership_training_sessions ?? '',
+                'membership_total_cost' => $this->contact->membership_total_cost ?? '',
             ]
         );
     }
@@ -83,12 +66,8 @@ class ContactFormEmail extends Mailable implements ShouldQueue
      */
     public function envelope(): Envelope
     {
-        $interestEnum = isset($this->formData['interest'])
-            ? ContactReasonEnum::tryFrom($this->formData['interest'])
-            : null;
-
         return new Envelope(
-            subject: 'Formulaire de contact - ' . ($interestEnum->getLabel() ?? 'Demande générale'),
+            subject: 'Formulaire de contact - ' . ($this->contact->interest->getLabel() ?? 'Demande générale'),
         );
     }
 }

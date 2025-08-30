@@ -4,17 +4,16 @@
 
 ---
 
-## Bonjour {{ $contact->first_name }} !
+## {{ __('welcome-email.title', ['name' => $contact->first_name]) }}
 
-Nous avons bien reçu votre demande de contact et nous vous remercions de l'intérêt que vous portez à notre club.
+{{ __('welcome-email.paragraph1') }}
 
-Notre équipe va examiner votre demande dans les plus brefs délais. En attendant, nous souhaitions vous faire découvrir notre univers et vous donner quelques informations utiles.
-
+{{ __('welcome-email.paragraph2') }}
 ---
 
 ### 📋 Votre demande en bref :
 
-- **Centre d'intérêt :** {{ $contact->interest ?: 'Non spécifié' }}
+- **Centre d'intérêt :** {{ $contact->interest->getLabel() ?: 'Non spécifié' }}
 - **Date de demande :** {{ $contact->created_at->format('d/m/Y') }}
 @if($contact->phone)
 - **Téléphone :** {{ $contact->phone }}

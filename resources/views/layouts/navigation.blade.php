@@ -295,7 +295,7 @@
                 </svg>
                 {{ __('Teams') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('teams.index')" :active="request()->routeIs('teams.index')" wire:navigate class="flex items-center pl-6">
+            <x-responsive-nav-link :href="route('admin.spams.index')" :active="request()->routeIs('admin.spams.index')" wire:navigate class="flex items-center pl-6">
                 <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <x-ui.icon name="bin" />
                 </svg>

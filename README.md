@@ -58,10 +58,10 @@ The project is open-source and licensed under the [MIT license](https://opensour
 - [x] Débuguer la suppression des contacts
 - [x] Implémenter la fonction de recherche avec livewire pour les contacts et les articles
 - [x] Implémenter la fonction de filtres avec livewire pour les contacts et les articles
-- [ ] Remove mail when registering
-- [ ] fix function "create account" with force of reset password
-- [ ] Split again active/paid columns in users index
-- [ ] make Birthday & address fields nullable in edit/create
+- [x] Remove mail when registering
+- [-] fix function "create account" with force of reset password : done from contact page, need to rework from create user page.
+- [x] Split again active/paid columns in users index
+- [x] make Birthday & address fields nullable in edit/create
 - [ ] supprimer/corriger room checker qui pointe vers /test
 - [ ] corriger lien "create new room" from admin
 - [ ] clean all forbidden features pour les membres qui n'ont pas le droit
@@ -70,7 +70,7 @@ The project is open-source and licensed under the [MIT license](https://opensour
 ### 🟧 Medium
 - [x] Fix missing components (layouts.app and x::bladewind-empty-state). see in prod. 
 - [x] Vérifier les liens dans les emails qui doivent ramener vers ctt ottignies 
-- [ ] Coder une fonction pour envoyer une invitation à un utilisateur pour s’enregistrer et simplement confirmer son email 
+- [-] Coder une fonction pour envoyer une invitation à un utilisateur pour s’enregistrer et simplement confirmer son email 
 - [x] Ajouter disclaimer « rgpd » / « utilisation des données » 
 - [x] Ajouter gestion cookie légal avec législation
 - [ ] Ajouter une fonction pour envoyer un QR et payer la cotisation par mail, mais aussi depuis la page "profil" de l'utilisateur
@@ -78,16 +78,16 @@ The project is open-source and licensed under the [MIT license](https://opensour
 - [ ] Ajouter une fonction pour « nettoyer » les utilisateurs qui ne sont plus « rgpd » compliant ou demandent d’effacer leurs données 
 - [x] Vérifier comment implémenter un système anti spam 
 - [ ] Créer un model event / dériver les enfants (trainings / interclub / tournament…) et dédier leurs tables 
-- [ ] Créer une vue globale par semaine pour voir s’il y a assez de joueur disponible ou pas 
-- [ ] Créer une vue pour les joueurs qui veulent encoder leurs disponibilités 
-- [ ] Créer une vue pour les capitaine lors de la composition des équipes 
-- [ ] Créer une fonction pour confirmer les joueurs sélectionnés 
-- [ ] Créer une vue pour s’enregistrer à un entraînement 
+- [-] Créer une vue globale par semaine pour voir s’il y a assez de joueur disponible ou pas 
+- [-] Créer une vue pour les joueurs qui veulent encoder leurs disponibilités 
+- [-] Créer une vue pour les capitaine lors de la composition des équipes 
+- [-] Créer une fonction pour confirmer les joueurs sélectionnés 
+- [-] Créer une vue pour s’enregistrer à un entraînement 
 - [ ] Regarder s’il existe des méthode de paiement électronique vraiment pas chère 
 - [ ] Ajouter bouton show/hide stats sur le dashboard 
 - [ ] regrouper les couleurs des stats et des blocks par thème (users bleu, teams jaunes, etc.) 
 - [ ] Ajouter les tournois dans le dashboard, ainsi que les contacts et les articles 
-- [ ] Make all strings translatable and translate into English and into French all the strings.
+- [-] Make all strings translatable and translate into English and into French all the strings.
 - [ ] Add a profile picture for the user
 - [ ] vue gestion des clés (clés + owners)
 - [ ] vue gestion des entraînements
@@ -97,10 +97,10 @@ The project is open-source and licensed under the [MIT license](https://opensour
 
 ### 🟩 Low
 - [ ] Coder le CRUD pour mettre à jour les résultats 
-- [ ] Mettre à jour le growler pour qu’il soit responsive sur tel 
+- [x] Mettre à jour le growler pour qu’il soit responsive sur tel 
 - [ ] Gérer les pluriels/singuliers dans le dashboard et dans chaque vue avec des stats 
-- [ ] Créer un système pour gérer les spams (vues, nombres, function pour bloquer des IP...)
-- [ ] Change all pagination to 10, 25 & 50
+- [-] Créer un système pour gérer les spams (vues, nombres, function pour bloquer des IP...)
+- [x] Change users pagination to 10, 25 & 50
 - [ ] vue gestion du bar ?
 
 

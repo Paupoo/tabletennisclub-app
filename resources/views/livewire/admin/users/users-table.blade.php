@@ -76,98 +76,100 @@
                     <span class="text-sm font-normal text-gray-500">({{ $users->total() }} {{ __('results') }})</span>
                 </h3>
                 
-                @if(count($selectedItems) > 0)
-                    <div class="relative" x-data="{ open: false }">
-                        <!-- Bouton principal du dropdown -->
-                        <button @click="open = !open" 
-                                @click.outside="open = false"
-                                class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"/>
-                            </svg>
-                            {{ __('Actions') }} ({{ count($selectedItems) }})
-                            <svg class="ml-2 -mr-1 w-4 h-4" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                            </svg>
-                        </button>
+                @if(Auth()->user()->is_committee_member || Auth()->user()->is_active)
+                    @if(count($selectedItems) > 0)
+                        <div class="relative" x-data="{ open: false }">
+                            <!-- Bouton principal du dropdown -->
+                            <button @click="open = !open" 
+                                    @click.outside="open = false"
+                                    class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"/>
+                                </svg>
+                                {{ __('Actions') }} ({{ count($selectedItems) }})
+                                <svg class="ml-2 -mr-1 w-4 h-4" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                </svg>
+                            </button>
 
-                        <!-- Menu dropdown -->
-                        <div x-show="open" 
-                            x-transition:enter="transition ease-out duration-200"
-                            x-transition:enter-start="transform opacity-0 scale-95"
-                            x-transition:enter-end="transform opacity-100 scale-100"
-                            x-transition:leave="transition ease-in duration-75"
-                            x-transition:leave-start="transform opacity-100 scale-100"
-                            x-transition:leave-end="transform opacity-0 scale-95"
-                            class="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white focus:outline-none z-50">
-                            <div class="py-1" role="menu">
-                                
+                            <!-- Menu dropdown -->
+                            <div x-show="open" 
+                                x-transition:enter="transition ease-out duration-200"
+                                x-transition:enter-start="transform opacity-0 scale-95"
+                                x-transition:enter-end="transform opacity-100 scale-100"
+                                x-transition:leave="transition ease-in duration-75"
+                                x-transition:leave-start="transform opacity-100 scale-100"
+                                x-transition:leave-end="transform opacity-0 scale-95"
+                                class="absolute right-0 mt-2 w-64 rounded-md shadow-lg bg-white focus:outline-none z-50">
+                                <div class="py-1" role="menu">
+                                    
 
-                                <!-- Activate -->
-                                <button wire:click="bulkActivate"
-                                        wire:confirm="Êtes-vous sûr de vouloir activer {{ count($selectedItems) }} membre(s) ?"
-                                        @click="open = false"
-                                        class="group flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-900">
-                                    <div class="w-5 h-5 mr-3 text-blue-600">
-                                        <x-ui.icon name="bolt"/>
-                                    </div>
-                                    {{ __('Activate') }}
-                                </button>
+                                    <!-- Activate -->
+                                    <button wire:click="bulkActivate"
+                                            wire:confirm="Êtes-vous sûr de vouloir activer {{ count($selectedItems) }} membre(s) ?"
+                                            @click="open = false"
+                                            class="group flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-900">
+                                        <div class="w-5 h-5 mr-3 text-blue-600">
+                                            <x-ui.icon name="bolt"/>
+                                        </div>
+                                        {{ __('Activate') }}
+                                    </button>
 
-                                <!-- Deactivate -->
-                                <button wire:click="bulkDeactivate"
-                                        wire:confirm="Êtes-vous sûr de vouloir désactiver {{ count($selectedItems) }} membre(s) ?"
-                                        @click="open = false"
-                                        class="group flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900">
-                                    <div class="w-5 h-5 mr-3 text-gray-600">
-                                        <x-ui.icon name="leave"/>
-                                    </div>
-                                    {{ __('Deactivate') }}
-                                </button>
+                                    <!-- Deactivate -->
+                                    <button wire:click="bulkDeactivate"
+                                            wire:confirm="Êtes-vous sûr de vouloir désactiver {{ count($selectedItems) }} membre(s) ?"
+                                            @click="open = false"
+                                            class="group flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900">
+                                        <div class="w-5 h-5 mr-3 text-gray-600">
+                                            <x-ui.icon name="leave"/>
+                                        </div>
+                                        {{ __('Deactivate') }}
+                                    </button>
 
-                                <!-- Separator -->
-                                <div class="border-t border-gray-100"></div>
+                                    <!-- Separator -->
+                                    <div class="border-t border-gray-100"></div>
 
-                               <!-- Mark Paid -->
-                                <button wire:click="bulkPaid"
-                                        wire:confirm="Êtes-vous sûr de vouloir marquer {{ count($selectedItems) }} membre(s) en ordre de cotisation ?"
-                                        @click="open = false"
-                                        class="group flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-900">
-                                    <div class="w-5 h-5 mr-3 text-green-600">
-                                        <x-ui.icon name="money"/>
-                                    </div>
-                                    {{ __('Mark Paid') }}
-                                </button>
+                                <!-- Mark Paid -->
+                                    <button wire:click="bulkPaid"
+                                            wire:confirm="Êtes-vous sûr de vouloir marquer {{ count($selectedItems) }} membre(s) en ordre de cotisation ?"
+                                            @click="open = false"
+                                            class="group flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-900">
+                                        <div class="w-5 h-5 mr-3 text-green-600">
+                                            <x-ui.icon name="money"/>
+                                        </div>
+                                        {{ __('Mark as paid') }}
+                                    </button>
 
-                                <!-- Mark Unpaid -->
-                                <button wire:click="bulkUnpaid"
-                                        wire:confirm="Êtes-vous sûr de vouloir marquer {{ count($selectedItems) }} membre(s) en défaut de cotisation ?"
-                                        @click="open = false"
-                                        class="group flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-900">
-                                    <div class="w-5 h-5 mr-3 text-orange-600">
-                                        <x-ui.icon name="money"/>
-                                    </div>
-                                    {{ __('Mark Unpaid') }}
-                                </button>   
+                                    <!-- Mark Unpaid -->
+                                    <button wire:click="bulkUnpaid"
+                                            wire:confirm="Êtes-vous sûr de vouloir marquer {{ count($selectedItems) }} membre(s) en défaut de cotisation ?"
+                                            @click="open = false"
+                                            class="group flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-900">
+                                        <div class="w-5 h-5 mr-3 text-orange-600">
+                                            <x-ui.icon name="money"/>
+                                        </div>
+                                        {{ __('Mark as unpaid') }}
+                                    </button>   
 
-                                <!-- Separator -->
-                                <div class="border-t border-gray-100"></div>
+                                    <!-- Separator -->
+                                    <div class="border-t border-gray-100"></div>
 
-                                <!-- Delete -->
-                                <button wire:click="bulkDelete"
-                                        wire:confirm="Êtes-vous sûr de vouloir supprimer {{ count($selectedItems) }} membre(s) ?"
-                                        @click="open = false"
-                                        class="group flex items-center w-full px-4 py-2 text-sm text-red-700 hover:bg-red-50 hover:text-red-900">
-                                    <div class="w-5 h-5 mr-3 text-red-600">
-                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                        </svg>
-                                    </div>
-                                    {{ __('Delete') }}
-                                </button>
+                                    <!-- Delete -->
+                                    <button wire:click="bulkDelete"
+                                            wire:confirm="Êtes-vous sûr de vouloir supprimer {{ count($selectedItems) }} membre(s) ?"
+                                            @click="open = false"
+                                            class="group flex items-center w-full px-4 py-2 text-sm text-red-700 hover:bg-red-50 hover:text-red-900">
+                                        <div class="w-5 h-5 mr-3 text-red-600">
+                                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                            </svg>
+                                        </div>
+                                        {{ __('Delete') }}
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    @endif
                 @endif
             </div>
 
@@ -176,6 +178,7 @@
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
+                            @if(Auth()->user()->is_committee_member || Auth()->user()->is_active)
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 <div class="flex items-center space-x-2">
                                     <input type="checkbox" wire:model.live="selectAll" class="rounded border-gray-300 text-club-blue focus:ring-club-blue">
@@ -188,6 +191,7 @@
                                     </div>
                                 </div>
                             </th>
+                            @endif
                             <th wire:click="sortBy('last_name')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors">
                                 <div class="flex items-center space-x-1">
                                     <span>{{ __('User') }}</span>
@@ -239,10 +243,11 @@
                     <tbody class="bg-white divide-y divide-gray-200">
                         @forelse ($users as $user)
                             <tr wire:key="{{ $user->id }}" class="hover:bg-gray-50 transition-colors duration-200 {{ in_array($user->id, $selectedItems) ? 'bg-blue-50' : '' }}">
-                                <!-- Utilisateur -->
+                                @if(Auth()->user()->is_committee_member || Auth()->user()->is_active)
                                 <td class="px-4 py-2">
                                     <input type="checkbox" wire:model.live="selectedItems" value="{{ $user->id }}">
                                 </td>
+                                @endif
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="flex items-center">
                                         <div class="flex-shrink-0 h-10 w-10">
@@ -304,14 +309,16 @@
                                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs justify-center font-medium bg-green-100 text-green-800">
                                                 {{ __('Active') }}
                                             </span>
-                                            @if(!$user->has_paid)
-                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs justify-center font-medium bg-red-100 text-red-800">
-                                                    ✗ {{ __('Unpaid') }}
-                                                </span>
-                                            @else
-                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs justify-center font-medium bg-green-100 text-green-800">
-                                                    {{ __('Paid') }}
-                                                </span>
+                                            @if(Auth()->user()->is_committee_member || Auth()->user()->is_admin )
+                                                @if(!$user->has_paid)
+                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs justify-center font-medium bg-red-100 text-red-800">
+                                                        ✗ {{ __('Unpaid') }}
+                                                    </span>
+                                                @else
+                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs justify-center font-medium bg-green-100 text-green-800">
+                                                        {{ __('Paid') }}
+                                                    </span>
+                                                @endif
                                             @endif
                                         @else
                                             <span class="inline-flex items-center px-2 py-1 rounded-full text-xs justify-center font-medium  bg-gray-100 text-gray-800">

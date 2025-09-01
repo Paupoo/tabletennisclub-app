@@ -208,6 +208,7 @@
                         @endif
 
                         {{-- Actions --}}
+                        @if(Auth()->user()->is_committee_member || Auth()->user()->is_admin)
                         <div class="flex flex-col sm:flex-row gap-3">
                             <form action="{{ route('users.create') }}" method="GET" class="flex-1">
                                 <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm flex items-center justify-center">
@@ -227,6 +228,7 @@
                                 </button>
                             </form>
                         </div>
+                        @endif
                     </div>
                 </div>
 
@@ -280,6 +282,7 @@
                         @endif
 
                         {{-- Actions --}}
+                        @if(Auth()->user()->is_committee_member || Auth()->user()->is_admin)
                         <div class="flex flex-col sm:flex-row gap-3">
                             <form action="{{ route('teams.create') }}" method="GET" class="flex-1">
                                 <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm flex items-center justify-center">
@@ -299,6 +302,7 @@
                                 </button>
                             </form>
                         </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -389,6 +393,7 @@
                         @endif
 
                         {{-- Actions --}}
+                        @if(Auth()->user()->is_committee_member || Auth()->user()->is_admin)
                         <div class="flex flex-col sm:flex-row gap-3">
                             <form action="" method="GET" class="flex-1">
                                 <button type="submit" class="w-full bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm flex items-center justify-center">
@@ -408,6 +413,7 @@
                                 </button>
                             </form>
                         </div>
+                        @endif
                     </div>
                 </div>
 
@@ -452,6 +458,7 @@
                         @endif
 
                         {{-- Actions --}}
+                        @if(Auth()->user()->is_committee_member || Auth()->user()->is_admin)
                         <div class="flex flex-col sm:flex-row gap-3">
                             <form action="{{ route('trainings.create') }}" method="GET" class="flex-1">
                                 <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm flex items-center justify-center">
@@ -471,6 +478,7 @@
                                 </button>
                             </form>
                         </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -532,6 +540,7 @@
                     </div>
 
                     {{-- Actions --}}
+                    @if(Auth()->user()->is_committee_member || Auth()->user()->is_admin)
                     <div class="flex flex-col sm:flex-row gap-3">
                         <form action="" method="GET" class="flex-1">
                             <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm flex items-center justify-center">
@@ -551,6 +560,7 @@
                             </button>
                         </form>
                     </div>
+                    @endif
                 </div>
             </div>
         </div>

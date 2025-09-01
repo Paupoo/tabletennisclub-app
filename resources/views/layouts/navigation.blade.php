@@ -15,6 +15,17 @@
 
                 <!-- Navigation Links Desktop -->
                 <div class="hidden lg:flex lg:items-center lg:ml-8 lg:space-x-1">
+
+
+                    <!-- Lien Dashboard simple -->
+                    <a href="{{ route('dashboard') }}" 
+                       class="flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 text-gray-700 dark:text-gray-300 hover:text-club-blue dark:hover:text-gray-200 hover:bg-indigo-300 dark:hover:bg-gray-700' }}" 
+                       wire:navigate>
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                        {{ __('Dashboard') }}
+                    </a>
                     <!-- Groupe Club Life Management -->
                     <div class="relative" x-data="{ open: false }">
                         <button 
@@ -39,6 +50,7 @@
                             x-transition:leave-start="opacity-100 scale-100"
                             x-transition:leave-end="opacity-0 scale-95"
                             class="absolute top-full left-0 mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
+                            @if(Auth()->user()->is_committee_member || Auth()->user()->is_admin)
                             <a href="{{ route('admin.articles.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-indigo-300 dark:hover:bg-gray-700 hover:text-club-blue transition-colors duration-200" wire:navigate>
                                 <svg class="w-4 h-4 mr-3 stroke-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <x-ui.icon name="article" />
@@ -54,6 +66,7 @@
                                     <span class="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full">{{ $newContactsCount }}</span>
                                 @endif
                             </a>    
+                            @endif
                             <a href="{{ route('users.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-indigo-300 dark:hover:bg-gray-700 hover:text-club-blue transition-colors duration-200" wire:navigate>
                                 <svg class="w-4 h-4 mr-3 stroke-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <x-ui.icon name="person" />
@@ -66,16 +79,19 @@
                                 </svg>
                                 {{ __('Teams') }}
                             </a>
+                            @if(Auth()->user()->is_committee_member || Auth()->user()->is_admin)
                             <a href="{{ route('admin.spams.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-indigo-300 dark:hover:bg-gray-700 hover:text-club-blue transition-colors duration-200" wire:navigate>
                                 <svg class="w-4 h-4 mr-3 stroke-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <x-ui.icon name="bin" class="w-4 h-4 mr-3" />
                                 </svg>
                                 {{ __('Spams') }}
                             </a>
+                            @endif
                         </div>
                     </div>
 
                     <!-- Groupe Infrastructure -->
+                    @if(Auth()->user()->is_admin || Auth()->user()->is_committee_member)
                     <div class="relative" x-data="{ open: false }">
                         <button 
                             @click="open = !open" 
@@ -113,6 +129,7 @@
                             </a>
                         </div>
                     </div>
+                    @endif
 
                     <!-- Groupe Activités -->
                     <div class="relative" x-data="{ open: false }">
@@ -163,19 +180,7 @@
                                 {{ __('Tournaments') }}
                             </a>
                         </div>
-                    </div>
-
-                    <!-- Lien Dashboard simple -->
-                    <a href="{{ route('dashboard') }}" 
-                       class="flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 {{ request()->routeIs('dashboard') ? 'bg-club-blue text-white' : 'text-gray-700 dark:text-gray-300 hover:text-club-blue dark:hover:text-gray-200 hover:bg-indigo-300 dark:hover:bg-gray-700' }}" 
-                       wire:navigate>
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                        </svg>
-                        {{ __('Dashboard') }}
-                    </a>
-
-                    
+                    </div>                    
                 </div>
             </div>
 
@@ -268,6 +273,7 @@
                     {{ __('Management') }}
                 </div>
             </div>
+            @if(Auth()->user()->is_committee_member || Auth()->user()->is_admin)
             <x-responsive-nav-link :href="route('admin.articles.index')" :active="request()->routeIs('admin.articles.index')" wire:navigate class="flex items-center pl-6">
                 <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <x-ui.icon name="article" />
@@ -283,6 +289,7 @@
                     <span class="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full">{{ $newContactsCount }}</span>
                 @endif
             </x-responsive-nav-link>
+            @endif
             <x-responsive-nav-link :href="route('users.index')" :active="request()->routeIs('users.index')" wire:navigate class="flex items-center pl-6">
                 <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m3 5.197H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -295,14 +302,17 @@
                 </svg>
                 {{ __('Teams') }}
             </x-responsive-nav-link>
+            @if(Auth()->user()->is_committee_member || Auth()->user()->is_admin)
             <x-responsive-nav-link :href="route('admin.spams.index')" :active="request()->routeIs('admin.spams.index')" wire:navigate class="flex items-center pl-6">
                 <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <x-ui.icon name="bin" />
                 </svg>
                 {{ __('Spams') }}
             </x-responsive-nav-link>
+            @endif
 
             <!-- Section Infrastructure -->
+            @if(Auth()->user()->is_admin || Auth()->user()->is_committee_member)
             <div class="pt-4 pb-2">
                 <div class="px-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     {{ __('Infrastructure') }}
@@ -320,6 +330,7 @@
                 </svg>
                 {{ __('Tables') }}
             </x-responsive-nav-link>
+            @endif
 
             <!-- Section Activités -->
             <div class="pt-4 pb-2">

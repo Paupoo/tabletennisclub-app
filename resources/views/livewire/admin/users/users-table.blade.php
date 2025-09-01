@@ -353,31 +353,7 @@
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                                 </svg>
                                             </a>
-{{--                                             
-                                            <a href="{{ route('users.toggleHaspaid', $user) }}" 
-                                            @class([
-                                                    'text-white p-2 rounded-lg transition-colors duration-200',
-                                                    'bg-green-600 hover:bg-green-700' => !$user->has_paid,
-                                                    'bg-red-600 hover:bg-red-700' => $user->has_paid,
-                                                ])
-                                            title="{{ __('Update subscription payment status') }}">
-                                                <x-ui.icon name="money"/>
-                                            </a> --}}
                                         @endcan
-                                        
-                                        {{-- @if(Auth::id() !== $user->id)
-                                        @can('delete', Auth()->user())
-                                            <button 
-                                                wire:click="$set('selectedUserId', {{ $user->id }})"
-                                                @click="$dispatch('open-modal', 'confirm-delete-user')"
-                                                class="bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg transition-colors duration-200"
-                                                title="{{ __('Delete user') }}">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                                </svg>
-                                            </button>
-                                        @endcan
-                                        @endif --}}
                                     </div>
                                 </td>
                             </tr>
@@ -422,49 +398,28 @@
                                             {{ $user->first_name }} {{ $user->last_name }}
                                         </div>
                                         <div class="text-sm text-gray-500">
-                                            {{ $user->is_competitor ? __('Competitor') : __('Casual') }} • 
-                                            Force: {{ $user->force_list }} • 
-                                            Ranking: {{ $user->ranking }}
+                                            <ol>
+                                                <li>{{ $user->is_competitor ? __('Competitor') : __('Casual') }}</li>
+                                                <li>Force: {{ $user->force_list }}</li>
+                                                <li>Ranking: {{ $user->ranking }}</li>
+                                                @if ($user->teams->count() > 0)
+                                                    <li>Teams :
+                                                        @foreach ($user->teams->sortBy('name') as $team)
+                                                        <a href="{{ route('teams.show', $team) }}" >
+                                                            {{ $team->name }}
+                                                        </a>
+                                                        @if(!$user->teams->last)
+                                                         - 
+                                                        @endif
+                                                        @endforeach
+                                                    </li>
+                                                @endif
+                                            </ol>
                                         </div>
                                     </div>
                                 </div>
-                                
-                                <div class="flex flex-col space-y-1">
-                                    @if ($user->is_active)
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                            {{ __('Active') }}
-                                        </span>
-                                    @else
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                            {{ __('Inactive') }}
-                                        </span>
-                                    @endif
-
-                                    @if ($user->has_paid)
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                            ✓ {{ __('Paid') }}
-                                        </span>
-                                    @else
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                            ✗ {{ __('Unpaid') }}
-                                        </span>
-                                    @endif
-                                </div>
                             </div>
-                            
-                            @if ($user->teams->count() > 0)
-                                <div class="mb-3">
-                                    <div class="flex flex-wrap gap-1">
-                                        @foreach ($user->teams->sortBy('name') as $team)
-                                            <a href="{{ route('teams.show', $team) }}" 
-                                            class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors duration-200">
-                                                {{ $team->name }}
-                                            </a>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            @endif
-                            
+                                                        
                             <div class="flex justify-end space-x-2">
                                 <a href="{{ route('users.show', $user->id) }}" 
                                 class="bg-club-blue hover:bg-club-blue-light text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-200">

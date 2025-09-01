@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Enums\TrainingLevel;
 use App\Enums\TrainingType;
 use App\Http\Requests\StoreTrainingRequest;
+use App\Http\Requests\UpdateTrainingRequest;
 use App\Models\Room;
 use App\Models\Season;
 use App\Models\Training;
@@ -17,6 +18,7 @@ use App\Support\Breadcrumb;
 use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 class TrainingController extends Controller
 {
@@ -48,7 +50,7 @@ class TrainingController extends Controller
         return view('admin.trainings.create', [
             'levels' => TrainingLevel::cases(),
             'rooms' => Room::all(),
-            'seasons' => Season::where('start_year', '>=', now()->format('Y') - 1)->orderBy('start_year')->get(),
+            'seasons' => $this->getAdjacentSeasons(),
             'training' => $training,
             'types' => TrainingType::cases(),
             'users' => User::select('id', 'last_name', 'first_name')->orderBy('last_name', 'asc')->orderBy('first_name', 'asc')->get(),
@@ -100,7 +102,27 @@ class TrainingController extends Controller
      */
     public function edit(Training $training)
     {
-        //
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->trainings()
+            ->current(__('Edit a training'))
+            ->toArray();
+
+        $levels= TrainingLevel::cases();
+        $rooms = Room::all();
+        $seasons = $this->getAdjacentSeasons();
+        $types = TrainingType::cases();
+        $users = User::all();
+
+        return view('admin.trainings.edit', compact([
+            'breadcrumbs',
+            'levels',
+            'training',
+            'rooms',
+            'seasons',
+            'types',
+            'users',
+        ]));
     }
 
     /**
@@ -157,8 +179,22 @@ class TrainingController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Training $training)
+    public function update(UpdateTrainingRequest $request, Training $training): RedirectResponse
     {
-        //
+
+        $updated = $training->update($request->validated());
+
+        if (! $updated) {
+            return redirect()->route('trainings.index')
+                ->with('error', __('The training could not be updated'));
+        }
+
+        return redirect()->route('trainings.index')
+            ->with('success', __('The training has been updated'));
+    }
+
+    private function getAdjacentSeasons(): Collection
+    {
+        return Season::where('start_year', '>=', now()->format('Y') - 1)->orderBy('start_year')->get();
     }
 }

@@ -72,6 +72,9 @@ class Training extends Model
         'level',
         'start',
         'type',
+        'trainer_id',
+        'room_id',
+        'season_id',
     ];
 
     // Relationships

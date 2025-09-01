@@ -19,6 +19,7 @@ use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 
 class TrainingController extends Controller
 {
@@ -193,8 +194,26 @@ class TrainingController extends Controller
             ->with('success', __('The training has been updated'));
     }
 
-    private function getAdjacentSeasons(): Collection
+    public function getAdjacentSeasons(): Collection
     {
         return Season::where('start_year', '>=', now()->format('Y') - 1)->orderBy('start_year')->get();
+    }
+
+    public function register(Training $training): RedirectResponse
+    {
+        $training->trainees()->attach(Auth()->user()->id);
+
+        return redirect()
+            ->route('trainings.index')
+            ->with('success', __('You are registered to the training'));
+    }
+
+    public function unregister(Training $training): RedirectResponse
+    {
+        $training->trainees()->detach(Auth()->user()->id);
+
+        return redirect()
+            ->route('trainings.index')
+            ->with('success', __('You are unregistered to the training'));
     }
 }

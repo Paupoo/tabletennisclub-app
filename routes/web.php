@@ -145,7 +145,14 @@ Route::resource('/admin/teams', TeamController::class)->middleware(['auth', 'ver
 /**
  * Training management
  */
-Route::resource('/admin/trainings', TrainingController::class)->middleware(['auth', 'verified']);
+Route::resource('/admin/trainings', TrainingController::class)
+    ->middleware(['auth', 'verified']);
+Route::get('/admin/trainings/{training}/register', [TrainingController::class, 'register'])
+    ->middleware(['auth', 'verified'])
+    ->name('trainings.register');
+Route::get('/admin/trainings/{training}/unregister', [TrainingController::class, 'unregister'])
+    ->middleware(['auth', 'verified'])
+    ->name('trainings.unregister');
 
 /**
  * Interclub management
@@ -269,7 +276,6 @@ Route::prefix('admin')->middleware(['auth'])->group(function (): void {
     Route::post('/{contact}/send-email', [ContactAdminController::class, 'sendEmail'])->name('admin.contacts.send-email');
     Route::get('/{contact}/compose-email', [ContactAdminController::class, 'composeEmail'])->name('admin.contacts.compose-email');
     Route::post('/{contact}/send-custom-email', [ContactAdminController::class, 'sendCustomEmail'])->name('admin.contacts.send-custom-email');
-
 });
 
 Route::prefix('admin')->middleware(['auth'])->group(function (): void {
@@ -278,7 +284,6 @@ Route::prefix('admin')->middleware(['auth'])->group(function (): void {
     Route::post('/{contact}/send-email', [ContactAdminController::class, 'sendEmail'])->name('admin.contacts.send-email');
     Route::get('/{contact}/compose-email', [ContactAdminController::class, 'composeEmail'])->name('admin.contacts.compose-email');
     Route::post('/{contact}/send-custom-email', [ContactAdminController::class, 'sendCustomEmail'])->name('admin.contacts.send-custom-email');
-
 });
 
 Route::middleware(['auth', 'verified'])->group(function (): void {

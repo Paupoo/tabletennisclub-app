@@ -237,13 +237,7 @@
                                         <!-- Location & Type -->
                                         <td class="px-4 py-4 whitespace-nowrap">
                                             <div class="flex items-center">
-                                                <div class="flex-shrink-0 w-8 h-8 bg-club-blue bg-opacity-10 rounded-full flex items-center justify-center mr-3">
-                                                    <svg class="w-4 h-4 text-club-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                    </svg>
-                                                </div>
-                                                <div>
+                                            <div>
                                                     <div class="text-sm font-medium text-gray-900">{{ $training->room->name }}</div>
                                                     <div class="text-sm text-gray-500">{{ $training->type }}</div>
                                                 </div>
@@ -261,7 +255,7 @@
                                                         {{ $training->trainer->last_name }} {{ $training->trainer->first_name }}
                                                     </div>
                                                 @endif
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-club-yellow bg-opacity-20 text-club-yellow">
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-club-yellow bg-opacity-20 text-club-blue">
                                                     {{ $training->level }}
                                                 </span>
                                             </div>
@@ -493,7 +487,7 @@
                                         <!-- Type + Niveau -->
                                         <div class="flex items-center space-x-2">
                                             <span>{{ $training->type }}</span>
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-club-yellow bg-opacity-20 text-club-yellow">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-club-yellow bg-opacity-20 text-club-blue">
                                                 {{ $training->level }}
                                             </span>
                                         </div>

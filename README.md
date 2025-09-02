@@ -93,6 +93,7 @@ The project is open-source and licensed under the [MIT license](https://opensour
 - [ ] vue gestion des entraînements
 - [ ] vue gestion des frais
 - [ ] vue pv des réunions
+- [ ] Revoir le code des event pour gérer les modifications en match des récurrences (création est ok, mais il faut pouvoir supprimer/éditer facilement)
 
 
 ### 🟩 Low

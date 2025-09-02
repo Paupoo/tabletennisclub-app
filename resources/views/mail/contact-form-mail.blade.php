@@ -7,7 +7,7 @@ Vous avez reçu un message depuis le formulaire de contact du site {{ config('ap
 - Nom : {{ $last_name }}
 - Email : {{ $email }}
 - Téléphone : {{ $phone }}
-- Au sujet de : {{ $interest->getLabel() }}
+- Au sujet de : {{ $interest }}
  
 
 # Message : 

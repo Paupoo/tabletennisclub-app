@@ -44,6 +44,8 @@ class ContactFormEmail extends Mailable implements ShouldQueue
      */
     public function content(): Content
     {
+        // Avoid serialisation issues with queue
+        $interest = $this->contact->interest->getLabel() ?? __('General request');
         return new Content(
             markdown: 'mail.contact-form-mail',
             with: [
@@ -51,7 +53,7 @@ class ContactFormEmail extends Mailable implements ShouldQueue
                 'last_name' => $this->contact->last_name ?? '',
                 'email' => $this->contact->email ?? '',
                 'phone' => $this->contact->phone ?? '',
-                'interest' => $this->contact->interest ?? 'Demande générale',
+                'interest' => $interest,
                 'message' => $this->contact->message ?? '',
                 'membership_family_members' => $this->contact->membership_family_members ?? '',
                 'membership_competitors' => $this->contact->membership_competitors ?? '',

@@ -556,5 +556,6 @@
     "Are you sure you want to delete this training?": "Êtes-vous sûr de vouloir supprimer cet entraînement ?",
     "Edit a training": "Modifier un entraînement",
     "The training could not be updated": "L'entraînement n'a pas pu être modifié",
-    "The training has been updated": "L'entraînement a été modifié"
+    "The training has been updated": "L'entraînement a été modifié",
+    "General request": "Demande générale"
 }

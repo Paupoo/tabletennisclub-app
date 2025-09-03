@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\User\CreateNewUserAction;
+use App\Actions\User\InviteExistingUserAction;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\ContactAdminController;
 use App\Http\Controllers\ContactController;
@@ -199,6 +200,9 @@ Route::get('/admin/users/deleteForceList', [
 Route::get('/admin/{user}/subscription', [UserController::class, 'toggleHasPaid'])->name('users.toggleHaspaid');
 
 Route::resource('admin/users', UserController::class)->middleware(['auth', 'verified']);
+
+Route::post('admin/users/{user}/invite', [InviteExistingUserAction::class, 'handle'])->name('admin.users.invite-existing-user');
+
 
 // Tournaments
 Route::middleware(['auth', 'verified'])

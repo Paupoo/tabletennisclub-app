@@ -201,9 +201,14 @@ class UserController extends Controller
         }
 
         $forceList->setOrUpdateAll();
+      
+        $message = __('messages.user_created', [
+            'name' => e($user->first_name . ' ' . $user->last_name),
+            'url'  => route('users.show', $user),
+        ]);
 
         return redirect()->route('users.create')
-            ->with('success', __('New member ' . $user->first_name . ' ' . $user->last_name . ' created'));
+            ->with('success', $message);
     }
 
     public function toggleHasPaid(User $user): RedirectResponse

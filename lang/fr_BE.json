@@ -557,5 +557,6 @@
     "Edit a training": "Modifier un entraînement",
     "The training could not be updated": "L'entraînement n'a pas pu être modifié",
     "The training has been updated": "L'entraînement a été modifié",
-    "General request": "Demande générale"
+    "General request": "Demande générale",
+    "messages.user_created": "Nouveau membre :name créé. <b><u><a href=\":url\">Voir les détails</a></b></u>"
 }

@@ -44,9 +44,6 @@
                 @if ($contact->interest === \App\Enums\ContactReasonEnum::join && !\App\Models\User::where('email', $contact->email)->exists())
                     <form action="{{ route('admin.contacts.invite-new-user') }}" method="POST">
                         @csrf
-                        @php
-                            $password = 'kjfeAL978$"lklaf';
-                        @endphp
                         <input type="hidden" name="first_name" value="{{ $contact->first_name }}">
                         <input type="hidden" name="last_name" value="{{ $contact->last_name }}">
                         <input type="hidden" name="email" value="{{ $contact->email }}">

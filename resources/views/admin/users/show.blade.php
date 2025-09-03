@@ -63,7 +63,22 @@
                         </svg>
                         {{ __('Edit') }}
                     </a>
+                    @if($user->email_verified_at == null)
+                    <form action="{{ route('admin.users.invite-existing-user', $user) }}" method="post">
+                        @csrf
+                        <button class="inline-flex items-center justify-center px-3 py-2 bg-club-blue hover:bg-club-blue-light text-white text-sm font-medium rounded-lg transition-colors">
+                            <svg class="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <x-ui.icon name="rocket-launch" />
+                            </svg>
+                            {{ __('Send invite') }}
+                        </button>
+                    </form>
+                    @else
+                        <button class="inline-flex items-center justify-center px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors">RESET PASSWORD //TODO</button>
+
+                    @endif
                 @endcan
+
                 
                 @can('delete', $user)
                     <button @click="showDeleteModal = true" class="inline-flex items-center justify-center px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors">

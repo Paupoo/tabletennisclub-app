@@ -24,7 +24,8 @@ class ContactController extends Controller
             // Envoyer un email
             // Mail::to(config('app.club_email'))->send(new ContactFormMail($validated)); --> uncomment this line once the mail of the club is correctly configured
             Mail::to($request->email)->send(new WelcomeEmail($contact));
-            Mail::to('aurelien.paulus@gmail.com')->send(new ContactFormEmail($contact));
+            Mail::to(config('app.club_email'))
+                ->send(new ContactFormEmail($contact));
 
 
             // Log pour le développement

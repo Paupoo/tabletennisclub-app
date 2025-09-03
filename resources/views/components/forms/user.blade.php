@@ -34,7 +34,8 @@
 </div>
 
 {{-- Password --}}
-@if (!$user->id)
+{{-- @if (!$user->id) --}}
+@if('x' === 'y')
     <div>
         <x-input-label for="password" :value="__('Password')" />
         <x-text-input id="password" name="password" type="password" class="block w-full mt-1" :value="old('password')"

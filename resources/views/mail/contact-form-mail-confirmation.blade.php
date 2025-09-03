@@ -39,7 +39,8 @@
 @endif
 
 ---
-### 📧 Nous contacter
+
+### 📧 Nous contacter :
 
 N'hésitez pas à nous contacter si vous avez des questions. Nous sommes là pour vous accompagner dans votre projet sportif !
 Une erreur, une précision à ajouter ? Pas problème, répondez simplement à cet email pour préciser votre demande.
@@ -49,7 +50,7 @@ Une erreur, une précision à ajouter ? Pas problème, répondez simplement à c
 ### 📞 Nos coordonnées :
 
 - **📧 Email :** {{ config('mail.from.address') }}
-- **📞 Téléphone :** {{ config('app.club_phone_number') }} - (lu.-ven. entre 16h et 20h).
+- **📞 Téléphone :** {{ config('app.club_phone_number') }} - (lu.-ven. 16h-20h).
 - **📍 Adresse :** {{ config('app.club_street') . ', ' . config('app.club_zip_code') . ' ' . config('app.club_city') }}
 - **🌐 Site web :** {{ config('app.url') }}
 

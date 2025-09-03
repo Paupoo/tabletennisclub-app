@@ -36,7 +36,7 @@
                         <div class="ml-4">
                             <h3 class="text-lg font-semibold text-gray-900">Téléphone</h3>
                             <p inert class="text-gray-600">{{ config('app.club_phone_number') }}</p>
-                            <p class="text-sm text-gray-500">Lun-Ven: 9h-18h</p>
+                            <p class="text-sm text-gray-500">Lun-Ven: 16h-20h</p>
                         </div>
                     </div>
                     

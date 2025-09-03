@@ -13,7 +13,7 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class ContactFormEmail extends Mailable implements ShouldQueue
+class ContactFormNotificationEmail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
@@ -44,16 +44,14 @@ class ContactFormEmail extends Mailable implements ShouldQueue
      */
     public function content(): Content
     {
-        // Avoid serialisation issues with queue
-        $interest = $this->contact->interest->getLabel() ?? __('General request');
         return new Content(
-            markdown: 'mail.contact-form-mail',
+            markdown: 'mail.contact-form-mail-notification',
             with: [
                 'first_name' => $this->contact->first_name ?? '',
                 'last_name' => $this->contact->last_name ?? '',
                 'email' => $this->contact->email ?? '',
                 'phone' => $this->contact->phone ?? '',
-                'interest' => $interest,
+                'interest' => $this->contact->interest,
                 'message' => $this->contact->message ?? '',
                 'membership_family_members' => $this->contact->membership_family_members ?? '',
                 'membership_competitors' => $this->contact->membership_competitors ?? '',

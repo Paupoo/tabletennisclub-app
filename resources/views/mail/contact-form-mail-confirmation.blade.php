@@ -39,7 +39,8 @@
 @endif
 
 ---
-**[📧 Nous contacter]
+### 📧 Nous contacter
+
 N'hésitez pas à nous contacter si vous avez des questions. Nous sommes là pour vous accompagner dans votre projet sportif !
 Une erreur, une précision à ajouter ? Pas problème, répondez simplement à cet email pour préciser votre demande.
 

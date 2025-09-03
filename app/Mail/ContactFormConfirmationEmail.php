@@ -12,7 +12,7 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class WelcomeEmail extends Mailable
+class ContactFormConfirmationEmail extends Mailable
 {
     use Queueable, SerializesModels;
 
@@ -33,7 +33,7 @@ class WelcomeEmail extends Mailable
     public function content(): Content
     {
         return new Content(
-            markdown: 'mail.welcome-email',
+            markdown: 'mail.contact-form-mail-confirmation',
             with: [
                 'contact' => $this->contact,
                 'clubName' => config('app.name'),

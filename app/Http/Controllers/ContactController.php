@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreContactRequest;
-use App\Mail\ContactFormEmail;
-use App\Mail\WelcomeEmail;
+use App\Mail\ContactFormNotificationEmail;
+use App\Mail\ContactFormConfirmationEmail;
 use App\Models\Contact;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -23,9 +23,9 @@ class ContactController extends Controller
 
             // Envoyer un email
             // Mail::to(config('app.club_email'))->send(new ContactFormMail($validated)); --> uncomment this line once the mail of the club is correctly configured
-            Mail::to($request->email)->send(new WelcomeEmail($contact));
+            Mail::to($request->email)->send(new ContactFormConfirmationEmail($contact));
             Mail::to(config('app.club_email'))
-                ->send(new ContactFormEmail($contact));
+                ->send(new ContactFormNotificationEmail($contact));
 
 
             // Log pour le développement

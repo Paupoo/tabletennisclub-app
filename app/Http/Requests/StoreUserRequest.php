@@ -51,7 +51,7 @@ class StoreUserRequest extends FormRequest
             'is_competitor' => ['boolean'],
             'last_name' => ['required', 'string', 'max:255'],
             'licence' => ['nullable', 'required_if:is_competitor,true', 'unique:users,licence', 'size:6'],
-            'password' => ['required', 'confirmed', 'min:8', Password::min(8)->letters()->mixedCase()->numbers()->symbols()->uncompromised()],
+            // 'password' => ['required', 'confirmed', 'min:8', Password::min(8)->letters()->mixedCase()->numbers()->symbols()->uncompromised()],
             'phone_number' => ['nullable', 'string', 'digits_between:9,20'],
             'ranking' => [
                 'nullable',

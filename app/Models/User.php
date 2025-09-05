@@ -6,6 +6,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
+use App\Enums\Sex;
 use Carbon\Carbon;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Contracts\Database\Query\Builder;
@@ -112,7 +113,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'password' => 'hashed',
         'first_name' => 'string',
         'last_name' => 'string',
-        'sex' => 'string',
+        'sex' => Sex::class,
         'phone_number' => 'string',
         'birthdate' => 'datetime:d-m-Y',
         'street' => 'string',

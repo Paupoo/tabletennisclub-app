@@ -149,12 +149,12 @@
                                     <div class="text-xs text-gray-400">{{ $contact->created_at->timezone('Europe/Brussels')->format('H:i') }}</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    @php
+                                    @php    
                                         $statusConfig = [
-                                            'new' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-800', 'label' => 'Nouveau'],
-                                            'pending' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-800', 'label' => 'En cours'],
-                                            'processed' => ['bg' => 'bg-green-100', 'text' => 'text-green-800', 'label' => 'Traité'],
-                                            'rejected' => ['bg' => 'bg-red-100', 'text' => 'text-red-800', 'label' => 'Refusé'],
+                                            'new' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-800', 'label' => __('New')],
+                                            'pending' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-800', 'label' => __('Pending')],
+                                            'processed' => ['bg' => 'bg-green-100', 'text' => 'text-green-800', 'label' => __('Processed')],
+                                            'rejected' => ['bg' => 'bg-red-100', 'text' => 'text-red-800', 'label' => __('Rejected')],
                                         ];
                                         $config = $statusConfig[$contact->status] ?? $statusConfig['nouveau'];
                                     @endphp
@@ -215,10 +215,10 @@
                                 
                                 @php
                                     $statusConfig = [
-                                        'nouveau' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-800', 'label' => 'Nouveau'],
-                                        'en_cours' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-800', 'label' => 'En cours'],
-                                        'traite' => ['bg' => 'bg-green-100', 'text' => 'text-green-800', 'label' => 'Traité'],
-                                        'refuse' => ['bg' => 'bg-red-100', 'text' => 'text-red-800', 'label' => 'Refusé'],
+                                        'new' => ['bg' => 'bg-blue-100', 'text' => 'text-blue-800', 'label' => 'Nouveau'],
+                                        'pending' => ['bg' => 'bg-yellow-100', 'text' => 'text-yellow-800', 'label' => 'En cours'],
+                                        'processed' => ['bg' => 'bg-green-100', 'text' => 'text-green-800', 'label' => 'Traité'],
+                                        'rejected' => ['bg' => 'bg-red-100', 'text' => 'text-red-800', 'label' => 'Refusé'],
                                     ];
                                     $config = $statusConfig[$contact->status] ?? $statusConfig['nouveau'];
                                 @endphp

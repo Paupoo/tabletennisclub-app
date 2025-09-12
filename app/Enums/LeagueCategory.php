@@ -6,7 +6,7 @@ namespace App\Enums;
 
 enum LeagueCategory: string
 {
-    case MEN = 'Men';
-    case VETERANS = 'Veterans';
-    case WOMEN = 'Women';
+    case MEN = 'men';
+    case VETERANS = 'veterans';
+    case WOMEN = 'women';
 }

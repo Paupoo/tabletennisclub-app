@@ -473,7 +473,7 @@ class TournamentMatchService
      */
     public function generateMatches(Pool $pool): Collection
     {
-        $players = $pool->users->toArray();
+        $players = $pool->users->all();
         $numberOfPlayers = count($players);
 
         // If odd number of players, add a "dummy" player (bye)

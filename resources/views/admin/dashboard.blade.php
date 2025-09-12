@@ -268,7 +268,7 @@
                                             <div>
                                                 <p class="font-medium text-gray-900 dark:text-gray-100">{{ $team->name }}</p>
                                                 <p class="text-sm text-gray-500 dark:text-gray-400">
-                                                    {{ $team->league?->category }} {{ $team->league?->level }} {{ $team->league?->division }}
+                                                    {{ $team?->league?->category }} {{ $team->league?->level }} {{ $team->league?->division }}
                                                 </p>
                                             </div>
                                         </div>

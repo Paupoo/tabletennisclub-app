@@ -6,7 +6,7 @@ namespace App\Enums;
 
 enum LeagueLevel: string
 {
-    case NATIONAL = 'National';
-    case PROVINCIAL_BW = 'Provincial BW';
-    case REGIONAL = 'Regional';
+    case NATIONAL = 'national';
+    case PROVINCIAL_BW = 'provincial_bw';
+    case REGIONAL = 'regional';
 }

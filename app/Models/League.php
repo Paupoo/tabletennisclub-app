@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\LeagueCategory;
+use App\Enums\LeagueLevel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -43,8 +45,8 @@ class League extends Model
 
     protected $casts = [
         'division' => 'string',
-        'level' => 'string',
-        'category' => 'string',
+        'level' => LeagueLevel::class,
+        'category' => LeagueCategory::class,
         'season_id' => 'integer',
     ];
 

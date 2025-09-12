@@ -6,9 +6,9 @@ namespace App\Enums;
 
 enum Sex: string
 {
-    case MEN = 'Men';
-    case WOMEN = 'Women';
-    case OTHER = 'Other'; // Do not use
+    case MEN = 'men';
+    case WOMEN = 'women';
+    case OTHER = 'other'; // Do not use
 
     /**
      * Returns the values in an array

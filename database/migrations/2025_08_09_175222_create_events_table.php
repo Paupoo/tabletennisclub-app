@@ -26,7 +26,7 @@ return new class extends Migration
             $table->string('title');
             $table->text('description');
             $table->enum('category', ['club-life', 'tournament', 'training'])->default('club-life');
-            $table->enum('status', ['draft', 'published', 'archived'])->default('draft');
+            $table->string('status')->default('draft');
             $table->date('event_date');
             $table->time('start_time');
             $table->time('end_time')->nullable();

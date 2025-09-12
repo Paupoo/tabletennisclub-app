@@ -27,8 +27,8 @@ return new class extends Migration
         Schema::create('leagues', function (Blueprint $table) {
             $table->id();
             $table->string('division');
-            $table->enum('level', array_column(LeagueLevel::cases(), 'name'));
-            $table->enum('category', array_column(LeagueCategory::cases(), 'name'));
+            $table->string('level');
+            $table->string('category');
             $table->foreignIdFor(Season::class)->constrained();
             $table->timestamps();
         });

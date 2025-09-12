@@ -39,7 +39,7 @@ class UserFactory extends Factory
             'remember_token' => Str::random(10),
             'first_name' => fake()->firstName(),
             'last_name' => fake()->lastName(),
-            'sex' => fake()->randomElement(array_column(Sex::cases(), 'name')),
+            'sex' => fake()->randomElement(array_column(Sex::cases(), 'value')),
             'phone_number' => fake()->numberBetween(460000000, 499000000),
             'birthdate' => fake()->dateTimeBetween('-75 years', '- 8 years'),
             'street' => fake()->streetAddress(),

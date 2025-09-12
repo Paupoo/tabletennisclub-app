@@ -127,7 +127,7 @@
 
             <!-- Contenu de la notification (structure originale avec responsive) -->
             <div class="flex justify-between items-start mt-1 gap-3">
-                <p x-text="notification.message" 
+                <p x-html="notification.message" 
                    class="text-sm sm:text-base flex-1 leading-relaxed break-words"></p>
 
                 <!-- Bouton de fermeture -->

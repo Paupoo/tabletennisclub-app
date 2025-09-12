@@ -41,7 +41,7 @@ class UserController extends Controller
             'user' => new User,
             'teams' => Team::with('league')->get(),
             'rankings' => collect(Ranking::cases())->pluck('name')->toArray(),
-            'sexes' => collect(Sex::cases())->pluck('name')->toArray(),
+            'sexes' => Sex::cases(),
             'breadcrumbs' => $breadcrumbs,
         ]);
     }
@@ -99,7 +99,7 @@ class UserController extends Controller
             'user' => $user,
             'teams' => Team::all(),
             'rankings' => array_column(Ranking::cases(), 'name'),
-            'sexes' => array_column(Sex::cases(), 'name'),
+            'sexes' => Sex::cases(),
             'breadcrumbs' => $breadcrumbs,
         ]);
     }

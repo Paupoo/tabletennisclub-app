@@ -25,7 +25,7 @@ class InviteExistingUserAction
         return redirect()
             ->back()
             ->with([
-                'success' => __('Account created and invitation sent'),
+                'success' => __('Invitation sent to ', ['name' => $user->full_name]),
             ]);
     }
 }

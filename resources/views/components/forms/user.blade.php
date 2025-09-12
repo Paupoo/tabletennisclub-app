@@ -19,11 +19,15 @@
     <x-input-label for="sex" :value="__('Sex')" />
     <x-select-input id="sex" name="sex" class="block w-full mt-1" required autofocus>
         @foreach ($sexes as $sex)
-            <option value="{{ $sex }}" @selected(old('sex', $user?->sex) === $sex)>{{ $sex->getLabel() }}</option>
+            <option value="{{ $sex->value }}" 
+                @selected(old('sex', $user?->sex?->value) === $sex->value)>
+                {{ $sex->getLabel() }}
+            </option>
         @endforeach
     </x-select-input>
     <x-input-error class="mt-2" :messages="$errors->get('sex')" />
 </div>
+
 
 {{-- Email --}}
 <div>

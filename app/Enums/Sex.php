@@ -4,18 +4,18 @@ declare(strict_types=1);
 
 namespace App\Enums;
 
-enum Sex
+enum Sex: string
 {
-    case MEN;
-    case OTHER; // Do not use
-    case WOMEN;
+    case MEN = 'Men';
+    case WOMEN = 'Women';
+    case OTHER = 'Other'; // Do not use
 
     /**
      * Returns the values in an array
      *
      * @return array
      */
-    public function values(): array
+    public static function values(): array
     {
         return array_column(self::cases(), 'value');
     }
@@ -28,9 +28,9 @@ enum Sex
     public function getLabel(): string
     {
         return match ($this) {
-            SELF::MEN => __('Men'),
-            SELF::WOMEN => __('Woman'),
-            SELF::OTHER => __('Other'),
+            self::MEN => __('Men'),
+            self::WOMEN => __('Women'),
+            self::OTHER => __('Other'),
         };
     }
 }

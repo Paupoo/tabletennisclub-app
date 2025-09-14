@@ -15,12 +15,14 @@ class Event extends Model
     // Constantes pour éviter la duplication
     public const CATEGORIES = [
         'club-life' => 'Vie du club',
+        'interclub' => 'Interclub',
         'tournament' => 'Tournoi',
         'training' => 'Entraînement',
     ];
 
     public const ICONS = [
         'club-life' => '🎉',
+        'interclub' => '🏓',
         'tournament' => '🏆',
         'training' => '🎯',
     ];
@@ -138,6 +140,6 @@ class Event extends Model
 
     public function scopeUpcoming(Builder $query): Builder
     {
-        return $query->where('event_date', '>=', now()->startOfDay());
+        return $query->where('start_at', '>=', now()->startOfDay());
     }
 }

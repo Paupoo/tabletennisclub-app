@@ -39,7 +39,7 @@ class UserFactory extends Factory
             'remember_token' => Str::random(10),
             'first_name' => fake()->firstName(),
             'last_name' => fake()->lastName(),
-            'sex' => fake()->randomElement(array_column(Sex::cases(), 'value')),
+            'sex' => fake()->randomElement([Sex::MEN, Sex::WOMEN]),
             'phone_number' => fake()->numberBetween(460000000, 499000000),
             'birthdate' => fake()->dateTimeBetween('-75 years', '- 8 years'),
             'street' => fake()->streetAddress(),
@@ -77,7 +77,7 @@ class UserFactory extends Factory
             return [
                 'is_competitor' => true,
                 'licence' => $unusedLicence,
-                'ranking' => fake()->randomElement(array_column(Ranking::cases(), 'name')),
+                'ranking' => fake()->randomElement([Sex::MEN, Sex::WOMEN]),
             ];
         });
     }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreEventRequest;
 use App\Models\Event;
 use App\Support\Breadcrumb;
 use Illuminate\Http\RedirectResponse;
@@ -171,31 +172,11 @@ class EventController extends Controller
         return view('events', compact('events'));
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(StoreEventRequest $request): RedirectResponse
     {
         $this->authorize('create', Event::class);
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'category' => 'required|in:' . implode(',', array_keys(Event::CATEGORIES)),
-            'status' => 'required|in:' . implode(',', array_keys(Event::STATUSES)),
-            'event_date' => 'required|date',
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'nullable|date_format:H:i|after:start_time',
-            'location' => 'required|string|max:255',
-            'price' => 'nullable|string|max:255',
-            'icon' => 'nullable|string|max:10',
-            'max_participants' => 'nullable|integer|min:1',
-            'notes' => 'nullable|string',
-            'featured' => 'boolean',
-        ]);
-
-        // Si pas d'icône fournie, utiliser l'icône par défaut de la catégorie
-        if (empty($validated['icon'])) {
-            $validated['icon'] = Event::ICONS[$validated['category']] ?? '📅';
-        }
-
-        $event = Event::create($validated);
+        dd($request->validated());
+        $event = Event::create($request->validated());
 
         return redirect()
             ->route('admin.events.show', $event)

@@ -12,6 +12,7 @@ use App\Mail\PoliteDeclineEmail;
 use App\Mail\RequestInfoEmail;
 use App\Mail\WelcomeEmail;
 use App\Models\Contact;
+use App\Policies\ContactPolicy;
 use App\Support\Breadcrumb;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -43,6 +44,8 @@ class ContactAdminController extends Controller
 
     public function index()
     {
+        $this->authorize('viewAny', Contact::class);
+        
         $breadcrumbs = Breadcrumb::make()
             ->home()
             ->contacts()

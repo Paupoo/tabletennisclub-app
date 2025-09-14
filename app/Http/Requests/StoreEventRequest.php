@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Carbon;
 
 class StoreEventRequest extends FormRequest
 {
@@ -25,25 +26,6 @@ class StoreEventRequest extends FormRequest
         ];
     }
 
-    public function rules(): array
-    {
-        return [
-            'title' => 'required|string|max:255',
-            'description' => 'required|string|max:2000',
-            'category' => 'required|in:' . implode(',', array_keys(Event::CATEGORIES)),
-            'status' => 'required|in:' . implode(',', array_keys(Event::STATUSES)),
-            'event_date' => 'required|date|after_or_equal:today',
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'nullable|date_format:H:i|after:start_time',
-            'location' => 'required|string|max:255',
-            'price' => 'nullable|string|max:255',
-            'icon' => 'nullable|string|max:10',
-            'max_participants' => 'nullable|integer|min:1|max:1000',
-            'notes' => 'nullable|string|max:1000',
-            'featured' => 'boolean',
-        ];
-    }
-
     protected function prepareForValidation(): void
     {
         // Si pas d'icône fournie, utiliser l'icône par défaut de la catégorie
@@ -57,5 +39,36 @@ class StoreEventRequest extends FormRequest
         $this->merge([
             'featured' => $this->boolean('featured'),
         ]);
+
+        // Fusion date + heures en datetime
+        if ($this->event_date && $this->start_time) {
+            $this->merge([
+                'start_at' => Carbon::parse($this->event_date . ' ' . $this->start_time)->format('Y-m-d H:i'),
+            ]);
+        }
+
+        if ($this->event_date && $this->end_time) {
+            $this->merge([
+                'end_at' => Carbon::parse($this->event_date . ' ' . $this->end_time)->format('Y-m-d H:i'),
+            ]);
+        }
+    }
+
+    public function rules(): array
+    {
+        return [
+            'title' => 'required|string|max:255',
+            'description' => 'required|string|max:2000',
+            'category' => 'required|string',
+            'status' => 'required|string',
+            'start_at' => 'required|date|after_or_equal:today',
+            'end_at' => 'nullable|date|after:start_time',
+            'address' => 'required|string|max:255',
+            'price' => 'nullable|string|max:255',
+            'icon' => 'nullable|string|max:10',
+            'max_participants' => 'nullable|integer|min:1|max:1000',
+            'notes' => 'nullable|string|max:1000',
+            'featured' => 'boolean',
+        ];
     }
 }

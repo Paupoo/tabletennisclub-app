@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 /**
  * @property int $id
@@ -63,17 +64,24 @@ class Interclub extends Model
 {
     use HasFactory;
 
+    protected $table = 'interclubs';
+
     protected $casts = [
-        'start_date_time' => 'datetime',
+        'total_players' => 'integer',
+        'week_number' => 'integer',
     ];
 
     protected $fillable = [
-        'address',
-        'start_date_time',
+        'week_number',
         'total_players',
         'visited_team_id',
         'visiting_team_id',
     ];
+
+    public function event(): MorphOne
+    {
+        return $this->morphOne(Event::class, 'eventable');
+    }
 
     public function league(): BelongsTo
     {

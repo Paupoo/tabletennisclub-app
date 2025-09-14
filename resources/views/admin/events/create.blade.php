@@ -106,13 +106,13 @@
 
                         <!-- Lieu -->
                         <div>
-                            <label for="location" class="block text-sm font-medium text-gray-700 mb-2">
+                            <label for="address" class="block text-sm font-medium text-gray-700 mb-2">
                                 Lieu *
                             </label>
                             <input type="text" 
-                                   id="location" 
-                                   name="location" 
-                                   value="{{ old('location') }}"
+                                   id="address" 
+                                   name="address" 
+                                   value="{{ old('address') }}"
                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent"
                                    placeholder="Demeester, Salle principale..."
                                    required>
@@ -273,7 +273,7 @@
                                         </div>
                                         <div class="flex items-center space-x-2">
                                             <span>📍</span>
-                                            <span x-text="$refs.location?.value || 'Lieu non défini'"></span>
+                                            <span x-text="$refs.address?.value || 'Lieu non défini'"></span>
                                         </div>
                                         <div class="flex items-center space-x-2" x-show="$refs.price?.value">
                                             <span>💰</span>
@@ -329,7 +329,7 @@
                     <input x-ref="event_date" :value="document.getElementById('event_date').value">
                     <input x-ref="start_time" :value="document.getElementById('start_time').value">
                     <input x-ref="end_time" :value="document.getElementById('end_time').value">
-                    <input x-ref="location" :value="document.getElementById('location').value">
+                    <input x-ref="address" :value="document.getElementById('address').value">
                     <input x-ref="price" :value="document.getElementById('price').value">
                 </div>
             </form>

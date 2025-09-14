@@ -259,13 +259,7 @@
                                         </div>
                                         <div class="ml-4">
                                             <div class="text-sm font-medium text-gray-900">
-                                                @if ($user->sex === \App\Enums\Sex::MEN->name)
-                                                    <span class="text-blue-600 mr-1">♂</span>
-                                                @elseif ($user->sex === \App\Enums\Sex::WOMEN->name)
-                                                    <span class="text-pink-600 mr-1">♀</span>
-                                                @else
-                                                    <span class="text-gray-600 mr-1">⚲</span>
-                                                @endif
+                                                <span class="{{ $user->sex_color }} mr-1">{{ $user->sex_display }}</span>
                                                 {{ $user->first_name }} {{ $user->last_name }}
                                             </div>
                                             <div class="text-sm text-gray-500">
@@ -388,13 +382,6 @@
                                     </div>
                                     <div>
                                         <div class="text-sm font-medium text-gray-900">
-                                            @if ($user->sex === \App\Enums\Sex::MEN->name)
-                                                <span class="text-blue-600 mr-1">♂</span>
-                                            @elseif ($user->sex === \App\Enums\Sex::WOMEN->name)
-                                                <span class="text-pink-600 mr-1">♀</span>
-                                            @else
-                                                <span class="text-gray-600 mr-1">⚲</span>
-                                            @endif
                                             {{ $user->first_name }} {{ $user->last_name }}
                                         </div>
                                         <div class="text-sm text-gray-500">

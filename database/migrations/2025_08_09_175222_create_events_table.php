@@ -24,21 +24,21 @@ return new class extends Migration
         Schema::create('events', function (Blueprint $table) {
             $table->id();
             $table->string('title');
-            $table->text('description');
+            $table->text('description')->nullable();
             $table->enum('category', ['club-life', 'tournament', 'training'])->default('club-life');
             $table->string('status')->default('draft');
-            $table->date('event_date');
-            $table->time('start_time');
-            $table->time('end_time')->nullable();
-            $table->string('location');
+            $table->time('start_at');
+            $table->time('end_at')->nullable();
+            $table->string('address')->nullable();
             $table->string('price')->nullable(); // Peut être "Gratuit", "25€", etc.
             $table->string('icon', 10)->default('📅');
             $table->integer('max_participants')->nullable();
             $table->text('notes')->nullable(); // Notes privées pour les admins
             $table->boolean('featured')->default(false); // Événement mis en avant
+            $table->morphs('eventable'); // crée eventable_id (bigint) + eventable_type (string)
             $table->timestamps();
             // Index pour optimiser les requêtes courantes
-            $table->index(['status', 'event_date']);
+            $table->index(['status', 'start_at']);
             $table->index(['category', 'status']);
         });
     }

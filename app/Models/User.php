@@ -325,4 +325,21 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->belongsToMany(Training::class);
     }
+    public function getSexDisplayAttribute(): string
+    {
+        return match($this->attributes['sex']) {
+            Sex::MEN => '♂',
+            Sex::WOMEN => '♀',
+            default => '⚲'
+        };
+    }
+
+    public function getSexColorAttribute(): string
+    {
+        return match($this->attributes['sex']) {
+            Sex::MEN => 'text-blue-600',
+            Sex::WOMEN => 'text-pink-600',
+            default => 'text-gray-600'
+        };
+    }
 }

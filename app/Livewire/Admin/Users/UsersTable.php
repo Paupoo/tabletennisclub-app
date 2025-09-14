@@ -29,8 +29,8 @@ class UsersTable extends Component
     
     public ?int $selectedUserId = null;
     
-    #[Url(as: 'sex')]
-    public string $sex = '';
+    #[Url(as: 'gender')]
+    public string $gender = '';
     
     #[Url(as: 'sort_field')]
     public string $sortByField = '';
@@ -178,9 +178,9 @@ class UsersTable extends Component
             $query->where('is_competitor', $this->competitor === '1');
         }
 
-        // Filtre sex - vérification que la valeur correspond aux enum
-        if (!empty($this->sex) && $this->sex !== 'all') {
-            $query->where('sex', $this->sex);
+        // Filtre gender - vérification que la valeur correspond aux enum
+        if (!empty($this->gender) && $this->gender !== 'all') {
+            $query->where('gender', $this->gender);
         }
 
         // Filtres de statut - logique améliorée
@@ -265,7 +265,7 @@ class UsersTable extends Component
         $this->resetPage();
     }
 
-    public function updatedSex(): void
+    public function updatedGender(): void
     {
         $this->resetPage();
     }

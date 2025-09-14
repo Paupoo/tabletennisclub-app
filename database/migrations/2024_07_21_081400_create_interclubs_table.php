@@ -27,12 +27,10 @@ return new class extends Migration
     {
         Schema::create('interclubs', function (Blueprint $table) {
             $table->id();
-            $table->string('address', 150);
-            $table->dateTime('start_date_time', 0);
             $table->unsignedTinyInteger('week_number')->nullable();
             $table->unsignedTinyInteger('total_players');
             $table->string('score', 5)->nullable();
-            $table->enum('result', array_column(InterclubResult::cases(), 'value'))->nullable();
+            $table->string('result')->nullable();
             $table->unsignedBigInteger('visited_team_id')->nullable();
             $table->unsignedBigInteger('visiting_team_id')->nullable();
             $table->foreignIdFor(Room::class)->nullable();

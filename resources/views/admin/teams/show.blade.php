@@ -41,9 +41,9 @@
                     <li
                         class="flex justify-center align-middle gap-1 px-4 py-2 bg-white hover:bg-sky-100 hover:text-sky-900 border-b last:border-none border-gray-200 transition-all duration-300 ease-in-out">
                         <img class="rounded-full w-12 h-12 border-4 border-indigo-200 object-cover"
-                            @if ($player->sex === \App\Enums\Sex::MEN->name)
+                            @if ($player->gender === \App\Enums\Gender::MEN->name)
                                 src="{{ asset('images/man.png') }}"
-                            @elseif ($player->sex === \App\Enums\Sex::WOMEN->name)
+                            @elseif ($player->gender === \App\Enums\Gender::WOMEN->name)
                                 src="{{ asset('images/woman.png') }}"
                             @endif 
                         alt="">

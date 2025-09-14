@@ -6,7 +6,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
-use App\Enums\Sex;
+use App\Enums\Gender;
 use Carbon\Carbon;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Contracts\Database\Query\Builder;
@@ -34,7 +34,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property string|null $remember_token
  * @property string $first_name
  * @property string $last_name
- * @property string $sex
+ * @property string $gender
  * @property string|null $phone_number
  * @property \Illuminate\Support\Carbon|null $birthdate
  * @property string|null $street
@@ -88,7 +88,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User wherePhoneNumber($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereRanking($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereRememberToken($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereSex($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereGender($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereStreet($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereUpdatedAt($value)
  *
@@ -113,7 +113,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'password' => 'hashed',
         'first_name' => 'string',
         'last_name' => 'string',
-        'sex' => Sex::class,
+        'gender' => Gender::class,
         'phone_number' => 'string',
         'birthdate' => 'datetime:d-m-Y',
         'street' => 'string',
@@ -146,7 +146,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'password',
         'phone_number',
         'ranking',
-        'sex',
+        'gender',
         'street',
         'avatar_url',
     ];
@@ -325,20 +325,20 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->belongsToMany(Training::class);
     }
-    public function getSexDisplayAttribute(): string
+    public function getGenderDisplayAttribute(): string
     {
-        return match($this->attributes['sex']) {
-            Sex::MEN => '♂',
-            Sex::WOMEN => '♀',
+        return match($this->attributes['gender']) {
+            Gender::MEN->value => '♂',
+            Gender::WOMEN->value => '♀',
             default => '⚲'
         };
     }
 
-    public function getSexColorAttribute(): string
+    public function getGenderColorAttribute(): string
     {
-        return match($this->attributes['sex']) {
-            Sex::MEN => 'text-blue-600',
-            Sex::WOMEN => 'text-pink-600',
+        return match($this->attributes['gender']) {
+            Gender::MEN->value => 'text-blue-600',
+            Gender::WOMEN->value => 'text-pink-600',
             default => 'text-gray-600'
         };
     }

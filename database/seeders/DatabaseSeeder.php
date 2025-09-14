@@ -9,7 +9,7 @@ namespace Database\Seeders;
 use App\Enums\LeagueCategory;
 use App\Enums\LeagueLevel;
 use App\Enums\Ranking;
-use App\Enums\Sex;
+use App\Enums\Gender;
 use App\Models\Club;
 use App\Models\League;
 use App\Models\Room;
@@ -159,7 +159,7 @@ class DatabaseSeeder extends Seeder
             'password' => Hash::make('test1234'),
             'first_name' => 'Aurélien',
             'last_name' => 'Paulus',
-            'sex' => Sex::MEN->value,
+            'gender' => Gender::MEN->value,
             'phone_number' => '0479577502',
             'birthdate' => '1988-08-17 00:00:00',
             'street' => 'Rue de la chapelle 30',
@@ -176,12 +176,12 @@ class DatabaseSeeder extends Seeder
         $password = Hash::make('password');
         // the players
         $players = [
-            ['Olivier', 'Tilmans', Ranking::E6->name, '223344', 'olivier.tilmans@test.com', Sex::MEN->value],
-            ['Xavier', 'Coenen', Ranking::E6->name, '123123', 'xavier.coenen@test.com', Sex::MEN->value],
-            ['Arnaud', 'Ghysens', Ranking::E2->name, '112233', 'arnaud.ghysens@test.com', Sex::MEN->value],
-            ['Éric', 'Godart', Ranking::E0->name, '443211', 'eric.godart@test.com', Sex::MEN->value],
-            ['Sébastien', 'Vandevyver', Ranking::E2->name, '987654', 'seba.vande@test.com', Sex::MEN->value],
-            ['Dariusz', 'Sekula', Ranking::E2->name, '332211', 'dariusz.sekula@test.com', Sex::MEN->value],
+            ['Olivier', 'Tilmans', Ranking::E6->name, '223344', 'olivier.tilmans@test.com', Gender::MEN->value],
+            ['Xavier', 'Coenen', Ranking::E6->name, '123123', 'xavier.coenen@test.com', Gender::MEN->value],
+            ['Arnaud', 'Ghysens', Ranking::E2->name, '112233', 'arnaud.ghysens@test.com', Gender::MEN->value],
+            ['Éric', 'Godart', Ranking::E0->name, '443211', 'eric.godart@test.com', Gender::MEN->value],
+            ['Sébastien', 'Vandevyver', Ranking::E2->name, '987654', 'seba.vande@test.com', Gender::MEN->value],
+            ['Dariusz', 'Sekula', Ranking::E2->name, '332211', 'dariusz.sekula@test.com', Gender::MEN->value],
         ];
 
         foreach ($players as $player) {
@@ -196,7 +196,7 @@ class DatabaseSeeder extends Seeder
                 'remember_token' => Str::random(10),
                 'first_name' => $player[0],
                 'last_name' => $player[1],
-                'sex' => $player[5],
+                'gender' => $player[5],
                 'phone_number' => '047' . fake()->randomNumber(7, true),
                 'birthdate' => fake()->dateTimeBetween('-59 years', '-25 years'),
                 'street' => fake()->streetAddress(),
@@ -228,7 +228,7 @@ class DatabaseSeeder extends Seeder
             'password' => $password,
             'first_name' => 'Thierry',
             'last_name' => 'Regnier',
-            'sex' => Sex::MEN->value,
+            'gender' => Gender::MEN->value,
             'phone_number' => '047' . fake()->randomNumber(7, true),
             'birthdate' => fake()->dateTimeBetween('-59 years', '-25 years'),
             'street' => fake()->streetAddress(),
@@ -248,7 +248,7 @@ class DatabaseSeeder extends Seeder
             'password' => $password,
             'first_name' => 'Manon',
             'last_name' => 'Patigny',
-            'sex' => Sex::WOMEN->value,
+            'gender' => Gender::WOMEN->value,
             'phone_number' => '047' . fake()->randomNumber(7, true),
             'birthdate' => fake()->dateTimeBetween('-59 years', '-25 years'),
             'street' => fake()->streetAddress(),

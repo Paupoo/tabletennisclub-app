@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Enums\Sex;
+use App\Enums\Gender;
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Support\Breadcrumb;
 use Illuminate\Http\RedirectResponse;
@@ -48,7 +48,7 @@ class ProfileController extends Controller
 
         return view('profile.edit', [
             'user' => $request->user(),
-            'sexes' => Sex::cases(),
+            'sexes' => Gender::cases(),
             'breadcrumbs' => $breadcrumbs,
         ]);
     }

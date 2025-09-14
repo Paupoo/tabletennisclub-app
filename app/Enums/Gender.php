@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Enums;
 
-enum Sex: string
+enum Gender: string
 {
-    case MEN = 'men';
-    case WOMEN = 'women';
-    case OTHER = 'other'; // Do not use
+    case MEN = 'MEN';
+    case WOMEN = 'WOMEN';
+    case OTHER = 'OTHER'; // Do not use
 
     /**
      * Returns the values in an array

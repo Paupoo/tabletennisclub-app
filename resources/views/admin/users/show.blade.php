@@ -8,9 +8,9 @@
                     <!-- Photo de profil -->
                     <div class="flex-shrink-0">
                        <img class="rounded-full w-16 h-16 sm:w-20 sm:h-20 border-4 border-club-blue object-cover"
-                            @if ($user->sex == \App\Enums\Sex::MEN->name) 
+                            @if ($user->gender == \App\Enums\Gender::MEN->name) 
                                 src="{{ asset('images/man.png') }}"
-                            @elseif ($user->sex == \App\Enums\Sex::WOMEN->name)
+                            @elseif ($user->gender == \App\Enums\Gender::WOMEN->name)
                                 src="{{ asset('images/woman.png') }}"
                             @endif
                             alt="Photo de profil">
@@ -23,9 +23,9 @@
                                 {{ $user->first_name }} {{ $user->last_name }}
                             </h2>
                             <span class="text-lg text-gray-600">
-                                @if ($user->sex == \App\Enums\Sex::MEN->name)
+                                @if ($user->gender == \App\Enums\Gender::MEN->name)
                                     &#9794;
-                                @elseif ($user->sex == \App\Enums\Sex::WOMEN->name)
+                                @elseif ($user->gender == \App\Enums\Gender::WOMEN->name)
                                     &#9792;
                                 @endif
                             </span>

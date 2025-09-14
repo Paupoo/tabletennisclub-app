@@ -31,14 +31,14 @@
                         </select>
                     </div>
 
-                    <!-- Sexe -->
+                    <!-- Gender -->
                     <div class="flex items-center space-x-2">
-                        <label class="text-sm font-medium text-gray-700 whitespace-nowrap">{{ __('Sex') }}</label>
-                        <select wire:model.live="sex" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-club-blue focus:border-club-blue">
+                        <label class="text-sm font-medium text-gray-700 whitespace-nowrap">{{ __('Gender') }}</label>
+                        <select wire:model.live="gender" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-club-blue focus:border-club-blue">
                             <option value="">{{ __('All') }}</option>
-                            <option value="{{ \App\Enums\Sex::WOMEN->name }}">{{ __('Women') }}</option>
-                            <option value="{{ \App\Enums\Sex::MEN->name }}">{{ __('Men') }}</option>
-                            <option value="{{ \App\Enums\Sex::OTHER->name }}">{{ __('Others') }}</option>
+                            <option value="{{ \App\Enums\Gender::WOMEN->name }}">{{ __('Women') }}</option>
+                            <option value="{{ \App\Enums\Gender::MEN->name }}">{{ __('Men') }}</option>
+                            <option value="{{ \App\Enums\Gender::OTHER->name }}">{{ __('Others') }}</option>
                         </select>
                     </div>
 
@@ -259,7 +259,7 @@
                                         </div>
                                         <div class="ml-4">
                                             <div class="text-sm font-medium text-gray-900">
-                                                <span class="{{ $user->sex_color }} mr-1">{{ $user->sex_display }}</span>
+                                                <span class="{{ $user->gender_color }} mr-1">{{ $user->gender_display }}</span>
                                                 {{ $user->first_name }} {{ $user->last_name }}
                                             </div>
                                             <div class="text-sm text-gray-500">

@@ -14,18 +14,18 @@
     <x-input-error class="mt-2" :messages="$errors->get('last_name')" />
 </div>
 
-{{-- Sex --}}
+{{-- Gender --}}
 <div>
-    <x-input-label for="sex" :value="__('Sex')" />
-    <x-select-input id="sex" name="sex" class="block w-full mt-1" required autofocus>
-        @foreach ($sexes as $sex)
-            <option value="{{ $sex->value }}" 
-                @selected(old('sex', $user?->sex?->value) === $sex->value)>
-                {{ $sex->getLabel() }}
+    <x-input-label for="gender" :value="__('Gender')" />
+    <x-select-input id="gender" name="gender" class="block w-full mt-1" required autofocus>
+        @foreach ($genders as $gender)
+            <option value="{{ $gender->value }}" 
+                @selected(old('gender', $user->gender?->value) === $gender->value)>
+                {{ $gender->getLabel() }}
             </option>
         @endforeach
     </x-select-input>
-    <x-input-error class="mt-2" :messages="$errors->get('sex')" />
+    <x-input-error class="mt-2" :messages="$errors->get('gender')" />
 </div>
 
 
@@ -138,7 +138,7 @@
 
             @foreach ($teams as $team)
                 <option value="{{ $team->id }}" @selected(old('team_id', $user?->team_id) === (string) $team->id)>
-                    {{ $team?->season?->name . ' | ' . $team->league?->level . ' | ' . $team?->league->division . ' | ' . $team->name }}
+                    {{ $team?->season?->name . ' | ' . $team->league?->level->getLabel() . ' | ' . $team?->league->division . ' | ' . $team->name }}
                 </option>
             @endforeach
         </x-select-input>

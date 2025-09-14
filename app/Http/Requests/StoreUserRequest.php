@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests;
 
 use App\Enums\Ranking;
-use App\Enums\Sex;
+use App\Enums\Gender;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
@@ -62,7 +62,7 @@ class StoreUserRequest extends FormRequest
                     Rule::in($rankings_enum),
                 ),
             ],
-            'sex' => ['required', Rule::in(collect(Sex::cases())->pluck('name'))],
+            'gender' => ['required', Rule::in(collect(Gender::cases())->pluck('name'))],
             'street' => ['nullable', 'string'],
             'team_id' => ['nullable', 'exists:teams,id'],
         ];

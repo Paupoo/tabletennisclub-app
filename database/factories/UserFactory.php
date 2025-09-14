@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Database\Factories;
 
 use App\Enums\Ranking;
-use App\Enums\Sex;
+use App\Enums\Gender;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -39,7 +39,7 @@ class UserFactory extends Factory
             'remember_token' => Str::random(10),
             'first_name' => fake()->firstName(),
             'last_name' => fake()->lastName(),
-            'sex' => fake()->randomElement([Sex::MEN, Sex::WOMEN]),
+            'gender' => fake()->randomElement([Gender::MEN, Gender::WOMEN]),
             'phone_number' => fake()->numberBetween(460000000, 499000000),
             'birthdate' => fake()->dateTimeBetween('-75 years', '- 8 years'),
             'street' => fake()->streetAddress(),
@@ -77,7 +77,7 @@ class UserFactory extends Factory
             return [
                 'is_competitor' => true,
                 'licence' => $unusedLicence,
-                'ranking' => fake()->randomElement([Sex::MEN, Sex::WOMEN]),
+                'ranking' => fake()->randomElement([Gender::MEN, Gender::WOMEN]),
             ];
         });
     }

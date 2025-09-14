@@ -27,7 +27,7 @@ test('email verification status is unchanged when the email address is unchanged
         ->patch('/profile', [
             'first_name' => 'John',
             'last_name' => 'Doe',
-            'sex' => 'MEN',
+            'gender' => 'MEN',
             'email' => $user->email,
         ]);
 
@@ -45,7 +45,7 @@ test('profile information can be updated', function (): void {
         ->patch('/profile', [
             'last_name' => 'Doe',
             'first_name' => 'John',
-            'sex' => 'WOMEN',
+            'gender' => 'WOMEN',
             'email' => 'test@example.com',
         ]);
 

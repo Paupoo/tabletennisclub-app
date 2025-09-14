@@ -6,7 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\User\ToggleHasPaidMembershipAction;
 use App\Enums\Ranking;
-use App\Enums\Sex;
+use App\Enums\Gender;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\Team;
@@ -41,7 +41,7 @@ class UserController extends Controller
             'user' => new User,
             'teams' => Team::with('league')->get(),
             'rankings' => collect(Ranking::cases())->pluck('name')->toArray(),
-            'sexes' => Sex::cases(),
+            'sexes' => Gender::cases(),
             'breadcrumbs' => $breadcrumbs,
         ]);
     }
@@ -62,7 +62,7 @@ class UserController extends Controller
         $this->authorize('delete', $user);
 
         if ($user->tournaments()->whereIn('status', ['draft', 'open', 'pending'])->count() > 0) {
-            $personalPronoum = $user->sex === Sex::WOMEN->name
+            $personalPronoum = $user->gender === Gender::WOMEN->name
                 ? 'she'
                 : 'he';
                 
@@ -99,7 +99,7 @@ class UserController extends Controller
             'user' => $user,
             'teams' => Team::all(),
             'rankings' => array_column(Ranking::cases(), 'name'),
-            'sexes' => Sex::cases(),
+            'genders' => Gender::cases(),
             'breadcrumbs' => $breadcrumbs,
         ]);
     }
@@ -137,10 +137,10 @@ class UserController extends Controller
                 ->where('birthdate', '>', now()->subYears(18))
                 ->count(),
             'totalWomen' => User::isActive()
-                ->where('sex', Sex::WOMEN)
+                ->where('gender', Gender::WOMEN)
                 ->count(),
             'totalMen' => User::isActive()
-                ->where('sex', Sex::MEN)
+                ->where('gender', Gender::MEN)
                 ->count(),
             'totalVeterans' => User::isActive()
                 ->isCompetitor()

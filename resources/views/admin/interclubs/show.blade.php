@@ -90,16 +90,16 @@
                             <li
                                 class="flex justify-center align-middle gap-1 px-4 py-2 bg-white hover:bg-sky-100 hover:text-sky-900 border-b last:border-none border-gray-200 transition-all duration-300 ease-in-out">
                                 <img class="rounded-full w-12 h-12 border-4 border-indigo-200 object-cover"
-                                    @if ($user->sex == \App\Enums\Sex::MEN->name) src="{{ asset('images/man.png') }}"
-                            @elseif ($user->sex == \App\Enums\Sex::WOMEN->name)
+                                    @if ($user->gender == \App\Enums\Gender::MEN->name) src="{{ asset('images/man.png') }}"
+                            @elseif ($user->gender == \App\Enums\Gender::WOMEN->name)
                                 src="{{ asset('images/woman.png') }}" alt="" @endif>
                                 <div class="my-auto">
                                     {{ $user->first_name . ' ' . $user->last_name }}
                                 </div>
                                 <div class="">
-                                    @if ($user->sex == \App\Enums\Sex::MEN->name)
+                                    @if ($user->gender == \App\Enums\Gender::MEN->name)
                                         &#9794;
-                                    @elseif ($user->sex == \App\Enums\Sex::WOMEN->name)
+                                    @elseif ($user->gender == \App\Enums\Gender::WOMEN->name)
                                         &#9792;
                                     @endif
                                 </div>
@@ -185,16 +185,16 @@
                             <li
                                 class="flex justify-center align-middle gap-1 px-4 py-2 bg-white hover:bg-sky-100 hover:text-sky-900 border-b last:border-none border-gray-200 transition-all duration-300 ease-in-out">
                                 <img class="rounded-full w-12 h-12 border-4 border-indigo-200 object-cover"
-                                    @if ($user->sex == \App\Enums\Sex::MEN->name) src="{{ asset('images/man.png') }}"
-                            @elseif ($user->sex == \App\Enums\Sex::WOMEN->name)
+                                    @if ($user->gender == \App\Enums\Gender::MEN->name) src="{{ asset('images/man.png') }}"
+                            @elseif ($user->gender == \App\Enums\Gender::WOMEN->name)
                                 src="{{ asset('images/woman.png') }}" alt="" @endif>
                                 <div class="my-auto">
                                     {{ $user->first_name . ' ' . $user->last_name }}
                                 </div>
                                 <div class="">
-                                    @if ($user->sex == \App\Enums\Sex::MEN->name)
+                                    @if ($user->gender == \App\Enums\Gender::MEN->name)
                                         &#9794;
-                                    @elseif ($user->sex == \App\Enums\Sex::WOMEN->name)
+                                    @elseif ($user->gender == \App\Enums\Gender::WOMEN->name)
                                         &#9792;
                                     @endif
                                 </div>
@@ -281,16 +281,16 @@
                             <li
                                 class="flex justify-center align-middle gap-1 px-4 py-2 bg-white hover:bg-sky-100 hover:text-sky-900 border-b last:border-none border-gray-200 transition-all duration-300 ease-in-out">
                                 <img class="rounded-full w-12 h-12 border-4 border-indigo-200 object-cover"
-                                    @if ($user->sex == \App\Enums\Sex::MEN->name) src="{{ asset('images/man.png') }}"
-                            @elseif ($user->sex == \App\Enums\Sex::WOMEN->name)
+                                    @if ($user->gender == \App\Enums\Gender::MEN->name) src="{{ asset('images/man.png') }}"
+                            @elseif ($user->gender == \App\Enums\Gender::WOMEN->name)
                                 src="{{ asset('images/woman.png') }}" alt="" @endif>
                                 <div class="my-auto">
                                     {{ $user->first_name . ' ' . $user->last_name }}
                                 </div>
                                 <div class="">
-                                    @if ($user->sex == \App\Enums\Sex::MEN->name)
+                                    @if ($user->gender == \App\Enums\Gender::MEN->name)
                                         &#9794;
-                                    @elseif ($user->sex == \App\Enums\Sex::WOMEN->name)
+                                    @elseif ($user->gender == \App\Enums\Gender::WOMEN->name)
                                         &#9792;
                                     @endif
                                 </div>

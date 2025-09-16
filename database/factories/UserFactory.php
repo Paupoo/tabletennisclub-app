@@ -77,7 +77,10 @@ class UserFactory extends Factory
             return [
                 'is_competitor' => true,
                 'licence' => $unusedLicence,
-                'ranking' => fake()->randomElement([Gender::MEN, Gender::WOMEN]),
+                'ranking' => collect(Ranking::cases())
+                    ->reject(fn ($case) => $case->name === "NA")
+                    ->pluck('name')
+                    ->random(),
             ];
         });
     }

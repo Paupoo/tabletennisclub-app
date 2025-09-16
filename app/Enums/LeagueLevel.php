@@ -6,9 +6,9 @@ namespace App\Enums;
 
 enum LeagueLevel: string
 {
-    case NATIONAL = 'national';
-    case PROVINCIAL_BW = 'provincial_bw';
-    case REGIONAL = 'regional';
+    case NATIONAL = 'NATIONAL';
+    case PROVINCIAL_BW = 'PROVINCIAL_BW';
+    case REGIONAL = 'REGIONAL';
 
     public function getLabel(): string
     {

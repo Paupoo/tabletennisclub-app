@@ -179,6 +179,8 @@ class TeamController extends Controller
      */
     public function saveTeams(Request $request): RedirectResponse
     {
+        $club = Club::where('licence', config('app.club_licence'))->first();
+        
         $seasonId = $request->season_id;
         // Looping for each team
         foreach ($request->teams as $teamName => $data) {
@@ -210,6 +212,7 @@ class TeamController extends Controller
             ]);
 
             $team->league()->associate($league->id)->save();
+            $team->club()->associate($club->id)->save();
         }
 
         return redirect()->route('teams.index')->with('success', sprintf('New teams for the season %s have been created.', Season::find($seasonId)->name));

@@ -90,7 +90,7 @@ class DatabaseSeeder extends Seeder
             'city_name' => 'Perwez',
         ]);
 
-        Season::factory(10)->create();
+        Season::factory(11)->create();
 
         League::create([
             'division' => '5E',
@@ -165,7 +165,7 @@ class DatabaseSeeder extends Seeder
             'street' => 'Rue de la chapelle 30',
             'city_code' => '1340',
             'city_name' => 'Ottignies',
-            'ranking' => Ranking::E4->name,
+            'ranking' => Ranking::E2->name,
             'licence' => '114399',
         ])->club()->associate(Club::firstWhere('licence', config('app.club_licence')));
         $admin->save();
@@ -176,12 +176,39 @@ class DatabaseSeeder extends Seeder
         $password = Hash::make('password');
         // the players
         $players = [
-            ['Olivier', 'Tilmans', Ranking::E6->name, '223344', 'olivier.tilmans@test.com', Gender::MEN->value],
-            ['Xavier', 'Coenen', Ranking::E6->name, '123123', 'xavier.coenen@test.com', Gender::MEN->value],
-            ['Arnaud', 'Ghysens', Ranking::E2->name, '112233', 'arnaud.ghysens@test.com', Gender::MEN->value],
-            ['Éric', 'Godart', Ranking::E0->name, '443211', 'eric.godart@test.com', Gender::MEN->value],
-            ['Sébastien', 'Vandevyver', Ranking::E2->name, '987654', 'seba.vande@test.com', Gender::MEN->value],
-            ['Dariusz', 'Sekula', Ranking::E2->name, '332211', 'dariusz.sekula@test.com', Gender::MEN->value],
+            ['AUGUSTIN', 'DOCQUIER', 'C0', '101683', 'augustin.docquier@test.com', Gender::MEN->value],
+            ['BENOIT', 'KUNSCH', 'C0', '100696', 'benoit.kunsch@test.com', Gender::MEN->value],
+            ['OLIVIER', 'PAUWELS', 'C0', '138942', 'olivier.pauwels@test.com', Gender::MEN->value],
+            ['MATHIEU', 'RENIERS', 'C0', '143164', 'mathieu.reniers@test.com', Gender::MEN->value],
+            ['SAMUEL', 'ALEXANDRE-MARTIN', 'C2', '166036', 'samuel.alexandre-martin@test.com', Gender::MEN->value],
+            ['PIERRE OLIVIER', 'BERTRAND', 'C4', '132472', 'pierre-olivier.bertrand@test.com', Gender::MEN->value],
+            ['JEAN', 'DOCQUIER', 'C4', '115989', 'jean.docquier@test.com', Gender::MEN->value],
+            ['SIMON', 'IZZARD', 'C6', '100837', 'simon.izzard@test.com', Gender::MEN->value],
+            ['ERIC', 'FILEE', 'D0', '101675', 'eric.filee@test.com', Gender::MEN->value],
+            ['PHILIPPE', 'JACQUERYE', 'D0', '106329', 'philippe.jacquerye@test.com', Gender::MEN->value],
+            ['PIERRE', 'NYST', 'D0', '102487', 'pierre.nyst@test.com', Gender::MEN->value],
+            ['GILLES', 'HERPIGNY', 'D2', '103647', 'gilles.herpigny@test.com', Gender::MEN->value],
+            ['MANON', 'PATINY', 'D2', '103867', 'manon.patiny@test.com', Gender::WOMEN->value],
+            ['JEAN LOUIS', 'WAROQUET', 'D4', '102396', 'jean-louis.waroquet@test.com', Gender::MEN->value],
+            ['ERIC', 'GODARD', 'D6', '171075', 'eric.godard@test.com', Gender::MEN->value],
+            ['DARIUSZ', 'SEKULA', 'D6', '164838', 'dariusz.sekula@test.com', Gender::MEN->value],
+            ['MICHEL', 'DARDENNE', 'E0', '104175', 'michel.dardenne@test.com', Gender::MEN->value],
+            ['VINCENT', 'MARLAIR', 'E0', '109273', 'vincent.marlair@test.com', Gender::MEN->value],
+            ['THIERRY', 'RENIERS', 'E0', '149689', 'thierry.reniers@test.com', Gender::MEN->value],
+            ['ARNAUD', 'GHYSENS', 'E2', '107028', 'arnaud.ghysens@test.com', Gender::MEN->value],
+            ['JEAN-PIERRE', 'VAN OUDENHOVE', 'E2', '173945', 'jean-pierre.vanoudenhove@test.com', Gender::MEN->value],
+            ['SEBASTIEN', 'VANDEVYVER', 'E2', '149043', 'sebastien.vandevyver@test.com', Gender::MEN->value],
+            ['XAVIER', 'COENEN', 'E4', '168706', 'xavier.coenen@test.com', Gender::MEN->value],
+            ['AUDREY', 'DE SCHRIJVER', 'E4', '133097', 'audrey.de-schrijver@test.com', Gender::WOMEN->value],
+            ['PIERRE', 'LAFLEUR', 'E6', '172352', 'pierre.lafleur@test.com', Gender::MEN->value],
+            ['HUGO', 'VAN OUDENHOVE', 'E6', '173944', 'hugo.vanoudenhove@test.com', Gender::MEN->value],
+            ['KARL', 'VANDERHULST', 'E6', '107092', 'karl.vanderhulst@test.com', Gender::MEN->value],
+            ['JULIEN', 'VERKAEREN', 'E6', '159558', 'julien.verkaeren@test.com', Gender::MEN->value],
+            ['DIEGO', 'DESWYSEN', 'NC', '174724', 'diego.deswysen@test.com', Gender::MEN->value],
+            ['FELIX', 'FINK', 'NC', '171974', 'felix.fink@test.com', Gender::MEN->value],
+            ['ARTHUR', 'JANSSEN', 'NC', '174337', 'arthur.janssen@test.com', Gender::MEN->value],
+            ['HECTOR', 'LOIX', 'NC', '172446', 'hector.loix@test.com', Gender::MEN->value],
+            ['EMILIEN', 'VANDERBIST', 'NC', '176388', 'emilien.vanderbist@test.com', Gender::MEN->value],
         ];
 
         foreach ($players as $player) {
@@ -209,54 +236,50 @@ class DatabaseSeeder extends Seeder
             $player->teams()->attach(Team::firstWhere('name', 'Z'));
 
             // Promote Oliver captain of team Z
-            if ($player->licence === '223344') {
+            if ($player->licence === '173945') {
                 $teamZ->update([
                     'captain_id' => $player->id,
                 ]);
             }
         }
 
-        // Add some random users
+        // Promote some committee members
 
-        User::make([
-            'is_active' => true,
-            'is_admin' => false,
-            'is_committee_member' => true,
-            'is_competitor' => true,
-            'email' => 'thierry.regnier@test.com',
-            'email_verified_at' => now(),
-            'password' => $password,
-            'first_name' => 'Thierry',
-            'last_name' => 'Regnier',
-            'gender' => Gender::MEN->value,
-            'phone_number' => '047' . fake()->randomNumber(7, true),
-            'birthdate' => fake()->dateTimeBetween('-59 years', '-25 years'),
-            'street' => fake()->streetAddress(),
-            'city_code' => fake()->postcode(),
-            'city_name' => fake()->city(),
-            'ranking' => Ranking::D6->name,
-            'licence' => '154856',
-        ])->club()->associate(Club::firstWhere('licence', config('app.club_licence')))->save();
+        $committeeMembers = [
+            [
+                'first_name' => 'Thierry',
+                'last_name' => 'Regnier',
+            ],
+            [
+                'first_name' => 'Manon',
+                'last_name' => 'Patiny',
+            ],
+            [
+                'first_name' => 'Olivier',
+                'last_name' => 'Pauwels',
+            ],
+            [
+                'first_name' => 'Gilles',
+                'last_name' => 'Herpigny',
+            ],
+            [
+                'first_name' => 'Éric',
+                'last_name' => 'Godart',
+            ],
+            [
+                'first_name' => 'Jean-Pierre',
+                'last_name' => 'Van Oudenhove',
+            ],
+        ];
 
-        User::make([
-            'is_active' => true,
-            'is_admin' => false,
-            'is_committee_member' => true,
-            'is_competitor' => true,
-            'email' => 'manon.patigny@test.com',
-            'email_verified_at' => now(),
-            'password' => $password,
-            'first_name' => 'Manon',
-            'last_name' => 'Patigny',
-            'gender' => Gender::WOMEN->value,
-            'phone_number' => '047' . fake()->randomNumber(7, true),
-            'birthdate' => fake()->dateTimeBetween('-59 years', '-25 years'),
-            'street' => fake()->streetAddress(),
-            'city_code' => fake()->postcode(),
-            'city_name' => fake()->city(),
-            'ranking' => Ranking::D4->name,
-            'licence' => '852364',
-        ])->club()->associate(Club::first())->save();
+        foreach($committeeMembers as $member){
+
+            User::where('first_name', $member['first_name'])
+            ->where('last_name', $member['last_name'])
+            ->update([
+                'is_committee_member' => true,
+            ]);
+        }
 
         User::factory()->isNotCompetitor()->count(5)->create();
 
@@ -267,6 +290,18 @@ class DatabaseSeeder extends Seeder
         User::factory()->isNotCompetitor()->count(2)->create([
             'ranking' => 'NC',
         ]);
+
+        // Créer 25 users non compétiteurs
+        User::factory()
+            ->isNotCompetitor()
+            ->count(25)
+            ->create();
+
+        // Créer 25 compétiteurs
+        // User::factory()
+        //     ->isCompetitor()
+        //     ->count(25)
+        //     ->create();
 
         // Set ForceIndexes
         $this->forceList->setOrUpdateAll();
@@ -319,11 +354,6 @@ class DatabaseSeeder extends Seeder
         foreach ($rooms as $room) {
             $this->tableService->updateTablesCount($room);
         }
-
-        User::factory()
-            ->isNotCompetitor()
-            ->count(100)
-            ->create();
 
         // Gestion du tournoi
         Tournament::factory(3)->create();

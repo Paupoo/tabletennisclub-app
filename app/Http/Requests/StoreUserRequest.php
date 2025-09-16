@@ -67,4 +67,11 @@ class StoreUserRequest extends FormRequest
             'team_id' => ['nullable', 'exists:teams,id'],
         ];
     }
+
+    public function messages(): array
+    {
+        return [
+            'licence.unique' => __('The licence is already used'),
+        ];
+    }
 }

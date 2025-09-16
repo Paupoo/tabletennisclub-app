@@ -27,7 +27,8 @@ class UpdateUserRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'ranking' => __('The ranking field is required and if the user is a competitor, it can\'t be "NA".'),
+            'ranking' => __('The ranking field is required and if the user is a competitor, it can\'t be "NA"'),
+            'licence.unique' => __('The licence is already used'),
         ];
     }
 

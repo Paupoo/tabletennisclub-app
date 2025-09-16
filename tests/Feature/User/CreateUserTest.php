@@ -93,7 +93,7 @@ test('licence is not already taken', function (): void {
         ->assertInvalid('licence')
         ->assertRedirect(route('users.create'))
         ->assertSessionHasErrors([
-            'licence' => 'The licence has already been taken.',
+            'licence' => __('The licence is already used'),
         ]);
 });
 test('member cannot create new member', function (): void {

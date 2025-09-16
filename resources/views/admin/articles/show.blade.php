@@ -75,7 +75,7 @@
                 </a>
 
                 @if($article->is_public && $article->status->value === 'published')
-                    <a href="{{ route('articles.show', $article->slug) }}" 
+                    <a href="{{ route('admin.articles.show', $article) }}" 
                        target="_blank"
                        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base inline-flex items-center justify-center">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

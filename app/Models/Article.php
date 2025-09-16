@@ -38,6 +38,11 @@ class Article extends Model
         'user_id',
     ];
 
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+    
     public function scopeSearch($query, $value): void
     {
         $query->where('title', 'like', '%' . $value . '%')

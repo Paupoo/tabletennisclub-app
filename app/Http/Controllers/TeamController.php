@@ -401,6 +401,7 @@ class TeamController extends Controller
     {
         $this->competitors = User::where('is_competitor', '=', true)
             ->orderby('force_list', 'asc')
+            ->orderBy('ranking', 'asc')
             ->orderby('last_name', 'asc')
             ->orderby('first_name', 'asc')
             ->get();

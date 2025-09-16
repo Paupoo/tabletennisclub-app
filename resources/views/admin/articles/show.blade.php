@@ -75,13 +75,13 @@
                 </a>
 
                 @if($article->is_public && $article->status->value === 'published')
-                    <a href="{{ route('admin.articles.show', $article) }}" 
+                    <a href="{{ route('public.articles.show', $article) }}" 
                        target="_blank"
                        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base inline-flex items-center justify-center">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
                         </svg>
-                        Voir sur le site
+                        {{ __('See on the website') }}
                     </a>
                 @endif
 

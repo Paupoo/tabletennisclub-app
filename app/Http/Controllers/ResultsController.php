@@ -65,9 +65,7 @@ class ResultsController extends Controller
                 'stats' => ['played' => 1, 'wins' => 0, 'losses' => 1, 'win_rate' => 0]
             ],
         ];
-
-        $teams = [];
-
+        
         return view('public.results', compact('teams', 'seasons', 'selectedSeason'));
     }
 }

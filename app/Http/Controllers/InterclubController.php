@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Enums\InterclubAvailability;
 use App\Enums\LeagueCategory;
 use App\Http\Requests\StoreInterclubRequest;
 use App\Models\Club;
@@ -16,6 +17,7 @@ use App\Support\Breadcrumb;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
@@ -23,12 +25,14 @@ class InterclubController extends Controller
 {
     protected $interclubService;
 
+    private int $totalPlayersNeeded = 4;
+
     public function __construct(InterclubService $interclubService)
     {
         $this->interclubService = $interclubService;
     }
 
-    public function addToSelection(Interclub $interclub, User $user): RedirectResponse
+    public function selectPlayer(Interclub $interclub, User $user): RedirectResponse
     {
         /**
          * to do : check if allowed, make a function for this
@@ -43,6 +47,62 @@ class InterclubController extends Controller
 
         return redirect()->route('interclubs.show', $interclub)->with('success', __($user->last_name . ' ' . $user->first_name . ' have been selected for the interclub.'));
 
+    }
+
+    public function confirmSelection(): void
+    {
+        // To do : create a confirmation email
+        // invoke it via the queue
+    }
+
+    public function deselectPlayer(): void
+    {
+        // to do
+    }
+
+    public function updateAvailability(Interclub $interclub, User $user, InterclubAvailability $availability): void
+    {
+        // to do
+            // Validate input
+            // Right logic to update status
+    }
+
+    /**
+     * A function to get the status of the selection (Green, yellow, orange or red)
+     *
+     * @param Interclub $interclub
+     * @return string
+     */
+    public function getSelectionStatus(Interclub $interclub): string
+    {
+        // Récupérer le nombre de joueurs qui souhaitent jouer
+        $totalPlayersWillingToPlay = (int) 0;
+    
+        // Si 4 joueurs ou plus veulent jouer : green
+        if ($totalPlayersWillingToPlay >= 4) {
+            return 'green';
+        }     
+
+        $totalMisisngPlayers = $this->totalPlayersNeeded - $totalPlayersWillingToPlay;
+        // Récupérer le nombre de joueurs disponibles pour jouer
+        $playersAvailableToPlay = 0;
+        // If less missing players than available players
+        if ($totalMisisngPlayers <= $playersAvailableToPlay) {
+            return 'yellow';
+        }
+
+        if ($totalMisisngPlayers > $playersAvailableToPlay) {
+            
+        }
+
+        // 
+
+        return 'red';
+    }
+
+    public function getEligiblePlayers(): Collection
+    {
+        // to do
     }
 
     /**

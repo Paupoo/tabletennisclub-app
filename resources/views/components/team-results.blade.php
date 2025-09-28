@@ -53,7 +53,7 @@
                 <div class="text-sm text-gray-600">Défaites</div>
             </div>
             <div class="text-center p-3 bg-gray-50 rounded-lg">
-                <div class="text-2xl font-bold text-club-yellow">{{ $team['stats']['win_rate'] }}%</div>
+                <div class="text-2xl font-bold text-club-blue">{{ $team['stats']['win_rate'] }}%</div>
                 <div class="text-sm text-gray-600">Taux de Victoire</div>
             </div>
         </div>

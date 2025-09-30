@@ -27,13 +27,13 @@
 
             <form action="{{ route('admin.events.store') }}" method="POST" 
                   x-data="{ 
-                      category: '{{ old('category', 'club-life') }}',
-                      status: '{{ old('status', 'draft') }}',
+                      type: '{{ old('type') }}',
+                      status: '{{ old('status', 'DRAFT') }}',
                       icons: @js(\App\Models\Event::ICONS),
                       showPreview: false,
                       updateIcon() {
-                          if (this.icons[this.category]) {
-                              this.$refs.iconInput.value = this.icons[this.category];
+                          if (this.icons[this.type]) {
+                              this.$refs.iconInput.value = this.icons[this.type];
                           }
                       }
                   }" 
@@ -73,17 +73,17 @@
                         <!-- Catégorie et Icône -->
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label for="category" class="block text-sm font-medium text-gray-700 mb-2">
-                                    Catégorie *
+                                <label for="type" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Type *
                                 </label>
-                                <select id="category" 
-                                        name="category" 
-                                        x-model="category"
+                                <select id="type" 
+                                        name="type" 
+                                        x-model="type"
                                         @change="updateIcon()"
                                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent"
                                         required>
-                                    @foreach(\App\Models\Event::CATEGORIES as $key => $label)
-                                        <option value="{{ $key }}">{{ $label }}</option>
+                                    @foreach(\App\Enums\EventTypeEnum::cases() as $type)
+                                        <option value="{{ $type->value }}">{{ $type->getLabel() }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -106,13 +106,13 @@
 
                         <!-- Lieu -->
                         <div>
-                            <label for="location" class="block text-sm font-medium text-gray-700 mb-2">
+                            <label for="address" class="block text-sm font-medium text-gray-700 mb-2">
                                 Lieu *
                             </label>
                             <input type="text" 
-                                   id="location" 
-                                   name="location" 
-                                   value="{{ old('location') }}"
+                                   id="address" 
+                                   name="address" 
+                                   value="{{ old('address') }}"
                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent"
                                    placeholder="Demeester, Salle principale..."
                                    required>
@@ -137,13 +137,13 @@
                     <div class="space-y-6">
                         <!-- Date et heures -->
                         <div>
-                            <label for="event_date" class="block text-sm font-medium text-gray-700 mb-2">
+                            <label for="start_at" class="block text-sm font-medium text-gray-700 mb-2">
                                 Date de l'événement *
                             </label>
                             <input type="date" 
-                                   id="event_date" 
-                                   name="event_date" 
-                                   value="{{ old('event_date') }}"
+                                   id="start_at" 
+                                   name="start_at" 
+                                   value="{{ old('start_at') }}"
                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent"
                                    required>
                         </div>
@@ -183,8 +183,8 @@
                                     x-model="status"
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent"
                                     required>
-                                @foreach(\App\Models\Event::STATUSES as $key => $label)
-                                    <option value="{{ $key }}">{{ $label }}</option>
+                                @foreach(\App\Enums\EventStatusEnum::cases() as $status)
+                                    <option value="{{ $status->name }}">{{ $status->getLabel() }}</option>
                                 @endforeach
                             </select>
                             <p class="text-xs text-gray-500 mt-1">
@@ -265,7 +265,7 @@
                                     <div class="space-y-2 text-sm text-gray-500">
                                         <div class="flex items-center space-x-2">
                                             <span>📅</span>
-                                            <span x-text="$refs.event_date?.value ? new Date($refs.event_date.value).toLocaleDateString('fr-FR') : 'Date non définie'"></span>
+                                            <span x-text="$refs.start_at?.value ? new Date($refs.start_at.value).toLocaleDateString('fr-FR') : 'Date non définie'"></span>
                                         </div>
                                         <div class="flex items-center space-x-2">
                                             <span>⏰</span>
@@ -273,7 +273,7 @@
                                         </div>
                                         <div class="flex items-center space-x-2">
                                             <span>📍</span>
-                                            <span x-text="$refs.location?.value || 'Lieu non défini'"></span>
+                                            <span x-text="$refs.address?.value || 'Lieu non défini'"></span>
                                         </div>
                                         <div class="flex items-center space-x-2" x-show="$refs.price?.value">
                                             <span>💰</span>
@@ -291,11 +291,11 @@
                                           x-text="status === 'draft' ? 'Brouillon' : status === 'published' ? 'Publié' : 'Archivé'"></span>
                                     <span class="px-3 py-1 text-xs font-medium rounded-full"
                                           :class="{
-                                              'bg-blue-100 text-blue-800': category === 'club-life',
-                                              'bg-orange-100 text-orange-800': category === 'tournament',
-                                              'bg-purple-100 text-purple-800': category === 'training'
+                                              'bg-blue-100 text-blue-800': type === \App\Enums\EventTypeEnum::COMMUNITY_EVENT->value,
+                                              'bg-orange-100 text-orange-800': type === \App\Enums\EventTypeEnum::TOURNAMENT->value,
+                                              'bg-purple-100 text-purple-800': type === \App\Enums\EventTypeEnum::TRAINING->value
                                           }"
-                                          x-text="category === 'club-life' ? 'Vie du club' : category === 'tournament' ? 'Tournoi' : 'Entraînement'"></span>
+                                          x-text="type === \App\Enums\EventTypeEnum::COMMUNITY_EVENT ? 'Vie du club' : type === \App\Enums\EventTypeEnum::TOURNAMENT ? 'Tournoi' : 'Entraînement'"></span>
                                 </div>
                             </div>
                         </div>
@@ -326,10 +326,10 @@
                 <div style="display: none;">
                     <input x-ref="title" :value="document.getElementById('title').value">
                     <input x-ref="description" :value="document.getElementById('description').value">
-                    <input x-ref="event_date" :value="document.getElementById('event_date').value">
+                    <input x-ref="start_at" :value="document.getElementById('start_at').value">
                     <input x-ref="start_time" :value="document.getElementById('start_time').value">
                     <input x-ref="end_time" :value="document.getElementById('end_time').value">
-                    <input x-ref="location" :value="document.getElementById('location').value">
+                    <input x-ref="address" :value="document.getElementById('address').value">
                     <input x-ref="price" :value="document.getElementById('price').value">
                 </div>
             </form>

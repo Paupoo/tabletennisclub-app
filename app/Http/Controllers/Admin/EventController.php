@@ -4,12 +4,18 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\EventTypeEnum;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreEventRequest;
 use App\Models\Event;
+use App\Models\Interclub;
+use App\Models\Tournament;
+use App\Models\Training;
 use App\Support\Breadcrumb;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use InvalidArgumentException;
 
 class EventController extends Controller
 {
@@ -75,14 +81,6 @@ class EventController extends Controller
 
     public function index(Request $request): View
     {
-        // Statistiques rapides
-        $stats = collect([
-            'totalDrafts' => Event::where('status', 'draft')->count(),
-            'totalPublished' => Event::where('status', 'published')->count(),
-            'totalArchived' => Event::where('status', 'archived')->count(),
-            'totalUpcoming' => Event::published()->upcoming()->count(),
-        ]);
-
         // Requête de base avec filtres
         $query = Event::query();
 
@@ -99,18 +97,19 @@ class EventController extends Controller
             $query->where(function ($q) use ($request): void {
                 $q->where('title', 'like', '%' . $request->search . '%')
                     ->orWhere('description', 'like', '%' . $request->search . '%')
-                    ->orWhere('location', 'like', '%' . $request->search . '%');
+                    ->orWhere('address', 'like', '%' . $request->search . '%');
             });
         }
 
-        // Tri par défaut : événements à venir d'abord, puis par date
-        $events = $query->orderByRaw('
-            CASE 
-                WHEN event_date >= CURDATE() THEN 0 
-                ELSE 1 
-            END, 
-            event_date ASC
-        ')->paginate($request->get('perPage', 25));
+        $events = $query->paginate();
+
+        // Statistiques rapides
+        $stats = collect([
+            'totalDrafts' => Event::where('status', 'draft')->count(),
+            'totalPublished' => Event::where('status', 'published')->count(),
+            'totalArchived' => Event::where('status', 'archived')->count(),
+            'totalUpcoming' => Event::published()->upcoming()->count(),
+        ]);
 
         $breadcrumbs = Breadcrumb::make()
             ->home()
@@ -161,7 +160,7 @@ class EventController extends Controller
                     'description' => $event->description,
                     'date' => $event->formatted_date,
                     'time' => $event->formatted_time,
-                    'location' => $event->location,
+                    'address' => $event->address,
                     'price' => $event->price ?: 'Gratuit',
                     'icon' => $event->icon,
                 ];
@@ -171,31 +170,27 @@ class EventController extends Controller
         return view('events', compact('events'));
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(StoreEventRequest $request): RedirectResponse
     {
         $this->authorize('create', Event::class);
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'category' => 'required|in:' . implode(',', array_keys(Event::CATEGORIES)),
-            'status' => 'required|in:' . implode(',', array_keys(Event::STATUSES)),
-            'event_date' => 'required|date',
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'nullable|date_format:H:i|after:start_time',
-            'location' => 'required|string|max:255',
-            'price' => 'nullable|string|max:255',
-            'icon' => 'nullable|string|max:10',
-            'max_participants' => 'nullable|integer|min:1',
-            'notes' => 'nullable|string',
-            'featured' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         // Si pas d'icône fournie, utiliser l'icône par défaut de la catégorie
         if (empty($validated['icon'])) {
             $validated['icon'] = Event::ICONS[$validated['category']] ?? '📅';
         }
+        // $event = Event::create($validated);
 
-        $event = Event::create($validated);
+        $typeClass = match ($validated['type']) {
+            EventTypeEnum::INTERCLUB->name => Interclub::class,
+            EventTypeEnum::TRAINING->name => Training::class,
+            EventTypeEnum::TOURNAMENT->name => Tournament::class,
+            default => throw new InvalidArgumentException('Unknown event type'),
+        };
+
+        $sub = $typeClass::create();
+        $event = new Event($validated);
+        $sub->event()->save($event);
 
         return redirect()
             ->route('admin.events.show', $event)
@@ -205,22 +200,6 @@ class EventController extends Controller
     public function update(Request $request, Event $event): RedirectResponse
     {
         $this->authorize('update', $event);
-
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'category' => 'required|in:' . implode(',', array_keys(Event::CATEGORIES)),
-            'status' => 'required|in:' . implode(',', array_keys(Event::STATUSES)),
-            'event_date' => 'required|date',
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'nullable|date_format:H:i|after:start_time',
-            'location' => 'required|string|max:255',
-            'price' => 'nullable|string|max:255',
-            'icon' => 'nullable|string|max:10',
-            'max_participants' => 'nullable|integer|min:1',
-            'notes' => 'nullable|string',
-            'featured' => 'boolean',
-        ]);
 
         $event->update($validated);
 

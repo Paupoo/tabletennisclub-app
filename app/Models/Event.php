@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\EventStatusEnum;
+use App\Enums\EventTypeEnum;
 use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -20,22 +22,18 @@ class Event extends Model
     ];
 
     public const ICONS = [
-        'club-life' => '🎉',
-        'tournament' => '🏆',
-        'training' => '🎯',
-    ];
-
-    public const STATUSES = [
-        'draft' => 'Brouillon',
-        'published' => 'Publié',
-        'archived' => 'Archivé',
+        // EventTypeEnum::COMMUNITY_EVENT => '🎉',
+        EventTypeEnum::INTERCLUB->value => '🏓',
+        EventTypeEnum::TOURNAMENT->value => '🏆',
+        EventTypeEnum::TRAINING->value => '🎯',
     ];
 
     protected $casts = [
-        'event_date' => 'date',
-        'start_time' => 'datetime',
-        'end_time' => 'datetime',
+        'start_at' => 'datetime',
+        'end_at' => 'datetime',
         'featured' => 'boolean',
+        'status' => EventStatusEnum::class,
+        'address' => 'string',
     ];
 
     protected $fillable = [
@@ -43,10 +41,10 @@ class Event extends Model
         'description',
         'category',
         'status',
-        'event_date',
-        'start_time',
+        'start_at',
+        'start_at',
         'end_time',
-        'location',
+        'address',
         'price',
         'icon',
         'max_participants',
@@ -79,12 +77,12 @@ class Event extends Model
 
     public function getFormattedDateAttribute(): string
     {
-        return $this->event_date->format('d/m/Y');
+        return $this->start_at->format('d/m/Y');
     }
 
     public function getFormattedTimeAttribute(): string
     {
-        $start = $this->start_time->format('H:i');
+        $start = $this->start_at->format('H:i');
         $end = $this->end_time ? $this->end_time->format('H:i') : null;
 
         return $end ? "{$start} - {$end}" : $start;
@@ -92,27 +90,27 @@ class Event extends Model
 
     public function getIsPastAttribute(): bool
     {
-        return $this->event_date < now()->startOfDay();
+        return $this->start_at < now()->startOfDay();
     }
 
     public function getIsUpcomingAttribute(): bool
     {
-        return $this->event_date >= now()->startOfDay();
+        return $this->start_at >= now()->startOfDay();
     }
 
     public function getStatusBadgeClasses(): string
     {
         return match ($this->status) {
-            'draft' => 'bg-gray-100 text-gray-800',
-            'published' => 'bg-green-100 text-green-800',
-            'archived' => 'bg-red-100 text-red-800',
+            EventStatusEnum::DRAFT => 'bg-gray-100 text-gray-800',
+            EventStatusEnum::PUBLISHED => 'bg-green-100 text-green-800',
+            EventStatusEnum::ARCHIVED => 'bg-red-100 text-red-800',
             default => 'bg-gray-100 text-gray-800'
         };
     }
 
     public function getStatusLabelAttribute(): string
     {
-        return self::STATUSES[$this->status] ?? $this->status;
+        return $this->status->getLabel();
     }
 
     public function scopeByCategory(Builder $query, string $category): Builder
@@ -127,7 +125,7 @@ class Event extends Model
 
     public function scopePast(Builder $query): Builder
     {
-        return $query->where('event_date', '<', now()->startOfDay());
+        return $query->where('start_at', '<', now()->startOfDay());
     }
 
     // Scopes pour les requêtes courantes
@@ -138,6 +136,6 @@ class Event extends Model
 
     public function scopeUpcoming(Builder $query): Builder
     {
-        return $query->where('event_date', '>=', now()->startOfDay());
+        return $query->where('start_at', '>=', now()->startOfDay());
     }
 }

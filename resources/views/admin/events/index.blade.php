@@ -67,9 +67,9 @@
                         <label class="text-sm font-medium text-gray-700 whitespace-nowrap">{{ __('Status') }}</label>
                         <select name="status" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-club-blue focus:border-club-blue">
                             <option value="">{{ __('All') }}</option>
-                            @foreach(\App\Models\Event::STATUSES as $key => $label)
-                                <option value="{{ $key }}" {{ request('status') === $key ? 'selected' : '' }}>
-                                    {{ $label }}
+                            @foreach(\App\Enums\EventStatusEnum::cases() as $status)
+                                <option value="{{ $status->value }}" {{ request('status') === $status->value ? 'selected' : '' }}>
+                                    {{ $status->getLabel() }}
                                 </option>
                             @endforeach
                         </select>

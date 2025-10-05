@@ -196,7 +196,7 @@ class TrainingController extends Controller
 
     public function getAdjacentSeasons(): Collection
     {
-        return Season::where('start_year', '>=', now()->format('Y') - 1)->orderBy('start_year')->get();
+        return Season::where('start_at', '>=', now()->format('Y') - 1)->orderBy('start_at')->get();
     }
 
     public function register(Training $training): RedirectResponse

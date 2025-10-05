@@ -197,7 +197,7 @@ class EventController extends Controller
         return view('admin.events.create', [
             'breadcrumbs' => $breadcrumbs,
             'rooms' => Room::orderBy('name')->get(),
-            'seasons' => Season::orderBy('start_year', 'desc')->get(),
+            'seasons' => Season::orderBy('start_at', 'desc')->get(),
             'teams' => Team::orderBy('name')->get(),
             'otherClubs' => Club::where('id', '!=', auth()->user()->club_id ?? null)->orderBy('name')->get(),
             'leagues' => League::orderBy('division')->get(),

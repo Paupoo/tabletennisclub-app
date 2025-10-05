@@ -52,15 +52,15 @@ class TeamController extends Controller
         $team = new Team;
         $date = Carbon::now();
         $date->format('m') <= 8
-            ? $team->season()->associate(Season::firstWhere('start_year', $date->format('y') - 1))
-            : $team->season()->associate(Season::firstWhere('start_year', $date->format('y')));
+            ? $team->season()->associate(Season::firstWhere('start_at', $date->format('y') - 1))
+            : $team->season()->associate(Season::firstWhere('start_at', $date->format('y')));
 
         return view('admin.teams.create', [
             'league_categories' => LeagueCategory::cases(),
             'league_levels' => LeagueLevel::cases(),
-            'seasons' => Season::select('name', 'id', 'start_year')
-                ->where('end_year', '>=', today()->format('Y'))
-                ->orderBy('start_year', 'asc')
+            'seasons' => Season::select('name', 'id', 'start_at')
+                ->where('end_at', '>=', today()->format('Y'))
+                ->orderBy('start_at', 'asc')
                 ->get(),
             'team' => $team,
             'team_names' => TeamName::cases(),
@@ -106,9 +106,9 @@ class TeamController extends Controller
                 ->get(),
             'league_levels' => LeagueLevel::cases(),
             'leagues' => League::all(),
-            'seasons' => Season::select('name', 'id', 'start_year')
-                ->where('end_year', '>=', today()->format('Y'))
-                ->orderBy('start_year', 'asc')
+            'seasons' => Season::select('name', 'id', 'start_at')
+                ->where('end_at', '>=', today()->format('Y'))
+                ->orderBy('start_at', 'asc')
                 ->get(),
             'team' => $team,
             'team_names' => TeamName::cases(),
@@ -129,7 +129,7 @@ class TeamController extends Controller
         }
         $this_year = Carbon::today()->format('Y');
 
-        return Season::where('end_year', '>=', $this_year)->orderBy('end_year', $sorting_order)->get();
+        return Season::where('end_at', '>=', $this_year)->orderBy('end_at', $sorting_order)->get();
     }
 
     /**

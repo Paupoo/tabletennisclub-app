@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Actions\Subscriptions\DeleteSubscription;
+use App\Actions\Subscriptions\SubscribeToSeasonController;
+use App\Actions\Subscriptions\UnsubscribeFromSeasonController;
 use App\Actions\User\CreateNewUserAction;
 use App\Actions\User\InviteExistingUserAction;
 use App\Http\Controllers\ArticleController;
@@ -12,12 +15,16 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InterclubController;
 use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\KnockoutPhaseController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicArticlesController;
+use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\ResultsController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\RoomController;
+use App\Http\Controllers\SeasonController;
 use App\Http\Controllers\SpamController;
+use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\TableController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\Tournament\ChangeTournamentStatusController;
@@ -309,6 +316,16 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
 
 Route::get('/test', function () {
     return view('test', ['breadcrumbs' => []]);
+});
+
+Route::prefix('admin')->middleware(['auth'])->group(function (): void {
+    Route::resource('seasons', SeasonController::class)->names('seasons');
+    Route::resource('registrations', RegistrationController::class)->names('registrations');
+    Route::resource('subscriptions', SubscriptionController::class)->names('subscriptions');
+    Route::resource('payments', PaymentController::class)->names('payments');
+    Route::post('seasons/{season}/subscribe/', SubscribeToSeasonController::class)->name('seasons.subscribe');
+    Route::post('seasons/{season}/unsubscribeUser/{user}', UnsubscribeFromSeasonController::class)->name('seasons.unsubscribe');
+    Route::post('subscriptions/cancel/{subscription}', DeleteSubscription::class)->name('subscriptions.cancel');
 });
 
 require __DIR__ . '/auth.php';

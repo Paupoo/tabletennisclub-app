@@ -17,7 +17,7 @@ class SeasonController extends Controller
     {
         $seasons = Season::all();
 
-        return view ('seasons.index', compact([
+        return view ('admin.seasons.index', compact([
             'seasons',
         ]));
     }
@@ -27,7 +27,7 @@ class SeasonController extends Controller
      */
     public function create(): View
     {
-        return view ('seasons.create');
+        return view ('admin.seasons.create');
     }
 
     /**
@@ -43,7 +43,7 @@ class SeasonController extends Controller
 
         Season::create($validated);
 
-        return view ('seasons.create');
+        return view ('admin.seasons.create');
     }
 
     /**
@@ -51,7 +51,7 @@ class SeasonController extends Controller
      */
     public function show(string $id): View
     {
-        $season = Season::with('subscriptions.user')->findOrFail($id);
+        $season = Season::with('users')->findOrFail($id);
         $subscribedUsers = $season->users->load('subscriptions');
 
         $notSubscribedUsers = User::whereDoesntHave('subscriptions', function ($query) use ($season) {
@@ -60,7 +60,7 @@ class SeasonController extends Controller
 
         $payments = Payment::all();
 
-        return view('seasons.show', compact([
+        return view('admin.seasons.show', compact([
             'payments',
             'season',
             'subscribedUsers',

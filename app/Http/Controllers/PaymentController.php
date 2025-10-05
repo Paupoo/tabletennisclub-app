@@ -15,7 +15,7 @@ class PaymentController extends Controller
     {
         $payments = Payment::all();
 
-        return view('payments.index', compact([
+        return view('admin.payments.index', compact([
             'payments',
         ]));
     }

@@ -15,7 +15,7 @@ class SubscriptionController extends Controller
     {
         $subscriptions = Subscription::all();
 
-        return view ('subscriptions.index', compact([
+        return view ('admin.subscriptions.index', compact([
             'subscriptions',
         ]));
     }

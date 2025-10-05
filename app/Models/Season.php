@@ -42,11 +42,14 @@ class Season extends Model
 {
     use HasFactory;
 
-    protected $casts = [
+    protected function casts(): array
+    {
+        return [
         'name' => 'string',
-        'start_at' => 'integer',
-        'end_at' => 'integer',
-    ];
+        'start_at' => 'datetime',
+        'end_at' => 'datetime',
+        ];
+    }
 
     protected $fillable = [
         'name',

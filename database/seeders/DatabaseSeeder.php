@@ -382,5 +382,13 @@ class DatabaseSeeder extends Seeder
         foreach ($this->tournament->pools as $pool) {
             $this->matchService->generateMatches($pool);
         }
+
+        $this->call(EventsTableSeeder::class);
+
+        $this->call(SeasonSeeder::class);
+
+        $this->call(SubscriptionSeeder::class);
+
+        $this->call(PaymentSeeder::class);
     }
 }

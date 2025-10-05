@@ -18,12 +18,12 @@ class SeasonFactory extends Factory
      */
     public function definition(): array
     {
-        $year = fake()->unique()->numberBetween(2020, 2030);
+        $year = fake()->unique()->numberBetween(2024, 2034);
 
         return [
             'name' => $year . ' - ' . $year + 1,
-            'start_year' => $year,
-            'end_year' => $year + 1,
+            'start_at' => $year,
+            'end_at' => $year + 1,
         ];
     }
 }

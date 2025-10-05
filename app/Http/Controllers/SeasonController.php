@@ -49,24 +49,23 @@ class SeasonController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id): View
-    {
-        $season = Season::with('users')->findOrFail($id);
-        $subscribedUsers = $season->users->load('subscriptions');
+        public function show(string $id): View
+        {
+            $season = Season::with('users')->findOrFail($id);
+            $subscriptions = $season->subscriptions;
+            $notSubscribedUsers = User::whereDoesntHave('subscriptions', function ($query) use ($season) {
+                $query->where('season_id', $season->id);
+            })->get();
 
-        $notSubscribedUsers = User::whereDoesntHave('subscriptions', function ($query) use ($season) {
-            $query->where('season_id', $season->id);
-        })->get();
+            $payments = Payment::all();
 
-        $payments = Payment::all();
-
-        return view('admin.seasons.show', compact([
-            'payments',
-            'season',
-            'subscribedUsers',
-            'notSubscribedUsers',
-        ]));
-    }
+            return view('admin.seasons.show', compact([
+                'payments',
+                'season',
+                'subscriptions',
+                'notSubscribedUsers',
+            ]));
+        }
 
     /**
      * Show the form for editing the specified resource.

@@ -1,5 +1,5 @@
 <div>
-    <p>Bonjour {{ $payment->payable->user->name }},</p>
+    <p>Bonjour {{ $payment->payable->user->first_name }},</p>
 
     <p>Vous êtes inscrit à la saison {{ $payment->payable->season->name }}.</p>
 

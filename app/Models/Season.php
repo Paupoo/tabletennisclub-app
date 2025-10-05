@@ -80,7 +80,12 @@ class Season extends Model
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'subscriptions')
-            ->withPivot('amount_due')
+            ->withPivot('amount_due', 'is_competitive')
             ->withTimestamps();
+    }
+
+    public function subscriptions()
+    {
+        return $this->hasMany(Subscription::class);
     }
 }

@@ -319,13 +319,13 @@ Route::get('/test', function () {
 });
 
 Route::prefix('admin')->middleware(['auth'])->group(function (): void {
-    Route::resource('seasons', SeasonController::class)->names('seasons');
-    Route::resource('registrations', RegistrationController::class)->names('registrations');
-    Route::resource('subscriptions', SubscriptionController::class)->names('subscriptions');
-    Route::resource('payments', PaymentController::class)->names('payments');
-    Route::post('seasons/{season}/subscribe/', SubscribeToSeasonController::class)->name('seasons.subscribe');
-    Route::post('seasons/{season}/unsubscribeUser/{user}', UnsubscribeFromSeasonController::class)->name('seasons.unsubscribe');
-    Route::post('subscriptions/cancel/{subscription}', DeleteSubscription::class)->name('subscriptions.cancel');
+    Route::resource('seasons', SeasonController::class)->names('admin.seasons');
+    Route::resource('registrations', RegistrationController::class)->names('admin.registrations');
+    Route::resource('subscriptions', SubscriptionController::class)->names('admin.subscriptions');
+    Route::resource('payments', PaymentController::class)->names('admin.payments');
+    Route::post('seasons/{season}/subscribe/', SubscribeToSeasonController::class)->name('admin.seasons.subscribe');
+    Route::post('seasons/{season}/unsubscribeUser/{user}', UnsubscribeFromSeasonController::class)->name('admin.seasons.unsubscribe');
+    Route::post('subscriptions/cancel/{subscription}', DeleteSubscription::class)->name('admin.subscriptions.cancel');
 });
 
 require __DIR__ . '/auth.php';

@@ -1,5 +1,5 @@
 <h1>Season {{ $season->name }}</h1>
-<a href="{{ route('seasons.index') }}">See All Seasons</a>
+<a href="{{ route('admin.seasons.index') }}">See All Seasons</a>
 <ul>
   <li>Name : {{ $season->name }}</li>
   <li>Start at : {{ $season->start_at->format('d/m/Y')   }}</li>
@@ -11,13 +11,13 @@
 
 <h2>Subscribed users</h2>
 <ul>
-    @foreach ($season->users as $subscription)
-        <li>{{ $subscription->user->name }} -- {{ $subscription->is_competitive ? 'Compet' : 'Loisir' }} -- Doit payer : {{ $subscription->amount_due }} €
-            <form action="{{ route('seasons.unsubscribe', parameters: [$season, $subscription->user])}}" method="POST">
+    @foreach ($subscriptions as $subscription)
+        <li>{{ $subscription->user->fullName }} -- {{ $subscription->is_competitive ? 'Compet' : 'Loisir' }} -- Doit payer : {{ $subscription->amount_due }} €
+            <form action="{{ route('admin.seasons.unsubscribe', parameters: [$season, $subscription->user])}}" method="POST">
                 @csrf
                 <button class="submit">Unsubscribe (destroy)</button>
             </form>
-            <form action="{{ route('subscriptions.cancel', parameters: $subscription )}}" method="POST">
+            <form action="{{ route('admin.subscriptions.cancel', parameters: $subscription )}}" method="POST">
                 @csrf
                 <button class="submit">Unsubscribe (soft delete)</button>
             </form>
@@ -30,7 +30,7 @@
                         <option value="{{ $payment->payment_id}}">{{ $payment->reference }}</option>
                     @endforeach
                 </select>
-                <button class="submit">Valitade payment</button>
+                <button class="submit">Validate payment</button>
             </form>
         </li>
     @endforeach
@@ -38,7 +38,7 @@
 
 <hr>
 
-<form action="{{ route('seasons.subscribe', $season)}}" method="post">
+<form action="{{ route('admin.seasons.subscribe', $season)}}" method="post">
     @csrf
     <input type="hidden" name="season_id" value="{{ $season->id }}">
     <select name="user_id" id="user_id">

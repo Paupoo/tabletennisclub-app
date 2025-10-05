@@ -37,7 +37,7 @@ class GeneratePaymentQR
         $beneficiary = 'CTT Ottignies-Blocry ASBL';
         $reference = $payment->reference    ; // votre référence / communication
         
-        $qrText = "BCD\n001\n1\nSCT\n$\App\Http\Controllers\Actions\Payments\BIC\n$\App\Http\Controllers\Actions\Payments\beneficiary\n$\App\Http\Controllers\Actions\Payments\IBAN\n$currency$\App\Http\Controllers\Actions\Payments\amount\nCHAR\n\n$reference";
+        $qrText = "BCD\n001\n1\nSCT\n$BIC\n$beneficiary\n$IBAN\n$currency$amount\nCHAR\n\n$reference";
 
         $builder = new Builder(
             writer: new PngWriter(),

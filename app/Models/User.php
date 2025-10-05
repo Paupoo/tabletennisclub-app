@@ -330,4 +330,11 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(Subscription::class); 
     }
+
+    public function seasons(): BelongsToMany
+    {
+        return $this->belongsToMany(Season::class, 'subsriptions')
+            ->withPivot('amount_due', 'is_competitive')
+            ->withTimestamps();
+    }
 }

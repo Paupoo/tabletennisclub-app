@@ -7,12 +7,15 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphPivot;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Subscription extends Model
 {
     /** @use HasFactory<\Database\Factories\SubscriptionFactory> */
     use HasFactory, SoftDeletes;
+
+    protected $table = 'subscriptions';
 
     protected $fillable = [
         'user_id',

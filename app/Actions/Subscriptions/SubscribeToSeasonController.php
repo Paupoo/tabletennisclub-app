@@ -46,7 +46,7 @@ class SubscribeToSeasonController extends Controller
 
         // Create the subscription
         $subscription = $this->subscribe();
-        
+            
         // Generate the pengind payment
         $payment = $this->generatePayment($subscription);
 

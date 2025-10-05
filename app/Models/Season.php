@@ -6,13 +6,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property int $id
  * @property string $name
- * @property int $start_year
- * @property int $end_year
+ * @property int $start_at
+ * @property int $end_at
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Interclub> $interclubs
@@ -43,14 +44,14 @@ class Season extends Model
 
     protected $casts = [
         'name' => 'string',
-        'start_year' => 'integer',
-        'end_year' => 'integer',
+        'start_at' => 'integer',
+        'end_at' => 'integer',
     ];
 
     protected $fillable = [
         'name',
-        'start_year',
-        'end_year',
+        'start_at',
+        'end_at',
     ];
 
     public function interclubs(): HasMany
@@ -71,5 +72,12 @@ class Season extends Model
     public function trainings(): HasMany
     {
         return $this->hasMany(Training::class);
+    }
+
+    public function users(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'subscriptions')
+            ->withPivot('amount_due')
+            ->withTimestamps();
     }
 }

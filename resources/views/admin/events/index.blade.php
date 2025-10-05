@@ -1,3 +1,4 @@
+{{-- resources/views/admin/events/index.blade.php --}}
 <x-app-layout :breadcrumbs="$breadcrumbs">
     <x-admin-block>
         <!-- En-tête de page -->
@@ -15,7 +16,7 @@
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                         </svg>
-                        Nouvel événement
+                        {{ __('New event') }}
                     </a>
                 </div>
             </div>
@@ -23,20 +24,20 @@
             <!-- Statistiques rapides -->
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
                 <div class="bg-gray-50 rounded-lg p-3 text-center border border-gray-200">
-                    <div class="text-lg sm:text-xl font-bold text-gray-600">{{ $stats->get('totalDrafts') }}</div>
-                    <div class="text-xs text-gray-700">Brouillons</div>
+                    <div class="text-lg sm:text-xl font-bold text-gray-600">{{ $stats['drafts'] }}</div>
+                    <div class="text-xs text-gray-700">{{ __('Drafts') }}</div>
                 </div>
                 <div class="bg-green-50 rounded-lg p-3 text-center border border-green-200">
-                    <div class="text-lg sm:text-xl font-bold text-green-600">{{ $stats->get('totalPublished') }}</div>
-                    <div class="text-xs text-green-700">Publiés</div>
+                    <div class="text-lg sm:text-xl font-bold text-green-600">{{ $stats['published'] }}</div>
+                    <div class="text-xs text-green-700">{{ __('Published') }}</div>
                 </div>
                 <div class="bg-red-50 rounded-lg p-3 text-center border border-red-200">
-                    <div class="text-lg sm:text-xl font-bold text-red-600">{{ $stats->get('totalArchived') }}</div>
-                    <div class="text-xs text-red-700">Archivés</div>
+                    <div class="text-lg sm:text-xl font-bold text-red-600">{{ $stats['archived'] }}</div>
+                    <div class="text-xs text-red-700">{{ __('Archived') }}</div>
                 </div>
                 <div class="bg-blue-50 rounded-lg p-3 text-center border border-blue-200">
-                    <div class="text-lg sm:text-xl font-bold text-blue-600">{{ $stats->get('totalUpcoming') }}</div>
-                    <div class="text-xs text-blue-700">À venir</div>
+                    <div class="text-lg sm:text-xl font-bold text-blue-600">{{ $stats['upcoming'] }}</div>
+                    <div class="text-xs text-blue-700">{{ __('Upcoming') }}</div>
                 </div>
             </div>
         </div>
@@ -75,14 +76,14 @@
                         </select>
                     </div>
 
-                    <!-- Catégorie -->
+                    <!-- Type -->
                     <div class="flex items-center space-x-2">
-                        <label class="text-sm font-medium text-gray-700 whitespace-nowrap">{{ __('Category') }}</label>
-                        <select name="category" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-club-blue focus:border-club-blue">
+                        <label class="text-sm font-medium text-gray-700 whitespace-nowrap">{{ __('Type') }}</label>
+                        <select name="type" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-club-blue focus:border-club-blue">
                             <option value="">{{ __('All') }}</option>
-                            @foreach(\App\Models\Event::CATEGORIES as $key => $label)
-                                <option value="{{ $key }}" {{ request('category') === $key ? 'selected' : '' }}>
-                                    {{ $label }}
+                            @foreach(\App\Enums\EventTypeEnum::cases() as $eventType)
+                                <option value="{{ $eventType->value }}" {{ request('type') === $eventType->value ? 'selected' : '' }}>
+                                    {{ $eventType->getLabel() }}
                                 </option>
                             @endforeach
                         </select>
@@ -99,7 +100,7 @@
                     </div>
 
                     <button type="submit" class="bg-club-blue hover:bg-club-blue-light text-white px-4 py-2 rounded-lg text-sm font-medium">
-                        Filtrer
+                        {{ __('Filter') }}
                     </button>
                 </div>
             </form>
@@ -111,7 +112,7 @@
             <div class="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gray-50">
                 <h3 class="text-lg font-medium text-gray-900">
                     {{ __('Events') }} 
-                    <span class="text-sm font-normal text-gray-500">({{ $events->total() }} résultats)</span>
+                    <span class="text-sm font-normal text-gray-500">({{ $events->total() }} {{ __('results') }})</span>
                 </h3>
             </div>
 
@@ -130,7 +131,7 @@
                                 {{ __('Location') }}
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {{ __('Category') }}
+                                {{ __('Type') }}
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 {{ __('Status') }}
@@ -155,7 +156,7 @@
                                                 {{ $event->title }}
                                                 @if($event->featured)
                                                     <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
-                                                        ⭐ Mis en avant
+                                                        ⭐ {{ __('Featured') }}
                                                     </span>
                                                 @endif
                                             </div>
@@ -166,32 +167,51 @@
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-900">{{ $event->formatted_date }}</div>
-                                    <div class="text-sm text-gray-500">{{ $event->formatted_time }}</div>
+                                    <div class="text-sm text-gray-900">{{ $event->event_date->isoFormat('D MMM YYYY') }}</div>
+                                    <div class="text-sm text-gray-500">
+                                        {{ $event->start_time }}
+                                        @if($event->end_time)
+                                            - {{ $event->end_time }}
+                                        @endif
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm text-gray-900">{{ $event->location }}</div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="{{ $event->getCategoryBadgeClasses() }} px-2 py-1 rounded-full text-xs font-medium">
-                                        {{ $event->category_label }}
+                                    @php
+                                        $typeColors = [
+                                            'TRAINING' => 'bg-purple-100 text-purple-800',
+                                            'INTERCLUB' => 'bg-orange-100 text-orange-800',
+                                            'TOURNAMENT' => 'bg-blue-100 text-blue-800',
+                                        ];
+                                    @endphp
+                                    <span class="{{ $typeColors[$event->type->value] ?? 'bg-gray-100 text-gray-800' }} px-2 py-1 rounded-full text-xs font-medium">
+                                        {{ $event->type->getIcon() }} {{ $event->type->getLabel() }}
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="{{ $event->getStatusBadgeClasses() }} px-2 py-1 rounded-full text-xs font-medium">
-                                        {{ $event->status_label }}
+                                    @php
+                                        $statusColors = [
+                                            'DRAFT' => 'bg-gray-100 text-gray-800',
+                                            'PUBLISHED' => 'bg-green-100 text-green-800',
+                                            'ARCHIVED' => 'bg-red-100 text-red-800',
+                                        ];
+                                    @endphp
+                                    <span class="{{ $statusColors[$event->status->value] ?? 'bg-gray-100 text-gray-800' }} px-2 py-1 rounded-full text-xs font-medium">
+                                        {{ $event->status->getLabel() }}
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <div class="flex items-center justify-end space-x-2">
                                         <!-- Actions rapides de statut -->
-                                        @if($event->status === 'draft')
+                                        @if($event->status->value === 'DRAFT')
                                             <form action="{{ route('admin.events.publish', $event) }}" method="POST" class="inline">
                                                 @csrf
                                                 @method('PATCH')
                                                 <button type="submit" 
                                                         class="bg-green-600 hover:bg-green-700 text-white p-1 rounded transition-colors duration-200"
-                                                        title="Publier">
+                                                        title="{{ __('Publish') }}">
                                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                                                     </svg>
@@ -199,13 +219,13 @@
                                             </form>
                                         @endif
 
-                                        @if($event->status === 'published')
+                                        @if($event->status->value === 'PUBLISHED')
                                             <form action="{{ route('admin.events.archive', $event) }}" method="POST" class="inline">
                                                 @csrf
                                                 @method('PATCH')
                                                 <button type="submit" 
                                                         class="bg-orange-600 hover:bg-orange-700 text-white p-1 rounded transition-colors duration-200"
-                                                        title="Archiver">
+                                                        title="{{ __('Archive') }}">
                                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8l6 6 6-6"></path>
                                                     </svg>
@@ -226,7 +246,7 @@
                                         <!-- Modifier -->
                                         <a href="{{ route('admin.events.edit', $event) }}" 
                                            class="bg-yellow-600 hover:bg-yellow-700 text-white p-1 rounded transition-colors duration-200"
-                                           title="Modifier">
+                                           title="{{ __('Edit') }}">
                                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                             </svg>
@@ -237,28 +257,25 @@
                                             @csrf
                                             <button type="submit" 
                                                     class="bg-blue-600 hover:bg-blue-700 text-white p-1 rounded transition-colors duration-200"
-                                                    title="Dupliquer">
+                                                    title="{{ __('Duplicate') }}">
                                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
                                                 </svg>
                                             </button>
                                         </form>
 
-                                        <!-- Supprimer (seulement si possible) -->
-                                        @if($event->canBeDeleted())
-                                            <form action="{{ route('admin.events.destroy', $event) }}" method="POST" class="inline">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" 
-                                                        class="bg-red-600 hover:bg-red-700 text-white p-1 rounded transition-colors duration-200"
-                                                        title="Supprimer"
-                                                        onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet événement ?')">
-                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                                    </svg>
-                                                </button>
-                                            </form>
-                                        @endif
+                                        <!-- Supprimer -->
+                                        <form action="{{ route('admin.events.destroy', $event) }}" method="POST" class="inline" onsubmit="return confirm('{{ __('Are you sure you want to delete this event?') }}')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" 
+                                                    class="bg-red-600 hover:bg-red-700 text-white p-1 rounded transition-colors duration-200"
+                                                    title="{{ __('Delete') }}">
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                </svg>
+                                            </button>
+                                        </form>
                                     </div>
                                 </td>
                             </tr>
@@ -269,15 +286,15 @@
                                         <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a2 2 0 012-2h8a2 2 0 012 2v4m-6 12h8a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                                         </svg>
-                                        <h3 class="mt-2 text-sm font-medium text-gray-900">Aucun événement trouvé</h3>
-                                        <p class="mt-1 text-sm text-gray-500">Commencez par créer un nouvel événement.</p>
+                                        <h3 class="mt-2 text-sm font-medium text-gray-900">{{ __('No events found') }}</h3>
+                                        <p class="mt-1 text-sm text-gray-500">{{ __('Start by creating a new event.') }}</p>
                                         <div class="mt-6">
                                             <a href="{{ route('admin.events.create') }}" 
                                                class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-club-blue hover:bg-club-blue-light">
                                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                                                 </svg>
-                                                Nouvel événement
+                                                {{ __('New event') }}
                                             </a>
                                         </div>
                                     </div>
@@ -312,11 +329,23 @@
                                 </div>
                                 
                                 <div class="flex flex-col space-y-1">
-                                    <span class="{{ $event->getStatusBadgeClasses() }} px-2 py-1 rounded-full text-xs font-medium text-center">
-                                        {{ $event->status_label }}
+                                    @php
+                                        $statusColors = [
+                                            'DRAFT' => 'bg-gray-100 text-gray-800',
+                                            'PUBLISHED' => 'bg-green-100 text-green-800',
+                                            'ARCHIVED' => 'bg-red-100 text-red-800',
+                                        ];
+                                        $typeColors = [
+                                            'TRAINING' => 'bg-purple-100 text-purple-800',
+                                            'INTERCLUB' => 'bg-orange-100 text-orange-800',
+                                            'TOURNAMENT' => 'bg-blue-100 text-blue-800',
+                                        ];
+                                    @endphp
+                                    <span class="{{ $statusColors[$event->status->value] ?? 'bg-gray-100 text-gray-800' }} px-2 py-1 rounded-full text-xs font-medium text-center">
+                                        {{ $event->status->getLabel() }}
                                     </span>
-                                    <span class="{{ $event->getCategoryBadgeClasses() }} px-2 py-1 rounded-full text-xs font-medium text-center">
-                                        {{ $event->category_label }}
+                                    <span class="{{ $typeColors[$event->type->value] ?? 'bg-gray-100 text-gray-800' }} px-2 py-1 rounded-full text-xs font-medium text-center">
+                                        {{ $event->type->getLabel() }}
                                     </span>
                                 </div>
                             </div>
@@ -326,7 +355,10 @@
                                     {{ Str::limit($event->description, 100) }}
                                 </div>
                                 <div class="text-sm text-gray-500">
-                                    📅 {{ $event->formatted_date }} • ⏰ {{ $event->formatted_time }}
+                                    📅 {{ $event->event_date->isoFormat('D MMM YYYY') }} • ⏰ {{ $event->start_time }}
+                                    @if($event->end_time)
+                                        - {{ $event->end_time }}
+                                    @endif
                                 </div>
                                 @if($event->price)
                                     <div class="text-sm text-gray-500">
@@ -338,11 +370,11 @@
                             <div class="flex justify-end space-x-2">
                                 <a href="{{ route('admin.events.show', $event) }}" 
                                    class="bg-club-blue hover:bg-club-blue-light text-white px-3 py-1 rounded text-xs font-medium transition-colors">
-                                    Voir
+                                    {{ __('View') }}
                                 </a>
                                 <a href="{{ route('admin.events.edit', $event) }}" 
                                    class="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded text-xs font-medium transition-colors">
-                                    Modifier
+                                    {{ __('Edit') }}
                                 </a>
                             </div>
                         </div>
@@ -351,8 +383,8 @@
                             <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a2 2 0 012-2h8a2 2 0 012 2v4m-6 12h8a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                             </svg>
-                            <h3 class="mt-2 text-sm font-medium text-gray-900">Aucun événement trouvé</h3>
-                            <p class="mt-1 text-sm text-gray-500">Essayez de modifier vos critères de recherche.</p>
+                            <h3 class="mt-2 text-sm font-medium text-gray-900">{{ __('No events found') }}</h3>
+                            <p class="mt-1 text-sm text-gray-500">{{ __('Try changing your search criteria.') }}</p>
                         </div>
                     @endforelse
                 </div>

@@ -24,6 +24,7 @@ class Subscription extends Model
         'has_other_family_members',
         'trainings_count',
         'amount_due',
+        'amount_paid',
         'subscription_price',
         'training_unit_price',
     ];

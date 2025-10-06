@@ -48,7 +48,6 @@ return new class extends Migration
             // Index pour optimiser les requêtes
             $table->index(['status', 'event_date']);
             $table->index(['type', 'status']);
-            $table->index(['eventable_type', 'eventable_id']);
         });
     }
 

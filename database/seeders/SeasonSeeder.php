@@ -18,7 +18,7 @@ class SeasonSeeder extends Seeder
         
         for($i = 0; $i < 3; $i++){
             Season::create([
-                'name' => (string) $thisYear + $i . '-' . (string) $thisYear + $i +1,
+                'name' => (string) ($thisYear + $i . '-' . $thisYear + $i +1),
                 'start_at' => Carbon::parse('First day of September ' . $thisYear +$i),
                 'end_at' => Carbon::parse('Last day of June ' . $thisYear +$i + 1),
             ]);

@@ -383,8 +383,6 @@ class DatabaseSeeder extends Seeder
             $this->matchService->generateMatches($pool);
         }
 
-        $this->call(EventsTableSeeder::class);
-
         $this->call(SeasonSeeder::class);
 
         $this->call(SubscriptionSeeder::class);

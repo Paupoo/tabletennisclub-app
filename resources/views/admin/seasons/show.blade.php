@@ -12,7 +12,7 @@
 <h2>Subscribed users</h2>
 <ul>
     @foreach ($subscriptions as $subscription)
-        <li>{{ $subscription->user->fullName }} -- {{ $subscription->is_competitive ? 'Compet' : 'Loisir' }} -- Doit payer : {{ $subscription->amount_due }} €
+        <li>{{ $subscription->user->fullName }} -- {{ $subscription->is_competitive ? 'Compet' : 'Loisir' }} -- Doit payer : {{ $subscription->amount_due - $subscription->amount_paid }} €
             <form action="{{ route('admin.seasons.unsubscribe', parameters: [$season, $subscription->user])}}" method="POST">
                 @csrf
                 <button class="submit">Unsubscribe (destroy)</button>

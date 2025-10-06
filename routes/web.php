@@ -31,6 +31,7 @@ use App\Http\Controllers\Tournament\ChangeTournamentStatusController;
 use App\Http\Controllers\Tournament\ToggleHasPaidController;
 use App\Http\Controllers\TournamentController;
 use App\Http\Controllers\TrainingController;
+use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\ProtectAgainstSpam;
 use App\Models\Room;
@@ -326,6 +327,15 @@ Route::prefix('admin')->middleware(['auth'])->group(function (): void {
     Route::post('seasons/{season}/subscribe/', SubscribeToSeasonController::class)->name('admin.seasons.subscribe');
     Route::post('seasons/{season}/unsubscribeUser/{user}', UnsubscribeFromSeasonController::class)->name('admin.seasons.unsubscribe');
     Route::post('subscriptions/cancel/{subscription}', DeleteSubscription::class)->name('admin.subscriptions.cancel');
+    Route::get('transactions/add', [TransactionController::class, 'add'])->name('admin.transactions.add ');
 });
+
+Route::prefix('admin/transactions')->middleware(['auth'])->group(function () {
+    Route::post('upload', [TransactionController::class, 'upload'])->name('admin.transactions.upload');
+    Route::get('/', [TransactionController::class, 'index'])->name('admin.transactions.index');
+    Route::get('/reconcile', [TransactionController::class, 'reconcile'])->name('admin.transactions.reconcile');
+    Route::post('/reconcile', [TransactionController::class, 'reconcileStore'])->name('admin.transactions.reconcile.store');
+});
+
 
 require __DIR__ . '/auth.php';

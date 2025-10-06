@@ -15,6 +15,11 @@ return new class extends Migration
             $table->renameColumn('start_year', 'start_at');
             $table->renameColumn('end_year', 'end_at');
         });
+
+        Schema::table('seasons', function (Blueprint $table) {
+            $table->dateTime('start_at')->change();
+            $table->dateTime('end_at')->change();
+        });
     }
 
     /**
@@ -25,6 +30,11 @@ return new class extends Migration
         Schema::table('seasons', function (Blueprint $table) {
             $table->renameColumn('start_at', 'start_year');
             $table->renameColumn('end_at', 'end_year');
+        });
+
+        Schema::table('seasons', function (Blueprint $table) {
+            $table->unsignedSmallInteger('start_year')->change();
+            $table->unsignedSmallInteger('end_year')->change();
         });
     }
 };

@@ -17,7 +17,7 @@ class PaymentFactory extends Factory
     public function definition(): array
     {
         // Générer un montant aléatoire (6000 ou 12500 centimes)
-        $amount = $this->faker->randomElement([6000, 12500]);
+        $amount = $this->faker->randomElement([60, 125]);
 
         // Générer un statut aléatoire (ici "pending" par défaut)
         $status = 'pending';

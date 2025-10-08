@@ -251,7 +251,9 @@ class TransactionController extends Controller
             'status' => 'paid',
         ]);
 
+        
         $this->recalculateSubscriptionPaidAmount($payment);
+        $this->markSubscriptionPaid($payment);
         
         return redirect()->route('admin.transactions.reconcile')
             ->with('success', 'Paiement réconcilié avec succès !');
@@ -263,5 +265,11 @@ class TransactionController extends Controller
         $subscription->update([
             'amount_paid' => $payment->amount_paid,
         ]);
+    }
+
+    public function markSubscriptionPaid(Payment $payment): void
+    {
+        $subscription = Subscription::find($payment->payable_id);
+        $subscription->markAsPaid();
     }
 }

@@ -75,9 +75,8 @@ class PaymentController extends Controller
         $validated = $request->validate([
             'payment_id' => 'required|exists:payments,id',
         ]);
-
+        
         $payment = Payment::find($validated['payment_id']);
-
         new SendPayementInvite()($payment);
 
         return back()

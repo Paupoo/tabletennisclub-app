@@ -44,14 +44,14 @@
             <form action="" method="POST">
                 @csrf
                 @if ($subscription->payments->count() > 0)
-                    <select name="payment_id" id="payment_id">
+                    <select name="payment_id" id="payment_id" required>
                         <option value="" disabled selected>Select a payment</option>
                         @foreach ($subscription->payments as $payment)
                             <option value="{{ $payment->id }}">{{ $payment->reference }}</option>
                         @endforeach
                     </select>
                     <button class="submit">Validate payment</button>
-                    <button class="submit" formaction="{{ route('admin.subscriptions.sendPaymentInvite', $payment) }}">Send payment invite</button>
+                    <button class="submit" formaction="{{ route('admin.subscriptions.sendPaymentInvite') }}">Send payment invite</button>
                 @endif
             </form>
         </li>

@@ -16,21 +16,28 @@
             <form action="{{ route('admin.seasons.unsubscribe', parameters: [$season, $subscription->user])}}" method="POST">
                 @csrf
                 <button class="submit">Unsubscribe (destroy)</button>
+                <button class="submit" formaction="{{ route('admin.subscriptions.cancel', parameters: $subscription )}}">Unsubscribe (soft delete)</button>
+                @if ($subscription->payments->count() <= 0)
+                    <button class="submit" formaction="{{ route('admin.subscription.generatePayment', parameters: $subscription )}}">Generate a payment</button>
+                @endif
             </form>
-            <form action="{{ route('admin.subscriptions.cancel', parameters: $subscription )}}" method="POST">
-                @csrf
-                <button class="submit">Unsubscribe (soft delete)</button>
-            </form>
+
             <form action="" method="POST">
                 @csrf
-                <input type="hidden" name="user_id" value="{{ $subscription->user->id }}">
-                <select name="payment_id" id="payment_id">
-                    <option value="" disabled selected>Select a payment</option>
-                    @foreach ($payments as $payment)
-                        <option value="{{ $payment->payment_id}}">{{ $payment->reference }}</option>
-                    @endforeach
-                </select>
-                <button class="submit">Validate payment</button>
+            </form>
+
+            <form action="" method="POST">
+                @csrf
+                @if ($subscription->payments->count() > 0)
+                    <select name="payment_id" id="payment_id">
+                        <option value="" disabled selected>Select a payment</option>
+                        @foreach ($subscription->payments as $payment)
+                            <option value="{{ $payment }}">{{ $payment->reference }}</option>
+                        @endforeach
+                    </select>
+                    <button class="submit">Validate payment</button>
+                    <button class="submit" formaction="{{ route('admin.subscriptions.sendPaymentInvite', $subscription) }}">Send payment invite</button>
+                @endif
             </form>
         </li>
     @endforeach

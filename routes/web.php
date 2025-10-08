@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Actions\Payments\GeneratePayment;
+use App\Actions\Payments\SendPayementInvite;
 use App\Actions\Subscriptions\DeleteSubscription;
 use App\Actions\Subscriptions\SubscribeToSeasonController;
 use App\Actions\Subscriptions\UnsubscribeFromSeasonController;
@@ -327,10 +329,12 @@ Route::prefix('admin')->middleware(['auth'])->group(function (): void {
     Route::post('seasons/{season}/subscribe/', SubscribeToSeasonController::class)->name('admin.seasons.subscribe');
     Route::post('seasons/{season}/unsubscribeUser/{user}', UnsubscribeFromSeasonController::class)->name('admin.seasons.unsubscribe');
     Route::post('subscriptions/cancel/{subscription}', DeleteSubscription::class)->name('admin.subscriptions.cancel');
-    Route::get('transactions/add', [TransactionController::class, 'add'])->name('admin.transactions.add ');
+    Route::post('subscriptions/sendPaymentInvite/{payment}', SendPayementInvite::class)->name('admin.subscriptions.sendPaymentInvite');
+    Route::post('payments/{subscription}/generate', GeneratePayment::class)->name('admin.subscription.generatePayment');
 });
 
 Route::prefix('admin/transactions')->middleware(['auth'])->group(function () {
+    Route::get('add', [TransactionController::class, 'add'])->name('admin.transactions.add ');
     Route::post('upload', [TransactionController::class, 'upload'])->name('admin.transactions.upload');
     Route::get('/', [TransactionController::class, 'index'])->name('admin.transactions.index');
     Route::get('/reconcile', [TransactionController::class, 'reconcile'])->name('admin.transactions.reconcile');

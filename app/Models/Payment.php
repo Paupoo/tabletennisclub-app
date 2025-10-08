@@ -42,11 +42,11 @@
             );
         }
         
-        /**
-         * Relation polymorphique vers l'entité payée
-         */
-        public function payable(): MorphTo
-        {
-            return $this->morphTo();
-        }
+            /**
+             * Relation polymorphique vers l'entité payée
+             */
+            public function payable(): MorphTo
+            {
+                return $this->morphTo();
+            }
     }

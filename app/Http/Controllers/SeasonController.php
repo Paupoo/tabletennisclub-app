@@ -52,15 +52,11 @@ class SeasonController extends Controller
         public function show(string $id): View
         {
             $season = Season::with('users')->findOrFail($id);
-            $subscriptions = $season->subscriptions;
+            $subscriptions = $season->subscriptions->load('payments');
             $notSubscribedUsers = User::whereDoesntHave('subscriptions', function ($query) use ($season) {
                 $query->where('season_id', $season->id);
             })->get();
-
-            $payments = Payment::all();
-
             return view('admin.seasons.show', compact([
-                'payments',
                 'season',
                 'subscriptions',
                 'notSubscribedUsers',

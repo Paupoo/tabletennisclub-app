@@ -2,10 +2,11 @@
 
 namespace App\Actions\Subscriptions;
 
+use App\Actions\Payments\GeneratePayment;
 use App\Actions\Payments\GeneratePaymentReference;
 use App\Actions\Payments\GeneratePaymentQR;
 use App\Http\Controllers\Controller;
-use App\Mail\PaymentInvitation;
+use App\Mail\PaymentInvitationEmail;
 use App\Models\Payment;
 use App\Models\Season;
 use App\Models\Subscription;
@@ -14,9 +15,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 
-use const App\Http\Controllers\Actions\Subscriptions\competitive;
-use const App\Http\Controllers\Actions\Subscriptions\required;
-use const App\Http\Controllers\Actions\Subscriptions\users;
 
 class SubscribeToSeasonController extends Controller
 {
@@ -47,17 +45,8 @@ class SubscribeToSeasonController extends Controller
         // Create the subscription
         $subscription = $this->subscribe();
             
-        // Generate the pengind payment
-        $payment = $this->generatePayment($subscription);
-
-        // Generate the QRCode
-        $QRGenerator = new GeneratePaymentQR();
-        $QRGenerator($payment); 
-
-        $payment->load( 'payable.user', 'payable.season');
-        // Send an email with payment instructions
-        Mail::to($this->user->email)
-            ->send(new PaymentInvitation($payment));
+        // Generate the penging payment
+        $payment = new GeneratePayment()($subscription);
 
         return back()->withInput([
             'success' => __('The user has been suscribed successfully'),
@@ -78,18 +67,5 @@ class SubscribeToSeasonController extends Controller
             'amount_due' => $this->calculatePrice(),
             'status' => 'pending',
         ]);
-    }
-
-    public function generatePayment(Subscription $subscription): Payment
-    {
-        $referenceGenerator = new GeneratePaymentReference();
-
-        return $subscription->payments()->create([
-            'reference' => $referenceGenerator  (),
-            'amount_due' => $subscription->amount_due,
-            'amount_paid' => 0,
-            'status' => 'pending',
-        ]);
-
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Contracts\PayableInterface;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphPivot;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Subscription extends Model
+class Subscription extends Model implements PayableInterface
 {
     /** @use HasFactory<\Database\Factories\SubscriptionFactory> */
     use HasFactory, SoftDeletes;
@@ -40,16 +41,16 @@ class Subscription extends Model
     protected function amountDue(): Attribute
     {
         return Attribute::make(
-            get: fn (string $value): float => round($value / 100, 2),
-            set: fn (string $value): int => $value * 100,
+            get: fn (?int $value): float => round(($value ?? 0) / 100, 2),
+            set: fn (int|float $value): int => $value * 100,
         );
     }
 
     protected function amountPaid(): Attribute
     {
         return Attribute::make(
-            get: fn (string $value): float => round($value / 100, 2),
-            set: fn (string $value): int => $value * 100,
+            get: fn (?int $value): float => round(($value ?? 0) / 100, 2),
+            set: fn (int|float $value): int => $value * 100,
         );
 
     }
@@ -57,7 +58,7 @@ class Subscription extends Model
     public function subscriptionPrice(): Attribute
     {
         return Attribute::make(
-            get: fn (int $value): float => round($value/100, 2),
+            get: fn (?int $value): float => round(($value ?? 0)/100, 2),
             set: fn (int|float $value): int => (int) $value * 100, 
         );
     }
@@ -81,37 +82,6 @@ class Subscription extends Model
     {
         return $this->morphMany(Payment::class, 'payable');
     }
-
-    // ==================== State Pattern Integration ====================
-
-    /**
-     * Retourne l'instance d'état actuelle
-     */
-    public function state(): SubscriptionState
-    {
-        return SubscriptionStateMachine::for($this);
-    }
-
-    /**
-     * Vérifie si une action est possible dans l'état actuel
-     */
-    public function can(string $action): bool
-    {
-        return SubscriptionStateMachine::can($this, $action);
-    }
-
-    /**
-     * Retourne les transitions possibles
-     * 
-     * @return array<string>
-     */
-    public function availableTransitions(): array
-    {
-        return SubscriptionStateMachine::availableTransitions($this);
-    }
-
-    // ==================== Business Logic ====================
-
     /**
      * Calcule le total payé via tous les payments
      */
@@ -119,7 +89,7 @@ class Subscription extends Model
     {
         return (float) $this->payments()
             ->whereIn('status', ['paid', 'refunded'])
-            ->sum('amount_paid') / 100;
+            ->sum('amount_paid');
     }
 
     /**
@@ -179,5 +149,11 @@ class Subscription extends Model
     public function scopePendingPayment($query)
     {
         return $query->whereIn('status', ['pending', 'confirmed']);
+    }
+
+    // ==================== Other ====================
+    public function getAmountDue(): int|float
+    {
+        return $this->getAttribute('amount_due');    
     }
 }

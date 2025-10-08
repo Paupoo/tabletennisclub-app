@@ -3,9 +3,13 @@
 declare(strict_types=1);
 
 use App\Actions\Payments\GeneratePayment;
-use App\Actions\Payments\SendPayementInvite;
+use App\Actions\Subscriptions\CancelSubscriptionAction;
+use App\Actions\Subscriptions\ConfirmSubscriptionAction;
+use App\Actions\Subscriptions\MarkPaidSubscriptionAction;
+use App\Actions\Subscriptions\MarkRefundSubscriptionAction;
 use App\Actions\Subscriptions\DeleteSubscription;
 use App\Actions\Subscriptions\SubscribeToSeasonController;
+use App\Actions\Subscriptions\UnconfirmSubscriptionAction;
 use App\Actions\Subscriptions\UnsubscribeFromSeasonController;
 use App\Actions\User\CreateNewUserAction;
 use App\Actions\User\InviteExistingUserAction;
@@ -327,9 +331,14 @@ Route::prefix('admin')->middleware(['auth'])->group(function (): void {
     Route::resource('subscriptions', SubscriptionController::class)->names('admin.subscriptions');
     Route::resource('payments', PaymentController::class)->names('admin.payments');
     Route::post('seasons/{season}/subscribe/', SubscribeToSeasonController::class)->name('admin.seasons.subscribe');
-    Route::post('seasons/{season}/unsubscribeUser/{user}', UnsubscribeFromSeasonController::class)->name('admin.seasons.unsubscribe');
-    Route::post('subscriptions/cancel/{subscription}', DeleteSubscription::class)->name('admin.subscriptions.cancel');
-    Route::post('subscriptions/sendPaymentInvite/{payment}', SendPayementInvite::class)->name('admin.subscriptions.sendPaymentInvite');
+    Route::post('seasons/{season}/unsubscribeUser/{user}', UnsubscribeFromSeasonController::class)->name('admin.subscriptions.unsubscribe');
+    Route::post('subscriptions/delete/{subscription}', DeleteSubscription::class)->name('admin.subscriptions.delete');
+    Route::post('subscriptions/sendPaymentInvite/', [PaymentController::class, 'sendInvite'])->name('admin.subscriptions.sendPaymentInvite');
+    Route::post('subscriptions/{subscription}/confirm', ConfirmSubscriptionAction::class)->name('admin.subscriptions.confirm');
+    Route::post('subscriptions/{subscription}/unconfirm', UnconfirmSubscriptionAction::class)->name('admin.subscriptions.unconfirm');
+    Route::post('subscriptions/{subscription}/cancel', CancelSubscriptionAction::class)->name('admin.subscriptions.cancel');
+    Route::post('subscriptions/{subscription}/markPair', MarkPaidSubscriptionAction::class)->name('admin.subscriptions.markPaid');
+    Route::post('subscriptions/{subscription}/markRefunded', MarkRefundSubscriptionAction::class)->name('admin.subscriptions.markRefunded');
     Route::post('payments/{subscription}/generate', GeneratePayment::class)->name('admin.subscription.generatePayment');
 });
 

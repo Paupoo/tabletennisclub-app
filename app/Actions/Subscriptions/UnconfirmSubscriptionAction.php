@@ -5,12 +5,12 @@ namespace App\Actions\Subscriptions;
 use App\Models\Subscription;
 use Illuminate\Http\RedirectResponse;
 
-class CancelSubscriptionAction
+class UnconfirmSubscriptionAction
 {
     public function __invoke(Subscription $subscription): RedirectResponse
     {
         try {
-            $subscription->cancel();
+            $subscription->unconfirm();
         } catch (\Throwable $th) {
             return back()
                 ->withErrors(['error' => $th->getMessage()]);
@@ -20,7 +20,7 @@ class CancelSubscriptionAction
 
         return back()
             ->withInput([
-                'success' => __('The subscription has been cancelled'),
+                'success' => __('The subscription has been set to pending'),
             ]);
     }
 }

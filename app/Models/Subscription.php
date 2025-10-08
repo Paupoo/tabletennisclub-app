@@ -3,18 +3,25 @@
 namespace App\Models;
 
 use App\Contracts\PayableInterface;
+use App\Contracts\SubscriptionState;
+use App\States\Payments\CancelledState;
+use App\States\Payments\ConfirmedState;
+use App\States\Payments\PaidState;
+use App\States\Payments\PendingState;
+use App\States\Payments\RefundedState;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
-use Illuminate\Database\Eloquent\Relations\MorphPivot;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Subscription extends Model implements PayableInterface
 {
     /** @use HasFactory<\Database\Factories\SubscriptionFactory> */
     use HasFactory, SoftDeletes;
+
+    private SubscriptionState $state;
 
     protected $table = 'subscriptions';
 
@@ -28,6 +35,7 @@ class Subscription extends Model implements PayableInterface
         'amount_paid',
         'subscription_price',
         'training_unit_price',
+        'status'
     ];
 
     protected $casts = [
@@ -82,6 +90,68 @@ class Subscription extends Model implements PayableInterface
     {
         return $this->morphMany(Payment::class, 'payable');
     }
+
+    // ==================== Observers ====================
+    public static function booted(): void
+    {
+        static::deleting(function (self $subscription) {
+            $subscription->payments()->delete();
+        });
+    }
+
+    // ==================== Status ====================
+    public function confirm(): void
+    {
+        $this->getCurrentState()->confirm($this);
+    }
+
+    public function unconfirm(): void
+    {
+        $this->getCurrentState()->unconfirm($this);
+    }
+
+    public function markAsPaid(): void
+    {
+        $this->getCurrentState()->markAsPaid($this);
+    }
+
+    public function refund(): void
+    {
+        $this->getCurrentState()->refund($this);
+    }
+
+    public function cancel(): void
+    {
+        $this->getCurrentState()->cancel($this);
+    }
+
+    public function setState(SubscriptionState $state): void
+    {
+        $this->status = $state->getStatus();
+        $this->save();
+    }
+ 
+    private function getCurrentState(): SubscriptionState
+    {
+        return match($this->status) {
+            'pending' => new PendingState(),
+            'confirmed' => new ConfirmedState(),
+            'paid' => new PaidState(),
+            'refunded' => new RefundedState(),
+            'cancelled' => new CancelledState(),
+            default => new PendingState(),
+        };
+    }
+
+    // Optionnel : helper pour obtenir le status actuel
+    public function getStatus(): string
+    {
+        return $this->status;
+    }
+
+    // ==================== Others ====================
+
+
     /**
      * Calcule le total payé via tous les payments
      */

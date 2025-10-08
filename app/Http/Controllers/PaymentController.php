@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Payments\SendPayementInvite;
 use App\Models\Payment;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -66,5 +68,21 @@ class PaymentController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+
+    public function sendInvite(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'payment_id' => 'required|exists:payments,id',
+        ]);
+
+        $payment = Payment::find($validated['payment_id']);
+
+        new SendPayementInvite()($payment);
+
+        return back()
+            ->withInput([
+                'success' => __('The payment invite has been sent'),
+            ]);
     }
 }

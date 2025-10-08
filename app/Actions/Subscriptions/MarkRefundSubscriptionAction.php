@@ -5,12 +5,14 @@ namespace App\Actions\Subscriptions;
 use App\Models\Subscription;
 use Illuminate\Http\RedirectResponse;
 
-class CancelSubscriptionAction
+use const App\Actions\Payments\paid;
+
+class MarkRefundSubscriptionAction
 {
     public function __invoke(Subscription $subscription): RedirectResponse
     {
-        try {
-            $subscription->cancel();
+        try {           
+            $subscription->refund();
         } catch (\Throwable $th) {
             return back()
                 ->withErrors(['error' => $th->getMessage()]);
@@ -20,7 +22,7 @@ class CancelSubscriptionAction
 
         return back()
             ->withInput([
-                'success' => __('The subscription has been cancelled'),
+                'success' => __('The subscription has been marked as refunded.'),
             ]);
     }
 }

@@ -4,14 +4,22 @@ namespace App\Actions\Subscriptions;
 
 
 use App\Models\Subscription;
+use Illuminate\Http\RedirectResponse;
 
 class ConfirmSubscriptionAction
 {
-   public function execute(Subscription $subscription): Subscription
-    {
-        // Délègue à l'état actuel
-        $subscription->state()->confirm();
+   public function __invoke(Subscription $subscription): RedirectResponse
+   {
+        try {
+            $subscription->confirm();
+        } catch (\Throwable $th) {
+            return back()
+                ->withErrors(['errror' => $th->getMessage()]);
+        }
 
-        return $subscription->fresh();
-    }
+        return back()
+            ->withInput([
+                'success' => __('The subscription has been confirmed'),
+            ]);
+   }
 }

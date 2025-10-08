@@ -16,7 +16,7 @@ class SendPayementInvite
         // Generate the QRCode
         $QRGenerator = new GeneratePaymentQR()($payment);
         $payment = $payment->load('payable.user');
-        dd($payment->payable);
+        
         // Send an email with payment instructions
         Mail::to($payment->payable->user)
             ->send(new PaymentInvitationEmail($payment

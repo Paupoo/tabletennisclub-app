@@ -18,7 +18,7 @@ class UnsubscribeFromSeasonController extends Controller
     {
         $season->users()->detach($user);
 
-        return back()->withInput([
+        return back()->with([
             'success' => __('The user has been suscribed successfully'),
         ]);
     }

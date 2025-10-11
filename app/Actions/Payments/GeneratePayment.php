@@ -25,7 +25,7 @@ class GeneratePayment
         ]);
 
         return back()
-            ->withInput([
+            ->with([
                 'success' => __('A new payment has been generated'),
             ]);
     }

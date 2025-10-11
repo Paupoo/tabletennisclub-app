@@ -21,7 +21,7 @@ class MarkPaidSubscriptionAction
         $subscription->fresh();
 
         return back()
-            ->withInput([
+            ->with([
                 'success' => __('The subscription has been marked as paid'),
             ]);
     }

@@ -37,10 +37,6 @@ class SubscriptionFactory extends Factory
             'is_competitive' => $competitor,
             'amount_due' => $amountDue,
             'amount_paid' => 0,
-            // 'has_other_family_members' => $this->faker->boolean(20),
-            // 'trainings_count' => $this->faker->numberBetween(0, 10),
-            // 'subscription_price' => $amountDue,
-            // 'training_unit_price' => $this->faker->numberBetween(500, 1000),
             'created_at' => $this->faker->dateTimeBetween('-30 days', 'now'),
             'updated_at' => now(),
         ];

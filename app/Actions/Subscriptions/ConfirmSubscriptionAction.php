@@ -19,7 +19,7 @@ class ConfirmSubscriptionAction
         }
 
         return back()
-            ->withInput([
+            ->with([
                 'success' => __('The subscription has been confirmed'),
             ]);
     }

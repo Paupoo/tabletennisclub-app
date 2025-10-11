@@ -21,7 +21,7 @@ class CancelSubscriptionAction
         $subscription->fresh();
 
         return back()
-            ->withInput([
+            ->with([
                 'success' => __('The subscription has been cancelled'),
             ]);
     }

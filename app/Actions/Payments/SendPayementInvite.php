@@ -24,7 +24,7 @@ class SendPayementInvite
             );
 
         return back()
-            ->withInput([
+            ->with([
                 'success' => __('The payment invitation has been sent'),
             ]);
     }

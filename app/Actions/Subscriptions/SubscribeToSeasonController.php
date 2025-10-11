@@ -46,7 +46,7 @@ class SubscribeToSeasonController extends Controller
         // Generate the penging payment
         $payment = new GeneratePayment($subscription);
 
-        return back()->withInput([
+        return back()->with([
             'success' => __('The user has been suscribed successfully'),
         ]);
     }

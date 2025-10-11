@@ -21,7 +21,7 @@ class MarkRefundSubscriptionAction
         $subscription->fresh();
 
         return back()
-            ->withInput([
+            ->with([
                 'success' => __('The subscription has been marked as refunded.'),
             ]);
     }

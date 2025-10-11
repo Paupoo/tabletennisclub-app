@@ -21,7 +21,7 @@ class UnconfirmSubscriptionAction
         $subscription->fresh();
 
         return back()
-            ->withInput([
+            ->with([
                 'success' => __('The subscription has been set to pending'),
             ]);
     }

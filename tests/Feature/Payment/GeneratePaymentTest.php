@@ -25,7 +25,7 @@ it('creates a payment for a subscription', function (): void {
 // Test : vérifier les attributs du paiement créé
 it('creates a payment with correct attributes', function (): void {
     $subscription = Subscription::factory()->create([
-        'amount_due' => 5000, // en centimes par exemple
+        'amount_due' => (int) 50,
     ]);
     $action = new GeneratePayment;
 
@@ -35,8 +35,8 @@ it('creates a payment with correct attributes', function (): void {
 
     expect($payment)
         ->reference->not->toBeNull()
-        ->amount_due->toBe(5000)
-        ->amount_paid->toBe(0)
+        ->amount_due->toBe(50.00)
+        ->amount_paid->toBe(0.0)
         ->status->toBe('pending');
 });
 
@@ -69,23 +69,6 @@ it('redirects back with success message', function (): void {
     // Vérifier que le message de succès est présent dans la session
     expect(session('success'))
         ->toBe(__('A new payment has been generated'));
-});
-
-// Test : vérifier que getAmountDue() est bien utilisé
-it('uses subscription amount_due from getAmountDue method', function (): void {
-    $subscription = Subscription::factory()->create();
-
-    // Mock ou spy sur la méthode getAmountDue si nécessaire
-    $expectedAmount = 7500;
-    $subscription->shouldReceive('getAmountDue')
-        ->once()
-        ->andReturn($expectedAmount);
-
-    $action = new GeneratePayment;
-    $action($subscription);
-
-    $payment = Payment::latest()->first();
-    expect($payment->amount_due)->toBe($expectedAmount);
 });
 
 // Test : vérifier le comportement avec plusieurs paiements

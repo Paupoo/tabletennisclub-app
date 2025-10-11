@@ -25,8 +25,8 @@ return new class extends Migration
             $table->id();
             $table->string('reference')->unique();
             $table->string('transaction_id')->unique()->nullable();
-            $table->unsignedSmallInteger('amount_due');
-            $table->unsignedSmallInteger('amount_paid');
+            $table->unsignedInteger('amount_due');
+            $table->unsignedInteger('amount_paid');
             $table->enum(column: 'status', allowed: ['pending', 'paid', 'failed', 'refunded'])->default('pending');
             $table->morphs('payable');
             $table->timestamps();

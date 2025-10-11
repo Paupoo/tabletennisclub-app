@@ -31,10 +31,10 @@ return new class extends Migration
             $table->boolean('is_competitive')->default(false);
             $table->boolean('has_other_family_members')->default(false);
             $table->unsignedTinyInteger('trainings_count')->default(0);
-            $table->unsignedSmallInteger('subscription_price')->default(0);
-            $table->unsignedSmallInteger('training_unit_price')->default(0);
-            $table->unsignedSmallInteger('amount_due')->default(0);
-            $table->unsignedSmallInteger('amount_paid')->default(0);
+            $table->unsignedInteger('subscription_price')->default(0);
+            $table->unsignedInteger('training_unit_price')->default(0);
+            $table->unsignedInteger('amount_due')->default(0);
+            $table->unsignedInteger('amount_paid')->default(0);
             $table->softDeletes();
             $table->timestamps();
         });

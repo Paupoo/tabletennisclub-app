@@ -43,4 +43,11 @@ class RefundedState implements SubscriptionState
         // État final : remboursée
         throw new \LogicException('Cannot set a refunded subscription back to pending.');
     }
+
+    public function availableTransitions(): array
+    {
+        return [
+            'markPaid' => __('Mark as Paid'),
+        ];
+    }
 }

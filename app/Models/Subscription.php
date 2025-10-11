@@ -174,6 +174,12 @@ class Subscription extends Model implements PayableInterface
         );
     }
 
+    // ==================== UI helpers ====================
+    public function availableTransitions(): array
+    {
+        return $this->getCurrentState()->availableTransitions();
+    }
+
     // ==================== Others ====================
 
     /**

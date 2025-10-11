@@ -48,9 +48,12 @@ class SeasonController extends Controller
         $seasons = Season::orderBy('start_at')
             ->paginate();
 
+        $users = User::all();
+
         return view('admin.seasons.index', compact([
-            'seasons',
             'breadcrumbs',
+            'seasons',
+            'users',
         ]));
     }
 

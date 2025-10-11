@@ -46,4 +46,12 @@ class PaidState implements SubscriptionState
         // Déjà confirmée et payée
         throw new \LogicException('Subscription is already paid.');
     }
+
+        public function availableTransitions(): array
+    {
+        return [
+            'markRefunded' => __('Refund'),
+            'confirm' => __('Confirm'),
+        ];
+    }
 }

@@ -336,7 +336,7 @@ Route::prefix('admin')->middleware(['auth'])->group(function (): void {
     Route::post('subscriptions/{subscription}/confirm', ConfirmSubscriptionAction::class)->name('admin.subscriptions.confirm');
     Route::post('subscriptions/{subscription}/unconfirm', UnconfirmSubscriptionAction::class)->name('admin.subscriptions.unconfirm');
     Route::post('subscriptions/{subscription}/cancel', CancelSubscriptionAction::class)->name('admin.subscriptions.cancel');
-    Route::post('subscriptions/{subscription}/markPair', MarkPaidSubscriptionAction::class)->name('admin.subscriptions.markPaid');
+    Route::post('subscriptions/{subscription}/markPaid', MarkPaidSubscriptionAction::class)->name('admin.subscriptions.markPaid');
     Route::post('subscriptions/{subscription}/markRefunded', MarkRefundSubscriptionAction::class)->name('admin.subscriptions.markRefunded');
     Route::post('payments/{subscription}/generate', GeneratePayment::class)->name('admin.subscription.generatePayment');
 });

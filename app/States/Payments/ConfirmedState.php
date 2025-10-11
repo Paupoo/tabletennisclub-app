@@ -45,4 +45,13 @@ class ConfirmedState implements SubscriptionState
         // Déjà confirmée
         $subscription->setState(new PendingState);
     }
+
+    public function availableTransitions(): array
+    {
+        return [
+            'cancel' => __('Cancel'),
+            'markPaid' => __('Mark as Paid'),
+            'unconfirm' => __('Unconfirm'),
+        ];
+    }
 }

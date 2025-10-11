@@ -19,4 +19,6 @@ interface SubscriptionState
     public function refund(Subscription $subscription): void;
 
     public function unconfirm(Subscription $subscription): void;
+
+    public function availableTransitions(): array;
 }

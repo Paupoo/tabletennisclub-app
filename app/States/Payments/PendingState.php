@@ -43,4 +43,12 @@ class PendingState implements SubscriptionState
         // L'instance est déjà pending
         throw new \LogicException(__('The subscription is already pending'));
     }
+
+    public function availableTransitions(): array
+    {
+        return [
+            'confirm' => __('Confirm'),
+            'cancel' => __('Cancel'),
+        ];
+    }
 }

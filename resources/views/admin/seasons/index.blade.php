@@ -402,7 +402,7 @@
                                     class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:border-club-blue focus:ring focus:ring-club-blue focus:ring-opacity-50"
                                     required>
                                 <option value="" disabled selected>{{ __('Select a member') }}</option>
-                                @foreach($allUsers ?? [] as $user)
+                                @foreach($users ?? [] as $user)
                                     <option value="{{ $user->id }}">{{ $user->fullName }}</option>
                                 @endforeach
                             </select>

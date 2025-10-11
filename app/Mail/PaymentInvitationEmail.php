@@ -30,7 +30,7 @@ class PaymentInvitationEmail extends Mailable
      */
     public function __construct(public Payment $payment)
     {
-        $this->qrCode = new GeneratePaymentQR($payment);
+        $this->qrCode = new GeneratePaymentQR()($payment);
     }
 
     /**

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -22,8 +23,8 @@ class SeasonFactory extends Factory
 
         return [
             'name' => $year . ' - ' . $year + 1,
-            'start_at' => $year,
-            'end_at' => $year + 1,
+            'start_at' => Carbon::parse('first day of September '. $year),
+            'end_at' => Carbon::parse('last day of June '. $year + 1),
         ];
     }
 }

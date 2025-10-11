@@ -6,9 +6,9 @@ namespace App\States\Tournament;
 
 use App\Enums\TournamentStatusEnum;
 use App\States\Tournament\Contracts\TournamentStateInterface;
-use App\States\Tournament\States\CancelledState;
 use App\States\Tournament\States\ClosedState;
 use App\States\Tournament\States\DraftState;
+use App\States\Tournament\States\LockedState;
 use App\States\Tournament\States\PendingState;
 use App\States\Tournament\States\PublishedState;
 use App\States\Tournament\States\SetUpState;
@@ -23,7 +23,8 @@ final class TournamentStateFactory
             TournamentStatusEnum::SETUP => new SetUpState,
             TournamentStatusEnum::PENDING => new PendingState,
             TournamentStatusEnum::CLOSED => new ClosedState,
-            TournamentStatusEnum::CANCELLED => new CancelledState,
+            TournamentStatusEnum::LOCKED => new LockedState,
+            TournamentStatusEnum::CANCELLED => new LockedState,
         };
     }
 }

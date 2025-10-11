@@ -117,7 +117,7 @@ class EventController extends Controller
             'drafts' => Event::where('status', EventStatusEnum::DRAFT)->count(),
             'published' => Event::where('status', EventStatusEnum::PUBLISHED)->count(),
             'archived' => Event::where('status', EventStatusEnum::ARCHIVED)->count(),
-            'upcoming' => Event::where('start_at', '>=', today())->count(),
+            'upcoming' => Event::where('start_time', '>=', today())->count(),
         ];
 
         $breadcrumbs = Breadcrumb::make()

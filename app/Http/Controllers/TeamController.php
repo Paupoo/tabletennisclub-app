@@ -146,14 +146,14 @@ class TeamController extends Controller
             'teamsInClub' => Team::select('teams.*')
                 ->InClub()
                 ->join('seasons', 'teams.season_id', 'seasons.id')
-                ->orderBy('seasons.start_year')
+                ->orderBy('seasons.start_at')
                 ->orderBy('teams.name')
                 ->paginate(10),
             'teamModel' => Team::class,
             'teamsNotInClub' => Team::select('teams.*')
                 ->NotInClub()
                 ->join('seasons', 'teams.season_id', 'seasons.id')
-                ->orderBy('seasons.start_year')
+                ->orderBy('seasons.start_at')
                 ->orderBy('teams.name')
                 ->paginate(10),
             'breadcrumbs' => $breadcrumbs,

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Payment;
 use App\Models\Season;
 use App\Models\User;
+use App\Support\Breadcrumb;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -15,10 +16,16 @@ class SeasonController extends Controller
      */
     public function index(): View
     {
-        $seasons = Season::all();
+        $breadcrumbs = Breadcrumb::make()
+                ->home()
+                ->toArray();
+
+        $seasons = Season::orderBy('start_at')
+            ->paginate();
 
         return view ('admin.seasons.index', compact([
             'seasons',
+            'breadcrumbs',
         ]));
     }
 
@@ -51,6 +58,9 @@ class SeasonController extends Controller
      */
         public function show(string $id): View
         {
+            $breadcrumbs = Breadcrumb::make()
+                ->home()
+                ->toArray();
             $season = Season::with('users')->findOrFail($id);
             $subscriptions = $season->subscriptions->load('payments');
             $notSubscribedUsers = User::whereDoesntHave('subscriptions', function ($query) use ($season) {
@@ -60,6 +70,7 @@ class SeasonController extends Controller
                 'season',
                 'subscriptions',
                 'notSubscribedUsers',
+                'breadcrumbs',
             ]));
         }
 

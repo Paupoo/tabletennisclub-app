@@ -16,7 +16,6 @@ class GeneratePayment
     public function __invoke(Subscription $subscription): RedirectResponse
     {
         $referenceGenerator = new GeneratePaymentReference();
-        // dd($payableInterface);
 
         $subscription->payments()->create([
             'reference' => $referenceGenerator  (),

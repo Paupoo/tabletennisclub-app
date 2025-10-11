@@ -27,7 +27,7 @@ class TransactionController extends Controller
         $query = Transaction::query()->orderBy('date', 'desc');
 
         if ($search = $request->get('search')) {
-            $query->where(function ($q) use ($search) {
+            $query->where(function ($q) use ($search): void {
                 $q->where('description', 'LIKE', "%{$search}%")
                     ->orWhere('counterparty_name', 'LIKE', "%{$search}%")
                     ->orWhere('counterparty_bank_account', 'LIKE', "%{$search}%");

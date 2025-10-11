@@ -341,7 +341,7 @@ Route::prefix('admin')->middleware(['auth'])->group(function (): void {
     Route::post('payments/{subscription}/generate', GeneratePayment::class)->name('admin.subscription.generatePayment');
 });
 
-Route::prefix('admin/transactions')->middleware(['auth'])->group(function () {
+Route::prefix('admin/transactions')->middleware(['auth'])->group(function (): void {
     Route::get('add', [TransactionController::class, 'add'])->name('admin.transactions.add ');
     Route::post('upload', [TransactionController::class, 'upload'])->name('admin.transactions.upload');
     Route::get('/', [TransactionController::class, 'index'])->name('admin.transactions.index');

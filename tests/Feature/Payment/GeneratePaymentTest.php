@@ -10,7 +10,7 @@ use App\Models\Subscription;
 uses()->group('payment');
 
 // Test basique : vérifier qu'un paiement est bien créé
-it('creates a payment for a subscription', function () {
+it('creates a payment for a subscription', function (): void {
     // Arrange : préparer les données
     $subscription = Subscription::factory()->create();
     $action = new GeneratePayment;
@@ -23,7 +23,7 @@ it('creates a payment for a subscription', function () {
 });
 
 // Test : vérifier les attributs du paiement créé
-it('creates a payment with correct attributes', function () {
+it('creates a payment with correct attributes', function (): void {
     $subscription = Subscription::factory()->create([
         'amount_due' => 5000, // en centimes par exemple
     ]);
@@ -41,7 +41,7 @@ it('creates a payment with correct attributes', function () {
 });
 
 // Test : vérifier que la référence est unique
-it('generates unique payment references', function () {
+it('generates unique payment references', function (): void {
     $subscription = Subscription::factory()->create();
     $action = new GeneratePayment;
 
@@ -57,7 +57,7 @@ it('generates unique payment references', function () {
 });
 
 // Test : vérifier la redirection avec message de succès
-it('redirects back with success message', function () {
+it('redirects back with success message', function (): void {
     $subscription = Subscription::factory()->create();
     $action = new GeneratePayment;
 
@@ -72,7 +72,7 @@ it('redirects back with success message', function () {
 });
 
 // Test : vérifier que getAmountDue() est bien utilisé
-it('uses subscription amount_due from getAmountDue method', function () {
+it('uses subscription amount_due from getAmountDue method', function (): void {
     $subscription = Subscription::factory()->create();
 
     // Mock ou spy sur la méthode getAmountDue si nécessaire
@@ -89,7 +89,7 @@ it('uses subscription amount_due from getAmountDue method', function () {
 });
 
 // Test : vérifier le comportement avec plusieurs paiements
-it('can generate multiple payments for the same subscription', function () {
+it('can generate multiple payments for the same subscription', function (): void {
     $subscription = Subscription::factory()->create();
     $action = new GeneratePayment;
 

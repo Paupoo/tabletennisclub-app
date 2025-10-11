@@ -64,7 +64,7 @@ class SeasonController extends Controller
             ->toArray();
         $season = Season::with('users')->findOrFail($id);
         $subscriptions = $season->subscriptions->load('payments');
-        $notSubscribedUsers = User::whereDoesntHave('subscriptions', function ($query) use ($season) {
+        $notSubscribedUsers = User::whereDoesntHave('subscriptions', function ($query) use ($season): void {
             $query->where('season_id', $season->id);
         })->get();
 

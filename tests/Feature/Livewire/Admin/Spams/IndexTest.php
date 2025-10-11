@@ -10,13 +10,13 @@ use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->adminUser = User::factory()->create();
     // $this->adminUser->assignRole('admin'); // Si tu utilises Spatie Permission
 });
 
-describe('Spams admin page', function () {
-    it('is accessible by an admin', function () {
+describe('Spams admin page', function (): void {
+    it('is accessible by an admin', function (): void {
         $this->actingAs($this->adminUser)
             ->get(route('admin.spams.index'))
             ->assertOk()
@@ -24,7 +24,7 @@ describe('Spams admin page', function () {
             ->assertSeeLivewire(Index::class);
     });
 
-    it('displays spam list correctly', function () {
+    it('displays spam list correctly', function (): void {
         $spams = Spam::factory()->count(3)->create([
             'created_at' => now()->subHours(2),
             'user_agent' => 'TestAgent/1.0',
@@ -36,7 +36,7 @@ describe('Spams admin page', function () {
             ->assertSee('TestAgent/1.0');
     });
 
-    it('displays stats correctly', function () {
+    it('displays stats correctly', function (): void {
         Spam::factory()->count(3)->create(['created_at' => now()]);
         Spam::factory()->count(2)->create(['created_at' => now()->subDay()]);
 
@@ -47,8 +47,8 @@ describe('Spams admin page', function () {
     });
 });
 
-describe('Search and filters', function () {
-    it('can search by ip', function () {
+describe('Search and filters', function (): void {
+    it('can search by ip', function (): void {
         $spam1 = Spam::factory()->create(['ip' => '192.168.1.100']);
         $spam2 = Spam::factory()->create(['ip' => '10.0.0.50']);
 
@@ -59,7 +59,7 @@ describe('Search and filters', function () {
             ->assertDontSee($spam2->ip);
     });
 
-    it('can filter by period', function () {
+    it('can filter by period', function (): void {
         $todaySpam = Spam::factory()->create(['created_at' => now()]);
         $oldSpam = Spam::factory()->create(['created_at' => now()->subWeek()]);
 
@@ -70,7 +70,7 @@ describe('Search and filters', function () {
             ->assertDontSee($oldSpam->ip);
     });
 
-    it('can clear all filters', function () {
+    it('can clear all filters', function (): void {
         Livewire::actingAs($this->adminUser)
             ->test(Index::class)
             ->set('search', 'test')
@@ -82,7 +82,7 @@ describe('Search and filters', function () {
             ->assertSet('filters.specificIp', '');
     });
 
-    it('can search inside json fields', function () {
+    it('can search inside json fields', function (): void {
         $spam = Spam::factory()->create([
             'inputs' => ['email' => 'test@spam.com', 'message' => 'Buy now!'],
         ]);
@@ -94,8 +94,8 @@ describe('Search and filters', function () {
     });
 });
 
-describe('Spam deletion', function () {
-    it('can delete a single spam', function () {
+describe('Spam deletion', function (): void {
+    it('can delete a single spam', function (): void {
         $spam = Spam::factory()->create();
 
         Livewire::actingAs($this->adminUser)
@@ -105,7 +105,7 @@ describe('Spam deletion', function () {
         $this->assertDatabaseMissing('spams', ['id' => $spam->id]);
     });
 
-    it('can bulk delete spams', function () {
+    it('can bulk delete spams', function (): void {
         $spams = Spam::factory()->count(3)->create();
         $spamIds = $spams->pluck('id')->toArray();
 
@@ -120,8 +120,8 @@ describe('Spam deletion', function () {
     });
 });
 
-describe('Selection and pagination', function () {
-    it('can select all spams on the page', function () {
+describe('Selection and pagination', function (): void {
+    it('can select all spams on the page', function (): void {
         Spam::factory()->count(5)->create();
 
         Livewire::actingAs($this->adminUser)
@@ -130,7 +130,7 @@ describe('Selection and pagination', function () {
             ->assertCount('selectedItems', 5);
     });
 
-    it('handles pagination correctly', function () {
+    it('handles pagination correctly', function (): void {
         Spam::factory()->count(30)->create();
 
         $component = Livewire::actingAs($this->adminUser)

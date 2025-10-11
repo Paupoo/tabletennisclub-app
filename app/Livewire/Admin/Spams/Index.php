@@ -262,7 +262,7 @@ class Index extends Component
         // Recherche textuelle
         if (! empty($this->search)) {
             $searchTerm = '%' . $this->search . '%';
-            $query->where(function (Builder $q) use ($searchTerm) {
+            $query->where(function (Builder $q) use ($searchTerm): void {
                 $q->where('ip', 'like', $searchTerm)
                     ->orWhere('user_agent', 'like', $searchTerm)
                     ->orWhereRaw("JSON_SEARCH(inputs, 'all', ?) IS NOT NULL", [$this->search]);

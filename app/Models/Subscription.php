@@ -49,7 +49,7 @@ class Subscription extends Model implements PayableInterface
     // ==================== Observers ====================
     public static function booted(): void
     {
-        static::deleting(function (self $subscription) {
+        static::deleting(function (self $subscription): void {
             $subscription->payments()->delete();
         });
     }

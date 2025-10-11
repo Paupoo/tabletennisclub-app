@@ -113,6 +113,9 @@ class TrainingController extends Controller
         $seasons = $this->getAdjacentSeasons();
         $types = TrainingType::cases();
         $users = User::all();
+        $notSubscribedUsers = User::whereDoesntHave('trainings', function ($query) use ($training) {
+            $query->where('training_id', $training->id);
+        })->get();
 
         return view('admin.trainings.edit', compact([
             'breadcrumbs',
@@ -122,6 +125,7 @@ class TrainingController extends Controller
             'seasons',
             'types',
             'users',
+            'notSubscribedUsers',
         ]));
     }
 

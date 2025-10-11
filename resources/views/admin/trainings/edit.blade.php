@@ -1,4 +1,5 @@
 <x-app-layout :breadcrumbs="$breadcrumbs">
+    <div x-data="{ showSubscribeModal: false }">
     <x-admin-block>
         <!-- En-tête de page avec navigation -->
         <div class="bg-white rounded-lg shadow-lg p-4 sm:p-6 mb-6">
@@ -9,15 +10,20 @@
                 </div>
 
                 <!-- Navigation contextuelle -->
-                <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-                    <a href="{{ route('dashboard') }}"
-                       class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base w-full sm:w-auto text-center flex items-center justify-center">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2v10z"></path>
-                        </svg>
-                        {{ __('Dashboard') }}
+                <div class="flex flex-col xs:flex-row space-y-2 sm:space-y-0 xs:space-x-2 lg:space-x-3 gap-2">
+                    <button @click="showSubscribeModal = true"
+                                class="inline-flex items-center justify-center px-4 py-2 bg-club-blue hover:bg-club-blue-light text-white rounded-lg font-medium transition-colors text-sm sm:text-base w-full sm:w-auto text-center">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                </svg>
+                                {{ __('Subscribe a member (TO DO)') }}
+                            </button>
+                    <a href="#"
+                       class="bg-red-600 hover:bg-red-500 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base w-full sm:w-auto text-center flex items-center justify-center">
+                        <x-ui.icon name="cancel" class="mr-2" />
+                        {{ __('Cancel training (TODO)') }}
                     </a>
-                    
                     <a href="{{ route('trainings.index') }}"
                        class="bg-club-yellow hover:bg-club-yellow-light text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base w-full sm:w-auto text-center flex items-center justify-center">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -123,4 +129,71 @@
             </div>
         </div>
     </x-admin-block>
+
+    <!-- Modal d'inscription d'un membre -->
+        <div x-show="showSubscribeModal" x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+            x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100"
+            x-transition:leave-end="opacity-0" class="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50"
+            style="display: none;">
+            <div class="flex items-center justify-center min-h-screen px-4">
+                <div x-show="showSubscribeModal" @click.outside="showSubscribeModal = false"
+                    x-transition:enter="transition ease-out duration-300"
+                    x-transition:enter-start="opacity-0 transform scale-95"
+                    x-transition:enter-end="opacity-100 transform scale-100"
+                    x-transition:leave="transition ease-in duration-200"
+                    x-transition:leave-start="opacity-100 transform scale-100"
+                    x-transition:leave-end="opacity-0 transform scale-95"
+                    class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md mx-auto">
+
+                    <div
+                        class="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-club-blue bg-opacity-10 rounded-full">
+                        <svg class="w-6 h-6 text-club-blue" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z">
+                            </path>
+                        </svg>
+                    </div>
+
+                    <h3 class="text-lg font-semibold text-gray-900 text-center mb-2">
+                        {{ __('Subscribe a member') }}
+                    </h3>
+
+                    <p class="text-sm text-gray-600 text-center mb-6">
+                        {{ __('Select a member and subscription type') }}
+                    </p>
+
+                    <form action="#" method="POST" class="space-y-4">
+                        @csrf
+                        <!-- Sélection du membre -->
+                        <div>
+                            <x-input-label for="user_id" :value="__('Member')" />
+                            <select name="user_id" id="user_id"
+                                class="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:border-club-blue focus:ring focus:ring-club-blue focus:ring-opacity-50"
+                                required>
+                                <option value="" disabled selected>{{ __('Select a member') }}</option>
+                                @foreach ($notSubscribedUsers as $notSubscribedUser)
+                                    <option value="{{ $notSubscribedUser->id }}">{{ $notSubscribedUser->fullName }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <!-- Boutons d'action -->
+                        <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 pt-4">
+                            <button type="button" @click="showSubscribeModal = false"
+                                class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg font-medium transition-colors text-sm">
+                                {{ __('Cancel') }}
+                            </button>
+                            <button type="submit"
+                                class="flex-1 bg-club-blue hover:bg-club-blue-light text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm">
+                                {{ __('Subscribe') }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        </div>
 </x-app-layout>

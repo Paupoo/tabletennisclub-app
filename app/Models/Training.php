@@ -87,9 +87,15 @@ class Training extends Model
         return $this->belongsTo(Room::class);
     }
 
+    // TO CHECK COULD BE REMOVED???
     public function season(): BelongsTo
     {
         return $this->belongsTo(Season::class);
+    }
+
+    public function trainingPack(): BelongsTo
+    {
+        return $this->belongsTo(TrainingPack::class);
     }
 
     // Mutators

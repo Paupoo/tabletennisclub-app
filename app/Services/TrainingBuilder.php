@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Models\Room;
 use App\Models\Season;
 use App\Models\Training;
+use App\Models\TrainingPack;
 use App\Models\User;
 use Carbon\Carbon;
 
@@ -68,6 +69,17 @@ class TrainingBuilder
             $trainer = User::findOrFail($trainer_id);
 
             $this->training->trainer()->associate($trainer);
+        }
+
+        return $this;
+    }
+
+    public function setTrainingPack(?int $trainingPackId = null): self
+    {
+        if ($trainingPackId !== null) {
+            $trainingPack = TrainingPack::findOrFail($trainingPackId);
+
+            $this->training->TrainingPack()->associate($trainingPackId);
         }
 
         return $this;

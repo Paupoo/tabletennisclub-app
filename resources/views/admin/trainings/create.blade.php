@@ -99,7 +99,7 @@
                 <div class="space-y-6">
                     <form id="training-form" action="{{ $training->id ? route('trainings.update', $training) : route('trainings.store') }}" method="POST" class="mt-6 space-y-6">
                     @csrf
-                        <x-forms.training :levels="$levels" :training="$training" :types="$types" :rooms="$rooms" :seasons="$seasons" :users="$users"/>
+                        <x-forms.training :levels="$levels" :training="$training" :types="$types" :rooms="$rooms" :seasons="$seasons" :users="$users"   :trainingPacks="$trainingPacks"/>
                     </form>    
                 </div>
 

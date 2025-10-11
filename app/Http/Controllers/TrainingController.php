@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Enums\Recurrence;
 use App\Enums\TrainingLevel;
 use App\Enums\TrainingType;
 use App\Http\Requests\StoreTrainingRequest;
@@ -11,6 +12,7 @@ use App\Http\Requests\UpdateTrainingRequest;
 use App\Models\Room;
 use App\Models\Season;
 use App\Models\Training;
+use App\Models\TrainingPack;
 use App\Models\User;
 use App\Services\TrainingBuilder;
 use App\Services\TrainingDateGenerator;
@@ -46,6 +48,7 @@ class TrainingController extends Controller
             ->toArray();
 
         $training = new Training;
+        $trainingPacks = TrainingPack::all();
 
         return view('admin.trainings.create', [
             'levels' => TrainingLevel::cases(),
@@ -55,6 +58,7 @@ class TrainingController extends Controller
             'types' => TrainingType::cases(),
             'users' => User::select('id', 'last_name', 'first_name')->orderBy('last_name', 'asc')->orderBy('first_name', 'asc')->get(),
             'breadcrumbs' => $breadcrumbs,
+            'trainingPacks' => $trainingPacks,
         ]);
     }
 
@@ -116,6 +120,7 @@ class TrainingController extends Controller
         $notSubscribedUsers = User::whereDoesntHave('trainings', function ($query) use ($training) {
             $query->where('training_id', $training->id);
         })->get();
+        $trainingPacks = TrainingPack::all();
 
         return view('admin.trainings.edit', compact([
             'breadcrumbs',
@@ -126,6 +131,7 @@ class TrainingController extends Controller
             'types',
             'users',
             'notSubscribedUsers',
+            'trainingPacks',
         ]));
     }
 
@@ -176,6 +182,30 @@ class TrainingController extends Controller
     {
         // Validate the request
         $validated = $request->validated();
+        $trainingPackId = null;
+
+        /**
+         * See form request, I might have an ID if there is no recurrence,
+         * to be used to link the solo training to that pack.
+         */
+        if($validated['training_pack_id']) {
+            $trainingPackId = $validated['training_pack_id'];
+        }
+
+        /**
+         * See form request, I expect to have a name if there is a recurrence
+         * so that I can create a new trainingpack.
+         */
+        if($validated['training_pack_name']) {
+            $newCreatedPack = TrainingPack::create([
+                'season_id' => $validated['season_id'],
+                'name' => $validated['training_pack_name'],
+                'price' => $validated['training_pack_price']
+            ]);
+
+            $trainingPack = $newCreatedPack->id;
+        }
+        
 
         $training_dates = $this->dateGenerator->generateDates($validated['start_date'], $validated['end_date'], $validated['recurrence']);
 
@@ -188,6 +218,7 @@ class TrainingController extends Controller
                 ->setRoom($validated['room_id'])
                 ->setSeason($validated['season_id'])
                 ->setTrainer($validated['trainer_id'])
+                ->setTrainingPack($trainingPack)
                 ->buildAndSave();
         }
 

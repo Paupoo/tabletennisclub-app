@@ -74,9 +74,9 @@
                         class="mb-2"/>
                     <x-select-input id="training_pack_id" name="training_pack_id" class="block w-full">
                         <option value="">{{ __('None') }}</option>
-                        @foreach (['test1', 'test2'] as $training_pack)
-                            <option value="#" @selected(old('training_pack_id') == $training_pack)>
-                                {{ $training_pack }}
+                        @foreach ($trainingPacks as $trainingPack)
+                            <option value="#" @selected(old('training_pack_id') == $trainingPack)>
+                                {{ $trainingPack }}
                             </option>
                         @endforeach
                     </x-select-input>

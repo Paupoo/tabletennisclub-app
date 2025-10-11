@@ -96,6 +96,20 @@ class StoreTrainingRequest extends FormRequest
                 'integer',
                 'exists:users,id',
             ],
+            'training_pack_id' => [
+                'nullable',
+                'integer',
+            ],
+            'training_pack_name' => [
+                'string',
+                'required_if:recurrence,' . Recurrence::DAILY->name,
+                'required_if:recurrence,' . Recurrence::WEEKLY->name,
+                'required_if:recurrence,' . Recurrence::BIWEEKLY->name,
+            ],
+            'training_pack_price' => [
+                'nullable',
+                'decimal:2',
+            ],
             'type' => [
                 'required',
                 'string',

@@ -68,9 +68,15 @@ class Season extends Model
         return $this->hasMany(Team::class);
     }
 
+    // Could be updated to hasmanythrough trainingPack ???
     public function trainings(): HasMany
     {
         return $this->hasMany(Training::class);
+    }
+
+    public function trainingPacks(): HasMany
+    {
+        return $this->hasMany(TrainingPack::class);
     }
 
     public function users(): BelongsToMany

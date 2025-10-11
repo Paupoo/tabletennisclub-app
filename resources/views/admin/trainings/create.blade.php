@@ -95,8 +95,8 @@
                         <div class="ml-3">
                             <h4 class="text-sm font-medium text-blue-800">{{ __('Bulk Training Creation') }}</h4>
                             <div class="mt-1 text-sm text-blue-700">
-                                <p>{{ __('To create multiple training sessions, simply extend the end date. Training sessions will be created weekly based on your start date.') }}</p>
-                                <p class="mt-1 font-medium">{{ __('Example: If your start date is a Monday, trainings will occur every Monday between start and end date.') }}</p>
+                                <p>{{ __('To create multiple training sessions, simply select the recurrence and extend the end date.') }}</p>
+                                <p class="mt-1 font-medium">{{ __('Example: If your start date is a Monday and the recurrence is weekly, trainings will occur every Monday between start and end date.') }}</p>
                             </div>
                         </div>
                     </div>

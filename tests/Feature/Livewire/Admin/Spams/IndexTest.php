@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use App\Livewire\Admin\Spams\Index;
@@ -26,7 +27,7 @@ describe('Spams admin page', function () {
     it('displays spam list correctly', function () {
         $spams = Spam::factory()->count(3)->create([
             'created_at' => now()->subHours(2),
-            'user_agent' => 'TestAgent/1.0'
+            'user_agent' => 'TestAgent/1.0',
         ]);
 
         Livewire::actingAs($this->adminUser)
@@ -83,7 +84,7 @@ describe('Search and filters', function () {
 
     it('can search inside json fields', function () {
         $spam = Spam::factory()->create([
-            'inputs' => ['email' => 'test@spam.com', 'message' => 'Buy now!']
+            'inputs' => ['email' => 'test@spam.com', 'message' => 'Buy now!'],
         ]);
 
         Livewire::actingAs($this->adminUser)
@@ -144,15 +145,13 @@ describe('Selection and pagination', function () {
         $component->assertViewHas('totalResults', 30);
 
         $component->set('perPage', '15')
-            ->assertViewHas('spams', fn ($spams) =>
-                $spams->count() === 15 
+            ->assertViewHas('spams', fn ($spams) => $spams->count() === 15
                 && $spams->total() === 30
                 && $spams->lastPage() === 2
             );
 
         $component->set('perPage', '50')
-            ->assertViewHas('spams', fn ($spams) =>
-                $spams->count() === 30 
+            ->assertViewHas('spams', fn ($spams) => $spams->count() === 30
                 && $spams->lastPage() === 1
             );
     });

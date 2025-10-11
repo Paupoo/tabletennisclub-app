@@ -40,8 +40,8 @@ class GeneratePaymentReference
 
     /**
      * Add the 2 '/' after the 3rd and the 7th number
-     *
-     * @return array|string
+     * @param string $string
+     * @return string
      */
     public function addSeperators(string $string): string
     {

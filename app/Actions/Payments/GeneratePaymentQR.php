@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace App\Actions\Payments;
 
-use const App\Http\Controllers\Actions\Payments\bancontact_qr;
-use const App\Http\Controllers\Actions\Payments\png;
-
 use App\Models\Payment;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Encoding\Encoding;

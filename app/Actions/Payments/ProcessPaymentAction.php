@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Actions\Payments;
 
+use App\Models\Subscription;
+
 class ProcessPaymentAction
 {
     public function execute(
@@ -11,7 +13,8 @@ class ProcessPaymentAction
         string $transactionId,
         float $amount,
         string $status = 'paid'
-    ): Subscription {
+    ) : Subscription 
+    {
         // Trouve le payment en attente
         $payment = $subscription->payments()
             ->where('status', 'pending')

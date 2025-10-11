@@ -14,7 +14,7 @@ class SendPayementInvite
     public function __invoke(Payment $payment): RedirectResponse
     {
         // Generate the QRCode
-        $QRGenerator = new GeneratePaymentQR($payment);
+        $QRGenerator = new GeneratePaymentQR()($payment);
         $payment = $payment->load('payable.user');
 
         // Send an email with payment instructions

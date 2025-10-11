@@ -38,6 +38,16 @@ class Article extends Model
         'user_id',
     ];
 
+    public function scopeIsPrivate($query): Builder
+    {
+        return $query->where('is_public', false);
+    }
+
+    public function scopeIsPublic($query): Builder
+    {
+        return $query->where('is_public', true);
+    }
+
     public function scopeSearch($query, $value): void
     {
         $query->where('title', 'like', '%' . $value . '%')
@@ -47,13 +57,5 @@ class Article extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
-    }
-
-    public function scopeIsPublic($query): Builder {
-        return $query->where('is_public', true);
-    }
-
-    public function scopeIsPrivate($query): Builder {
-        return $query->where('is_public', false);
     }
 }

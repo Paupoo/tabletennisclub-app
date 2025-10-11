@@ -19,7 +19,6 @@ use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Auth;
 
 class TrainingController extends Controller
 {
@@ -109,7 +108,7 @@ class TrainingController extends Controller
             ->current(__('Edit a training'))
             ->toArray();
 
-        $levels= TrainingLevel::cases();
+        $levels = TrainingLevel::cases();
         $rooms = Room::all();
         $seasons = $this->getAdjacentSeasons();
         $types = TrainingType::cases();
@@ -124,6 +123,11 @@ class TrainingController extends Controller
             'types',
             'users',
         ]));
+    }
+
+    public function getAdjacentSeasons(): Collection
+    {
+        return Season::where('start_at', '>=', now()->format('Y') - 1)->orderBy('start_at')->get();
     }
 
     /**
@@ -142,6 +146,15 @@ class TrainingController extends Controller
             'trainings' => Training::orderBy('start')->paginate(10),
             'breadcrumbs' => $breadcrumbs,
         ]);
+    }
+
+    public function register(Training $training): RedirectResponse
+    {
+        $training->trainees()->attach(Auth()->user()->id);
+
+        return redirect()
+            ->route('trainings.index')
+            ->with('success', __('You are registered to the training'));
     }
 
     /**
@@ -177,6 +190,15 @@ class TrainingController extends Controller
         return redirect()->route('trainings.index')->with('success', 'The training has been created.');
     }
 
+    public function unregister(Training $training): RedirectResponse
+    {
+        $training->trainees()->detach(Auth()->user()->id);
+
+        return redirect()
+            ->route('trainings.index')
+            ->with('success', __('You are unregistered to the training'));
+    }
+
     /**
      * Update the specified resource in storage.
      */
@@ -192,28 +214,5 @@ class TrainingController extends Controller
 
         return redirect()->route('trainings.index')
             ->with('success', __('The training has been updated'));
-    }
-
-    public function getAdjacentSeasons(): Collection
-    {
-        return Season::where('start_at', '>=', now()->format('Y') - 1)->orderBy('start_at')->get();
-    }
-
-    public function register(Training $training): RedirectResponse
-    {
-        $training->trainees()->attach(Auth()->user()->id);
-
-        return redirect()
-            ->route('trainings.index')
-            ->with('success', __('You are registered to the training'));
-    }
-
-    public function unregister(Training $training): RedirectResponse
-    {
-        $training->trainees()->detach(Auth()->user()->id);
-
-        return redirect()
-            ->route('trainings.index')
-            ->with('success', __('You are unregistered to the training'));
     }
 }

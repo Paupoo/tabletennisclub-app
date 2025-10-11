@@ -1,8 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
-use App\Models\Payment;
 use App\Models\Season;
 use App\Models\User;
 use App\Support\Breadcrumb;
@@ -12,29 +13,67 @@ use Illuminate\View\View;
 class SeasonController extends Controller
 {
     /**
+     * Show the form for creating a new resource.
+     */
+    public function create(): View
+    {
+        return view('admin.seasons.create');
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(string $id)
+    {
+        //
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(string $id)
+    {
+        //
+    }
+
+    /**
      * Display a listing of the resource.
      */
     public function index(): View
     {
         $breadcrumbs = Breadcrumb::make()
-                ->home()
-                ->toArray();
+            ->home()
+            ->toArray();
 
         $seasons = Season::orderBy('start_at')
             ->paginate();
 
-        return view ('admin.seasons.index', compact([
+        return view('admin.seasons.index', compact([
             'seasons',
             'breadcrumbs',
         ]));
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Display the specified resource.
      */
-    public function create(): View
+    public function show(string $id): View
     {
-        return view ('admin.seasons.create');
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->toArray();
+        $season = Season::with('users')->findOrFail($id);
+        $subscriptions = $season->subscriptions->load('payments');
+        $notSubscribedUsers = User::whereDoesntHave('subscriptions', function ($query) use ($season) {
+            $query->where('season_id', $season->id);
+        })->get();
+
+        return view('admin.seasons.show', compact([
+            'season',
+            'subscriptions',
+            'notSubscribedUsers',
+            'breadcrumbs',
+        ]));
     }
 
     /**
@@ -50,50 +89,13 @@ class SeasonController extends Controller
 
         Season::create($validated);
 
-        return view ('admin.seasons.create');
-    }
-
-    /**
-     * Display the specified resource.
-     */
-        public function show(string $id): View
-        {
-            $breadcrumbs = Breadcrumb::make()
-                ->home()
-                ->toArray();
-            $season = Season::with('users')->findOrFail($id);
-            $subscriptions = $season->subscriptions->load('payments');
-            $notSubscribedUsers = User::whereDoesntHave('subscriptions', function ($query) use ($season) {
-                $query->where('season_id', $season->id);
-            })->get();
-            return view('admin.seasons.show', compact([
-                'season',
-                'subscriptions',
-                'notSubscribedUsers',
-                'breadcrumbs',
-            ]));
-        }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
+        return view('admin.seasons.create');
     }
 
     /**
      * Update the specified resource in storage.
      */
     public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
     {
         //
     }

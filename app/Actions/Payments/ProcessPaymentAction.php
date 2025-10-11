@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Actions\Payments;
 
 class ProcessPaymentAction
@@ -16,7 +18,7 @@ class ProcessPaymentAction
             ->latest()
             ->first();
 
-        if (!$payment) {
+        if (! $payment) {
             throw new \DomainException('No pending payment found');
         }
 

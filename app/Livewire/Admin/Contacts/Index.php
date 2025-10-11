@@ -12,15 +12,33 @@ use Livewire\WithPagination;
 class Index extends Component
 {
     use WithPagination;
-    public string $search = '';
+
+    public string $interest = '';
 
     public int $perPage = 25;
-    public string $status = '';
-    public string $interest = '';
-    public string $sortByField = '';
-    public string $sortDirection = 'desc';
+
+    public string $search = '';
+
     public ?int $selectedContactId = null;
 
+    public string $sortByField = '';
+
+    public string $sortDirection = 'desc';
+
+    public string $status = '';
+
+    public function deleteContact()
+    {
+
+        $this->authorize('delete', Auth()->user());
+
+        $article = Contact::find($this->selectedContactId);
+        $article->delete();
+
+        session()->flash('success', __('The contact has been deleted.'));
+
+        return $this->redirectRoute('admin.contacts.index');
+    }
 
     public function mount(): void {}
 
@@ -28,7 +46,7 @@ class Index extends Component
     {
         $contacts = Contact::search($this->search)
             ->when($this->status !== '', function (Builder $query): void {
-                $query->where('status', $this->status); 
+                $query->where('status', $this->status);
             })
             ->when($this->interest !== '', function (Builder $query): void {
                 $query->where('interest', $this->interest);
@@ -41,22 +59,12 @@ class Index extends Component
         return view('livewire.admin.contacts.index', compact('contacts'));
     }
 
-    public function sortBy(string $field): void {
-        if($this->sortByField === $field) {
+    public function sortBy(string $field): void
+    {
+        if ($this->sortByField === $field) {
             $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
         }
 
         $this->sortByField = $field;
-    }
-
-    public function deleteContact() {
-        
-        $this->authorize('delete', Auth()->user());
-
-        $article = Contact::find($this->selectedContactId);
-        $article->delete();
-
-        session()->flash('success', __('The contact has been deleted.'));
-        return $this->redirectRoute('admin.contacts.index');
     }
 }

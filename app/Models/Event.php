@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 // app/Models/Event.php
 
 namespace App\Models;
@@ -12,6 +14,13 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 class Event extends Model
 {
     use HasFactory;
+
+    protected $casts = [
+        'type' => EventTypeEnum::class,
+        'status' => EventStatusEnum::class,
+        'event_date' => 'date',
+        'featured' => 'boolean',
+    ];
 
     protected $fillable = [
         'eventable_type',
@@ -31,13 +40,6 @@ class Event extends Model
         'featured',
     ];
 
-    protected $casts = [
-        'type' => EventTypeEnum::class,
-        'status' => EventStatusEnum::class,
-        'event_date' => 'date',
-        'featured' => 'boolean',
-    ];
-
     /**
      * Relation polymorphique vers Training, Interclub ou Tournament
      */
@@ -47,61 +49,18 @@ class Event extends Model
     }
 
     /**
-     * Scope pour filtrer par statut
+     * Formatte la date et l'heure
      */
-    public function scopePublished($query)
+    public function getFormattedDateTimeAttribute(): string
     {
-        return $query->where('status', EventStatusEnum::PUBLISHED);
-    }
+        $date = $this->event_date->isoFormat('dddd D MMMM YYYY');
+        $time = $this->start_time;
 
-    /**
-     * Scope pour filtrer par type
-     */
-    public function scopeOfType($query, EventTypeEnum $type)
-    {
-        return $query->where('type', $type);
-    }
+        if ($this->end_time) {
+            $time .= ' - ' . $this->end_time;
+        }
 
-    /**
-     * Scope pour les événements à venir
-     */
-    public function scopeUpcoming($query)
-    {
-        return $query->where('event_date', '>=', today())
-            ->orderBy('event_date')
-            ->orderBy('start_time');
-    }
-
-    /**
-     * Scope pour les événements mis en avant
-     */
-    public function scopeFeatured($query)
-    {
-        return $query->where('featured', true);
-    }
-
-    /**
-     * Vérifie si l'événement est un Training
-     */
-    public function isTraining(): bool
-    {
-        return $this->type === EventTypeEnum::TRAINING;
-    }
-
-    /**
-     * Vérifie si l'événement est un Interclub
-     */
-    public function isInterclub(): bool
-    {
-        return $this->type === EventTypeEnum::INTERCLUB;
-    }
-
-    /**
-     * Vérifie si l'événement est un Tournament
-     */
-    public function isTournament(): bool
-    {
-        return $this->type === EventTypeEnum::TOURNAMENT;
+        return $date . ' à ' . $time;
     }
 
     /**
@@ -110,6 +69,14 @@ class Event extends Model
     public function getPublicUrlAttribute(): string
     {
         return route('events.show', $this);
+    }
+
+    /**
+     * Vérifie si l'événement est un Interclub
+     */
+    public function isInterclub(): bool
+    {
+        return $this->type === EventTypeEnum::INTERCLUB;
     }
 
     /**
@@ -129,17 +96,52 @@ class Event extends Model
     }
 
     /**
-     * Formatte la date et l'heure
+     * Vérifie si l'événement est un Tournament
      */
-    public function getFormattedDateTimeAttribute(): string
+    public function isTournament(): bool
     {
-        $date = $this->event_date->isoFormat('dddd D MMMM YYYY');
-        $time = $this->start_time;
-        
-        if ($this->end_time) {
-            $time .= ' - ' . $this->end_time;
-        }
-        
-        return $date . ' à ' . $time;
+        return $this->type === EventTypeEnum::TOURNAMENT;
+    }
+
+    /**
+     * Vérifie si l'événement est un Training
+     */
+    public function isTraining(): bool
+    {
+        return $this->type === EventTypeEnum::TRAINING;
+    }
+
+    /**
+     * Scope pour les événements mis en avant
+     */
+    public function scopeFeatured($query)
+    {
+        return $query->where('featured', true);
+    }
+
+    /**
+     * Scope pour filtrer par type
+     */
+    public function scopeOfType($query, EventTypeEnum $type)
+    {
+        return $query->where('type', $type);
+    }
+
+    /**
+     * Scope pour filtrer par statut
+     */
+    public function scopePublished($query)
+    {
+        return $query->where('status', EventStatusEnum::PUBLISHED);
+    }
+
+    /**
+     * Scope pour les événements à venir
+     */
+    public function scopeUpcoming($query)
+    {
+        return $query->where('event_date', '>=', today())
+            ->orderBy('event_date')
+            ->orderBy('start_time');
     }
 }

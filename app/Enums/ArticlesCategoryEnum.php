@@ -15,7 +15,6 @@ enum ArticlesCategoryEnum: string
 
     /**
      * Return the values of the enum into an array
-     * @return array
      */
     public static function values(): array
     {
@@ -24,6 +23,7 @@ enum ArticlesCategoryEnum: string
 
     /**
      * Retur the localized string of a particular value
+     *
      * @return array|string|null
      */
     public function getLabel(): string

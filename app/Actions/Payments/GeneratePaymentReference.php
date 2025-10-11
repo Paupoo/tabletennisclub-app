@@ -5,16 +5,18 @@ declare(strict_types=1);
 namespace App\Actions\Payments;
 
 use App\Models\Payment;
-use App\Models\Training;
 use Carbon\Carbon;
-use Illuminate\Foundation\Mix;
 
 class GeneratePaymentReference
 {
-    private Carbon $now;
-    private string $date;
-    private string $sequence;
     public string $reference;
+
+    private string $date;
+
+    private Carbon $now;
+
+    private string $sequence;
+
     private int $verification;
 
     /**
@@ -32,12 +34,33 @@ class GeneratePaymentReference
     public function __invoke(): string
     {
         $string = (string) $this->reference . $this->verification;
+
         return $this->addSeperators($string);
     }
 
     /**
+     * Add the 2 '/' after the 3rd and the 7th number
+     *
+     * @return array|string
+     */
+    public function addSeperators(string $string): string
+    {
+        $string = substr_replace($string, '/', 7, 0);
+        $string = substr_replace($string, '/', 3, 0);
+
+        return $string;
+    }
+
+    /**
+     * Returns the validation number
+     */
+    private function getCheckSum(): int
+    {
+        return (int) $this->reference % 97;
+    }
+
+    /**
      * Get the next sequence of the day
-     * @return string
      */
     private function getNextSequence(): string
     {
@@ -51,26 +74,5 @@ class GeneratePaymentReference
         $todayPaymentCount = str_pad((string) $todayPaymentCount, 3, '0', STR_PAD_LEFT);
 
         return (string) $todayPaymentCount;
-    }
-    
-    /**
-     * Returns the validation number
-     * @return int
-     */
-    private function getCheckSum(): int
-    {
-        return (int) $this->reference % 97;
-    }
-
-    /**
-     * Add the 2 '/' after the 3rd and the 7th number 
-     * @param string $string
-     * @return array|string
-     */
-    public function addSeperators(string $string): string
-    {
-        $string = substr_replace($string, '/', 7, 0);
-        $string = substr_replace($string, '/', 3, 0);
-        return $string;
     }
 }

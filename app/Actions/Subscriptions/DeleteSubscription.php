@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Actions\Subscriptions;
 
 use App\Http\Controllers\Controller;
@@ -18,7 +20,7 @@ class DeleteSubscription extends Controller
 
         return back()
             ->withInput(
-                ['success' => __('The subscription has been deleted'),]
+                ['success' => __('The subscription has been deleted')]
             );
     }
 }

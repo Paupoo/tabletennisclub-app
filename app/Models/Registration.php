@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use App\Contracts\PayableInterface;
@@ -17,9 +19,14 @@ class Registration extends Model implements PayableInterface
     public function amountDue(): Attribute
     {
         return Attribute::make(
-            get: fn (string $value): float => round($value/100, 2),
+            get: fn (string $value): float => round($value / 100, 2),
             set: fn (string $value): int => $value * 100,
         );
+    }
+
+    public function getAmountDue(): int|float
+    {
+        return $this->amountDue;
     }
 
     // ==================== Relations ====================
@@ -30,10 +37,5 @@ class Registration extends Model implements PayableInterface
     public function payments(): MorphMany
     {
         return $this->morphMany(Payment::class, 'payable');
-    }
-
-    public function getAmountDue(): int|float
-    {
-        return $this->amountDue;
     }
 }

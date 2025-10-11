@@ -9,6 +9,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class Contact extends Model
 {
+    protected $casts = [
+        'interest' => ContactReasonEnum::class,
+    ];
+
     protected $fillable = [
         'first_name',
         'last_name',
@@ -21,10 +25,6 @@ class Contact extends Model
         'membership_training_sessions',
         'membership_total_cost',
         'status',
-    ];
-
-    protected $casts = [
-        'interest' => ContactReasonEnum::class,
     ];
 
     public function scopeSearch($query, $value): void

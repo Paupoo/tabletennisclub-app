@@ -1,30 +1,37 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\States\Payments;
+
+use const App\States\Tournament\Payments\confirmed;
 
 use App\Contracts\SubscriptionState;
 use App\Models\Subscription;
 
-use const App\States\Tournament\Payments\confirmed;
-
 class ConfirmedState implements SubscriptionState
 {
+    public function cancel(Subscription $subscription): void
+    {
+        // Transition autorisée : confirmed → cancelled
+        $subscription->setState(new CancelledState);
+    }
+
     public function confirm(Subscription $subscription): void
     {
         // Déjà confirmée
         throw new \LogicException('Subscription is already confirmed.');
     }
 
-    public function unconfirm(Subscription $subscription): void
+    public function getStatus(): string
     {
-        // Déjà confirmée
-        $subscription->setState(new PendingState());
+        return 'confirmed';
     }
 
     public function markAsPaid(Subscription $subscription): void
     {
         // Transition autorisée : confirmed → paid
-        $subscription->setState(new PaidState());
+        $subscription->setState(new PaidState);
     }
 
     public function refund(Subscription $subscription): void
@@ -33,14 +40,9 @@ class ConfirmedState implements SubscriptionState
         throw new \LogicException('Cannot refund a subscription that has not been paid.');
     }
 
-    public function cancel(Subscription $subscription): void
+    public function unconfirm(Subscription $subscription): void
     {
-        // Transition autorisée : confirmed → cancelled
-        $subscription->setState(new CancelledState());
-    }
-
-    public function getStatus(): string
-    {
-        return 'confirmed';
+        // Déjà confirmée
+        $subscription->setState(new PendingState);
     }
 }

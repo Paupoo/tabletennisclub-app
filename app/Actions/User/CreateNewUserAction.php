@@ -24,7 +24,6 @@ class CreateNewUserAction
         Mail::to($user->email)
             ->send(new InviteNewUserMail($user, $link));
 
-
         // Mail::to($user->email)->send(new InviteNewUserMail($user, $request->password));
 
         return redirect()

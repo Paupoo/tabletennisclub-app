@@ -14,15 +14,25 @@ enum EventTypeEnum: string
 
     /**
      * Return the values of the enum into an array
-     * @return array
      */
     public static function values(): array
     {
         return array_column(self::cases(), 'value');
     }
 
+    public function getIcon(): string
+    {
+        return match ($this) {
+            // self::COMMUNITY_EVENT => '🎉',
+            self::INTERCLUB => '🏓',
+            self::TOURNAMENT => '🏆',
+            self::TRAINING => '🎯',
+        };
+    }
+
     /**
      * Retur the localized string of a particular value
+     *
      * @return array|string|null
      */
     public function getLabel(): string
@@ -33,16 +43,6 @@ enum EventTypeEnum: string
             // self::MEETING => __('Meeting'),
             self::TOURNAMENT => __('Tournament'),
             self::TRAINING => __('Training'),
-        };
-    }
-
-    public function getIcon(): string
-    {
-        return match ($this) {
-            // self::COMMUNITY_EVENT => '🎉',
-            self::INTERCLUB => '🏓',
-            self::TOURNAMENT => '🏆',
-            self::TRAINING => '🎯',
         };
     }
 }

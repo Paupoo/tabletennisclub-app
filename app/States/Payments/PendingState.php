@@ -1,23 +1,29 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\States\Payments;
 
 use App\Contracts\SubscriptionState;
 use App\Models\Subscription;
-use Exception;
 
 class PendingState implements SubscriptionState
 {
-    public function unconfirm(Subscription $subscription): void
+    public function cancel(Subscription $subscription): void
     {
-        // L'instance est déjà pending
-        throw new \LogicException(__('The subscription is already pending'));
+        // Transition autorisée : pending → cancelled
+        $subscription->setState(new CancelledState);
     }
-    
+
     public function confirm(Subscription $subscription): void
     {
         // Transition autorisée : pending → confirmed
-        $subscription->setState(new ConfirmedState());
+        $subscription->setState(new ConfirmedState);
+    }
+
+    public function getStatus(): string
+    {
+        return 'pending';
     }
 
     public function markAsPaid(Subscription $subscription): void
@@ -32,14 +38,9 @@ class PendingState implements SubscriptionState
         throw new \LogicException('Cannot refund a pending subscription.');
     }
 
-    public function cancel(Subscription $subscription): void
+    public function unconfirm(Subscription $subscription): void
     {
-        // Transition autorisée : pending → cancelled
-        $subscription->setState(new CancelledState());
-    }
-
-    public function getStatus(): string
-    {
-        return 'pending';
+        // L'instance est déjà pending
+        throw new \LogicException(__('The subscription is already pending'));
     }
 }

@@ -1,31 +1,29 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Actions\Subscriptions;
 
 use App\Actions\Payments\GeneratePayment;
-use App\Actions\Payments\GeneratePaymentReference;
-use App\Actions\Payments\GeneratePaymentQR;
 use App\Http\Controllers\Controller;
-use App\Mail\PaymentInvitationEmail;
 use App\Models\Payment;
 use App\Models\Season;
 use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Mail;
-
 
 class SubscribeToSeasonController extends Controller
 {
     private int $casualLicencePrice = 60;
+
     private int $competitiveLicencePrice = 125;
 
-    private User $user;
+    private bool $is_competitor = false;
 
     private Season $season;
 
-    private bool $is_competitor = false;
+    private User $user;
 
     /**
      * Handle the incoming request.
@@ -36,7 +34,7 @@ class SubscribeToSeasonController extends Controller
             'user_id' => 'string|required|exists:users,id',
             'type' => 'required|in:competitive,casual',
         ]);
-        
+
         // Set up parameters
         $this->season = $season;
         $this->user = User::find($validated['user_id']);
@@ -44,9 +42,9 @@ class SubscribeToSeasonController extends Controller
 
         // Create the subscription
         $subscription = $this->subscribe();
-            
+
         // Generate the penging payment
-        $payment = new GeneratePayment()($subscription);
+        $payment = new GeneratePayment($subscription);
 
         return back()->withInput([
             'success' => __('The user has been suscribed successfully'),

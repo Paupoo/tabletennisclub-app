@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -29,7 +31,7 @@ class PaymentFactory extends Factory
             $this->faker->numberBetween(0, 9999),
             $this->faker->numberBetween(0, 99999)
         );
-        
+
         // Date aléatoire sur les 30 derniers jours
         $createdAt = $this->faker->dateTimeBetween('-30 days', 'now');
         $updatedAt = $createdAt;

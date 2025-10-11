@@ -10,14 +10,16 @@ use Illuminate\Database\Eloquent\Model;
 final class Spam extends Model
 {
     use HasFactory;
-    protected $table = 'spams';
+
+    protected $casts = [
+        'inputs' => 'array',
+    ];
+
     protected $fillable = [
         'ip',
         'user_agent',
         'inputs',
     ];
 
-    protected $casts = [
-        'inputs' => 'array',
-    ];
+    protected $table = 'spams';
 }

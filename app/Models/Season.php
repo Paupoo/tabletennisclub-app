@@ -42,15 +42,6 @@ class Season extends Model
 {
     use HasFactory;
 
-    protected function casts(): array
-    {
-        return [
-        'name' => 'string',
-        'start_at' => 'datetime',
-        'end_at' => 'datetime',
-        ];
-    }
-
     protected $fillable = [
         'name',
         'start_at',
@@ -65,6 +56,11 @@ class Season extends Model
     public function leagues(): HasMany
     {
         return $this->hasMany(League::class);
+    }
+
+    public function subscriptions()
+    {
+        return $this->hasMany(Subscription::class);
     }
 
     public function teams(): HasMany
@@ -84,8 +80,12 @@ class Season extends Model
             ->withTimestamps();
     }
 
-    public function subscriptions()
+    protected function casts(): array
     {
-        return $this->hasMany(Subscription::class);
+        return [
+            'name' => 'string',
+            'start_at' => 'datetime',
+            'end_at' => 'datetime',
+        ];
     }
 }

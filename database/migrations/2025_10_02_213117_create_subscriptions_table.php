@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Models\Season;
 use App\Models\User;
 use Illuminate\Database\Migrations\Migration;
@@ -8,6 +10,14 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('subscriptions');
+    }
+
     /**
      * Run the migrations.
      */
@@ -28,13 +38,5 @@ return new class extends Migration
             $table->softDeletes();
             $table->timestamps();
         });
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('subscriptions');
     }
 };

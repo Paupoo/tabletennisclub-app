@@ -1,10 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Actions\Payments;
 
-use App\Contracts\PayableInterface;
 use App\Models\Payment;
-use App\Models\Registration;
 use App\Models\Subscription;
 use Illuminate\Http\RedirectResponse;
 
@@ -15,10 +15,10 @@ class GeneratePayment
      */
     public function __invoke(Subscription $subscription): RedirectResponse
     {
-        $referenceGenerator = new GeneratePaymentReference();
+        $referenceGenerator = new GeneratePaymentReference;
 
         $subscription->payments()->create([
-            'reference' => $referenceGenerator  (),
+            'reference' => $referenceGenerator(),
             'amount_due' => $subscription->getAmountDue(),
             'amount_paid' => 0,
             'status' => 'pending',

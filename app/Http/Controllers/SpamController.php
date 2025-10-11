@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Models\Spam;
@@ -11,9 +13,33 @@ use Illuminate\View\View;
 class SpamController extends Controller
 {
     /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        //
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(Spam $spam)
+    {
+        //
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(Spam $spam)
+    {
+        //
+    }
+
+    /**
      * Display a listing of the resource.
      */
-        public function index(Request $request): View
+    public function index(Request $request): View
     {
         // Breadcrumbs pour la navigation
         $breadcrumbs = Breadcrumb::make()
@@ -28,24 +54,9 @@ class SpamController extends Controller
     }
 
     /**
-     * Calcul des statistiques pour l'en-tête de page
+     * Display the specified resource.
      */
-    private function getStats(): Collection
-    {
-        $baseQuery = Spam::query();
-        
-        return collect([
-            'totalSpams' => $baseQuery->count(),
-            'todaySpams' => $baseQuery->whereDate('created_at', today())->count(),
-            'uniqueIps' => $baseQuery->distinct('ip')->count('ip'),
-            'blockedIps' => 0, // À implémenter selon ton système de blocage
-        ]);
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function show(Spam $spam)
     {
         //
     }
@@ -59,22 +70,6 @@ class SpamController extends Controller
     }
 
     /**
-     * Display the specified resource.
-     */
-    public function show(Spam $spam)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Spam $spam)
-    {
-        //
-    }
-
-    /**
      * Update the specified resource in storage.
      */
     public function update(Request $request, Spam $spam)
@@ -83,10 +78,17 @@ class SpamController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Calcul des statistiques pour l'en-tête de page
      */
-    public function destroy(Spam $spam)
+    private function getStats(): Collection
     {
-        //
+        $baseQuery = Spam::query();
+
+        return collect([
+            'totalSpams' => $baseQuery->count(),
+            'todaySpams' => $baseQuery->whereDate('created_at', today())->count(),
+            'uniqueIps' => $baseQuery->distinct('ip')->count('ip'),
+            'blockedIps' => 0, // À implémenter selon ton système de blocage
+        ]);
     }
 }

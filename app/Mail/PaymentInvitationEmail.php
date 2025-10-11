@@ -1,12 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Mail;
 
 use App\Actions\Payments\GeneratePaymentQR;
 use App\Models\Payment;
-use App\Models\Season;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
@@ -17,29 +17,30 @@ class PaymentInvitationEmail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public string $qrCode;
     public string $beneficiary = 'CTT Ottignies-Blocry ASBL';
-    public string $IBAN = 'BE23732333208791';
+
     public string $BIC = 'CREGBEBB';
+
+    public string $IBAN = 'BE23732333208791';
+
+    public string $qrCode;
 
     /**
      * To do
-     * @param \App\Models\Payment $payment
      */
     public function __construct(public Payment $payment)
     {
-        $this->qrCode = new GeneratePaymentQR()($payment);
+        $this->qrCode = new GeneratePaymentQR($payment);
     }
 
     /**
-     * Get the message envelope.
+     * Get the attachments for the message.
+     *
+     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
      */
-    public function envelope(): Envelope
+    public function attachments(): array
     {
-        return new Envelope(
-            from: new Address('test@example.com', 'CTT Ottignies-Blocry'),
-            subject: 'Payment Invitation for the seasons',
-        );
+        return [];
     }
 
     /**
@@ -56,12 +57,13 @@ class PaymentInvitationEmail extends Mailable
     }
 
     /**
-     * Get the attachments for the message.
-     *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
+     * Get the message envelope.
      */
-    public function attachments(): array
+    public function envelope(): Envelope
     {
-        return [];
+        return new Envelope(
+            from: new Address('test@example.com', 'CTT Ottignies-Blocry'),
+            subject: 'Payment Invitation for the seasons',
+        );
     }
 }

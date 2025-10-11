@@ -6,9 +6,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Enums\EventStatusEnum;
 use App\Enums\EventTypeEnum;
-use App\Enums\LeagueCategory;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreEventRequest;
 use App\Models\Club;
 use App\Models\Event;
 use App\Models\Interclub;
@@ -19,9 +17,7 @@ use App\Models\Team;
 use App\Models\Tournament;
 use App\Models\Training;
 use App\Models\User;
-use App\Services\InterclubService;
 use App\Support\Breadcrumb;
-use Auth;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -37,6 +33,28 @@ class EventController extends Controller
         $event->update(['status' => 'archived']);
 
         return back()->with('success', 'Événement archivé !');
+    }
+
+    /**
+     * Affiche le formulaire de création
+     */
+    public function create()
+    {
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->events()
+            ->current(__('Create'))
+            ->toArray();
+
+        return view('admin.events.create', [
+            'breadcrumbs' => $breadcrumbs,
+            'rooms' => Room::orderBy('name')->get(),
+            'seasons' => Season::orderBy('start_at', 'desc')->get(),
+            'teams' => Team::orderBy('name')->get(),
+            'otherClubs' => Club::where('id', '!=', auth()->user()->club_id ?? null)->orderBy('name')->get(),
+            'leagues' => League::orderBy('division')->get(),
+            'trainers' => User::orderBy('first_name')->orderBy('last_name')->get(),
+        ]);
     }
 
     public function destroy(Event $event): RedirectResponse
@@ -89,10 +107,10 @@ class EventController extends Controller
         // Recherche
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%")
-                  ->orWhere('location', 'like', "%{$search}%");
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhere('location', 'like', "%{$search}%");
             });
         }
 
@@ -184,28 +202,6 @@ class EventController extends Controller
     }
 
     /**
-     * Affiche le formulaire de création
-     */
-    public function create()
-    {
-        $breadcrumbs = Breadcrumb::make()
-            ->home()
-            ->events()
-            ->current(__('Create'))
-            ->toArray();
-
-        return view('admin.events.create', [
-            'breadcrumbs' => $breadcrumbs,
-            'rooms' => Room::orderBy('name')->get(),
-            'seasons' => Season::orderBy('start_at', 'desc')->get(),
-            'teams' => Team::orderBy('name')->get(),
-            'otherClubs' => Club::where('id', '!=', auth()->user()->club_id ?? null)->orderBy('name')->get(),
-            'leagues' => League::orderBy('division')->get(),
-            'trainers' => User::orderBy('first_name')->orderBy('last_name')->get(),
-        ]);
-    }
-
-    /**
      * Enregistre un nouvel événement
      */
     public function store(Request $request)
@@ -249,11 +245,130 @@ class EventController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             return back()
                 ->withInput()
                 ->withErrors(['error' => __('An error occurred while creating the event: ') . $e->getMessage()]);
         }
+    }
+
+    public function update(Request $request, Event $event): RedirectResponse
+    {
+        $this->authorize('update', $event);
+
+        $event->update($validated);
+
+        return redirect()
+            ->route('admin.events.show', $event)
+            ->with('success', 'Événement mis à jour avec succès !');
+    }
+
+    /**
+     * Crée l'événement principal
+     */
+    protected function createEvent(Request $request, array $validated, $eventable): Event
+    {
+        // Gestion du statut selon l'action
+        $status = match ($request->action) {
+            'publish' => EventStatusEnum::PUBLISHED->value,
+            'draft' => EventStatusEnum::DRAFT->value,
+            default => $validated['status'],
+        };
+
+        return Event::create([
+            'eventable_type' => get_class($eventable),
+            'eventable_id' => $eventable->id,
+            'type' => $validated['type'],
+            'title' => $validated['title'],
+            'description' => $validated['description'],
+            'status' => $status,
+            'event_date' => $validated['event_date'],
+            'start_time' => $validated['start_time'],
+            'end_time' => $validated['end_time'],
+            'location' => $validated['location'],
+            'price' => $validated['price'],
+            'icon' => $validated['icon'] ?? EventTypeEnum::from($validated['type'])->getIcon(),
+            'max_participants' => $validated['max_participants'],
+            'notes' => $validated['notes'],
+            'featured' => $request->boolean('featured'),
+        ]);
+    }
+
+    /**
+     * Crée le modèle spécifique (Training, Interclub ou Tournament)
+     */
+    protected function createEventableModel(Request $request, string $type): Training|Interclub|Tournament
+    {
+        return match ($type) {
+            EventTypeEnum::TRAINING->value => $this->createTraining($request),
+            EventTypeEnum::INTERCLUB->value => $this->createInterclub($request),
+            EventTypeEnum::TOURNAMENT->value => $this->createTournament($request),
+            default => throw new InvalidArgumentException("Unknown event type: {$type}"),
+        };
+    }
+
+    /**
+     * Crée un Interclub
+     */
+    protected function createInterclub(Request $request): Interclub
+    {
+        $startDateTime = $request->event_date . ' ' . $request->start_time;
+
+        return Interclub::create([
+            'address' => $request->is_home ? null : $request->interclub_address,
+            'start_date_time' => $startDateTime,
+            'week_number' => $request->week_number,
+            'total_players' => $request->total_players,
+            'visited_team_id' => $request->visited_team_id,
+            'visiting_team_id' => $request->visiting_team_id,
+            'room_id' => $request->is_home ? $request->interclub_room_id : null,
+            'league_id' => $request->league_id,
+            'season_id' => $request->interclub_season_id,
+        ]);
+    }
+
+    /**
+     * Crée un Tournament
+     */
+    protected function createTournament(Request $request): Tournament
+    {
+        $startDate = $request->tournament_start_date
+            ?? $request->event_date . ' ' . $request->start_time;
+
+        $endDate = $request->tournament_end_date
+            ?? ($request->end_time ? $request->event_date . ' ' . $request->end_time : null);
+
+        return Tournament::create([
+            'name' => $request->title, // Réutilise le titre de l'événement
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'total_users' => 0, // Sera incrémenté lors des inscriptions
+            'max_users' => $request->tournament_max_users,
+            'price' => $request->tournament_price * 100, // Conversion en centimes
+            'status' => $request->tournament_status,
+            'has_handicap_points' => $request->boolean('has_handicap_points'),
+        ]);
+    }
+
+    /**
+     * Crée un Training
+     */
+    protected function createTraining(Request $request): Training
+    {
+        $startDateTime = $request->event_date . ' ' . $request->start_time;
+        $endDateTime = $request->end_time
+            ? $request->event_date . ' ' . $request->end_time
+            : null;
+
+        return Training::create([
+            'level' => $request->training_level,
+            'type' => $request->training_type,
+            'start' => $startDateTime,
+            'end' => $endDateTime,
+            'room_id' => $request->room_id,
+            'trainer_id' => $request->trainer_id,
+            'season_id' => $request->season_id,
+        ]);
     }
 
     /**
@@ -295,124 +410,5 @@ class EventController extends Controller
 
             default => null,
         };
-    }
-
-    /**
-     * Crée le modèle spécifique (Training, Interclub ou Tournament)
-     */
-    protected function createEventableModel(Request $request, string $type): Training|Interclub|Tournament
-    {
-        return match ($type) {
-            EventTypeEnum::TRAINING->value => $this->createTraining($request),
-            EventTypeEnum::INTERCLUB->value => $this->createInterclub($request),
-            EventTypeEnum::TOURNAMENT->value => $this->createTournament($request),
-            default => throw new InvalidArgumentException("Unknown event type: {$type}"),
-        };
-    }
-
-    /**
-     * Crée un Training
-     */
-    protected function createTraining(Request $request): Training
-    {
-        $startDateTime = $request->event_date . ' ' . $request->start_time;
-        $endDateTime = $request->end_time 
-            ? $request->event_date . ' ' . $request->end_time 
-            : null;
-
-        return Training::create([
-            'level' => $request->training_level,
-            'type' => $request->training_type,
-            'start' => $startDateTime,
-            'end' => $endDateTime,
-            'room_id' => $request->room_id,
-            'trainer_id' => $request->trainer_id,
-            'season_id' => $request->season_id,
-        ]);
-    }
-
-    /**
-     * Crée un Interclub
-     */
-    protected function createInterclub(Request $request): Interclub
-    {
-        $startDateTime = $request->event_date . ' ' . $request->start_time;
-
-        return Interclub::create([
-            'address' => $request->is_home ? null : $request->interclub_address,
-            'start_date_time' => $startDateTime,
-            'week_number' => $request->week_number,
-            'total_players' => $request->total_players,
-            'visited_team_id' => $request->visited_team_id,
-            'visiting_team_id' => $request->visiting_team_id,
-            'room_id' => $request->is_home ? $request->interclub_room_id : null,
-            'league_id' => $request->league_id,
-            'season_id' => $request->interclub_season_id,
-        ]);
-    }
-
-    /**
-     * Crée un Tournament
-     */
-    protected function createTournament(Request $request): Tournament
-    {
-        $startDate = $request->tournament_start_date 
-            ?? $request->event_date . ' ' . $request->start_time;
-        
-        $endDate = $request->tournament_end_date 
-            ?? ($request->end_time ? $request->event_date . ' ' . $request->end_time : null);
-
-        return Tournament::create([
-            'name' => $request->title, // Réutilise le titre de l'événement
-            'start_date' => $startDate,
-            'end_date' => $endDate,
-            'total_users' => 0, // Sera incrémenté lors des inscriptions
-            'max_users' => $request->tournament_max_users,
-            'price' => $request->tournament_price * 100, // Conversion en centimes
-            'status' => $request->tournament_status,
-            'has_handicap_points' => $request->boolean('has_handicap_points'),
-        ]);
-    }
-
-    /**
-     * Crée l'événement principal
-     */
-    protected function createEvent(Request $request, array $validated, $eventable): Event
-    {
-        // Gestion du statut selon l'action
-        $status = match ($request->action) {
-            'publish' => EventStatusEnum::PUBLISHED->value,
-            'draft' => EventStatusEnum::DRAFT->value,
-            default => $validated['status'],
-        };
-
-        return Event::create([
-            'eventable_type' => get_class($eventable),
-            'eventable_id' => $eventable->id,
-            'type' => $validated['type'],
-            'title' => $validated['title'],
-            'description' => $validated['description'],
-            'status' => $status,
-            'event_date' => $validated['event_date'],
-            'start_time' => $validated['start_time'],
-            'end_time' => $validated['end_time'],
-            'location' => $validated['location'],
-            'price' => $validated['price'],
-            'icon' => $validated['icon'] ?? EventTypeEnum::from($validated['type'])->getIcon(),
-            'max_participants' => $validated['max_participants'],
-            'notes' => $validated['notes'],
-            'featured' => $request->boolean('featured'),
-        ]);
-    }
-
-    public function update(Request $request, Event $event): RedirectResponse
-    {
-        $this->authorize('update', $event);
-
-        $event->update($validated);
-
-        return redirect()
-            ->route('admin.events.show', $event)
-            ->with('success', 'Événement mis à jour avec succès !');
     }
 }

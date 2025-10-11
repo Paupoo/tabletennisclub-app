@@ -37,7 +37,7 @@ class ProtectAgainstSpam
             'user_agent' => $request->userAgent(),
             'inputs' => $request->except(['password']), // ne jamais loguer les mdp
         ]);
-        
+
         Spam::create([
             'ip' => $request->ip(),
             'user_agent' => $request->userAgent(),

@@ -27,14 +27,6 @@ class UserPolicy
     }
 
     /**
-     * Determine whether the user can delete the model.
-     */public function selfDelete(User $user, User $model): bool
-    {
-        //
-        return $user->is($model);
-    }
-
-    /**
      * Determine wether the user can delete force index.
      */
     public function deleteForceList(User $user): bool
@@ -67,6 +59,15 @@ class UserPolicy
     {
         //
         return false;
+    }
+
+    /**
+     * Determine whether the user can delete the model.
+     */
+    public function selfDelete(User $user, User $model): bool
+    {
+        //
+        return $user->is($model);
     }
 
     public function sendEmail(User $user): bool

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Actions\User;
 
-use App\Http\Requests\StoreUserRequest;
 use App\Mail\InviteNewUserMail;
 use App\Models\User;
 use Illuminate\Support\Facades\Mail;

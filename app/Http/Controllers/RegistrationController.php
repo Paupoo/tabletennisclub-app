@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Models\Registration;
@@ -9,18 +11,6 @@ use Illuminate\View\View;
 class RegistrationController extends Controller
 {
     /**
-     * Display a listing of the resource.
-     */
-    public function index(): View
-    {
-        $registrations = Registration::all();
-
-        return view ('admin.registrations.index', compact([
-            'registrations',
-        ]));
-    }
-
-    /**
      * Show the form for creating a new resource.
      */
     public function create()
@@ -29,17 +19,9 @@ class RegistrationController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Remove the specified resource from storage.
      */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function destroy(string $id)
     {
         //
     }
@@ -53,17 +35,37 @@ class RegistrationController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Display a listing of the resource.
      */
-    public function update(Request $request, string $id)
+    public function index(): View
+    {
+        $registrations = Registration::all();
+
+        return view('admin.registrations.index', compact([
+            'registrations',
+        ]));
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(string $id)
     {
         //
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Store a newly created resource in storage.
      */
-    public function destroy(string $id)
+    public function store(Request $request)
+    {
+        //
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, string $id)
     {
         //
     }

@@ -5,9 +5,9 @@ declare(strict_types=1);
 use App\Actions\Payments\GeneratePayment;
 use App\Actions\Subscriptions\CancelSubscriptionAction;
 use App\Actions\Subscriptions\ConfirmSubscriptionAction;
+use App\Actions\Subscriptions\DeleteSubscription;
 use App\Actions\Subscriptions\MarkPaidSubscriptionAction;
 use App\Actions\Subscriptions\MarkRefundSubscriptionAction;
-use App\Actions\Subscriptions\DeleteSubscription;
 use App\Actions\Subscriptions\SubscribeToSeasonController;
 use App\Actions\Subscriptions\UnconfirmSubscriptionAction;
 use App\Actions\Subscriptions\UnsubscribeFromSeasonController;
@@ -217,7 +217,6 @@ Route::resource('admin/users', UserController::class)->middleware(['auth', 'veri
 
 Route::post('admin/users/{user}/invite', [InviteExistingUserAction::class, 'handle'])->name('admin.users.invite-existing-user');
 
-
 // Tournaments
 Route::middleware(['auth', 'verified'])
     ->group(function (): void {
@@ -349,6 +348,5 @@ Route::prefix('admin/transactions')->middleware(['auth'])->group(function () {
     Route::get('/reconcile', [TransactionController::class, 'reconcile'])->name('admin.transactions.reconcile');
     Route::post('/reconcile', [TransactionController::class, 'reconcileStore'])->name('admin.transactions.reconcile.store');
 });
-
 
 require __DIR__ . '/auth.php';

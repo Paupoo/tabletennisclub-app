@@ -1,10 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Seeders;
 
 use App\Models\Payment;
 use App\Models\Subscription;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class PaymentSeeder extends Seeder
@@ -18,6 +19,7 @@ class PaymentSeeder extends Seeder
 
         if ($subscriptions->isEmpty()) {
             $this->command->info('Aucune subscription existante. Veuillez lancer SubscriptionSeeder avant.');
+
             return;
         }
 
@@ -28,7 +30,7 @@ class PaymentSeeder extends Seeder
 
                 return [
                     'payable_type' => Subscription::class,
-                    'payable_id'   => $subscription->id,
+                    'payable_id' => $subscription->id,
                 ];
             })
             ->create();

@@ -65,12 +65,11 @@ class UserController extends Controller
             $personalPronoum = $user->sex === Sex::WOMEN->name
                 ? 'she'
                 : 'he';
-                
+
             return redirect()
                 ->back()
                 ->with('error', __('Cannot delete ' . $user->first_name . ' ' . $user->last_name . ' because ' . $personalPronoum . ' subscribed to one or more tournaments'));
-        }   
-
+        }
 
         $user->delete();
 
@@ -201,10 +200,10 @@ class UserController extends Controller
         }
 
         $forceList->setOrUpdateAll();
-      
+
         $message = __('messages.user_created', [
             'name' => e($user->first_name . ' ' . $user->last_name),
-            'url'  => route('users.show', $user),
+            'url' => route('users.show', $user),
         ]);
 
         return redirect()->route('users.create')

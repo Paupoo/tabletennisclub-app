@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\States\Payments;
 
 use App\Contracts\SubscriptionState;
@@ -7,16 +9,21 @@ use App\Models\Subscription;
 
 class RefundedState implements SubscriptionState
 {
+    public function cancel(Subscription $subscription): void
+    {
+        // État final : remboursée
+        throw new \LogicException('Subscription is already refunded.');
+    }
+
     public function confirm(Subscription $subscription): void
     {
         // État final : remboursée
         throw new \LogicException('Cannot confirm a refunded subscription.');
     }
 
-    public function unconfirm(Subscription $subscription): void
+    public function getStatus(): string
     {
-        // État final : remboursée
-        throw new \LogicException('Cannot set a refunded subscription back to pending.');
+        return 'refunded';
     }
 
     public function markAsPaid(Subscription $subscription): void
@@ -31,14 +38,9 @@ class RefundedState implements SubscriptionState
         throw new \LogicException('Subscription is already refunded.');
     }
 
-    public function cancel(Subscription $subscription): void
+    public function unconfirm(Subscription $subscription): void
     {
         // État final : remboursée
-        throw new \LogicException('Subscription is already refunded.');
-    }
-
-    public function getStatus(): string
-    {
-        return 'refunded';
+        throw new \LogicException('Cannot set a refunded subscription back to pending.');
     }
 }

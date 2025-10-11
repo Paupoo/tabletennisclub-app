@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 // app/Http/Requests/StoreEventRequest.php
 
 namespace App\Http\Requests;
@@ -16,6 +18,43 @@ class StoreEventRequest extends FormRequest
     public function authorize(): bool
     {
         return $this->user()->can('create', Event::class);
+    }
+
+    /**
+     * Messages de validation personnalisés
+     */
+    public function messages(): array
+    {
+        return [
+            'type.required' => __('Please select an event type.'),
+            'title.required' => __('The title is required.'),
+            'description.required' => __('The description is required.'),
+            'event_date.required' => __('The event date is required.'),
+            'event_date.after_or_equal' => __('The event date must be today or in the future.'),
+            'start_time.required' => __('The start time is required.'),
+            'end_time.after' => __('The end time must be after the start time.'),
+            'location.required' => __('The location is required.'),
+
+            // Training
+            'training_level.required' => __('Please select a training level.'),
+            'training_type.required' => __('Please select a training type.'),
+            'room_id.required' => __('Please select a room.'),
+            'season_id.required' => __('Please select a season.'),
+
+            // Interclub
+            'interclub_room_id.required_if' => __('Please select a room for home matches.'),
+            'interclub_address.required_if' => __('Please provide an address for away matches.'),
+            'visited_team_id.required' => __('Please select your team.'),
+            'opposite_club_id.required' => __('Please select the opposing club.'),
+            'total_players.required' => __('Please specify the number of players.'),
+            'opposite_team_name.regex' => __('The team name must be a single letter (A, B, C...).'),
+            'interclub_season_id.required' => __('Please select a season.'),
+
+            // Tournament
+            'tournament_max_users.required' => __('Please specify the maximum number of participants.'),
+            'tournament_price.required' => __('Please specify the registration price (0 if free).'),
+            'tournament_status.required' => __('Please select a tournament status.'),
+        ];
     }
 
     /**
@@ -86,43 +125,6 @@ class StoreEventRequest extends FormRequest
 
             default => [],
         };
-    }
-
-    /**
-     * Messages de validation personnalisés
-     */
-    public function messages(): array
-    {
-        return [
-            'type.required' => __('Please select an event type.'),
-            'title.required' => __('The title is required.'),
-            'description.required' => __('The description is required.'),
-            'event_date.required' => __('The event date is required.'),
-            'event_date.after_or_equal' => __('The event date must be today or in the future.'),
-            'start_time.required' => __('The start time is required.'),
-            'end_time.after' => __('The end time must be after the start time.'),
-            'location.required' => __('The location is required.'),
-            
-            // Training
-            'training_level.required' => __('Please select a training level.'),
-            'training_type.required' => __('Please select a training type.'),
-            'room_id.required' => __('Please select a room.'),
-            'season_id.required' => __('Please select a season.'),
-            
-            // Interclub
-            'interclub_room_id.required_if' => __('Please select a room for home matches.'),
-            'interclub_address.required_if' => __('Please provide an address for away matches.'),
-            'visited_team_id.required' => __('Please select your team.'),
-            'opposite_club_id.required' => __('Please select the opposing club.'),
-            'total_players.required' => __('Please specify the number of players.'),
-            'opposite_team_name.regex' => __('The team name must be a single letter (A, B, C...).'),
-            'interclub_season_id.required' => __('Please select a season.'),
-            
-            // Tournament
-            'tournament_max_users.required' => __('Please specify the maximum number of participants.'),
-            'tournament_price.required' => __('Please specify the registration price (0 if free).'),
-            'tournament_status.required' => __('Please select a tournament status.'),
-        ];
     }
 
     /**

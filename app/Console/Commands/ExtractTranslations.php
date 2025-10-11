@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Console\Commands;
@@ -9,6 +10,13 @@ use Symfony\Component\Finder\Finder;
 class ExtractTranslations extends Command
 {
     /**
+     * La description de la commande.
+     *
+     * @var string
+     */
+    protected $description = 'Extrait toutes les chaînes traduisibles (__() et @lang) du projet et génère un JSON.';
+
+    /**
      * Le nom et la signature de la commande.
      *
      * @var string
@@ -17,19 +25,12 @@ class ExtractTranslations extends Command
                             {--path= : Répertoire à scanner (par défaut app/ et resources/views/)} 
                             {--output=translations.json : Fichier de sortie JSON}';
 
-    /**
-     * La description de la commande.
-     *
-     * @var string
-     */
-    protected $description = 'Extrait toutes les chaînes traduisibles (__() et @lang) du projet et génère un JSON.';
-
     public function handle(): int
     {
         $path = $this->option('path') ?: base_path();
         $outputFile = base_path($this->option('output'));
 
-        $finder = new Finder();
+        $finder = new Finder;
         $finder->files()->in([$path . '/app', $path . '/resources/views'])->name(['*.php', '*.blade.php']);
 
         $translations = [];

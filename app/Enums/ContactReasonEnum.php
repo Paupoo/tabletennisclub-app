@@ -1,14 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Enums;
 
 enum ContactReasonEnum: string
 {
-    CASE join = 'join';
-    CASE try = 'try';
-    CASE info_interclubs = 'info_interclubs';
-    CASE become_supporter = 'become_supporter';
-    CASE partnership = 'partnership';
+    case become_supporter = 'become_supporter';
+    case info_interclubs = 'info_interclubs';
+    case join = 'join';
+    case partnership = 'partnership';
+    case try = 'try';
 
     public static function values(): array
     {

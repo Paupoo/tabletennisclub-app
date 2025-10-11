@@ -271,6 +271,13 @@ class User extends Authenticatable implements MustVerifyEmail
         })->orderBy('last_name')->orderBy('first_name');
     }
 
+    public function seasons(): BelongsToMany
+    {
+        return $this->belongsToMany(Season::class, 'subsriptions')
+            ->withPivot('amount_due', 'is_competitive')
+            ->withTimestamps();
+    }
+
     /**
      * Calculate user's age and store it into ->age attribute.
      */
@@ -311,6 +318,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->attributes['last_name'] = $cleaned_name;
     }
 
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(Subscription::class);
+    }
+
     public function teams(): BelongsToMany
     {
         return $this->belongsToMany(Team::class);
@@ -324,17 +336,5 @@ class User extends Authenticatable implements MustVerifyEmail
     public function trainings(): BelongsToMany
     {
         return $this->belongsToMany(Training::class);
-    }
-
-    public function subscriptions(): HasMany
-    {
-        return $this->hasMany(Subscription::class); 
-    }
-
-    public function seasons(): BelongsToMany
-    {
-        return $this->belongsToMany(Season::class, 'subsriptions')
-            ->withPivot('amount_due', 'is_competitive')
-            ->withTimestamps();
     }
 }

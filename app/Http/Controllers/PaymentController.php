@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Actions\Payments\SendPayementInvite;
@@ -11,18 +13,6 @@ use Illuminate\View\View;
 class PaymentController extends Controller
 {
     /**
-     * Display a listing of the resource.
-     */
-    public function index(): View
-    {
-        $payments = Payment::all();
-
-        return view('admin.payments.index', compact([
-            'payments',
-        ]));
-    }
-
-    /**
      * Show the form for creating a new resource.
      */
     public function create()
@@ -31,17 +21,9 @@ class PaymentController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Remove the specified resource from storage.
      */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function destroy(string $id)
     {
         //
     }
@@ -55,19 +37,15 @@ class PaymentController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Display a listing of the resource.
      */
-    public function update(Request $request, string $id)
+    public function index(): View
     {
-        //
-    }
+        $payments = Payment::all();
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        return view('admin.payments.index', compact([
+            'payments',
+        ]));
     }
 
     public function sendInvite(Request $request): RedirectResponse
@@ -75,13 +53,37 @@ class PaymentController extends Controller
         $validated = $request->validate([
             'payment_id' => 'required|exists:payments,id',
         ]);
-        
+
         $payment = Payment::find($validated['payment_id']);
-        new SendPayementInvite()($payment);
+        new SendPayementInvite($payment);
 
         return back()
             ->withInput([
                 'success' => __('The payment invite has been sent'),
             ]);
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(string $id)
+    {
+        //
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request)
+    {
+        //
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, string $id)
+    {
+        //
     }
 }

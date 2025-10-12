@@ -28,7 +28,7 @@ class ResultsController extends Controller
             ],
             [
                 'name' => 'Équipe B - Division 3B',
-                'position' => '3ème place',
+                'position' => '4ème place',
                 'position_class' => 'bg-gray-100 text-gray-800',
                 'matches' => [
                     ['date' => '12 Sep 2025', 'opponent' => 'Arc En Ciel G', 'venue' => 'Domicile', 'score' => '8-8', 'result' => 'Nul'],
@@ -40,7 +40,7 @@ class ResultsController extends Controller
             ],
             [
                 'name' => 'Équipe C - Division 4C',
-                'position' => '5ème place',
+                'position' => '4ème place',
                 'position_class' => 'bg-gray-100 text-gray-800',
                 'matches' => [
                     ['date' => '12 Sep 2025', 'opponent' => 'CTT Limal Wavre F', 'venue' => 'Extérieur', 'score' => '13-3', 'result' => 'Victoire'],
@@ -52,7 +52,7 @@ class ResultsController extends Controller
             ],
             [
                 'name' => 'Équipe D - Division 4D',
-                'position' => '6ème place',
+                'position' => '4ème place',
                 'position_class' => 'bg-gray-100 text-gray-800',
                 'matches' => [
                     ['date' => '13 Sep 2025', 'opponent' => 'CTT Le Moulin C', 'venue' => 'Extérieur', 'score' => '14-2', 'result' => 'Victoire'],
@@ -64,7 +64,7 @@ class ResultsController extends Controller
             ],
             [
                 'name' => 'Équipe E - Division 5H',
-                'position' => '5ème place',
+                'position' => '6ème place',
                 'position_class' => 'bg-gray-100 text-gray-800',
                 'matches' => [
                     ['date' => '12 Sep 2025', 'opponent' => 'CTT Alpa Schaerbeek P', 'venue' => 'Extérieur', 'score' => '6-10', 'result' => 'Défaite'],
@@ -94,7 +94,7 @@ class ResultsController extends Controller
             ],
             [
                 'name' => 'Équipe C - Division 4F Vétérans',
-                'position' => '5ème place',
+                'position' => '2nde place',
                 'position_class' => 'bg-gray-100 text-gray-800',
                 'matches' => [
                     ['date' => '03 Oct 2025', 'opponent' => 'Logis Auderghem D', 'venue' => 'Domicile', 'score' => '7-3', 'result' => 'Victoire'],

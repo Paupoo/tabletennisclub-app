@@ -43,6 +43,7 @@ class SeasonController extends Controller
     {
         $breadcrumbs = Breadcrumb::make()
             ->home()
+            ->seasons()
             ->toArray();
 
         $seasons = Season::orderBy('start_at')
@@ -62,11 +63,15 @@ class SeasonController extends Controller
      */
     public function show(string $id): View
     {
+        $season = Season::with('users')->findOrFail($id);
+
         $breadcrumbs = Breadcrumb::make()
             ->home()
+            ->seasons()
+            ->current($season->name)
             ->toArray();
-        $season = Season::with('users')->findOrFail($id);
         $subscriptions = $season->subscriptions->load('payments');
+        $trainingPacks = $season->trainingPacks()->get();
         $notSubscribedUsers = User::whereDoesntHave('subscriptions', function ($query) use ($season): void {
             $query->where('season_id', $season->id);
         })->get();
@@ -76,6 +81,7 @@ class SeasonController extends Controller
             'subscriptions',
             'notSubscribedUsers',
             'breadcrumbs',
+            'trainingPacks',
         ]));
     }
 

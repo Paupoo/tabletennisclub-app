@@ -59,6 +59,15 @@ class Breadcrumb
     {
         return $this->add('Rooms', $url ?: route('rooms.index'));
     }
+    public function seasons($url = null)
+    {
+        return $this->add(__('Seasons'), $url ?: route('admin.seasons.index'), 'calendar');
+    }
+
+    public function subscriptions($url = null)
+    {
+        return $this->add(__('Subscriptions'), $url ?: route('admin.subscriptions.index'), 'calendar');
+    }
 
     public function tables($url = null)
     {

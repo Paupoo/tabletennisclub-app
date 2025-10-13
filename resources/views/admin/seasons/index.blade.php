@@ -239,101 +239,111 @@
                         </table>
                     </div>
 
-                    <!-- Version mobile et tablette : Cards simplifiées -->
+                    <!-- Version mobile et tablette : Cards modernes -->
                     <div class="lg:hidden">
                         @foreach ($seasons as $season)
-                            <div class="border-b border-gray-200 p-4 hover:bg-gray-50 transition-colors duration-200">
-                                <!-- Ligne principale : Nom + Status -->
-                                <div class="flex items-center justify-between mb-2">
-                                    <div class="flex-1 min-w-0">
-                                        <div class="text-sm font-semibold text-gray-900">{{ $season->name }}</div>
-                                        <div class="text-xs text-gray-500 mt-1">
-                                            {{ $season->start_at->format('d/m/Y') }} - {{ $season->end_at->format('d/m/Y') }}
+                            <div class="border-b border-gray-200 last:border-b-0">
+                                <div class="p-4 space-y-3">
+                                    <!-- Header: Nom + Badge Status -->
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div class="flex-1 min-w-0">
+                                            <h3 class="font-semibold text-gray-900 text-base leading-tight">
+                                                {{ $season->name }}
+                                            </h3>
                                         </div>
+                                        
+                                        @if($season->end_at >= now())
+                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800 flex-shrink-0">
+                                                {{ __('Active') }}
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600 flex-shrink-0">
+                                                {{ __('Finished') }}
+                                            </span>
+                                        @endif
                                     </div>
-                                    
-                                    @if($season->end_at >= now())
-                                        <span class="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 flex-shrink-0">
-                                            {{ __('Active') }}
-                                        </span>
-                                    @else
-                                        <span class="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800 flex-shrink-0">
-                                            {{ __('Finished') }}
-                                        </span>
-                                    @endif
-                                </div>
 
-                                <!-- Ligne secondaire : Inscriptions + Actions -->
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center text-sm text-gray-600">
-                                        <svg class="w-4 h-4 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                        </svg>
-                                        <span class="font-medium">{{ $season->users()->count() }}</span>
-                                        <span class="text-xs ml-1">{{ __('members') }}</span>
+                                    <!-- Infos: Dates + Membres -->
+                                    <div class="flex items-center gap-4 text-xs text-gray-500">
+                                        <!-- Dates -->
+                                        <div class="flex items-center gap-1.5">
+                                            <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                            </svg>
+                                            <span class="whitespace-nowrap">{{ $season->start_at->format('d/m/y') }} - {{ $season->end_at->format('d/m/y') }}</span>
+                                        </div>
+
+                                        <!-- Membres -->
+                                        <div class="flex items-center gap-1.5">
+                                            <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                                            </svg>
+                                            <span class="font-medium text-gray-900">{{ $season->users()->count() }}</span>
+                                            <span>{{ __('members') }}</span>
+                                        </div>
                                     </div>
 
                                     <!-- Actions -->
-                                    <div class="flex items-center space-x-1">
+                                    <div class="flex items-center gap-2 pt-1">
                                         @can('subscribe', $season)
                                             <button @click="selectedSeason = {{ $season->id }}; showSubscribeModal = true"
-                                                    class="bg-green-600 hover:bg-green-700 text-white p-2 rounded-lg transition-colors duration-200"
-                                                    title="{{ __('Subscribe a member') }}">
+                                                    class="flex-1 inline-flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg font-medium text-sm transition-colors">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
                                                 </svg>
+                                                <span>{{ __('Subscribe') }}</span>
                                             </button>
                                         @endcan
                                         
                                         <a href="{{ route('admin.seasons.show', $season) }}" 
-                                           class="bg-club-blue hover:bg-club-blue-light text-white p-2 rounded-lg transition-colors duration-200">
+                                           class="flex-1 inline-flex items-center justify-center gap-2 bg-club-blue hover:bg-club-blue-light text-white px-3 py-2 rounded-lg font-medium text-sm transition-colors">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                             </svg>
+                                            <span>{{ __('View') }}</span>
                                         </a>
 
-                                        <!-- Menu dropdown pour les autres actions -->
-                                        <div x-data="{ open: false }" class="relative">
+                                        <!-- Menu dropdown -->
+                                        <div x-data="{ open: false }" class="relative" @click.away="open = false">
                                             <button @click="open = !open" 
-                                                    class="bg-gray-600 hover:bg-gray-700 text-white p-2 rounded-lg transition-colors duration-200">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    class="inline-flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-700 p-2 rounded-lg transition-colors">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path>
                                                 </svg>
                                             </button>
                                             
                                             <div x-show="open" 
-                                                 @click.away="open = false"
                                                  x-transition:enter="transition ease-out duration-100"
-                                                 x-transition:enter-start="transform opacity-0 scale-95"
-                                                 x-transition:enter-end="transform opacity-100 scale-100"
+                                                 x-transition:enter-start="opacity-0 scale-95"
+                                                 x-transition:enter-end="opacity-100 scale-100"
                                                  x-transition:leave="transition ease-in duration-75"
-                                                 x-transition:leave-start="transform opacity-100 scale-100"
-                                                 x-transition:leave-end="transform opacity-0 scale-95"
-                                                 class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10"
+                                                 x-transition:leave-start="opacity-100 scale-100"
+                                                 x-transition:leave-end="opacity-0 scale-95"
+                                                 class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden z-20"
                                                  style="display: none;">
                                                 
                                                 @can('update', $season)
                                                     <a href="{{ route('admin.seasons.edit', $season) }}" 
-                                                       class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                                        <svg class="w-4 h-4 mr-2 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                       class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors border-b border-gray-100">
+                                                        <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                                         </svg>
-                                                        {{ __('Edit') }}
+                                                        <span class="font-medium">{{ __('Edit') }}</span>
                                                     </a>
                                                 @endcan
 
                                                 @can('delete', $season)
-                                                    <form action="{{ route('admin.seasons.destroy', $season) }}" method="POST" class="block">
+                                                    <form action="{{ route('admin.seasons.destroy', $season) }}" method="POST">
                                                         @csrf
                                                         @method('delete')
                                                         <button type="submit" 
-                                                                onclick="return confirm('{{ __('Are you sure?') }}')"
-                                                                class="w-full text-left flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50">
-                                                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                onclick="return confirm('{{ __('Are you sure you want to delete this season?') }}')"
+                                                                class="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                                             </svg>
-                                                            {{ __('Delete') }}
+                                                            <span class="font-medium">{{ __('Delete') }}</span>
                                                         </button>
                                                     </form>
                                                 @endcan

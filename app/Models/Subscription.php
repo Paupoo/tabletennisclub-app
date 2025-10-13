@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -155,11 +156,6 @@ class Subscription extends Model implements PayableInterface
         return $query->whereIn('status', ['pending', 'confirmed']);
     }
 
-    public function season(): BelongsTo
-    {
-        return $this->belongsTo(Season::class);
-    }
-
     public function setState(SubscriptionState $state): void
     {
         $this->status = $state->getStatus();
@@ -199,6 +195,16 @@ class Subscription extends Model implements PayableInterface
 
     // ==================== Relations ====================
 
+    public function season(): BelongsTo
+    {
+        return $this->belongsTo(Season::class);
+    }
+
+    public function trainingPacks(): BelongsToMany
+    {
+        return $this->belongsToMany(TrainingPack::class);
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
@@ -232,5 +238,10 @@ class Subscription extends Model implements PayableInterface
             'cancelled' => new CancelledState,
             default => new PendingState,
         };
+    }
+
+    public function canGeneratePayment(): bool
+    {
+        return $this->getCurrentState()->canGeneratePayment($this);
     }
 }

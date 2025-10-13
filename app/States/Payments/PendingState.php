@@ -51,4 +51,9 @@ class PendingState implements SubscriptionState
             'cancel' => __('Cancel'),
         ];
     }
+
+    public function canGeneratePayment(Subscription $subscription): bool
+    {
+        return false;
+    }
 }

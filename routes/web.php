@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\Payments\GeneratePayment;
+use App\Actions\Subscriptions\AddTrainingPack;
 use App\Actions\Subscriptions\CancelSubscriptionAction;
 use App\Actions\Subscriptions\ConfirmSubscriptionAction;
 use App\Actions\Subscriptions\DeleteSubscription;
@@ -339,6 +340,9 @@ Route::prefix('admin')->middleware(['auth','verified'])->group(function (): void
     Route::post('subscriptions/{subscription}/markPaid', MarkPaidSubscriptionAction::class)->name('admin.subscriptions.markPaid');
     Route::post('subscriptions/{subscription}/markRefunded', MarkRefundSubscriptionAction::class)->name('admin.subscriptions.markRefunded');
     Route::post('payments/{subscription}/generate', GeneratePayment::class)->name('admin.subscription.generatePayment');
+    Route::post('subscription/{subscription}/addTrainingPack', [SubscriptionController::class, 'syncTrainingPacks'])->name('admin.subscriptions.addTrainingPack');
+    Route::get('/admin/subscriptions/{subscription}', [SubscriptionController::class, 'show'])
+    ->name('admin.subscriptions.show');
 });
 
 Route::prefix('admin/transactions')->middleware(['auth','verified'])->group(function (): void {

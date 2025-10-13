@@ -54,4 +54,9 @@ class ConfirmedState implements SubscriptionState
             'unconfirm' => __('Unconfirm'),
         ];
     }
+
+    public function canGeneratePayment(Subscription $subscription): bool
+    {
+        return true;
+    }
 }

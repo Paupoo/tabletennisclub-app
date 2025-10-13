@@ -21,4 +21,6 @@ interface SubscriptionState
     public function unconfirm(Subscription $subscription): void;
 
     public function availableTransitions(): array;
+
+    public function canGeneratePayment(Subscription $subscription): bool;
 }

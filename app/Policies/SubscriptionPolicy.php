@@ -2,11 +2,11 @@
 
 namespace App\Policies;
 
-use App\Models\Season;
+use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Auth\Access\Response;
 
-class SeasonPolicy
+class SubscriptionPolicy
 {
     /**
      * Determine whether the user can view any models.
@@ -19,9 +19,9 @@ class SeasonPolicy
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, Season $season): bool
+    public function view(User $user, Subscription $subscription): bool
     {
-        return false;
+        return $user->can('update', $subscription->season);
     }
 
     /**
@@ -35,23 +35,23 @@ class SeasonPolicy
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, Season $season): bool
+    public function update(User $user, Subscription $subscription): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can('update', $subscription->season);
     }
 
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, Season $season): bool
+    public function delete(User $user, Subscription $subscription): bool
     {
-        return false;
+        return $user->is_admin;
     }
 
     /**
      * Determine whether the user can restore the model.
      */
-    public function restore(User $user, Season $season): bool
+    public function restore(User $user, Subscription $subscription): bool
     {
         return false;
     }
@@ -59,17 +59,12 @@ class SeasonPolicy
     /**
      * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(User $user, Season $season): bool
+    public function forceDelete(User $user, Subscription $subscription): bool
     {
-        return false;
+        return $user->is_admin;
     }
 
-    public function subscribe(User $user): bool
-    {
-        return $user->is_admin || $user->is_committee_member;
-    }
-
-    public function manageSubscription(User $user): bool
+    public function generatePayment(User $user, Subscription $subscription): bool
     {
         return $user->is_admin || $user->is_committee_member;
     }

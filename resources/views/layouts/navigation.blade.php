@@ -50,15 +50,11 @@
                             class="absolute top-full left-0 mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
                             @if(Auth()->user()->is_committee_member || Auth()->user()->is_admin)
                             <a href="{{ route('admin.articles.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-indigo-300 dark:hover:bg-gray-700 hover:text-club-blue transition-colors duration-200" wire:navigate>
-                                <svg class="w-4 h-4 mr-3 stroke-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <x-ui.icon name="article" />
-                                </svg>
+                                <x-ui.icon name="article" class="w-4 h-4 mr-3" />
                                 {{ __('Articles') }}
                             </a>
                             <a href="{{ route('admin.contacts.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-indigo-300 dark:hover:bg-gray-700 hover:text-club-blue transition-colors duration-200" wire:navigate>
-                                <svg class="w-4 h-4 mr-3 stroke-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <x-ui.icon name="envelope-closed" />
-                                </svg>
+                                <x-ui.icon name="envelope-closed" class="w-4 h-4 mr-3" />
                                 {{ __('Contacts') }}
                                 @if(isset($newContactsCount) && $newContactsCount > 0)
                                     <span class="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full">{{ $newContactsCount }}</span>
@@ -66,28 +62,20 @@
                             </a>    
                             @endif
                             <a href="{{ route('teams.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-indigo-300 dark:hover:bg-gray-700 hover:text-club-blue transition-colors duration-200" wire:navigate>
-                                <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <x-ui.icon name="people" />
-                                </svg>
+                                <x-ui.icon name="people" class="w-4 h-4 mr-3" />
                                 {{ __('Teams') }}
                             </a>
                             <a href="{{ route('users.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-indigo-300 dark:hover:bg-gray-700 hover:text-club-blue transition-colors duration-200" wire:navigate>
-                                <svg class="w-4 h-4 mr-3 stroke-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <x-ui.icon name="person" />
-                                </svg>
+                                <x-ui.icon name="person" class="w-4 h-4 mr-3" />
                                 {{ __('Members') }}
                             </a>
                             <a href="{{ route('admin.seasons.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-indigo-300 dark:hover:bg-gray-700 hover:text-club-blue transition-colors duration-200" wire:navigate>
-                                <svg class="w-4 h-4 mr-3 stroke-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <x-ui.icon name="calendar" />
-                                </svg>
+                                <x-ui.icon name="calendar" class="w-4 h-4 mr-3" />
                                 {{ __('Seasons') }}
                             </a>
                             @if(Auth()->user()->is_committee_member || Auth()->user()->is_admin)
                             <a href="{{ route('admin.spams.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-indigo-300 dark:hover:bg-gray-700 hover:text-club-blue transition-colors duration-200" wire:navigate>
-                                <svg class="w-4 h-4 mr-3 stroke-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <x-ui.icon name="bin" class="w-4 h-4 mr-3" />
-                                </svg>
+                                <x-ui.icon name="bin" class="w-4 h-4 mr-3" />
                                 {{ __('Spams') }}
                             </a>
                             @endif
@@ -282,7 +270,7 @@
                 <x-ui.icon class="w-4 h-4 mr-3" name="person" />
                 {{ __('Members') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('admin.seasons.index')" :active="request()->routeIs('users.index')" wire:navigate class="flex items-center pl-6">
+            <x-responsive-nav-link :href="route('admin.seasons.index')" :active="request()->routeIs('admin.seasons.index')" wire:navigate class="flex items-center pl-6">
                 <x-ui.icon class="w-4 h-4 mr-3" name="calendar" />
                 {{ __('Seasons') }}
             </x-responsive-nav-link>
@@ -316,7 +304,7 @@
                     {{ __('Activities') }}
                 </div>
             </div>
-            <x-responsive-nav-link :href="route('admin.events.index')" :active="request()->routeIs('trainings.index')" wire:navigate class="flex items-center pl-6">
+            <x-responsive-nav-link :href="route('admin.events.index')" :active="request()->routeIs('admin.events.index')" wire:navigate class="flex items-center pl-6">
                 <x-ui.icon class="w-4 h-4 mr-3" name="calendar" />
                 {{ __('Events') }}
             </x-responsive-nav-link>

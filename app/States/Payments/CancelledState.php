@@ -48,4 +48,9 @@ class CancelledState implements SubscriptionState
     {
         return [];
     }
+
+    public function canGeneratePayment(Subscription $subscription): bool
+    {
+        return false;
+    }
 }

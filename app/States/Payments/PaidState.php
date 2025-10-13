@@ -54,4 +54,9 @@ class PaidState implements SubscriptionState
             'confirm' => __('Confirm'),
         ];
     }
+
+    public function canGeneratePayment(Subscription $subscription): bool
+    {
+        return false;
+    }
 }

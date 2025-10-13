@@ -174,7 +174,6 @@
                     </div>
                 </div>
             @endif
-
             <!-- Conteneur des entraînements -->
             <div class="bg-white rounded-lg shadow-lg overflow-hidden">
                 @if ($trainings->count() == 0)

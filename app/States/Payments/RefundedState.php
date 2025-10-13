@@ -50,4 +50,9 @@ class RefundedState implements SubscriptionState
             'markPaid' => __('Mark as Paid'),
         ];
     }
+
+    public function canGeneratePayment(Subscription $subscription): bool
+    {
+        return false;
+    }
 }

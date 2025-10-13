@@ -7,6 +7,7 @@ namespace App\Actions\Payments;
 use App\Models\Payment;
 use App\Models\Subscription;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Gate;
 
 class GeneratePayment
 {
@@ -15,6 +16,13 @@ class GeneratePayment
      */
     public function __invoke(Subscription $subscription): RedirectResponse
     {
+        Gate::authorize('generatePayment', $subscription);
+
+        if(! $subscription->canGeneratePayment($subscription)) {
+            return back()
+                ->withErrors(__('Cannot generate payment for current subscription state.'));
+        }
+
         $referenceGenerator = new GeneratePaymentReference;
 
         $subscription->payments()->create([

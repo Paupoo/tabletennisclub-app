@@ -40,17 +40,17 @@
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div class="bg-gray-50 rounded-lg p-4">
                         <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">{{ __('Amount due') }}</p>
-                        <p class="text-2xl font-bold text-gray-900">{{ number_format($subscription->amount_due, 2) }} €</p>
+                        <p class="text-2xl font-bold text-gray-900">{{ number_format($subscription->amount_due, 2) }}&nbsp;€</p>
                     </div>
                     
                     <div class="bg-gray-50 rounded-lg p-4">
                         <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">{{ __('Amount paid') }}</p>
-                        <p class="text-2xl font-bold text-green-600">{{ number_format($subscription->amount_paid, 2) }} €</p>
+                        <p class="text-2xl font-bold text-green-600">{{ number_format($subscription->amount_paid, 2) }}&nbsp;€</p>
                     </div>
                     
                     <div class="bg-gray-50 rounded-lg p-4">
                         <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">{{ __('Remaining') }}</p>
-                        <p class="text-2xl font-bold text-orange-600">{{ number_format($subscription->amount_due - $subscription->amount_paid, 2) }} €</p>
+                        <p class="text-2xl font-bold text-orange-600">{{ number_format($subscription->amount_due - $subscription->amount_paid, 2) }}&nbsp;€</p>
                     </div>
                 </div>
             </div>
@@ -79,7 +79,7 @@
                                     </label>
                                 </div>
                                 @if($trainingPack->price)
-                                    <span class="text-sm text-gray-600">{{ number_format($trainingPack->price, 2) }} €</span>
+                                    <span class="text-sm text-gray-600">{{ number_format($trainingPack->price, 2) }}&nbsp;€</span>
                                 @endif
                             </div>
                         @empty
@@ -125,7 +125,7 @@
                             <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                                 <div>
                                     <p class="text-sm font-medium text-gray-900">{{ $payment->reference }}</p>
-                                    <p class="text-sm font-medium text-gray-900">{{ $payment->amount_due }} €</p>
+                                    <p class="text-sm font-medium text-gray-900">{{ $payment->amount_due }}&nbsp;€</p>
                                     <p class="text-xs text-gray-500">{{ $payment->created_at->format('d/m/Y H:i') }}</p>
                                 </div>
                                 @if($payment->paid_at)
@@ -179,7 +179,7 @@
                             <p class="text-sm font-medium text-gray-900">{{ __('Soft delete subscription') }}</p>
                             <p class="text-xs text-gray-500">{{ __('Mark this subscription as deleted (can be restored)') }}</p>
                         </div>
-                        <form method="POST" action="{{ route('admin.subscriptions.delete', $subscription) }}" class="inline">
+                        <form method="POST" action="{{ route('admin.subscriptions.unsubscribe', $subscription) }}" class="inline">
                             @csrf
                             <button type="submit" 
                                 onclick="return confirm('{{ __('Are you sure?') }}')"
@@ -194,8 +194,9 @@
                             <p class="text-sm font-medium text-red-900">{{ __('Unsubscribe member') }}</p>
                             <p class="text-xs text-red-600">{{ __('Permanently delete this subscription (cannot be undone)') }}</p>
                         </div>
-                        <form method="POST" action="{{ route('admin.subscriptions.unsubscribe', [$subscription->season, $subscription->user]) }}" class="inline">
+                        <form method="POST" action="{{ route('admin.subscriptions.destroy', [$subscription->season, $subscription->user]) }}" class="inline">
                             @csrf
+                            @method('DELETE')
                             <button type="submit" 
                                 onclick="return confirm('{{ __('This action is irreversible. Are you absolutely sure?') }}')"
                                 class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors text-sm">

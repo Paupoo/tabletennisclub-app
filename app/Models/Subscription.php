@@ -162,14 +162,6 @@ class Subscription extends Model implements PayableInterface
         $this->save();
     }
 
-    public function subscriptionPrice(): Attribute
-    {
-        return Attribute::make(
-            get: fn (?int $value): float => round(($value ?? 0) / 100, 2),
-            set: fn (int|float $value): int => (int) $value * 100,
-        );
-    }
-
     // ==================== UI helpers ====================
     public function availableTransitions(): array
     {
@@ -215,7 +207,7 @@ class Subscription extends Model implements PayableInterface
     {
         return Attribute::make(
             get: fn (?int $value): float => round(($value ?? 0) / 100, 2),
-            set: fn (int|float $value): int => $value * 100,
+            set: fn (int|float $value): int => (int) ($value * 100),
         );
     }
 
@@ -223,9 +215,25 @@ class Subscription extends Model implements PayableInterface
     {
         return Attribute::make(
             get: fn (?int $value): float => round(($value ?? 0) / 100, 2),
-            set: fn (int|float $value): int => $value * 100,
+            set: fn (int|float $value): int => (int) ($value * 100),
         );
 
+    }
+
+    public function subscriptionPrice(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?int $value): float => round(($value ?? 0) / 100, 2),
+            set: fn (int|float $value): int => (int) $value * 100,
+        );
+    }
+
+    protected function trainingUnitPrice(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?int $value): float => round(($value ?? 0) / 100, 2),
+            set: fn (float|int $value): int => (int) ($value * 100),
+        );
     }
 
     private function getCurrentState(): SubscriptionState

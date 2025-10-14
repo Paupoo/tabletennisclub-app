@@ -2,7 +2,7 @@
     <div x-data="{ showStats: false, showActionsMenu: false }">
         <x-admin-block>
             <!-- En-tête de page avec actions -->
-            <div class="bg-white rounded-lg shadow-lg p-4 sm:p-6 mb-6">
+            <div class="p-4 sm:p-6 mb-6">
                 <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start space-y-4 sm:space-y-0">
                     <div>
                         <h2 class="text-xl sm:text-2xl font-bold text-club-blue mb-2">{{ __('Members') }}</h2>
@@ -148,7 +148,7 @@
                 </div>
             </div>
             <!-- Table des utilisateurs -->
-            <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div class="overflow-hidden">
                 <livewire:admin.users.users-table>
             </div>
             <!-- Modal de confirmation - Reset Force Index -->

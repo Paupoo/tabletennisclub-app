@@ -15,9 +15,11 @@ use Illuminate\Http\Request;
 
 class SubscribeToSeasonController extends Controller
 {
-    private int $casualLicencePrice = 60;
+    private float $casualLicencePrice = 60;
 
-    private int $competitiveLicencePrice = 125;
+    private float $competitiveLicencePrice = 125;
+
+    private float $trainingPrice = 90;
 
     private bool $is_competitor = false;
 
@@ -51,7 +53,7 @@ class SubscribeToSeasonController extends Controller
         ]);
     }
 
-    public function calculatePrice(): int
+    public function calculatePrice(): float
     {
         return $this->is_competitor ? $this->competitiveLicencePrice : $this->casualLicencePrice;
     }
@@ -64,6 +66,7 @@ class SubscribeToSeasonController extends Controller
             'is_competitive' => $this->is_competitor,
             'amount_due' => $this->calculatePrice(),
             'status' => 'pending',
+            'training_unit_price' => $this->trainingPrice,
         ]);
     }
 }

@@ -51,7 +51,7 @@ class PaidState implements SubscriptionState
     {
         return [
             'markRefunded' => __('Refund'),
-            'confirm' => __('Confirm'),
+            // 'confirm' => __('Confirm'),
         ];
     }
 

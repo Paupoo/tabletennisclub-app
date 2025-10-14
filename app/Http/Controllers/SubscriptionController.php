@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Actions\Subscriptions\AddTrainingPack;
-use App\Actions\Subscriptions\SynchTrainingPack;
+use App\Actions\Subscriptions\SyncTrainingPack;
 use App\Models\Subscription;
 use App\Models\TrainingPack;
 use App\Support\Breadcrumb;
@@ -26,9 +26,25 @@ class SubscriptionController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Subscription $subscription): RedirectResponse
     {
-        //
+        $this->authorize('delete', $subscription);
+
+        $subscription->forceDelete();
+
+        return back()
+            ->withInput(
+                ['success' => __('The subscription has been deleted')]
+            );
+    }
+
+    public function unsubscribe(Subscription $subscription): RedirectResponse
+    {
+        $subscription->delete();
+
+        return back()->with([
+            'success' => __('The user has been unsuscribed successfully'),
+        ]);
     }
 
     /**
@@ -101,7 +117,7 @@ class SubscriptionController extends Controller
             'training_packs.*' => 'integer|required|exists:training_packs,id',
         ]);
 
-        new SynchTrainingPack()($validated['training_packs'], $subscription);
+        new SyncTrainingPack()($validated['training_packs'], $subscription);
 
         return back()
             ->with([

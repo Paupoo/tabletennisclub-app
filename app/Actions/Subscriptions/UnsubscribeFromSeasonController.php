@@ -19,7 +19,7 @@ class UnsubscribeFromSeasonController extends Controller
         $season->users()->detach($user);
 
         return back()->with([
-            'success' => __('The user has been suscribed successfully'),
+            'success' => __('The user has been unsuscribed successfully'),
         ]);
     }
 }

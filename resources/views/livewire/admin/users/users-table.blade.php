@@ -1,7 +1,7 @@
     <div>
 
         <!-- Barre de filtres modernisée -->
-        <div class="bg-white rounded-lg shadow-lg p-4 sm:p-6 mb-6">
+        <div class="py-4 sm:py-6 m                                                                                                                                                                  b-6">
             <div class="flex flex-col lg:flex-row lg:justify-between lg:items-center space-y-4 lg:space-y-0 lg:space-x-4">
                 <!-- Recherche -->
                 <div class="flex-1 max-w-md">
@@ -192,36 +192,44 @@
                                 </div>
                             </th>
                             @endif
-                            <th wire:click="sortBy('last_name')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors">
+                            <th wire:click="sortBy('first_name')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors">
                                 <div class="flex items-center space-x-1">
+                                    <x-table.sort-by-indicator :sortByField="$sortByField" :sortDirection="$sortDirection" currentName="first_name"/>
                                     <span>{{ __('User') }}</span>
-                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path>
-                                    </svg>
                                 </div>
                             </th>
                             <th wire:click="sortBy('force_list')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors">
                                 <div class="flex items-center space-x-1">
+                                    @if ($sortByField === 'force_list')
+                                        @if ($sortDirection === 'asc')
+                                            <x-ui.icon name="bars-arrow-down" class="w-4 h-4 text-gray-600" />
+                                        @else
+                                            <x-ui.icon name="bars-arrow-up" class="w-4 h-4 text-gray-600" />
+                                        @endif
+                                    @else
+                                        <x-ui.icon name="chevron-up-down" class="w-4 h-4 text-gray-400" />
+                                    @endif
                                     <span>{{ __('Force Index') }}</span>
-                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path>
-                                    </svg>
                                 </div>
                             </th>
                             <th wire:click="sortBy('ranking')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors">
                                 <div class="flex items-center space-x-1">
+                                    @if ($sortByField === 'ranking')
+                                        @if ($sortDirection === 'asc')
+                                            <x-ui.icon name="bars-arrow-down" class="w-4 h-4 text-gray-600" />
+                                        @else
+                                            <x-ui.icon name="bars-arrow-up" class="w-4 h-4 text-gray-600" />
+                                        @endif
+                                    @else
+                                        <x-ui.icon name="chevron-up-down" class="w-4 h-4 text-gray-400" />
+                                    @endif
                                     <span>{{ __('Ranking') }}</span>
-                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path>
-                                    </svg>
                                 </div>
                             </th>
-                            <th wire:click="sortBy('team_id')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors">
+                            <th wire:click="sortBy('team_id->name')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors">
                                 <div class="flex items-center space-x-1">
+                                    
                                     <span>{{ __('Teams') }}</span>
-                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path>
-                                    </svg>
                                 </div>
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -229,10 +237,16 @@
                             </th>
                             <th wire:click="sortBy('created_at')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors">
                                 <div class="flex items-center space-x-1">
+                                    @if ($sortByField === 'created_at')
+                                        @if ($sortDirection === 'asc')
+                                            <x-ui.icon name="bars-arrow-down" class="w-4 h-4 text-gray-600" />
+                                        @else
+                                            <x-ui.icon name="bars-arrow-up" class="w-4 h-4 text-gray-600" />
+                                        @endif
+                                    @else
+                                        <x-ui.icon name="chevron-up-down" class="w-4 h-4 text-gray-400" />
+                                    @endif
                                     <span>{{ __('Created at') }}</span>
-                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path>
-                                    </svg>
                                 </div>
                             </th>
                             <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">

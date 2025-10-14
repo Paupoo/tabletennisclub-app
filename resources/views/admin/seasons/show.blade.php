@@ -364,7 +364,7 @@
                                                 @endif
 
                                                 <form method="POST"
-                                                    action="{{ route('admin.subscriptions.delete', $subscription) }}">
+                                                    action="{{ route('admin.subscriptions.unsubscribe', $subscription) }}">
                                                     @csrf
                                                     <button type="submit"
                                                         class="px-3 py-1.5 border border-gray-300 rounded text-gray-700 text-xs hover:bg-gray-100">
@@ -373,8 +373,9 @@
                                                 </form>
 
                                                 <form method="POST"
-                                                    action="{{ route('admin.subscriptions.unsubscribe', [$season, $subscription->user]) }}">
+                                                    action="{{ route('admin.subscriptions.destroy', [$season, $subscription->user]) }}">
                                                     @csrf
+                                                    @method('DELETE')
                                                     <button type="submit"
                                                         class="px-3 py-1.5 border border-gray-300 rounded text-red-700 text-xs hover:bg-red-50 font-medium">
                                                         {{ __('Unsubscribe (destroy)') }}

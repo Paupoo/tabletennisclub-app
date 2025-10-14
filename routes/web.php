@@ -331,8 +331,7 @@ Route::prefix('admin')->middleware(['auth','verified'])->group(function (): void
     Route::resource('subscriptions', SubscriptionController::class)->names('admin.subscriptions');
     Route::resource('payments', PaymentController::class)->names('admin.payments');
     Route::post('seasons/{season}/subscribe/', SubscribeToSeasonController::class)->name('admin.seasons.subscribe');
-    Route::post('seasons/{season}/unsubscribeUser/{user}', UnsubscribeFromSeasonController::class)->name('admin.subscriptions.unsubscribe');
-    Route::post('subscriptions/delete/{subscription}', DeleteSubscription::class)->name('admin.subscriptions.delete');
+    Route::post('seasons/{season}/unsubscribe', [SubscriptionController::class, 'unsubscribe'])->name('admin.subscriptions.unsubscribe');
     Route::post('subscriptions/sendPaymentInvite/', [PaymentController::class, 'sendInvite'])->name('admin.subscriptions.sendPaymentInvite');
     Route::post('subscriptions/{subscription}/confirm', ConfirmSubscriptionAction::class)->name('admin.subscriptions.confirm');
     Route::post('subscriptions/{subscription}/unconfirm', UnconfirmSubscriptionAction::class)->name('admin.subscriptions.unconfirm');

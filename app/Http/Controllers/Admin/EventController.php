@@ -35,7 +35,7 @@ class EventController extends Controller
 
     public function destroy(Event $event): RedirectResponse
     {
-        $this->authorize('destroy', $event);
+        $this->authorize('delete', $event);
         if (! $event->canBeDeleted()) {
             return back()->with('error', 'Cet événement ne peut pas être supprimé.');
         }

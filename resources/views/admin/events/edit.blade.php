@@ -27,7 +27,7 @@
                 </div>
             @endif
 
-            <form action="{{ route('admin.events.update', $event) }}" method="POST" 
+            <form action="{{ route('admin.events.update', $event) }}" method="POST" id="eventUpdate"
                   x-data="{ 
                       category: '{{ old('category', $event->category) }}',
                       status: '{{ old('status', $event->status) }}',
@@ -275,10 +275,11 @@
                     <!-- Actions de suppression (si possible) -->
                     <div>
                         @if($event->canBeDeleted())
-                            <form action="{{ route('admin.events.destroy', $event) }}" method="POST" class="inline">
+                            <form action="{{ route('admin.events.destroy', $event) }}" method="POST" class="inline" id="eventDeletion">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" 
+                                        for='eventDeletion'
                                         class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
                                         onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet événement ? Cette action est irréversible.')">
                                     🗑️ Supprimer définitivement
@@ -298,6 +299,7 @@
                             Annuler
                         </a>
                         <button type="submit" 
+                                for="eventUpdate"
                                 class="bg-club-blue hover:bg-club-blue-light text-white px-6 py-2 rounded-lg font-medium transition-colors">
                             💾 Enregistrer les modifications
                         </button>

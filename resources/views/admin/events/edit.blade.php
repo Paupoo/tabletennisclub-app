@@ -27,7 +27,7 @@
                 </div>
             @endif
 
-            <form action="{{ route('admin.events.update', $event) }}" method="POST" id="eventUpdate"
+            <form action="{{ route('admin.events.update', $event) }}" method="POST" 
                   x-data="{ 
                       category: '{{ old('category', $event->category) }}',
                       status: '{{ old('status', $event->status) }}',
@@ -272,40 +272,52 @@
 
                 <!-- Actions -->
                 <div class="flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0 sm:space-x-3 mt-8 pt-6 border-t">
-                    <!-- Actions de suppression (si possible) -->
-                    <div>
-                        @if($event->canBeDeleted())
-                            <form action="{{ route('admin.events.destroy', $event) }}" method="POST" class="inline" id="eventDeletion">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" 
-                                        for='eventDeletion'
-                                        class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
-                                        onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet événement ? Cette action est irréversible.')">
-                                    🗑️ Supprimer définitivement
-                                </button>
-                            </form>
-                        @else
-                            <p class="text-xs text-gray-500">
-                                ℹ️ Cet événement ne peut pas être supprimé car il est publié.
-                            </p>
-                        @endif
-                    </div>
-
-                    <!-- Actions principales -->
-                    <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-                        <a href="{{ route('admin.events.show', $event) }}" 
-                           class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium transition-colors text-center">
-                            Annuler
-                        </a>
-                        <button type="submit" 
-                                for="eventUpdate"
-                                class="bg-club-blue hover:bg-club-blue-light text-white px-6 py-2 rounded-lg font-medium transition-colors">
-                            💾 Enregistrer les modifications
-                        </button>
+                    {{-- Informations de modification --}}
+                <div class="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div class="flex items-center space-x-2 text-sm text-blue-700">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <div>
+                            <strong>Créé le :</strong> {{ $event->created_at->format('d/m/Y à H:i') }}
+                            @if($event->updated_at != $event->created_at)
+                                • <strong>Dernière modification :</strong> {{ $event->updated_at->format('d/m/Y à H:i') }}
+                            @endif
+                        </div>
                     </div>
                 </div>
+
+                {{-- Actions principales (sans suppression) --}}
+                <div class="flex flex-col sm:flex-row justify-end items-center space-y-2 sm:space-y-0 sm:space-x-3 mt-8 pt-6 border-t">
+                    <a href="{{ route('admin.events.show', $event) }}" 
+                       class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium transition-colors text-center">
+                        Annuler
+                    </a>
+                    <button type="submit" 
+                            class="bg-club-blue hover:bg-club-blue-light text-white px-6 py-2 rounded-lg font-medium transition-colors">
+                        💾 Enregistrer les modifications
+                    </button>
+                </div>
             </form>
+            {{-- Formulaire de suppression séparé (en dehors du form principal) --}}
+            <div class="flex justify-start mt-6">
+                @if($event->canBeDeleted())
+                    <form action="{{ route('admin.events.destroy', $event) }}" method="POST" class="inline">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" 
+                                class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+                                onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet événement ? Cette action est irréversible.')">
+                            🗑️ Supprimer définitivement
+                        </button>
+                    </form>
+                @else
+                    <p class="text-xs text-gray-500">
+                        ℹ️ Cet événement ne peut pas être supprimé car il est publié.
+                    </p>
+                @endif
+            </div>
         </div>
     </x-admin-block>
 </x-app-layout>

@@ -40,7 +40,7 @@
             </div>
         </div>
         
-        <button class="w-full @if($event['category'] === 'tournament') bg-club-blue hover:bg-club-blue-light @elseif($event['category'] === 'training') bg-gray-800 hover:bg-gray-700 @else bg-club-yellow hover:bg-club-yellow-light @endif @if($event['category'] === 'social') text-club-blue @else text-white @endif py-3 px-4 rounded-lg transition-colors font-medium">
+        {{-- <button class="w-full @if($event['category'] === 'tournament') bg-club-blue hover:bg-club-blue-light @elseif($event['category'] === 'training') bg-gray-800 hover:bg-gray-700 @else bg-club-yellow hover:bg-club-yellow-light @endif @if($event['category'] === 'social') text-club-blue @else text-white @endif py-3 px-4 rounded-lg transition-colors font-medium">
             @if($event['category'] === 'tournament')
                 S'inscrire Maintenant (TO DO)
             @elseif($event['category'] === 'training')
@@ -48,6 +48,6 @@
             @else
                 Confirmer Présence (TO DO)
             @endif
-        </button>
+        </button> --}}
     </div>
 </div>

@@ -3,15 +3,12 @@
 declare(strict_types=1);
 
 use App\Actions\Payments\GeneratePayment;
-use App\Actions\Subscriptions\AddTrainingPack;
 use App\Actions\Subscriptions\CancelSubscriptionAction;
 use App\Actions\Subscriptions\ConfirmSubscriptionAction;
-use App\Actions\Subscriptions\DeleteSubscription;
 use App\Actions\Subscriptions\MarkPaidSubscriptionAction;
 use App\Actions\Subscriptions\MarkRefundSubscriptionAction;
 use App\Actions\Subscriptions\SubscribeToSeasonController;
 use App\Actions\Subscriptions\UnconfirmSubscriptionAction;
-use App\Actions\Subscriptions\UnsubscribeFromSeasonController;
 use App\Actions\User\CreateNewUserAction;
 use App\Actions\User\InviteExistingUserAction;
 use App\Http\Controllers\ArticleController;
@@ -325,7 +322,7 @@ Route::get('/test', function () {
     return view('test', ['breadcrumbs' => []]);
 });
 
-Route::prefix('admin')->middleware(['auth','verified'])->group(function (): void {
+Route::middleware(['auth','verified'])->group(function (): void {
     Route::resource('seasons', SeasonController::class)->names('admin.seasons');
     Route::resource('registrations', RegistrationController::class)->names('admin.registrations');
     Route::resource('subscriptions', SubscriptionController::class)->names('admin.subscriptions');

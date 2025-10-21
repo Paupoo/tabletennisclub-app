@@ -10,6 +10,7 @@ use App\Models\Payment;
 use App\Models\Season;
 use App\Models\Subscription;
 use App\Models\User;
+use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -37,16 +38,23 @@ class SubscribeToSeasonController extends Controller
             'type' => 'required|in:competitive,casual',
         ]);
 
+
         // Set up parameters
         $this->season = $season;
         $this->user = User::find($validated['user_id']);
+
+        // Make sure we don't subscribe twice for the same season
+        if ($this->user->subscriptions()->where('season_id', $this->season->id)->exists()) {
+            return back()->withErrors(__('The user has already subscribed to this season'));
+        }
+
         $this->is_competitor = $validated['type'] === 'competitive' ? true : false;
 
         // Create the subscription
         $subscription = $this->subscribe();
 
         // Generate the penging payment
-        $payment = new GeneratePayment($subscription);
+        $payment = new GeneratePayment()($subscription);
 
         return back()->with([
             'success' => __('The user has been suscribed successfully'),

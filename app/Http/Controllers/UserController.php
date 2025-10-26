@@ -9,6 +9,7 @@ use App\Enums\Ranking;
 use App\Enums\Sex;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
+use App\Models\Season;
 use App\Models\Team;
 use App\Models\User;
 use App\Services\ForceList;
@@ -179,9 +180,16 @@ class UserController extends Controller
             ->add($user->first_name . ' ' . $user->last_name)
             ->toArray();
 
+        $subscription = $user->subscriptions()->with('season')->latest('created_at')->first();
+        $currentSeason = Season::where('start_at', '<', now())->where('end_at', '>', now())->first();
+        $trainingPacks = $subscription?->season?->trainingPacks()->get();
+
         return view('admin.users.show', [
             'user' => $user,
             'breadcrumbs' => $breadcrumbs,
+            'subscription' => $subscription,
+            'currentSeason' => $currentSeason,
+            'trainingPacks' => $trainingPacks,
         ]);
     }
 

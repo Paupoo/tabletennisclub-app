@@ -53,8 +53,9 @@ class SubscribeToSeasonController extends Controller
         // Create the subscription
         $subscription = $this->subscribe();
 
+        // Removed... we need to let the user or the admin choose the options first
         // Generate the penging payment
-        $payment = new GeneratePayment()($subscription);
+        // $payment = new GeneratePayment()($subscription);
 
         return back()->with([
             'success' => __('The user has been suscribed successfully'),

@@ -30,9 +30,10 @@ class SubscriptionController extends Controller
     {
         $this->authorize('delete', $subscription);
 
+        $season = $subscription->season;
         $subscription->forceDelete();
 
-        return back()
+        return redirect(route('admin.seasons.show', $season))
             ->withInput(
                 ['success' => __('The subscription has been deleted')]
             );
@@ -74,15 +75,15 @@ class SubscriptionController extends Controller
     {
         // Autorisation
         $this->authorize('view', $subscription);
-        
+
         // Chargement des relations
         $subscription->load(['user', 'season', 'trainingPacks', 'payments']);
-        
+
         // Récupération des packs d'entraînement disponibles
         $trainingPacks = TrainingPack::where('season_id', $subscription->season_id)
             ->orderBy('name')
             ->get();
-        
+
         // Fil d'Ariane
         $breadcrumbs = Breadcrumb::make()
             ->home()
@@ -90,7 +91,7 @@ class SubscriptionController extends Controller
             ->add($subscription->season->name, route('admin.seasons.show', $subscription->season->id))
             ->current($subscription->user->full_name)
             ->toArray();
-        
+
         return view('admin.subscriptions.show', compact('subscription', 'trainingPacks', 'breadcrumbs'));
     }
 
@@ -113,9 +114,13 @@ class SubscriptionController extends Controller
     public function syncTrainingPacks(Request $request, Subscription $subscription): RedirectResponse
     {
         $validated = $request->validate([
-            'training_packs' => 'array|required',
+            'training_packs' => 'array|nullable',
             'training_packs.*' => 'integer|required|exists:training_packs,id',
         ]);
+
+        if (!array_key_exists('training_packs', $validated)) {
+            $validated['training_packs'] = [];
+        }
 
         new SyncTrainingPack()($validated['training_packs'], $subscription);
 

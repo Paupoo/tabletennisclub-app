@@ -285,7 +285,7 @@ Route::middleware(['auth', 'verified'])
             ->name('resetKnockoutMatch');
     });
 
-Route::prefix('admin')->middleware(['auth','verified'])->group(function (): void {
+Route::prefix('admin')->middleware(['auth', 'verified'])->group(function (): void {
     Route::resource('contacts', ContactAdminController::class)->names('admin.contacts');
     Route::post('contacts/create-new-user', [CreateNewUserAction::class, 'handle'])->name('admin.contacts.invite-new-user');
     Route::post('/{contact}/send-email', [ContactAdminController::class, 'sendEmail'])->name('admin.contacts.send-email');
@@ -293,7 +293,7 @@ Route::prefix('admin')->middleware(['auth','verified'])->group(function (): void
     Route::post('/{contact}/send-custom-email', [ContactAdminController::class, 'sendCustomEmail'])->name('admin.contacts.send-custom-email');
 });
 
-Route::prefix('admin')->middleware(['auth','verified'])->group(function (): void {
+Route::prefix('admin')->middleware(['auth', 'verified'])->group(function (): void {
     Route::get('spams', [SpamController::class, 'index'])->name('admin.spams.index');
     Route::post('contacts/create-new-user', [CreateNewUserAction::class, 'handle'])->name('admin.contacts.invite-new-user');
     Route::post('/{contact}/send-email', [ContactAdminController::class, 'sendEmail'])->name('admin.contacts.send-email');
@@ -321,8 +321,11 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
 Route::get('/test', function () {
     return view('test', ['breadcrumbs' => []]);
 });
+Route::get('/test2', function () {
+    return view('wizzard', ['breadcrumbs' => []]);
+})->middleware(['auth', 'verified']);
 
-Route::middleware(['auth','verified'])->group(function (): void {
+Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::resource('seasons', SeasonController::class)->names('admin.seasons');
     Route::resource('registrations', RegistrationController::class)->names('admin.registrations');
     Route::resource('subscriptions', SubscriptionController::class)->names('admin.subscriptions');
@@ -338,10 +341,10 @@ Route::middleware(['auth','verified'])->group(function (): void {
     Route::post('payments/{subscription}/generate', GeneratePayment::class)->name('admin.subscription.generatePayment');
     Route::post('subscription/{subscription}/addTrainingPack', [SubscriptionController::class, 'syncTrainingPacks'])->name('admin.subscriptions.addTrainingPack');
     Route::get('/admin/subscriptions/{subscription}', [SubscriptionController::class, 'show'])
-    ->name('admin.subscriptions.show');
+        ->name('admin.subscriptions.show');
 });
 
-Route::prefix('admin/transactions')->middleware(['auth','verified'])->group(function (): void {
+Route::prefix('admin/transactions')->middleware(['auth', 'verified'])->group(function (): void {
     Route::get('add', [TransactionController::class, 'add'])->name('admin.transactions.add ');
     Route::post('upload', [TransactionController::class, 'upload'])->name('admin.transactions.upload');
     Route::get('/', [TransactionController::class, 'index'])->name('admin.transactions.index');

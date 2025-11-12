@@ -7,10 +7,10 @@ namespace App\Models;
 use App\Contracts\PayableInterface;
 use App\Contracts\SubscriptionState;
 use App\States\Payments\CancelledState;
-use App\States\Payments\ConfirmedState;
 use App\States\Payments\PaidState;
 use App\States\Payments\PendingState;
 use App\States\Payments\RefundedState;
+use App\States\Payments\ValidatedState;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -240,7 +240,7 @@ class Subscription extends Model implements PayableInterface
     {
         return match ($this->status) {
             'pending' => new PendingState,
-            'confirmed' => new ConfirmedState,
+            'confirmed' => new ValidatedState,
             'paid' => new PaidState,
             'refunded' => new RefundedState,
             'cancelled' => new CancelledState,

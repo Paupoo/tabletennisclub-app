@@ -18,7 +18,7 @@ class PendingState implements SubscriptionState
     public function confirm(Subscription $subscription): void
     {
         // Transition autorisée : pending → confirmed
-        $subscription->setState(new ConfirmedState);
+        $subscription->setState(new ValidatedState);
     }
 
     public function getStatus(): string

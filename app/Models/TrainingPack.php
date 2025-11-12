@@ -18,11 +18,28 @@ class TrainingPack extends Model
         'season_id',
         'name',
         'price',
+        'trainer_id',
+        'room_id',
     ];
 
     public function season(): BelongsTo
     {
         return $this->belongsTo(Season::class);
+    }
+
+    public function room(): BelongsTo
+    {
+        return $this->belongsTo(Room::class);
+    }
+
+    public function trainees(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class);
+    }
+
+    public function trainer(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     public function trainings(): HasMany
@@ -38,8 +55,8 @@ class TrainingPack extends Model
     public function price(): Attribute
     {
         return Attribute::make(
-            get: fn (int $value): float => round($value / 100, 2),
-            set: fn (float|int $value): int => (int) $value * 100,
+            get: fn(int $value): float => round($value / 100, 2),
+            set: fn(float|int $value): int => (int) $value * 100,
         );
     }
 }

@@ -19,9 +19,14 @@ class SendPayementInvite
 
         // Send an email with payment instructions
         Mail::to($payment->payable->user)
-            ->send(new PaymentInvitationEmail($payment
-                ->load('payable.user', 'payable.season'))
+            ->send(
+                new PaymentInvitationEmail($payment
+                    ->load('payable.user', 'payable.season'))
             );
+
+        // Increment invitation counter
+        $payment->invitation_counter++;
+        $payment->save();
 
         return back()
             ->with([

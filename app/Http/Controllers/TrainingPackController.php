@@ -5,15 +5,27 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreTrainingPackRequest;
 use App\Http\Requests\UpdateTrainingPackRequest;
 use App\Models\TrainingPack;
+use App\Support\Breadcrumb;
+use Illuminate\View\View;
 
 class TrainingPackController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(): View
     {
-        //
+        $breadcrumbs = Breadcrumb::make()
+            ->home()
+            ->trainingPacks()
+            ->toArray();
+
+        $trainingPacks = TrainingPack::paginate();
+
+        return view('admin.training_packs.index', compact([
+            'breadcrumbs',
+            'trainingPacks',
+        ]));
     }
 
     /**

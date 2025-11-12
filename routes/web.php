@@ -35,6 +35,7 @@ use App\Http\Controllers\Tournament\ChangeTournamentStatusController;
 use App\Http\Controllers\Tournament\ToggleHasPaidController;
 use App\Http\Controllers\TournamentController;
 use App\Http\Controllers\TrainingController;
+use App\Http\Controllers\TrainingPackController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\ProtectAgainstSpam;
@@ -291,6 +292,7 @@ Route::prefix('admin')->middleware(['auth', 'verified'])->group(function (): voi
     Route::post('/{contact}/send-email', [ContactAdminController::class, 'sendEmail'])->name('admin.contacts.send-email');
     Route::get('/{contact}/compose-email', [ContactAdminController::class, 'composeEmail'])->name('admin.contacts.compose-email');
     Route::post('/{contact}/send-custom-email', [ContactAdminController::class, 'sendCustomEmail'])->name('admin.contacts.send-custom-email');
+    Route::resource('trainingpacks', TrainingPackController::class)->names('admin.trainingpacks');
 });
 
 Route::prefix('admin')->middleware(['auth', 'verified'])->group(function (): void {

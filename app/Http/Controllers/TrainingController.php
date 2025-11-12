@@ -188,7 +188,7 @@ class TrainingController extends Controller
          * See form request, I might have an ID if there is no recurrence,
          * to be used to link the solo training to that pack.
          */
-        if($validated['training_pack_id']) {
+        if ($validated['training_pack_id']) {
             $trainingPackId = $validated['training_pack_id'];
         }
 
@@ -196,16 +196,18 @@ class TrainingController extends Controller
          * See form request, I expect to have a name if there is a recurrence
          * so that I can create a new trainingpack.
          */
-        if($validated['training_pack_name']) {
+        if ($validated['training_pack_name']) {
             $newCreatedPack = TrainingPack::create([
                 'season_id' => $validated['season_id'],
                 'name' => $validated['training_pack_name'],
-                'price' => $validated['training_pack_price']
+                'price' => $validated['training_pack_price'],
+                'room_id' => $validated['room_id'],
+                'trainer_id' => $validated['trainer_id']
             ]);
 
             $trainingPack = $newCreatedPack->id;
         }
-        
+
 
         $training_dates = $this->dateGenerator->generateDates($validated['start_date'], $validated['end_date'], $validated['recurrence']);
 

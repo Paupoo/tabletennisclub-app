@@ -128,4 +128,8 @@ class Room extends Model
     {
         return $this->hasMany(Training::class);
     }
+    public function trainingPacks(): HasMany
+    {
+        return $this->hasMany(Training::class);
+    }
 }

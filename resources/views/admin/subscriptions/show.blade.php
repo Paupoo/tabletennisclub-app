@@ -108,10 +108,9 @@
                             <form method="POST" action="{{ route('admin.subscriptions.' . $action, $subscription) }}"
                                 class="inline">
                                 @csrf
-                                <button type="submit"
-                                    class="px-4 py-2 bg-club-blue hover:bg-club-blue-light text-white rounded-lg font-medium transition-colors text-sm">
+                                <x-secondary-button type="submit">
                                     {{ __($label) }}
-                                </button>
+                                </x-secondary-button>
                             </form>
                         @endforeach
                     </div>
@@ -149,15 +148,14 @@
                 @endif
 
                 <!-- Actions de paiement -->
-                <div class="flex flex-wrap gap-3">
+                <div class="flex flex-wrap gap-3 justify-left items-center">
                     @if ($subscription->payments->count() <= 0 && $subscription->status == 'confirmed')
                         <form method="POST" action="{{ route('admin.subscription.generatePayment', $subscription) }}"
                             class="inline">
                             @csrf
-                            <button type="submit"
-                                class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors text-sm">
+                            <x-secondary-button type="submit">
                                 {{ __('Generate payment') }}
-                            </button>
+                            </x-secondary-button>
                         </form>
                     @endif
 
@@ -166,11 +164,13 @@
                             class="inline">
                             @csrf
                             <input type="hidden" name="payment_id" value="{{ $subscription->payments->first()->id }}">
-                            <button type="submit"
-                                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors text-sm">
+                            <x-secondary-button type="submit">
                                 {{ __('Send payment invite') }}
-                            </button>
+                            </x-secondary-button>
                         </form>
+                        <p class="text-sm text-gray-600">
+                            {{ __('The user already received ' . (string) $subscription->payments()->sum('invitation_counter') . ' invitations') }}
+                        </p>
                     @endif
                 </div>
             </div>

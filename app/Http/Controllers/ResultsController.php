@@ -16,7 +16,7 @@ class ResultsController extends Controller
         $teams = [
             [
                 'name' => 'Équipe A - Division 2C',
-                'position' => '1ère place',
+                'position' => '3ème place',
                 'position_class' => 'bg-gray-100 text-gray-800',
                 'matches' => [
                     ['date' => '12 Sep 2025', 'opponent' => 'Arc En Ciel F', 'venue' => 'Domicile', 'score' => '15-1', 'result' => 'Victoire'],
@@ -24,8 +24,9 @@ class ResultsController extends Controller
                     ['date' => '26 Sep 2025', 'opponent' => 'Braine l\'Alleud I', 'venue' => 'Domicile', 'score' => '14-2', 'result' => 'Victoire'],
                     ['date' => '10 Oct 2025', 'opponent' => 'Logis Auderghem I', 'venue' => 'Domicile', 'score' => '10-6', 'result' => 'Victoire'],
                     ['date' => '18 Oct 2025', 'opponent' => 'Gremlins A', 'venue' => 'Extérieur', 'score' => '3-13', 'result' => 'Victoire'],
+                    ['date' => '7 Nov 2025', 'opponent' => 'Tourinnes A', 'venue' => 'Extérieur', 'score' => '9-7', 'result' => 'Défaite'],
                 ],
-                'stats' => ['played' => 5, 'wins' => 5, 'losses' => 0, 'win_rate' => 100]
+                'stats' => ['played' => 6, 'wins' => 5, 'losses' => 1, 'win_rate' => 83]
             ],
             [
                 'name' => 'Équipe B - Division 3B',
@@ -37,8 +38,9 @@ class ResultsController extends Controller
                     ['date' => '26 Sep 2025', 'opponent' => 'Piranha G', 'venue' => 'Domicile', 'score' => '11-5', 'result' => 'Victoire'],
                     ['date' => '10 Oct 2025', 'opponent' => 'Royal 1865 B', 'venue' => 'Domicile', 'score' => '6-10', 'result' => 'Défaite'],
                     ['date' => '18 Oct 2025', 'opponent' => 'TT Zenith Brussels B', 'venue' => 'Extérieur', 'score' => '6-10', 'result' => 'Victoire'],
+                    ['date' => '7 Nov 2025', 'opponent' => 'Logis Auderghem N', 'venue' => 'Extérieur', 'score' => '6-10', 'result' => 'Victoire'],
                 ],
-                'stats' => ['played' => 5, 'wins' => 3, 'losses' => 1, 'win_rate' => 60]
+                'stats' => ['played' => 6, 'wins' => 4, 'losses' => 1, 'win_rate' => 66]
             ],
             [
                 'name' => 'Équipe C - Division 4C',
@@ -50,12 +52,13 @@ class ResultsController extends Controller
                     ['date' => '27 Sep 2025', 'opponent' => 'Braine l\'Alleud M', 'venue' => 'Extérieur', 'score' => '3-13', 'result' => 'Victoire'],
                     ['date' => '10 Oct 2025', 'opponent' => 'Set-Jet Fleur Bleue K', 'venue' => 'Extérieur', 'score' => '1-15', 'result' => 'Victoire'],
                     ['date' => '18 Oct 2025', 'opponent' => 'Mont St Guibert B', 'venue' => 'Domicile', 'score' => '6-10', 'result' => 'Défaite'],
+                    ['date' => '7 Nov 2025', 'opponent' => 'Beauchamp A', 'venue' => 'Domicile', 'score' => '11-5', 'result' => 'Victoire'],
                 ],
-                'stats' => ['played' => 5, 'wins' => 3, 'losses' => 2, 'win_rate' => 60]
+                'stats' => ['played' => 6, 'wins' => 4, 'losses' => 2, 'win_rate' => 66]
             ],
             [
                 'name' => 'Équipe D - Division 4D',
-                'position' => '5ème place',
+                'position' => '6ème place',
                 'position_class' => 'bg-gray-100 text-gray-800',
                 'matches' => [
                     ['date' => '13 Sep 2025', 'opponent' => 'CTT Le Moulin C', 'venue' => 'Extérieur', 'score' => '14-2', 'result' => 'Victoire'],
@@ -63,8 +66,9 @@ class ResultsController extends Controller
                     ['date' => '27 Sep 2025', 'opponent' => 'Gremlins F', 'venue' => 'Extérieur', 'score' => '5-11', 'result' => 'Victoire'],
                     ['date' => '10 Oct 2025', 'opponent' => 'Piranha I', 'venue' => 'Extérieur', 'score' => '6-10', 'result' => 'Victoire'],
                     ['date' => '18 Oct 2025', 'opponent' => 'Eveil F', 'venue' => 'Domicile', 'score' => '6-10', 'result' => 'Défaite'],
+                    ['date' => '7 Nov 2025', 'opponent' => 'Arc En Ciel J', 'venue' => 'Domicile', 'score' => '5-11', 'result' => 'Défaite'],
                 ],
-                'stats' => ['played' => 5, 'wins' => 3, 'losses' => 2, 'win_rate' => 60]
+                'stats' => ['played' => 6, 'wins' => 3, 'losses' => 3, 'win_rate' => 50]
             ],
             [
                 'name' => 'Équipe E - Division 5H',
@@ -76,33 +80,37 @@ class ResultsController extends Controller
                     ['date' => '26 Sep 2025', 'opponent' => 'Tourinnes E', 'venue' => 'Extérieur', 'score' => '0-16', 'result' => 'Défaite'],
                     ['date' => '10 Oct 2025', 'opponent' => 'Braine l\'Alleud O', 'venue' => 'Extérieur', 'score' => '11-5', 'result' => 'Défaite'],
                     ['date' => '18 Oct 2025', 'opponent' => 'Logis Auderghem 2', 'venue' => 'Domicile', 'score' => '4-12', 'result' => 'Défaite'],
+                    ['date' => '7 Nov 2025', 'opponent' => 'Limal Wavre I', 'venue' => 'Domicile', 'score' => '4-12', 'result' => 'Défaite'],
                 ],
-                'stats' => ['played' => 4, 'wins' => 0, 'losses' => 4, 'win_rate' => 0]
+                'stats' => ['played' => 5, 'wins' => 0, 'losses' => 5, 'win_rate' => 0]
             ],
             [
                 'name' => 'Équipe A - Division 3B Vétérans',
-                'position' => '1re place',
-                'position_class' => 'bg-gray-100 text-gray-800',
-                'matches' => [
-                    ['date' => '03 Oct 2025', 'opponent' => 'Uccle Ping B', 'venue' => 'Domicile', 'score' => '10-0', 'result' => 'Victoire'],
-                ],
-                'stats' => ['played' => 1, 'wins' => 1, 'losses' => 0, 'win_rate' => 100]
-            ],
-            [
-                'name' => 'Équipe B - Division 3C Vétérans',
-                'position' => '5ème place',
-                'position_class' => 'bg-gray-100 text-gray-800',
-                'matches' => [
-                    ['date' => '03 Oct 2025', 'opponent' => 'Logis Auderghem C', 'venue' => 'Extérieur', 'score' => '6-4', 'result' => 'Défaite'],
-                ],
-                'stats' => ['played' => 1, 'wins' => 0, 'losses' => 1, 'win_rate' => 0]
-            ],
-            [
-                'name' => 'Équipe C - Division 4F Vétérans',
                 'position' => '2nde place',
                 'position_class' => 'bg-gray-100 text-gray-800',
                 'matches' => [
+                    ['date' => '03 Oct 2025', 'opponent' => 'Uccle Ping B', 'venue' => 'Domicile', 'score' => '10-0', 'result' => 'Victoire'],
+                    ['date' => '31 Oct 2025', 'opponent' => 'Limal Wavre C', 'venue' => 'Domicile', 'score' => '7-3', 'result' => 'Victoire'],
+                ],
+                'stats' => ['played' => 2, 'wins' => 2, 'losses' => 0, 'win_rate' => 100]
+            ],
+            [
+                'name' => 'Équipe B - Division 3C Vétérans',
+                'position' => '6ème place',
+                'position_class' => 'bg-gray-100 text-gray-800',
+                'matches' => [
+                    ['date' => '03 Oct 2025', 'opponent' => 'Logis Auderghem C', 'venue' => 'Extérieur', 'score' => '6-4', 'result' => 'Défaite'],
+                    ['date' => '31 Oct 2025', 'opponent' => 'Arc En Ciel C', 'venue' => 'Domicile', 'score' => '3-7', 'result' => 'Défaite'],
+                ],
+                'stats' => ['played' => 2, 'wins' => 0, 'losses' => 2, 'win_rate' => 0]
+            ],
+            [
+                'name' => 'Équipe C - Division 4F Vétérans',
+                'position' => '5ème place',
+                'position_class' => 'bg-gray-100 text-gray-800',
+                'matches' => [
                     ['date' => '03 Oct 2025', 'opponent' => 'Logis Auderghem D', 'venue' => 'Domicile', 'score' => '7-3', 'result' => 'Victoire'],
+                    ['date' => '31 Oct 2025', 'opponent' => 'Bye', 'venue' => 'Bye', 'score' => 'Bye', 'result' => 'Bye'],
                 ],
                 'stats' => ['played' => 1, 'wins' => 1, 'losses' => 0, 'win_rate' => 100]
             ],

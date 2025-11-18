@@ -16,7 +16,7 @@ class ResultsController extends Controller
         $teams = [
             [
                 'name' => 'Équipe A - Division 2C',
-                'position' => '3ème place',
+                'position' => '2nde place',
                 'position_class' => 'bg-gray-100 text-gray-800',
                 'matches' => [
                     ['date' => '12 Sep 2025', 'opponent' => 'Arc En Ciel F', 'venue' => 'Domicile', 'score' => '15-1', 'result' => 'Victoire'],
@@ -25,12 +25,13 @@ class ResultsController extends Controller
                     ['date' => '10 Oct 2025', 'opponent' => 'Logis Auderghem I', 'venue' => 'Domicile', 'score' => '10-6', 'result' => 'Victoire'],
                     ['date' => '18 Oct 2025', 'opponent' => 'Gremlins A', 'venue' => 'Extérieur', 'score' => '3-13', 'result' => 'Victoire'],
                     ['date' => '7 Nov 2025', 'opponent' => 'Tourinnes A', 'venue' => 'Extérieur', 'score' => '9-7', 'result' => 'Défaite'],
+                    ['date' => '14 Nov 2025', 'opponent' => 'La Hulpe-Rix. C', 'venue' => 'Extérieur', 'score' => '4-12', 'result' => 'Victoire'],
                 ],
-                'stats' => ['played' => 6, 'wins' => 5, 'losses' => 1, 'win_rate' => 83]
+                'stats' => ['played' => 7, 'wins' => 6, 'losses' => 1, 'win_rate' => 86]
             ],
             [
                 'name' => 'Équipe B - Division 3B',
-                'position' => '3ème place',
+                'position' => '4ème place',
                 'position_class' => 'bg-gray-100 text-gray-800',
                 'matches' => [
                     ['date' => '12 Sep 2025', 'opponent' => 'Arc En Ciel G', 'venue' => 'Domicile', 'score' => '8-8', 'result' => 'Nul'],
@@ -39,12 +40,13 @@ class ResultsController extends Controller
                     ['date' => '10 Oct 2025', 'opponent' => 'Royal 1865 B', 'venue' => 'Domicile', 'score' => '6-10', 'result' => 'Défaite'],
                     ['date' => '18 Oct 2025', 'opponent' => 'TT Zenith Brussels B', 'venue' => 'Extérieur', 'score' => '6-10', 'result' => 'Victoire'],
                     ['date' => '7 Nov 2025', 'opponent' => 'Logis Auderghem N', 'venue' => 'Extérieur', 'score' => '6-10', 'result' => 'Victoire'],
+                    ['date' => '14 Nov 2025', 'opponent' => 'La Hulpe Rix. D', 'venue' => 'Extérieur', 'score' => '11-5', 'result' => 'Défaite'],
                 ],
-                'stats' => ['played' => 6, 'wins' => 4, 'losses' => 1, 'win_rate' => 66]
+                'stats' => ['played' => 7, 'wins' => 4, 'losses' => 2, 'win_rate' => 57]
             ],
             [
                 'name' => 'Équipe C - Division 4C',
-                'position' => '5ème place',
+                'position' => '6ème place',
                 'position_class' => 'bg-gray-100 text-gray-800',
                 'matches' => [
                     ['date' => '12 Sep 2025', 'opponent' => 'CTT Limal Wavre F', 'venue' => 'Extérieur', 'score' => '13-3', 'result' => 'Victoire'],
@@ -53,12 +55,13 @@ class ResultsController extends Controller
                     ['date' => '10 Oct 2025', 'opponent' => 'Set-Jet Fleur Bleue K', 'venue' => 'Extérieur', 'score' => '1-15', 'result' => 'Victoire'],
                     ['date' => '18 Oct 2025', 'opponent' => 'Mont St Guibert B', 'venue' => 'Domicile', 'score' => '6-10', 'result' => 'Défaite'],
                     ['date' => '7 Nov 2025', 'opponent' => 'Beauchamp A', 'venue' => 'Domicile', 'score' => '11-5', 'result' => 'Victoire'],
+                    ['date' => '14 Nov 2025', 'opponent' => 'Witterzee A', 'venue' => 'Domicile', 'score' => '2-14', 'result' => 'Défaite'],
                 ],
-                'stats' => ['played' => 6, 'wins' => 4, 'losses' => 2, 'win_rate' => 66]
+                'stats' => ['played' => 7, 'wins' => 4, 'losses' => 3, 'win_rate' => 57]
             ],
             [
                 'name' => 'Équipe D - Division 4D',
-                'position' => '6ème place',
+                'position' => '4ème place',
                 'position_class' => 'bg-gray-100 text-gray-800',
                 'matches' => [
                     ['date' => '13 Sep 2025', 'opponent' => 'CTT Le Moulin C', 'venue' => 'Extérieur', 'score' => '14-2', 'result' => 'Victoire'],
@@ -67,8 +70,9 @@ class ResultsController extends Controller
                     ['date' => '10 Oct 2025', 'opponent' => 'Piranha I', 'venue' => 'Extérieur', 'score' => '6-10', 'result' => 'Victoire'],
                     ['date' => '18 Oct 2025', 'opponent' => 'Eveil F', 'venue' => 'Domicile', 'score' => '6-10', 'result' => 'Défaite'],
                     ['date' => '7 Nov 2025', 'opponent' => 'Arc En Ciel J', 'venue' => 'Domicile', 'score' => '5-11', 'result' => 'Défaite'],
+                    ['date' => '14 Nov 2025', 'opponent' => 'Smash Evere C', 'venue' => 'Domicile', 'score' => '10-6', 'result' => 'Victoire'],
                 ],
-                'stats' => ['played' => 6, 'wins' => 3, 'losses' => 3, 'win_rate' => 50]
+                'stats' => ['played' => 7, 'wins' => 4, 'losses' => 3, 'win_rate' => 57]
             ],
             [
                 'name' => 'Équipe E - Division 5H',
@@ -81,8 +85,9 @@ class ResultsController extends Controller
                     ['date' => '10 Oct 2025', 'opponent' => 'Braine l\'Alleud O', 'venue' => 'Extérieur', 'score' => '11-5', 'result' => 'Défaite'],
                     ['date' => '18 Oct 2025', 'opponent' => 'Logis Auderghem 2', 'venue' => 'Domicile', 'score' => '4-12', 'result' => 'Défaite'],
                     ['date' => '7 Nov 2025', 'opponent' => 'Limal Wavre I', 'venue' => 'Domicile', 'score' => '4-12', 'result' => 'Défaite'],
+                    ['date' => '7 Nov 2025', 'opponent' => 'Royal Clabecq G', 'venue' => 'Domicile', 'score' => '4-12', 'result' => 'Défaite'],
                 ],
-                'stats' => ['played' => 5, 'wins' => 0, 'losses' => 5, 'win_rate' => 0]
+                'stats' => ['played' => 6, 'wins' => 0, 'losses' => 6, 'win_rate' => 0]
             ],
             [
                 'name' => 'Équipe A - Division 3B Vétérans',
@@ -112,7 +117,7 @@ class ResultsController extends Controller
                     ['date' => '03 Oct 2025', 'opponent' => 'Logis Auderghem D', 'venue' => 'Domicile', 'score' => '7-3', 'result' => 'Victoire'],
                     ['date' => '31 Oct 2025', 'opponent' => 'Bye', 'venue' => 'Bye', 'score' => 'Bye', 'result' => 'Bye'],
                 ],
-                'stats' => ['played' => 1, 'wins' => 1, 'losses' => 0, 'win_rate' => 100]
+                'stats' => ['played' => 1, 'wins' => 1, 'losses' => 0, 'win_rate' => 50]
             ],
         ];
 

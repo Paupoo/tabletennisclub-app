@@ -2,8 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Models;
+namespace App\Models\ClubAdmin\Club;
 
+use App\Models\ClubEvents\Interclub\Club;
+use App\Models\ClubEvents\Interclub\Interclub;
+use App\Models\ClubEvents\Tournament\Tournament;
+use App\Models\ClubEvents\Training\Training;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -24,15 +28,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $total_playable_tables
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Club> $clubs
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Interclub\Club> $clubs
  * @property-read int|null $clubs_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Interclub> $interclubs
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Interclub\Interclub> $interclubs
  * @property-read int|null $interclubs_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Table> $tables
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubAdmin\Club\Table> $tables
  * @property-read int|null $tables_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Tournament> $tournaments
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Tournament\Tournament> $tournaments
  * @property-read int|null $tournaments_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Training> $training
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Training\Training> $training
  * @property-read int|null $training_count
  *
  * @method static \Database\Factories\RoomFactory factory($count = null, $state = [])

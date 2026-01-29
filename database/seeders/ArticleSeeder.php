@@ -6,8 +6,8 @@ namespace Database\Seeders;
 
 use App\Enums\ArticlesCategoryEnum;
 use App\Enums\ArticlesStatusEnum;
-use App\Models\Article;
-use App\Models\User;
+use App\Models\ClubAdmin\Users\User;
+use App\Models\ClubPosts\Article;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;

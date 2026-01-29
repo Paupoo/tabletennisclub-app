@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Admin\Contacts;
 
-use App\Models\Contact;
+use App\Models\ClubAdmin\Users\Contact;
 use Illuminate\Contracts\Database\Query\Builder;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -28,7 +28,7 @@ class Index extends Component
     {
         $contacts = Contact::search($this->search)
             ->when($this->status !== '', function (Builder $query): void {
-                $query->where('status', $this->status); 
+                $query->where('status', $this->status);
             })
             ->when($this->interest !== '', function (Builder $query): void {
                 $query->where('interest', $this->interest);
@@ -50,7 +50,7 @@ class Index extends Component
     }
 
     public function deleteContact() {
-        
+
         $this->authorize('delete', Auth()->user());
 
         $article = Contact::find($this->selectedContactId);

@@ -2,8 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Models;
+namespace App\Models\ClubEvents\Interclub;
 
+use App\Models\ClubAdmin\Users\User;
+use App\Models\ClubEvents\Tournament\Tournament;
+use App\Models\ClubEvents\Tournament\TournamentMatch;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -17,10 +20,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $tournament_id
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\Tournament $tournament
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\TournamentMatch> $tournamentmatches
+ * @property-read \App\Models\ClubEvents\Tournament\Tournament $tournament
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Tournament\TournamentMatch> $tournamentmatches
  * @property-read int|null $tournamentmatches_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $users
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubAdmin\Users\User> $users
  * @property-read int|null $users_count
  *
  * @method static \Database\Factories\PoolFactory factory($count = null, $state = [])

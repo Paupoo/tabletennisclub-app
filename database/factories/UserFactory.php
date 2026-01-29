@@ -6,13 +6,13 @@ namespace Database\Factories;
 
 use App\Enums\Ranking;
 use App\Enums\Sex;
-use App\Models\User;
+use App\Models\ClubAdmin\Users\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\ClubAdmin\Users\User>
  */
 class UserFactory extends Factory
 {

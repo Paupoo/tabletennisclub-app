@@ -1,11 +1,12 @@
 <?php
 
 declare(strict_types=1);
+
 use App\Enums\Recurrence;
 use App\Enums\TrainingLevel;
 use App\Enums\TrainingType;
-use App\Models\Room;
-use App\Models\Training;
+use App\Models\ClubAdmin\Club\Room;
+use App\Models\ClubEvents\Training\Training;
 
 uses(\Tests\Trait\CreateUser::class);
 

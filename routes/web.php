@@ -26,10 +26,10 @@ use App\Http\Controllers\TournamentController;
 use App\Http\Controllers\TrainingController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\ProtectAgainstSpam;
-use App\Models\Room;
-use App\Models\Team;
-use App\Models\Training;
-use App\Models\User;
+use App\Models\ClubAdmin\Club\Room;
+use App\Models\ClubAdmin\Users\User;
+use App\Models\ClubEvents\Interclub\Team;
+use App\Models\ClubEvents\Training\Training;
 use Illuminate\Support\Facades\Route;
 
 /*

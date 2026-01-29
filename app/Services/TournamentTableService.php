@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Models\Room;
-use App\Models\Tournament;
-use App\Models\TournamentMatch;
+use App\Models\ClubAdmin\Club\Room;
+use App\Models\ClubEvents\Tournament\Tournament;
+use App\Models\ClubEvents\Tournament\TournamentMatch;
 
 class TournamentTableService
 {

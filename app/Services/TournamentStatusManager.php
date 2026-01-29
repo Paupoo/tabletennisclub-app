@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\TournamentStatusEnum;
-use App\Models\Tournament;
+use App\Models\ClubEvents\Tournament\Tournament;
 use InvalidArgumentException;
 use LogicException;
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Models\Pool;
+use App\Models\ClubEvents\Interclub\Pool;
 use Illuminate\Http\Request;
 
 class PoolController extends Controller

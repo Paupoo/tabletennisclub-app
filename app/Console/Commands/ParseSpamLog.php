@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
-use App\Models\Spam;
+use App\Models\ClubAdmin\Mailing\Spam;
 use Illuminate\Console\Command;
 
 final class ParseSpamLog extends Command
@@ -48,7 +48,7 @@ final class ParseSpamLog extends Command
         while (($line = fgets($handle)) !== false) {
             if (str_contains($line, 'Spam attempt detected')) {
                 $this->line("DEBUG: Ligne détectée -> " . substr($line, 0, 200));
-                
+
                 $parts = explode('Spam attempt detected', $line, 2);
 
                 if (count($parts) === 2) {
@@ -61,7 +61,7 @@ final class ParseSpamLog extends Command
                         preg_match('/\[(.*?)\]/', $line, $dateMatches)
                             ? $logDate = $dateMatches[1] // "2025-08-17 20:59:51"
                             : $logDate = now()->toDateTimeString();
-                        
+
                         $spam = Spam::create([
                             'ip' => $data['ip'] ?? null,
                             'user_agent' => $data['user_agent'] ?? null,

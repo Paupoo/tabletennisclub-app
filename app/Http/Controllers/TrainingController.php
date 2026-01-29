@@ -8,18 +8,16 @@ use App\Enums\TrainingLevel;
 use App\Enums\TrainingType;
 use App\Http\Requests\StoreTrainingRequest;
 use App\Http\Requests\UpdateTrainingRequest;
-use App\Models\Room;
-use App\Models\Season;
-use App\Models\Training;
-use App\Models\User;
+use App\Models\ClubAdmin\Club\Room;
+use App\Models\ClubAdmin\Users\User;
+use App\Models\ClubEvents\Interclub\Season;
+use App\Models\ClubEvents\Training\Training;
 use App\Services\TrainingBuilder;
 use App\Services\TrainingDateGenerator;
 use App\Support\Breadcrumb;
 use Exception;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Auth;
 
 class TrainingController extends Controller
 {

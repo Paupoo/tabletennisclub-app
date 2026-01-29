@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Enums\ArticlesCategoryEnum;
 use App\Enums\ArticlesStatusEnum;
 use App\Livewire\Public\Articles\ArticleList;
-use App\Models\Article;
+use App\Models\ClubPosts\Article;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Livewire\Livewire;

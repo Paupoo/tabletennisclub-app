@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Spam;
+use App\Models\ClubAdmin\Mailing\Spam;
 use App\Support\Breadcrumb;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -33,7 +33,7 @@ class SpamController extends Controller
     private function getStats(): Collection
     {
         $baseQuery = Spam::query();
-        
+
         return collect([
             'totalSpams' => $baseQuery->count(),
             'todaySpams' => $baseQuery->whereDate('created_at', today())->count(),

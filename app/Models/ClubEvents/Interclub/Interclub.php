@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Models;
+namespace App\Models\ClubEvents\Interclub;
 
 use App\Enums\LeagueCategory;
+use App\Models\ClubAdmin\Club\Room;
+use App\Models\ClubAdmin\Users\User;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -28,15 +30,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int|null $season_id
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\League|null $league
- * @property-read \App\Models\Room|null $room
- * @property-read \App\Models\Season|null $season
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Team> $teams
+ * @property-read \App\Models\ClubEvents\Interclub\League|null $league
+ * @property-read \App\Models\ClubAdmin\Club\Room|null $room
+ * @property-read \App\Models\ClubEvents\Interclub\Season|null $season
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Interclub\Team> $teams
  * @property-read int|null $teams_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $users
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubAdmin\Users\User> $users
  * @property-read int|null $users_count
- * @property-read \App\Models\Team|null $visitedTeam
- * @property-read \App\Models\Team|null $visitingTeam
+ * @property-read \App\Models\ClubEvents\Interclub\Team|null $visitedTeam
+ * @property-read \App\Models\ClubEvents\Interclub\Team|null $visitingTeam
  *
  * @method static \Database\Factories\InterclubFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub newModelQuery()

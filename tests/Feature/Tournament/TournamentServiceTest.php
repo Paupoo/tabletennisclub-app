@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Models\Tournament;
-use App\Models\User;
+use App\Models\ClubAdmin\Users\User;
+use App\Models\ClubEvents\Tournament\Tournament;
 use App\Services\TournamentService;
 
 it('counts registered users and returns correct user count', function (): void {

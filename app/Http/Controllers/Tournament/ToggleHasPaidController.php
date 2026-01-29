@@ -6,8 +6,8 @@ namespace App\Http\Controllers\Tournament;
 
 use App\Actions\Tournament\ToggleHasPaidTournamentAction;
 use App\Http\Controllers\Controller;
-use App\Models\Tournament;
-use App\Models\User;
+use App\Models\ClubAdmin\Users\User;
+use App\Models\ClubEvents\Tournament\Tournament;
 use Illuminate\Http\RedirectResponse;
 
 class ToggleHasPaidController extends Controller

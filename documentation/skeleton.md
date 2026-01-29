@@ -1,9 +1,13 @@
 - models
     - clubAdmin
-        - user
-        - role
-        - room
-        - table
+      - Users
+          - user
+          - role
+      - Club
+          - room
+          - table
+      - Mailing
+        - Spam
     - clubEvents
         - training
         - interclub

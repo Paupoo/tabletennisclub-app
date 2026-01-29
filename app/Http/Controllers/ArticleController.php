@@ -6,7 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\ArticlesCategoryEnum;
 use App\Enums\ArticlesStatusEnum;
-use App\Models\Article;
+use App\Models\ClubPosts\Article;
 use App\Support\Breadcrumb;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;

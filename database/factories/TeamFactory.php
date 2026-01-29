@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Models\Club;
-use App\Models\League;
-use App\Models\Season;
-use App\Models\User;
+use App\Models\ClubAdmin\Users\User;
+use App\Models\ClubEvents\Interclub\Club;
+use App\Models\ClubEvents\Interclub\League;
+use App\Models\ClubEvents\Interclub\Season;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Team>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\ClubEvents\Interclub\Team>
  */
 class TeamFactory extends Factory
 {

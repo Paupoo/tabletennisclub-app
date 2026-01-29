@@ -7,7 +7,7 @@ namespace App\Http\Requests;
 use App\Enums\LeagueCategory;
 use App\Enums\LeagueLevel;
 use App\Enums\TeamName;
-use App\Models\Team;
+use App\Models\ClubEvents\Interclub\Team;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;

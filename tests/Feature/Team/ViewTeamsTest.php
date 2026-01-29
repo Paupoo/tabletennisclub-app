@@ -1,7 +1,8 @@
 <?php
 
 declare(strict_types=1);
-use App\Models\User;
+
+use App\Models\ClubAdmin\Users\User;
 
 test('logged user can see teams index', function (): void {
     $user = User::find(1);

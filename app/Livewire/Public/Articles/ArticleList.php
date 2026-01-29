@@ -6,7 +6,7 @@ namespace App\Livewire\Public\Articles;
 
 use App\Enums\ArticlesCategoryEnum;
 use App\Enums\ArticlesStatusEnum;
-use App\Models\Article;
+use App\Models\ClubPosts\Article;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;

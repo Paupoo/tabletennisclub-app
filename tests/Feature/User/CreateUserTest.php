@@ -1,12 +1,13 @@
 <?php
 
 declare(strict_types=1);
+
 use App\Enums\Ranking;
 use App\Enums\Sex;
 use App\Http\Controllers\UserController;
-use App\Models\Club;
-use App\Models\Team;
-use App\Models\User;
+use App\Models\ClubAdmin\Users\User;
+use App\Models\ClubEvents\Interclub\Club;
+use App\Models\ClubEvents\Interclub\Team;
 use App\Services\ForceList;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Hash;

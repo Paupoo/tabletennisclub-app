@@ -6,10 +6,9 @@ namespace App\Http\Controllers\Tournament;
 
 use App\Enums\TournamentStatusEnum;
 use App\Http\Controllers\Controller;
-use App\Models\Tournament;
+use App\Models\ClubEvents\Tournament\Tournament;
 use App\States\Tournament\TournamentStateMachine;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 
 class ChangeTournamentStatusController extends Controller
 {

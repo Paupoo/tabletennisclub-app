@@ -6,9 +6,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreCompetitionUserRequest;
 use App\Http\Requests\UpdateCompetitionUserRequest;
+use App\Models\ClubAdmin\Users\User;
 use App\Models\Competition;
 use App\Models\CompetitionUser;
-use App\Models\User;
 
 class CompetitionUserController extends Controller
 {

@@ -1,9 +1,10 @@
 <?php
 
 declare(strict_types=1);
+
 use App\Enums\TournamentStatusEnum;
-use App\Models\Tournament;
-use App\Models\TournamentMatch;
+use App\Models\ClubEvents\Tournament\Tournament;
+use App\Models\ClubEvents\Tournament\TournamentMatch;
 use App\Services\TournamentStatusManager;
 
 uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);

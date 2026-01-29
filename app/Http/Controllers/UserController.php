@@ -9,8 +9,8 @@ use App\Enums\Ranking;
 use App\Enums\Sex;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
-use App\Models\Team;
-use App\Models\User;
+use App\Models\ClubAdmin\Users\User;
+use App\Models\ClubEvents\Interclub\Team;
 use App\Services\ForceList;
 use App\Support\Breadcrumb;
 use Illuminate\Http\RedirectResponse;
@@ -65,11 +65,11 @@ class UserController extends Controller
             $personalPronoum = $user->sex === Sex::WOMEN->name
                 ? 'she'
                 : 'he';
-                
+
             return redirect()
                 ->back()
                 ->with('error', __('Cannot delete ' . $user->first_name . ' ' . $user->last_name . ' because ' . $personalPronoum . ' subscribed to one or more tournaments'));
-        }   
+        }
 
 
         $user->delete();
@@ -201,7 +201,7 @@ class UserController extends Controller
         }
 
         $forceList->setOrUpdateAll();
-      
+
         $message = __('messages.user_created', [
             'name' => e($user->first_name . ' ' . $user->last_name),
             'url'  => route('users.show', $user),

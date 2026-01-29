@@ -11,7 +11,7 @@ use App\Mail\MembershipInfoDetailEmail;
 use App\Mail\PoliteDeclineEmail;
 use App\Mail\RequestInfoEmail;
 use App\Mail\WelcomeEmail;
-use App\Models\Contact;
+use App\Models\ClubAdmin\Users\Contact;
 use App\Support\Breadcrumb;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;

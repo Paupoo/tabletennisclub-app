@@ -2,9 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\Article;
-use App\Models\User;
-use Illuminate\Auth\Access\Response;
+use App\Models\ClubAdmin\Users\User;
+use App\Models\ClubPosts\Article;
 
 class ArticlePolicy
 {

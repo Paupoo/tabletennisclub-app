@@ -6,11 +6,11 @@ namespace App\Http\Controllers;
 
 use App\Enums\LeagueCategory;
 use App\Http\Requests\StoreInterclubRequest;
-use App\Models\Club;
-use App\Models\Interclub;
-use App\Models\Room;
-use App\Models\Team;
-use App\Models\User;
+use App\Models\ClubAdmin\Club\Room;
+use App\Models\ClubAdmin\Users\User;
+use App\Models\ClubEvents\Interclub\Club;
+use App\Models\ClubEvents\Interclub\Interclub;
+use App\Models\ClubEvents\Interclub\Team;
 use App\Services\InterclubService;
 use App\Support\Breadcrumb;
 use Illuminate\Database\Eloquent\Builder;

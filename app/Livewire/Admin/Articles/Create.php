@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Admin\Articles;
 
-use App\Models\Article;
+use App\Models\ClubPosts\Article;
 use Livewire\Component;
 
 class Create extends Component

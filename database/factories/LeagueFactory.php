@@ -6,11 +6,11 @@ namespace Database\Factories;
 
 use App\Enums\LeagueCategory;
 use App\Enums\LeagueLevel;
-use App\Models\Season;
+use App\Models\ClubEvents\Interclub\Season;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\League>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\ClubEvents\Interclub\League>
  */
 class LeagueFactory extends Factory
 {

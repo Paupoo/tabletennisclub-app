@@ -2,11 +2,18 @@
 
 declare(strict_types=1);
 
-namespace App\Models;
+namespace App\Models\ClubAdmin\Users;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
 use App\Enums\Sex;
+use App\Models\ClubEvents\Interclub\Club;
+use App\Models\ClubEvents\Interclub\Interclub;
+use App\Models\ClubEvents\Interclub\Pool;
+use App\Models\ClubEvents\Interclub\Team;
+use App\Models\ClubEvents\Tournament\Tournament;
+use App\Models\ClubEvents\Training\Training;
+use App\Models\ClubPosts\Article;
 use Carbon\Carbon;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Contracts\Database\Query\Builder;
@@ -44,21 +51,21 @@ use Laravel\Sanctum\HasApiTokens;
  * @property string|null $licence
  * @property int|null $force_list
  * @property int $club_id
- * @property-read \App\Models\Team|null $captainOf
- * @property-read \App\Models\Club|null $club
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Interclub> $interclubs
+ * @property-read \App\Models\ClubEvents\Interclub\Team|null $captainOf
+ * @property-read \App\Models\ClubEvents\Interclub\Club|null $club
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Interclub\Interclub> $interclubs
  * @property-read int|null $interclubs_count
  * @property-read \Illuminate\Notifications\DatabaseNotificationCollection<int, \Illuminate\Notifications\DatabaseNotification> $notifications
  * @property-read int|null $notifications_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Pool> $pools
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Interclub\Pool> $pools
  * @property-read int|null $pools_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Team> $teams
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Interclub\Team> $teams
  * @property-read int|null $teams_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \Laravel\Sanctum\PersonalAccessToken> $tokens
  * @property-read int|null $tokens_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Tournament> $tournaments
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Tournament\Tournament> $tournaments
  * @property-read int|null $tournaments_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\Training> $trainings
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Training\Training> $trainings
  * @property-read int|null $trainings_count
  *
  * @method static \Database\Factories\UserFactory factory($count = null, $state = [])

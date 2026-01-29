@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreContactRequest;
-use App\Mail\ContactFormNotificationEmail;
 use App\Mail\ContactFormConfirmationEmail;
-use App\Models\Contact;
+use App\Mail\ContactFormNotificationEmail;
+use App\Models\ClubAdmin\Users\Contact;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 

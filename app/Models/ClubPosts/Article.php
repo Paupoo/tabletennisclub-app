@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Models;
+namespace App\Models\ClubPosts;
 
 use App\Enums\ArticlesCategoryEnum;
 use App\Enums\ArticlesStatusEnum;
+use App\Models\ClubAdmin\Users\User;
 use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -42,7 +43,7 @@ class Article extends Model
     {
         return 'slug';
     }
-    
+
     public function scopeSearch($query, $value): void
     {
         $query->where('title', 'like', '%' . $value . '%')

@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace App\Livewire\Admin\Users;
 
-use App\Models\User;
+use App\Models\ClubAdmin\Users\User;
 use App\Services\ForceList;
-use Exception;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Database\QueryException;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
-use Livewire\Attributes\Url; // Ajout pour les URLs
+
+// Ajout pour les URLs
 
 class UsersTable extends Component
 {
@@ -20,27 +21,27 @@ class UsersTable extends Component
     // Utilisation d'Url attributes pour maintenir l'état dans l'URL
     #[Url(as: 'competitor')]
     public string $competitor = '';
-    
+
     #[Url(as: 'per_page')]
     public int $perPage = 25;
-    
+
     #[Url(as: 'search')]
     public string $search = '';
-    
+
     public ?int $selectedUserId = null;
-    
+
     #[Url(as: 'sex')]
     public string $sex = '';
-    
+
     #[Url(as: 'sort_field')]
     public string $sortByField = '';
-    
+
     #[Url(as: 'sort_dir')]
     public string $sortDirection = 'desc';
-    
+
     #[Url(as: 'status')]
     public string $status = '';
-    
+
     protected ForceList $forceList;
     public array $selectedItems = [];
     public bool $selectAll = false;
@@ -134,19 +135,19 @@ class UsersTable extends Component
     {
         $user = User::findOrFail($this->selectedUserId);
         $this->authorize('delete', [Auth()->user(), $user]);
-        
+
         try {
             // Vérifier les contraintes métier
             if ($user->tournaments()->whereIn('status', ['draft', 'open', 'pending'])->count() > 0) {
                 session()->flash('error', __('Cannot delete ' . $user->first_name . ' ' . $user->last_name . ' because he subscribed to one or more tournaments'));
                 return redirect()->route('users.index');
             }
-            
+
             $user->delete();
             $this->forceList->setOrUpdateAll();
             session()->flash('warning', __('User ' . $user->first_name . ' ' . $user->last_name . ' has been deleted'));
             return redirect()->route('users.index');
-            
+
         } catch (QueryException $e) {
             session()->flash('error', __('The user could not be deleted'));
             return redirect()->route('users.index');

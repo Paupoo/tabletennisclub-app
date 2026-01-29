@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Models\Article;
+use App\Models\ClubPosts\Article;
 
 class HomeController extends Controller
 {

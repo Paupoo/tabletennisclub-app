@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
+use App\Models\ClubAdmin\Users\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire;
 
-use App\Models\Tournament;
+use App\Models\ClubEvents\Tournament\Tournament;
 use Livewire\Component;
 use Livewire\WithPagination;
 

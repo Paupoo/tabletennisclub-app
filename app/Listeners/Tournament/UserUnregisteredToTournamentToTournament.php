@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Listeners\Tournament;
 
 use App\Events\Tournament\UserUnregisteredFromTournament;
-use App\Models\Tournament;
-use App\Models\User;
+use App\Models\ClubAdmin\Users\User;
+use App\Models\ClubEvents\Tournament\Tournament;
 use App\Notifications\Tournament\UserUnregisteredFromTournament as TournamentUserUnregisteredFromTournament;
 use Illuminate\Contracts\Queue\ShouldQueue;
 

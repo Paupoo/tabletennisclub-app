@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreOrUpdateRoomRequest;
-use App\Models\Room;
+use App\Models\ClubAdmin\Club\Room;
 use App\Support\Breadcrumb;
-use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 

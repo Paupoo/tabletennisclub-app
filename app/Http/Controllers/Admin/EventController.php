@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Event;
+use App\Models\ClubEvents\Event;
 use App\Support\Breadcrumb;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -105,10 +105,10 @@ class EventController extends Controller
 
         // Tri par défaut : événements à venir d'abord, puis par date
         $events = $query->orderByRaw('
-            CASE 
-                WHEN event_date >= CURDATE() THEN 0 
-                ELSE 1 
-            END, 
+            CASE
+                WHEN event_date >= CURDATE() THEN 0
+                ELSE 1
+            END,
             event_date ASC
         ')->paginate($request->get('perPage', 25));
 
@@ -145,10 +145,10 @@ class EventController extends Controller
         // Récupérer uniquement les événements publiés, triés par date
         $events = Event::published()
             ->orderByRaw('
-                CASE 
-                    WHEN event_date >= CURDATE() THEN 0 
-                    ELSE 1 
-                END, 
+                CASE
+                    WHEN event_date >= CURDATE() THEN 0
+                    ELSE 1
+                END,
                 event_date ASC
             ')
             ->get()

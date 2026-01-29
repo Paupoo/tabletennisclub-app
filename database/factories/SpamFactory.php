@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Models\Spam;
+use App\Models\ClubAdmin\Mailing\Spam;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class SpamFactory extends Factory

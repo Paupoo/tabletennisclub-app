@@ -2,8 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Models;
+namespace App\Models\ClubEvents\Training;
 
+use App\Models\ClubAdmin\Club\Room;
+use App\Models\ClubAdmin\Users\User;
+use App\Models\ClubEvents\Interclub\Season;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -20,12 +23,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property int $season_id
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\Room $room
- * @property-read \App\Models\Season|null $season
+ * @property-read \App\Models\ClubAdmin\Club\Room $room
+ * @property-read \App\Models\ClubEvents\Interclub\Season|null $season
  * @property-write mixed $trainer_name
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\User> $trainees
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubAdmin\Users\User> $trainees
  * @property-read int|null $trainees_count
- * @property-read \App\Models\User|null $trainer
+ * @property-read \App\Models\ClubAdmin\Users\User|null $trainer
  *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Training newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Training newQuery()

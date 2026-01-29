@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreOrUpdateTableRequest;
-use App\Models\Room;
-use App\Models\Table;
-use App\Models\Tournament;
+use App\Models\ClubAdmin\Club\Room;
+use App\Models\ClubAdmin\Club\Table;
+use App\Models\ClubEvents\Tournament\Tournament;
 use App\Services\TournamentTableService;
 use App\Support\Breadcrumb;
 

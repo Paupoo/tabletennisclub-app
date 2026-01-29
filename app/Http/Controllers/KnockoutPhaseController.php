@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Models\MatchSet;
-use App\Models\Tournament;
-use App\Models\TournamentMatch;
+use App\Models\ClubEvents\Tournament\MatchSet;
+use App\Models\ClubEvents\Tournament\Tournament;
+use App\Models\ClubEvents\Tournament\TournamentMatch;
 use App\Services\TournamentFinalPhaseService;
 use App\States\Tournament\TournamentStateMachine;
 use App\Support\Breadcrumb;

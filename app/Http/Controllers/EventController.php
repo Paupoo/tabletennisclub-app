@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Models\Event;
+use App\Models\ClubEvents\Event;
 
 class EventController extends Controller
 {
@@ -80,10 +80,10 @@ class EventController extends Controller
         // Récupérer uniquement les événements publiés, triés par date
         $events = Event::published()
             ->orderByRaw('
-                CASE 
-                    WHEN event_date >= CURDATE() THEN 0 
-                    ELSE 1 
-                END, 
+                CASE
+                    WHEN event_date >= CURDATE() THEN 0
+                    ELSE 1
+                END,
                 event_date ASC
             ')
             ->get()

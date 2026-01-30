@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use App\Enums\Ranking;
 use App\Enums\Sex;
-use App\Http\Controllers\UserController;
+use App\Http\Controllers\ClubAdmin\User\UserController;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Club;
 use App\Models\ClubEvents\Interclub\Team;

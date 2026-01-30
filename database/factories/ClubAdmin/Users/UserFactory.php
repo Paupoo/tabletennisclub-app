@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Database\Factories;
+namespace Database\Factories\ClubAdmin\Users;
 
 use App\Enums\Ranking;
 use App\Enums\Sex;

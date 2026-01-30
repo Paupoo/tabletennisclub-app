@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\ClubAdmin\Club;
 
+use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreOrUpdateRoomRequest;
 use App\Models\ClubAdmin\Club\Room;
 use App\Support\Breadcrumb;

@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\ClubAdmin\User;
 
+use App\Http\Controllers\Controller;
 use App\Models\Role;
 use Illuminate\Http\Request;
 

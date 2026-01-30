@@ -43,7 +43,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property-read \App\Models\ClubEvents\Tournament\Tournament|null $tournament
  * @property-read \App\Models\ClubAdmin\Users\User|null $winner
  *
- * @method static \Database\Factories\TournamentMatchFactory factory($count = null, $state = [])
+ * @method static \Database\Factories\ClubEvents\Tournament\TournamentMatchFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch fromBracket()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch fromPools()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch newModelQuery()

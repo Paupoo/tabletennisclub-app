@@ -39,7 +39,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Training\Training> $training
  * @property-read int|null $training_count
  *
- * @method static \Database\Factories\RoomFactory factory($count = null, $state = [])
+ * @method static \Database\Factories\ClubAdmin\Club\RoomFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Room newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Room newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Room query()

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Database\Factories;
+namespace Database\Factories\ClubPosts;
 
 use App\Enums\ArticlesStatusEnum;
 use App\Models\ClubAdmin\Users\User;

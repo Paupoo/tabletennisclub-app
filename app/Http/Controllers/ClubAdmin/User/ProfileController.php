@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\ClubAdmin\User;
 
 use App\Enums\Sex;
+use App\Http\Controllers\Controller;
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Support\Breadcrumb;
 use Illuminate\Http\RedirectResponse;

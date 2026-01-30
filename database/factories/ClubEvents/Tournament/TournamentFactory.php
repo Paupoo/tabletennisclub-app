@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Database\Factories;
+namespace Database\Factories\ClubEvents\Tournament;
 
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\Factory;

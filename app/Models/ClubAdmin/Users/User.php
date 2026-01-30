@@ -68,7 +68,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Training\Training> $trainings
  * @property-read int|null $trainings_count
  *
- * @method static \Database\Factories\UserFactory factory($count = null, $state = [])
+ * @method static \Database\Factories\ClubAdmin\Users\UserFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|User query()

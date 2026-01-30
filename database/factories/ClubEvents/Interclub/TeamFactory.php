@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Database\Factories;
+namespace Database\Factories\ClubEvents\Interclub;
 
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Club;

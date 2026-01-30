@@ -40,7 +40,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read \App\Models\ClubEvents\Interclub\Team|null $visitedTeam
  * @property-read \App\Models\ClubEvents\Interclub\Team|null $visitingTeam
  *
- * @method static \Database\Factories\InterclubFactory factory($count = null, $state = [])
+ * @method static \Database\Factories\ClubEvents\Interclub\InterclubFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub query()

@@ -1,6 +1,6 @@
 <?php
 
-namespace Database\Factories;
+namespace Database\Factories\ClubAdmin\Mailing;
 
 use App\Models\ClubAdmin\Mailing\Spam;
 use Illuminate\Database\Eloquent\Factories\Factory;

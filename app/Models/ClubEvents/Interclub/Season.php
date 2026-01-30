@@ -25,7 +25,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Training\Training> $trainings
  * @property-read int|null $trainings_count
  *
- * @method static \Database\Factories\SeasonFactory factory($count = null, $state = [])
+ * @method static \Database\Factories\ClubEvents\Interclub\SeasonFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Season newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Season newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Season query()

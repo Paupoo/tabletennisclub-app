@@ -42,7 +42,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubAdmin\Users\User> $users
  * @property-read int|null $users_count
  *
- * @method static \Database\Factories\TournamentFactory factory($count = null, $state = [])
+ * @method static \Database\Factories\ClubEvents\Tournament\TournamentFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Tournament newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Tournament newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Tournament query()
@@ -64,7 +64,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 #[ObservedBy(TournamentObserver::class)]
 class Tournament extends Model
 {
-    /** @use HasFactory<\Database\Factories\TournamentFactory> */
+    /** @use HasFactory<\Database\Factories\ClubEvents\Tournament\TournamentFactory> */
     use HasFactory;
 
     protected $casts = [

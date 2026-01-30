@@ -2,11 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\ClubAdmin\User;
 
 use App\Actions\User\ToggleHasPaidMembershipAction;
 use App\Enums\Ranking;
 use App\Enums\Sex;
+use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\ClubAdmin\Users\User;

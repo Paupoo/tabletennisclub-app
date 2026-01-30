@@ -26,7 +26,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubAdmin\Users\User> $users
  * @property-read int|null $users_count
  *
- * @method static \Database\Factories\PoolFactory factory($count = null, $state = [])
+ * @method static \Database\Factories\ClubEvents\Interclub\PoolFactory factory($count = null, $state = [])
  * @method static Builder<static>|Pool newModelQuery()
  * @method static Builder<static>|Pool newQuery()
  * @method static Builder<static>|Pool query()
@@ -40,7 +40,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class Pool extends Model
 {
-    /** @use HasFactory<\Database\Factories\PoolFactory> */
+    /** @use HasFactory<\Database\Factories\ClubEvents\Interclub\PoolFactory> */
     use HasFactory;
 
     protected $casts = [

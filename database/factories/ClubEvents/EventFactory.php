@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Database\Factories;
+namespace Database\Factories\ClubEvents;
 
 use App\Models\ClubEvents\Event;
 use Illuminate\Database\Eloquent\Factories\Factory;

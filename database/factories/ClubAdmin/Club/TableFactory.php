@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Database\Factories;
+namespace Database\Factories\ClubAdmin\Club;
 
 use App\Models\ClubAdmin\Club\Room;
 use Illuminate\Database\Eloquent\Factories\Factory;

@@ -4,26 +4,26 @@ declare(strict_types=1);
 
 use App\Actions\User\CreateNewUserAction;
 use App\Actions\User\InviteExistingUserAction;
-use App\Http\Controllers\ArticleController;
-use App\Http\Controllers\ContactAdminController;
-use App\Http\Controllers\ContactController;
+use App\Http\Controllers\ClubAdmin\ContactAdminController;
+use App\Http\Controllers\ClubAdmin\ContactController;
+use App\Http\Controllers\ClubAdmin\InvitationController;
+use App\Http\Controllers\ClubAdmin\Mailing\SpamController;
+use App\Http\Controllers\ClubEvents\Interclub\InterclubController;
+use App\Http\Controllers\ClubEvents\Interclub\KnockoutPhaseController;
+use App\Http\Controllers\ClubEvents\Interclub\ResultsController;
+use App\Http\Controllers\ClubEvents\Interclub\TeamController;
+use App\Http\Controllers\ClubEvents\Tournament\ChangeTournamentStatusController;
+use App\Http\Controllers\ClubEvents\Tournament\ToggleHasPaidController;
+use App\Http\Controllers\ClubEvents\Tournament\TournamentController;
+use App\Http\Controllers\ClubEvents\Training\TrainingController;
+use App\Http\Controllers\ClubPosts\ArticleController;
+use App\Http\Controllers\ClubPosts\PublicArticlesController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\HomeController;
-use App\Http\Controllers\InterclubController;
-use App\Http\Controllers\InvitationController;
-use App\Http\Controllers\KnockoutPhaseController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\PublicArticlesController;
-use App\Http\Controllers\ResultsController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\RoomController;
-use App\Http\Controllers\SpamController;
 use App\Http\Controllers\TableController;
-use App\Http\Controllers\TeamController;
-use App\Http\Controllers\Tournament\ChangeTournamentStatusController;
-use App\Http\Controllers\Tournament\ToggleHasPaidController;
-use App\Http\Controllers\TournamentController;
-use App\Http\Controllers\TrainingController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\ProtectAgainstSpam;
 use App\Models\ClubAdmin\Club\Room;
@@ -295,14 +295,14 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
 
     Route::prefix('admin')->name('admin.')->group(function (): void {
         // Routes événements
-        Route::resource('events', App\Http\Controllers\Admin\EventController::class);
+        Route::resource('events', \App\Http\Controllers\ClubEvents\EventController::class);
 
         // Actions spéciales pour les événements
-        Route::patch('events/{event}/publish', [App\Http\Controllers\Admin\EventController::class, 'publish'])
+        Route::patch('events/{event}/publish', [\App\Http\Controllers\ClubEvents\EventController::class, 'publish'])
             ->name('events.publish');
-        Route::patch('events/{event}/archive', [App\Http\Controllers\Admin\EventController::class, 'archive'])
+        Route::patch('events/{event}/archive', [\App\Http\Controllers\ClubEvents\EventController::class, 'archive'])
             ->name('events.archive');
-        Route::post('events/{event}/duplicate', [App\Http\Controllers\Admin\EventController::class, 'duplicate'])
+        Route::post('events/{event}/duplicate', [\App\Http\Controllers\ClubEvents\EventController::class, 'duplicate'])
             ->name('events.duplicate');
     });
 });

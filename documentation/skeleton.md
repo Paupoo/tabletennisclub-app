@@ -13,6 +13,7 @@
         - interclub
             - club
             - league
+            - pool
             - team
             - season
             - result
@@ -30,8 +31,9 @@
             - auth
             - profile
             - forceList
-        - room
-        - table
+        - club
+          - room
+          - table
     - clubEvents
         - training
             - CRUD

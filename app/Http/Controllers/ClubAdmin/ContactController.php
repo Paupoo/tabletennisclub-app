@@ -1,0 +1,49 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Controllers\ClubAdmin;
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreContactRequest;
+use App\Mail\ContactFormConfirmationEmail;
+use App\Mail\ContactFormNotificationEmail;
+use App\Models\ClubAdmin\Users\Contact;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+
+class ContactController extends Controller
+{
+    public function store(StoreContactRequest $request)
+    {
+
+        $validated = $request->validated();
+
+        try {
+            $contact = Contact::create($validated);
+
+            // Envoyer un email
+            // Mail::to(config('app.club_email'))->send(new ContactFormMail($validated)); --> uncomment this line once the mail of the club is correctly configured
+            Mail::to($request->email)->send(new ContactFormConfirmationEmail($contact));
+            Mail::to(config('app.club_email'))
+                ->send(new ContactFormNotificationEmail($contact));
+
+
+            // Log pour le développement
+            Log::info('Nouveau message de contact', $validated);
+
+            return redirect('/#contact')
+                ->with('success', 'Votre message a été envoyé avec succès ! Nous vous répondrons dans les plus brefs délais.');
+
+        } catch (\Exception $e) {
+            Log::error('Erreur lors de l\'envoi du message de contact', [
+                'error' => $e->getMessage(),
+                'data' => $validated,
+            ]);
+
+            return redirect('/#contact')
+                ->with('error', 'Une erreur est survenue lors de l\'envoi de votre message. Veuillez réessayer.')
+                ->withInput();
+        }
+    }
+}

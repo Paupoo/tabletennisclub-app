@@ -1,47 +1,24 @@
 <?php
-
-declare(strict_types=1);
+// app/Models/Event.php
 
 namespace App\Models\ClubPosts;
 
-use Illuminate\Contracts\Database\Query\Builder;
+use App\Enums\EventStatusEnum;
+use App\Enums\EventTypeEnum;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class EventPost extends Model
 {
     use HasFactory;
 
-    // Constantes pour éviter la duplication
-    public const CATEGORIES = [
-        'club-life' => 'Vie du club',
-        'tournament' => 'Tournoi',
-        'training' => 'Entraînement',
-    ];
-
-    public const ICONS = [
-        'club-life' => '🎉',
-        'tournament' => '🏆',
-        'training' => '🎯',
-    ];
-
-    public const STATUSES = [
-        'draft' => 'Brouillon',
-        'published' => 'Publié',
-        'archived' => 'Archivé',
-    ];
-
-    protected $casts = [
-        'event_date' => 'date',
-        'start_time' => 'datetime',
-        'end_time' => 'datetime',
-        'featured' => 'boolean',
-    ];
-
     protected $fillable = [
+        'eventable_type',
+        'eventable_id',
+        'type',
         'title',
         'description',
-        'category',
         'status',
         'event_date',
         'start_time',
@@ -54,90 +31,115 @@ class EventPost extends Model
         'featured',
     ];
 
-    // Méthodes utilitaires
-    public function canBeDeleted(): bool
+    protected $casts = [
+        'type' => EventTypeEnum::class,
+        'status' => EventStatusEnum::class,
+        'event_date' => 'date',
+        'featured' => 'boolean',
+    ];
+
+    /**
+     * Relation polymorphique vers Training, Interclub ou Tournament
+     */
+    public function eventable(): MorphTo
     {
-        // Un événement peut être supprimé s'il est en brouillon ou archivé
-        return in_array($this->status, ['draft', 'archived']);
+        return $this->morphTo();
     }
 
-    public function getCategoryBadgeClasses(): string
+    /**
+     * Scope pour filtrer par statut
+     */
+    public function scopePublished($query)
     {
-        return match ($this->category) {
-            'club-life' => 'bg-blue-100 text-blue-800',
-            'tournament' => 'bg-orange-100 text-orange-800',
-            'training' => 'bg-purple-100 text-purple-800',
-            default => 'bg-gray-100 text-gray-800'
-        };
+        return $query->where('status', EventStatusEnum::PUBLISHED);
     }
 
-    // Accesseurs pour améliorer l'affichage
-    public function getCategoryLabelAttribute(): string
+    /**
+     * Scope pour filtrer par type
+     */
+    public function scopeOfType($query, EventTypeEnum $type)
     {
-        return self::CATEGORIES[$this->category] ?? $this->category;
+        return $query->where('type', $type);
     }
 
-    public function getFormattedDateAttribute(): string
+    /**
+     * Scope pour les événements à venir
+     */
+    public function scopeUpcoming($query)
     {
-        return $this->event_date->format('d/m/Y');
+        return $query->where('event_date', '>=', today())
+            ->orderBy('event_date')
+            ->orderBy('start_time');
     }
 
-    public function getFormattedTimeAttribute(): string
-    {
-        $start = $this->start_time->format('H:i');
-        $end = $this->end_time ? $this->end_time->format('H:i') : null;
-
-        return $end ? "{$start} - {$end}" : $start;
-    }
-
-    public function getIsPastAttribute(): bool
-    {
-        return $this->event_date < now()->startOfDay();
-    }
-
-    public function getIsUpcomingAttribute(): bool
-    {
-        return $this->event_date >= now()->startOfDay();
-    }
-
-    public function getStatusBadgeClasses(): string
-    {
-        return match ($this->status) {
-            'draft' => 'bg-gray-100 text-gray-800',
-            'published' => 'bg-green-100 text-green-800',
-            'archived' => 'bg-red-100 text-red-800',
-            default => 'bg-gray-100 text-gray-800'
-        };
-    }
-
-    public function getStatusLabelAttribute(): string
-    {
-        return self::STATUSES[$this->status] ?? $this->status;
-    }
-
-    public function scopeByCategory(Builder $query, string $category): Builder
-    {
-        return $query->where('category', $category);
-    }
-
-    public function scopeFeatured(Builder $query): Builder
+    /**
+     * Scope pour les événements mis en avant
+     */
+    public function scopeFeatured($query)
     {
         return $query->where('featured', true);
     }
 
-    public function scopePast(Builder $query): Builder
+    /**
+     * Vérifie si l'événement est un Training
+     */
+    public function isTraining(): bool
     {
-        return $query->where('event_date', '<', now()->startOfDay());
+        return $this->type === EventTypeEnum::TRAINING;
     }
 
-    // Scopes pour les requêtes courantes
-    public function scopePublished(Builder $query): Builder
+    /**
+     * Vérifie si l'événement est un Interclub
+     */
+    public function isInterclub(): bool
     {
-        return $query->where('status', 'published');
+        return $this->type === EventTypeEnum::INTERCLUB;
     }
 
-    public function scopeUpcoming(Builder $query): Builder
+    /**
+     * Vérifie si l'événement est un Tournament
+     */
+    public function isTournament(): bool
     {
-        return $query->where('event_date', '>=', now()->startOfDay());
+        return $this->type === EventTypeEnum::TOURNAMENT;
+    }
+
+    /**
+     * Retourne l'URL de la vue publique
+     */
+    public function getPublicUrlAttribute(): string
+    {
+        return route('events.show', $this);
+    }
+
+    /**
+     * Vérifie si l'événement est passé
+     */
+    public function isPast(): bool
+    {
+        return $this->event_date->isPast();
+    }
+
+    /**
+     * Vérifie si l'événement est aujourd'hui
+     */
+    public function isToday(): bool
+    {
+        return $this->event_date->isToday();
+    }
+
+    /**
+     * Formatte la date et l'heure
+     */
+    public function getFormattedDateTimeAttribute(): string
+    {
+        $date = $this->event_date->isoFormat('dddd D MMMM YYYY');
+        $time = $this->start_time;
+        
+        if ($this->end_time) {
+            $time .= ' - ' . $this->end_time;
+        }
+        
+        return $date . ' à ' . $time;
     }
 }

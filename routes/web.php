@@ -11,7 +11,6 @@ use App\Http\Controllers\ClubAdmin\Contact\ContactController;
 use App\Http\Controllers\ClubAdmin\Contact\InvitationController;
 use App\Http\Controllers\ClubAdmin\Contact\SpamController;
 use App\Http\Controllers\ClubAdmin\Users\ProfileController;
-use App\Http\Controllers\ClubAdmin\Users\RoleController;
 use App\Http\Controllers\ClubAdmin\Users\UserController;
 use App\Http\Controllers\ClubEvents\Interclub\InterclubController;
 use App\Http\Controllers\ClubEvents\Interclub\ResultsController;
@@ -74,10 +73,6 @@ Route::get('/admin/dashboard', function () {
     ]);
 })->middleware(['auth', 'verified'])
     ->name('dashboard');
-/**
- * Roles management
- */
-Route::resource('admin/roles', RoleController::class)->middleware(['auth', 'verified']);
 
 /**
  * Rooms management

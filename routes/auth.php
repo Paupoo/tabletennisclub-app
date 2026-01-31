@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-use App\Http\Controllers\ClubAdmin\User\Auth\AuthenticatedSessionController;
-use App\Http\Controllers\ClubAdmin\User\Auth\ConfirmablePasswordController;
-use App\Http\Controllers\ClubAdmin\User\Auth\EmailVerificationNotificationController;
-use App\Http\Controllers\ClubAdmin\User\Auth\EmailVerificationPromptController;
-use App\Http\Controllers\ClubAdmin\User\Auth\NewPasswordController;
-use App\Http\Controllers\ClubAdmin\User\Auth\PasswordController;
-use App\Http\Controllers\ClubAdmin\User\Auth\PasswordResetLinkController;
-use App\Http\Controllers\ClubAdmin\User\Auth\RegisteredUserController;
-use App\Http\Controllers\ClubAdmin\User\Auth\VerifyEmailController;
+use App\Http\Controllers\ClubAdmin\Users\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\ClubAdmin\Users\Auth\ConfirmablePasswordController;
+use App\Http\Controllers\ClubAdmin\Users\Auth\EmailVerificationNotificationController;
+use App\Http\Controllers\ClubAdmin\Users\Auth\EmailVerificationPromptController;
+use App\Http\Controllers\ClubAdmin\Users\Auth\NewPasswordController;
+use App\Http\Controllers\ClubAdmin\Users\Auth\PasswordController;
+use App\Http\Controllers\ClubAdmin\Users\Auth\PasswordResetLinkController;
+use App\Http\Controllers\ClubAdmin\Users\Auth\RegisteredUserController;
+use App\Http\Controllers\ClubAdmin\Users\Auth\VerifyEmailController;
 use App\Http\Middleware\ProtectAgainstSpam;
 use Illuminate\Support\Facades\Route;
 

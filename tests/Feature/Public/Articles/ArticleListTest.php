@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Enums\ArticlesCategoryEnum;
 use App\Enums\ArticlesStatusEnum;
 use App\Livewire\Public\Articles\ArticleList;
-use App\Models\ClubPosts\Article;
+use App\Models\ClubPosts\NewsPost;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Livewire\Livewire;
@@ -14,17 +14,17 @@ uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     // Création d'articles exemples pour tests
-    Article::factory()->create([
+    NewsPost::factory()->create([
         'status' => ArticlesStatusEnum::PUBLISHED,
         'category' => ArticlesCategoryEnum::PARTNERSHIP,
         'created_at' => '2024-05-15',
     ]);
-    Article::factory()->create([
+    NewsPost::factory()->create([
         'status' => ArticlesStatusEnum::PUBLISHED,
         'category' => ArticlesCategoryEnum::EVENT,
         'created_at' => '2023-01-10',
     ]);
-    Article::factory()->create([
+    NewsPost::factory()->create([
         'status' => ArticlesStatusEnum::DRAFT,
         'category' => ArticlesCategoryEnum::PARTNERSHIP,
         'created_at' => '2024-01-01',
@@ -83,19 +83,19 @@ it('applies filters correctly in getArticlesProperty', function (): void {
 
 it('returns only published articles', function (): void {
     // Créer des articles avec différents statuts
-    $publishedArticle = Article::factory()->create([
+    $publishedArticle = NewsPost::factory()->create([
         'status' => ArticlesStatusEnum::PUBLISHED,
         'category' => ArticlesCategoryEnum::PARTNERSHIP,
         'created_at' => '2024-05-15',
     ]);
 
-    $draftArticle = Article::factory()->create([
+    $draftArticle = NewsPost::factory()->create([
         'status' => ArticlesStatusEnum::DRAFT,
         'category' => ArticlesCategoryEnum::PARTNERSHIP,
         'created_at' => '2024-05-16',
     ]);
 
-    $archivedArticle = Article::factory()->create([
+    $archivedArticle = NewsPost::factory()->create([
         'status' => ArticlesStatusEnum::ARCHIVED,
         'category' => ArticlesCategoryEnum::EVENT,
         'created_at' => '2024-05-17',
@@ -124,7 +124,7 @@ it('returns only published articles', function (): void {
 
 it('resets pagination when filters update', function (): void {
     // Créer suffisamment d'articles pour avoir plusieurs pages
-    Article::factory()->count(20)->create([
+    NewsPost::factory()->count(20)->create([
         'status' => ArticlesStatusEnum::PUBLISHED->value,
         'category' => ArticlesCategoryEnum::PARTNERSHIP->value,
     ]);
@@ -196,7 +196,7 @@ it('tests that activeFiltersCountProperty returns correct count', function (): v
 it('tests that applyFilters modifies the query as expected', function (): void {
     $component = new ArticleList;
 
-    $query = Article::query()->where('status', ArticlesStatusEnum::PUBLISHED);
+    $query = NewsPost::query()->where('status', ArticlesStatusEnum::PUBLISHED);
 
     $component->category = ArticlesCategoryEnum::PARTNERSHIP->value;
     $component->year = '2024';

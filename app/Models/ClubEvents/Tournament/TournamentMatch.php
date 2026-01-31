@@ -6,7 +6,6 @@ namespace App\Models\ClubEvents\Tournament;
 
 use App\Models\ClubAdmin\Club\Table;
 use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Interclub\Pool;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -35,7 +34,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \App\Models\ClubAdmin\Users\User|null $player1
  * @property-read \App\Models\ClubAdmin\Users\User|null $player2
- * @property-read \App\Models\ClubEvents\Interclub\Pool|null $pool
+ * @property-read \App\Models\ClubEvents\Tournament\Pool|null $pool
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Tournament\MatchSet> $sets
  * @property-read int|null $sets_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubAdmin\Club\Table> $table

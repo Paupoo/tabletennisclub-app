@@ -71,7 +71,7 @@
                         <select name="status"
                                 class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-club-blue focus:border-club-blue">
                             <option value="">{{ __('All') }}</option>
-                            @foreach(\App\Models\ClubEvents\Event::STATUSES as $key => $label)
+                            @foreach(\App\Models\ClubPosts\EventPost::STATUSES as $key => $label)
                                 <option value="{{ $key }}" {{ request('status') === $key ? 'selected' : '' }}>
                                     {{ $label }}
                                 </option>
@@ -85,7 +85,7 @@
                         <select name="category"
                                 class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-club-blue focus:border-club-blue">
                             <option value="">{{ __('All') }}</option>
-                            @foreach(\App\Models\ClubEvents\Event::CATEGORIES as $key => $label)
+                            @foreach(\App\Models\ClubPosts\EventPost::CATEGORIES as $key => $label)
                                 <option value="{{ $key }}" {{ request('category') === $key ? 'selected' : '' }}>
                                     {{ $label }}
                                 </option>
@@ -128,7 +128,7 @@
                     <thead class="bg-gray-50">
                     <tr>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            {{ __('Event') }}
+                            {{ __('EventPost') }}
                         </th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             {{ __('Date & Time') }}

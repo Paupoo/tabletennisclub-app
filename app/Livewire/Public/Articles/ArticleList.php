@@ -6,7 +6,7 @@ namespace App\Livewire\Public\Articles;
 
 use App\Enums\ArticlesCategoryEnum;
 use App\Enums\ArticlesStatusEnum;
-use App\Models\ClubPosts\Article;
+use App\Models\ClubPosts\NewsPost;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -65,7 +65,7 @@ class ArticleList extends Component
 
     public function getArticlesProperty(): LengthAwarePaginator
     {
-        $query = Article::query()
+        $query = NewsPost::query()
             ->where('status', ArticlesStatusEnum::PUBLISHED->value);
 
         $this->applyFilters($query);
@@ -104,7 +104,7 @@ class ArticleList extends Component
         \Log::info('Month: ' . ($this->month ?: 'empty'));
 
         // Test direct de la requête
-        $testQuery = Article::query()->where('status', 'published');
+        $testQuery = NewsPost::query()->where('status', 'published');
         $this->applyFilters($testQuery);
         \Log::info('SQL Query: ' . $testQuery->toSql());
         \Log::info('Bindings: ' . json_encode($testQuery->getBindings()));
@@ -153,7 +153,7 @@ class ArticleList extends Component
 
     private function loadYears(): Collection
     {
-        return Article::query()
+        return NewsPost::query()
             ->selectRaw('YEAR(created_at) as year')
             ->distinct()
             ->orderBy('year', 'desc')

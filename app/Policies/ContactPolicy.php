@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
-use App\Models\ClubAdmin\Users\Contact;
+use App\Models\ClubAdmin\Contact\Contact;
 use App\Models\ClubAdmin\Users\User;
 
 class ContactPolicy

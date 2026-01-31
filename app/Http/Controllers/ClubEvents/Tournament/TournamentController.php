@@ -13,7 +13,7 @@ use App\Http\Requests\StoreOrUpdateTournamentRequest;
 use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Club\Table;
 use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Interclub\Pool;
+use App\Models\ClubEvents\Tournament\Pool;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Tournament\TournamentMatch;
 use App\Services\TournamentFinalPhaseService;

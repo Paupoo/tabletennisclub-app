@@ -10,7 +10,6 @@ use App\Events\Tournament\NewTournamentPublished;
 use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Club\Table;
 use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Interclub\Pool;
 use App\Observers\TournamentObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -32,7 +31,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Tournament\TournamentMatch> $matches
  * @property-read int|null $matches_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Interclub\Pool> $pools
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Tournament\Pool> $pools
  * @property-read int|null $pools_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubAdmin\Club\Room> $rooms
  * @property-read int|null $rooms_count

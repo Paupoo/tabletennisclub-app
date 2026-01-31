@@ -13,9 +13,9 @@
                         @endif
                     </p>
                 </div>
-                
+
                 <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-                    <a href="{{ route('admin.articles.show', $article) }}" 
+                    <a href="{{ route('admin.articles.show', $article) }}"
                        class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base inline-flex items-center justify-center">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -23,7 +23,7 @@
                         </svg>
                         {{ __('View article') }}
                     </a>
-                    <a href="{{ route('admin.articles.index') }}" 
+                    <a href="{{ route('admin.articles.index') }}"
                        class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base inline-flex items-center justify-center">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
@@ -68,16 +68,16 @@
                     <!-- Titre et slug -->
                     <div class="bg-white rounded-lg shadow-lg p-4 sm:p-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">Informations générales</h3>
-                        
+
                         <div class="space-y-4">
                             <!-- Titre -->
                             <div>
                                 <label for="title" class="block text-sm font-medium text-gray-700 mb-2">
                                     {{ __('Title') }} <span class="text-red-500">*</span>
                                 </label>
-                                <input type="text" 
-                                       id="title" 
-                                       name="title" 
+                                <input type="text"
+                                       id="title"
+                                       name="title"
                                        value="{{ old('title', $article->title) }}"
                                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-club-blue focus:border-club-blue @error('title') border-red-500 @enderror"
                                        placeholder="Entrez le titre de l'article"
@@ -99,9 +99,9 @@
                                     <span class="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
                                         {{ url('/articles') }}/
                                     </span>
-                                    <input type="text" 
-                                           id="slug" 
-                                           name="slug" 
+                                    <input type="text"
+                                           id="slug"
+                                           name="slug"
                                            value="{{ old('slug', $article->slug) }}"
                                            class="flex-1 border border-gray-300 rounded-r-lg px-3 py-2 focus:ring-club-blue focus:border-club-blue @error('slug') border-red-500 @enderror"
                                            placeholder="url-de-l-article"
@@ -111,7 +111,7 @@
                                 </div>
                                 <div class="flex justify-between mt-1">
                                     <p class="text-xs text-gray-500">L'URL peut être modifiée mais cela peut casser les liens existants</p>
-                                    <button type="button" 
+                                    <button type="button"
                                             @click="regenerateSlugFromTitle()"
                                             class="text-xs text-club-blue hover:text-club-blue-light">
                                         Régénérer depuis le titre
@@ -127,13 +127,13 @@
                     <!-- Contenu -->
                     <div class="bg-white rounded-lg shadow-lg p-4 sm:p-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">Contenu de l'article</h3>
-                        
+
                         <div>
                             <label for="content" class="block text-sm font-medium text-gray-700 mb-2">
                                 {{ __('Content') }} <span class="text-red-500">*</span>
                             </label>
-                            <textarea id="content" 
-                                      name="content" 
+                            <textarea id="content"
+                                      name="content"
                                       rows="15"
                                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-club-blue focus:border-club-blue @error('content') border-red-500 @enderror"
                                       placeholder="Rédigez le contenu de votre article ici..."
@@ -151,7 +151,7 @@
                     <!-- Image -->
                     <div class="bg-white rounded-lg shadow-lg p-4 sm:p-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">Image de l'article</h3>
-                        
+
                         <div x-data="{ imagePreview: '{{ $article->image ? asset('storage/' . $article->image) : null }}', showCurrentImage: {{ $article->image ? 'true' : 'false' }} }" class="space-y-4">
                             <!-- Image actuelle -->
                             @if($article->image)
@@ -168,7 +168,7 @@
                                     <input type="hidden" name="remove_image" x-model="!showCurrentImage ? '1' : '0'">
                                 </div>
                             @endif
-                            
+
                             <!-- Upload nouvelle image -->
                             <div>
                                 <label for="image" class="block text-sm font-medium text-gray-700 mb-2">
@@ -183,9 +183,9 @@
                                             <div class="flex text-sm text-gray-600">
                                                 <label for="image" class="relative cursor-pointer bg-white rounded-md font-medium text-club-blue hover:text-club-blue-light focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-club-blue">
                                                     <span>{{ $article->image ? 'Changer l\'image' : 'Télécharger une image' }}</span>
-                                                    <input id="image" 
-                                                           name="image" 
-                                                           type="file" 
+                                                    <input id="image"
+                                                           name="image"
+                                                           type="file"
                                                            accept="image/*"
                                                            class="sr-only"
                                                            @change="const file = $event.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = e => { imagePreview = e.target.result; showCurrentImage = false; }; reader.readAsDataURL(file); }">
@@ -217,15 +217,15 @@
                     <!-- Actions de publication -->
                     <div class="bg-white rounded-lg shadow-lg p-4 sm:p-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">Publication</h3>
-                        
+
                         <div class="space-y-4">
                             <!-- Statut -->
                             <div>
                                 <label for="status" class="block text-sm font-medium text-gray-700 mb-2">
                                     {{ __('Status') }}
                                 </label>
-                                <select id="status" 
-                                        name="status" 
+                                <select id="status"
+                                        name="status"
                                         class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-club-blue focus:border-club-blue @error('status') border-red-500 @enderror">
                                     @foreach(\App\Enums\ArticlesStatusEnum::cases() as $statusEnum)
                                         <option value="{{ $statusEnum->value }}" {{ old('status', $article->status->value) === $statusEnum->value ? 'selected' : '' }}>
@@ -245,20 +245,20 @@
                                 </label>
                                 <div class="space-y-2">
                                     <label class="flex items-center">
-                                        <input type="radio" 
-                                               name="is_public" 
-                                               value="1" 
-                                               class="text-club-blue focus:ring-club-blue" 
+                                        <input type="radio"
+                                               name="is_public"
+                                               value="1"
+                                               class="text-club-blue focus:ring-club-blue"
                                                {{ old('is_public', $article->is_public) == '1' ? 'checked' : '' }}>
                                         <span class="ml-2 text-sm text-gray-700">
                                             <span class="font-medium">Public</span> - Visible par tous les visiteurs
                                         </span>
                                     </label>
                                     <label class="flex items-center">
-                                        <input type="radio" 
-                                               name="is_public" 
-                                               value="0" 
-                                               class="text-club-blue focus:ring-club-blue" 
+                                        <input type="radio"
+                                               name="is_public"
+                                               value="0"
+                                               class="text-club-blue focus:ring-club-blue"
                                                {{ old('is_public', $article->is_public) == '0' ? 'checked' : '' }}>
                                         <span class="ml-2 text-sm text-gray-700">
                                             <span class="font-medium">Privé</span> - Visible uniquement par les membres
@@ -272,8 +272,8 @@
 
                             <!-- Boutons d'action -->
                             <div class="pt-4 border-t border-gray-200 space-y-2">
-                                <button type="submit" 
-                                        name="action" 
+                                <button type="submit"
+                                        name="action"
                                         value="save"
                                         class="w-full bg-club-blue hover:bg-club-blue-light text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm flex items-center justify-center">
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -281,9 +281,9 @@
                                     </svg>
                                     Enregistrer les modifications
                                 </button>
-                                
-                                <button type="submit" 
-                                        name="action" 
+
+                                <button type="submit"
+                                        name="action"
                                         value="save_and_view"
                                         class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm flex items-center justify-center">
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -299,13 +299,13 @@
                     <!-- Catégorie -->
                     <div class="bg-white rounded-lg shadow-lg p-4 sm:p-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">Catégorisation</h3>
-                        
+
                         <div>
                             <label for="category" class="block text-sm font-medium text-gray-700 mb-2">
                                 {{ __('Category') }} <span class="text-red-500">*</span>
                             </label>
-                            <select id="category" 
-                                    name="category" 
+                            <select id="category"
+                                    name="category"
                                     class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-club-blue focus:border-club-blue @error('category') border-red-500 @enderror"
                                     required>
                                 <option value="">Choisir une catégorie</option>
@@ -324,7 +324,7 @@
                     <!-- Informations de l'article -->
                     <div class="bg-white rounded-lg shadow-lg p-4 sm:p-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">Informations</h3>
-                        
+
                         <div class="space-y-3 text-sm">
                             <div class="flex justify-between">
                                 <span class="font-medium text-gray-700">ID:</span>
@@ -358,10 +358,10 @@
                     <!-- Actions rapides -->
                     <div class="bg-white rounded-lg shadow-lg p-4 sm:p-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">Actions rapides</h3>
-                        
+
                         <div class="space-y-2">
                             @if($article->is_public && $article->status->value === 'published')
-                                <a href="{{ route('admin.articles.show', $article->slug) }}" 
+                                <a href="{{ route('admin.articles.show', $article->slug) }}"
                                    target="_blank"
                                    class="w-full bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg font-medium transition-colors text-sm flex items-center justify-center">
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -372,8 +372,8 @@
                             @endif
 
                             @if($article->status->value === 'draft')
-                                <button type="submit" 
-                                        name="quick_action" 
+                                <button type="submit"
+                                        name="quick_action"
                                         value="publish"
                                         class="w-full bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg font-medium transition-colors text-sm flex items-center justify-center">
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -384,8 +384,8 @@
                             @endif
 
                             @if($article->status->value !== 'archived')
-                                <button type="submit" 
-                                        name="quick_action" 
+                                <button type="submit"
+                                        name="quick_action"
                                         value="archive"
                                         class="w-full bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-2 rounded-lg font-medium transition-colors text-sm flex items-center justify-center">
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -395,7 +395,7 @@
                                 </button>
                             @endif
 
-                            <button type="button" 
+                            <button type="button"
                                     onclick="if(confirm('Êtes-vous sûr de vouloir dupliquer cet article ?')) { document.getElementById('duplicate-form').submit(); }"
                                     class="w-full bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg font-medium transition-colors text-sm flex items-center justify-center">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -433,11 +433,11 @@
                 const characterCount = document.getElementById('character-count');
                 const currentCharCount = document.getElementById('current-char-count');
                 const autoSaveStatus = document.getElementById('auto-save-status');
-                
+
                 let hasUnsavedChanges = false;
                 let autoSaveTimeout;
                 let originalFormData = new FormData(document.querySelector('form'));
-                
+
                 // Génération automatique du slug
                 function generateSlug(title) {
                     return title
@@ -454,43 +454,43 @@
                         .replace(/-+/g, '-')
                         .trim('-');
                 }
-                
+
                 // Fonction globale pour Alpine.js
                 window.updateSlugFromTitle = function() {
                     // Cette fonction sera appelée par Alpine.js
                 }
-                
+
                 window.regenerateSlugFromTitle = function() {
                     const slug = generateSlug(titleInput.value);
                     slugInput.value = slug;
                     slugInput.dispatchEvent(new Event('input'));
                 }
-                
+
                 // Compteur de caractères et détection des changements
                 function updateCharacterCount() {
                     const count = contentTextarea.value.length;
                     if (characterCount) characterCount.textContent = `${count} caractères`;
                     if (currentCharCount) currentCharCount.textContent = count;
                 }
-                
+
                 // Détection des changements
                 function detectChanges() {
                     const currentFormData = new FormData(document.querySelector('form'));
                     let hasChanged = false;
-                    
+
                     for (let [key, value] of currentFormData.entries()) {
                         if (originalFormData.get(key) !== value) {
                             hasChanged = true;
                             break;
                         }
                     }
-                    
+
                     if (hasChanged !== hasUnsavedChanges) {
                         hasUnsavedChanges = hasChanged;
                         updateAutoSaveStatus();
                     }
                 }
-                
+
                 function updateAutoSaveStatus() {
                     if (autoSaveStatus) {
                         if (hasUnsavedChanges) {
@@ -502,7 +502,7 @@
                         }
                     }
                 }
-                
+
                 // Auto-sauvegarde (simulation - vous devriez implémenter avec AJAX)
                 function scheduleAutoSave() {
                     clearTimeout(autoSaveTimeout);
@@ -513,7 +513,7 @@
                             if (autoSaveStatus) {
                                 autoSaveStatus.textContent = '• Auto-sauvegarde en cours...';
                                 autoSaveStatus.className = 'text-blue-600';
-                                
+
                                 setTimeout(() => {
                                     autoSaveStatus.textContent = '• Sauvegardé automatiquement';
                                     autoSaveStatus.className = 'text-green-600';
@@ -522,21 +522,21 @@
                         }, 30000); // Auto-save après 30 secondes
                     }
                 }
-                
-                // Event listeners
+
+                // EventPost listeners
                 contentTextarea.addEventListener('input', function() {
                     updateCharacterCount();
                     detectChanges();
                     scheduleAutoSave();
                 });
-                
+
                 [titleInput, slugInput].forEach(input => {
                     input.addEventListener('input', function() {
                         detectChanges();
                         scheduleAutoSave();
                     });
                 });
-                
+
                 // Avertissement avant de quitter la page
                 window.addEventListener('beforeunload', function(e) {
                     if (hasUnsavedChanges) {
@@ -545,16 +545,16 @@
                         return message;
                     }
                 });
-                
+
                 // Marquer comme sauvegardé lors de la soumission
                 document.querySelector('form').addEventListener('submit', function() {
                     hasUnsavedChanges = false;
                 });
-                
+
                 // Initialisation
                 updateCharacterCount();
                 updateAutoSaveStatus();
-                
+
                 // Raccourcis clavier
                 document.addEventListener('keydown', function(e) {
                     // Ctrl+S ou Cmd+S pour sauvegarder
@@ -572,13 +572,13 @@
                 font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
                 line-height: 1.6;
             }
-            
+
             /* Animation pour les champs modifiés */
             .form-field-modified {
                 border-color: #3B82F6;
                 box-shadow: 0 0 0 1px #3B82F6;
             }
-            
+
             /* Indicateur de modifications non sauvegardées */
             .unsaved-changes::after {
                 content: ' *';

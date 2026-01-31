@@ -9,11 +9,11 @@ namespace App\Models\ClubAdmin\Users;
 use App\Enums\Sex;
 use App\Models\ClubEvents\Interclub\Club;
 use App\Models\ClubEvents\Interclub\Interclub;
-use App\Models\ClubEvents\Interclub\Pool;
 use App\Models\ClubEvents\Interclub\Team;
+use App\Models\ClubEvents\Tournament\Pool;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Training\Training;
-use App\Models\ClubPosts\Article;
+use App\Models\ClubPosts\NewsPost;
 use Carbon\Carbon;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Contracts\Database\Query\Builder;
@@ -57,7 +57,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property-read int|null $interclubs_count
  * @property-read \Illuminate\Notifications\DatabaseNotificationCollection<int, \Illuminate\Notifications\DatabaseNotification> $notifications
  * @property-read int|null $notifications_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Interclub\Pool> $pools
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Tournament\Pool> $pools
  * @property-read int|null $pools_count
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Interclub\Team> $teams
  * @property-read int|null $teams_count
@@ -170,7 +170,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function articles(): HasMany
     {
-        return $this->hasMany(Article::class);
+        return $this->hasMany(NewsPost::class);
     }
 
     public function captainOf(): HasOne

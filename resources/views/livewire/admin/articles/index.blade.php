@@ -11,8 +11,8 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
                         </div>
-                        <input 
-                            type="text" 
+                        <input
+                            type="text"
                             wire:model.live.debounce.500ms="search"
                             class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-club-blue focus:border-club-blue text-sm"
                             placeholder="{{ __('Search articles...') }}">
@@ -72,7 +72,7 @@
             <!-- En-tête responsive -->
             <div class="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gray-50">
                 <h3 class="text-lg font-medium text-gray-900">
-                    {{ __('Articles') }} 
+                    {{ __('Articles') }}
                     <span class="text-sm font-normal text-gray-500">({{ $articles->total() }} résultats)</span>
                 </h3>
             </div>
@@ -84,7 +84,7 @@
                         <tr>
                             <th wire:click="sortBy('title')" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100">
                                 <div class="flex items-center space-x-1">
-                                    <span>{{ __('Article') }}</span>
+                                    <span>{{ __('NewsPost') }}</span>
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l4-4 4 4m0 6l-4 4-4-4"></path>
                                     </svg>
@@ -210,7 +210,7 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <div class="flex items-center justify-end space-x-2">
-                                        <a href="{{ route('admin.articles.show', $article) }}" 
+                                        <a href="{{ route('admin.articles.show', $article) }}"
                                            class="bg-club-blue hover:bg-club-blue-light text-white p-2 rounded-lg transition-colors duration-200"
                                            title="{{ __('View details') }}">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -218,7 +218,7 @@
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                             </svg>
                                         </a>
-                                        <a href="{{ route('admin.articles.edit', $article) }}" 
+                                        <a href="{{ route('admin.articles.edit', $article) }}"
                                            class="bg-yellow-600 hover:bg-yellow-700 text-white p-2 rounded-lg transition-colors duration-200"
                                            title="{{ __('Edit article') }}">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -226,7 +226,7 @@
                                             </svg>
                                         </a>
                                         @can('delete', Auth()->user())
-                                            <button 
+                                            <button
                                                 wire:click="$set('selectedArticleId', {{ $article->id }})"
                                                 @click="$dispatch('open-modal', 'confirm-delete-article')"
                                                 class="bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg transition-colors duration-200"
@@ -292,18 +292,18 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="flex justify-end space-x-2">
-                                <a href="{{ route('admin.articles.show', $article) }}" 
+                                <a href="{{ route('admin.articles.show', $article) }}"
                                    class="bg-club-blue hover:bg-club-blue-light text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-200">
                                     Voir
                                 </a>
-                                <a href="{{ route('admin.articles.edit', $article) }}" 
+                                <a href="{{ route('admin.articles.edit', $article) }}"
                                    class="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-200">
                                     Modifier
                                 </a>
                                 @can('delete', Auth()->user())
-                                    <button 
+                                    <button
                                         wire:click="$set('selectedArticleId', {{ $article->id }})"
                                         @click="$dispatch('open-modal', 'confirm-delete-article')"
                                         class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-200">
@@ -325,7 +325,7 @@
                     <h3 class="mt-2 text-sm font-medium text-gray-900">Aucun article trouvé</h3>
                     <p class="mt-1 text-sm text-gray-500">Commencez par créer votre premier article.</p>
                     <div class="mt-6">
-                        <a href="{{ route('admin.articles.create') }}" 
+                        <a href="{{ route('admin.articles.create') }}"
                            class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-club-blue hover:bg-club-blue-light">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
@@ -352,20 +352,20 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
                     </svg>
                 </div>
-                
+
                 <h3 class="text-lg font-semibold text-gray-900 text-center mb-2">
                     {{ __('Confirm deletion') }}
                 </h3>
-                
+
                 <p class="text-sm text-gray-600 text-center mb-6">
                     {{ __('Are you sure you want to delete this article? This action cannot be undone.') }}
                 </p>
-                
+
                 <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                     <x-secondary-button @click="$dispatch('close')" class="flex-1">
                         {{ __('Cancel') }}
                     </x-secondary-button>
-                    <x-danger-button 
+                    <x-danger-button
                         wire:click="deleteArticle()"
                         @click="$dispatch('close')"
                         class="flex-1">

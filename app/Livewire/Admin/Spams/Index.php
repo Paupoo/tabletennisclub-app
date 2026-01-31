@@ -2,7 +2,7 @@
 
 namespace App\Livewire\Admin\Spams;
 
-use App\Models\ClubAdmin\Mailing\Spam;
+use App\Models\ClubAdmin\Contact\Spam;
 use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Support\Collection;
 use Livewire\Component;

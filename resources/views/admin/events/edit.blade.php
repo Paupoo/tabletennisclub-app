@@ -32,7 +32,7 @@
                   x-data="{
                       category: '{{ old('category', $event->category) }}',
                       status: '{{ old('status', $event->status) }}',
-                      icons: @js(\App\Models\ClubEvents\Event::ICONS),
+                      icons: @js(\App\Models\ClubPosts\EventPost::ICONS),
                       showPreview: false,
                       updateIcon() {
                           if (this.icons[this.category]) {
@@ -74,7 +74,7 @@
                                         @change="updateIcon()"
                                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent"
                                         required>
-                                    @foreach(\App\Models\ClubEvents\Event::CATEGORIES as $key => $label)
+                                    @foreach(\App\Models\ClubPosts\EventPost::CATEGORIES as $key => $label)
                                         <option
                                             value="{{ $key }}" {{ old('category', $event->category) === $key ? 'selected' : '' }}>
                                             {{ $label }}
@@ -155,7 +155,7 @@
                             <select id="status" name="status" x-model="status"
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent"
                                     required>
-                                @foreach(\App\Models\ClubEvents\Event::STATUSES as $key => $label)
+                                @foreach(\App\Models\ClubPosts\EventPost::STATUSES as $key => $label)
                                     <option
                                         value="{{ $key }}" {{ old('status', $event->status) === $key ? 'selected' : '' }}>
                                         {{ $label }}

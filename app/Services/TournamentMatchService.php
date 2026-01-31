@@ -6,7 +6,7 @@ namespace App\Services;
 
 use App\Enums\Ranking;
 use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Interclub\Pool;
+use App\Models\ClubEvents\Tournament\Pool;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Tournament\TournamentMatch;
 use Illuminate\Support\Collection;

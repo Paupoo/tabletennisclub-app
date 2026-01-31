@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Admin\Contacts;
 
-use App\Models\ClubAdmin\Users\Contact;
+use App\Models\ClubAdmin\Contact\Contact;
 use Illuminate\Contracts\Database\Query\Builder;
 use Livewire\Component;
 use Livewire\WithPagination;

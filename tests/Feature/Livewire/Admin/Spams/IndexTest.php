@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 use App\Livewire\Admin\Spams\Index;
-use App\Models\ClubAdmin\Mailing\Spam;
+use App\Models\ClubAdmin\Contact\Spam;
 use App\Models\ClubAdmin\Users\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;

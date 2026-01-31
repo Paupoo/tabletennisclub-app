@@ -1,6 +1,6 @@
 @props([
     'breadcrumbs' => [],
-    'newContactsCount' => \App\Models\ClubAdmin\Users\Contact::where('status', 'new')->count(),
+    'newContactsCount' => \App\Models\ClubAdmin\Contact\Contact::where('status', 'new')->count(),
 ])
 
     <!DOCTYPE html>

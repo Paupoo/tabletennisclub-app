@@ -7,8 +7,8 @@
                     <h2 class="text-xl sm:text-2xl font-bold text-club-blue mb-2">{{ __('Create new article') }}</h2>
                     <p class="text-gray-600 text-sm sm:text-base">{{ __('Fill out the form below to create a new article.') }}</p>
                 </div>
-                
-                <a href="{{ route('admin.articles.index') }}" 
+
+                <a href="{{ route('admin.articles.index') }}"
                    class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base inline-flex items-center">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
@@ -28,16 +28,16 @@
                     <!-- Titre et slug -->
                     <div class="bg-white rounded-lg shadow-lg p-4 sm:p-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">Informations générales</h3>
-                        
+
                         <div class="space-y-4">
                             <!-- Titre -->
                             <div>
                                 <label for="title" class="block text-sm font-medium text-gray-700 mb-2">
                                     {{ __('Title') }} <span class="text-red-500">*</span>
                                 </label>
-                                <input type="text" 
-                                       id="title" 
-                                       name="title" 
+                                <input type="text"
+                                       id="title"
+                                       name="title"
                                        value="{{ old('title') }}"
                                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-club-blue focus:border-club-blue @error('title') border-red-500 @enderror"
                                        placeholder="Entrez le titre de l'article"
@@ -59,9 +59,9 @@
                                     <span class="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
                                         {{ url('/articles') }}/
                                     </span>
-                                    <input type="text" 
-                                           id="slug" 
-                                           name="slug" 
+                                    <input type="text"
+                                           id="slug"
+                                           name="slug"
                                            value="{{ old('slug') }}"
                                            class="flex-1 border border-gray-300 rounded-r-lg px-3 py-2 focus:ring-club-blue focus:border-club-blue @error('slug') border-red-500 @enderror"
                                            placeholder="url-de-l-article"
@@ -80,13 +80,13 @@
                     <!-- Contenu -->
                     <div class="bg-white rounded-lg shadow-lg p-4 sm:p-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">Contenu de l'article</h3>
-                        
+
                         <div>
                             <label for="content" class="block text-sm font-medium text-gray-700 mb-2">
                                 {{ __('Content') }} <span class="text-red-500">*</span>
                             </label>
-                            <textarea id="content" 
-                                      name="content" 
+                            <textarea id="content"
+                                      name="content"
                                       rows="15"
                                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-club-blue focus:border-club-blue @error('content') border-red-500 @enderror"
                                       placeholder="Rédigez le contenu de votre article ici..."
@@ -104,11 +104,11 @@
                     <!-- Image -->
                     <div class="bg-white rounded-lg shadow-lg p-4 sm:p-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">Image de l'article</h3>
-                        
+
                         <div x-data="{ imagePreview: null }" class="space-y-4">
                             <div>
                                 <label for="image" class="block text-sm font-medium text-gray-700 mb-2">
-                                    {{ __('Article Image') }}
+                                    {{ __('NewsPost Image') }}
                                 </label>
                                 <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-gray-400 transition-colors">
                                     <div class="space-y-1 text-center">
@@ -119,9 +119,9 @@
                                             <div class="flex text-sm text-gray-600">
                                                 <label for="image" class="relative cursor-pointer bg-white rounded-md font-medium text-club-blue hover:text-club-blue-light focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-club-blue">
                                                     <span>Télécharger une image</span>
-                                                    <input id="image" 
-                                                           name="image" 
-                                                           type="file" 
+                                                    <input id="image"
+                                                           name="image"
+                                                           type="file"
                                                            accept="image/*"
                                                            class="sr-only"
                                                            @change="const file = $event.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = e => imagePreview = e.target.result; reader.readAsDataURL(file); }">
@@ -153,15 +153,15 @@
                     <!-- Actions de publication -->
                     <div class="bg-white rounded-lg shadow-lg p-4 sm:p-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">Publication</h3>
-                        
+
                         <div class="space-y-4">
                             <!-- Statut -->
                             <div>
                                 <label for="status" class="block text-sm font-medium text-gray-700 mb-2">
                                     {{ __('Status') }}
                                 </label>
-                                <select id="status" 
-                                        name="status" 
+                                <select id="status"
+                                        name="status"
                                         class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-club-blue focus:border-club-blue @error('status') border-red-500 @enderror">
                                     @foreach(\App\Enums\ArticlesStatusEnum::cases() as $statusEnum)
                                         <option value="{{ $statusEnum->value }}" {{ old('status', 'draft') === $statusEnum->value ? 'selected' : '' }}>
@@ -181,20 +181,20 @@
                                 </label>
                                 <div class="space-y-2">
                                     <label class="flex items-center">
-                                        <input type="radio" 
-                                               name="is_public" 
-                                               value="1" 
-                                               class="text-club-blue focus:ring-club-blue" 
+                                        <input type="radio"
+                                               name="is_public"
+                                               value="1"
+                                               class="text-club-blue focus:ring-club-blue"
                                                {{ old('is_public', '1') == '1' ? 'checked' : '' }}>
                                         <span class="ml-2 text-sm text-gray-700">
                                             <span class="font-medium">Public</span> - Visible par tous les visiteurs
                                         </span>
                                     </label>
                                     <label class="flex items-center">
-                                        <input type="radio" 
-                                               name="is_public" 
-                                               value="0" 
-                                               class="text-club-blue focus:ring-club-blue" 
+                                        <input type="radio"
+                                               name="is_public"
+                                               value="0"
+                                               class="text-club-blue focus:ring-club-blue"
                                                {{ old('is_public') == '0' ? 'checked' : '' }}>
                                         <span class="ml-2 text-sm text-gray-700">
                                             <span class="font-medium">Privé</span> - Visible uniquement par les membres
@@ -208,8 +208,8 @@
 
                             <!-- Boutons d'action -->
                             <div class="pt-4 border-t border-gray-200 space-y-2">
-                                <button type="submit" 
-                                        name="action" 
+                                <button type="submit"
+                                        name="action"
                                         value="save"
                                         class="w-full bg-club-blue hover:bg-club-blue-light text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm flex items-center justify-center">
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -217,9 +217,9 @@
                                     </svg>
                                     Enregistrer l'article
                                 </button>
-                                
-                                <button type="submit" 
-                                        name="action" 
+
+                                <button type="submit"
+                                        name="action"
                                         value="save_and_continue"
                                         class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm flex items-center justify-center">
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -234,13 +234,13 @@
                     <!-- Catégorie -->
                     <div class="bg-white rounded-lg shadow-lg p-4 sm:p-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">Catégorisation</h3>
-                        
+
                         <div>
                             <label for="category" class="block text-sm font-medium text-gray-700 mb-2">
                                 {{ __('Category') }} <span class="text-red-500">*</span>
                             </label>
-                            <select id="category" 
-                                    name="category" 
+                            <select id="category"
+                                    name="category"
                                     class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-club-blue focus:border-club-blue @error('category') border-red-500 @enderror"
                                     required>
                                 <option value="">Choisir une catégorie</option>
@@ -262,7 +262,7 @@
                     <!-- Aperçu en temps réel -->
                     <div class="bg-white rounded-lg shadow-lg p-4 sm:p-6">
                         <h3 class="text-lg font-semibold text-gray-900 mb-4">Aperçu</h3>
-                        
+
                         <div class="space-y-3 text-sm">
                             <div>
                                 <span class="font-medium text-gray-700">Titre:</span>
@@ -306,7 +306,7 @@
                 const contentTextarea = document.getElementById('content');
                 const characterCount = document.getElementById('character-count');
                 const contentPreview = document.getElementById('content-preview');
-                
+
                 // Génération automatique du slug
                 function generateSlug(title) {
                     return title
@@ -323,24 +323,24 @@
                         .replace(/-+/g, '-')
                         .trim('-');
                 }
-                
+
                 titleInput.addEventListener('input', function() {
                     const slug = generateSlug(this.value);
                     slugInput.value = slug;
                 });
-                
+
                 // Compteur de caractères
                 function updateCharacterCount() {
                     const count = contentTextarea.value.length;
                     characterCount.textContent = `${count} caractères`;
-                    
+
                     // Aperçu du contenu
                     const preview = contentTextarea.value.slice(0, 100);
                     contentPreview.textContent = preview ? preview + (contentTextarea.value.length > 100 ? '...' : '') : 'Aucun contenu';
                 }
-                
+
                 contentTextarea.addEventListener('input', updateCharacterCount);
-                
+
                 // Auto-sauvegarde (optionnel - vous pouvez l'implémenter avec AJAX)
                 let autoSaveTimeout;
                 function autoSave() {
@@ -350,11 +350,11 @@
                         console.log('Auto-save would trigger here');
                     }, 30000); // Auto-save après 30 secondes d'inactivité
                 }
-                
+
                 [titleInput, slugInput, contentTextarea].forEach(input => {
                     input.addEventListener('input', autoSave);
                 });
-                
+
                 // Initialiser le compteur
                 updateCharacterCount();
             });
@@ -366,12 +366,12 @@
                 font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
                 line-height: 1.6;
             }
-            
+
             /* Animation pour les champs de formulaire */
             .form-group {
                 transition: all 0.3s ease;
             }
-            
+
             .form-group:focus-within {
                 transform: translateY(-1px);
                 box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);

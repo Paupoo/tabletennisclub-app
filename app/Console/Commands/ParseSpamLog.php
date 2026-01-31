@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
-use App\Models\ClubAdmin\Mailing\Spam;
+use App\Models\ClubAdmin\Contact\Spam;
 use Illuminate\Console\Command;
 
 final class ParseSpamLog extends Command

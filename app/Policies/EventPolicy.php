@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Policies;
 
 use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Event;
+use App\Models\ClubPosts\EventPost;
 
 class EventPolicy
 {
@@ -25,7 +25,7 @@ class EventPolicy
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, Event $event): bool
+    public function delete(User $user, EventPost $event): bool
     {
         return $user->is_admin || $user->is_committee_member;
     }
@@ -38,7 +38,7 @@ class EventPolicy
     /**
      * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(User $user, Event $event): bool
+    public function forceDelete(User $user, EventPost $event): bool
     {
         return $user->is_admin || $user->is_committee_member;
     }
@@ -51,7 +51,7 @@ class EventPolicy
     /**
      * Determine whether the user can restore the model.
      */
-    public function restore(User $user, Event $event): bool
+    public function restore(User $user, EventPost $event): bool
     {
         return $user->is_admin || $user->is_committee_member;
     }
@@ -59,7 +59,7 @@ class EventPolicy
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, Event $event): bool
+    public function update(User $user, EventPost $event): bool
     {
         return $user->is_admin || $user->is_committee_member;
     }
@@ -67,7 +67,7 @@ class EventPolicy
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, Event $event): bool
+    public function view(User $user, EventPost $event): bool
     {
         return $user->is_admin || $user->is_committee_member;
     }

@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\Ranking;
-use App\Models\Pool;
-use App\Models\Tournament;
-use App\Models\TournamentMatch;
-use App\Models\User;
+use App\Models\ClubAdmin\Users\User;
+use App\Models\ClubEvents\Tournament\Pool;
+use App\Models\ClubEvents\Tournament\Tournament;
+use App\Models\ClubEvents\Tournament\TournamentMatch;
 use Illuminate\Support\Collection;
 use InvalidArgumentException;
 

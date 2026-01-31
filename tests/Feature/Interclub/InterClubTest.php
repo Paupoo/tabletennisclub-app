@@ -1,8 +1,9 @@
 <?php
 
 declare(strict_types=1);
-use App\Models\Club;
-use App\Models\Interclub;
+
+use App\Models\ClubEvents\Interclub\Club;
+use App\Models\ClubEvents\Interclub\Interclub;
 
 uses(\Tests\Trait\CreateInterclub::class);
 

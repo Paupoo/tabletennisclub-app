@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Models\Room;
-use App\Models\Season;
-use App\Models\Training;
-use App\Models\User;
+use App\Models\ClubAdmin\Club\Room;
+use App\Models\ClubAdmin\Users\User;
+use App\Models\ClubEvents\Interclub\Season;
+use App\Models\ClubEvents\Training\Training;
 use Carbon\Carbon;
 
 class TrainingBuilder

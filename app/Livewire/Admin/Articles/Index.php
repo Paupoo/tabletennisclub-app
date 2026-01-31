@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace App\Livewire\Admin\Articles;
 
-use App\Models\Article;
+use App\Models\ClubPosts\NewsPost;
 use App\Support\Breadcrumb;
 use Illuminate\Contracts\Database\Query\Builder;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Redirect;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -30,12 +28,12 @@ class Index extends Component
 
     public function render()
     {
-        $articles = Article::search($this->search)
+        $articles = NewsPost::search($this->search)
             ->when($this->visibility !== '', function(Builder $query): void {
                 $this->visibility ? $query->isPublic() : $query->isPrivate();
             })
             ->when($this->status !== '', function (Builder $query): void {
-                $query->where('status', $this->status); 
+                $query->where('status', $this->status);
             })
             ->when($this->category !== '', function (Builder $query): void {
                 $query->where('category', $this->category);
@@ -69,10 +67,10 @@ class Index extends Component
     }
 
     public function deleteArticle() {
-        
+
         $this->authorize('delete', Auth()->user());
 
-        $article = Article::find($this->selectedArticleId);
+        $article = NewsPost::find($this->selectedArticleId);
         $article->delete();
 
         session()->flash('success', __('The article ' . $article->title . ' has been deleted.'));

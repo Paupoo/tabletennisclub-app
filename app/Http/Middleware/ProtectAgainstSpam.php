@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
-use App\Models\Spam;
+use App\Models\ClubAdmin\Contact\Spam;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -37,7 +37,7 @@ class ProtectAgainstSpam
             'user_agent' => $request->userAgent(),
             'inputs' => $request->except(['password']), // ne jamais loguer les mdp
         ]);
-        
+
         Spam::create([
             'ip' => $request->ip(),
             'user_agent' => $request->userAgent(),

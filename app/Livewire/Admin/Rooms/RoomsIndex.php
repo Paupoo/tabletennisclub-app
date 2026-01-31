@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Admin\Rooms;
 
-use App\Models\Room;
+use App\Models\ClubAdmin\Club\Room;
 use Illuminate\Support\Collection;
 use Livewire\Component;
 

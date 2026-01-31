@@ -15,12 +15,17 @@ enum ArticlesCategoryEnum: string
 
     /**
      * Return the values of the enum into an array
+     * @return array
      */
     public static function values(): array
     {
         return array_column(self::cases(), 'value');
     }
 
+    /**
+     * Retur the localized string of a particular value
+     * @return array|string|null
+     */
     public function getLabel(): string
     {
         return match ($this) {

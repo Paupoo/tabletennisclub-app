@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Models\Club;
+use App\Models\ClubEvents\Interclub\Club;
 use Illuminate\Database\Seeder;
 
 class ClubSeeder extends Seeder

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Models\Pool;
-use App\Models\Tournament;
+use App\Models\ClubEvents\Tournament\Pool;
+use App\Models\ClubEvents\Tournament\Tournament;
 use Exception;
 use Illuminate\Support\Collection;
 

@@ -43,7 +43,7 @@
                         <fieldset class="border border-gray-400 rounded-md p-2 bg-gray-50">
                             <legend class="bg-gray-700 text-gray-50 rounded-t-lg px-2">{{ __('Select a season') }}
                             </legend>
-                            <x-input-label for="" :value="__('Select a season.')" />
+                            <x-input-label for="" :value="__('Select a season')" />
                             <x-select-input id="" name="" class="block w-full mt-1" disabled>
                                 <option value="" selected>{{ __('To do') }}</option>
                                 

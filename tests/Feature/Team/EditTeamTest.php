@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 use App\Enums\LeagueCategory;
 use App\Enums\LeagueLevel;
-use App\Models\Team;
-use App\Models\User;
+use App\Models\ClubAdmin\Users\User;
+use App\Models\ClubEvents\Interclub\Team;
 
 beforeEach(function (): void {
     $this->member = User::factory()->create([

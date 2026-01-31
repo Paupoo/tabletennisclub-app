@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Models\TournamentMatch;
+use App\Models\ClubEvents\Tournament\TournamentMatch;
 use Illuminate\Database\Seeder;
 
 class TournamentMatchSeeder extends Seeder

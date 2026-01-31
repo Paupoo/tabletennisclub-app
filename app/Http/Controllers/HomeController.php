@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Models\Article;
+use App\Models\ClubPosts\NewsPost;
 
 class HomeController extends Controller
 {
@@ -14,12 +14,12 @@ class HomeController extends Controller
             // ['name' => 'Eric Filée', 'logo' => asset('images/sponsors/ericfilee.png'), 'url' => null],
             // ['name' => 'GD Tax & Account', 'logo' => asset('images/sponsors/gd_tax_account.png'), 'url' => null],
             // ['name' => 'La maison de Malou', 'logo' => asset('images/sponsors/malou.png'), 'url' => 'https://www.lamaisondemalou.be/'],
-            ['name' => 'La maison de Malou', 'logo' => asset('images/sponsors/logo_10x102.jpg'), 'url' => 'https://www.lamaisondemalou.be/'],
-            ['name' => 'Chatisfait', 'logo' => asset('images/sponsors/banderole.jpg'), 'url' => 'https://www.chatisfait.be/'],
+            ['name' => 'La maison de Malou', 'logo' => asset('images/sponsors/sponsor_1_v2.jpg'), 'url' => 'https://www.lamaisondemalou.be/'],
+            ['name' => 'Chatisfait', 'logo' => asset('images/sponsors/sponsor_2_v2.png'), 'url' => 'https://www.chatisfait.be/'],
             // ['name' => 'Artadom SPRL', 'logo' => null, 'url' => null],
         ];
 
-        $articles = Article::latest()
+        $articles = NewsPost::latest()
             ->with('user')
             ->take(3)
             ->get();

@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace App\Livewire\Admin\Articles;
 
-use App\Models\Article;
+use App\Models\ClubPosts\NewsPost;
 use Livewire\Component;
 
 class Create extends Component
 {
-    public Article $article;
+    public NewsPost $article;
 
     public function mount()
     {
-        $this->article = new Article;
+        $this->article = new NewsPost;
     }
 
     public function render()

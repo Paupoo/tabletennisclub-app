@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Models\Club;
-use App\Models\Interclub;
-use App\Models\League;
-use App\Models\Room;
-use App\Models\Season;
-use App\Models\Team;
+use App\Models\ClubAdmin\Club\Room;
+use App\Models\ClubEvents\Interclub\Club;
+use App\Models\ClubEvents\Interclub\Interclub;
+use App\Models\ClubEvents\Interclub\League;
+use App\Models\ClubEvents\Interclub\Season;
+use App\Models\ClubEvents\Interclub\Team;
 
 class InterclubService
 {

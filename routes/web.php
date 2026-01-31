@@ -15,7 +15,6 @@ use App\Http\Controllers\KnockoutPhaseController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PublicArticlesController;
 use App\Http\Controllers\ResultsController;
-use App\Http\Controllers\RoleController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\SpamController;
 use App\Http\Controllers\TableController;
@@ -74,10 +73,6 @@ Route::get('/admin/dashboard', function () {
     ]);
 })->middleware(['auth', 'verified'])
     ->name('dashboard');
-/**
- * Roles management
- */
-Route::resource('admin/roles', RoleController::class)->middleware(['auth', 'verified']);
 
 /**
  * Rooms management

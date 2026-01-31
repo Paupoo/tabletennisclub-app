@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Livewire\Tournament;
 
-use App\Models\Tournament;
-use App\Models\User;
+use App\Models\ClubAdmin\Users\User;
+use App\Models\ClubEvents\Tournament\Tournament;
 use App\Services\TournamentService;
 use Livewire\Component;
 

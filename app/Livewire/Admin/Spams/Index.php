@@ -2,7 +2,7 @@
 
 namespace App\Livewire\Admin\Spams;
 
-use App\Models\Spam;
+use App\Models\ClubAdmin\Contact\Spam;
 use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Support\Collection;
 use Livewire\Component;
@@ -43,7 +43,7 @@ class Index extends Component
     public function render()
     {
         $spamsQuery = $this->getSpamsQuery();
-        
+
         return view('livewire.admin.spams.index', [
             'spams' => $spamsQuery->paginate($this->perPage),
             'stats' => $this->getStats(),
@@ -100,7 +100,7 @@ class Index extends Component
     private function getStats(): Collection
     {
         $baseQuery = Spam::query();
-        
+
         return collect([
             'totalSpams' => $baseQuery->count(),
             'todaySpams' => $baseQuery->whereDate('created_at', today())->count(),
@@ -173,18 +173,18 @@ class Index extends Component
         try {
             $spam = Spam::findOrFail($spamId);
             $spam->delete();
-            
+
             // Retirer de la sélection si présent
             $this->selectedItems = array_filter(
-                $this->selectedItems, 
+                $this->selectedItems,
                 fn($id) => $id !== $spamId
             );
-            
+
             $this->dispatch('spam-deleted', [
                 'message' => 'Spam supprimé avec succès.',
                 'type' => 'success'
             ]);
-            
+
         } catch (\Exception $e) {
             $this->dispatch('spam-error', [
                 'message' => 'Erreur lors de la suppression du spam.',
@@ -204,14 +204,14 @@ class Index extends Component
 
         try {
             $deletedCount = Spam::whereIn('id', $this->selectedItems)->delete();
-            
+
             $this->resetSelection();
-            
+
             $this->dispatch('spam-bulk-deleted', [
                 'message' => "{$deletedCount} spam(s) supprimé(s) avec succès.",
                 'type' => 'success'
             ]);
-            
+
         } catch (\Exception $e) {
             $this->dispatch('spam-error', [
                 'message' => 'Erreur lors de la suppression en lot.',
@@ -228,15 +228,15 @@ class Index extends Component
         try {
             // Ici tu peux implémenter ta logique de blocage
             // Par exemple, créer un modèle BlockedIp ou ajouter à un fichier .htaccess
-            
+
             // Exemple simple : log de l'action
             logger()->info("IP blocked by admin: {$ip}");
-            
+
             $this->dispatch('ip-blocked', [
                 'message' => "IP {$ip} ajoutée à la liste de blocage.",
                 'type' => 'success'
             ]);
-            
+
         } catch (\Exception $e) {
             $this->dispatch('spam-error', [
                 'message' => 'Erreur lors du blocage de l\'IP.',
@@ -253,15 +253,15 @@ class Index extends Component
         try {
             // Tu peux utiliser Laravel Excel ou une solution custom
             // Pour l'instant, on log juste l'action
-            
+
             $count = $this->getSpamsQuery()->count();
             logger()->info("Spam export requested: {$count} records");
-            
+
             $this->dispatch('export-started', [
                 'message' => "Export de {$count} enregistrement(s) en cours...",
                 'type' => 'info'
             ]);
-            
+
         } catch (\Exception $e) {
             $this->dispatch('spam-error', [
                 'message' => 'Erreur lors de l\'export.',
@@ -275,7 +275,7 @@ class Index extends Component
      */
     public function hasActiveFilters(): bool
     {
-        return !empty($this->search) || 
+        return !empty($this->search) ||
                !empty(array_filter($this->filters));
     }
 

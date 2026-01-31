@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Models\Article;
+use App\Models\ClubPosts\NewsPost;
 
 class HomeController extends Controller
 {
@@ -19,7 +19,7 @@ class HomeController extends Controller
             // ['name' => 'Artadom SPRL', 'logo' => null, 'url' => null],
         ];
 
-        $articles = Article::latest()
+        $articles = NewsPost::latest()
             ->with('user')
             ->take(3)
             ->get();

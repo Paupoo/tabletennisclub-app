@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Policies;
 
 use App\Models\Captain;
-use App\Models\User;
+use App\Models\ClubAdmin\Users\User;
 
 class CaptainPolicy
 {

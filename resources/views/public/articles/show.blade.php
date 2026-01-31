@@ -1,7 +1,7 @@
-<x-guest-layout :title="($article['title'] ?? 'Article') . ' - Ace Table Tennis Club'">
+<x-guest-layout :title="($article['title'] ?? 'NewsPost') . ' - Ace Table Tennis Club'">
     <x-navigation :fixed="false" />
 
-    <!-- Article Header -->
+    <!-- NewsPost Header -->
     <div class="bg-white">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8">
             <!-- Breadcrumb -->
@@ -15,10 +15,10 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                 </svg>
-                <span class="text-gray-900">{{ Str::words($article['title'] ?? 'Article', 6, '[...]') }}</span>
+                <span class="text-gray-900">{{ Str::words($article['title'] ?? 'NewsPost', 6, '[...]') }}</span>
             </nav>
 
-            <!-- Article Meta -->
+            <!-- NewsPost Meta -->
             <div class="flex flex-wrap items-center gap-4 mb-6">
                 <span
                     class="@if (($article['category'] ?? '') === 'Compétition') bg-club-blue text-white @elseif(($article['category'] ?? '') === 'Formation') bg-club-yellow text-club-blue @else bg-gray-100 text-gray-800 @endif text-sm font-medium px-4 py-2 rounded-full">
@@ -79,7 +79,7 @@
         </div>
     @endif
 
-    <!-- Article Content -->
+    <!-- NewsPost Content -->
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="prose prose-lg max-w-none whitespace-pre-line">
             <div class="text-gray-700 leading-relaxed">

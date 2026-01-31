@@ -2,8 +2,8 @@
 declare(strict_types=1);
 
 use App\Livewire\Admin\Spams\Index;
-use App\Models\Spam;
-use App\Models\User;
+use App\Models\ClubAdmin\Contact\Spam;
+use App\Models\ClubAdmin\Users\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 
@@ -145,14 +145,14 @@ describe('Selection and pagination', function () {
 
         $component->set('perPage', '15')
             ->assertViewHas('spams', fn ($spams) =>
-                $spams->count() === 15 
+                $spams->count() === 15
                 && $spams->total() === 30
                 && $spams->lastPage() === 2
             );
 
         $component->set('perPage', '50')
             ->assertViewHas('spams', fn ($spams) =>
-                $spams->count() === 30 
+                $spams->count() === 30
                 && $spams->lastPage() === 1
             );
     });

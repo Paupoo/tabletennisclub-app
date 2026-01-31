@@ -6,10 +6,10 @@ namespace App\Services\Team;
 
 use App\Enums\LeagueCategory;
 use App\Enums\LeagueLevel;
-use App\Models\Club;
-use App\Models\Season;
-use App\Models\Team;
-use App\Models\User;
+use App\Models\ClubAdmin\Users\User;
+use App\Models\ClubEvents\Interclub\Club;
+use App\Models\ClubEvents\Interclub\Season;
+use App\Models\ClubEvents\Interclub\Team;
 
 class TeamService
 {

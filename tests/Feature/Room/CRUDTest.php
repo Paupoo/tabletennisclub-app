@@ -1,7 +1,8 @@
 <?php
 
 declare(strict_types=1);
-use App\Models\Room;
+
+use App\Models\ClubAdmin\Club\Room;
 
 uses(\Tests\Trait\CreateUser::class);
 

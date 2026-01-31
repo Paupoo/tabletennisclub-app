@@ -1,33 +1,53 @@
 - models
     - clubAdmin
-        - user
-        - role
-        - room
-        - table
+      - Users
+          - user
+          - role
+      - Club
+          - room
+          - table
+      - Contact
+        - Spam
+        - Contact
     - clubEvents
         - training
+          - training
         - interclub
+            - interclub
             - club
             - league
             - team
             - season
             - result
         - tournament
+          - pool
+          - knockoutMatch
+          - matchSet
+          - TableTournament
+          - Tournament
+          - TournamentMatch
         - meetings
         - social
     - clubPosts
+      - NewsPost
+      - EventPost
 
 - controllers
     - homepage
     - dashboard
     - clubAdmin
-        - user
+        - users
             - role
             - auth
             - profile
             - forceList
-        - room
-        - table
+        - club
+          - room
+          - table
+        - contact
+          - spam
+          - contact
+          - invitation
     - clubEvents
         - training
             - CRUD
@@ -49,7 +69,8 @@
         - meetings
         - social
     - clubPosts
-        - news (simple news + events)
+        - NewsPost
+        - EventPost
         - results
             - CRUD
     - subscriptions\*\*

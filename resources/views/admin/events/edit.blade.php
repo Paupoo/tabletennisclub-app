@@ -8,7 +8,7 @@
                     <p class="text-gray-600 mt-1">{{ $event->title }}</p>
                 </div>
                 <div class="flex space-x-2">
-                    <a href="{{ route('admin.events.show', $event) }}" 
+                    <a href="{{ route('admin.events.show', $event) }}"
                        class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
                         ← Annuler
                     </a>
@@ -28,11 +28,11 @@
             @endif
 
             {{-- Formulaire principal --}}
-            <form action="{{ route('admin.events.update', $event) }}" method="POST" 
-                  x-data="{ 
+            <form action="{{ route('admin.events.update', $event) }}" method="POST"
+                  x-data="{
                       category: '{{ old('category', $event->category) }}',
                       status: '{{ old('status', $event->status) }}',
-                      icons: @js(\App\Models\Event::ICONS),
+                      icons: @js(\App\Models\ClubPosts\EventPost::ICONS),
                       showPreview: false,
                       updateIcon() {
                           if (this.icons[this.category]) {
@@ -74,8 +74,9 @@
                                         @change="updateIcon()"
                                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent"
                                         required>
-                                    @foreach(\App\Models\Event::CATEGORIES as $key => $label)
-                                        <option value="{{ $key }}" {{ old('category', $event->category) === $key ? 'selected' : '' }}>
+                                    @foreach(\App\Models\ClubPosts\EventPost::CATEGORIES as $key => $label)
+                                        <option
+                                            value="{{ $key }}" {{ old('category', $event->category) === $key ? 'selected' : '' }}>
                                             {{ $label }}
                                         </option>
                                     @endforeach
@@ -154,8 +155,9 @@
                             <select id="status" name="status" x-model="status"
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent"
                                     required>
-                                @foreach(\App\Models\Event::STATUSES as $key => $label)
-                                    <option value="{{ $key }}" {{ old('status', $event->status) === $key ? 'selected' : '' }}>
+                                @foreach(\App\Models\ClubPosts\EventPost::STATUSES as $key => $label)
+                                    <option
+                                        value="{{ $key }}" {{ old('status', $event->status) === $key ? 'selected' : '' }}>
                                         {{ $label }}
                                     </option>
                                 @endforeach
@@ -225,18 +227,20 @@
                         <div>
                             <strong>Créé le :</strong> {{ $event->created_at->format('d/m/Y à H:i') }}
                             @if($event->updated_at != $event->created_at)
-                                • <strong>Dernière modification :</strong> {{ $event->updated_at->format('d/m/Y à H:i') }}
+                                • <strong>Dernière modification
+                                    :</strong> {{ $event->updated_at->format('d/m/Y à H:i') }}
                             @endif
                         </div>
                     </div>
                 </div>
 
-                <div class="flex flex-col sm:flex-row justify-end items-center space-y-2 sm:space-y-0 sm:space-x-3 mt-8 pt-6 border-t">
-                    <a href="{{ route('admin.events.show', $event) }}" 
+                <div
+                    class="flex flex-col sm:flex-row justify-end items-center space-y-2 sm:space-y-0 sm:space-x-3 mt-8 pt-6 border-t">
+                    <a href="{{ route('admin.events.show', $event) }}"
                        class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium transition-colors text-center">
                         Annuler
                     </a>
-                    <button type="submit" 
+                    <button type="submit"
                             class="bg-club-blue hover:bg-club-blue-light text-white px-6 py-2 rounded-lg font-medium transition-colors">
                         💾 Enregistrer les modifications
                     </button>
@@ -249,7 +253,7 @@
                     <form action="{{ route('admin.events.destroy', $event) }}" method="POST" class="inline">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" 
+                        <button type="submit"
                                 class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
                                 onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet événement ? Cette action est irréversible.')">
                             🗑️ Supprimer définitivement

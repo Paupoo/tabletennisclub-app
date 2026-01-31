@@ -2,9 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\Article;
-use App\Models\User;
-use Illuminate\Auth\Access\Response;
+use App\Models\ClubAdmin\Users\User;
+use App\Models\ClubPosts\NewsPost;
 
 class ArticlePolicy
 {
@@ -19,7 +18,7 @@ class ArticlePolicy
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, Article $article): bool
+    public function view(User $user, NewsPost $article): bool
     {
         return false;
     }
@@ -35,7 +34,7 @@ class ArticlePolicy
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, Article $article): bool
+    public function update(User $user, NewsPost $article): bool
     {
         return false;
     }
@@ -43,7 +42,7 @@ class ArticlePolicy
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, Article $article): bool
+    public function delete(User $user, NewsPost $article): bool
     {
         return $user->is_admin || $user->is_committee_member;
     }
@@ -51,7 +50,7 @@ class ArticlePolicy
     /**
      * Determine whether the user can restore the model.
      */
-    public function restore(User $user, Article $article): bool
+    public function restore(User $user, NewsPost $article): bool
     {
         return false;
     }
@@ -59,7 +58,7 @@ class ArticlePolicy
     /**
      * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(User $user, Article $article): bool
+    public function forceDelete(User $user, NewsPost $article): bool
     {
         return false;
     }

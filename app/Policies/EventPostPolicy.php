@@ -7,7 +7,7 @@ namespace App\Policies;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubPosts\EventPost;
 
-class EventPolicy
+class EventPostPolicy
 {
     public function archive(User $user): bool
     {

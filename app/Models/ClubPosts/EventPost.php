@@ -1,12 +1,11 @@
 <?php
 
 declare(strict_types=1);
-// app/Models/Event.php
 
 namespace App\Models\ClubPosts;
 
-use App\Enums\EventStatusEnum;
 use App\Enums\EventTypeEnum;
+use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
@@ -35,7 +34,7 @@ class EventPost extends Model
 
     protected $casts = [
         'type' => EventTypeEnum::class,
-        'status' => EventStatusEnum::class,
+        'status' => 'string',
         'event_date' => 'date',
         'start_time' => 'datetime',
         'end_time' => 'datetime',
@@ -60,12 +59,40 @@ class EventPost extends Model
         'featured',
     ];
 
+    // Méthodes utilitaires
+    public function canBeDeleted(): bool
+    {
+        // Un événement peut être supprimé s'il est en brouillon ou archivé
+        return in_array($this->status, ['draft', 'archived']);
+    }
+
     /**
      * Relation polymorphique vers Training, Interclub ou Tournament
      */
     public function eventable(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    public function getCategoryBadgeClasses(): string
+    {
+        return match ($this->category) {
+            'club-life' => 'bg-blue-100 text-blue-800',
+            'tournament' => 'bg-orange-100 text-orange-800',
+            'training' => 'bg-purple-100 text-purple-800',
+            default => 'bg-gray-100 text-gray-800'
+        };
+    }
+
+    // Accesseurs pour améliorer l'affichage
+    public function getCategoryLabelAttribute(): string
+    {
+        return self::CATEGORIES[$this->category] ?? $this->category;
+    }
+
+    public function getFormattedDateAttribute(): string
+    {
+        return $this->event_date->format('d/m/Y');
     }
 
     /**
@@ -83,12 +110,45 @@ class EventPost extends Model
         return $date . ' à ' . $time;
     }
 
+    public function getFormattedTimeAttribute(): string
+    {
+        $start = $this->start_time->format('H:i');
+        $end = $this->end_time ? $this->end_time->format('H:i') : null;
+
+        return $end ? "{$start} - {$end}" : $start;
+    }
+
+    public function getIsPastAttribute(): bool
+    {
+        return $this->event_date < now()->startOfDay();
+    }
+
+    public function getIsUpcomingAttribute(): bool
+    {
+        return $this->event_date >= now()->startOfDay();
+    }
+
     /**
      * Retourne l'URL de la vue publique
      */
     public function getPublicUrlAttribute(): string
     {
         return route('admin.events.show', $this);
+    }
+
+    public function getStatusBadgeClasses(): string
+    {
+        return match ($this->status) {
+            // 'draft' => 'bg-gray-100 text-gray-800',
+            'published' => 'bg-green-100 text-green-800',
+            'archived' => 'bg-red-100 text-red-800',
+            default => 'bg-gray-100 text-gray-800'
+        };
+    }
+
+    public function getStatusLabelAttribute(): string
+    {
+        return self::STATUSES[$this->status] ?? $this->status;
     }
 
     /**
@@ -131,37 +191,29 @@ class EventPost extends Model
         return $this->type === EventTypeEnum::TRAINING;
     }
 
-    /**
-     * Scope pour les événements mis en avant
-     */
-    public function scopeFeatured($query)
+    public function scopeByCategory(Builder $query, string $category): Builder
+    {
+        return $query->where('category', $category);
+    }
+
+    public function scopeFeatured(Builder $query): Builder
     {
         return $query->where('featured', true);
     }
 
-    /**
-     * Scope pour filtrer par type
-     */
-    public function scopeOfType($query, EventTypeEnum $type)
+    public function scopePast(Builder $query): Builder
     {
-        return $query->where('type', $type);
+        return $query->where('event_date', '<', now()->startOfDay());
     }
 
-    /**
-     * Scope pour filtrer par statut
-     */
-    public function scopePublished($query)
+    // Scopes pour les requêtes courantes
+    public function scopePublished(Builder $query): Builder
     {
-        return $query->where('status', EventStatusEnum::PUBLISHED);
+        return $query->where('status', 'published');
     }
 
-    /**
-     * Scope pour les événements à venir
-     */
-    public function scopeUpcoming($query)
+    public function scopeUpcoming(Builder $query): Builder
     {
-        return $query->where('event_date', '>=', today())
-            ->orderBy('event_date')
-            ->orderBy('start_time');
+        return $query->where('event_date', '>=', now()->startOfDay());
     }
 }

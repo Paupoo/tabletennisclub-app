@@ -5,7 +5,7 @@ namespace App\Policies;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubPosts\NewsPost;
 
-class ArticlePolicy
+class NewsPostPolicy
 {
     /**
      * Determine whether the user can view any models.

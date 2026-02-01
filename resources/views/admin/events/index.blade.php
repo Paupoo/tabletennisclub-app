@@ -1,3 +1,5 @@
+@use('App\Models\ClubPosts\EventPost')
+
 <x-app-layout :breadcrumbs="$breadcrumbs">
     <x-admin-block>
         <!-- En-tête de page -->
@@ -16,7 +18,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                   d="M12 4v16m8-8H4"></path>
                         </svg>
-                        Nouvel événement
+                        {{ __('New event') }}
                     </a>
                 </div>
             </div>
@@ -25,19 +27,19 @@
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
                 <div class="bg-gray-50 rounded-lg p-3 text-center border border-gray-200">
                     <div class="text-lg sm:text-xl font-bold text-gray-600">{{ $stats->get('totalDrafts') }}</div>
-                    <div class="text-xs text-gray-700">Brouillons</div>
+                    <div class="text-xs text-gray-700">{{ __('Draft') }}</div>
                 </div>
                 <div class="bg-green-50 rounded-lg p-3 text-center border border-green-200">
                     <div class="text-lg sm:text-xl font-bold text-green-600">{{ $stats->get('totalPublished') }}</div>
-                    <div class="text-xs text-green-700">Publiés</div>
+                    <div class="text-xs text-green-700">{{ __('Published') }}</div>
                 </div>
                 <div class="bg-red-50 rounded-lg p-3 text-center border border-red-200">
                     <div class="text-lg sm:text-xl font-bold text-red-600">{{ $stats->get('totalArchived') }}</div>
-                    <div class="text-xs text-red-700">Archivés</div>
+                    <div class="text-xs text-red-700"> {{ __('Archived') }}</div>
                 </div>
                 <div class="bg-blue-50 rounded-lg p-3 text-center border border-blue-200">
                     <div class="text-lg sm:text-xl font-bold text-blue-600">{{ $stats->get('totalUpcoming') }}</div>
-                    <div class="text-xs text-blue-700">À venir</div>
+                    <div class="text-xs text-blue-700">{{ __('Upcoming') }}</div>
                 </div>
             </div>
         </div>
@@ -71,7 +73,7 @@
                         <select name="status"
                                 class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-club-blue focus:border-club-blue">
                             <option value="">{{ __('All') }}</option>
-                            @foreach(\App\Models\ClubPosts\EventPost::STATUSES as $key => $label)
+                            @foreach(EventPost::STATUSES as $key => $label)
                                 <option value="{{ $key }}" {{ request('status') === $key ? 'selected' : '' }}>
                                     {{ $label }}
                                 </option>
@@ -85,7 +87,7 @@
                         <select name="category"
                                 class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-club-blue focus:border-club-blue">
                             <option value="">{{ __('All') }}</option>
-                            @foreach(\App\Models\ClubPosts\EventPost::CATEGORIES as $key => $label)
+                            @foreach(EventPost::CATEGORIES as $key => $label)
                                 <option value="{{ $key }}" {{ request('category') === $key ? 'selected' : '' }}>
                                     {{ $label }}
                                 </option>
@@ -97,7 +99,7 @@
                     <div class="flex items-center space-x-2">
                         <label class="text-sm font-medium text-gray-700 whitespace-nowrap">{{ __('Per page') }}</label>
                         <select name="perPage"
-                                class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-club-blue focus:border-club-blue">
+                                class="min-w-[80px] border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-club-blue focus:border-club-blue">
                             <option value="25" {{ request('perPage', 25) == 25 ? 'selected' : '' }}>25</option>
                             <option value="50" {{ request('perPage', 25) == 50 ? 'selected' : '' }}>50</option>
                             <option value="100" {{ request('perPage', 25) == 100 ? 'selected' : '' }}>100</option>
@@ -118,7 +120,7 @@
             <div class="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gray-50">
                 <h3 class="text-lg font-medium text-gray-900">
                     {{ __('Events') }}
-                    <span class="text-sm font-normal text-gray-500">({{ $events->total() }} résultats)</span>
+                    <span class="text-sm font-normal text-gray-500">({{ $events->total() }} {{ __('Results') }})</span>
                 </h3>
             </div>
 
@@ -356,7 +358,7 @@
 
                             <div class="space-y-2 mb-3">
                                 <div class="text-sm text-gray-600">
-                                    {{ Str::limit($event->description, 100) }}
+                                    {{ Str::limit($event->description) }}
                                 </div>
                                 <div class="text-sm text-gray-500">
                                     📅 {{ $event->formatted_date }} • ⏰ {{ $event->formatted_time }}

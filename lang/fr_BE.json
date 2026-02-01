@@ -269,7 +269,7 @@
     "News": "Actualités",
     "No": "Non",
     "No captain": "Pas de capitaine",
-    "No licene": "Pas de licence",
+    "No licence": "Pas de licence",
     "No match generated yet.": "Aucun match généré pour le moment.",
     "No pool created yet, please configure the tournament.": "Aucune poule créée pour le moment, veuillez configurer le tournoi.",
     "No registered players": "Aucun joueur inscrit",
@@ -670,5 +670,7 @@
     "Please select a tournament status.": "Veuillez sélectionner un statut de tournoi.",
     "Home": "Domicile",
     "Away": "Extérieur",
-    "Back to homepage": "Retour à l'accueil"
+    "Back to homepage": "Retour à l'accueil",
+    "Upcoming": "À venir",
+    "Results": "résultats"
 }

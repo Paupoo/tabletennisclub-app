@@ -5,7 +5,7 @@
             <div class="flex">
                 <!-- Logo -->
                 <div class="flex items-center shrink-0">
-                    <a href="{{ route('home') }}" class="flex items-center space-x-2 group">
+                    <a href="{{ route('home') }}" class="flex items-center space-x-2 group" aria-label="{{ __('Back to homepage') }}">
                         <x-logo class="block w-auto text-club-blue fill-current h-9 dark:text-gray-200 group-hover:text-club-blue-light transition-colors duration-200" />
                         <span class="hidden sm:block ml-4 text-lg font-bold text-club-blue dark:text-gray-200 group-hover:text-club-blue-light transition-colors duration-200">
                             {{ config('app.name', 'Club') }}
@@ -18,8 +18,8 @@
 
 
                     <!-- Lien Dashboard simple -->
-                    <a href="{{ route('dashboard') }}" 
-                       class="flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 text-gray-700 dark:text-gray-300 hover:text-club-blue dark:hover:text-gray-200 hover:bg-indigo-300 dark:hover:bg-gray-700' }}" 
+                    <a href="{{ route('dashboard') }}"
+                       class="flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 text-gray-700 dark:text-gray-300 hover:text-club-blue dark:hover:text-gray-200 hover:bg-indigo-300 dark:hover:bg-gray-700' }}"
                        wire:navigate>
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
@@ -28,8 +28,8 @@
                     </a>
                     <!-- Groupe Club Life Management -->
                     <div class="relative" x-data="{ open: false }">
-                        <button 
-                            @click="open = !open" 
+                        <button
+                            @click="open = !open"
                             @click.away="open = false"
                             class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-club-blue dark:hover:text-gray-200 hover:bg-indigo-300 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 group"
                             :class="{'bg-club-blue text-white hover:bg-club-blue-light': open}">
@@ -41,8 +41,8 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </button>
-                        <div 
-                            x-show="open" 
+                        <div
+                            x-show="open"
                             x-transition:enter="transition ease-out duration-200"
                             x-transition:enter-start="opacity-0 scale-95"
                             x-transition:enter-end="opacity-100 scale-100"
@@ -65,7 +65,7 @@
                                 @if(isset($newContactsCount) && $newContactsCount > 0)
                                     <span class="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full">{{ $newContactsCount }}</span>
                                 @endif
-                            </a>    
+                            </a>
                             @endif
                             <a href="{{ route('users.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-indigo-300 dark:hover:bg-gray-700 hover:text-club-blue transition-colors duration-200" wire:navigate>
                                 <svg class="w-4 h-4 mr-3 stroke-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -93,8 +93,8 @@
                     <!-- Groupe Infrastructure -->
                     @if(Auth()->user()->is_admin || Auth()->user()->is_committee_member)
                     <div class="relative" x-data="{ open: false }">
-                        <button 
-                            @click="open = !open" 
+                        <button
+                            @click="open = !open"
                             @click.away="open = false"
                             class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-club-blue dark:hover:text-gray-200 hover:bg-indigo-300 dark:hover:bg-gray-700 rounded-lg transition-all duration-200"
                             :class="{'bg-club-blue text-white hover:bg-club-blue-light': open}">
@@ -106,8 +106,8 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </button>
-                        <div 
-                            x-show="open" 
+                        <div
+                            x-show="open"
                             x-transition:enter="transition ease-out duration-200"
                             x-transition:enter-start="opacity-0 scale-95"
                             x-transition:enter-end="opacity-100 scale-100"
@@ -133,8 +133,8 @@
 
                     <!-- Groupe Activités -->
                     <div class="relative" x-data="{ open: false }">
-                        <button 
-                            @click="open = !open" 
+                        <button
+                            @click="open = !open"
                             @click.away="open = false"
                             class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-club-blue dark:hover:text-gray-200 hover:bg-indigo-300 dark:hover:bg-gray-700 rounded-lg transition-all duration-200"
                             :class="{'bg-club-blue text-white hover:bg-club-blue-light': open}">
@@ -146,8 +146,8 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                             </svg>
                         </button>
-                        <div 
-                            x-show="open" 
+                        <div
+                            x-show="open"
                             x-transition:enter="transition ease-out duration-200"
                             x-transition:enter-start="opacity-0 scale-95"
                             x-transition:enter-end="opacity-100 scale-100"
@@ -180,7 +180,7 @@
                                 {{ __('Tournaments') }}
                             </a>
                         </div>
-                    </div>                    
+                    </div>
                 </div>
             </div>
 

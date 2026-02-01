@@ -669,5 +669,6 @@
     "Please specify the registration price (0 if free).": "Veuillez spécifier le prix d'inscription (0 si gratuit).",
     "Please select a tournament status.": "Veuillez sélectionner un statut de tournoi.",
     "Home": "Domicile",
-    "Away": "Extérieur"
+    "Away": "Extérieur",
+    "Back to homepage": "Retour à l'accueil"
 }

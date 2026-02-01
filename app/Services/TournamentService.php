@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Events\Tournament\UserRegisteredToTournament;
-use App\Models\Tournament;
-use App\Models\User;
+use App\Models\ClubAdmin\Users\User;
+use App\Models\ClubEvents\Tournament\Tournament;
 use Event;
 use LogicException;
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
-use App\Models\Spam;
+use App\Models\ClubAdmin\Contact\Spam;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;

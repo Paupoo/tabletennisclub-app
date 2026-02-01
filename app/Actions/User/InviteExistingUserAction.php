@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\User;
 
 use App\Mail\InviteNewUserMail;
-use App\Models\User;
+use App\Models\ClubAdmin\Users\User;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 

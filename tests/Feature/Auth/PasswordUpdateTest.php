@@ -1,7 +1,8 @@
 <?php
 
 declare(strict_types=1);
-use App\Models\User;
+
+use App\Models\ClubAdmin\Users\User;
 use Illuminate\Support\Facades\Hash;
 
 test('correct password must be provided to update password', function (): void {

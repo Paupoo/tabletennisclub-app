@@ -1,7 +1,8 @@
 <?php
 
 declare(strict_types=1);
-use App\Models\User;
+
+use App\Models\ClubAdmin\Users\User;
 
 test('correct password must be provided to delete account', function (): void {
     $user = User::factory()->create();

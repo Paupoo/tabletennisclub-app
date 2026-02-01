@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace App\Livewire\Admin\Users;
 
-use App\Models\User;
+use App\Models\ClubAdmin\Users\User;
 use App\Services\ForceList;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Database\QueryException;
 use Livewire\Attributes\Url;
 use Livewire\Component;
-use Livewire\WithPagination; // Ajout pour les URLs
+use Livewire\WithPagination;
+
+// Ajout pour les URLs
 
 class UsersTable extends Component
 {
@@ -25,10 +27,6 @@ class UsersTable extends Component
 
     #[Url(as: 'search')]
     public string $search = '';
-
-    public bool $selectAll = false;
-
-    public array $selectedItems = [];
 
     public ?int $selectedUserId = null;
 
@@ -141,7 +139,6 @@ class UsersTable extends Component
             session()->flash('warning', __('User ' . $user->first_name . ' ' . $user->last_name . ' has been deleted'));
 
             return redirect()->route('users.index');
-
         } catch (QueryException $e) {
             session()->flash('error', __('The user could not be deleted'));
 
@@ -283,5 +280,32 @@ class UsersTable extends Component
     {
         $this->selectedItems = [];
         $this->selectAll = false;
+    }
+
+    // Réinitialiser la pagination quand on change le nombre par page
+    public function updatedPerPage(): void
+    {
+        $this->resetPage();
+    }
+
+    // Méthodes pour réinitialiser la pagination lors des changements de filtres
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedCompetitor(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedSex(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedStatus(): void
+    {
+        $this->resetPage();
     }
 }

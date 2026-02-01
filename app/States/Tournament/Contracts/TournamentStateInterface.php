@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\States\Tournament\Contracts;
 
 use App\Enums\TournamentStatusEnum;
-use App\Models\Tournament;
+use App\Models\ClubEvents\Tournament\Tournament;
 
 /**
  * Interface commune pour tous les états du tournoi

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Admin\Contacts;
 
-use App\Models\Contact;
+use App\Models\ClubAdmin\Contact\Contact;
 use Illuminate\Contracts\Database\Query\Builder;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -66,5 +66,17 @@ class Index extends Component
         }
 
         $this->sortByField = $field;
+    }
+
+    public function deleteContact()
+    {
+
+        $this->authorize('delete', Auth()->user());
+
+        $article = Contact::find($this->selectedContactId);
+        $article->delete();
+
+        session()->flash('success', __('The contact has been deleted.'));
+        return $this->redirectRoute('admin.contacts.index');
     }
 }

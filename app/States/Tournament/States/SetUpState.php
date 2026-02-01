@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\States\Tournament\States;
 
 use App\Enums\TournamentStatusEnum;
-use App\Models\Tournament;
+use App\Models\ClubEvents\Tournament\Tournament;
 use App\States\Tournament\AbstractTournamentState;
 use InvalidArgumentException;
 

@@ -1,9 +1,9 @@
 @props([
     'breadcrumbs' => [],
-    'newContactsCount' => \App\Models\Contact::where('status', 'new')->count(),
+    'newContactsCount' => \App\Models\ClubAdmin\Contact\Contact::where('status', 'new')->count(),
 ])
 
-<!DOCTYPE html>
+    <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
 <head>
@@ -19,18 +19,18 @@
 </head>
 
 <body class="font-sans antialiased">
-    <div class="min-h-screen bg-gray-100 dark:bg-gray-900 pb-6">
-        @include('layouts.navigation')
+<div class="min-h-screen bg-gray-100 dark:bg-gray-900 pb-6">
+    @include('layouts.navigation')
 
-        <x-header :breadcrumbs="$breadcrumbs" />
+    <x-header :breadcrumbs="$breadcrumbs"/>
 
-        <!-- Page Content -->
-        <main>
-            {{ $slot }}
-        </main>
-    </div>
-    <x-growler />
-    @livewireScripts
+    <!-- Page Content -->
+    <main>
+        {{ $slot }}
+    </main>
+</div>
+<x-growler/>
+@livewireScripts
 </body>
 
 </html>

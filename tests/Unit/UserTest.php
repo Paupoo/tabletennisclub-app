@@ -1,7 +1,8 @@
 <?php
 
 declare(strict_types=1);
-use App\Models\User;
+
+use App\Models\ClubAdmin\Users\User;
 use Carbon\Carbon;
 
 test('method set age', function (): void {

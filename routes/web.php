@@ -11,38 +11,31 @@ use App\Actions\Subscriptions\SubscribeToSeasonController;
 use App\Actions\Subscriptions\UnconfirmSubscriptionAction;
 use App\Actions\User\CreateNewUserAction;
 use App\Actions\User\InviteExistingUserAction;
-use App\Http\Controllers\ArticleController;
-use App\Http\Controllers\ContactAdminController;
-use App\Http\Controllers\ContactController;
-use App\Http\Controllers\EventController;
+use App\Http\Controllers\ClubAdmin\Club\RoomController;
+use App\Http\Controllers\ClubAdmin\Club\TableController;
+use App\Http\Controllers\ClubAdmin\Contact\ContactAdminController;
+use App\Http\Controllers\ClubAdmin\Contact\ContactController;
+use App\Http\Controllers\ClubAdmin\Contact\InvitationController;
+use App\Http\Controllers\ClubAdmin\Contact\SpamController;
+use App\Http\Controllers\ClubAdmin\Users\ProfileController;
+use App\Http\Controllers\ClubAdmin\Users\UserController;
+use App\Http\Controllers\ClubEvents\Interclub\InterclubController;
+use App\Http\Controllers\ClubEvents\Interclub\ResultsController;
+use App\Http\Controllers\ClubEvents\Interclub\TeamController;
+use App\Http\Controllers\ClubEvents\Tournament\ChangeTournamentStatusController;
+use App\Http\Controllers\ClubEvents\Tournament\KnockoutPhaseController;
+use App\Http\Controllers\ClubEvents\Tournament\ToggleHasPaidController;
+use App\Http\Controllers\ClubEvents\Tournament\TournamentController;
+use App\Http\Controllers\ClubEvents\Training\TrainingController;
+use App\Http\Controllers\ClubPosts\AdminNewsPostController;
+use App\Http\Controllers\ClubPosts\PublicNewsPostController;
+use App\Http\Controllers\ClubPosts\PublicEventPostController;
 use App\Http\Controllers\HomeController;
-use App\Http\Controllers\InterclubController;
-use App\Http\Controllers\InvitationController;
-use App\Http\Controllers\KnockoutPhaseController;
-use App\Http\Controllers\PaymentController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\PublicArticlesController;
-use App\Http\Controllers\RegistrationController;
-use App\Http\Controllers\ResultsController;
-use App\Http\Controllers\RoleController;
-use App\Http\Controllers\RoomController;
-use App\Http\Controllers\SeasonController;
-use App\Http\Controllers\SpamController;
-use App\Http\Controllers\SubscriptionController;
-use App\Http\Controllers\TableController;
-use App\Http\Controllers\TeamController;
-use App\Http\Controllers\Tournament\ChangeTournamentStatusController;
-use App\Http\Controllers\Tournament\ToggleHasPaidController;
-use App\Http\Controllers\TournamentController;
-use App\Http\Controllers\TrainingController;
-use App\Http\Controllers\TrainingPackController;
-use App\Http\Controllers\TransactionController;
-use App\Http\Controllers\UserController;
 use App\Http\Middleware\ProtectAgainstSpam;
-use App\Models\Room;
-use App\Models\Team;
-use App\Models\Training;
-use App\Models\User;
+use App\Models\ClubAdmin\Club\Room;
+use App\Models\ClubAdmin\Users\User;
+use App\Models\ClubEvents\Interclub\Team;
+use App\Models\ClubEvents\Training\Training;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -61,7 +54,7 @@ Route::get('/', [HomeController::class, 'index'])
     ->name('home');
 Route::get('/results', [ResultsController::class, 'index'])
     ->name('results');
-Route::get('/events', [EventController::class, 'index'])
+Route::get('/events', [PublicEventPostController::class, 'index'])
     ->name('events');
 Route::post('/contact', [ContactController::class, 'store'])
     ->middleware(ProtectAgainstSpam::class)
@@ -87,10 +80,6 @@ Route::get('/admin/dashboard', function () {
     ]);
 })->middleware(['auth', 'verified'])
     ->name('dashboard');
-/**
- * Roles management
- */
-Route::resource('admin/roles', RoleController::class)->middleware(['auth', 'verified']);
 
 /**
  * Rooms management
@@ -100,8 +89,8 @@ Route::resource('/admin/rooms', RoomController::class)->middleware(['auth', 'ver
 /**
  * Articles management
  */
-Route::get('/articles', [PublicArticlesController::class, 'index'])->name('public.articles.index');
-Route::get('/articles/{slug}', [PublicArticlesController::class, 'show'])->name('public.articles.show');
+Route::get('/articles', [PublicNewsPostController::class, 'index'])->name('public.articles.index');
+Route::get('/articles/{slug}', [PublicNewsPostController::class, 'show'])->name('public.articles.show');
 
 /**
  * This route is used to manage articles in the admin panel.
@@ -110,10 +99,10 @@ Route::get('/articles/{slug}', [PublicArticlesController::class, 'show'])->name(
  * This route is protected by authentication and verification middleware.
  */
 Route::prefix('admin')->middleware('auth')->group(function (): void {
-    Route::resource('articles', ArticleController::class)->names('admin.articles');
-    Route::patch('articles/{article}/publish', [ArticleController::class, 'publish'])->name('admin.articles.publish');
-    Route::patch('articles/{article}/archive', [ArticleController::class, 'archive'])->name('admin.articles.archive');
-    Route::post('articles/{article}/duplicate', [ArticleController::class, 'duplicate'])->name('admin.articles.duplicate');
+    Route::resource('articles', AdminNewsPostController::class)->names('admin.articles');
+    Route::patch('articles/{article}/publish', [AdminNewsPostController::class, 'publish'])->name('admin.articles.publish');
+    Route::patch('articles/{article}/archive', [AdminNewsPostController::class, 'archive'])->name('admin.articles.archive');
+    Route::post('articles/{article}/duplicate', [AdminNewsPostController::class, 'duplicate'])->name('admin.articles.duplicate');
 });
 
 /**
@@ -308,14 +297,14 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
 
     Route::prefix('admin')->name('admin.')->group(function (): void {
         // Routes événements
-        Route::resource('events', App\Http\Controllers\Admin\EventController::class);
+        Route::resource('events', \App\Http\Controllers\ClubPosts\AdminEventPostController::class);
 
         // Actions spéciales pour les événements
-        Route::patch('events/{event}/publish', [App\Http\Controllers\Admin\EventController::class, 'publish'])
+        Route::patch('events/{event}/publish', [\App\Http\Controllers\ClubPosts\AdminEventPostController::class, 'publish'])
             ->name('events.publish');
-        Route::patch('events/{event}/archive', [App\Http\Controllers\Admin\EventController::class, 'archive'])
+        Route::patch('events/{event}/archive', [\App\Http\Controllers\ClubPosts\AdminEventPostController::class, 'archive'])
             ->name('events.archive');
-        Route::post('events/{event}/duplicate', [App\Http\Controllers\Admin\EventController::class, 'duplicate'])
+        Route::post('events/{event}/duplicate', [\App\Http\Controllers\ClubPosts\AdminEventPostController::class, 'duplicate'])
             ->name('events.duplicate');
     });
 });

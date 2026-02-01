@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
-use App\Models\Table;
-use App\Models\User;
+use App\Models\ClubAdmin\Club\Table;
+use App\Models\ClubAdmin\Users\User;
 
 class TablePolicy
 {

@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace App\Actions\Subscriptions;
+namespace App\Actions\ClubAdmin\Subscriptions;
 
-use App\Models\Subscription;
+use App\Models\ClubAdmin\Subscription\Subscription;
 use Illuminate\Http\RedirectResponse;
 
-class MarkPaidSubscriptionAction
+class MarkRefundSubscriptionAction
 {
     public function __invoke(Subscription $subscription): RedirectResponse
     {
         try {
-            $subscription->markAsPaid();
+            $subscription->refund();
         } catch (\Throwable $th) {
             return back()
                 ->withErrors(['error' => $th->getMessage()]);
@@ -22,7 +22,7 @@ class MarkPaidSubscriptionAction
 
         return back()
             ->with([
-                'success' => __('The subscription has been marked as paid'),
+                'success' => __('The subscription has been marked as refunded.'),
             ]);
     }
 }

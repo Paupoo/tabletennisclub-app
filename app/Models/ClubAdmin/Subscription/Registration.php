@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Models;
+namespace App\Models\ClubAdmin\Subscription;
 
 use App\Contracts\PayableInterface;
+use App\Models\ClubAdmin\Payment\Payment;
 use Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -19,8 +20,8 @@ class Registration extends Model implements PayableInterface
     public function amountDue(): Attribute
     {
         return Attribute::make(
-            get: fn (string $value): float => round($value / 100, 2),
-            set: fn (string $value): int => $value * 100,
+            get: fn(string $value): float => round($value / 100, 2),
+            set: fn(string $value): int => $value * 100,
         );
     }
 

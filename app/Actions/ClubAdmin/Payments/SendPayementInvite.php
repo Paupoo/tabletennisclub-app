@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Actions\Payments;
+namespace App\Actions\ClubAdmin\Payments;
 
 use App\Mail\PaymentInvitationEmail;
-use App\Models\Payment;
+use App\Models\ClubAdmin\Payment\Payment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Mail;
 

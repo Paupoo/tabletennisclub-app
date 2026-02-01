@@ -1,9 +1,11 @@
 <?php
 
-namespace App\Actions\Subscriptions;
+namespace App\Actions\ClubAdmin\Subscriptions;
 
-use App\Models\Subscription;
+use App\Models\ClubAdmin\Subscription\Subscription;
 use Exception;
+
+use function App\Actions\Subscriptions\__;
 
 class SyncTrainingPack
 {

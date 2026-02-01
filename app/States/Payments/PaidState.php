@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\States\Payments;
 
-use const App\States\Tournament\Payments\paid;
-
 use App\Contracts\SubscriptionState;
-use App\Models\Subscription;
+use App\Models\ClubAdmin\Subscription\Subscription;
+
+use const App\States\Tournament\Payments\paid;
 
 class PaidState implements SubscriptionState
 {

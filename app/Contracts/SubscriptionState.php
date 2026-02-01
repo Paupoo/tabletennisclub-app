@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Contracts;
 
-use App\Models\Subscription;
+use App\Models\ClubAdmin\Subscription\Subscription;
 
 interface SubscriptionState
 {

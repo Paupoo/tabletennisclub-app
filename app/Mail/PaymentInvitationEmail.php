@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Mail;
 
-use App\Actions\Payments\GeneratePaymentQR;
-use App\Models\Payment;
+use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
+use App\Models\ClubAdmin\Payment\Payment;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;

@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-
 use App\Enums\Sex;
+use App\Models\ClubAdmin\Subscription\Subscription;
 use Carbon\Carbon;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Contracts\Database\Query\Builder;

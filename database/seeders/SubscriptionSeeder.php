@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Models\ClubAdmin\Subscription\Subscription;
 use App\Models\Season;
-use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 

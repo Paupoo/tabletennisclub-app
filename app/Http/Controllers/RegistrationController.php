@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Models\Registration;
+use App\Models\ClubAdmin\Subscription\Registration;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 

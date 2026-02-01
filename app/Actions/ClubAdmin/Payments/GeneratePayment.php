@@ -2,12 +2,15 @@
 
 declare(strict_types=1);
 
-namespace App\Actions\Payments;
+namespace App\Actions\ClubAdmin\Payments;
 
-use App\Models\Payment;
-use App\Models\Subscription;
+use App\Actions\ClubAdmin\Payments\GeneratePaymentReference;
+use App\Models\ClubAdmin\Payment\Payment;
+use App\Models\ClubAdmin\Subscription\Subscription;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
+
+use function App\Actions\Payments\__;
 
 class GeneratePayment
 {

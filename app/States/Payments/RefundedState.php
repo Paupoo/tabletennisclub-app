@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\States\Payments;
 
 use App\Contracts\SubscriptionState;
-use App\Models\Subscription;
+use App\Models\ClubAdmin\Subscription\Subscription;
 
 class RefundedState implements SubscriptionState
 {

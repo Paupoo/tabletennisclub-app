@@ -2,10 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\Models;
+namespace App\Models\ClubAdmin\Subscription;
 
 use App\Contracts\PayableInterface;
 use App\Contracts\SubscriptionState;
+use App\Models\ClubAdmin\Payment\Payment;
+use App\Models\Season;
+use App\Models\TrainingPack;
+use App\Models\User;
 use App\States\Payments\CancelledState;
 use App\States\Payments\PaidState;
 use App\States\Payments\PendingState;
@@ -18,6 +22,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+
+use const App\Models\ClubAdmin\Subscriptions\Accessors;
+use const App\Models\ClubAdmin\Subscriptions\payées;
 
 class Subscription extends Model implements PayableInterface
 {
@@ -206,33 +213,32 @@ class Subscription extends Model implements PayableInterface
     protected function amountDue(): Attribute
     {
         return Attribute::make(
-            get: fn (?int $value): float => round(($value ?? 0) / 100, 2),
-            set: fn (int|float $value): int => (int) ($value * 100),
+            get: fn(?int $value): float => round(($value ?? 0) / 100, 2),
+            set: fn(int|float $value): int => (int) ($value * 100),
         );
     }
 
     protected function amountPaid(): Attribute
     {
         return Attribute::make(
-            get: fn (?int $value): float => round(($value ?? 0) / 100, 2),
-            set: fn (int|float $value): int => (int) ($value * 100),
+            get: fn(?int $value): float => round(($value ?? 0) / 100, 2),
+            set: fn(int|float $value): int => (int) ($value * 100),
         );
-
     }
 
     public function subscriptionPrice(): Attribute
     {
         return Attribute::make(
-            get: fn (?int $value): float => round(($value ?? 0) / 100, 2),
-            set: fn (int|float $value): int => (int) $value * 100,
+            get: fn(?int $value): float => round(($value ?? 0) / 100, 2),
+            set: fn(int|float $value): int => (int) $value * 100,
         );
     }
 
     protected function trainingUnitPrice(): Attribute
     {
         return Attribute::make(
-            get: fn (?int $value): float => round(($value ?? 0) / 100, 2),
-            set: fn (float|int $value): int => (int) ($value * 100),
+            get: fn(?int $value): float => round(($value ?? 0) / 100, 2),
+            set: fn(float|int $value): int => (int) ($value * 100),
         );
     }
 

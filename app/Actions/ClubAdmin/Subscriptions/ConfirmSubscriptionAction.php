@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Actions\Subscriptions;
+namespace App\Actions\ClubAdmin\Subscriptions;
 
-use App\Models\Subscription;
+use App\Models\ClubAdmin\Subscription\Subscription;
 use Illuminate\Http\RedirectResponse;
 
 class ConfirmSubscriptionAction

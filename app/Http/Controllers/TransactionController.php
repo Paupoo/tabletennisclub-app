@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Models\Payment;
-use App\Models\Subscription;
-use App\Models\Transaction;
+use App\Models\ClubAdmin\Payment\Payment;
+use App\Models\ClubAdmin\Payment\Transaction;
+use App\Models\ClubAdmin\Subscription\Subscription;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;

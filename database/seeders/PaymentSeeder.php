@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Models\Payment;
-use App\Models\Subscription;
+use App\Models\ClubAdmin\Payment\Payment;
+use App\Models\ClubAdmin\Subscription\Subscription;
 use Illuminate\Database\Seeder;
 
 class PaymentSeeder extends Seeder

@@ -2,13 +2,18 @@
 
 declare(strict_types=1);
 
-namespace App\Actions\Payments;
+namespace App\Actions\ClubAdmin\Payments;
 
-use App\Models\Payment;
+use App\Models\ClubAdmin\Payment\Payment;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Encoding\Encoding;
 use Endroid\QrCode\ErrorCorrectionLevel;
 use Endroid\QrCode\Writer\PngWriter;
+
+use const App\Actions\Payments\bancontact_qr;
+use const App\Actions\Payments\base64;
+use const App\Actions\Payments\image;
+use const App\Actions\Payments\png;
 
 class GeneratePaymentQR
 {

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Actions\Payments;
+namespace App\Actions\ClubAdmin\Payments;
 
-use App\Models\Payment;
+use App\Models\ClubAdmin\Payment\Payment;
 use Carbon\Carbon;
 
 class GeneratePaymentReference

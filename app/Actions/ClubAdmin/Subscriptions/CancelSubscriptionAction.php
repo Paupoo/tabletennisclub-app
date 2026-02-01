@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace App\Actions\Subscriptions;
+namespace App\Actions\ClubAdmin\Subscriptions;
 
-use App\Models\Subscription;
+use App\Models\ClubAdmin\Subscription\Subscription;
 use Illuminate\Http\RedirectResponse;
 
-class UnconfirmSubscriptionAction
+class CancelSubscriptionAction
 {
     public function __invoke(Subscription $subscription): RedirectResponse
     {
         try {
-            $subscription->unconfirm();
+            $subscription->cancel();
         } catch (\Throwable $th) {
             return back()
                 ->withErrors(['error' => $th->getMessage()]);
@@ -22,7 +22,7 @@ class UnconfirmSubscriptionAction
 
         return back()
             ->with([
-                'success' => __('The subscription has been set to pending'),
+                'success' => __('The subscription has been cancelled'),
             ]);
     }
 }

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Actions\Subscriptions;
+namespace App\Actions\ClubAdmin\Subscriptions;
 
 use App\Http\Controllers\Controller;
 use App\Models\Season;

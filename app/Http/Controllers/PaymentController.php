@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Actions\Payments\SendPayementInvite;
-use App\Models\Payment;
+use App\Actions\ClubAdmin\Payments\SendPayementInvite;
+use App\Models\ClubAdmin\Payment\Payment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;

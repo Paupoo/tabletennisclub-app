@@ -624,10 +624,11 @@
                                                         {{ __('Cancel') }}
                                                     </x-secondary-button>
 
-                                                    <x-secondary-button type="submit" :disabled="licenceType === ''"
+                                                    <x-primary-button type="submit"
+                                                        x-bind:disabled="licenceType === ''"
                                                         class="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg font-medium transition text-sm">
                                                         {{ __('Confirm') }}
-                                                    </x-secondary-button>
+                                                    </x-primary-button>
                                                 </div>
                                             </form>
                                         </div>

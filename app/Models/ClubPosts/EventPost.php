@@ -40,6 +40,12 @@ class EventPost extends Model
         'featured',
     ];
 
+    public const ICONS = [
+        'club-life' => '🎉',
+        'tournament' => '🏆',
+        'training' => '🎯',
+    ];
+
     /**
      * Relation polymorphique vers Training, Interclub ou Tournament
      */

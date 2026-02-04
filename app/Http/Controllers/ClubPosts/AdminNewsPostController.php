@@ -335,7 +335,8 @@ class AdminNewsPostController extends Controller
     {
         $stats = [
             'total' => NewsPost::count(),
-            'published' => NewsPost::where('status', ArticlesStatusEnum::PUBLISHED)->count(),            'draft' => NewsPost::where('status', ArticlesStatusEnum::DRAFT)->count(),
+            'published' => NewsPost::where('status', ArticlesStatusEnum::PUBLISHED)->count(),
+            'draft' => NewsPost::where('status', ArticlesStatusEnum::DRAFT)->count(),
             'archived' => NewsPost::where('status', ArticlesStatusEnum::ARCHIVED)->count(),
             'public' => NewsPost::where('is_public', true)->count(),
             'private' => NewsPost::where('is_public', false)->count(),
@@ -366,7 +367,7 @@ class AdminNewsPostController extends Controller
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'slug' => 'required|string|max:255|unique:articles,slug',
+            'slug' => 'required|string|max:255|unique:news_posts,slug',
             'content' => 'required|string',
             'category' => ['required', Rule::enum(ArticlesCategoryEnum::class)],
             'status' => ['required', Rule::enum(ArticlesStatusEnum::class)],

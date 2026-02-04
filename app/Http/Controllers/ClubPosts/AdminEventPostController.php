@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\ClubPosts;
 
+use App\Enums\EventStatusEnum;
 use App\Http\Controllers\Controller;
 use App\Models\ClubPosts\EventPost;
 use App\Support\Breadcrumb;
@@ -75,12 +76,11 @@ class AdminEventPostController extends Controller
 
     public function index(Request $request): View
     {
-        // Statistiques rapides
         $stats = collect([
-            'totalDrafts' => EventPost::where('status', 'draft')->count(),
-            'totalPublished' => EventPost::where('status', 'published')->count(),
-            'totalArchived' => EventPost::where('status', 'archived')->count(),
-            'totalUpcoming' => EventPost::published()->upcoming()->count(),
+            'drafts' => EventPost::where('status', EventStatusEnum::DRAFT)->count(),
+            'published' => EventPost::where('status', EventStatusEnum::PUBLISHED)->count(),
+            'archived' => EventPost::where('status', EventStatusEnum::ARCHIVED)->count(),
+            'upcoming' => EventPost::where('start_time', '>=', today())->count(),
         ]);
 
         // Requête de base avec filtres

@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\Season;
-use App\Models\User;
+use App\Models\ClubEvents\Interclub\Season;
+use App\Models\ClubAdmin\Users\User;
 use Illuminate\Auth\Access\Response;
 
 class SeasonPolicy

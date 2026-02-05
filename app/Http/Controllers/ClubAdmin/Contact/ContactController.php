@@ -7,7 +7,6 @@ namespace App\Http\Controllers\ClubAdmin\Contact;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreContactRequest;
 use App\Mail\ContactFormConfirmationEmail;
-use App\Mail\ContactFormConfirmationEmail;
 use App\Mail\ContactFormNotificationEmail;
 use App\Models\ClubAdmin\Contact\Contact;
 use Illuminate\Support\Facades\Log;

@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace App\Http\Controllers\ClubPosts;
 
 use App\Enums\EventStatusEnum;
+use App\Enums\EventTypeEnum;
 use App\Http\Controllers\Controller;
 use App\Models\ClubPosts\EventPost;
 use App\Support\Breadcrumb;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class AdminEventPostController extends Controller
@@ -177,8 +179,8 @@ class AdminEventPostController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
-            'category' => 'required|in:' . implode(',', array_keys(EventPost::CATEGORIES)),
-            'status' => 'required|in:' . implode(',', array_keys(EventPost::STATUSES)),
+            'type' => ['required', Rule::enum(EventTypeEnum::class)],
+            'status' => ['required', Rule::enum(EventStatusEnum::class)],
             'event_date' => 'required|date',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'nullable|date_format:H:i|after:start_time',

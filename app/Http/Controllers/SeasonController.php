@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Models\Season;
-use App\Models\User;
+use App\Models\ClubEvents\Interclub\Season;
+use App\Models\ClubAdmin\Users\User;
 use App\Support\Breadcrumb;
 use Illuminate\Http\Request;
 use Illuminate\View\View;

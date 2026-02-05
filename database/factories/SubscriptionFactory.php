@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Models\Season;
-use App\Models\User;
+use App\Models\ClubEvents\Interclub\Season;
+use App\Models\ClubAdmin\Users\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

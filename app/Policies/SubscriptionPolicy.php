@@ -3,7 +3,7 @@
 namespace App\Policies;
 
 use App\Models\ClubAdmin\Subscription\Subscription;
-use App\Models\User;
+use App\Models\ClubAdmin\Users\User;
 use Illuminate\Auth\Access\Response;
 
 class SubscriptionPolicy

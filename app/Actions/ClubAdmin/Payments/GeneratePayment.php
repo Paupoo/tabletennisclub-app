@@ -10,8 +10,6 @@ use App\Models\ClubAdmin\Subscription\Subscription;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 
-use function App\Actions\Payments\__;
-
 class GeneratePayment
 {
     /**
@@ -21,7 +19,7 @@ class GeneratePayment
     {
         Gate::authorize('generatePayment', $subscription);
 
-        if(! $subscription->canGeneratePayment($subscription)) {
+        if (! $subscription->canGeneratePayment($subscription)) {
             return back()
                 ->withErrors(__('Cannot generate payment for current subscription state.'));
         }

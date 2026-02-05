@@ -8,18 +8,11 @@ use App\Actions\ClubAdmin\Payments\GeneratePayment;
 use App\Http\Controllers\Controller;
 use App\Models\ClubAdmin\Payment\Payment;
 use App\Models\ClubAdmin\Subscription\Subscription;
-use App\Models\Season;
-use App\Models\User;
+use App\Models\ClubEvents\Interclub\Season;
+use App\Models\ClubAdmin\Users\User;
 use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-
-use function App\Actions\Subscriptions\__;
-
-use const App\Actions\Subscriptions\competitive;
-use const App\Actions\Subscriptions\Removed;
-use const App\Actions\Subscriptions\required;
-use const App\Actions\Subscriptions\users;
 
 class SubscribeToSeasonController extends Controller
 {

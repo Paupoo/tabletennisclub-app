@@ -7,9 +7,9 @@ namespace App\Models\ClubAdmin\Subscription;
 use App\Contracts\PayableInterface;
 use App\Contracts\SubscriptionState;
 use App\Models\ClubAdmin\Payment\Payment;
-use App\Models\Season;
+use App\Models\ClubEvents\Interclub\Season;
 use App\Models\TrainingPack;
-use App\Models\User;
+use App\Models\ClubAdmin\Users\User;
 use App\States\Payments\CancelledState;
 use App\States\Payments\PaidState;
 use App\States\Payments\PendingState;
@@ -22,9 +22,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-
-use const App\Models\ClubAdmin\Subscriptions\Accessors;
-use const App\Models\ClubAdmin\Subscriptions\payées;
 
 class Subscription extends Model implements PayableInterface
 {

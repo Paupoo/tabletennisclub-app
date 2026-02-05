@@ -437,7 +437,7 @@ class AdminNewsPostController extends Controller
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'slug' => ['required', 'string', 'max:255', Rule::unique('articles', 'slug')->ignore($article->id)],
+            'slug' => ['required', 'string', 'max:255', Rule::unique('news_posts', 'slug')->ignore($article->id)],
             'content' => 'required|string',
             'category' => ['required', Rule::enum(ArticlesCategoryEnum::class)],
             'status' => ['required', Rule::enum(ArticlesStatusEnum::class)],

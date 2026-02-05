@@ -2,10 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Livewire\Admin\Articles;
+namespace App\Livewire\Admin\NewsPosts;
 
 use App\Models\ClubPosts\NewsPost;
 use Livewire\Component;
+
+use const App\Livewire\Admin\Articles\admin;
+use const App\Livewire\Admin\Articles\articles;
 
 class Create extends Component
 {

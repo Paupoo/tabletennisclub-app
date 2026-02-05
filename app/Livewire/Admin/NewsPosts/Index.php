@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Livewire\Admin\Articles;
+namespace App\Livewire\Admin\NewsPosts;
 
 use App\Models\ClubPosts\NewsPost;
 use App\Support\Breadcrumb;
@@ -35,7 +35,7 @@ class Index extends Component
 
         $this->authorize('delete', Auth()->user());
 
-        $article = Article::find($this->selectedArticleId);
+        $article = NewsPost::find($this->selectedArticleId);
         $article->delete();
 
         session()->flash('success', __('The article ' . $article->title . ' has been deleted.'));
@@ -74,7 +74,7 @@ class Index extends Component
             'totalPrivate' => 0,
         ]);
 
-        return view('livewire.admin.articles.index', compact('articles', 'breadcrumbs', 'stats'));
+        return view('livewire.admin.news-posts.index', compact('articles', 'breadcrumbs', 'stats'));
     }
 
     public function sortBy(string $field): void

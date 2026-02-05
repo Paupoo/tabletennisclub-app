@@ -7,11 +7,12 @@
                     <h2 class="text-xl sm:text-2xl font-bold text-club-blue mb-2">{{ __('Articles management') }}</h2>
                     <p class="text-gray-600 text-sm sm:text-base">{{ __('Manage all your articles here.') }}</p>
                 </div>
-                
+
                 <!-- Statistiques rapides -->
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
                     <div class="bg-green-50 rounded-lg p-3 text-center border border-green-200">
-                        <div class="text-lg sm:text-xl font-bold text-green-600">{{ $stats->get('totalPublished') }}</div>
+                        <div class="text-lg sm:text-xl font-bold text-green-600">{{ $stats->get('totalPublished') }}
+                        </div>
                         <div class="text-xs text-green-700">Publiés</div>
                     </div>
                     <div class="bg-yellow-50 rounded-lg p-3 text-center border border-yellow-200">
@@ -23,7 +24,8 @@
                         <div class="text-xs text-blue-700">Publics</div>
                     </div>
                     <div class="bg-purple-50 rounded-lg p-3 text-center border border-purple-200">
-                        <div class="text-lg sm:text-xl font-bold text-purple-600">{{ $stats->get('totalPrivate') }}</div>
+                        <div class="text-lg sm:text-xl font-bold text-purple-600">{{ $stats->get('totalPrivate') }}
+                        </div>
                         <div class="text-xs text-purple-700">Privés</div>
                     </div>
                 </div>
@@ -31,8 +33,8 @@
 
             <!-- Bouton d'ajout -->
             <div class="flex justify-start">
-                <a href="{{ route('admin.articles.create') }}" 
-                   class="bg-club-blue hover:bg-club-blue-light text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base inline-flex items-center">
+                <a href="{{ route('admin.articles.create') }}"
+                    class="bg-club-blue hover:bg-club-blue-light text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base inline-flex items-center">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                     </svg>
@@ -41,7 +43,7 @@
             </div>
         </div>
 
-        <livewire:admin.articles.index />
+        <livewire:admin.news-posts.index />
 
 
     </x-admin-block>

@@ -13,7 +13,7 @@
 
                     <!-- Menu d'actions optimisé -->
                     <div class="flex flex-col xs:flex-row space-y-2 xs:space-y-0 xs:space-x-2 lg:space-x-3">
-                        @can('create', App\Models\Season::class)
+                        @can('create', App\Models\ClubEvents\Interclub\Season::class)
                             <a href="{{ route('admin.seasons.create') }}"
                                 class="bg-club-blue hover:bg-club-blue-light text-white px-3 py-1.5 lg:px-4 lg:py-2 rounded-lg font-medium transition-colors text-xs sm:text-sm lg:text-base w-full xs:w-auto text-center flex items-center justify-center">
                                 <svg class="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" fill="none" stroke="currentColor"

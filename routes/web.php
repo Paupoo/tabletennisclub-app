@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-use App\Actions\Payments\GeneratePayment;
-use App\Actions\Subscriptions\CancelSubscriptionAction;
-use App\Actions\Subscriptions\ConfirmSubscriptionAction;
-use App\Actions\Subscriptions\MarkPaidSubscriptionAction;
-use App\Actions\Subscriptions\MarkRefundSubscriptionAction;
-use App\Actions\Subscriptions\SubscribeToSeasonController;
-use App\Actions\Subscriptions\UnconfirmSubscriptionAction;
+use App\Actions\ClubAdmin\Payments\GeneratePayment;
+use App\Actions\ClubAdmin\Subscriptions\CancelSubscriptionAction;
+use App\Actions\ClubAdmin\Subscriptions\ConfirmSubscriptionAction;
+use App\Actions\ClubAdmin\Subscriptions\MarkPaidSubscriptionAction;
+use App\Actions\ClubAdmin\Subscriptions\MarkRefundSubscriptionAction;
+use App\Actions\ClubAdmin\Subscriptions\SubscribeToSeasonController;
+use App\Actions\ClubAdmin\Subscriptions\UnconfirmSubscriptionAction;
 use App\Actions\User\CreateNewUserAction;
 use App\Actions\User\InviteExistingUserAction;
 use App\Http\Controllers\ClubAdmin\Club\RoomController;
@@ -31,6 +31,12 @@ use App\Http\Controllers\ClubPosts\AdminNewsPostController;
 use App\Http\Controllers\ClubPosts\PublicNewsPostController;
 use App\Http\Controllers\ClubPosts\PublicEventPostController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\RegistrationController;
+use App\Http\Controllers\SeasonController;
+use App\Http\Controllers\SubscriptionController;
+use App\Http\Controllers\TrainingPackController;
+use App\Http\Controllers\TransactionController;
 use App\Http\Middleware\ProtectAgainstSpam;
 use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Users\User;

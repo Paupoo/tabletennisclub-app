@@ -365,6 +365,7 @@ class AdminNewsPostController extends Controller
      */
     public function store(Request $request)
     {
+        $this->authorize('create', NewsPost::class);
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'slug' => 'required|string|max:255|unique:news_posts,slug',
@@ -435,6 +436,7 @@ class AdminNewsPostController extends Controller
      */
     public function update(Request $request, NewsPost $article)
     {
+        $this->authorize('update', $article);
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'slug' => ['required', 'string', 'max:255', Rule::unique('news_posts', 'slug')->ignore($article->id)],

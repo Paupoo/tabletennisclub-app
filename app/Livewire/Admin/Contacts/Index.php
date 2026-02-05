@@ -67,16 +67,4 @@ class Index extends Component
 
         $this->sortByField = $field;
     }
-
-    public function deleteContact()
-    {
-
-        $this->authorize('delete', Auth()->user());
-
-        $article = Contact::find($this->selectedContactId);
-        $article->delete();
-
-        session()->flash('success', __('The contact has been deleted.'));
-        return $this->redirectRoute('admin.contacts.index');
-    }
 }

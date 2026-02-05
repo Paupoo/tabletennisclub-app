@@ -57,47 +57,6 @@ class Index extends Component
     }
 
     /**
-     * Construction de la requête avec filtres
-     */
-    private function getSpamsQuery(): Builder
-    {
-        $query = Spam::query()->orderBy('created_at', 'desc');
-
-        // Recherche textuelle
-        if (!empty($this->search)) {
-            $searchTerm = '%' . $this->search . '%';
-            $query->where(function (Builder $q) use ($searchTerm) {
-                $q->where('ip', 'like', $searchTerm)
-                    ->orWhere('user_agent', 'like', $searchTerm)
-                    ->orWhereRaw("JSON_SEARCH(inputs, 'all', ?) IS NOT NULL", [$this->search]);
-            });
-        }
-
-        // Filtres avancés
-        if (!empty($this->filters['period'])) {
-            match ($this->filters['period']) {
-                'today' => $query->whereDate('created_at', today()),
-                'week' => $query->where('created_at', '>=', now()->subWeek()),
-                'month' => $query->where('created_at', '>=', now()->subMonth()),
-                default => null,
-            };
-        }
-
-        if (!empty($this->filters['userAgentType'])) {
-            $query->where('user_agent', 'like', match ($this->filters['userAgentType']) {
-                'bot' => '%bot%',
-                'curl' => '%curl%',
-                'browser' => '%Mozilla%',
-                default => '%',
-            });
-        }
-
-        if (!empty($this->filters['specificIp'])) {
-            $query->where('ip', $this->filters['specificIp']);
-        }
-    }
-
-    /**
      * Calcul des statistiques
      */
     private function getStats(): Collection
@@ -116,15 +75,6 @@ class Index extends Component
      * Mise à jour de la recherche
      */
     public function updatedSearch(): void
-    {
-        $this->resetPage();
-        $this->resetSelection();
-    }
-
-    /**
-     * Mise à jour des filtres
-     */
-    public function updatedFilters(): void
     {
         $this->resetPage();
         $this->resetSelection();
@@ -281,31 +231,6 @@ class Index extends Component
             !empty(array_filter($this->filters));
     }
 
-    public function mount(): void
-    {
-        // Réinitialiser les filtres vides
-        $this->filters = array_filter($this->filters);
-    }
-
-    public function render()
-    {
-        $spamsQuery = $this->getSpamsQuery();
-
-        return view('livewire.admin.spams.index', [
-            'spams' => $spamsQuery->paginate($this->perPage),
-            'stats' => $this->getStats(),
-            'totalResults' => $spamsQuery->count(),
-        ]);
-    }
-
-    /**
-     * Basculer l'affichage des filtres
-     */
-    public function toggleFilters(): void
-    {
-        $this->showFilters = ! $this->showFilters;
-    }
-
     /**
      * Formatage pour l'affichage
      */
@@ -318,15 +243,6 @@ class Index extends Component
      * Mise à jour des filtres
      */
     public function updatedFilters(): void
-    {
-        $this->resetPage();
-        $this->resetSelection();
-    }
-
-    /**
-     * Mise à jour de la recherche
-     */
-    public function updatedSearch(): void
     {
         $this->resetPage();
         $this->resetSelection();
@@ -388,21 +304,6 @@ class Index extends Component
         }
 
         return $query;
-    }
-
-    /**
-     * Calcul des statistiques
-     */
-    private function getStats(): Collection
-    {
-        $baseQuery = Spam::query();
-
-        return collect([
-            'totalSpams' => $baseQuery->count(),
-            'todaySpams' => $baseQuery->whereDate('created_at', today())->count(),
-            'uniqueIps' => $baseQuery->distinct('ip')->count('ip'),
-            'blockedIps' => 0, // À implémenter avec un modèle BlockedIp si nécessaire
-        ]);
     }
 
     /**

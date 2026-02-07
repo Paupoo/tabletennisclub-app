@@ -21,3 +21,5 @@ yarn-error.log
 /.vscode
 laravel
 .env.testing
+_ide_helper*.php
+.phpstorm.meta.php

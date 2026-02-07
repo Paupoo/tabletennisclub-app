@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\ClubEvents\Training;
 
 use App\Models\ClubAdmin\Subscription\Subscription;
 use Illuminate\Database\Eloquent\Casts\Attribute;

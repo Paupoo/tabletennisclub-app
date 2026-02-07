@@ -2,7 +2,7 @@
 
 namespace App\Policies;
 
-use App\Models\TrainingPack;
+use App\Models\ClubEvents\Training\TrainingPack;
 use App\Models\User;
 use Illuminate\Auth\Access\Response;
 

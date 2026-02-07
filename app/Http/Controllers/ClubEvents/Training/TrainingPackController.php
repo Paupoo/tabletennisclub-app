@@ -1,12 +1,15 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\ClubEvents\Training;
 
+use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreTrainingPackRequest;
 use App\Http\Requests\UpdateTrainingPackRequest;
-use App\Models\TrainingPack;
+use App\Models\ClubEvents\Training\TrainingPack;
 use App\Support\Breadcrumb;
 use Illuminate\View\View;
+
+use const App\Http\Controllers\training_packs;
 
 class TrainingPackController extends Controller
 {

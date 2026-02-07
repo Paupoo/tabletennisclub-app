@@ -2,13 +2,16 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\ClubEvents\Interclub;
 
-use App\Models\ClubEvents\Interclub\Season;
+use App\Http\Controllers\Controller;
 use App\Models\ClubAdmin\Users\User;
+use App\Models\ClubEvents\Interclub\Season;
 use App\Support\Breadcrumb;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+
+use const App\Http\Controllers\seasons;
 
 class SeasonController extends Controller
 {

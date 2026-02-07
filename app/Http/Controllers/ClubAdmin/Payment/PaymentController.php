@@ -2,13 +2,18 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\ClubAdmin\Payment;
 
-use App\Models\ClubAdmin\Subscription\Registration;
+use App\Actions\ClubAdmin\Payments\SendPayementInvite;
+use App\Http\Controllers\Controller;
+use App\Models\ClubAdmin\Payment\Payment;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
-class RegistrationController extends Controller
+use const App\Http\Controllers\payments;
+
+class PaymentController extends Controller
 {
     /**
      * Show the form for creating a new resource.
@@ -39,11 +44,26 @@ class RegistrationController extends Controller
      */
     public function index(): View
     {
-        $registrations = Registration::all();
+        $payments = Payment::all();
 
-        return view('admin.registrations.index', compact([
-            'registrations',
+        return view('admin.payments.index', compact([
+            'payments',
         ]));
+    }
+
+    public function sendInvite(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'payment_id' => 'required|exists:payments,id',
+        ]);
+
+        $payment = Payment::find($validated['payment_id']);
+        new SendPayementInvite()($payment);
+
+        return back()
+            ->with([
+                'success' => __('The payment invite has been sent'),
+            ]);
     }
 
     /**

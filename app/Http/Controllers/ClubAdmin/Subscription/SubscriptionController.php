@@ -7,7 +7,7 @@ namespace App\Http\Controllers;
 use App\Actions\ClubAdmin\Subscriptions\SyncTrainingPack;
 use App\Actions\Subscriptions\AddTrainingPack;
 use App\Models\ClubAdmin\Subscription\Subscription;
-use App\Models\TrainingPack;
+use App\Models\ClubEvents\Training\TrainingPack;
 use App\Support\Breadcrumb;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;

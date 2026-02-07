@@ -1,17 +1,19 @@
 - models
     - clubAdmin
-      - Users
-          - user
-          - role
-      - Club
-          - room
-          - table
-      - Contact
-        - Spam
+        - Users
+            - user
+            - role
+        - Club
+            - room
+            - table
         - Contact
+            - Spam
+            - Contact
+            - Payment
+            - Subscription
     - clubEvents
         - training
-          - training
+            - training
         - interclub
             - interclub
             - club
@@ -20,17 +22,17 @@
             - season
             - result
         - tournament
-          - pool
-          - knockoutMatch
-          - matchSet
-          - TableTournament
-          - Tournament
-          - TournamentMatch
+            - pool
+            - knockoutMatch
+            - matchSet
+            - TableTournament
+            - Tournament
+            - TournamentMatch
         - meetings
         - social
     - clubPosts
-      - NewsPost
-      - EventPost
+        - NewsPost
+        - EventPost
 
 - controllers
     - homepage
@@ -42,12 +44,12 @@
             - profile
             - forceList
         - club
-          - room
-          - table
+            - room
+            - table
         - contact
-          - spam
-          - contact
-          - invitation
+            - spam
+            - contact
+            - invitation
     - clubEvents
         - training
             - CRUD

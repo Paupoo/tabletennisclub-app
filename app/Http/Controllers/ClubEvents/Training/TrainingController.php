@@ -14,7 +14,7 @@ use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Season;
 use App\Models\ClubEvents\Training\Training;
-use App\Models\TrainingPack;
+use App\Models\ClubEvents\Training\TrainingPack;
 use App\Services\TrainingBuilder;
 use App\Services\TrainingDateGenerator;
 use App\Support\Breadcrumb;

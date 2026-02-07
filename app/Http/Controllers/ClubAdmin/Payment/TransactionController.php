@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\ClubAdmin\Payment;
 
+use App\Http\Controllers\Controller;
 use App\Models\ClubAdmin\Payment\Payment;
 use App\Models\ClubAdmin\Payment\Transaction;
 use App\Models\ClubAdmin\Subscription\Subscription;
@@ -14,6 +15,21 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
+
+use const App\Http\Controllers\csv;
+use const App\Http\Controllers\CSV;
+use const App\Http\Controllers\en;
+use const App\Http\Controllers\etc;
+use const App\Http\Controllers\lowercase;
+use const App\Http\Controllers\m;
+use const App\Http\Controllers\ods;
+use const App\Http\Controllers\ODS;
+use const App\Http\Controllers\payments;
+use const App\Http\Controllers\points;
+use const App\Http\Controllers\transactions;
+use const App\Http\Controllers\xls;
+use const App\Http\Controllers\xlsx;
+use const App\Http\Controllers\XLSX;
 
 class TransactionController extends Controller
 {
@@ -179,7 +195,6 @@ class TransactionController extends Controller
                     ]);
 
                     $importedCount++;
-
                 } catch (\Exception $e) {
                     Log::error("Erreur insertion ligne {$lineNumber} : " . $e->getMessage());
                     Log::error('Data : ' . json_encode([
@@ -191,7 +206,6 @@ class TransactionController extends Controller
             }
 
             return back()->with('success', "Fichier importé avec succès. {$importedCount} transactions importées.");
-
         } catch (\Exception $e) {
             Log::error('Erreur lors de l\'import : ' . $e->getMessage());
 
@@ -266,17 +280,43 @@ class TransactionController extends Controller
     private function removeAccents(string $str): string
     {
         $unwanted = [
-            'é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e',
-            'à' => 'a', 'â' => 'a', 'ä' => 'a', 'á' => 'a',
-            'ù' => 'u', 'û' => 'u', 'ü' => 'u', 'ú' => 'u',
-            'ô' => 'o', 'ö' => 'o', 'ó' => 'o',
-            'î' => 'i', 'ï' => 'i', 'í' => 'i',
+            'é' => 'e',
+            'è' => 'e',
+            'ê' => 'e',
+            'ë' => 'e',
+            'à' => 'a',
+            'â' => 'a',
+            'ä' => 'a',
+            'á' => 'a',
+            'ù' => 'u',
+            'û' => 'u',
+            'ü' => 'u',
+            'ú' => 'u',
+            'ô' => 'o',
+            'ö' => 'o',
+            'ó' => 'o',
+            'î' => 'i',
+            'ï' => 'i',
+            'í' => 'i',
             'ç' => 'c',
-            'É' => 'E', 'È' => 'E', 'Ê' => 'E', 'Ë' => 'E',
-            'À' => 'A', 'Â' => 'A', 'Ä' => 'A', 'Á' => 'A',
-            'Ù' => 'U', 'Û' => 'U', 'Ü' => 'U', 'Ú' => 'U',
-            'Ô' => 'O', 'Ö' => 'O', 'Ó' => 'O',
-            'Î' => 'I', 'Ï' => 'I', 'Í' => 'I',
+            'É' => 'E',
+            'È' => 'E',
+            'Ê' => 'E',
+            'Ë' => 'E',
+            'À' => 'A',
+            'Â' => 'A',
+            'Ä' => 'A',
+            'Á' => 'A',
+            'Ù' => 'U',
+            'Û' => 'U',
+            'Ü' => 'U',
+            'Ú' => 'U',
+            'Ô' => 'O',
+            'Ö' => 'O',
+            'Ó' => 'O',
+            'Î' => 'I',
+            'Ï' => 'I',
+            'Í' => 'I',
             'Ç' => 'C',
         ];
 

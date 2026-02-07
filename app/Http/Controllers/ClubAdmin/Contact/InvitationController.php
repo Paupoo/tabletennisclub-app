@@ -12,7 +12,7 @@ class InvitationController extends Controller
 {
     public function showForm(User $user)
     {
-        return view('auth.invitation', compact('user'));
+        return view('clubAdmin.users.auth.invitation', compact('user'));
     }
 
     public function store(Request $request, User $user)

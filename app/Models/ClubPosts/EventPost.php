@@ -133,7 +133,7 @@ class EventPost extends Model
      */
     public function getPublicUrlAttribute(): string
     {
-        return route('admin.events.show', $this);
+        return route('clubAdmin.eventPosts.show', $this);
     }
 
     public function getStatusBadgeClasses(): string

@@ -7,13 +7,13 @@
                         <div class="flex flex-row gap-2 align-items-center">
 
                             <x-logo class="block w-auto text-club-blue dark:text-club-yellow fill-current h-9 group-hover:text-club-blue-light transition-colors duration-200" />
-                            
+
                             <h1 class="text-2xl md:text-xl lg:text-2xl font-bold text-club-blue dark:dark:text-club-yellow">CTT Ottignies-Blocry</h1>
                         </div>
                     </a>
                 </div>
             </div>
-            
+
             <!-- Desktop Navigation -->
             <div class="hidden md:block">
                 <div class="ml-10 flex items-baseline space-x-4">
@@ -23,11 +23,11 @@
                     <a href="{{ route('results') }}" class="text-gray-900 dark:text-white hover:text-club-blue px-3 py-2 rounded-md text-sm font-medium transition-colors {{ request()->routeIs('results') ? 'text-club-blue' : '' }}">
                         Résultats
                     </a>
-                    <a href="{{ route('events') }}" class="text-gray-900 dark:text-white hover:text-club-blue px-3 py-2 rounded-md text-sm font-medium transition-colors {{ request()->routeIs('events') ? 'text-club-blue' : '' }}">
+                    <a href="{{ route('eventPosts') }}" class="text-gray-900 dark:text-white hover:text-club-blue px-3 py-2 rounded-md text-sm font-medium transition-colors {{ request()->routeIs('events') ? 'text-club-blue' : '' }}">
                         Événements
                     </a>
                     </a>
-                    <a href="{{ route('public.articles.index') }}" class="text-gray-900 dark:text-white hover:text-club-blue px-3 py-2 rounded-md text-sm font-medium transition-colors {{ request()->routeIs('events') ? 'text-club-blue' : '' }}">
+                    <a href="{{ route('public.clubPosts.index') }}" class="text-gray-900 dark:text-white hover:text-club-blue px-3 py-2 rounded-md text-sm font-medium transition-colors {{ request()->routeIs('events') ? 'text-club-blue' : '' }}">
                         Nouvelles
                     </a>
                     <a href="{{ route('home') }}#contact" class="text-gray-900 dark:text-white hover:text-club-blue px-3 py-2 rounded-md text-sm font-medium transition-colors">
@@ -48,7 +48,7 @@
                     @endguest
                 </div>
             </div>
-            
+
             <!-- Mobile menu button -->
             <div class="md:hidden">
                 <button @click="toggleMobileMenu()" class="text-gray-900 dark:text-white hover:text-club-blue">
@@ -59,14 +59,14 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Mobile Navigation -->
     <div x-show="mobileMenuOpen" x-transition @click.away="closeMobileMenu()" class="md:hidden bg-white dark:bg-gray-900/95 border-t">
         <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
             <a href="{{ route('home') }}" @click="closeMobileMenu()" class="block text-gray-900 dark:text-white hover:text-club-blue dark:hover:text-club-yellow px-3 py-2 rounded-md text-base font-medium">Accueil</a>
             <a href="{{ route('results') }}" @click="closeMobileMenu()" class="block text-gray-900 dark:text-white hover:text-club-blue dark:hover:text-club-yellow px-3 py-2 rounded-md text-base font-medium">Résultats</a>
-            <a href="{{ route('events') }}" @click="closeMobileMenu()" class="block text-gray-900 dark:text-white hover:text-club-blue dark:hover:text-club-yellow px-3 py-2 rounded-md text-base font-medium">Événements</a>
-            <a href="{{ route('public.articles.index') }}" @click="closeMobileMenu()" class="block text-gray-900 dark:text-white hover:text-club-blue dark:hover:text-club-yellow px-3 py-2 rounded-md text-base font-medium">Nouvelles</a>
+            <a href="{{ route('eventPosts') }}" @click="closeMobileMenu()" class="block text-gray-900 dark:text-white hover:text-club-blue dark:hover:text-club-yellow px-3 py-2 rounded-md text-base font-medium">Événements</a>
+            <a href="{{ route('public.clubPosts.index') }}" @click="closeMobileMenu()" class="block text-gray-900 dark:text-white hover:text-club-blue dark:hover:text-club-yellow px-3 py-2 rounded-md text-base font-medium">Nouvelles</a>
             <a href="{{ route('home') }}#contact" @click="closeMobileMenu()" class="block text-gray-900 dark:text-white hover:text-club-blue dark:hover:text-club-yellow px-3 py-2 rounded-md text-base font-medium">Contact</a>
             @guest
                 <a href="{{ route('home') }}#join" @click="closeMobileMenu()" class="block bg-club-blue text-white px-3 py-2 rounded-md text-base font-medium">Rejoindre</a>

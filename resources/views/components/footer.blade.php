@@ -16,7 +16,7 @@
                     </li>
                     <li><a href="{{ route('results') }}"
                             class="text-gray-400 hover:text-white transition-colors">Résultats</a></li>
-                    <li><a href="{{ route('events') }}"
+                    <li><a href="{{ route('eventPosts') }}"
                             class="text-gray-400 hover:text-white transition-colors">Événements</a></li>
                     <li><a href="#contact" class="text-gray-400 hover:text-white transition-colors">Contact</a></li>
                 </ul>

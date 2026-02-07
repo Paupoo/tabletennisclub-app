@@ -30,7 +30,7 @@ class ResultsController extends Controller
                     ['date' => '21 Nov 2025', 'opponent' => 'Set-Jet Fleur Bleue D', 'venue' => 'Domicile', 'score' => '13-3', 'result' => 'Victoire'],
                     ['date' => '28 Nov 2025', 'opponent' => 'Eveil B', 'venue' => 'Domicile', 'score' => '16-0', 'result' => 'Victoire'],
                 ],
-                'stats' => ['played' => 9, 'wins' => 8, 'losses' => 1, 'win_rate' => 89]
+                'stats' => ['played' => 9, 'wins' => 8, 'losses' => 1, 'win_rate' => 89],
             ],
             [
                 'name' => 'Équipe B - Division 3B',
@@ -47,7 +47,7 @@ class ResultsController extends Controller
                     ['date' => '21 Nov 2025', 'opponent' => 'Ry Ternel C', 'venue' => 'Domicile', 'score' => '5-11', 'result' => 'Défaite'],
                     ['date' => '28 Nov 2025', 'opponent' => 'Eveil D', 'venue' => 'Domicile', 'score' => '11-5', 'result' => 'Victoire'],
                 ],
-                'stats' => ['played' => 9, 'wins' => 5, 'losses' => 3, 'win_rate' => 56]
+                'stats' => ['played' => 9, 'wins' => 5, 'losses' => 3, 'win_rate' => 56],
             ],
             [
                 'name' => 'Équipe C - Division 4C',
@@ -64,7 +64,7 @@ class ResultsController extends Controller
                     ['date' => '21 Nov 2025', 'opponent' => 'Set-Jet Fleur Bleue J', 'venue' => 'Extérieur', 'score' => '3-13', 'result' => 'Victoire'],
                     ['date' => '29 Nov 2025', 'opponent' => 'Logis Auderghem S', 'venue' => 'Extérieur', 'score' => '10-6', 'result' => 'Défaite'],
                 ],
-                'stats' => ['played' => 9, 'wins' => 5, 'losses' => 4, 'win_rate' => 56]
+                'stats' => ['played' => 9, 'wins' => 5, 'losses' => 4, 'win_rate' => 56],
             ],
             [
                 'name' => 'Équipe D - Division 4D',
@@ -81,7 +81,7 @@ class ResultsController extends Controller
                     ['date' => '21 Nov 2025', 'opponent' => 'Set-Jet Fleur Bleue F', 'venue' => 'Extérieur', 'score' => '6-10', 'result' => 'Défaite'],
                     ['date' => '28 Nov 2025', 'opponent' => 'Logis Auderghem Q', 'venue' => 'Extérieur', 'score' => '13-3', 'result' => 'Défaite'],
                 ],
-                'stats' => ['played' => 9, 'wins' => 4, 'losses' => 5, 'win_rate' => 44]
+                'stats' => ['played' => 9, 'wins' => 4, 'losses' => 5, 'win_rate' => 44],
             ],
             [
                 'name' => 'Équipe E - Division 5H',
@@ -98,7 +98,7 @@ class ResultsController extends Controller
                     ['date' => '21 Nov 2025', 'opponent' => 'REP Nivelles H', 'venue' => 'Extérieur', 'score' => '3-13', 'result' => 'Victoire'],
                     ['date' => 'Bye', 'opponent' => 'Bye', 'venue' => 'Domicile', 'score' => 'Bye', 'result' => 'Bye'],
                 ],
-                'stats' => ['played' => 7, 'wins' => 1, 'losses' => 6, 'win_rate' => 14]
+                'stats' => ['played' => 7, 'wins' => 1, 'losses' => 6, 'win_rate' => 14],
             ],
             [
                 'name' => 'Équipe A - Division 3B Vétérans',
@@ -108,7 +108,7 @@ class ResultsController extends Controller
                     ['date' => '03 Oct 2025', 'opponent' => 'Uccle Ping B', 'venue' => 'Domicile', 'score' => '10-0', 'result' => 'Victoire'],
                     ['date' => '31 Oct 2025', 'opponent' => 'Limal Wavre C', 'venue' => 'Domicile', 'score' => '7-3', 'result' => 'Victoire'],
                 ],
-                'stats' => ['played' => 2, 'wins' => 2, 'losses' => 0, 'win_rate' => 100]
+                'stats' => ['played' => 2, 'wins' => 2, 'losses' => 0, 'win_rate' => 100],
             ],
             [
                 'name' => 'Équipe B - Division 3C Vétérans',
@@ -118,7 +118,7 @@ class ResultsController extends Controller
                     ['date' => '03 Oct 2025', 'opponent' => 'Logis Auderghem C', 'venue' => 'Extérieur', 'score' => '6-4', 'result' => 'Défaite'],
                     ['date' => '31 Oct 2025', 'opponent' => 'Arc En Ciel C', 'venue' => 'Domicile', 'score' => '3-7', 'result' => 'Défaite'],
                 ],
-                'stats' => ['played' => 2, 'wins' => 0, 'losses' => 2, 'win_rate' => 0]
+                'stats' => ['played' => 2, 'wins' => 0, 'losses' => 2, 'win_rate' => 0],
             ],
             [
                 'name' => 'Équipe C - Division 4F Vétérans',
@@ -128,7 +128,7 @@ class ResultsController extends Controller
                     ['date' => '03 Oct 2025', 'opponent' => 'Logis Auderghem D', 'venue' => 'Domicile', 'score' => '7-3', 'result' => 'Victoire'],
                     ['date' => '31 Oct 2025', 'opponent' => 'Bye', 'venue' => 'Bye', 'score' => 'Bye', 'result' => 'Bye'],
                 ],
-                'stats' => ['played' => 1, 'wins' => 1, 'losses' => 0, 'win_rate' => 50]
+                'stats' => ['played' => 1, 'wins' => 1, 'losses' => 0, 'win_rate' => 50],
             ],
         ];
 

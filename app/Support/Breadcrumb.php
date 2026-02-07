@@ -6,38 +6,55 @@ namespace App\Support;
 
 class Breadcrumb
 {
-    protected $items = [];
+    protected array $items = [];
 
-    public static function make()
+    /**
+     * @return static
+     */
+    public static function make(): static
     {
         return new static;
     }
 
-    public function add($title, $url = null, $icon = null)
+    /**
+     * @param $title
+     * @param $url
+     * @param $icon
+     * @return $this
+     */
+    public function add($title, $url = null, $icon = null): self
     {
         $this->items[] = compact('title', 'url', 'icon');
 
         return $this;
     }
 
-    public function articles($url = null)
+    /**
+     * @param $url
+     * @return $this
+     */
+    public function articles($url = null): self
     {
-        return $this->add('Articles', $url ?: route('admin.articles.index'), 'home');
+        return $this->add('Articles', $url ?: route('clubPosts.newsPosts.index'), 'home');
     }
 
-    public function contacts($url = null)
+    /**
+     * @param $url
+     * @return self
+     */
+    public function contacts($url = null): self
     {
-        return $this->add('Contacts', $url ?: route('admin.contacts.index'));
+        return $this->add('Contacts', $url ?: route('clubAdmin.contacts.index'));
     }
 
     public function current($title)
     {
-        return $this->add($title, null);
+        return $this->add($title);
     }
 
     public function events($url = null)
     {
-        return $this->add('Events', $url ?: route('admin.events.index'), 'home');
+        return $this->add('Events', $url ?: route('clubPosts.eventPosts.index'), 'home');
     }
 
     public function home($url = null)
@@ -70,7 +87,10 @@ class Breadcrumb
         return $this->add('Teams', $url ?: route('teams.index'));
     }
 
-    public function toArray()
+    /**
+     * @return array
+     */
+    public function toArray(): array
     {
         return $this->items;
     }

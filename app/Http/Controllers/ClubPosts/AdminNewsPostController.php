@@ -17,7 +17,7 @@ use Illuminate\Validation\Rule;
 class AdminNewsPostController extends Controller
 {
     /**
-     * Archive un article
+     * Archive a newsPost
      */
     public function archive(NewsPost $article)
     {
@@ -26,38 +26,38 @@ class AdminNewsPostController extends Controller
         ]);
 
         return redirect()->back()
-            ->with('success', 'NewsPost archivé avec succès !');
+            ->with('success', __('NewsPost put in archives'));
     }
 
     /**
-     * Api endpoint pour l'auto-sauvegarde (AJAX).
+     * API endpoint for autosave (AJAX).
      */
     public function autoSave(Request $request, NewsPost $article)
     {
-        // Validation basique pour l'auto-sauvegarde.
+        // Basic validation for autosave.
         $validated = $request->validate([
             'title' => 'sometimes|string|max:255',
             'content' => 'sometimes|string',
             'slug' => 'sometimes|string|max:255',
         ]);
 
-        // Vérifier que l'utilisateur peut modifier cet article
-        if ($article->user_id !== auth()->id() && ! auth()->user()->hasRole('admin')) {
+        // Ensure the user can modify this article
+        if ($article->user_id !== auth()->id() && ! auth()->user()->hasRole('clubAdmin')) {
             return response()->json(['error' => 'Non autorisé'], 403);
         }
 
-        // Mettre à jour uniquement les champs fournis
+        // Update only the provided fields
         $article->update(array_filter($validated));
 
         return response()->json([
             'success' => true,
-            'message' => 'Sauvegarde automatique effectuée',
+            'message' => __('Auto-save executed'),
             'updated_at' => $article->fresh()->updated_at->format('d/m/Y H:i:s'),
         ]);
     }
 
     /**
-     * Affiche le formulaire de création d'un nouvel article
+     * Show the form to create a new article
      */
     public function create()
     {
@@ -67,43 +67,43 @@ class AdminNewsPostController extends Controller
             ->current(__('Create'))
             ->toArray();
 
-        return view('admin.articles.create', compact('breadcrumbs'));
+        return view('clubPosts.newsPosts.create', compact('breadcrumbs'));
     }
 
     /**
-     * Supprime un article (soft delete)
+     * Delete an article (soft delete)
      */
     public function destroy(NewsPost $article)
     {
-        // Supprimer l'image associée si elle existe
+        // Delete the associated image if it exists
         if ($article->image) {
             Storage::disk('public')->delete($article->image);
         }
 
         $article->delete();
 
-        return redirect()->route('admin.articles.index')
-            ->with('success', 'NewsPost supprimé avec succès !');
+        return redirect()->route('clubPosts.newsPosts.index')
+            ->with('success', __('NewsPost deleted successfully'));
     }
 
     /**
-     * Duplique un article existant
+     * Duplicate an existing article
      */
     public function duplicate(NewsPost $article)
     {
         $newArticle = $article->replicate();
 
-        // Modifier les champs pour éviter les conflits
+        // Modify fields to avoid conflicts
         $newArticle->title = $article->title . ' - Copie';
         $newArticle->slug = $article->slug . '-copie-' . time();
         $newArticle->status = NewsPostStatusEnum::DRAFT;
         $newArticle->user_id = auth()->id();
 
-        // Dupliquer l'image si elle existe
+        // Duplicate the image if it exists
         if ($article->image) {
             $extension = pathinfo($article->image, PATHINFO_EXTENSION);
             $filename = pathinfo($article->image, PATHINFO_FILENAME);
-            $newImagePath = 'articles/' . $filename . '-copie-' . time() . '.' . $extension;
+            $newImagePath = 'clubPosts/' . $filename . '-copie-' . time() . '.' . $extension;
 
             if (Storage::disk('public')->exists($article->image)) {
                 Storage::disk('public')->copy($article->image, $newImagePath);
@@ -113,125 +113,33 @@ class AdminNewsPostController extends Controller
 
         $newArticle->save();
 
-        return redirect()->route('admin.articles.edit', $newArticle)
-            ->with('success', 'NewsPost dupliqué avec succès ! Vous pouvez maintenant le modifier.');
+        return redirect()->route('clubPosts.newsPosts.edit', $newArticle)
+            ->with('success', __('NewsPost duplicated successfully, you may proceed to edit it'));
     }
 
     /**
-     * Affiche le formulaire d'édition d'un article
+     * Show the form to edit an article
      */
     public function edit(NewsPost $article)
     {
         $breadcrumbs = Breadcrumb::make()
             ->home()
             ->articles()
-            ->add($article->title, route('admin.articles.edit', $article))
+            ->add($article->title, route('clubPosts.newsPosts.edit', $article))
             ->current(__('Edit'))
             ->toArray();
 
-        return view('admin.articles.edit', compact('article', 'breadcrumbs'));
+        return view('clubPosts.newsPosts.edit', compact('article', 'breadcrumbs'));
     }
 
     /**
-     * Export des articles en CSV
-     */
-    public function export(Request $request)
-    {
-        $query = NewsPost::with('user');
-
-        // Appliquer les mêmes filtres que sur la page index
-        if ($request->filled('search')) {
-            $query->search($request->search);
-        }
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
-        if ($request->filled('category')) {
-            $query->where('category', $request->category);
-        }
-
-        if ($request->filled('visibility')) {
-            $query->where('is_public', $request->visibility);
-        }
-
-        $articles = $query->latest()->get();
-
-        $filename = 'articles_' . now()->format('Y-m-d_H-i-s') . '.csv';
-
-        $headers = [
-            'Content-Type' => 'text/csv',
-            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
-        ];
-
-        $callback = function () use ($articles): void {
-            $file = fopen('php://output', 'w');
-
-            // En-têtes CSV
-            fputcsv($file, [
-                'ID',
-                'Titre',
-                'Slug',
-                'Catégorie',
-                'Statut',
-                'Visibilité',
-                'Auteur',
-                'Date de création',
-                'Date de modification',
-                'Nombre de caractères',
-                'Nombre de mots',
-            ]);
-
-            // Données
-            foreach ($articles as $article) {
-                fputcsv($file, [
-                    $article->id,
-                    $article->title,
-                    $article->slug,
-                    $article->category->name,
-                    $article->status->value,
-                    $article->is_public ? 'Public' : 'Privé',
-                    $article->user->first_name . ' ' . $article->user->last_name,
-                    $article->created_at->format('d/m/Y H:i'),
-                    $article->updated_at->format('d/m/Y H:i'),
-                    strlen($article->content),
-                    str_word_count(strip_tags($article->content)),
-                ]);
-            }
-
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
-    }
-
-    /**
-     * Supprime définitivement un article
-     */
-    public function forceDestroy($id)
-    {
-        $article = NewsPost::withTrashed()->findOrFail($id);
-
-        // Supprimer l'image associée si elle existe
-        if ($article->image) {
-            Storage::disk('public')->delete($article->image);
-        }
-
-        $article->forceDelete();
-
-        return redirect()->route('admin.articles.index')
-            ->with('success', 'NewsPost supprimé définitivement !');
-    }
-
-    /**
-     * Affiche la liste des articles avec filtres et pagination
+     * Display the list of clubPosts with filters and pagination
      */
     public function index(Request $request)
     {
         $query = NewsPost::with('user');
 
-        // Filtres de recherche
+        // Search filters
         if ($request->filled('search')) {
             $query->search($request->search);
         }
@@ -248,10 +156,10 @@ class AdminNewsPostController extends Controller
             $query->where('is_public', $request->visibility);
         }
 
-        // Tri par défaut : les plus récents en premier
+        // Default sorting: newest first
         $articles = $query->latest()->paginate($request->get('perPage', 25));
 
-        // Statistiques pour le dashboard
+        // Statistics for the dashboard
         $stats = collect([
             'totalPublished' => NewsPost::where('status', NewsPostStatusEnum::PUBLISHED)->count(),
             'totalDraft' => NewsPost::where('status', NewsPostStatusEnum::DRAFT)->count(),
@@ -264,31 +172,11 @@ class AdminNewsPostController extends Controller
             ->articles()
             ->toArray();
 
-        return view('admin.articles.index', compact('articles', 'stats', 'breadcrumbs'));
+        return view('clubPosts.newsPosts.index', compact('articles', 'stats', 'breadcrumbs'));
     }
 
     /**
-     * Génère un aperçu de l'article sans le sauvegarder
-     */
-    public function preview(Request $request)
-    {
-        $data = $request->validate([
-            'title' => 'required|string',
-            'content' => 'required|string',
-            'category' => 'required|string',
-            'is_public' => 'boolean',
-        ]);
-
-        // Créer un article temporaire pour l'aperçu (non sauvegardé)
-        $previewArticle = new NewsPost($data);
-        $previewArticle->user = auth()->user();
-        $previewArticle->created_at = now();
-
-        return view('admin.articles.preview', compact('previewArticle'));
-    }
-
-    /**
-     * Publie un article (change le statut en publié)
+     * Publish an article (set status to published)
      */
     public function publish(NewsPost $article)
     {
@@ -297,23 +185,23 @@ class AdminNewsPostController extends Controller
         ]);
 
         return redirect()->back()
-            ->with('success', 'NewsPost publié avec succès !');
+            ->with('success', __('NewsPost published successfully'));
     }
 
     /**
-     * Restaure un article supprimé (soft deleted)
+     * Restore a deleted article (soft deleted)
      */
     public function restore($id)
     {
         $article = NewsPost::withTrashed()->findOrFail($id);
         $article->restore();
 
-        return redirect()->route('admin.articles.index')
-            ->with('success', 'NewsPost restauré avec succès !');
+        return redirect()->route('clubPosts.newsPosts.index')
+            ->with('success', __('NewsPost restored successfully'));
     }
 
     /**
-     * Affiche les détails d'un article
+     * Display the details of an article
      */
     public function show(NewsPost $article)
     {
@@ -325,11 +213,11 @@ class AdminNewsPostController extends Controller
             ->add($article->title)
             ->toArray();
 
-        return view('admin.articles.show', compact('article', 'breadcrumbs'));
+        return view('clubPosts.newsPosts.show', compact('article', 'breadcrumbs'));
     }
 
     /**
-     * Statistiques détaillées pour le dashboard
+     * Detailed statistics for the dashboard
      */
     public function statistics()
     {
@@ -361,13 +249,13 @@ class AdminNewsPostController extends Controller
     }
 
     /**
-     * Enregistre un nouvel article
+     * Store a new article
      */
     public function store(Request $request)
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'slug' => 'required|string|max:255|unique:articles,slug',
+            'slug' => 'required|string|max:255|unique:clubPosts,slug',
             'content' => 'required|string',
             'category' => ['required', Rule::enum(NewsPostCategoryEnum::class)],
             'status' => ['required', Rule::enum(NewsPostStatusEnum::class)],
@@ -375,12 +263,12 @@ class AdminNewsPostController extends Controller
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        // Génération automatique du slug si nécessaire
+        // Generate slug automatically if needed
         if (empty($validated['slug'])) {
             $validated['slug'] = Str::slug($validated['title']);
         }
 
-        // Vérification de l'unicité du slug
+        // Ensure slug uniqueness
         $originalSlug = $validated['slug'];
         $counter = 1;
         while (NewsPost::where('slug', $validated['slug'])->exists()) {
@@ -388,56 +276,34 @@ class AdminNewsPostController extends Controller
             $counter++;
         }
 
-        // Gestion de l'upload d'image
+        // Manage image upload
         if ($request->hasFile('image')) {
-            $validated['image'] = $request->file('image')->store('articles', 'public');
+            $validated['image'] = $request->file('image')->store('clubPosts', 'public');
         }
 
-        // Ajout de l'utilisateur connecté
+        // Attach the authenticated user
         $validated['user_id'] = auth()->id();
 
         $article = NewsPost::create($validated);
 
-        // Redirection selon l'action demandée
+        // Redirect depending on the requested action
         if ($request->get('action') === 'save_and_continue') {
-            return redirect()->route('admin.articles.edit', $article)
-                ->with('success', 'NewsPost créé avec succès ! Vous pouvez continuer à le modifier.');
+            return redirect()->route('clubPosts.newsPosts.edit', $article)
+                ->with('success', __('NewsPost created successfully, you may proceed to edit it'));
         }
 
-        return redirect()->route('admin.articles.index')
-            ->with('success', 'NewsPost créé avec succès !');
+        return redirect()->route('clubPosts.newsPosts.index')
+            ->with('success', __('NewsPost created successfully'));
     }
 
     /**
-     * Affiche les articles supprimés (corbeille)
-     */
-    public function trash(Request $request)
-    {
-        $query = NewsPost::onlyTrashed()->with('user');
-
-        if ($request->filled('search')) {
-            $query->search($request->search);
-        }
-
-        $trashedArticles = $query->latest('deleted_at')->paginate($request->get('perPage', 25));
-
-        $breadcrumbs = [
-            ['name' => 'Admin', 'url' => route('dashboard')],
-            ['name' => 'Articles', 'url' => route('admin.articles.index')],
-            ['name' => 'Corbeille', 'url' => null],
-        ];
-
-        return view('admin.articles.trash', compact('trashedArticles', 'breadcrumbs'));
-    }
-
-    /**
-     * Met à jour un article existant
+     * Update an existing article
      */
     public function update(Request $request, NewsPost $article)
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
-            'slug' => ['required', 'string', 'max:255', Rule::unique('articles', 'slug')->ignore($article->id)],
+            'slug' => ['required', 'string', 'max:255', Rule::unique('clubPosts', 'slug')->ignore($article->id)],
             'content' => 'required|string',
             'category' => ['required', Rule::enum(NewsPostCategoryEnum::class)],
             'status' => ['required', Rule::enum(NewsPostStatusEnum::class)],
@@ -446,22 +312,22 @@ class AdminNewsPostController extends Controller
             'remove_image' => 'nullable|boolean',
         ]);
 
-        // Gestion de la suppression de l'image existante
+        // Handle removal of the existing image
         if ($request->boolean('remove_image') && $article->image) {
             Storage::disk('public')->delete($article->image);
             $validated['image'] = null;
         }
 
-        // Gestion de l'upload d'une nouvelle image
+        // Handle upload of a new image
         if ($request->hasFile('image')) {
             // Supprimer l'ancienne image si elle existe
             if ($article->image) {
                 Storage::disk('public')->delete($article->image);
             }
-            $validated['image'] = $request->file('image')->store('articles', 'public');
+            $validated['image'] = $request->file('image')->store('clubPosts', 'public');
         }
 
-        // Gestion des actions rapides
+        // Handle quick actions
         if ($request->has('quick_action')) {
             switch ($request->get('quick_action')) {
                 case 'publish':
@@ -477,11 +343,11 @@ class AdminNewsPostController extends Controller
 
         // Redirection selon l'action demandée
         if ($request->get('action') === 'save_and_view') {
-            return redirect()->route('admin.articles.show', $article)
-                ->with('success', 'NewsPost mis à jour avec succès !');
+            return redirect()->route('clubPosts.newsPosts.show', $article)
+                ->with('success', __('NewsPost updated successfully'));
         }
 
-        return redirect()->route('admin.articles.index')
-            ->with('success', 'NewsPost mis à jour avec succès !');
+        return redirect()->route('clubPosts.newsPosts.index')
+            ->with('success', __('NewsPost updated successfully'));
     }
 }

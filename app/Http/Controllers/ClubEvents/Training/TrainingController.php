@@ -47,19 +47,20 @@ class TrainingController extends Controller
 
         $training = new Training;
 
-        return view('admin.trainings.create', [
+        return view('clubEvents.trainings.create', [
             'levels' => TrainingLevel::cases(),
             'rooms' => Room::all(),
             'seasons' => $this->getAdjacentSeasons(),
             'training' => $training,
             'types' => TrainingType::cases(),
-            'users' => User::select('id', 'last_name', 'first_name')->orderBy('last_name', 'asc')->orderBy('first_name', 'asc')->get(),
+            'users' => User::select(['id', 'last_name', 'first_name'])->orderBy('last_name')->orderBy('first_name')->get(),
             'breadcrumbs' => $breadcrumbs,
         ]);
     }
 
     /**
      * Get all dates for a specific weekday between 2 dates
+     * @throws Exception
      */
     public function daysBetweenTwoDate(string $start_date, string $end_date, int $week_day): array
     {
@@ -74,9 +75,7 @@ class TrainingController extends Controller
                 // If the day number matches the date's date number, add it into the array, otherwise do nothing.
                 if (date('N', strtotime($start_date)) === $week_day) {
                     $dates[] = $start_date;
-                } else {
                 }
-
                 // Then add 24h.
                 $start_date = date('d-m-Y', strtotime('+1 day', strtotime($start_date)));
             }
@@ -108,13 +107,13 @@ class TrainingController extends Controller
             ->current(__('Edit a training'))
             ->toArray();
 
-        $levels= TrainingLevel::cases();
+        $levels = TrainingLevel::cases();
         $rooms = Room::all();
         $seasons = $this->getAdjacentSeasons();
         $types = TrainingType::cases();
         $users = User::all();
 
-        return view('admin.trainings.edit', compact([
+        return view('clubEvents.trainings.edit', compact([
             'breadcrumbs',
             'levels',
             'training',
@@ -137,7 +136,7 @@ class TrainingController extends Controller
             ->trainings()
             ->toArray();
 
-        return view('admin.trainings.index', [
+        return view('clubEvents.trainings.index', [
             'trainings' => Training::orderBy('start')->paginate(10),
             'breadcrumbs' => $breadcrumbs,
         ]);
@@ -148,11 +147,12 @@ class TrainingController extends Controller
      */
     public function show(Training $training)
     {
-        //
+        // TODO
     }
 
     /**
      * Store a newly created resource in storage.
+     * @throws Exception
      */
     public function store(StoreTrainingRequest $request): RedirectResponse
     {

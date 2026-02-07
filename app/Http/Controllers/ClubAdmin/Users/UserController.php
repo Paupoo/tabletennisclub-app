@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Controllers\ClubAdmin\Users;
 
 use App\Actions\User\ToggleHasPaidMembershipAction;
-use App\Enums\Ranking;
 use App\Enums\Gender;
+use App\Enums\Ranking;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
@@ -18,7 +18,7 @@ use Illuminate\Http\RedirectResponse;
 
 class UserController extends Controller
 {
-    protected $forceList;
+    protected ForceList $forceList;
 
     public function __construct(ForceList $forceList)
     {
@@ -38,7 +38,7 @@ class UserController extends Controller
 
         $this->authorize('create', User::class);
 
-        return View('admin.users.create', [
+        return View('clubAdmin.users.create', [
             'user' => new User,
             'teams' => Team::with('league')->get(),
             'rankings' => collect(Ranking::cases())->pluck('name')->toArray(),
@@ -63,15 +63,14 @@ class UserController extends Controller
         $this->authorize('delete', $user);
 
         if ($user->tournaments()->whereIn('status', ['draft', 'open', 'pending'])->count() > 0) {
-            $personalPronoum = $user->sex === Gender::WOMEN->name
+            $personalPronoun = $user->sex === Gender::WOMEN->name
                 ? 'she'
                 : 'he';
 
             return redirect()
                 ->back()
-                ->with('error', __('Cannot delete ' . $user->first_name . ' ' . $user->last_name . ' because ' . $personalPronoum . ' subscribed to one or more tournaments'));
+                ->with('error', __('Cannot delete ' . $user->first_name . ' ' . $user->last_name . ' because ' . $personalPronoun . ' subscribed to one or more tournaments'));
         }
-
 
         $user->delete();
 
@@ -96,7 +95,7 @@ class UserController extends Controller
 
         $this->authorize('update', User::class);
 
-        return view('admin.users.edit', [
+        return view('clubAdmin.users.edit', [
             'user' => $user,
             'teams' => Team::all(),
             'rankings' => array_column(Ranking::cases(), 'name'),
@@ -151,7 +150,7 @@ class UserController extends Controller
 
         $this->authorize('index', User::class);
 
-        return View('admin.users.index', [
+        return View('clubAdmin.users.index', [
             'user_model' => User::class,
             'breadcrumbs' => $breadcrumbs,
             'actions' => $actions,
@@ -181,7 +180,7 @@ class UserController extends Controller
             ->add($user->first_name . ' ' . $user->last_name)
             ->toArray();
 
-        return view('admin.users.show', [
+        return view('clubAdmin.users.show', [
             'user' => $user,
             'breadcrumbs' => $breadcrumbs,
         ]);
@@ -205,7 +204,7 @@ class UserController extends Controller
 
         $message = __('messages.user_created', [
             'name' => e($user->first_name . ' ' . $user->last_name),
-            'url'  => route('users.show', $user),
+            'url' => route('users.show', $user),
         ]);
 
         return redirect()->route('users.create')

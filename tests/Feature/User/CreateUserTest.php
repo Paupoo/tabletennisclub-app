@@ -38,7 +38,7 @@ test('email is not already taken', function (): void {
 
     $this->actingAs($admin)
         ->from(route('users.create'))
-        ->post('/admin/users', [
+        ->post('/clubAdmin/users', [
             'last_name' => 'Jules',
             'first_name' => 'Destrée',
             'sex' => 'MEN',
@@ -79,7 +79,7 @@ test('licence is not already taken', function (): void {
 
     $this->actingAs($admin)
         ->from(route('users.create'))
-        ->post('/admin/users', [
+        ->post('/clubAdmin/users', [
             'last_name' => 'Jules',
             'first_name' => 'Destrée',
             'sex' => 'MEN',
@@ -101,7 +101,7 @@ test('member cannot create new member', function (): void {
     $user = $this->createFakeUser();
 
     $this->actingAs($user)
-        ->post('/admin/users/create')
+        ->post('/clubAdmin/users/create')
         ->assertStatus(405);
 });
 test('new member creation positive case', function (): void {
@@ -110,7 +110,7 @@ test('new member creation positive case', function (): void {
 
     $this->actingAs($admin)
         ->from(route('users.create'))
-        ->post('/admin/users', [
+        ->post('/clubAdmin/users', [
             'birthdate' => Date::create(1988, 8, 17),
             'city_code' => '1340',
             'city_name' => 'Ottignies',
@@ -140,7 +140,7 @@ test('new member creation with invalid paramaters returns errors in the session'
 
     $this->actingAs($admin)
         ->from(route('users.create'))
-        ->post('/admin/users', [
+        ->post('/clubAdmin/users', [
             'last_name' => null,
             'first_name' => 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Provident autem, quod eos rerum tempore iure sit inventore. Laboriosam corrupti libero et reiciendis consequuntur cumque alias ex repellat nulla, temporibus dolore. This is mini Lorem exceeding 255 characters',
             'sex' => 'wrong',
@@ -181,7 +181,7 @@ test('new member is competitor with valid ranking and licence', function (): voi
 
     $this->actingAs($admin)
         ->from(route('users.create'))
-        ->post('/admin/users', [
+        ->post('/clubAdmin/users', [
             'is_competitor' => 'on',
             'last_name' => 'Jules',
             'first_name' => 'Destrée',
@@ -204,7 +204,7 @@ test('new member is competitor without ranking and licence', function (): void {
 
     $this->actingAs($admin)
         ->from(route('users.create'))
-        ->post('/admin/users', [
+        ->post('/clubAdmin/users', [
             'is_competitor' => 'on',
             'last_name' => 'Jules',
             'first_name' => 'Destrée',
@@ -235,7 +235,7 @@ test('ranking is invalid', function (): void {
 
     $this->actingAs($admin)
         ->from(route('users.create'))
-        ->post('/admin/users', [
+        ->post('/clubAdmin/users', [
             'last_name' => 'Jules',
             'first_name' => 'Destrée',
             'sex' => 'MEN',

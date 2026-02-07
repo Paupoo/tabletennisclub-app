@@ -11,9 +11,9 @@ use App\Mail\CustomEmail;
 use App\Mail\MembershipInfoDetailEmail;
 use App\Mail\PoliteDeclineEmail;
 use App\Mail\RequestInfoEmail;
-use App\Mail\WelcomeEmail;
 use App\Models\ClubAdmin\Contact\Contact;
 use App\Support\Breadcrumb;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -30,7 +30,7 @@ class ContactAdminController extends Controller
             ->current('Email personnalisé')
             ->toArray();
 
-        return view('admin.contacts.compose-email', compact('contact', 'breadcrumbs'));
+        return view('clubAdmin.contacts.contact.compose-email', compact('contact', 'breadcrumbs'));
     }
 
     public function destroy(Contact $contact)
@@ -39,7 +39,7 @@ class ContactAdminController extends Controller
 
         $contact->delete();
 
-        return redirect()->route('admin.contacts.index')->with('success', 'Contact supprimé.');
+        return redirect()->route('clubAdmin.contacts.index')->with('success', 'Contact supprimé.');
     }
 
     public function index()
@@ -58,7 +58,7 @@ class ContactAdminController extends Controller
             'totalRejected' => Contact::where('status', 'rejected')->count(),
         ]);
 
-        return view('admin.contacts.index', compact('contacts', 'breadcrumbs', 'stats'));
+        return view('clubAdmin.contacts.contact.index', compact('contacts', 'breadcrumbs', 'stats'));
     }
 
     public function sendCustomEmail(Request $request, Contact $contact)
@@ -95,10 +95,10 @@ class ContactAdminController extends Controller
             ]);
 
             return redirect()
-                ->route('admin.contacts.show', $contact)
+                ->route('clubAdmin.contacts.show', $contact)
                 ->with('success', 'Email personnalisé envoyé avec succès !');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Erreur envoi email personnalisé', [
                 'contact_id' => $contact->id,
                 'error' => $e->getMessage(),
@@ -142,11 +142,10 @@ class ContactAdminController extends Controller
 
                 case 'custom':
                     // Rediriger vers un formulaire de composition d'email personnalisé
-                    return redirect()->route('admin.contacts.compose-email', $contact);
-                    break;
+                    return redirect()->route('clubAdmin.contacts.compose-email', $contact);
 
                 default:
-                    throw new \Exception('Template non géré');
+                    throw new Exception('Template non géré');
             }
 
             // Logger l'action
@@ -158,7 +157,7 @@ class ContactAdminController extends Controller
 
             return redirect()->back()->with('success', $message);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Erreur envoi email', [
                 'contact_id' => $contact->id,
                 'template' => $template,
@@ -179,7 +178,7 @@ class ContactAdminController extends Controller
             ->current('Détails du contact')
             ->toArray();
 
-        return view('admin.contacts.show', compact('contact', 'breadcrumbs'));
+        return view('clubAdmin.contacts.contact.show', compact('contact', 'breadcrumbs'));
     }
 
     public function update(UpdateContactRequest $request, Contact $contact)

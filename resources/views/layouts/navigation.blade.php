@@ -51,13 +51,13 @@
                             x-transition:leave-end="opacity-0 scale-95"
                             class="absolute top-full left-0 mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
                             @if(Auth()->user()->is_committee_member || Auth()->user()->is_admin)
-                            <a href="{{ route('admin.articles.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-indigo-300 dark:hover:bg-gray-700 hover:text-club-blue transition-colors duration-200" wire:navigate>
+                            <a href="{{ route('clubPosts.newsPosts.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-indigo-300 dark:hover:bg-gray-700 hover:text-club-blue transition-colors duration-200" wire:navigate>
                                 <svg class="w-4 h-4 mr-3 stroke-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <x-ui.icon name="article" />
                                 </svg>
                                 {{ __('Articles') }}
                             </a>
-                            <a href="{{ route('admin.contacts.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-indigo-300 dark:hover:bg-gray-700 hover:text-club-blue transition-colors duration-200" wire:navigate>
+                            <a href="{{ route('clubAdmin.contacts.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-indigo-300 dark:hover:bg-gray-700 hover:text-club-blue transition-colors duration-200" wire:navigate>
                                 <svg class="w-4 h-4 mr-3 stroke-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <x-ui.icon name="envelope-closed" />
                                 </svg>
@@ -80,7 +80,7 @@
                                 {{ __('Teams') }}
                             </a>
                             @if(Auth()->user()->is_committee_member || Auth()->user()->is_admin)
-                            <a href="{{ route('admin.spams.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-indigo-300 dark:hover:bg-gray-700 hover:text-club-blue transition-colors duration-200" wire:navigate>
+                            <a href="{{ route('clubAdmin.spams.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-indigo-300 dark:hover:bg-gray-700 hover:text-club-blue transition-colors duration-200" wire:navigate>
                                 <svg class="w-4 h-4 mr-3 stroke-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <x-ui.icon name="bin" class="w-4 h-4 mr-3" />
                                 </svg>
@@ -155,7 +155,7 @@
                             x-transition:leave-start="opacity-100 scale-100"
                             x-transition:leave-end="opacity-0 scale-95"
                             class="absolute top-full left-0 mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
-                            <a href="{{ route('admin.events.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-indigo-300 dark:hover:bg-gray-700 hover:text-club-blue transition-colors duration-200" wire:navigate>
+                            <a href="{{ route('clubPosts.eventPosts.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-indigo-300 dark:hover:bg-gray-700 hover:text-club-blue transition-colors duration-200" wire:navigate>
                                 <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
                                 </svg>
@@ -274,13 +274,13 @@
                 </div>
             </div>
             @if(Auth()->user()->is_committee_member || Auth()->user()->is_admin)
-            <x-responsive-nav-link :href="route('admin.articles.index')" :active="request()->routeIs('admin.articles.index')" wire:navigate class="flex items-center pl-6">
+            <x-responsive-nav-link :href="route('clubPosts.newsPosts.index')" :active="request()->routeIs('admin.articles.index')" wire:navigate class="flex items-center pl-6">
                 <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <x-ui.icon name="article" />
                 </svg>
                 {{ __('Articles') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('admin.contacts.index')" :active="request()->routeIs('admin.contacts.index')" wire:navigate class="flex items-center pl-6">
+            <x-responsive-nav-link :href="route('clubAdmin.contacts.index')" :active="request()->routeIs('admin.contacts.index')" wire:navigate class="flex items-center pl-6">
                 <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
                 </svg>
@@ -303,7 +303,7 @@
                 {{ __('Teams') }}
             </x-responsive-nav-link>
             @if(Auth()->user()->is_committee_member || Auth()->user()->is_admin)
-            <x-responsive-nav-link :href="route('admin.spams.index')" :active="request()->routeIs('admin.spams.index')" wire:navigate class="flex items-center pl-6">
+            <x-responsive-nav-link :href="route('clubAdmin.spams.index')" :active="request()->routeIs('admin.spams.index')" wire:navigate class="flex items-center pl-6">
                 <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <x-ui.icon name="bin" />
                 </svg>
@@ -338,7 +338,7 @@
                     {{ __('Activities') }}
                 </div>
             </div>
-            <x-responsive-nav-link :href="route('admin.events.index')" :active="request()->routeIs('trainings.index')" wire:navigate class="flex items-center pl-6">
+            <x-responsive-nav-link :href="route('clubPosts.eventPosts.index')" :active="request()->routeIs('trainings.index')" wire:navigate class="flex items-center pl-6">
                 <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
                 </svg>

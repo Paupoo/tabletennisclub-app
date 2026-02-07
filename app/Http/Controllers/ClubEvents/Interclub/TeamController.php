@@ -44,7 +44,7 @@ class TeamController extends Controller
     {
         $this->authorize('create', Team::class);
 
-        $breadcrumps = Breadcrumb::make()
+        $breadcrumbs = Breadcrumb::make()
             ->home()
             ->teams()
             ->add('Create')
@@ -56,17 +56,17 @@ class TeamController extends Controller
             ? $team->season()->associate(Season::firstWhere('start_year', $date->format('y') - 1))
             : $team->season()->associate(Season::firstWhere('start_year', $date->format('y')));
 
-        return view('admin.teams.create', [
+        return view('clubEvents.interclubs.teams.create', [
             'league_categories' => LeagueCategory::cases(),
             'league_levels' => LeagueLevel::cases(),
-            'seasons' => Season::select('name', 'id', 'start_year')
+            'seasons' => Season::select(['name', 'id', 'start_year'])
                 ->where('end_year', '>=', today()->format('Y'))
-                ->orderBy('start_year', 'asc')
+                ->orderBy('start_year')
                 ->get(),
             'team' => $team,
             'team_names' => TeamName::cases(),
             'users' => User::where('is_competitor', true)->orderby('force_list')->orderby('last_name')->orderby('first_name')->get(),
-            'breadcrumbs' => $breadcrumps,
+            'breadcrumbs' => $breadcrumbs,
         ]);
     }
 
@@ -75,7 +75,6 @@ class TeamController extends Controller
      */
     public function destroy(string $id)
     {
-        //
         $team = Team::find($id);
 
         // Delete the team.
@@ -96,20 +95,20 @@ class TeamController extends Controller
         $breadcrumbs = Breadcrumb::make()
             ->home()
             ->teams()
-            ->add('Edit team')
+            ->add(__('Edit team'))
             ->toArray();
 
         //
-        return view('admin.teams.edit', [
+        return view('clubEvents.interclubs.teams.edit', [
             'attachedUsers' => $team->users->pluck('id')->toArray(),
             'league_categories' => LeagueCategory::cases(),
-            'league_divisions' => League::select('division', 'id')
+            'league_divisions' => League::select(['division', 'id'])
                 ->get(),
             'league_levels' => LeagueLevel::cases(),
             'leagues' => League::all(),
-            'seasons' => Season::select('name', 'id', 'start_year')
+            'seasons' => Season::select(['name', 'id', 'start_year'])
                 ->where('end_year', '>=', today()->format('Y'))
-                ->orderBy('start_year', 'asc')
+                ->orderBy('start_year')
                 ->get(),
             'team' => $team,
             'team_names' => TeamName::cases(),
@@ -119,14 +118,14 @@ class TeamController extends Controller
     }
 
     /**
-     * Return Seasons in the future, starting from this year.
-     *
-     * @return Season
+     * Return Seasons in the future, starting from this year
+     * @param string $sorting_order
+     * @return Collection
      */
     public function getUpToDateSeasons(string $sorting_order = 'asc'): Collection
     {
         if ($sorting_order !== 'asc' & $sorting_order !== 'desc') {
-            throw new InvalidArgument('This function only accepts those 2 argumments : \'asc\' or \'desc\'');
+            throw new InvalidArgument('This function only accepts those 2 arguments : \'asc\' or \'desc\'');
         }
         $this_year = Carbon::today()->format('Y');
 
@@ -143,7 +142,7 @@ class TeamController extends Controller
             ->teams()
             ->toArray();
 
-        return view('admin.teams.index', [
+        return view('clubEvents.interclubs.teams.index', [
             'teamsInClub' => Team::select('teams.*')
                 ->InClub()
                 ->join('seasons', 'teams.season_id', 'seasons.id')
@@ -169,8 +168,8 @@ class TeamController extends Controller
             ->add('Team Builder')
             ->toArray();
 
-        return view('admin/teams/team-builder', [
-            'seasons' => $this->getUpToDateSeasons('asc'),
+        return view('clubEvents.interclubs.teams.team-builder', [
+            'seasons' => $this->getUpToDateSeasons(),
             'breadcrumbs' => $breadcrumbs,
         ]);
     }
@@ -228,7 +227,7 @@ class TeamController extends Controller
             ->toArray();
 
         //
-        return view('admin.teams.show', [
+        return view('clubEvents.interclubs.teams.show', [
             'team' => $team->load('users'),
             'breadcrumbs' => $breadcrumbs,
         ]);
@@ -296,7 +295,7 @@ class TeamController extends Controller
 
         isset($validated['players'])
             ? $team->users()->sync($validated['players'])
-            : throw ValidationException::withMessages(['players' => 'A team must contain at least 5 players']);
+            : throw ValidationException::withMessages(['players' => __('A team must contain at least 5 players')]);
 
         return redirect()->route('teams.index')->with('success', 'The team ' . $team->name . ' has been updated.');
     }
@@ -306,7 +305,7 @@ class TeamController extends Controller
         $breadcrumbs = Breadcrumb::make()
             ->home()
             ->teams()
-            ->add('Team Builder')
+            ->add(__('Team Builder'))
             ->toArray();
 
         $playersPerTeam = (int) $request->safe()->playersPerTeam;
@@ -317,8 +316,8 @@ class TeamController extends Controller
             ->buildTeamsFromAToZ()
             ->addPlayersToTeams($playersPerTeam);
 
-        return view('admin/teams/team-builder', [
-            'seasons' => $this->getUpToDateSeasons('asc'),
+        return view('clubEvents.interclubs.teams.team-builder', [
+            'seasons' => $this->getUpToDateSeasons(),
             'selectedSeason' => Season::findOrFail($request->season_id),
             'leagueLevel' => LeagueLevel::cases(),
             'leagueCategory' => LeagueCategory::cases(),
@@ -353,10 +352,11 @@ class TeamController extends Controller
         return $this;
     }
 
+
     /**
      * Add competitors to each teams
-     *
-     * @param  SupportCollection  $competitors
+     * @param int $playersPerTeam
+     * @return self
      */
     private function addPlayersToTeams(int $playersPerTeam = 5): self
     {
@@ -374,10 +374,10 @@ class TeamController extends Controller
         return $this;
     }
 
+
     /**
      * Returns a collection of teams names from A to Z
-     *
-     * @param  int  $totalTeamsAmount
+     * @return self
      */
     private function buildTeamsFromAToZ(): self
     {
@@ -398,9 +398,9 @@ class TeamController extends Controller
     private function getCompetitors(): self
     {
         $this->competitors = User::where('is_competitor', '=', true)
-            ->orderby('force_list', 'asc')
-            ->orderby('last_name', 'asc')
-            ->orderby('first_name', 'asc')
+            ->orderby('force_list')
+            ->orderby('last_name')
+            ->orderby('first_name')
             ->get();
 
         return $this;

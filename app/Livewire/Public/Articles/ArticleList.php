@@ -87,6 +87,7 @@ class ArticleList extends Component
     {
         return view('livewire.public.articles.articles-list', [
             'articles' => $this->articles,
+            'clubPosts' => $this->articles,
             'categories' => $this->categories,
             'years' => $this->years,
             'months' => $this->months,

@@ -9,6 +9,7 @@ use App\Http\Requests\StoreContactRequest;
 use App\Mail\ContactFormConfirmationEmail;
 use App\Mail\ContactFormNotificationEmail;
 use App\Models\ClubAdmin\Contact\Contact;
+use Exception;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
@@ -35,7 +36,7 @@ class ContactController extends Controller
             return redirect('/#contact')
                 ->with('success', 'Votre message a été envoyé avec succès ! Nous vous répondrons dans les plus brefs délais.');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('Erreur lors de l\'envoi du message de contact', [
                 'error' => $e->getMessage(),
                 'data' => $validated,

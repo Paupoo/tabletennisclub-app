@@ -1,6 +1,4 @@
 <x-app-layout :breadcrumbs="$breadcrumbs">
-    
-
 
     {{-- Actions --}}
     @push('header-actions')
@@ -14,9 +12,9 @@
 
     <x-admin-block>
         <x-layout.page-header title="{{ __('Create a new room') }}" description="{{ __('Address will be used to help users locate an activity. Capacity defines the maximum amount of tables to be used for an activity.') }}" />
-        
+
         <x-forms.room :room="$room"/>
-        
+
     </x-admin-block>
 
 </x-app-layout>

@@ -30,28 +30,33 @@
                     <p class="text-xs sm:text-sm text-gray-400">{{ __('Training: ' . $room->capacity_for_trainings . ' tables') }}</p>
                     <p class="text-xs sm:text-sm text-gray-400">{{ __('Competition: ' . $room->capacity_for_interclubs . ' tables') }}</p>
                 </div>
-                
+
                 <!-- Badges des capacités -->
                 <div class="flex flex-wrap gap-2 self-start">
-                    @can('update', Auth()->user())
-                    <x-ui.action-button 
+                    @can('update', $room)
+                    <x-ui.action-button
                         variant="default"
                         icon="edit"
                         tooltip="{{ __('Edit room') }}"
                         onclick="window.location.href='{{ route('rooms.edit', $room) }}'">
                     </x-ui.action-button>
                     @endcan
-                    @can('delete', Auth()->user())
-                    <x-ui.action-button 
-                        variant="danger"
-                        icon="delete"
-                        tooltip="{{ __('Delete room') }}"
-                        onclick="window.location.href='{{ route('rooms.destroy', $room) }}'">
-                    </x-ui.action-button>
+                    @can('delete', $room)
+                    <form method="POST" action="{{ route('rooms.destroy', $room) }}" class="inline" onsubmit="return confirm('{{ __('Are you sure you want to delete this room?') }}')">
+                        @csrf
+                        @method('DELETE')
+                        <x-ui.action-button
+                            variant="danger"
+                            icon="delete"
+                            tooltip="{{ __('Delete room') }}"
+                            type="submit">
+                        </x-ui.action-button>
+                    </form>
                     @endcan
                 </div>
             </div>
         </div>
         @endforeach
-     
+
     </x-admin-block>
+</div>

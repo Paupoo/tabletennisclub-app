@@ -6,25 +6,47 @@ namespace App\Livewire\Admin\Contacts;
 
 use App\Models\ClubAdmin\Contact\Contact;
 use Illuminate\Contracts\Database\Query\Builder;
+use Illuminate\Contracts\View\View;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class Index extends Component
 {
     use WithPagination;
-    public string $search = '';
+
+    public string $interest = '';
 
     public int $perPage = 25;
-    public string $status = '';
-    public string $interest = '';
-    public string $sortByField = '';
-    public string $sortDirection = 'desc';
+
+    public string $search = '';
+
     public ?int $selectedContactId = null;
 
+    public string $sortByField = '';
 
-    public function mount(): void {}
+    public string $sortDirection = 'desc';
 
-    public function render()
+    public string $status = '';
+
+    public function deleteContact()
+    {
+
+        $this->authorize('delete', Auth()->user());
+
+        $article = Contact::find($this->selectedContactId);
+        $article->delete();
+
+        session()->flash('success', __('The contact has been deleted'));
+
+        return $this->redirectRoute('clubAdmin.contacts.index');
+    }
+
+    public function mount(): void
+    {
+        // TODO
+    }
+
+    public function render(): View
     {
         $contacts = Contact::search($this->search)
             ->when($this->status !== '', function (Builder $query): void {
@@ -38,25 +60,15 @@ class Index extends Component
             })
             ->paginate($this->perPage);
 
-        return view('livewire.admin.contacts.index', compact('contacts'));
+        return View('livewire.admin.contacts.index', compact('contacts'));
     }
 
-    public function sortBy(string $field): void {
-        if($this->sortByField === $field) {
+    public function sortBy(string $field): void
+    {
+        if ($this->sortByField === $field) {
             $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
         }
 
         $this->sortByField = $field;
-    }
-
-    public function deleteContact() {
-
-        $this->authorize('delete', Auth()->user());
-
-        $article = Contact::find($this->selectedContactId);
-        $article->delete();
-
-        session()->flash('success', __('The contact has been deleted.'));
-        return $this->redirectRoute('admin.contacts.index');
     }
 }

@@ -81,20 +81,18 @@ Route::get('/clubAdmin/dashboard', function () {
 Route::resource('/clubAdmin/club/rooms', RoomController::class)->middleware(['auth', 'verified']);
 
 /**
- * Articles management
- */
-/**
  * This route is used to manage clubPosts in the clubAdmin panel.
  * It allows authenticated and verified users to perform CRUD operations on clubPosts.
- * The clubPosts are stored in the database and can be created, read, updated, and deleted through this interface.
+ * The clubPosts  are stored in the database and can be created, read, updated, and deleted through this interface.
  * This route is protected by authentication and verification middleware.
  */
 Route::prefix('clubPosts')->middleware('auth')->group(function (): void {
+    // Admin NewsPosts
     Route::resource('newsPosts', AdminNewsPostController::class)->names('clubPosts.newsPosts');
     Route::patch('newsPosts/{newspost}/publish', [AdminNewsPostController::class, 'publish'])->name('clubPosts.newsPosts.publish');
     Route::patch('newsPosts/{newspost}/archive', [AdminNewsPostController::class, 'archive'])->name('clubPosts.newsPosts.archive');
     Route::post('newsPosts/{newspost}/duplicate', [AdminNewsPostController::class, 'duplicate'])->name('clubPosts.newsPosts.duplicate');
-    // Admin events (kept consistent with AdminNewsPost naming)
+    // Admin EventPosts
     Route::resource('eventPosts', AdminEventPostController::class)->names('clubPosts.eventPosts');
     Route::patch('eventPosts/{event}/publish', [AdminEventPostController::class, 'publish'])->name('clubPosts.eventPosts.publish');
     Route::patch('eventPosts/{event}/archive', [AdminEventPostController::class, 'archive'])->name('clubPosts.eventPosts.archive');

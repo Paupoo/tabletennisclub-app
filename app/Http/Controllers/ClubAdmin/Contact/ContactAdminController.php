@@ -11,6 +11,7 @@ use App\Mail\CustomEmail;
 use App\Mail\MembershipInfoDetailEmail;
 use App\Mail\PoliteDeclineEmail;
 use App\Mail\RequestInfoEmail;
+use App\Mail\WelcomeEmail;
 use App\Models\ClubAdmin\Contact\Contact;
 use App\Support\Breadcrumb;
 use Exception;

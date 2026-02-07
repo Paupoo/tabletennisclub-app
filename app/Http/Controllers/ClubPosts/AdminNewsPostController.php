@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\ClubPosts;
 
-use App\Enums\ArticlesCategoryEnum;
-use App\Enums\ArticlesStatusEnum;
+use App\Enums\NewsPostCategoryEnum;
+use App\Enums\NewsPostStatusEnum;
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\Str;
 use App\Models\ClubPosts\NewsPost;
 use App\Support\Breadcrumb;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class AdminNewsPostController extends Controller
@@ -22,7 +22,7 @@ class AdminNewsPostController extends Controller
     public function archive(NewsPost $article)
     {
         $article->update([
-            'status' => ArticlesStatusEnum::ARCHIVED,
+            'status' => NewsPostStatusEnum::ARCHIVED,
         ]);
 
         return redirect()->back()
@@ -30,11 +30,11 @@ class AdminNewsPostController extends Controller
     }
 
     /**
-     * API endpoint pour l'auto-sauvegarde (AJAX)
+     * Api endpoint pour l'auto-sauvegarde (AJAX).
      */
     public function autoSave(Request $request, NewsPost $article)
     {
-        // Validation basique pour l'auto-sauvegarde
+        // Validation basique pour l'auto-sauvegarde.
         $validated = $request->validate([
             'title' => 'sometimes|string|max:255',
             'content' => 'sometimes|string',
@@ -61,7 +61,7 @@ class AdminNewsPostController extends Controller
      */
     public function create()
     {
-        $breadcrumbs = $breadcrumbs = Breadcrumb::make()
+        $breadcrumbs = Breadcrumb::make()
             ->home()
             ->articles()
             ->current(__('Create'))
@@ -96,7 +96,7 @@ class AdminNewsPostController extends Controller
         // Modifier les champs pour éviter les conflits
         $newArticle->title = $article->title . ' - Copie';
         $newArticle->slug = $article->slug . '-copie-' . time();
-        $newArticle->status = ArticlesStatusEnum::DRAFT;
+        $newArticle->status = NewsPostStatusEnum::DRAFT;
         $newArticle->user_id = auth()->id();
 
         // Dupliquer l'image si elle existe
@@ -253,8 +253,8 @@ class AdminNewsPostController extends Controller
 
         // Statistiques pour le dashboard
         $stats = collect([
-            'totalPublished' => NewsPost::where('status', ArticlesStatusEnum::PUBLISHED)->count(),
-            'totalDraft' => NewsPost::where('status', ArticlesStatusEnum::DRAFT)->count(),
+            'totalPublished' => NewsPost::where('status', NewsPostStatusEnum::PUBLISHED)->count(),
+            'totalDraft' => NewsPost::where('status', NewsPostStatusEnum::DRAFT)->count(),
             'totalPublic' => NewsPost::where('is_public', true)->count(),
             'totalPrivate' => NewsPost::where('is_public', false)->count(),
         ]);
@@ -293,7 +293,7 @@ class AdminNewsPostController extends Controller
     public function publish(NewsPost $article)
     {
         $article->update([
-            'status' => ArticlesStatusEnum::PUBLISHED,
+            'status' => NewsPostStatusEnum::PUBLISHED,
         ]);
 
         return redirect()->back()
@@ -335,8 +335,9 @@ class AdminNewsPostController extends Controller
     {
         $stats = [
             'total' => NewsPost::count(),
-            'published' => NewsPost::where('status', ArticlesStatusEnum::PUBLISHED)->count(),            'draft' => NewsPost::where('status', ArticlesStatusEnum::DRAFT)->count(),
-            'archived' => NewsPost::where('status', ArticlesStatusEnum::ARCHIVED)->count(),
+            'published' => NewsPost::where('status', NewsPostStatusEnum::PUBLISHED)->count(),
+            'draft' => NewsPost::where('status', NewsPostStatusEnum::DRAFT)->count(),
+            'archived' => NewsPost::where('status', NewsPostStatusEnum::ARCHIVED)->count(),
             'public' => NewsPost::where('is_public', true)->count(),
             'private' => NewsPost::where('is_public', false)->count(),
             'by_category' => NewsPost::selectRaw('category, COUNT(*) as count')
@@ -368,8 +369,8 @@ class AdminNewsPostController extends Controller
             'title' => 'required|string|max:255',
             'slug' => 'required|string|max:255|unique:articles,slug',
             'content' => 'required|string',
-            'category' => ['required', Rule::enum(ArticlesCategoryEnum::class)],
-            'status' => ['required', Rule::enum(ArticlesStatusEnum::class)],
+            'category' => ['required', Rule::enum(NewsPostCategoryEnum::class)],
+            'status' => ['required', Rule::enum(NewsPostStatusEnum::class)],
             'is_public' => 'required|boolean',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
@@ -421,7 +422,7 @@ class AdminNewsPostController extends Controller
         $trashedArticles = $query->latest('deleted_at')->paginate($request->get('perPage', 25));
 
         $breadcrumbs = [
-            ['name' => 'Admin', 'url' => route('admin.dashboard')],
+            ['name' => 'Admin', 'url' => route('dashboard')],
             ['name' => 'Articles', 'url' => route('admin.articles.index')],
             ['name' => 'Corbeille', 'url' => null],
         ];
@@ -438,8 +439,8 @@ class AdminNewsPostController extends Controller
             'title' => 'required|string|max:255',
             'slug' => ['required', 'string', 'max:255', Rule::unique('articles', 'slug')->ignore($article->id)],
             'content' => 'required|string',
-            'category' => ['required', Rule::enum(ArticlesCategoryEnum::class)],
-            'status' => ['required', Rule::enum(ArticlesStatusEnum::class)],
+            'category' => ['required', Rule::enum(NewsPostCategoryEnum::class)],
+            'status' => ['required', Rule::enum(NewsPostStatusEnum::class)],
             'is_public' => 'required|boolean',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'remove_image' => 'nullable|boolean',
@@ -464,10 +465,10 @@ class AdminNewsPostController extends Controller
         if ($request->has('quick_action')) {
             switch ($request->get('quick_action')) {
                 case 'publish':
-                    $validated['status'] = ArticlesStatusEnum::PUBLISHED;
+                    $validated['status'] = NewsPostStatusEnum::PUBLISHED;
                     break;
                 case 'archive':
-                    $validated['status'] = ArticlesStatusEnum::ARCHIVED;
+                    $validated['status'] = NewsPostStatusEnum::ARCHIVED;
                     break;
             }
         }

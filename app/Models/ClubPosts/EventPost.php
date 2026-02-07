@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\ClubPosts;
 
-use App\Enums\EventTypeEnum;
+use App\Enums\ClubEventTypeEnum;
 use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -33,7 +33,7 @@ class EventPost extends Model
     ];
 
     protected $casts = [
-        'type' => EventTypeEnum::class,
+        'type' => ClubEventTypeEnum::class,
         'status' => 'string',
         'event_date' => 'date',
         'start_time' => 'datetime',
@@ -156,7 +156,7 @@ class EventPost extends Model
      */
     public function isInterclub(): bool
     {
-        return $this->type === EventTypeEnum::INTERCLUB;
+        return $this->type === ClubEventTypeEnum::INTERCLUB;
     }
 
     /**
@@ -180,7 +180,7 @@ class EventPost extends Model
      */
     public function isTournament(): bool
     {
-        return $this->type === EventTypeEnum::TOURNAMENT;
+        return $this->type === ClubEventTypeEnum::TOURNAMENT;
     }
 
     /**
@@ -188,7 +188,7 @@ class EventPost extends Model
      */
     public function isTraining(): bool
     {
-        return $this->type === EventTypeEnum::TRAINING;
+        return $this->type === ClubEventTypeEnum::TRAINING;
     }
 
     public function scopeByCategory(Builder $query, string $category): Builder

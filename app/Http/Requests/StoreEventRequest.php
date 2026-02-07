@@ -3,8 +3,8 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\EventStatusEnum;
-use App\Enums\EventTypeEnum;
+use App\Enums\EventPostStatusEnum;
+use App\Enums\ClubEventTypeEnum;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -25,10 +25,10 @@ class StoreEventRequest extends FormRequest
     {
         return [
             // Champs communs
-            'type' => ['required', Rule::in(EventTypeEnum::values())],
+            'type' => ['required', Rule::in(ClubEventTypeEnum::values())],
             'title' => 'required|string|max:255',
             'description' => 'required|string',
-            'status' => ['required', Rule::in(EventStatusEnum::values())],
+            'status' => ['required', Rule::in(EventPostStatusEnum::values())],
             'event_date' => 'required|date|after_or_equal:today',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'nullable|date_format:H:i|after:start_time',
@@ -53,7 +53,7 @@ class StoreEventRequest extends FormRequest
         $type = $this->input('type');
 
         return match ($type) {
-            EventTypeEnum::TRAINING->value => [
+            ClubEventTypeEnum::TRAINING->value => [
                 'training_level' => 'required|string',
                 'training_type' => 'required|string',
                 'room_id' => 'required|exists:rooms,id',
@@ -61,7 +61,7 @@ class StoreEventRequest extends FormRequest
                 'season_id' => 'required|exists:seasons,id',
             ],
 
-            EventTypeEnum::INTERCLUB->value => [
+            ClubEventTypeEnum::INTERCLUB->value => [
                 'is_home' => 'boolean',
                 'interclub_room_id' => 'required_if:is_home,1|nullable|exists:rooms,id',
                 'interclub_address' => 'required_if:is_home,0|nullable|string|max:150',
@@ -75,7 +75,7 @@ class StoreEventRequest extends FormRequest
                 'interclub_season_id' => 'required|exists:seasons,id',
             ],
 
-            EventTypeEnum::TOURNAMENT->value => [
+            ClubEventTypeEnum::TOURNAMENT->value => [
                 'tournament_start_date' => 'nullable|date|after_or_equal:event_date',
                 'tournament_end_date' => 'nullable|date|after_or_equal:tournament_start_date',
                 'tournament_max_users' => 'required|integer|min:2',
@@ -102,13 +102,13 @@ class StoreEventRequest extends FormRequest
             'start_time.required' => __('The start time is required.'),
             'end_time.after' => __('The end time must be after the start time.'),
             'location.required' => __('The location is required.'),
-            
+
             // Training
             'training_level.required' => __('Please select a training level.'),
             'training_type.required' => __('Please select a training type.'),
             'room_id.required' => __('Please select a room.'),
             'season_id.required' => __('Please select a season.'),
-            
+
             // Interclub
             'interclub_room_id.required_if' => __('Please select a room for home matches.'),
             'interclub_address.required_if' => __('Please provide an address for away matches.'),
@@ -117,7 +117,7 @@ class StoreEventRequest extends FormRequest
             'total_players.required' => __('Please specify the number of players.'),
             'opposite_team_name.regex' => __('The team name must be a single letter (A, B, C...).'),
             'interclub_season_id.required' => __('Please select a season.'),
-            
+
             // Tournament
             'tournament_max_users.required' => __('Please specify the maximum number of participants.'),
             'tournament_price.required' => __('Please specify the registration price (0 if free).'),

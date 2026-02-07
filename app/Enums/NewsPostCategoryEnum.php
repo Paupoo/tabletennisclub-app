@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Enums;
 
-enum ArticlesCategoryEnum: string
+enum NewsPostCategoryEnum: string
 {
     case COMPETITION = 'Compétition';
     case EVENT = 'Events';
@@ -14,8 +14,7 @@ enum ArticlesCategoryEnum: string
     case TRAINING = 'Training';
 
     /**
-     * Return the values of the enum into an array
-     * @return array
+     * Returns the values of the enum into an array
      */
     public static function values(): array
     {
@@ -23,8 +22,8 @@ enum ArticlesCategoryEnum: string
     }
 
     /**
-     * Retur the localized string of a particular value
-     * @return array|string|null
+     * Return the localized string of a particular value
+     * @return string
      */
     public function getLabel(): string
     {

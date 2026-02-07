@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Enums;
 
-enum EventTypeEnum: string
+enum ClubEventTypeEnum: string
 {
     // case COMMUNITY_EVENT = 'COMMUNITY_EVENT';
     case INTERCLUB = 'INTERCLUB';
@@ -22,8 +22,21 @@ enum EventTypeEnum: string
     }
 
     /**
-     * Retur the localized string of a particular value
-     * @return array|string|null
+     * @return string
+     */
+    public function getIcon(): string
+    {
+        return match ($this) {
+            // self::COMMUNITY_EVENT => '🎉',
+            self::INTERCLUB => '🏓',
+            self::TOURNAMENT => '🏆',
+            self::TRAINING => '🎯',
+        };
+    }
+
+    /**
+     * Return the localized string of a particular value
+     * @return string
      */
     public function getLabel(): string
     {
@@ -33,16 +46,6 @@ enum EventTypeEnum: string
             // self::MEETING => __('Meeting'),
             self::TOURNAMENT => __('Tournament'),
             self::TRAINING => __('Training'),
-        };
-    }
-
-    public function getIcon(): string
-    {
-        return match ($this) {
-            // self::COMMUNITY_EVENT => '🎉',
-            self::INTERCLUB => '🏓',
-            self::TOURNAMENT => '🏆',
-            self::TRAINING => '🎯',
         };
     }
 }

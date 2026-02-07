@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Enums;
 
-enum EventStatusEnum: string
+enum NewsPostStatusEnum: string
 {
-    case ARCHIVED = 'ARCHIVED';
-    case DRAFT = 'DRAFT';
-    case PUBLISHED = 'PUBLISHED';
+    case ARCHIVED = 'archived';
+    case DRAFT = 'draft';
+    case PUBLISHED = 'published';
 
     /**
      * Return the values of the enum into an array
@@ -18,6 +18,9 @@ enum EventStatusEnum: string
         return array_column(self::cases(), 'value');
     }
 
+    /**
+     * @return string
+     */
     public function getLabel(): string
     {
         return match ($this) {

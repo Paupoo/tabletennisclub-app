@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Enums\Ranking;
-use App\Enums\Sex;
+use App\Enums\Gender;
 use App\Http\Controllers\ClubAdmin\Users\UserController;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Club;
@@ -30,7 +30,7 @@ test('create method returning expected view and data', function (): void {
         ->assertViewHasAll([
             'teams' => Team::with('league')->get(),
             'rankings' => collect(Ranking::cases())->pluck('name')->toArray(),
-            'sexes' => collect(Sex::cases())->pluck('name')->toArray(),
+            'sexes' => collect(Gender::cases())->pluck('name')->toArray(),
         ]);
 });
 test('email is not already taken', function (): void {

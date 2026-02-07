@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Enums;
 
-enum ArticlesStatusEnum: string
+enum EventPostStatusEnum: string
 {
-    case ARCHIVED = 'archived';
-    case DRAFT = 'draft';
-    case PUBLISHED = 'published';
+    case ARCHIVED = 'ARCHIVED';
+    case DRAFT = 'DRAFT';
+    case PUBLISHED = 'PUBLISHED';
 
     /**
      * Return the values of the enum into an array

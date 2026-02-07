@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\ClubAdmin\Users;
 
-use App\Enums\Sex;
+use App\Enums\Gender;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Support\Breadcrumb;
@@ -49,7 +49,7 @@ class ProfileController extends Controller
 
         return view('profile.edit', [
             'user' => $request->user(),
-            'sexes' => Sex::cases(),
+            'sexes' => Gender::cases(),
             'breadcrumbs' => $breadcrumbs,
         ]);
     }

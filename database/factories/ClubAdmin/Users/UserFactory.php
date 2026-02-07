@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Database\Factories\ClubAdmin\Users;
 
 use App\Enums\Ranking;
-use App\Enums\Sex;
+use App\Enums\Gender;
 use App\Models\ClubAdmin\Users\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -39,7 +39,7 @@ class UserFactory extends Factory
             'remember_token' => Str::random(10),
             'first_name' => fake()->firstName(),
             'last_name' => fake()->lastName(),
-            'sex' => fake()->randomElement(array_column(Sex::cases(), 'name')),
+            'sex' => fake()->randomElement(array_column(Gender::cases(), 'name')),
             'phone_number' => fake()->numberBetween(460000000, 499000000),
             'birthdate' => fake()->dateTimeBetween('-75 years', '- 8 years'),
             'street' => fake()->streetAddress(),

@@ -34,7 +34,7 @@
                         $config = $statusConfig[$contact->status] ?? $statusConfig['nouveau'];
                     @endphp
                     <span
-                        class="{{ $config['bg'] }} {{ $config['text'] }} px-3 py-1 rounded-full text-xs sm:text-sm font-medium">
+                            class="{{ $config['bg'] }} {{ $config['text'] }} px-3 py-1 rounded-full text-xs sm:text-sm font-medium">
                         {{ ucfirst(str_replace('_', ' ', $contact->status)) }}
                     </span>
                 </div>
@@ -49,7 +49,7 @@
                         <input type="hidden" name="first_name" value="{{ $contact->first_name }}">
                         <input type="hidden" name="last_name" value="{{ $contact->last_name }}">
                         <input type="hidden" name="email" value="{{ $contact->email }}">
-                        <input type="hidden" name="sex" value="{{ App\Enums\Sex::OTHER->name }}">
+                        <input type="hidden" name="sex" value="{{ App\Enums\Gender::OTHER->name }}">
                         <button type="submit"
                                 class="bg-club-blue hover:bg-club-blue-light text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base w-full sm:w-auto"
                                 title="{{ __('Create an account and send invitation') }}">
@@ -66,9 +66,9 @@
                 <!-- Bouton Email avec dropdown -->
                 <div class="relative">
                     <button
-                        @click="emailTemplateOpen = !emailTemplateOpen"
-                        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base w-full sm:w-auto flex items-center justify-center"
-                        type="button"
+                            @click="emailTemplateOpen = !emailTemplateOpen"
+                            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base w-full sm:w-auto flex items-center justify-center"
+                            type="button"
                     >
                         <svg class="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -84,20 +84,20 @@
 
                     <!-- Menu dropdown des templates -->
                     <div
-                        x-show="emailTemplateOpen"
-                        x-transition:enter="transition ease-out duration-200"
-                        x-transition:enter-start="opacity-0 scale-95"
-                        x-transition:enter-end="opacity-100 scale-100"
-                        x-transition:leave="transition ease-in duration-75"
-                        x-transition:leave-start="opacity-100 scale-100"
-                        x-transition:leave-end="opacity-0 scale-95"
-                        @click.away="emailTemplateOpen = false"
-                        class="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50"
-                        style="display: none;"
+                            x-show="emailTemplateOpen"
+                            x-transition:enter="transition ease-out duration-200"
+                            x-transition:enter-start="opacity-0 scale-95"
+                            x-transition:enter-end="opacity-100 scale-100"
+                            x-transition:leave="transition ease-in duration-75"
+                            x-transition:leave-start="opacity-100 scale-100"
+                            x-transition:leave-end="opacity-0 scale-95"
+                            @click.away="emailTemplateOpen = false"
+                            class="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50"
+                            style="display: none;"
                     >
                         <div class="py-2">
                             <div
-                                class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b">
+                                    class="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b">
                                 Choisir un template
                             </div>
 
@@ -107,15 +107,15 @@
 
                                 <!-- Template de bienvenue -->
                                 <button
-                                    type="submit"
-                                    name="template"
-                                    value="welcome"
-                                    class="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors group"
-                                    @click="emailTemplateOpen = false"
+                                        type="submit"
+                                        name="template"
+                                        value="welcome"
+                                        class="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors group"
+                                        @click="emailTemplateOpen = false"
                                 >
                                     <div class="flex items-start space-x-3">
                                         <div
-                                            class="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+                                                class="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors">
                                             <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor"
                                                  viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -132,15 +132,15 @@
 
                                 <!-- Template d'information adhésion -->
                                 <button
-                                    type="submit"
-                                    name="template"
-                                    value="membership_info"
-                                    class="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors group"
-                                    @click="emailTemplateOpen = false"
+                                        type="submit"
+                                        name="template"
+                                        value="membership_info"
+                                        class="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors group"
+                                        @click="emailTemplateOpen = false"
                                 >
                                     <div class="flex items-start space-x-3">
                                         <div
-                                            class="flex-shrink-0 w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors">
+                                                class="flex-shrink-0 w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors">
                                             <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor"
                                                  viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -157,15 +157,15 @@
 
                                 <!-- Template de refus poli -->
                                 <button
-                                    type="submit"
-                                    name="template"
-                                    value="polite_decline"
-                                    class="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors group"
-                                    @click="emailTemplateOpen = false"
+                                        type="submit"
+                                        name="template"
+                                        value="polite_decline"
+                                        class="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors group"
+                                        @click="emailTemplateOpen = false"
                                 >
                                     <div class="flex items-start space-x-3">
                                         <div
-                                            class="flex-shrink-0 w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center group-hover:bg-orange-200 transition-colors">
+                                                class="flex-shrink-0 w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center group-hover:bg-orange-200 transition-colors">
                                             <svg class="w-4 h-4 text-orange-600" fill="none" stroke="currentColor"
                                                  viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -182,15 +182,15 @@
 
                                 <!-- Template de demande compléments -->
                                 <button
-                                    type="submit"
-                                    name="template"
-                                    value="request_info"
-                                    class="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors group"
-                                    @click="emailTemplateOpen = false"
+                                        type="submit"
+                                        name="template"
+                                        value="request_info"
+                                        class="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors group"
+                                        @click="emailTemplateOpen = false"
                                 >
                                     <div class="flex items-start space-x-3">
                                         <div
-                                            class="flex-shrink-0 w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center group-hover:bg-purple-200 transition-colors">
+                                                class="flex-shrink-0 w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center group-hover:bg-purple-200 transition-colors">
                                             <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor"
                                                  viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -207,15 +207,15 @@
 
                                 <!-- Template personnalisé -->
                                 <button
-                                    type="submit"
-                                    name="template"
-                                    value="custom"
-                                    class="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors group"
-                                    @click="emailTemplateOpen = false"
+                                        type="submit"
+                                        name="template"
+                                        value="custom"
+                                        class="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors group"
+                                        @click="emailTemplateOpen = false"
                                 >
                                     <div class="flex items-start space-x-3">
                                         <div
-                                            class="flex-shrink-0 w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center group-hover:bg-gray-200 transition-colors">
+                                                class="flex-shrink-0 w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center group-hover:bg-gray-200 transition-colors">
                                             <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor"
                                                  viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -303,7 +303,7 @@
                     @if($contact->membership_family_members)
                         <div class="bg-gray-50 rounded-lg p-4 text-center">
                             <div
-                                class="text-xl sm:text-2xl font-bold text-club-blue">{{ $contact->membership_family_members }}</div>
+                                    class="text-xl sm:text-2xl font-bold text-club-blue">{{ $contact->membership_family_members }}</div>
                             <div class="text-xs sm:text-sm text-gray-600">
                                 Licence{{ $contact->membership_family_members > 1 ? 's' : '' }}
                                 récréative{{ $contact->membership_family_members > 1 ? 's' : '' }}</div>
@@ -313,7 +313,7 @@
                     @if($contact->membership_competitors)
                         <div class="bg-gray-50 rounded-lg p-4 text-center">
                             <div
-                                class="text-xl sm:text-2xl font-bold text-green-600">{{ $contact->membership_competitors }}</div>
+                                    class="text-xl sm:text-2xl font-bold text-green-600">{{ $contact->membership_competitors }}</div>
                             <div class="text-xs sm:text-sm text-gray-600">
                                 Licence{{ $contact->membership_competitors > 1 ? 's' : '' }}
                                 compétitive{{ $contact->membership_family_members > 1 ? 's' : '' }}</div>
@@ -323,7 +323,7 @@
                     @if($contact->membership_training_sessions)
                         <div class="bg-gray-50 rounded-lg p-4 text-center">
                             <div
-                                class="text-xl sm:text-2xl font-bold text-club-yellow">{{ $contact->membership_training_sessions }}</div>
+                                    class="text-xl sm:text-2xl font-bold text-club-yellow">{{ $contact->membership_training_sessions }}</div>
                             <div class="text-xs sm:text-sm text-gray-600">
                                 Séance{{ $contact->membership_training_sessions > 1 ? 's' : '' }} d'entraînement
                             </div>
@@ -333,7 +333,7 @@
                     @if($contact->membership_total_cost)
                         <div class="bg-gray-50 rounded-lg p-4 text-center">
                             <div
-                                class="text-xl sm:text-2xl font-bold text-club-blue">{{ $contact->membership_total_cost }}
+                                    class="text-xl sm:text-2xl font-bold text-club-blue">{{ $contact->membership_total_cost }}
                                 €
                             </div>
                             <div class="text-xs sm:text-sm text-gray-600">Coût total</div>
@@ -349,9 +349,9 @@
             <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                 <!-- Bouton supprimer qui ouvre le modal -->
                 <button
-                    x-data=""
-                    @click.prevent="$dispatch('open-modal', 'confirm-delete-contact')"
-                    class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base w-full sm:w-auto"
+                        x-data=""
+                        @click.prevent="$dispatch('open-modal', 'confirm-delete-contact')"
+                        class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base w-full sm:w-auto"
                 >
                     <svg class="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -361,7 +361,7 @@
                 </button>
 
                 <button
-                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base w-full sm:w-auto">
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base w-full sm:w-auto">
                     <svg class="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -395,11 +395,11 @@
                     Pour confirmer, tapez <strong>DELETE</strong> dans le champ ci-dessous :
                 </label>
                 <input
-                    type="text"
-                    x-model="confirmText"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                    placeholder="DELETE"
-                    autocomplete="off"
+                        type="text"
+                        x-model="confirmText"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                        placeholder="DELETE"
+                        autocomplete="off"
                 >
             </div>
 
@@ -413,10 +413,10 @@
                     @csrf
                     @method('DELETE')
                     <button
-                        type="submit"
-                        class="w-full inline-flex justify-center items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-500 active:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150"
-                        x-bind:disabled="!isValid()"
-                        x-bind:class="{ 'opacity-50 cursor-not-allowed': !isValid() }"
+                            type="submit"
+                            class="w-full inline-flex justify-center items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-500 active:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150"
+                            x-bind:disabled="!isValid()"
+                            x-bind:class="{ 'opacity-50 cursor-not-allowed': !isValid() }"
                     >
                         Supprimer définitivement
                     </button>

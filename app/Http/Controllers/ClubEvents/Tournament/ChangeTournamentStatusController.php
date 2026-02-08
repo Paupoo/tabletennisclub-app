@@ -8,7 +8,9 @@ use App\Enums\TournamentStatusEnum;
 use App\Http\Controllers\Controller;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\States\Tournament\TournamentStateMachine;
+use Exception;
 use Illuminate\Http\RedirectResponse;
+use InvalidArgumentException;
 
 class ChangeTournamentStatusController extends Controller
 {
@@ -34,14 +36,14 @@ class ChangeTournamentStatusController extends Controller
                 TournamentStatusEnum::PENDING => $stateMachine->start(),
                 TournamentStatusEnum::CLOSED => $stateMachine->close(),
                 TournamentStatusEnum::CANCELLED => $stateMachine->cancel(),
-                default => throw new \InvalidArgumentException("Unsupported transition to {$newStatus->value}")
+                default => throw new InvalidArgumentException("Unsupported transition to {$newStatus->value}")
             };
 
             return redirect()
                 ->back()
                 ->with('success', "Tournament status updated to {$newStatus->value}");
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return redirect()
                 ->back()
                 ->with('error', $e->getMessage());

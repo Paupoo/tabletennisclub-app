@@ -28,24 +28,28 @@ use Event;
 use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
+use Throwable;
 
 class TournamentController extends Controller
 {
     //
     public function __construct(
-        private TournamentService $tournamentService,
-        private TournamentTableService $tableService,
-        private TournamentPoolService $poolService,
-        private TournamentMatchService $matchService,
-        private TournamentFinalPhaseService $knockoutService,
+        private readonly TournamentService $tournamentService,
+        private readonly TournamentTableService $tableService,
+        private readonly TournamentPoolService $poolService,
+        private readonly TournamentMatchService $matchService,
+        private readonly TournamentFinalPhaseService $knockoutService,
     ) {}
 
     /**
      * Add user to a pool
      *
      * @return Exception|Redirect
+     *
+     * @throws Exception
      */
     public function addUserToPool(Pool $pool, User $user): Exception|RedirectResponse
     {
@@ -83,7 +87,7 @@ class TournamentController extends Controller
             ->current('Create new tournament')
             ->toArray();
 
-        return view('admin.tournaments.create', [
+        return view('clubEvents.tournaments.create', [
             'tournament' => new Tournament,
             'rooms' => Room::all(),
             'breadcrumbs' => $breadcrumbs,
@@ -112,7 +116,7 @@ class TournamentController extends Controller
 
         $stateMachine = new TournamentStateMachine($tournament);
 
-        return view('admin.tournaments.edit', [
+        return view('clubEvents.tournaments.edit', [
             'tournament' => $tournament->load(['pools.users']),
             'rooms' => Room::orderBy('name')->get(),
             'statusesAllowed' => $stateMachine->getAllowedTransitions(),
@@ -136,7 +140,7 @@ class TournamentController extends Controller
             ->current('Edit Match')
             ->toArray();
 
-        return view('admin.tournaments.edit-match', [
+        return view('clubEvents.tournaments.edit-match', [
             'match' => $match->load(['player1', 'player2', 'sets']),
             'pool' => $match->pool,
             'tournament' => $tournament,
@@ -209,7 +213,7 @@ class TournamentController extends Controller
     {
         /** On récupère le nombre de joueurs à sélectionner par poule pour se rapprocher
          *  le plus près possible du nombre de joueurs nécessaires.
-         *  Puis on récupère le nombre de joueurs à repêcher
+         *  Puis, on récupère le nombre de joueurs à repêcher
          */
         $totalPlayers = $firstRound * 2; // Il faut 2 joueurs par match, donc 32 joueurs pour un 16e de finales
         $totalPools = $tournament->pools()->count();
@@ -229,7 +233,7 @@ class TournamentController extends Controller
             }
         }
 
-        // On obtient un tableau avec les joueurs triés par poule et par ordre dans la poule comme suit :A1, A2, B1, B2, C1, C2, D1, D2
+        // On obtient un tableau avec les joueurs triés par poule et par ordre dans la poule comme suit : A1, A2, B1, B2, C1, C2, D1, D2.
         for ($i = 0; $i < $totalPools * $TotalQualifiedPerPool; $i++) {
             // pour chaque joueur, on prend alternativement le premier et le dernier de la liste pour faire un match (A1-D2, A2-D1, B1-C2, B2-C1...)
             if ($i % 2 === 0) {
@@ -239,12 +243,12 @@ class TournamentController extends Controller
             }
         }
 
-        // si le nombre de joueur manque est supérieur à 0
+        // si le nombre de joueurs manque est supérieur à 0.
         if ($TotalPlayersToFill > 0) {
-            // On récupère tous les joueurs inscrits au tournoi, triés par nombres de matches remportés, puis de sets, puis de points
+            // On récupère tous les joueurs inscrits au tournoi, triés par nombre de matches remportés, puis de sets, puis de points.
             $sortedPlayers = $this->matchService->calculateRowStandings($tournament);
 
-            // On retire les joueurs déjà qualifié dans le tableau précédent
+            // On retire les joueurs déjà qualifiés dans le tableau précédent
             $UnqualifiedPlayers = array_diff($sortedPlayers['players'], $sortedPlayers['players']);
 
             for ($i = 0; $i < $TotalPlayersToFill; $i++) {
@@ -270,7 +274,7 @@ class TournamentController extends Controller
 
         $tournament = new Tournament;
 
-        return view('admin.tournaments.index', [
+        return view('clubEvents.tournaments.index', [
             'rooms' => Room::orderBy('name')->get(),
             'tournament' => $tournament,
             'breadcrumbs' => $breadcrumbs,
@@ -300,7 +304,7 @@ class TournamentController extends Controller
     {
         try {
             $this->tournamentService->registerUser($tournament, $user);
-        } catch (\Throwable $th) {
+        } catch (Throwable $th) {
             return redirect()
                 ->back()
                 ->with('error', $th->getMessage());
@@ -405,7 +409,7 @@ class TournamentController extends Controller
             ->tournament($tournament) // Ajoutez cette méthode ou utilisez current avec le nom du tournoi
             ->toArray();
 
-        return view('admin.tournaments.show', [
+        return view('clubEvents.tournaments.show', [
             'matches' => $matches,
             'rooms' => $rooms,
             'tables' => $tables,
@@ -445,7 +449,7 @@ class TournamentController extends Controller
             ->current($tournament->name)
             ->toArray();
 
-        return view('admin.tournaments.show-matches', [
+        return view('clubEvents.tournaments.show-matches', [
             'matches' => $matches,
             'tournament' => $tournament,
             'statusesAllowed' => $stateMachine->getAllowedTransitions(),
@@ -488,7 +492,7 @@ class TournamentController extends Controller
             ->current($tournament->name)
             ->toArray();
 
-        return view('admin.tournaments.show-players', [
+        return view('clubEvents.tournaments.show-players', [
             'matches' => $matches,
             'rooms' => $rooms,
             'tables' => $tables,
@@ -523,7 +527,7 @@ class TournamentController extends Controller
             ->current($tournament->name)
             ->toArray();
 
-        return view('admin.tournaments.pool-matches', [
+        return view('clubEvents.tournaments.pool-matches', [
             'pool' => $pool,
             'tournament' => $tournament,
             'matches' => $matches,
@@ -538,7 +542,7 @@ class TournamentController extends Controller
     {
         $tournament = Tournament::with([
             'pools' => function ($query): void {
-                $query->orderBy('name'); // Optionnel: ordonner les pools
+                $query->orderBy('name'); // Optionnel : ordonner les pools
             },
             'pools.users' => function ($query): void {
                 // Charger les users de chaque pool, déjà triés par ranking
@@ -554,7 +558,7 @@ class TournamentController extends Controller
 
         $stateMachine = new TournamentStateMachine($tournament);
 
-        return view('admin.tournaments.show-pools', [
+        return view('clubEvents.tournaments.show-pools', [
             'tournament' => $tournament,
             'statusesAllowed' => $stateMachine->getAllowedTransitions(),
             'breadcrumbs' => $breadcrumbs,
@@ -591,7 +595,7 @@ class TournamentController extends Controller
 
         $stateMachine = new TournamentStateMachine($tournament);
 
-        return view('admin.tournaments.show-tables', [
+        return view('clubEvents.tournaments.show-tables', [
             'matches' => $matches,
             'rooms' => $rooms,
             'tables' => $tables,
@@ -645,6 +649,12 @@ class TournamentController extends Controller
             ->with('success', __('The tournament ' . $tournament->name . ' has been created.'));
     }
 
+    /**
+     * @param Tournament $tournament
+     * @param User $user
+     * @return RedirectResponse
+     * @throws Exception
+     */
     public function toggleHasPaid(Tournament $tournament, User $user): RedirectResponse
     {
         $this->authorize('updatesBeforeStart', $tournament);
@@ -770,7 +780,7 @@ class TournamentController extends Controller
                 ->with('error', 'Un joueur doit gagner au minimum 3 sets.');
         }
 
-        // Record results - ne garder que les sets avec des résultats
+        // Record results : ne garder que les sets avec des résultats
         $match->recordResult($setsWithResults);
 
         $this->tableService->freeUsedTable($match);
@@ -797,7 +807,7 @@ class TournamentController extends Controller
     /**
      * Met à jour la répartition des joueurs dans les poules.
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function updatePoolPlayers(Request $request, Tournament $tournament): RedirectResponse
     {
@@ -811,7 +821,7 @@ class TournamentController extends Controller
         foreach ($playerMoves as $userId => $targetPoolId) {
             // Ne traiter que les entrées avec une valeur (pool cible)
             if (! empty($targetPoolId)) {
-                // Vérifier que l'utilisateur et la pool existent
+                // Vérifier que l'utilisateur et la poule existent
                 $user = User::find($userId);
                 $targetPool = Pool::find($targetPoolId);
 
@@ -836,5 +846,10 @@ class TournamentController extends Controller
     private function eraseMatches(Pool $pool): void
     {
         $pool->tournamentmatches()->delete();
+    }
+
+    public function managePools()
+    {
+        //TODO: implement
     }
 }

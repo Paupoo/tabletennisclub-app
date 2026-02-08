@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-declare(strict_types=1);
-
 namespace App\Http\Controllers\ClubAdmin\Contact;
 
 use App\Http\Controllers\Controller;
@@ -20,7 +18,7 @@ class SpamController extends Controller
      */
     public function create()
     {
-        //
+        // TODO
     }
 
     /**
@@ -28,7 +26,7 @@ class SpamController extends Controller
      */
     public function destroy(Spam $spam)
     {
-        //
+        // TODO
     }
 
     /**
@@ -36,7 +34,7 @@ class SpamController extends Controller
      */
     public function edit(Spam $spam)
     {
-        //
+        // TODO
     }
 
     /**
@@ -53,15 +51,15 @@ class SpamController extends Controller
         // Calcul des statistiques pour l'en-tête
         $stats = $this->getStats();
 
-        return view('admin.spams.index', compact('breadcrumbs', 'stats'));
+        return view('clubAdmin.contacts.spams.index', compact('breadcrumbs', 'stats'));
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Display the specified resource.
      */
     public function show(Spam $spam)
     {
-        //
+        // TODO
     }
 
     /**
@@ -69,7 +67,7 @@ class SpamController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        // TODO
     }
 
     /**
@@ -77,7 +75,7 @@ class SpamController extends Controller
      */
     public function update(Request $request, Spam $spam)
     {
-        //
+        // TODO
     }
 
     /**

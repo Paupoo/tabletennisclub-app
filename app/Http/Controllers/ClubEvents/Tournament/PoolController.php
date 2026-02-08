@@ -15,7 +15,7 @@ class PoolController extends Controller
      */
     public function create()
     {
-        //
+        // TODO
     }
 
     /**
@@ -23,7 +23,7 @@ class PoolController extends Controller
      */
     public function destroy(Pool $pool)
     {
-        //
+        // TODO
     }
 
     /**
@@ -31,7 +31,7 @@ class PoolController extends Controller
      */
     public function edit(Pool $pool)
     {
-        //
+        // TODO
     }
 
     /**
@@ -39,7 +39,7 @@ class PoolController extends Controller
      */
     public function index()
     {
-        //
+        // TODO
     }
 
     /**
@@ -47,7 +47,7 @@ class PoolController extends Controller
      */
     public function show(Pool $pool)
     {
-        //
+        // TODO
     }
 
     /**
@@ -55,7 +55,7 @@ class PoolController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        // TODO
     }
 
     /**
@@ -63,6 +63,6 @@ class PoolController extends Controller
      */
     public function update(Request $request, Pool $pool)
     {
-        //
+        // TODO
     }
 }

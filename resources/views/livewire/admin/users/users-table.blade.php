@@ -1,4 +1,7 @@
-    <div>
+@php
+    use App\Enums\Gender;
+@endphp
+<div>
 
         <!-- Barre de filtres modernisée -->
         <div
@@ -20,84 +23,85 @@
                     </div>
                 </div>
 
-                <!-- Filtres -->
-                <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
-                    <!-- Type -->
-                    <div class="flex items-center space-x-2">
-                        <label class="text-sm font-medium text-gray-700 whitespace-nowrap">{{ __('Type') }}</label>
-                        <select wire:model.live="competitor"
-                            class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-club-blue focus:border-club-blue">
-                            <option value="">{{ __('All') }}</option>
-                            <option value="1">{{ __('Competitor') }}</option>
-                            <option value="0">{{ __('Casual') }}</option>
-                        </select>
-                    </div>
+            <!-- Filters -->
+            <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
+                <!-- Type -->
+                <div class="flex items-center space-x-2">
+                    <label class="text-sm font-medium text-gray-700 whitespace-nowrap">{{ __('Type') }}</label>
+                    <select wire:model.live="competitor"
+                            class=" w-32 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-club-blue focus:border-club-blue">
+                        <option value="">{{ __('All') }}</option>
+                        <option value="1">{{ __('Competitor') }}</option>
+                        <option value="0">{{ __('Casual') }}</option>
+                    </select>
+                </div>
 
-                    <!-- Sexe -->
-                    <div class="flex items-center space-x-2">
-                        <label class="text-sm font-medium text-gray-700 whitespace-nowrap">{{ __('Sex') }}</label>
-                        <select wire:model.live="sex"
-                            class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-club-blue focus:border-club-blue">
-                            <option value="">{{ __('All') }}</option>
-                            <option value="{{ \App\Enums\Sex::WOMEN->name }}">{{ __('Women') }}</option>
-                            <option value="{{ \App\Enums\Sex::MEN->name }}">{{ __('Men') }}</option>
-                            <option value="{{ \App\Enums\Sex::OTHER->name }}">{{ __('Others') }}</option>
-                        </select>
-                    </div>
+                <!-- Gender -->
+                <div class="flex items-center space-x-2">
+                    <label class="text-sm font-medium text-gray-700 whitespace-nowrap">{{ __('Gender') }}</label>
+                    <select wire:model.live="gender"
+                            class="w-32 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-club-blue focus:border-club-blue">
+                        <option value="">{{ __('All') }}</option>
+                        <option value="{{ Gender::WOMEN->name }}">{{ __('Women') }}</option>
+                        <option value="{{ Gender::MEN->name }}">{{ __('Men') }}</option>
+                        <option value="{{ Gender::OTHER->name }}">{{ __('Others') }}</option>
+                    </select>
+                </div>
 
-                    <!-- Statut -->
-                    <div class="flex items-center space-x-2">
-                        <label class="text-sm font-medium text-gray-700 whitespace-nowrap">{{ __('Status') }}</label>
-                        <select wire:model.live="status"
-                            class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-club-blue focus:border-club-blue">
-                            <option value="">{{ __('All') }}</option>
-                            <option value="active">{{ __('Active') }}</option>
-                            <option value="inactive">{{ __('Inactive') }}</option>
-                            <option value="paid">{{ __('Paid') }}</option>
-                            <option value="unpaid">{{ __('Unpaid') }}</option>
-                        </select>
-                    </div>
+                <!-- Status -->
+                <div class="flex items-center space-x-2">
+                    <label class="text-sm font-medium text-gray-700 whitespace-nowrap">{{ __('Status') }}</label>
+                    <select wire:model.live="status"
+                            class="w-24 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-club-blue focus:border-club-blue">
+                        <option value="">{{ __('All') }}</option>
+                        <option value="active">{{ __('Active') }}</option>
+                        <option value="inactive">{{ __('Inactive') }}</option>
+                        <option value="paid">{{ __('Paid') }}</option>
+                        <option value="unpaid">{{ __('Unpaid') }}</option>
+                    </select>
+                </div>
 
-                    <!-- Pagination -->
-                    <div class="flex items-center space-x-2">
-                        <label class="text-sm font-medium text-gray-700 whitespace-nowrap">{{ __('Per page') }}</label>
-                        <select wire:model.live="perPage"
+                <!-- Pagination -->
+                <div class="flex items-center space-x-2">
+                    <label class="text-sm font-medium text-gray-700 whitespace-nowrap">{{ __('Per page') }}</label>
+                    <select wire:model.live="perPage"
                             class="border border-gray-300 rounded-lg px-3 py-2 pr-8 text-sm focus:ring-club-blue focus:border-club-blue">
-                            <option value="10">10</option>
-                            <option value="25">25</option>
-                            <option value="50">50</option>
-                        </select>
-                    </div>
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                    </select>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Table des utilisateurs -->
-        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-            <!-- En-tête responsive -->
-            <div class="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between">
-                <h3 class="text-lg font-medium text-gray-900">
-                    {{ __('Users') }}
-                    <span class="text-sm font-normal text-gray-500">({{ $users->total() }} {{ __('results') }})</span>
-                </h3>
+    <!-- Table des utilisateurs -->
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+        <!-- En-tête responsive -->
+        <div class="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between">
+            <h3 class="text-lg font-medium text-gray-900">
+                {{ __('Users') }}
+                <span class="text-sm font-normal text-gray-500">({{ $users->total() }} {{ __('results') }})</span>
+            </h3>
 
-                @if (Auth()->user()->is_committee_member || Auth()->user()->is_active)
-                    @if (count($selectedItems) > 0)
-                        <div class="relative" x-data="{ open: false }">
-                            <!-- Bouton principal du dropdown -->
-                            <button @click="open = !open" @click.outside="open = false"
+            @if(Auth()->user()->is_committee_member || Auth()->user()->is_active)
+                @if(count($selectedItems) > 0)
+                    <div class="relative" x-data="{ open: false }">
+                        <!-- Bouton principal du dropdown -->
+                        <button @click="open = !open"
+                                @click.outside="open = false"
                                 class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
-                                </svg>
-                                {{ __('Actions') }} ({{ count($selectedItems) }})
-                                <svg class="ml-2 -mr-1 w-4 h-4" :class="{ 'rotate-180': open }" fill="none"
-                                    stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M19 9l-7 7-7-7" />
-                                </svg>
-                            </button>
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4"/>
+                            </svg>
+                            {{ __('Actions') }} ({{ count($selectedItems) }})
+                            <svg class="ml-2 -mr-1 w-4 h-4" :class="{ 'rotate-180': open }" fill="none"
+                                 stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </button>
 
                             <!-- Menu dropdown -->
                             <div x-show="open" x-transition:enter="transition ease-out duration-200"
@@ -132,8 +136,8 @@
                                         {{ __('Deactivate') }}
                                     </button>
 
-                                    <!-- Separator -->
-                                    <div class="border-t border-gray-100"></div>
+                                <!-- Separator -->
+                                <div class="border-t border-gray-100"></div>
 
                                     <!-- Mark Paid -->
                                     <button wire:click="bulkPaid"
@@ -157,8 +161,8 @@
                                         {{ __('Mark as unpaid') }}
                                     </button>
 
-                                    <!-- Separator -->
-                                    <div class="border-t border-gray-100"></div>
+                                <!-- Separator -->
+                                <div class="border-t border-gray-100"></div>
 
                                     <!-- Delete -->
                                     <button wire:click="bulkDelete"
@@ -273,25 +277,25 @@
                                                 <span class="text-sm font-medium text-white">
                                                     {{ strtoupper(substr($user->first_name, 0, 1) . substr($user->last_name, 0, 1)) }}
                                                 </span>
-                                            </div>
-                                        </div>
-                                        <div class="ml-4">
-                                            <div class="text-sm font-medium text-gray-900">
-                                                @if ($user->sex === \App\Enums\Sex::MEN->name)
-                                                    <span class="text-blue-600 mr-1">♂</span>
-                                                @elseif ($user->sex === \App\Enums\Sex::WOMEN->name)
-                                                    <span class="text-pink-600 mr-1">♀</span>
-                                                @else
-                                                    <span class="text-gray-600 mr-1">⚲</span>
-                                                @endif
-                                                {{ $user->first_name }} {{ $user->last_name }}
-                                            </div>
-                                            <div class="text-sm text-gray-500">
-                                                {{ $user->is_competitor ? __('Competitor') : __('Casual') }}
-                                            </div>
-                                        </div>
                                     </div>
-                                </td>
+                                </div>
+                                <div class="ml-4">
+                                    <div class="text-sm font-medium text-gray-900">
+                                        @if ($user->sex === Gender::MEN->name)
+                                            <span class="text-blue-600 mr-1">♂</span>
+                                        @elseif ($user->sex === Gender::WOMEN->name)
+                                            <span class="text-pink-600 mr-1">♀</span>
+                                        @else
+                                            <span class="text-gray-600 mr-1">⚲</span>
+                                        @endif
+                                        {{ $user->first_name }} {{ $user->last_name }}
+                                    </div>
+                                    <div class="text-sm text-gray-500">
+                                        {{ $user->is_competitor ? __('Competitor') : __('Casual') }}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
 
                                 <!-- Ranking -->
                                 <td class="px-6 py-4 whitespace-nowrap">
@@ -323,10 +327,10 @@
                                                 class="inline-flex items-center px-2 py-1 rounded-full text-xs justify-center font-medium bg-green-100 text-green-800">
                                                 {{ __('Active') }}
                                             </span>
-                                            @if (Auth()->user()->is_committee_member || Auth()->user()->is_admin)
-                                                @if (!$user->has_paid)
-                                                    <span
-                                                        class="inline-flex items-center px-2 py-1 rounded-full text-xs justify-center font-medium bg-red-100 text-red-800">
+                                    @if(Auth()->user()->is_committee_member || Auth()->user()->is_admin )
+                                        @if(!$user->has_paid)
+                                            <span
+                                                class="inline-flex items-center px-2 py-1 rounded-full text-xs justify-center font-medium bg-red-100 text-red-800">
                                                         ✗ {{ __('Unpaid') }}
                                                     </span>
                                                 @else
@@ -414,66 +418,67 @@
                                             <span class="text-sm font-medium text-white">
                                                 {{ strtoupper(substr($user->first_name, 0, 1) . substr($user->last_name, 0, 1)) }}
                                             </span>
-                                        </div>
                                     </div>
-                                    <div>
-                                        <div class="text-sm font-medium text-gray-900">
-                                            @if ($user->sex === \App\Enums\Sex::MEN->name)
-                                                <span class="text-blue-600 mr-1">♂</span>
-                                            @elseif ($user->sex === \App\Enums\Sex::WOMEN->name)
-                                                <span class="text-pink-600 mr-1">♀</span>
-                                            @else
-                                                <span class="text-gray-600 mr-1">⚲</span>
+                                </div>
+                                <div>
+                                    <div class="text-sm font-medium text-gray-900">
+                                        @if ($user->sex === Gender::MEN->name)
+                                            <span class="text-blue-600 mr-1">♂</span>
+                                        @elseif ($user->sex === Gender::WOMEN->name)
+                                            <span class="text-pink-600 mr-1">♀</span>
+                                        @else
+                                            <span class="text-gray-600 mr-1">⚲</span>
+                                        @endif
+                                        {{ $user->first_name }} {{ $user->last_name }}
+                                    </div>
+                                    <div class="text-sm text-gray-500">
+                                        <ol>
+                                            <li>{{ $user->is_competitor ? __('Competitor') : __('Casual') }}</li>
+                                            <li>Force: {{ $user->force_list }}</li>
+                                            <li>Ranking: {{ $user->ranking }}</li>
+                                            @if ($user->teams->count() > 0)
+                                                <li>Teams :
+                                                    @foreach ($user->teams->sortBy('name') as $team)
+                                                        <a href="{{ route('teams.show', $team) }}">
+                                                            {{ $team->name }}
+                                                        </a>
+                                                        @if(!$user->teams->last)
+                                                            -
+                                                        @endif
+                                                    @endforeach
+                                                </li>
                                             @endif
-                                            {{ $user->first_name }} {{ $user->last_name }}
-                                        </div>
-                                        <div class="text-sm text-gray-500">
-                                            <ol>
-                                                <li>{{ $user->is_competitor ? __('Competitor') : __('Casual') }}</li>
-                                                <li>Force: {{ $user->force_list }}</li>
-                                                <li>Ranking: {{ $user->ranking }}</li>
-                                                @if ($user->teams->count() > 0)
-                                                    <li>Teams :
-                                                        @foreach ($user->teams->sortBy('name') as $team)
-                                                            <a href="{{ route('teams.show', $team) }}">
-                                                                {{ $team->name }}
-                                                            </a>
-                                                            @if (!$user->teams->last)
-                                                                -
-                                                            @endif
-                                                        @endforeach
-                                                    </li>
-                                                @endif
-                                            </ol>
-                                        </div>
+                                        </ol>
                                     </div>
                                 </div>
                             </div>
-
-                            <div class="flex justify-end space-x-2">
-                                <a href="{{ route('users.show', $user->id) }}"
-                                    class="bg-club-blue hover:bg-club-blue-light text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-200">
-                                    {{ __('Details') }}
-                                </a>
-                                @can('update', Auth()->user())
-                                    <a href="{{ route('users.edit', $user) }}"
-                                        class="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-200">
-                                        {{ __('Edit') }}
-                                    </a>
-                                @endcan
-                                @can('delete', Auth()->user())
-                                    <button wire:click="$set('selectedUserId', {{ $user->id }})"
-                                        @click="$dispatch('open-modal', 'confirm-delete-user')"
-                                        class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-200">
-                                        {{ __('Delete') }}
-                                    </button>
-                                @endcan
-                            </div>
                         </div>
-                    @endforeach
-                </div>
+
+                        <div class="flex justify-end space-x-2">
+                            <a href="{{ route('users.show', $user->id) }}"
+                               class="bg-club-blue hover:bg-club-blue-light text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-200">
+                                {{ __('Details') }}
+                            </a>
+                            @can('update', Auth()->user())
+                                <a href="{{ route('users.edit', $user) }}"
+                                   class="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-200">
+                                    {{ __('Edit') }}
+                                </a>
+                            @endcan
+                            @can('delete', Auth()->user())
+                                <button
+                                    wire:click="$set('selectedUserId', {{ $user->id }})"
+                                    @click="$dispatch('open-modal', 'confirm-delete-user')"
+                                    class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-200">
+                                    {{ __('Delete') }}
+                                </button>
+                            @endcan
+                        </div>
+                    </div>
+                @endforeach
             </div>
         </div>
+    </div>
 
         <!-- Pagination -->
         @if ($users->hasPages())
@@ -508,69 +513,77 @@
                         <span class="text-sm text-gray-600">{{ __('Update user details') }}</span>
                     </div>
 
-                    {{-- <div class="flex items-center space-x-2">
-                        <div class="bg-green-600 text-white p-1 rounded">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                            </svg>
-                        </div>
-                        <span class="text-sm text-gray-600">{{ __('Toggle payment') }}</span>
-                    </div> --}}
-                @endcan
-
-                {{-- @can('delete', auth()->user())
-                    <div class="flex items-center space-x-2">
-                        <div class="bg-red-600 text-white p-1 rounded">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                            </svg>
-                        </div>
-                        <span class="text-sm text-gray-600">{{ __('Delete user') }}</span>
+                {{-- <div class="flex items-center space-x-2">
+                    <div class="bg-green-600 text-white p-1 rounded">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                        </svg>
                     </div>
-                @endcan --}}
-            </div>
+                    <span class="text-sm text-gray-600">{{ __('Toggle payment') }}</span>
+                </div> --}}
+            @endcan
+
+            {{-- @can('delete', auth()->user())
+                <div class="flex items-center space-x-2">
+                    <div class="bg-red-600 text-white p-1 rounded">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                    </div>
+                    <span class="text-sm text-gray-600">{{ __('Delete user') }}</span>
+                </div>
+            @endcan --}}
         </div>
-
-        <!-- Modal de confirmation de suppression amélioré -->
-        <x-modal name="confirm-delete-user" focusable>
-            <form wire:submit.prevent="destroy()" class="p-6" x-data="{ confirmText: '', isValid() { return this.confirmText === 'DELETE' } }">
-                <div class="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
-                    <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z">
-                        </path>
-                    </svg>
-                </div>
-
-                <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100 text-center mb-2">
-                    {{ __('Are you sure you want to delete this user?') }}
-                </h2>
-
-                <p class="text-sm text-gray-600 dark:text-gray-400 text-center mb-4">
-                    {{ __('This action is irreversible. All associated data will be permanently deleted.') }}
-                </p>
-
-                <!-- Champ de confirmation -->
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        {{ __('To confirm, type') }} <strong>"DELETE"</strong> {{ __('in the box below') }}:
-                    </label>
-                    <input type="text" x-model="confirmText"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                        placeholder="DELETE" autocomplete="off">
-                </div>
-
-                <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-                    <x-secondary-button @click="$dispatch('close')" class="flex-1">
-                        {{ __('Cancel') }}
-                    </x-secondary-button>
-
-                    <x-danger-button class="flex-1" x-bind:disabled="!isValid()"
-                        x-bind:class="{ 'opacity-50 cursor-not-allowed': !isValid() }" type="submit">
-                        {{ __('Delete permanently') }}
-                    </x-danger-button>
-                </div>
-            </form>
-        </x-modal>
-
     </div>
+
+    <!-- Modal de confirmation de suppression amélioré -->
+    <x-modal name="confirm-delete-user" focusable>
+        <form wire:submit.prevent="destroy()" class="p-6"
+              x-data="{ confirmText: '', isValid() { return this.confirmText === 'DELETE' } }">
+            <div class="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
+                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                </svg>
+            </div>
+
+            <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100 text-center mb-2">
+                {{ __('Are you sure you want to delete this user?') }}
+            </h2>
+
+            <p class="text-sm text-gray-600 dark:text-gray-400 text-center mb-4">
+                {{ __('This action is irreversible. All associated data will be permanently deleted.') }}
+            </p>
+
+            <!-- Champ de confirmation -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    {{ __('To confirm, type') }} <strong>"DELETE"</strong> {{ __('in the box below') }}:
+                </label>
+                <input
+                    type="text"
+                    x-model="confirmText"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    placeholder="DELETE"
+                    autocomplete="off"
+                >
+            </div>
+
+            <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+                <x-secondary-button @click="$dispatch('close')" class="flex-1">
+                    {{ __('Cancel') }}
+                </x-secondary-button>
+
+                <x-danger-button
+                    class="flex-1"
+                    x-bind:disabled="!isValid()"
+                    x-bind:class="{ 'opacity-50 cursor-not-allowed': !isValid() }"
+                    type="submit"
+                >
+                    {{ __('Delete permanently') }}
+                </x-danger-button>
+            </div>
+        </form>
+    </x-modal>
+
+</div>

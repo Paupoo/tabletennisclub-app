@@ -6,6 +6,7 @@ namespace App\Livewire\Admin\Contacts;
 
 use App\Models\ClubAdmin\Contact\Contact;
 use Illuminate\Contracts\Database\Query\Builder;
+use Illuminate\Contracts\View\View;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -35,14 +36,17 @@ class Index extends Component
         $article = Contact::find($this->selectedContactId);
         $article->delete();
 
-        session()->flash('success', __('The contact has been deleted.'));
+        session()->flash('success', __('The contact has been deleted'));
 
-        return $this->redirectRoute('admin.contacts.index');
+        return $this->redirectRoute('clubAdmin.contacts.index');
     }
 
-    public function mount(): void {}
+    public function mount(): void
+    {
+        // TODO
+    }
 
-    public function render()
+    public function render(): View
     {
         $contacts = Contact::search($this->search)
             ->when($this->status !== '', function (Builder $query): void {
@@ -56,7 +60,7 @@ class Index extends Component
             })
             ->paginate($this->perPage);
 
-        return view('livewire.admin.contacts.index', compact('contacts'));
+        return View('livewire.admin.contacts.index', compact('contacts'));
     }
 
     public function sortBy(string $field): void

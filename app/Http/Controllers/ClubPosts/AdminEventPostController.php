@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\ClubPosts;
 
-use App\Enums\EventStatusEnum;
-use App\Enums\EventTypeEnum;
+use App\Enums\EventPostStatusEnum;
+use App\Enums\ClubEventTypeEnum;
 use App\Http\Controllers\Controller;
 use App\Models\ClubPosts\EventPost;
 use App\Support\Breadcrumb;
@@ -21,7 +21,7 @@ class AdminEventPostController extends Controller
         $this->authorize('archive', $event);
         $event->update(['status' => 'archived']);
 
-        return back()->with('success', 'Événement archivé !');
+        return back()->with('success', __('Event put in archives'));
     }
 
     public function create(): View
@@ -33,21 +33,21 @@ class AdminEventPostController extends Controller
             ->current(__('New event'))
             ->toArray();
 
-        return view('admin.events.create', compact('breadcrumbs'));
+        return view('clubPosts.eventPosts.create', compact('breadcrumbs'));
     }
 
     public function destroy(EventPost $event): RedirectResponse
     {
         $this->authorize('delete', $event);
         if (! $event->canBeDeleted()) {
-            return back()->with('error', 'Cet événement ne peut pas être supprimé.');
+            return back()->with('error', __('This event cannot be deleted'));
         }
 
         $event->delete();
 
         return redirect()
-            ->route('admin.events.index')
-            ->with('success', 'Événement supprimé avec succès !');
+            ->route('clubPosts.eventPosts.index')
+            ->with('success', __('Event deleted successfully'));
     }
 
     public function duplicate(EventPost $event): RedirectResponse
@@ -59,30 +59,31 @@ class AdminEventPostController extends Controller
         $newEvent->save();
 
         return redirect()
-            ->route('admin.events.edit', $newEvent)
-            ->with('success', 'Événement dupliqué ! Vous pouvez maintenant le modifier.');
+            ->route('clubPosts.eventPosts.edit', $newEvent)
+            ->with('success', __('Event duplicated successfully, you may proceed to edit it'));
     }
 
-    public function edit(EventPost $event): View
+    public function edit(EventPost $eventPost): View
     {
-        $this->authorize('update', $event);
+        $this->authorize('update', $eventPost);
         $breadcrumbs = Breadcrumb::make()
             ->home()
             ->events()
-            ->add($event->title, route('admin.events.show', $event))
+            ->add($eventPost->title, route('clubPosts.eventPosts.show', $eventPost))
             ->current(__('Edit'))
             ->toArray();
 
-        return view('admin.events.edit', compact('event', 'breadcrumbs'));
+        return view('clubPosts.eventPosts.edit', compact('eventPost', 'breadcrumbs'));
     }
 
     public function index(Request $request): View
     {
+        // Statistiques rapides
         $stats = collect([
-            'drafts' => EventPost::where('status', EventStatusEnum::DRAFT)->count(),
-            'published' => EventPost::where('status', EventStatusEnum::PUBLISHED)->count(),
-            'archived' => EventPost::where('status', EventStatusEnum::ARCHIVED)->count(),
-            'upcoming' => EventPost::where('start_time', '>=', today())->count(),
+            'drafts' => EventPost::where('status', 'draft')->count(),
+            'published' => EventPost::where('status', 'published')->count(),
+            'archived' => EventPost::where('status', 'archived')->count(),
+            'upcoming' => EventPost::published()->upcoming()->count(),
         ]);
 
         // Requête de base avec filtres
@@ -119,7 +120,7 @@ class AdminEventPostController extends Controller
             ->events()
             ->toArray();
 
-        return view('admin.events.index', compact('events', 'stats', 'breadcrumbs'));
+        return view('clubPosts.eventPosts.index', compact('events', 'stats', 'breadcrumbs'));
     }
 
     // Actions rapides pour changer le statut
@@ -128,7 +129,7 @@ class AdminEventPostController extends Controller
         $this->authorize('publish', $event);
         $event->update(['status' => 'published']);
 
-        return back()->with('success', 'Événement publié !');
+        return back()->with('success', __('Event published successfully'));
     }
 
     public function show(EventPost $event): View
@@ -139,7 +140,7 @@ class AdminEventPostController extends Controller
             ->current($event->title)
             ->toArray();
 
-        return view('admin.events.show', compact('event', 'breadcrumbs'));
+        return view('clubPosts.eventPosts.show', compact('event', 'breadcrumbs'));
     }
 
     public function showPublicEvents()
@@ -164,13 +165,13 @@ class AdminEventPostController extends Controller
                     'date' => $event->formatted_date,
                     'time' => $event->formatted_time,
                     'location' => $event->location,
-                    'price' => $event->price ?: 'Gratuit',
+                    'price' => $event->price ?: __('Free'),
                     'icon' => $event->icon,
                 ];
             })
             ->toArray();
 
-        return view('events', compact('events'));
+        return view('clubPosts.eventPosts.index', compact('events'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -179,8 +180,8 @@ class AdminEventPostController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
-            'type' => ['required', Rule::enum(EventTypeEnum::class)],
-            'status' => ['required', Rule::enum(EventStatusEnum::class)],
+            'type' => ['required', Rule::enum(ClubEventTypeEnum::class)],
+            'status' => ['required', Rule::enum(EventPostStatusEnum::class)],
             'event_date' => 'required|date',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'nullable|date_format:H:i|after:start_time',
@@ -200,8 +201,8 @@ class AdminEventPostController extends Controller
         $event = EventPost::create($validated);
 
         return redirect()
-            ->route('admin.events.show', $event)
-            ->with('success', 'Événement créé avec succès !');
+            ->route('clubPosts.eventPosts.show', $event)
+            ->with('success', __('Event created successfully'));
     }
 
     public function update(Request $request, EventPost $event): RedirectResponse
@@ -227,7 +228,7 @@ class AdminEventPostController extends Controller
         $event->update($validated);
 
         return redirect()
-            ->route('admin.events.show', $event)
-            ->with('success', 'Événement mis à jour avec succès !');
+            ->route('clubPosts.eventPosts.show', $event)
+            ->with('success', __('Event updated successfully'));
     }
 }

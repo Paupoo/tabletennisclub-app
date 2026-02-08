@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Controllers\ClubAdmin\Users;
 
 use App\Actions\User\ToggleHasPaidMembershipAction;
+use App\Enums\Gender;
 use App\Enums\Ranking;
-use App\Enums\Sex;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
@@ -19,7 +19,7 @@ use Illuminate\Http\RedirectResponse;
 
 class UserController extends Controller
 {
-    protected $forceList;
+    protected ForceList $forceList;
 
     public function __construct(ForceList $forceList)
     {
@@ -39,11 +39,11 @@ class UserController extends Controller
 
         $this->authorize('create', User::class);
 
-        return View('admin.users.create', [
+        return View('clubAdmin.users.create', [
             'user' => new User,
             'teams' => Team::with('league')->get(),
             'rankings' => collect(Ranking::cases())->pluck('name')->toArray(),
-            'sexes' => collect(Sex::cases())->pluck('name')->toArray(),
+            'sexes' => collect(Gender::cases())->pluck('name')->toArray(),
             'breadcrumbs' => $breadcrumbs,
         ]);
     }
@@ -64,15 +64,14 @@ class UserController extends Controller
         $this->authorize('delete', $user);
 
         if ($user->tournaments()->whereIn('status', ['draft', 'open', 'pending'])->count() > 0) {
-            $personalPronoum = $user->sex === Sex::WOMEN->name
+            $personalPronoun = $user->sex === Gender::WOMEN->name
                 ? 'she'
                 : 'he';
 
             return redirect()
                 ->back()
-                ->with('error', __('Cannot delete ' . $user->first_name . ' ' . $user->last_name . ' because ' . $personalPronoum . ' subscribed to one or more tournaments'));
+                ->with('error', __('Cannot delete ' . $user->first_name . ' ' . $user->last_name . ' because ' . $personalPronoun . ' subscribed to one or more tournaments'));
         }
-
 
         $user->delete();
 
@@ -97,11 +96,11 @@ class UserController extends Controller
 
         $this->authorize('update', User::class);
 
-        return view('admin.users.edit', [
+        return view('clubAdmin.users.edit', [
             'user' => $user,
             'teams' => Team::all(),
             'rankings' => array_column(Ranking::cases(), 'name'),
-            'sexes' => array_column(Sex::cases(), 'name'),
+            'sexes' => array_column(Gender::cases(), 'name'),
             'breadcrumbs' => $breadcrumbs,
         ]);
     }
@@ -139,10 +138,10 @@ class UserController extends Controller
                 ->where('birthdate', '>', now()->subYears(18))
                 ->count(),
             'totalWomen' => User::isActive()
-                ->where('sex', Sex::WOMEN)
+                ->where('sex', Gender::WOMEN)
                 ->count(),
             'totalMen' => User::isActive()
-                ->where('sex', Sex::MEN)
+                ->where('sex', Gender::MEN)
                 ->count(),
             'totalVeterans' => User::isActive()
                 ->isCompetitor()
@@ -152,7 +151,7 @@ class UserController extends Controller
 
         $this->authorize('index', User::class);
 
-        return View('admin.users.index', [
+        return View('clubAdmin.users.index', [
             'user_model' => User::class,
             'breadcrumbs' => $breadcrumbs,
             'actions' => $actions,
@@ -186,7 +185,7 @@ class UserController extends Controller
         $currentSeason = Season::where('start_at', '<', now())->where('end_at', '>', now())->first();
         $trainingPacks = $subscription?->season?->trainingPacks()->get();
 
-        return view('admin.users.show', [
+        return view('clubAdmin.users.show', [
             'user' => $user,
             'breadcrumbs' => $breadcrumbs,
             'subscription' => $subscription,

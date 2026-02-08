@@ -1,5 +1,5 @@
 {{-- resources/views/livewire/admin/spam/index.blade.php --}}
-<div x-data="{ 
+<div x-data="{
     showFilters: @entangle('showFilters'),
     selectedItems: @entangle('selectedItems'),
     selectAll: @entangle('selectAll')
@@ -10,7 +10,7 @@
             <!-- Recherche et filtres -->
             <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
                 <div class="relative">
-                    <input type="text" 
+                    <input type="text"
                            wire:model.live.debounce.300ms="search"
                            placeholder="Rechercher par IP ou User Agent..."
                            class="w-full sm:w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-club-blue focus:border-club-blue">
@@ -20,8 +20,8 @@
                         </svg>
                     </div>
                 </div>
-                
-                <button wire:click="toggleFilters" 
+
+                <button wire:click="toggleFilters"
                         class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
@@ -36,7 +36,7 @@
             <!-- Actions -->
             <div class="flex items-center space-x-2">
                 @if(count($selectedItems) > 0)
-                    <button wire:click="bulkDelete" 
+                    <button wire:click="bulkDelete"
                             wire:confirm="Êtes-vous sûr de vouloir supprimer {{ count($selectedItems) }} spam(s) ?"
                             class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700">
                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -45,8 +45,8 @@
                         {{ __('Delete') }} ({{ count($selectedItems) }})
                     </button>
                 @endif
-                
-                <button wire:click="exportData" 
+
+                <button wire:click="exportData"
                         class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
@@ -62,7 +62,7 @@
                     </select>
                 </div>
             </div>
-            
+
         </div>
 
         <!-- Panneau de filtres avancés -->
@@ -74,7 +74,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('Period') }}</label>
-                        <select wire:model.live="filters.period" 
+                        <select wire:model.live="filters.period"
                                 class="block w-full border-gray-300 rounded-md focus:ring-club-blue focus:border-club-blue text-sm">
                             <option value="">{{ __('All dates') }}</option>
                             <option value="today">{{ __('Today') }}</option>
@@ -82,10 +82,10 @@
                             <option value="month">{{ __('This month') }}</option>
                         </select>
                     </div>
-                    
+
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('User Agent Type') }}</label>
-                        <select wire:model.live="filters.userAgentType" 
+                        <select wire:model.live="filters.userAgentType"
                                 class="block w-full border-gray-300 rounded-md focus:ring-club-blue focus:border-club-blue text-sm">
                             <option value="">{{ __('All types') }}</option>
                             <option value="bot">{{ __('Bots') }}</option>
@@ -93,17 +93,17 @@
                             <option value="browser">{{ __('Browsers') }}</option>
                         </select>
                     </div>
-                    
+
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">{{ __('Specific IP') }}</label>
-                        <input type="text" 
+                        <input type="text"
                                wire:model.live.debounce.500ms="filters.specificIp"
                                placeholder="192.168.1.1"
                                class="block w-full border-gray-300 rounded-md focus:ring-club-blue focus:border-club-blue text-sm">
                     </div>
-                    
+
                     <div class="flex items-end">
-                        <button wire:click="clearFilters" 
+                        <button wire:click="clearFilters"
                                 class="w-full px-3 py-2 text-sm text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200">
                             {{ __('Reset') }}
                         </button>
@@ -117,7 +117,7 @@
     <div class="px-4 sm:px-6 py-3 bg-gray-50 border-b border-gray-200">
         <div class="flex items-center justify-between">
             <div class="flex items-center">
-                <input type="checkbox" 
+                <input type="checkbox"
                        wire:model.live="selectAll"
                        class="h-4 w-4 text-club-blue focus:ring-club-blue border-gray-300 rounded">
                 <label class="ml-2 text-sm text-gray-700">
@@ -142,7 +142,7 @@
                 <div class="flex items-start space-x-4">
                     <!-- Checkbox -->
                     <div class="flex-shrink-0 pt-1">
-                        <input type="checkbox" 
+                        <input type="checkbox"
                                value="{{ $spam->id }}"
                                wire:model.live="selectedItems"
                                class="h-4 w-4 text-club-blue focus:ring-club-blue border-gray-300 rounded">
@@ -161,12 +161,12 @@
                                     <span class="text-sm font-mono text-gray-900 bg-gray-100 px-2 py-1 rounded">{{ $spam->ip }}</span>
                                     <span class="text-xs text-gray-500">{{ $spam->created_at->format('d/m/Y H:i') }}</span>
                                 </div>
-                                
+
                                 <p class="text-sm text-gray-600 mb-2">
                                     <span class="font-medium">{{ __('User Agent') }}:</span>
                                     <span class="font-mono">{{ $this->truncateText($spam->user_agent ?? 'N/A') }}</span>
                                 </p>
-                                
+
                                 @if($spam->inputs)
                                     <div class="text-sm">
                                         <span class="font-medium text-gray-700">{{ __('Submitted data') }}:</span>
@@ -178,13 +178,13 @@
                             <!-- Actions -->
                             <div class="flex items-center space-x-2">
                                 @if($spam->ip)
-                                    <button wire:click="blockIp('{{ $spam->ip }}')" 
+                                    <button wire:click="blockIp('{{ $spam->ip }}')"
                                             wire:confirm="Bloquer l'IP {{ $spam->ip }} ?"
                                             class="text-sm text-orange-600 hover:text-orange-800 font-medium">
                                         {{ __('Block IP') }}
                                     </button>
                                 @endif
-                                <button wire:click="deleteSpam({{ $spam->id }})" 
+                                <button wire:click="deleteSpam({{ $spam->id }})"
                                         wire:confirm="Supprimer ce spam ?"
                                         class="text-sm text-red-600 hover:text-red-800 font-medium">
                                     {{ __('Delete') }}
@@ -235,7 +235,7 @@
     $wire.on('spam-deleted', (data) => {
         // Tu peux utiliser ton système de notifications existant
         console.log('Spam deleted:', data.message);
-        // Exemple: showNotification(data.message, data.type);
+        // Exemple : show Notification(data.message, data.type);
     });
 
     $wire.on('spam-bulk-deleted', (data) => {

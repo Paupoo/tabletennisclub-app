@@ -1,23 +1,14 @@
 <?php
-
 declare(strict_types=1);
 
-use App\Enums\EventStatusEnum;
-use App\Enums\EventTypeEnum;
+use App\Enums\EventPostStatusEnum;
+use App\Enums\ClubEventTypeEnum;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('events');
-    }
-
     /**
      * Run the migrations.
      */
@@ -30,12 +21,12 @@ return new class extends Migration
             $table->morphs('eventable'); // eventable_type + eventable_id
 
             // Type d'événement (pour faciliter les requêtes)
-            $table->enum('type', EventTypeEnum::values());
+            $table->enum('type', ClubEventTypeEnum::values());
 
             // Informations communes
             $table->string('title');
             $table->text('description');
-            $table->enum('status', EventStatusEnum::values())->default(EventStatusEnum::DRAFT->value);
+            $table->enum('status', EventPostStatusEnum::values())->default(EventPostStatusEnum::DRAFT->value);
 
             // Date et heure (communes à tous)
             $table->date('event_date');
@@ -57,6 +48,15 @@ return new class extends Migration
             // Index pour optimiser les requêtes
             $table->index(['status', 'event_date']);
             $table->index(['type', 'status']);
+            $table->index(['eventable_type', 'eventable_id']);
         });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('events');
     }
 };

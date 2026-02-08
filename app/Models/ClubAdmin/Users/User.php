@@ -6,7 +6,7 @@ namespace App\Models\ClubAdmin\Users;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
-use App\Enums\Sex;
+use App\Enums\Gender;
 use App\Models\ClubEvents\Interclub\Club;
 use App\Models\ClubEvents\Interclub\Interclub;
 use App\Models\ClubEvents\Interclub\Team;
@@ -121,7 +121,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'password' => 'hashed',
         'first_name' => 'string',
         'last_name' => 'string',
-        'sex' => Sex::class,
+        'sex' => Gender::class,
         'phone_number' => 'string',
         'birthdate' => 'datetime:d-m-Y',
         'street' => 'string',

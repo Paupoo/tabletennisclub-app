@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories\ClubPosts;
 
-use App\Enums\ArticlesStatusEnum;
+use App\Enums\NewsPostStatusEnum;
 use App\Models\ClubAdmin\Users\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
@@ -28,7 +28,7 @@ class NewsPostFactory extends Factory
             'slug' => Str::slug($title), // Génération du slug à partir du titre
             'content' => $this->faker->paragraph(),
             'user_id' => User::factory(),
-            'status' => ArticlesStatusEnum::PUBLISHED,
+            'status' => NewsPostStatusEnum::PUBLISHED,
             'category' => 'Partnership', // ou un value de ton enum
             'created_at' => now(),
             'updated_at' => now(),

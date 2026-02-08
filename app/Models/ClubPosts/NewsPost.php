@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models\ClubPosts;
 
-use App\Enums\ArticlesCategoryEnum;
-use App\Enums\ArticlesStatusEnum;
+use App\Enums\NewsPostCategoryEnum;
+use App\Enums\NewsPostStatusEnum;
 use App\Models\ClubAdmin\Users\User;
 use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -21,9 +21,9 @@ class NewsPost extends Model
         'title' => 'string',
         'slug' => 'string',
         'content' => 'string',
-        'category' => ArticlesCategoryEnum::class,
+        'category' => NewsPostCategoryEnum::class,
         'image' => 'string',
-        'status' => ArticlesStatusEnum::class,
+        'status' => NewsPostStatusEnum::class,
         'is_public' => 'boolean',
         'user_id' => 'integer',
     ];

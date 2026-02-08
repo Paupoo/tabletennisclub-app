@@ -14,7 +14,7 @@ use App\Support\Breadcrumb;
 
 class TableController extends Controller
 {
-    public function __construct(private TournamentTableService $tableService) {}
+    public function __construct(private readonly TournamentTableService $tableService) {}
 
     /**
      * Show the form for creating a new resource.
@@ -32,7 +32,7 @@ class TableController extends Controller
         $table = new Table;
         $rooms = Room::orderBy('name')->get();
 
-        return view('admin.tables.create', [
+        return view('clubAdmin.club.tables.create', [
             'table' => $table,
             'rooms' => $rooms,
             'breadcrumbs' => $breadcrumbs,
@@ -69,7 +69,7 @@ class TableController extends Controller
             ->toArray();
         $rooms = Room::orderBy('name')->get();
 
-        return view('admin.tables.edit', [
+        return view('clubAdmin.club.tables.edit', [
             'table' => $table,
             'rooms' => $rooms,
             'breadcrumbs' => $breadcrumbs,
@@ -88,7 +88,7 @@ class TableController extends Controller
             ->tables()
             ->toArray();
 
-        return view('admin.tables.index', [
+        return view('clubAdmin.club.tables.index', [
             'tables' => Table::orderByRaw('name * 1 ASC')->paginate(10),
             'breadcrumbs' => $breadcrumbs,
         ]);

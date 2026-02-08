@@ -8,10 +8,11 @@
                     <p class="text-gray-600 text-sm sm:text-base">{{ __('Fill out the form below to create a new article.') }}</p>
                 </div>
 
-                <a href="{{ route('admin.articles.index') }}"
+                <a href="{{ route('clubPosts.newsPosts.index') }}"
                    class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base inline-flex items-center">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M15 19l-7-7 7-7"></path>
                     </svg>
                     {{ __('Back to list') }}
                 </a>
@@ -19,7 +20,8 @@
         </div>
 
         <!-- Formulaire de création -->
-        <form action="{{ route('admin.articles.store') }}" method="POST" enctype="multipart/form-data" class="space-y-6">
+        <form action="{{ route('clubPosts.newsPosts.store') }}" method="POST" enctype="multipart/form-data"
+              class="space-y-6">
             @csrf
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -46,7 +48,7 @@
                                        x-model="title"
                                        @input="generateSlug">
                                 @error('title')
-                                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -56,7 +58,8 @@
                                     {{ __('URL (Slug)') }} <span class="text-red-500">*</span>
                                 </label>
                                 <div class="flex">
-                                    <span class="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
+                                    <span
+                                        class="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
                                         {{ url('/articles') }}/
                                     </span>
                                     <input type="text"
@@ -69,9 +72,10 @@
                                            x-data="{ slug: '{{ old('slug') }}' }"
                                            x-model="slug">
                                 </div>
-                                <p class="text-xs text-gray-500 mt-1">L'URL sera automatiquement générée à partir du titre</p>
+                                <p class="text-xs text-gray-500 mt-1">L'URL sera automatiquement générée à partir du
+                                    titre</p>
                                 @error('slug')
-                                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>
@@ -96,7 +100,7 @@
                                 <span id="character-count">0 caractères</span>
                             </div>
                             @error('content')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                             @enderror
                         </div>
                     </div>
@@ -110,14 +114,20 @@
                                 <label for="image" class="block text-sm font-medium text-gray-700 mb-2">
                                     {{ __('NewsPost Image') }}
                                 </label>
-                                <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-gray-400 transition-colors">
+                                <div
+                                    class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-gray-400 transition-colors">
                                     <div class="space-y-1 text-center">
                                         <div x-show="!imagePreview">
-                                            <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                                            <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor"
+                                                 fill="none" viewBox="0 0 48 48">
+                                                <path
+                                                    d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                                                    stroke-width="2" stroke-linecap="round"
+                                                    stroke-linejoin="round"></path>
                                             </svg>
                                             <div class="flex text-sm text-gray-600">
-                                                <label for="image" class="relative cursor-pointer bg-white rounded-md font-medium text-club-blue hover:text-club-blue-light focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-club-blue">
+                                                <label for="image"
+                                                       class="relative cursor-pointer bg-white rounded-md font-medium text-club-blue hover:text-club-blue-light focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-club-blue">
                                                     <span>Télécharger une image</span>
                                                     <input id="image"
                                                            name="image"
@@ -132,16 +142,21 @@
                                         </div>
                                         <div x-show="imagePreview" class="relative">
                                             <img :src="imagePreview" class="mx-auto h-32 w-auto rounded-lg shadow-sm">
-                                            <button @click="imagePreview = null; document.getElementById('image').value = ''" type="button" class="absolute top-0 right-0 -mt-2 -mr-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                            <button
+                                                @click="imagePreview = null; document.getElementById('image').value = ''"
+                                                type="button"
+                                                class="absolute top-0 right-0 -mt-2 -mr-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                     viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                          stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                                                 </svg>
                                             </button>
                                         </div>
                                     </div>
                                 </div>
                                 @error('image')
-                                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                 @enderror
                             </div>
                         </div>
@@ -163,14 +178,15 @@
                                 <select id="status"
                                         name="status"
                                         class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-club-blue focus:border-club-blue @error('status') border-red-500 @enderror">
-                                    @foreach(\App\Enums\ArticlesStatusEnum::cases() as $statusEnum)
-                                        <option value="{{ $statusEnum->value }}" {{ old('status', 'draft') === $statusEnum->value ? 'selected' : '' }}>
+                                    @foreach(\App\Enums\NewsPostStatusEnum::cases() as $statusEnum)
+                                        <option
+                                            value="{{ $statusEnum->value }}" {{ old('status', 'draft') === $statusEnum->value ? 'selected' : '' }}>
                                             {{ ucfirst($statusEnum->value) }}
                                         </option>
                                     @endforeach
                                 </select>
                                 @error('status')
-                                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -185,7 +201,7 @@
                                                name="is_public"
                                                value="1"
                                                class="text-club-blue focus:ring-club-blue"
-                                               {{ old('is_public', '1') == '1' ? 'checked' : '' }}>
+                                            {{ old('is_public', '1') == '1' ? 'checked' : '' }}>
                                         <span class="ml-2 text-sm text-gray-700">
                                             <span class="font-medium">Public</span> - Visible par tous les visiteurs
                                         </span>
@@ -195,14 +211,14 @@
                                                name="is_public"
                                                value="0"
                                                class="text-club-blue focus:ring-club-blue"
-                                               {{ old('is_public') == '0' ? 'checked' : '' }}>
+                                            {{ old('is_public') == '0' ? 'checked' : '' }}>
                                         <span class="ml-2 text-sm text-gray-700">
                                             <span class="font-medium">Privé</span> - Visible uniquement par les membres
                                         </span>
                                     </label>
                                 </div>
                                 @error('is_public')
-                                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                 @enderror
                             </div>
 
@@ -213,7 +229,8 @@
                                         value="save"
                                         class="w-full bg-club-blue hover:bg-club-blue-light text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm flex items-center justify-center">
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                              d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12"></path>
                                     </svg>
                                     Enregistrer l'article
                                 </button>
@@ -223,7 +240,8 @@
                                         value="save_and_continue"
                                         class="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm flex items-center justify-center">
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                     </svg>
                                     Enregistrer et modifier
                                 </button>
@@ -244,14 +262,15 @@
                                     class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-club-blue focus:border-club-blue @error('category') border-red-500 @enderror"
                                     required>
                                 <option value="">Choisir une catégorie</option>
-                                @foreach(\App\Enums\ArticlesCategoryEnum::cases() as $categoryEnum)
-                                    <option value="{{ $categoryEnum->value }}" {{ old('category') === $categoryEnum->value ? 'selected' : '' }}>
+                                @foreach(\App\Enums\NewsPostCategoryEnum::cases() as $categoryEnum)
+                                    <option
+                                        value="{{ $categoryEnum->value }}" {{ old('category') === $categoryEnum->value ? 'selected' : '' }}>
                                         {{ $categoryEnum->name }}
                                     </option>
                                 @endforeach
                             </select>
                             @error('category')
-                                <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                             @enderror
                         </div>
                     </div>
@@ -270,11 +289,13 @@
                             </div>
                             <div>
                                 <span class="font-medium text-gray-700">URL:</span>
-                                <span x-text="slug ? '{{ url('/articles') }}/' + slug : 'Non définie'" class="text-gray-600 font-mono text-xs"></span>
+                                <span x-text="slug ? '{{ url('/articles') }}/' + slug : 'Non définie'"
+                                      class="text-gray-600 font-mono text-xs"></span>
                             </div>
                             <div>
                                 <span class="font-medium text-gray-700">Auteur:</span>
-                                <span class="text-gray-600">{{ auth()->user()->first_name }} {{ auth()->user()->last_name }}</span>
+                                <span
+                                    class="text-gray-600">{{ auth()->user()->first_name }} {{ auth()->user()->last_name }}</span>
                             </div>
                             <div>
                                 <span class="font-medium text-gray-700">Contenu:</span>
@@ -300,7 +321,7 @@
 
         <!-- Scripts pour les interactions -->
         <script>
-            document.addEventListener('DOMContentLoaded', function() {
+            document.addEventListener('DOMContentLoaded', function () {
                 const titleInput = document.getElementById('title');
                 const slugInput = document.getElementById('slug');
                 const contentTextarea = document.getElementById('content');
@@ -324,7 +345,7 @@
                         .trim('-');
                 }
 
-                titleInput.addEventListener('input', function() {
+                titleInput.addEventListener('input', function () {
                     const slug = generateSlug(this.value);
                     slugInput.value = slug;
                 });
@@ -343,6 +364,7 @@
 
                 // Auto-sauvegarde (optionnel - vous pouvez l'implémenter avec AJAX)
                 let autoSaveTimeout;
+
                 function autoSave() {
                     clearTimeout(autoSaveTimeout);
                     autoSaveTimeout = setTimeout(() => {

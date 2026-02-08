@@ -11,11 +11,12 @@ use App\Models\ClubEvents\Tournament\TournamentMatch;
 use App\Services\TournamentFinalPhaseService;
 use App\States\Tournament\TournamentStateMachine;
 use App\Support\Breadcrumb;
+use Exception;
 use Illuminate\Http\Request;
 
 class KnockoutPhaseController extends Controller
 {
-    protected $knockoutService;
+    protected readonly TournamentFinalPhaseService $knockoutService;
 
     public function __construct(TournamentFinalPhaseService $knockoutService)
     {
@@ -27,11 +28,12 @@ class KnockoutPhaseController extends Controller
      */
     public function setup(Tournament $tournament)
     {
-        return view('admin.tournaments.knockout-setup', compact('tournament'));
+        return view('clubEvents.tournaments.knockout-setup', compact('tournament'));
     }
 
     /**
      * Configure knockout phase
+     * @throws Exception
      */
     public function configure(Request $request, Tournament $tournament)
     {
@@ -114,7 +116,7 @@ class KnockoutPhaseController extends Controller
 
         $statusesAllowed = (new TournamentStateMachine($tournament))->getAllowedTransitions();
 
-        return view('admin.tournaments.knockout-bracket', compact('tournament', 'rounds', 'tables', 'statusesAllowed', 'breadcrumbs'));
+        return view('clubEvents.tournaments.knockout-bracket', compact('tournament', 'rounds', 'tables', 'statusesAllowed', 'breadcrumbs'));
     }
 
     /**

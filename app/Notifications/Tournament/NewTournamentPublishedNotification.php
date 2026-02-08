@@ -44,7 +44,7 @@ class NewTournamentPublishedNotification extends Notification
             ->greeting(__('Hi ' . $this->user->first_name . ' !'))
             ->line(__('Join us at ' . $this->tournament->name . ' on the ' . $this->tournament->start_date->format('d/m/Y')))
             ->line(__('Click on the button below to join us and play your best table tennis!'))
-            ->action('I want to play', 'http://localhost:8000/admin/tournament/' . $this->tournament->id . '/register/' . $this->user->id)
+            ->action('I want to play', 'http://localhost:8000/clubAdmin/tournament/' . $this->tournament->id . '/register/' . $this->user->id)
             ->line(__('We are looking forward to see you there!'));
     }
 

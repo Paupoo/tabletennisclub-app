@@ -6,13 +6,22 @@ namespace App\Support;
 
 class Breadcrumb
 {
-    protected $items = [];
+    protected array $items = [];
 
+    /**
+     * @return Breadcrumb
+     */
     public static function make(): Breadcrumb
     {
         return new static;
     }
 
+    /**
+     * @param $title
+     * @param $url
+     * @param $icon
+     * @return Breadcrumb
+     */
     public function add($title, $url = null, $icon = null): Breadcrumb
     {
         $this->items[] = compact('title', 'url', 'icon');
@@ -20,24 +29,32 @@ class Breadcrumb
         return $this;
     }
 
+    /**
+     * @param $url
+     * @return Breadcrumb
+     */
     public function articles($url = null): Breadcrumb
     {
-        return $this->add('Articles', $url ?: route('admin.articles.index'), 'home');
+        return $this->add('Articles', $url ?: route('clubPosts.newsPosts.index'), 'home');
     }
 
+    /**
+     * @param $url
+     * @return Breadcrumb
+     */
     public function contacts($url = null): Breadcrumb
     {
-        return $this->add('Contacts', $url ?: route('admin.contacts.index'));
+        return $this->add('Contacts', $url ?: route('clubAdmin.contacts.index'));
     }
 
     public function current($title): Breadcrumb
     {
-        return $this->add($title, null);
+        return $this->add($title);
     }
 
     public function events($url = null): Breadcrumb
     {
-        return $this->add('Events', $url ?: route('admin.events.index'), 'home');
+        return $this->add('Events', $url ?: route('clubPosts.eventPosts.index'), 'home');
     }
 
     public function home($url = null): Breadcrumb
@@ -79,6 +96,9 @@ class Breadcrumb
         return $this->add('Teams', $url ?: route('teams.index'));
     }
 
+    /**
+     * @return array
+     */
     public function toArray(): array
     {
         return $this->items;

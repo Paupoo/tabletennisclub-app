@@ -1,12 +1,10 @@
 <?php
-
-declare(strict_types=1);
 // app/Http/Requests/StoreEventRequest.php
 
 namespace App\Http\Requests;
 
-use App\Enums\EventStatusEnum;
-use App\Enums\EventTypeEnum;
+use App\Enums\EventPostStatusEnum;
+use App\Enums\ClubEventTypeEnum;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -18,6 +16,76 @@ class StoreEventRequest extends FormRequest
     public function authorize(): bool
     {
         return $this->user()->can('create', Event::class);
+    }
+
+    /**
+     * Règles de validation communes
+     */
+    public function rules(): array
+    {
+        return [
+            // Champs communs
+            'type' => ['required', Rule::in(ClubEventTypeEnum::values())],
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'status' => ['required', Rule::in(EventPostStatusEnum::values())],
+            'event_date' => 'required|date|after_or_equal:today',
+            'start_time' => 'required|date_format:H:i',
+            'end_time' => 'nullable|date_format:H:i|after:start_time',
+            'location' => 'required|string|max:255',
+            'price' => 'nullable|string|max:255',
+            'icon' => 'nullable|string|max:10',
+            'max_participants' => 'nullable|integer|min:1',
+            'notes' => 'nullable|string',
+            'featured' => 'boolean',
+            'action' => 'nullable|in:draft,publish',
+
+            // Règles spécifiques selon le type
+            ...$this->getTypeSpecificRules(),
+        ];
+    }
+
+    /**
+     * Retourne les règles spécifiques selon le type
+     */
+    protected function getTypeSpecificRules(): array
+    {
+        $type = $this->input('type');
+
+        return match ($type) {
+            ClubEventTypeEnum::TRAINING->value => [
+                'training_level' => 'required|string',
+                'training_type' => 'required|string',
+                'room_id' => 'required|exists:rooms,id',
+                'trainer_id' => 'nullable|exists:users,id',
+                'season_id' => 'required|exists:seasons,id',
+            ],
+
+            ClubEventTypeEnum::INTERCLUB->value => [
+                'is_home' => 'boolean',
+                'interclub_room_id' => 'required_if:is_home,1|nullable|exists:rooms,id',
+                'interclub_address' => 'required_if:is_home,0|nullable|string|max:150',
+                'visited_team_id' => 'required|exists:teams,id',
+                'opposite_club_id' => 'required|exists:clubs,id',
+                'visiting_team_id' => 'nullable|exists:teams,id',
+                'opposite_team_name' => 'nullable|string|size:1|regex:/^[a-zA-Z]$/',
+                'total_players' => 'required|integer|min:1|max:20',
+                'week_number' => 'nullable|integer|min:1|max:52',
+                'league_id' => 'nullable|exists:leagues,id',
+                'interclub_season_id' => 'required|exists:seasons,id',
+            ],
+
+            ClubEventTypeEnum::TOURNAMENT->value => [
+                'tournament_start_date' => 'nullable|date|after_or_equal:event_date',
+                'tournament_end_date' => 'nullable|date|after_or_equal:tournament_start_date',
+                'tournament_max_users' => 'required|integer|min:2',
+                'tournament_price' => 'required|numeric|min:0',
+                'tournament_status' => 'required|string',
+                'has_handicap_points' => 'boolean',
+            ],
+
+            default => [],
+        };
     }
 
     /**
@@ -55,76 +123,6 @@ class StoreEventRequest extends FormRequest
             'tournament_price.required' => __('Please specify the registration price (0 if free).'),
             'tournament_status.required' => __('Please select a tournament status.'),
         ];
-    }
-
-    /**
-     * Règles de validation communes
-     */
-    public function rules(): array
-    {
-        return [
-            // Champs communs
-            'type' => ['required', Rule::in(EventTypeEnum::values())],
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'status' => ['required', Rule::in(EventStatusEnum::values())],
-            'event_date' => 'required|date|after_or_equal:today',
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'nullable|date_format:H:i|after:start_time',
-            'location' => 'required|string|max:255',
-            'price' => 'nullable|string|max:255',
-            'icon' => 'nullable|string|max:10',
-            'max_participants' => 'nullable|integer|min:1',
-            'notes' => 'nullable|string',
-            'featured' => 'boolean',
-            'action' => 'nullable|in:draft,publish',
-
-            // Règles spécifiques selon le type
-            ...$this->getTypeSpecificRules(),
-        ];
-    }
-
-    /**
-     * Retourne les règles spécifiques selon le type
-     */
-    protected function getTypeSpecificRules(): array
-    {
-        $type = $this->input('type');
-
-        return match ($type) {
-            EventTypeEnum::TRAINING->value => [
-                'training_level' => 'required|string',
-                'training_type' => 'required|string',
-                'room_id' => 'required|exists:rooms,id',
-                'trainer_id' => 'nullable|exists:users,id',
-                'season_id' => 'required|exists:seasons,id',
-            ],
-
-            EventTypeEnum::INTERCLUB->value => [
-                'is_home' => 'boolean',
-                'interclub_room_id' => 'required_if:is_home,1|nullable|exists:rooms,id',
-                'interclub_address' => 'required_if:is_home,0|nullable|string|max:150',
-                'visited_team_id' => 'required|exists:teams,id',
-                'opposite_club_id' => 'required|exists:clubs,id',
-                'visiting_team_id' => 'nullable|exists:teams,id',
-                'opposite_team_name' => 'nullable|string|size:1|regex:/^[a-zA-Z]$/',
-                'total_players' => 'required|integer|min:1|max:20',
-                'week_number' => 'nullable|integer|min:1|max:52',
-                'league_id' => 'nullable|exists:leagues,id',
-                'interclub_season_id' => 'required|exists:seasons,id',
-            ],
-
-            EventTypeEnum::TOURNAMENT->value => [
-                'tournament_start_date' => 'nullable|date|after_or_equal:event_date',
-                'tournament_end_date' => 'nullable|date|after_or_equal:tournament_start_date',
-                'tournament_max_users' => 'required|integer|min:2',
-                'tournament_price' => 'required|numeric|min:0',
-                'tournament_status' => 'required|string',
-                'has_handicap_points' => 'boolean',
-            ],
-
-            default => [],
-        };
     }
 
     /**

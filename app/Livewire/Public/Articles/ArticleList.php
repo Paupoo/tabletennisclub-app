@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Livewire\Public\Articles;
 
-use App\Enums\ArticlesCategoryEnum;
-use App\Enums\ArticlesStatusEnum;
+use App\Enums\NewsPostCategoryEnum;
+use App\Enums\NewsPostStatusEnum;
 use App\Models\ClubPosts\NewsPost;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -66,7 +66,7 @@ class ArticleList extends Component
     public function getArticlesProperty(): LengthAwarePaginator
     {
         $query = NewsPost::query()
-            ->where('status', ArticlesStatusEnum::PUBLISHED->value);
+            ->where('status', NewsPostStatusEnum::PUBLISHED->value);
 
         $this->applyFilters($query);
 
@@ -76,10 +76,10 @@ class ArticleList extends Component
 
     public function mount(): void
     {
-        $this->categories = collect(ArticlesCategoryEnum::cases());
+        $this->categories = collect(NewsPostCategoryEnum::cases());
         $this->years = $this->loadYears();
         $this->months = $this->loadMonths();
-        $this->categories = collect(ArticlesCategoryEnum::cases())
+        $this->categories = collect(NewsPostCategoryEnum::cases())
             ->pluck('value');
     }
 
@@ -87,6 +87,7 @@ class ArticleList extends Component
     {
         return view('livewire.public.articles.articles-list', [
             'articles' => $this->articles,
+            'clubPosts' => $this->articles,
             'categories' => $this->categories,
             'years' => $this->years,
             'months' => $this->months,

@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Enums\ArticlesCategoryEnum;
-use App\Enums\ArticlesStatusEnum;
+use App\Enums\NewsPostCategoryEnum;
+use App\Enums\NewsPostStatusEnum;
 use App\Livewire\Public\Articles\ArticleList;
 use App\Models\ClubPosts\NewsPost;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -15,18 +15,18 @@ uses(RefreshDatabase::class);
 beforeEach(function (): void {
     // Création d'articles exemples pour tests
     NewsPost::factory()->create([
-        'status' => ArticlesStatusEnum::PUBLISHED,
-        'category' => ArticlesCategoryEnum::PARTNERSHIP,
+        'status' => NewsPostStatusEnum::PUBLISHED,
+        'category' => NewsPostCategoryEnum::PARTNERSHIP,
         'created_at' => '2024-05-15',
     ]);
     NewsPost::factory()->create([
-        'status' => ArticlesStatusEnum::PUBLISHED,
-        'category' => ArticlesCategoryEnum::EVENT,
+        'status' => NewsPostStatusEnum::PUBLISHED,
+        'category' => NewsPostCategoryEnum::EVENT,
         'created_at' => '2023-01-10',
     ]);
     NewsPost::factory()->create([
-        'status' => ArticlesStatusEnum::DRAFT,
-        'category' => ArticlesCategoryEnum::PARTNERSHIP,
+        'status' => NewsPostStatusEnum::DRAFT,
+        'category' => NewsPostCategoryEnum::PARTNERSHIP,
         'created_at' => '2024-01-01',
     ]);
 });
@@ -42,7 +42,7 @@ it('initializes with correct default values and collections', function (): void 
 
     // Categories loaded correspond à enum values
     expect($component->categories)->toBeInstanceOf(\Illuminate\Support\Collection::class);
-    expect($component->categories)->toContain(ArticlesCategoryEnum::PARTNERSHIP->value);
+    expect($component->categories)->toContain(NewsPostCategoryEnum::PARTNERSHIP->value);
 
     // Years loaded
     expect($component->years)->toBeInstanceOf(\Illuminate\Support\Collection::class);
@@ -55,13 +55,13 @@ it('initializes with correct default values and collections', function (): void 
 
 it('applies filters correctly in getArticlesProperty', function (): void {
     $component = Livewire::test(ArticleList::class)
-        ->set('category', ArticlesCategoryEnum::PARTNERSHIP->value)
+        ->set('category', NewsPostCategoryEnum::PARTNERSHIP->value)
         ->set('year', '2024')
         ->set('month', '05')
         ->set('sort', 'asc');
 
     // Vérifier que les propriétés sont bien définies
-    $component->assertSet('category', ArticlesCategoryEnum::PARTNERSHIP->value);
+    $component->assertSet('category', NewsPostCategoryEnum::PARTNERSHIP->value);
     $component->assertSet('year', '2024');
     $component->assertSet('month', '05');
     $component->assertSet('sort', 'asc');
@@ -74,7 +74,7 @@ it('applies filters correctly in getArticlesProperty', function (): void {
     // Vérifier que seuls les articles correspondant aux filtres sont retournés
     if ($articles->count() > 0) {
         foreach ($articles as $article) {
-            expect($article->category)->toBe(ArticlesCategoryEnum::PARTNERSHIP);
+            expect($article->category)->toBe(NewsPostCategoryEnum::PARTNERSHIP);
             expect($article->created_at->year)->toBe(2024);
             expect($article->created_at->month)->toBe(5);
         }
@@ -84,20 +84,20 @@ it('applies filters correctly in getArticlesProperty', function (): void {
 it('returns only published articles', function (): void {
     // Créer des articles avec différents statuts
     $publishedArticle = NewsPost::factory()->create([
-        'status' => ArticlesStatusEnum::PUBLISHED,
-        'category' => ArticlesCategoryEnum::PARTNERSHIP,
+        'status' => NewsPostStatusEnum::PUBLISHED,
+        'category' => NewsPostCategoryEnum::PARTNERSHIP,
         'created_at' => '2024-05-15',
     ]);
 
     $draftArticle = NewsPost::factory()->create([
-        'status' => ArticlesStatusEnum::DRAFT,
-        'category' => ArticlesCategoryEnum::PARTNERSHIP,
+        'status' => NewsPostStatusEnum::DRAFT,
+        'category' => NewsPostCategoryEnum::PARTNERSHIP,
         'created_at' => '2024-05-16',
     ]);
 
     $archivedArticle = NewsPost::factory()->create([
-        'status' => ArticlesStatusEnum::ARCHIVED,
-        'category' => ArticlesCategoryEnum::EVENT,
+        'status' => NewsPostStatusEnum::ARCHIVED,
+        'category' => NewsPostCategoryEnum::EVENT,
         'created_at' => '2024-05-17',
     ]);
 
@@ -110,7 +110,7 @@ it('returns only published articles', function (): void {
 
     // Vérifier que tous les articles retournés sont publiés
     foreach ($articles as $article) {
-        expect($article->status)->toBe(ArticlesStatusEnum::PUBLISHED);
+        expect($article->status)->toBe(NewsPostStatusEnum::PUBLISHED);
     }
 
     // Vérifier que l'article publié est dans les résultats
@@ -125,8 +125,8 @@ it('returns only published articles', function (): void {
 it('resets pagination when filters update', function (): void {
     // Créer suffisamment d'articles pour avoir plusieurs pages
     NewsPost::factory()->count(20)->create([
-        'status' => ArticlesStatusEnum::PUBLISHED->value,
-        'category' => ArticlesCategoryEnum::PARTNERSHIP->value,
+        'status' => NewsPostStatusEnum::PUBLISHED->value,
+        'category' => NewsPostCategoryEnum::PARTNERSHIP->value,
     ]);
 
     $component = Livewire::test(ArticleList::class)
@@ -137,7 +137,7 @@ it('resets pagination when filters update', function (): void {
     expect($articles->currentPage())->toBe(2);
 
     // Changer un filtre - cela devrait reset la page à 1
-    $component->set('category', ArticlesCategoryEnum::EVENT->value);
+    $component->set('category', NewsPostCategoryEnum::EVENT->value);
 
     // Vérifier que la page est maintenant à 1
     $articlesAfterFilter = $component->instance()->getArticlesProperty();
@@ -146,7 +146,7 @@ it('resets pagination when filters update', function (): void {
 
 it('tests that clearAllFilters resets all filters and sort', function (): void {
     $component = Livewire::test(ArticleList::class)
-        ->set('category', ArticlesCategoryEnum::PARTNERSHIP->value)
+        ->set('category', NewsPostCategoryEnum::PARTNERSHIP->value)
         ->set('year', '2024')
         ->set('month', '05')
         ->set('sort', 'asc');
@@ -161,7 +161,7 @@ it('tests that clearAllFilters resets all filters and sort', function (): void {
 
 it('tests that  clearFilter resets individual filters correctly', function (): void {
     $component = new ArticleList;
-    $component->category = ArticlesCategoryEnum::PARTNERSHIP->value;
+    $component->category = NewsPostCategoryEnum::PARTNERSHIP->value;
     $component->year = '2024';
     $component->month = '05';
     $component->sort = 'asc';
@@ -181,7 +181,7 @@ it('tests that  clearFilter resets individual filters correctly', function (): v
 
 it('tests that activeFiltersCountProperty returns correct count', function (): void {
     $component = Livewire::test(ArticleList::class)
-        ->set('category', ArticlesCategoryEnum::PARTNERSHIP->value)
+        ->set('category', NewsPostCategoryEnum::PARTNERSHIP->value)
         ->set('year', '')
         ->set('month', '05');
 
@@ -196,9 +196,9 @@ it('tests that activeFiltersCountProperty returns correct count', function (): v
 it('tests that applyFilters modifies the query as expected', function (): void {
     $component = new ArticleList;
 
-    $query = NewsPost::query()->where('status', ArticlesStatusEnum::PUBLISHED);
+    $query = NewsPost::query()->where('status', NewsPostStatusEnum::PUBLISHED);
 
-    $component->category = ArticlesCategoryEnum::PARTNERSHIP->value;
+    $component->category = NewsPostCategoryEnum::PARTNERSHIP->value;
     $component->year = '2024';
     $component->month = '05';
 

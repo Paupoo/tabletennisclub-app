@@ -28,18 +28,12 @@ class RoomController extends Controller
 
         $room = new Room;
 
-        return view('admin.rooms.create', [
+        return view('clubAdmin.club.rooms.create', [
             'room' => $room,
             'breadcrumbs' => $breadcrumbs,
         ]);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  string  $id
-     * @return void
-     */
     public function destroy(Room $room): RedirectResponse
     {
         $this->authorize('delete', $room);
@@ -62,7 +56,7 @@ class RoomController extends Controller
 
         $this->authorize('create', Room::class);
 
-        return view('admin.rooms.edit', [
+        return view('clubAdmin.club.rooms.edit', [
             'room' => $room,
             'breadcrumbs' => $breadcrumbs,
         ]);
@@ -80,7 +74,7 @@ class RoomController extends Controller
 
         $this->authorize('viewAny', Room::class);
 
-        return view('admin.rooms.index', [
+        return view('clubAdmin.club.rooms.index', [
             'breadcrumbs' => $breadcrumbs,
         ]);
     }
@@ -141,5 +135,6 @@ class RoomController extends Controller
         // } else {
         //     throw new Exception(__('This activity is unknown. Expected values \'training\' or \'match\'.'));
         // }
+        return true;
     }
 }

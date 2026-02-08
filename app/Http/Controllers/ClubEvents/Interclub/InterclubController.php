@@ -14,15 +14,15 @@ use App\Models\ClubEvents\Interclub\Interclub;
 use App\Models\ClubEvents\Interclub\Team;
 use App\Services\InterclubService;
 use App\Support\Breadcrumb;
+use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\View\View;
 
 class InterclubController extends Controller
 {
-    protected $interclubService;
+    protected readonly InterclubService $interclubService;
 
     public function __construct(InterclubService $interclubService)
     {
@@ -36,7 +36,7 @@ class InterclubController extends Controller
          *  - not selected in other team already
          *  - match not in the past
          *  - player is competitor
-         *  - player is allow to play (list force check)
+         *  - player is allowed to play (list force check)
          */
         $userSelected = $user->interclubs()->sync([
             $interclub->id => ['is_selected' => true],
@@ -51,7 +51,6 @@ class InterclubController extends Controller
      */
     public function create()
     {
-        //
         $this->authorize('create', Interclub::class);
 
         $breadcrumbs = Breadcrumb::make()
@@ -66,11 +65,11 @@ class InterclubController extends Controller
         $teams = ($user->is_admin || $user->is_committee_member)
             ? $teams = Team::where('club_id', $club->id)->get()
             : $teams = Team::where('captain_id', $user->id)->get();
-        $rooms = Room::select('id', 'name')
+        $rooms = Room::select(['id', 'name'])
             ->where('capacity_for_interclubs', '>', 0)
             ->get();
 
-        return view('admin.interclubs.create', [
+        return view('clubEvents.interclubs.interclub.create', [
             'otherClubs' => $otherClubs,
             'rooms' => $rooms,
             'teams' => $teams,
@@ -84,7 +83,7 @@ class InterclubController extends Controller
      */
     public function destroy(Interclub $interclub)
     {
-        //
+        // TODO
     }
 
     /**
@@ -92,7 +91,7 @@ class InterclubController extends Controller
      */
     public function edit(Interclub $interclub)
     {
-        //
+        // TODO
     }
 
     /**
@@ -105,9 +104,9 @@ class InterclubController extends Controller
             ->matches()
             ->toArray();
 
-        $interclubs = Interclub::orderBy('start_date_time', 'asc')->paginate(10);
+        $interclubs = Interclub::orderBy('start_date_time')->paginate(10);
 
-        return view('admin.interclubs.index', [
+        return view('clubEvents.interclubs.interclub.index', [
             'interclubs' => $interclubs,
             'breadcrumbs' => $breadcrumbs,
         ]);
@@ -118,7 +117,7 @@ class InterclubController extends Controller
      */
     public function show(Interclub $interclub): View
     {
-        $this->authorize('view', Auth::user(), Interclub::class);
+        $this->authorize('view', [Auth::user(), Interclub::class]);
 
         $breadcrumbs = Breadcrumb::make()
             ->home()
@@ -129,17 +128,17 @@ class InterclubController extends Controller
         $selectedUsers = $interclub
             ->users()
             ->wherePivot('is_selected', true)
-            ->orderBy('last_name', 'asc')
-            ->orderby('first_name', 'asc')
+            ->orderBy('last_name')
+            ->orderby('first_name')
             ->get();
 
         $subscribedUsers = $interclub
             ->users()
             ->wherePivot('is_subscribed', true)
             ->wherePivot('is_selected', false)
-            ->orWherePivot('is_selected', null)
-            ->orderBy('last_name', 'asc')
-            ->orderby('first_name', 'asc')
+            ->orWherePivot('is_selected')
+            ->orderBy('last_name')
+            ->orderby('first_name')
             ->get();
 
         $users = User::where('is_competitor', true)
@@ -151,7 +150,7 @@ class InterclubController extends Controller
             })
             ->get();
 
-        return View('admin.interclubs.show', [
+        return View('clubEvents.interclubs.interclub.show', [
             'interclub' => $interclub,
             'selectedUsers' => $selectedUsers,
             'subscribedUsers' => $subscribedUsers,
@@ -170,7 +169,7 @@ class InterclubController extends Controller
 
         $interclubs = Interclub::all();
 
-        return View('admin.interclubs.selections', [
+        return View('clubEvents.interclubs.interclub.selections', [
             'interclubs' => $interclubs,
             'breadcrumbs' => $breadcrumbs,
         ]);
@@ -185,7 +184,7 @@ class InterclubController extends Controller
 
         $this->interclubService->createInterclub($validated);
 
-        return redirect()->route('interclubs.index')->with('success', 'The match has been added.');
+        return redirect()->route('interclubs.index')->with('success', __('The match has been added.'));
 
     }
 
@@ -224,6 +223,6 @@ class InterclubController extends Controller
      */
     public function update(Request $request, Interclub $interclub)
     {
-        //
+        // TODO
     }
 }

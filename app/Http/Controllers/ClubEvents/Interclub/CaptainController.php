@@ -16,7 +16,7 @@ class CaptainController extends Controller
      */
     public function create()
     {
-        //
+        // TODO
     }
 
     /**
@@ -24,7 +24,7 @@ class CaptainController extends Controller
      */
     public function destroy(Captain $captain)
     {
-        //
+        // TODO
     }
 
     /**
@@ -32,7 +32,7 @@ class CaptainController extends Controller
      */
     public function edit(Captain $captain)
     {
-        //
+        // TODO
     }
 
     /**
@@ -40,7 +40,7 @@ class CaptainController extends Controller
      */
     public function index()
     {
-        //
+        // TODO
     }
 
     /**
@@ -48,7 +48,7 @@ class CaptainController extends Controller
      */
     public function show(Captain $captain)
     {
-        //
+        // TODO
     }
 
     /**
@@ -56,7 +56,7 @@ class CaptainController extends Controller
      */
     public function store(StoreCaptainRequest $request)
     {
-        //
+        // TODO
     }
 
     /**
@@ -64,6 +64,6 @@ class CaptainController extends Controller
      */
     public function update(UpdateCaptainRequest $request, Captain $captain)
     {
-        //
+        // TODO
     }
 }

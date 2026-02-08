@@ -335,7 +335,7 @@
                                             </h2>
 
                                             <form method="POST"
-                                                action="{{ route('admin.subscriptions.addTrainingPack', $subscription) }}">
+                                                action="{{ route('clubAdmin.subscriptions.addTrainingPack', $subscription) }}">
                                                 @csrf
                                                 <div class="space-y-3">
                                                     @forelse($trainingPacks as $trainingPack)
@@ -396,7 +396,7 @@
                                             </h2>
 
                                             <form method="POST"
-                                                action="{{ route('admin.subscriptions.addTrainingPack', $subscription) }}">
+                                                action="{{ route('clubAdmin.subscriptions.addTrainingPack', $subscription) }}">
                                                 @csrf
                                                 <div class="space-y-3">
                                                     @forelse($trainingPacks as $trainingPack)
@@ -456,7 +456,7 @@
                                             </h2>
 
                                             <form method="POST"
-                                                action="{{ route('admin.subscriptions.addTrainingPack', $subscription) }}">
+                                                action="{{ route('clubAdmin.subscriptions.addTrainingPack', $subscription) }}">
                                                 @csrf
                                                 <div class="space-y-3">
                                                     @forelse($trainingPacks as $trainingPack)

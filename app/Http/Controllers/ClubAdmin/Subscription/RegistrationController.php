@@ -9,8 +9,6 @@ use App\Models\ClubAdmin\Subscription\Registration;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
-use const App\Http\Controllers\registrations;
-
 class RegistrationController extends Controller
 {
     /**
@@ -18,7 +16,7 @@ class RegistrationController extends Controller
      */
     public function create()
     {
-        //
+        // TODO
     }
 
     /**
@@ -26,7 +24,7 @@ class RegistrationController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        // TODO
     }
 
     /**
@@ -34,7 +32,7 @@ class RegistrationController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        // TODO
     }
 
     /**
@@ -44,7 +42,7 @@ class RegistrationController extends Controller
     {
         $registrations = Registration::all();
 
-        return view('admin.registrations.index', compact([
+        return view('clubAdmin.registrations.index', compact([
             'registrations',
         ]));
     }
@@ -54,7 +52,7 @@ class RegistrationController extends Controller
      */
     public function show(string $id)
     {
-        //
+        // TODO
     }
 
     /**
@@ -62,7 +60,7 @@ class RegistrationController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        // TODO
     }
 
     /**
@@ -70,6 +68,6 @@ class RegistrationController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        // TODO
     }
 }

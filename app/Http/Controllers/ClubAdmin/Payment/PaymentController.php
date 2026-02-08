@@ -11,8 +11,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
-use const App\Http\Controllers\payments;
-
 class PaymentController extends Controller
 {
     /**
@@ -46,7 +44,7 @@ class PaymentController extends Controller
     {
         $payments = Payment::all();
 
-        return view('admin.payments.index', compact([
+        return view('clubAdmin.payments.index', compact([
             'payments',
         ]));
     }

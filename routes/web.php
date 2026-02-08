@@ -32,12 +32,12 @@ use App\Http\Controllers\ClubPosts\PublicNewsPostController;
 use App\Http\Controllers\ClubPosts\AdminEventPostController;
 use App\Http\Controllers\ClubPosts\PublicEventPostController;
 use App\Http\Controllers\HomeController;
-use App\Http\Controllers\PaymentController;
-use App\Http\Controllers\RegistrationController;
-use App\Http\Controllers\SeasonController;
-use App\Http\Controllers\SubscriptionController;
-use App\Http\Controllers\TrainingPackController;
-use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\ClubAdmin\Payment\PaymentController;
+use App\Http\Controllers\ClubAdmin\Subscription\RegistrationController;
+use App\Http\Controllers\ClubEvents\Interclub\SeasonController;
+use App\Http\Controllers\ClubAdmin\Subscription\SubscriptionController;
+use App\Http\Controllers\ClubEvents\Training\TrainingPackController;
+use App\Http\Controllers\ClubAdmin\Payment\TransactionController;
 use App\Http\Middleware\ProtectAgainstSpam;
 use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Users\User;
@@ -320,21 +320,21 @@ Route::get('/test2', function () {
 
 Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::resource('seasons', SeasonController::class)->names('clubEvents.interclubs.seasons');
-    Route::resource('registrations', RegistrationController::class)->names('admin.registrations');
-    Route::resource('subscriptions', SubscriptionController::class)->names('admin.subscriptions');
+    Route::resource('registrations', RegistrationController::class)->names('clubAdmin.registrations');
+    Route::resource('subscriptions', SubscriptionController::class)->names('clubAdmin.subscriptions');
     Route::resource('payments', PaymentController::class)->names('admin.payments');
     Route::post('seasons/{season}/subscribe/', SubscribeToSeasonController::class)->name('clubEvents.interclubs.seasons.subscribe');
-    Route::post('seasons/{season}/unsubscribe', [SubscriptionController::class, 'unsubscribe'])->name('admin.subscriptions.unsubscribe');
-    Route::post('subscriptions/sendPaymentInvite/', [PaymentController::class, 'sendInvite'])->name('admin.subscriptions.sendPaymentInvite');
-    Route::post('subscriptions/{subscription}/confirm', ConfirmSubscriptionAction::class)->name('admin.subscriptions.confirm');
-    Route::post('subscriptions/{subscription}/unconfirm', UnconfirmSubscriptionAction::class)->name('admin.subscriptions.unconfirm');
-    Route::post('subscriptions/{subscription}/cancel', CancelSubscriptionAction::class)->name('admin.subscriptions.cancel');
-    Route::post('subscriptions/{subscription}/markPaid', MarkPaidSubscriptionAction::class)->name('admin.subscriptions.markPaid');
-    Route::post('subscriptions/{subscription}/markRefunded', MarkRefundSubscriptionAction::class)->name('admin.subscriptions.markRefunded');
+    Route::post('seasons/{season}/unsubscribe', [SubscriptionController::class, 'unsubscribe'])->name('clubAdmin.subscriptions.unsubscribe');
+    Route::post('subscriptions/sendPaymentInvite/', [PaymentController::class, 'sendInvite'])->name('clubAdmin.subscriptions.sendPaymentInvite');
+    Route::post('subscriptions/{subscription}/confirm', ConfirmSubscriptionAction::class)->name('clubAdmin.subscriptions.confirm');
+    Route::post('subscriptions/{subscription}/unconfirm', UnconfirmSubscriptionAction::class)->name('clubAdmin.subscriptions.unconfirm');
+    Route::post('subscriptions/{subscription}/cancel', CancelSubscriptionAction::class)->name('clubAdmin.subscriptions.cancel');
+    Route::post('subscriptions/{subscription}/markPaid', MarkPaidSubscriptionAction::class)->name('clubAdmin.subscriptions.markPaid');
+    Route::post('subscriptions/{subscription}/markRefunded', MarkRefundSubscriptionAction::class)->name('clubAdmin.subscriptions.markRefunded');
     Route::post('payments/{subscription}/generate', GeneratePayment::class)->name('admin.subscription.generatePayment');
-    Route::post('subscription/{subscription}/addTrainingPack', [SubscriptionController::class, 'syncTrainingPacks'])->name('admin.subscriptions.addTrainingPack');
+    Route::post('subscription/{subscription}/addTrainingPack', [SubscriptionController::class, 'syncTrainingPacks'])->name('clubAdmin.subscriptions.addTrainingPack');
     Route::get('/admin/subscriptions/{subscription}', [SubscriptionController::class, 'show'])
-        ->name('admin.subscriptions.show');
+        ->name('clubAdmin.subscriptions.show');
 });
 
 Route::prefix('admin/transactions')->middleware(['auth', 'verified'])->group(function (): void {

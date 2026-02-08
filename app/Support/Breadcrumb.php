@@ -83,7 +83,7 @@ class Breadcrumb
 
     public function subscriptions($url = null): Breadcrumb
     {
-        return $this->add(__('Subscriptions'), $url ?: route('admin.subscriptions.index'), 'calendar');
+        return $this->add(__('Subscriptions'), $url ?: route('clubAdmin.subscriptions.index'), 'calendar');
     }
 
     public function tables($url = null): Breadcrumb

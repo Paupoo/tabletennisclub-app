@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\ClubAdmin\Subscription;
 
 use App\Actions\ClubAdmin\Subscriptions\SyncTrainingPack;
 use App\Actions\Subscriptions\AddTrainingPack;
+use App\Http\Controllers\Controller;
 use App\Models\ClubAdmin\Subscription\Subscription;
 use App\Models\ClubEvents\Training\TrainingPack;
 use App\Support\Breadcrumb;
@@ -63,7 +64,7 @@ class SubscriptionController extends Controller
     {
         $subscriptions = Subscription::all();
 
-        return view('admin.subscriptions.index', compact([
+        return view('clubAdmin.subscriptions.index', compact([
             'subscriptions',
         ]));
     }
@@ -92,7 +93,7 @@ class SubscriptionController extends Controller
             ->current($subscription->user->full_name)
             ->toArray();
 
-        return view('admin.subscriptions.show', compact('subscription', 'trainingPacks', 'breadcrumbs'));
+        return view('clubAdmin.subscriptions.show', compact('subscription', 'trainingPacks', 'breadcrumbs'));
     }
 
     /**

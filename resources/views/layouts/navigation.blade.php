@@ -73,11 +73,11 @@
                                 <x-ui.icon name="person" class="w-4 h-4 mr-3" />
                                 {{ __('Members') }}
                             </a>
-                            <a href="{{ route('teams.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-indigo-300 dark:hover:bg-gray-700 hover:text-club-blue transition-colors duration-200" wire:navigate>
+                            <a href="{{ route('clubEvents.interclubs.seasons.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-indigo-300 dark:hover:bg-gray-700 hover:text-club-blue transition-colors duration-200" wire:navigate>
                                 <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <x-ui.icon name="people" />
+                                    <x-ui.icon name="calendar" />
                                 </svg>
-                                {{ __('Team') }}
+                                {{ __('Seasons') }}
                             </a>
                             @if(Auth()->user()->is_committee_member || Auth()->user()->is_admin)
                             <a href="{{ route('clubAdmin.spams.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-indigo-300 dark:hover:bg-gray-700 hover:text-club-blue transition-colors duration-200" wire:navigate>

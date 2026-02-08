@@ -194,7 +194,7 @@
                                     {{-- Actions --}}
                                     @can('manageSubscription', $season)
                                     <td class="px-4 py-2 whitespace-nowrap text-right text-sm">
-                                        <a href="{{ route('admin.subscriptions.show', $subscription) }}"
+                                        <a href="{{ route('clubAdmin.subscriptions.show', $subscription) }}"
                                             class="text-club-blue hover:text-club-blue-light font-medium">
                                             {{ __('Manage') }} →
                                         </a>
@@ -295,7 +295,7 @@
                                             {{ __('Trainings') }}
                                         </p>
                                         <form method="POST"
-                                            action="{{ route('admin.subscriptions.addTrainingPack', $subscription) }}"
+                                            action="{{ route('clubAdmin.subscriptions.addTrainingPack', $subscription) }}"
                                             class="flex flex-col justify-start gap-2">
                                             @csrf
                                             @foreach ($trainingPacks as $trainingPack)
@@ -326,7 +326,7 @@
                                         <div class="flex flex-wrap gap-2">
                                             @foreach ($subscription->availableTransitions() as $action => $label)
                                             <form method="POST"
-                                                action="{{ route('admin.subscriptions.' . $action, $subscription) }}">
+                                                action="{{ route('clubAdmin.subscriptions.' . $action, $subscription) }}">
                                                 @csrf
                                                 <button type="submit"
                                                     class="px-3 py-1.5 border border-gray-300 rounded text-gray-700 text-xs hover:bg-gray-100">
@@ -357,7 +357,7 @@
 
                                                 @if ($subscription->payments->count() > 0 && $subscription->status == 'confirmed')
                                                 <form method="POST"
-                                                    action="{{ route('admin.subscriptions.sendPaymentInvite') }}">
+                                                    action="{{ route('clubAdmin.subscriptions.sendPaymentInvite') }}">
                                                     @csrf
                                                     <input type="hidden" name="payment_id"
                                                         value="{{ $subscription->payments->first()->id }}">
@@ -369,7 +369,7 @@
                                                 @endif
 
                                                 <form method="POST"
-                                                    action="{{ route('admin.subscriptions.unsubscribe', $subscription) }}">
+                                                    action="{{ route('clubAdmin.subscriptions.unsubscribe', $subscription) }}">
                                                     @csrf
                                                     <button type="submit"
                                                         class="px-3 py-1.5 border border-gray-300 rounded text-gray-700 text-xs hover:bg-gray-100">
@@ -378,7 +378,7 @@
                                                 </form>
 
                                                 <form method="POST"
-                                                    action="{{ route('admin.subscriptions.destroy', [$season, $subscription->user]) }}">
+                                                    action="{{ route('clubAdmin.subscriptions.destroy', [$season, $subscription->user]) }}">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit"

@@ -70,7 +70,7 @@
 
             <!-- Actions principales -->
             <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-                <a href="{{ route('clubAdmin.clubPosts.edit', $article) }}"
+                <a href="{{ route('clubPosts.newsPosts.edit', $article) }}"
                    class="bg-club-blue hover:bg-club-blue-light text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base inline-flex items-center justify-center">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -92,7 +92,7 @@
                 @endif
 
                 @if($article->status->value === 'draft')
-                    <form action="{{ route('clubAdmin.clubPosts.publish', $article) }}" method="POST" class="inline">
+                    <form action="{{ route('clubPosts.newsPosts.publish', $article) }}" method="POST" class="inline">
                         @csrf
                         @method('PATCH')
                         <button type="submit"
@@ -261,7 +261,7 @@
         <div class="bg-white rounded-lg shadow-lg p-4 sm:p-6 mt-6">
             <h3 class="text-lg sm:text-xl font-bold text-club-blue mb-4">Actions supplémentaires</h3>
             <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-                <a href="{{ route('clubAdmin.clubPosts.index') }}"
+                <a href="{{ route('clubPosts.newsPosts.index') }}"
                    class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base w-full sm:w-auto inline-flex items-center justify-center">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -270,7 +270,7 @@
                     Retour à la liste
                 </a>
 
-                <a href="{{ route('clubAdmin.clubPosts.create') }}"
+                <a href="{{ route('clubPosts.newsPosts.create') }}"
                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base w-full sm:w-auto inline-flex items-center justify-center">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
@@ -278,7 +278,7 @@
                     Nouvel article
                 </a>
 
-                <form action="{{ route('clubAdmin.clubPosts.destroy', $article) }}" method="POST"
+                <form action="{{ route('clubPosts.newsPosts.destroy', $article) }}" method="POST"
                       class="w-full sm:w-auto">
                     @csrf
                     @method('DELETE')
@@ -294,7 +294,7 @@
                 </form>
 
                 @if($article->status->value !== 'archived')
-                    <form action="{{ route('clubAdmin.clubPosts.archive', $article) }}" method="POST"
+                    <form action="{{ route('clubPosts.newsPosts.archive', $article) }}" method="POST"
                           class="w-full sm:w-auto">
                         @csrf
                         @method('PATCH')

@@ -1,12 +1,12 @@
-<h2 class="text-xl font-bold text-gray-800 mb-6">Liste des tables</h2>
+<h2 class="text-xl font-bold text-gray-800 mb-6">{{ __('Tables list') }}</h2>
 <div class="max-w-7xl mx-auto p-6">
-    <h1 class="text-2xl font-bold text-white mb-6">État des tables</h1>
+    <h1 class="text-2xl font-bold text-white mb-6"> {{ __('Table state') }}</h1>
 
     <!-- Filtres et recherche -->
     <div class="flex flex-wrap gap-4 mb-6">
-        <button class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">Toutes</button>
-        <button class="px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-100 transition">Disponibles</button>
-        <button class="px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-100 transition">Occupées</button>
+        <button class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">{{ __('All') }}</button>
+        <button class="px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-100 transition">{{ __('Available')  }}</button>
+        <button class="px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-100 transition">{{ __('Busy') }}</button>
         <div class="ml-auto">
             <input type="text" placeholder="Rechercher..."
                 class="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-hidden">

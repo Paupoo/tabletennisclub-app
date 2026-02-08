@@ -14,7 +14,7 @@
                 @if($match->player1_id)
                     {{ $match->player1->first_name }} {{ $match->player1->last_name }}
                 @else
-                    <span class="text-gray-400 italic">En attente...</span>
+                    <span class="text-gray-400 italic">{{ __('Pending') }}</span>
                 @endif
             </div>
             <div class="text-right font-medium">
@@ -30,7 +30,7 @@
                 @if($match->player2_id)
                     {{ $match->player2->first_name }} {{ $match->player2->last_name }}
                 @else
-                    <span class="text-gray-400 italic">En attente...</span>
+                    <span class="text-gray-400 italic">{{ __('Pending') }}</span>
                 @endif
             </div>
             <div class="text-right font-medium">
@@ -110,6 +110,6 @@
             </form>
         </div>
     @endif
-        
+
     </div>
 </div>

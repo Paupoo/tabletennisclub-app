@@ -11,7 +11,7 @@
                 <x-primary-button>{{ __('Dashboard') }}</x-primary-button>
             </form>
             <form action="{{ route('interclubs.index') }}" method="GET">
-                <x-primary-button>{{ __('Manage competitiones') }}</x-primary-button>
+                <x-primary-button>{{ __('Manage competitions') }}</x-primary-button>
             </form>
         </div>
     </x-admin-block>
@@ -46,7 +46,7 @@
                             <x-input-label for="" :value="__('Select a season')" />
                             <x-select-input id="" name="" class="block w-full mt-1" disabled>
                                 <option value="" selected>{{ __('To do') }}</option>
-                                
+
                             </x-select-input>
                             <x-input-error class="mt-2" :messages="$errors->get('')" />
                         </fieldset>

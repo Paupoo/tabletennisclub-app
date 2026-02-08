@@ -1,4 +1,9 @@
-    {{-- resources/views/clubAdmin/eventPosts/partials/training-fields.blade.php --}}
+@php
+    use App\Enums\TrainingLevel;
+    use App\Enums\TrainingType;
+@endphp
+
+{{-- resources/views/clubAdmin/eventPosts/partials/training-fields.blade.php --}}
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     {{-- Niveau --}}
     <div>
@@ -10,7 +15,7 @@
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent"
                 required>
             <option value="" disabled selected>{{ __('Select a level') }}</option>
-            @foreach(\App\Enums\TrainingLevel::cases() as $level)
+            @foreach(TrainingLevel::cases() as $level)
                 <option value="{{ $level->name }}" {{ old('training_level') === $level->name ? 'selected' : '' }}>
                     {{ __($level->name) }}
                 </option>
@@ -28,8 +33,9 @@
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent"
                 required>
             <option value="" disabled selected>{{ __('Select a type') }}</option>
-            @foreach(\App\Enums\TrainingType::cases() as $trainingType)
-                <option value="{{ $trainingType->name }}" {{ old('training_type') === $trainingType->name ? 'selected' : '' }}>
+            @foreach(TrainingType::cases() as $trainingType)
+                <option
+                    value="{{ $trainingType->name }}" {{ old('training_type') === $trainingType->name ? 'selected' : '' }}>
                     {{ __($trainingType->name) }}
                 </option>
             @endforeach

@@ -1,3 +1,4 @@
+@php use App\Enums\TournamentStatusEnum; @endphp
 {{-- resources/views/clubAdmin/eventPosts/partials/tournament-fields.blade.php --}}
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     {{-- Date de début spécifique (peut différer de event_date) --}}
@@ -69,8 +70,9 @@
                 name="tournament_status"
                 class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent"
                 required>
-            @foreach(\App\Enums\TournamentStatusEnum::cases() as $status)
-                <option value="{{ $status->value }}" {{ old('tournament_status', 'DRAFT') === $status->value ? 'selected' : '' }}>
+            @foreach(TournamentStatusEnum::cases() as $status)
+                <option
+                    value="{{ $status->value }}" {{ old('tournament_status', 'DRAFT') === $status->value ? 'selected' : '' }}>
                     {{ __($status->value) }}
                 </option>
             @endforeach
@@ -80,7 +82,8 @@
 
     {{-- Points de handicap --}}
     <div>
-        <label class="flex items-center space-x-3 cursor-pointer p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+        <label
+            class="flex items-center space-x-3 cursor-pointer p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
             <input type="checkbox"
                    name="has_handicap_points"
                    value="1"

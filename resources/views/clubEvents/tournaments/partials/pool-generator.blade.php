@@ -1,6 +1,6 @@
 <!-- Formulaire de génération des pools -->
 <div class="bg-white border border-gray-200 rounded-lg p-6 mb-8">
-    <h4 class="text-lg font-medium mb-4 text-gray-800">Générer les pools</h4>
+    <h4 class="text-lg font-medium mb-4 text-gray-800">{{ __('Generate pools') }}</h4>
     <form action="{{ route('tournaments.generate-pools', $tournament) }}"
         method="POST">
         @csrf
@@ -13,8 +13,7 @@
                 fin de la phase de poules.
             </p>
             <label for="number_of_pools"
-                class="block text-sm font-medium text-gray-700 mb-2">Nombre de
-                pools à créer
+                class="block text-sm font-medium text-gray-700 mb-2">{{ __('Number of pools') }}
                 :</label>
             <div class="relative">
                 <select name="number_of_pools" id="number_of_pools"
@@ -39,8 +38,7 @@
         </div>
 
         <button type="submit"
-            class="w-full mb-4 md:w-auto px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition duration-200">Générer
-            les pools</button>
+            class="w-full mb-4 md:w-auto px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition duration-200">{{ __('Generate pools') }}</button>
     </form>
     <hr class="text-gray-500 opacity-50 my-4">
 
@@ -73,7 +71,6 @@
             </div>
         </div>
         <button type="submit"
-            class="w-full md:w-auto px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition duration-200">Générer
-            les pools</button>
+            class="w-full md:w-auto px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition duration-200">{{ __('Generate pools') }}</button>
     </form>
 </div>

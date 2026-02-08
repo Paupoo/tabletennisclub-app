@@ -1,3 +1,4 @@
+@php use App\Enums\NewsPostCategoryEnum; @endphp
 <div>
 
     <!-- Barre de filtres -->
@@ -13,10 +14,10 @@
                         </svg>
                     </div>
                     <input
-                            type="text"
-                            wire:model.live.debounce.500ms="search"
-                            class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-club-blue focus:border-club-blue text-sm"
-                            placeholder="{{ __('Search articles...') }}">
+                        type="text"
+                        wire:model.live.debounce.500ms="search"
+                        class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-club-blue focus:border-club-blue text-sm"
+                        placeholder="{{ __('Search articles...') }}">
                 </div>
             </div>
 
@@ -40,7 +41,7 @@
                     <select wire:model.live="category"
                             class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-club-blue focus:border-club-blue">
                         <option value="">{{ __('All') }}</option>
-                        @foreach(\App\Enums\NewsPostCategoryEnum::cases() as $categoryEnum)
+                        @foreach(NewsPostCategoryEnum::cases() as $categoryEnum)
                             <option value="{{ $categoryEnum->name }}">{{ $categoryEnum->value }}</option>
                         @endforeach
                     </select>
@@ -185,17 +186,20 @@
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                    <span
+                                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                                         {{ $article->category->value }}
                                     </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-900">{{ $article->user->first_name }} {{ $article->user->last_name }}</div>
+                            <div
+                                class="text-sm text-gray-900">{{ $article->user->first_name }} {{ $article->user->last_name }}</div>
                             <div class="text-sm text-gray-500">{{ $article->user->email }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {{ $article->created_at->format('d/m/Y') }}
-                            <div class="text-xs text-gray-400">{{ $article->created_at->timezone('Europe/Brussels')->format('H:i') }}</div>
+                            <div
+                                class="text-xs text-gray-400">{{ $article->created_at->timezone('Europe/Brussels')->format('H:i') }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             @php
@@ -206,13 +210,15 @@
                                 ];
                                 $config = $statusConfig[$article->status->value] ?? $statusConfig['draft'];
                             @endphp
-                            <span class="{{ $config['bg'] }} {{ $config['text'] }} px-2 py-1 rounded-full text-xs font-medium">
+                            <span
+                                class="{{ $config['bg'] }} {{ $config['text'] }} px-2 py-1 rounded-full text-xs font-medium">
                                         {{ $config['label'] }}
                                     </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             @if($article->is_public)
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <span
+                                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                             <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                                 <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
                                                 <path fill-rule="evenodd"
@@ -222,12 +228,14 @@
                                             Public
                                         </span>
                             @else
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                <span
+                                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                                             <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                                 <path fill-rule="evenodd"
                                                       d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z"
                                                       clip-rule="evenodd"></path>
-                                                <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z"></path>
+                                                <path
+                                                    d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z"></path>
                                             </svg>
                                             Privé
                                         </span>
@@ -235,7 +243,7 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <div class="flex items-center justify-end space-x-2">
-                                <a href="{{ route('admin.articles.show', $article) }}"
+                                <a href="{{ route('clubPosts.newsPosts.show', $article) }}"
                                    class="bg-club-blue hover:bg-club-blue-light text-white p-2 rounded-lg transition-colors duration-200"
                                    title="{{ __('View details') }}">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -245,7 +253,7 @@
                                               d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                                     </svg>
                                 </a>
-                                <a href="{{ route('admin.articles.edit', $article) }}"
+                                <a href="{{ route('clubPosts.newsPosts.edit', $article) }}"
                                    class="bg-yellow-600 hover:bg-yellow-700 text-white p-2 rounded-lg transition-colors duration-200"
                                    title="{{ __('Edit article') }}">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -255,10 +263,10 @@
                                 </a>
                                 @can('delete', Auth()->user())
                                     <button
-                                            wire:click="$set('selectedArticleId', {{ $article->id }})"
-                                            @click="$dispatch('open-modal', 'confirm-delete-article')"
-                                            class="bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg transition-colors duration-200"
-                                            title="{{ __('Delete article') }}">
+                                        wire:click="$set('selectedArticleId', {{ $article->id }})"
+                                        @click="$dispatch('open-modal', 'confirm-delete-article')"
+                                        class="bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg transition-colors duration-200"
+                                        title="{{ __('Delete article') }}">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                   d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
@@ -299,7 +307,8 @@
                                 <h4 class="text-sm font-medium text-gray-900 mb-1">{{ Str::limit($article->title, 50) }}</h4>
                                 <p class="text-sm text-gray-600 mb-2">{{ Str::limit(strip_tags($article->content), 100) }}</p>
                                 <div class="flex flex-wrap gap-2 mb-2">
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                        <span
+                                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                                             {{ $article->category->name }}
                                         </span>
                                     @php
@@ -310,13 +319,16 @@
                                         ];
                                         $config = $statusConfig[$article->status->value] ?? $statusConfig['draft'];
                                     @endphp
-                                    <span class="{{ $config['bg'] }} {{ $config['text'] }} px-2 py-1 rounded-full text-xs font-medium">
+                                    <span
+                                        class="{{ $config['bg'] }} {{ $config['text'] }} px-2 py-1 rounded-full text-xs font-medium">
                                             {{ $config['label'] }}
                                         </span>
                                     @if($article->is_public)
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Public</span>
+                                        <span
+                                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Public</span>
                                     @else
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Privé</span>
+                                        <span
+                                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Privé</span>
                                     @endif
                                 </div>
                                 <div class="text-sm text-gray-500">
@@ -327,19 +339,19 @@
                         </div>
 
                         <div class="flex justify-end space-x-2">
-                            <a href="{{ route('admin.articles.show', $article) }}"
+                            <a href="{{ route('clubPosts.newsPosts.show', $article) }}"
                                class="bg-club-blue hover:bg-club-blue-light text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-200">
                                 Voir
                             </a>
-                            <a href="{{ route('admin.articles.edit', $article) }}"
+                            <a href="{{ route('clubPosts.newsPosts.edit', $article) }}"
                                class="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-200">
                                 Modifier
                             </a>
                             @can('delete', Auth()->user())
                                 <button
-                                        wire:click="$set('selectedArticleId', {{ $article->id }})"
-                                        @click="$dispatch('open-modal', 'confirm-delete-article')"
-                                        class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-200">
+                                    wire:click="$set('selectedArticleId', {{ $article->id }})"
+                                    @click="$dispatch('open-modal', 'confirm-delete-article')"
+                                    class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-200">
                                     Supprimer
                                 </button>
                             @endcan
@@ -359,7 +371,7 @@
                 <h3 class="mt-2 text-sm font-medium text-gray-900">Aucun article trouvé</h3>
                 <p class="mt-1 text-sm text-gray-500">Commencez par créer votre premier article.</p>
                 <div class="mt-6">
-                    <a href="{{ route('admin.articles.create') }}"
+                    <a href="{{ route('clubPosts.newsPosts.create') }}"
                        class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-club-blue hover:bg-club-blue-light">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -402,9 +414,9 @@
                     {{ __('Cancel') }}
                 </x-secondary-button>
                 <x-danger-button
-                        wire:click="deleteArticle()"
-                        @click="$dispatch('close')"
-                        class="flex-1">
+                    wire:click="deleteArticle()"
+                    @click="$dispatch('close')"
+                    class="flex-1">
                     {{ __('Delete permanently') }}
                 </x-danger-button>
             </div>

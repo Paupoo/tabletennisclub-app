@@ -14,7 +14,6 @@
                 <form action="{{ route('interclubs.create') }}" method="GET">
                     <x-primary-button>{{ __('Create new match') }}</x-primary-button>
                 </form>
-                </form>
                 <form action="{{ route('interclubs.selections') }}" method="GET">
                     <x-primary-button>{{ __('Make selections') }}</x-primary-button>
                 </form>
@@ -93,7 +92,6 @@
                 <x-admin-block>
                     <x-primary-button>Save</x-primary-button>
 
-                    </form>
                     {{ $interclubs->links() }}
                 </x-admin-block>
 

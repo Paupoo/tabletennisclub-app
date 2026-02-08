@@ -1,3 +1,4 @@
+@php use App\Enums\Gender; @endphp
 <x-app-layout :breadcrumbs="$breadcrumbs">
     <x-admin-block>
         <!-- En-tête avec informations principales -->
@@ -8,9 +9,9 @@
                     <!-- Photo de profil -->
                     <div class="flex-shrink-0">
                         <img class="rounded-full w-16 h-16 sm:w-20 sm:h-20 border-4 border-club-blue object-cover"
-                             @if ($user->sex == \App\Enums\Gender::MEN->name)
+                             @if ($user->sex == Gender::MEN->name)
                                  src="{{ asset('images/man.png') }}"
-                             @elseif ($user->sex == \App\Enums\Gender::WOMEN->name)
+                             @elseif ($user->sex == Gender::WOMEN->name)
                                  src="{{ asset('images/woman.png') }}"
                              @endif
                              alt="Photo de profil">
@@ -23,9 +24,9 @@
                                 {{ $user->first_name }} {{ $user->last_name }}
                             </h2>
                             <span class="text-lg text-gray-600">
-                                @if ($user->sex == \App\Enums\Gender::MEN->name)
+                                @if ($user->sex == Gender::MEN->name)
                                     &#9794;
-                                @elseif ($user->sex == \App\Enums\Gender::WOMEN->name)
+                                @elseif ($user->sex == Gender::WOMEN->name)
                                     &#9792;
                                 @endif
                             </span>
@@ -37,19 +38,19 @@
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
                     <div class="bg-blue-50 rounded-lg p-3 text-center border border-blue-200">
                         <div class="text-lg sm:text-xl font-bold text-blue-600">15</div>
-                        <div class="text-xs text-blue-700">Victoires</div>
+                        <div class="text-xs text-blue-700">{{ __('Victories') }}</div>
                     </div>
                     <div class="bg-yellow-50 rounded-lg p-3 text-center border border-yellow-200">
                         <div class="text-lg sm:text-xl font-bold text-yellow-600">8</div>
-                        <div class="text-xs text-yellow-700">Défaites</div>
+                        <div class="text-xs text-yellow-700">{{ __('Defeats') }}</div>
                     </div>
                     <div class="bg-green-50 rounded-lg p-3 text-center border border-green-200">
                         <div class="text-lg sm:text-xl font-bold text-green-600">2</div>
-                        <div class="text-xs text-green-700">Performances</div>
+                        <div class="text-xs text-green-700">{{ __('Performance') }}</div>
                     </div>
                     <div class="bg-red-50 rounded-lg p-3 text-center border border-red-200">
                         <div class="text-lg sm:text-xl font-bold text-red-600">3</div>
-                        <div class="text-xs text-red-700">Contres</div>
+                        <div class="text-xs text-red-700">{{ __('Bad performance') }}</div>
                     </div>
                 </div>
             </div>
@@ -69,7 +70,8 @@
                     @if($user->email_verified_at == null)
                         <form action="{{ route('clubAdmin.users.invite-existing-user', $user) }}" method="post">
                             @csrf
-                            <button class="inline-flex items-center justify-center px-3 py-2 bg-club-blue hover:bg-club-blue-light text-white text-sm font-medium rounded-lg transition-colors">
+                            <button
+                                class="inline-flex items-center justify-center px-3 py-2 bg-club-blue hover:bg-club-blue-light text-white text-sm font-medium rounded-lg transition-colors">
                                 <svg class="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor"
                                      viewBox="0 0 24 24">
                                     <x-ui.icon name="rocket-launch"/>
@@ -78,10 +80,11 @@
                             </button>
                         </form>
                     @else
-                        <button class="inline-flex items-center justify-center px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors">
+{{-- TO DO : Reset parssword --}}
+                        <button
+                            class="inline-flex items-center justify-center px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors">
                             RESET PASSWORD //TODO
                         </button>
-
                     @endif
                 @endcan
 
@@ -116,7 +119,8 @@
                                  x-transition:leave-start="opacity-100 transform scale-100"
                                  x-transition:leave-end="opacity-0 transform scale-95"
                                  class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md mx-auto">
-                                <div class="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
+                                <div
+                                    class="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
                                     <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor"
                                          viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -124,7 +128,7 @@
                                     </svg>
                                 </div>
                                 <h3 class="text-lg font-semibold text-gray-900 text-center mb-2">
-                                    Confirmer la suppression
+                                    {{ __('Confirm deletion') }}
                                 </h3>
                                 <p class="text-sm text-gray-600 text-center mb-6">
                                     Êtes-vous sûr de vouloir supprimer le membre
@@ -134,13 +138,14 @@
                                 <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                                     <button @click="showDeleteModal = false"
                                             class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg font-medium transition-colors text-sm">
-                                        Annuler
+                                        {{ __('Cancel') }}
                                     </button>
                                     <form action="{{ route('users.destroy', $user) }}" method="post">
                                         @csrf
                                         @method('DELETE')
-                                        <button class="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm text-center">
-                                            Supprimer définitivement
+                                        <button
+                                            class="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm text-center">
+                                            {{ __('Delete permanently') }}
                                         </button>
                                     </form>
                                 </div>
@@ -151,9 +156,9 @@
 
                 @can('sendEmail', $user)
                     <button
-                            @click="emailTemplateOpen = !emailTemplateOpen"
-                            class="inline-flex items-center justify-center px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors"
-                            type="button"
+                        @click="emailTemplateOpen = !emailTemplateOpen"
+                        class="inline-flex items-center justify-center px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors"
+                        type="button"
                     >
                         <svg class="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -173,7 +178,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <!-- Informations personnelles -->
             <div class="bg-white rounded-lg shadow-lg p-4 sm:p-6">
-                <h3 class="text-lg sm:text-xl font-bold text-club-blue mb-4">Informations personnelles</h3>
+                <h3 class="text-lg sm:text-xl font-bold text-club-blue mb-4">{{ __('Personal data') }}</h3>
                 <div class="space-y-4">
                     <!-- Contact -->
                     <div class="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
@@ -187,8 +192,8 @@
                         </div>
                         <div>
                             <p class="text-sm font-medium text-gray-500">{{ __('Contact info') }}</p>
-                            <p class="text-sm text-gray-800">Email: {{ $user->email }}</p>
-                            <p class="text-sm text-gray-800">Phone number: {{ $user->phone_number }}</p>
+                            <p class="text-sm text-gray-800">{{ __('Email') }}: {{ $user->email }}</p>
+                            <p class="text-sm text-gray-800"> {{ __('Phone Number') }}: {{ $user->phone_number }}</p>
                         </div>
                     </div>
                     <!-- Adresse -->
@@ -202,7 +207,7 @@
                             </svg>
                         </div>
                         <div>
-                            <p class="text-sm font-medium text-gray-500">Adresse</p>
+                            <p class="text-sm font-medium text-gray-500">{{ __('Address') }}</p>
                             <p class="text-sm text-gray-800">{{ $user->street }}</p>
                             <p class="text-sm text-gray-800">{{ $user->city_code }} {{ $user->city_name }}</p>
                         </div>
@@ -219,7 +224,7 @@
                                 </svg>
                             </div>
                             <div>
-                                <p class="text-sm font-medium text-gray-500">Date de naissance</p>
+                                <p class="text-sm font-medium text-gray-500">{{ __('Birth date') }}</p>
                                 <p class="text-sm text-gray-800">{{ $user->birthdate->format('d/m/Y') }}
                                     ({{ $user->age }} {{ __('years') }})</p>
                             </div>
@@ -230,7 +235,7 @@
 
             <!-- Informations joueur -->
             <div class="bg-white rounded-lg shadow-lg p-4 sm:p-6">
-                <h3 class="text-lg sm:text-xl font-bold text-club-blue mb-4">Informations joueur</h3>
+                <h3 class="text-lg sm:text-xl font-bold text-club-blue mb-4">{{ __('Player info') }}</h3>
                 <div class="space-y-4">
 
                     <!-- Compétition -->
@@ -257,7 +262,7 @@
                         </div>
                         <div>
                             <p class="text-sm font-medium text-gray-500">{{ __('Licence') }}</p>
-                            <p class="text-sm text-gray-800">{{ $user->licence ?? __('No licene') }}</p>
+                            <p class="text-sm text-gray-800">{{ $user->licence ?? __('No licence') }}</p>
                         </div>
                     </div>
 
@@ -457,7 +462,8 @@
                                     @csrf
                                     @method('delete')
 
-                                    <div class="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
+                                    <div
+                                        class="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
                                         <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor"
                                              viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -511,7 +517,7 @@
         <!-- Section Liste des matchs -->
         <div class="bg-white rounded-lg shadow-lg p-4 sm:p-6 mt-6">
             <div class="flex items-center justify-between mb-6">
-                <h3 class="text-lg sm:text-xl font-bold text-club-blue">Matchs joués</h3>
+                <h3 class="text-lg sm:text-xl font-bold text-club-blue">{{ __('Matches played:') }}</h3>
                 <div class="text-sm text-gray-500">
                     Saison 2024-2025
                 </div>
@@ -521,15 +527,16 @@
             <div class="grid grid-cols-3 gap-4 mb-6">
                 <div class="bg-green-50 rounded-lg p-3 text-center border border-green-200">
                     <div class="text-lg font-bold text-green-600">13</div>
-                    <div class="text-xs text-green-700">Victoires</div>
+                    <div class="text-xs text-green-700">{{ __('Victories') }}</div>
                 </div>
                 <div class="bg-red-50 rounded-lg p-3 text-center border border-red-200">
                     <div class="text-lg font-bold text-red-600">3</div>
-                    <div class="text-xs text-red-700">Défaites</div>
+                    <div class="text-xs text-red-700">{{ __('Defeats') }}</div>
                 </div>
-                <div class="bg-club-blue bg-opacity-10 rounded-lg p-3 text-center border border-club-blue border-opacity-20">
-                    <div class="text-lg font-bold text-club-blue">81%</div>
-                    <div class="text-xs text-club-blue">Taux victoire</div>
+                <div
+                    class="bg-club-blue bg-opacity-10 rounded-lg p-3 text-center border border-club-blue border-opacity-20">
+                    <div class="text-lg font-bold text-white">81%</div>
+                    <div class="text-xs text-white">{{ __('Win rate') }}</div>
                 </div>
             </div>
 
@@ -552,15 +559,15 @@
 
                         <div class="flex items-center space-x-4">
                             <div class="text-center">
-                                <p class="text-xs text-gray-500">Adversaire</p>
+                                <p class="text-xs text-gray-500">{{ __('Opponent') }}</p>
                                 <p class="text-sm font-medium">B4</p>
                             </div>
                             <div class="text-center">
-                                <p class="text-xs text-gray-500">Résultat</p>
+                                <p class="text-xs text-gray-500">{{ __('Results') }}</p>
                                 <p class="text-lg font-bold text-green-600">3-1</p>
                             </div>
                             <div class="text-center">
-                                <p class="text-xs text-gray-500">Date</p>
+                                <p class="text-xs text-gray-500">{{ __('Date') }}</p>
                                 <p class="text-sm">15/03/24</p>
                             </div>
                         </div>
@@ -698,11 +705,12 @@
 
             <!-- Bouton "Voir plus" -->
             <div class="mt-6 text-center">
-                <button class="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors">
+                <button
+                    class="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                     </svg>
-                    Voir tous les matchs (16)
+                    {{ __('Consult all the matches') }}
                 </button>
             </div>
         </div>

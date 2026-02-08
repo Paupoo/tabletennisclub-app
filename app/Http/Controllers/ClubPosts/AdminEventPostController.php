@@ -60,17 +60,17 @@ class AdminEventPostController extends Controller
             ->with('success', __('Event duplicated successfully, you may proceed to edit it'));
     }
 
-    public function edit(EventPost $event): View
+    public function edit(EventPost $eventPost): View
     {
-        $this->authorize('update', $event);
+        $this->authorize('update', $eventPost);
         $breadcrumbs = Breadcrumb::make()
             ->home()
             ->events()
-            ->add($event->title, route('clubPosts.eventPosts.show', $event))
+            ->add($eventPost->title, route('clubPosts.eventPosts.show', $eventPost))
             ->current(__('Edit'))
             ->toArray();
 
-        return view('clubPosts.eventPosts.edit', compact('event', 'breadcrumbs'));
+        return view('clubPosts.eventPosts.edit', compact('eventPost', 'breadcrumbs'));
     }
 
     public function index(Request $request): View

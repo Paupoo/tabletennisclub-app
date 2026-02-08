@@ -76,8 +76,7 @@
                                     </li>
                                 @empty
                                     <li class="px-4 py-3 text-gray-500 italic">
-                                        Aucun joueur dans
-                                        cette pool</li>
+                                        {{ __('No player found on this pool') }}</li>
                                 @endforelse
                             </ul>
                         </div>
@@ -86,9 +85,10 @@
                 <div class="mt-8 flex justify-end">
                     <button type="submit"
                         class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-md shadow-xs transition duration-200">
-                        Enregistrer les modifications
+                        {{ __('Register modifications') }}
                     </button>
                 </div>
+            </form>
         </div>
     @else
         {{ __('No pool created yet, please configure the tournament.') }}

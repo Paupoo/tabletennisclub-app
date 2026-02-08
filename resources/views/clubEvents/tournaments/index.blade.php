@@ -9,6 +9,6 @@
         </x-tournament.actions-menu>
     @endpush
     <x-admin-block>
-        <livewire:tournaments-table>
+        <livewire:tournaments-table/>
     </x-admin-block>
 </x-app-layout>

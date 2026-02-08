@@ -1,3 +1,6 @@
+@php
+    use App\Enums\Gender;
+@endphp
 <div>
 
     <!-- Barre de filtres modernisée -->
@@ -13,43 +16,43 @@
                         </svg>
                     </div>
                     <input
-                            type="text"
-                            wire:model.live.debounce.500ms="search"
-                            class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-club-blue focus:border-club-blue text-sm"
-                            placeholder="{{ __('Search users...') }}">
+                        type="text"
+                        wire:model.live.debounce.500ms="search"
+                        class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-club-blue focus:border-club-blue text-sm"
+                        placeholder="{{ __('Search users...') }}">
                 </div>
             </div>
 
-            <!-- Filtres -->
+            <!-- Filters -->
             <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
                 <!-- Type -->
                 <div class="flex items-center space-x-2">
                     <label class="text-sm font-medium text-gray-700 whitespace-nowrap">{{ __('Type') }}</label>
                     <select wire:model.live="competitor"
-                            class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-club-blue focus:border-club-blue">
+                            class=" w-32 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-club-blue focus:border-club-blue">
                         <option value="">{{ __('All') }}</option>
                         <option value="1">{{ __('Competitor') }}</option>
                         <option value="0">{{ __('Casual') }}</option>
                     </select>
                 </div>
 
-                <!-- Sexe -->
+                <!-- Gender -->
                 <div class="flex items-center space-x-2">
                     <label class="text-sm font-medium text-gray-700 whitespace-nowrap">{{ __('Gender') }}</label>
-                    <select wire:model.live="sex"
-                            class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-club-blue focus:border-club-blue">
+                    <select wire:model.live="gender"
+                            class="w-32 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-club-blue focus:border-club-blue">
                         <option value="">{{ __('All') }}</option>
-                        <option value="{{ \App\Enums\Gender::WOMEN->name }}">{{ __('Women') }}</option>
-                        <option value="{{ \App\Enums\Gender::MEN->name }}">{{ __('Men') }}</option>
-                        <option value="{{ \App\Enums\Gender::OTHER->name }}">{{ __('Others') }}</option>
+                        <option value="{{ Gender::WOMEN->name }}">{{ __('Women') }}</option>
+                        <option value="{{ Gender::MEN->name }}">{{ __('Men') }}</option>
+                        <option value="{{ Gender::OTHER->name }}">{{ __('Others') }}</option>
                     </select>
                 </div>
 
-                <!-- Statut -->
+                <!-- Status -->
                 <div class="flex items-center space-x-2">
                     <label class="text-sm font-medium text-gray-700 whitespace-nowrap">{{ __('Status') }}</label>
                     <select wire:model.live="status"
-                            class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-club-blue focus:border-club-blue">
+                            class="w-24 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-club-blue focus:border-club-blue">
                         <option value="">{{ __('All') }}</option>
                         <option value="active">{{ __('Active') }}</option>
                         <option value="inactive">{{ __('Inactive') }}</option>
@@ -280,9 +283,9 @@
                                 </div>
                                 <div class="ml-4">
                                     <div class="text-sm font-medium text-gray-900">
-                                        @if ($user->sex === \App\Enums\Gender::MEN->name)
+                                        @if ($user->sex === Gender::MEN->name)
                                             <span class="text-blue-600 mr-1">♂</span>
-                                        @elseif ($user->sex === \App\Enums\Gender::WOMEN->name)
+                                        @elseif ($user->sex === Gender::WOMEN->name)
                                             <span class="text-pink-600 mr-1">♀</span>
                                         @else
                                             <span class="text-gray-600 mr-1">⚲</span>
@@ -327,22 +330,26 @@
                             <div class="flex flex-col space-y-1">
                                 <!-- Statut actif -->
                                 @if ($user->is_active)
-                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs justify-center font-medium bg-green-100 text-green-800">
+                                    <span
+                                        class="inline-flex items-center px-2 py-1 rounded-full text-xs justify-center font-medium bg-green-100 text-green-800">
                                                 {{ __('Active') }}
                                             </span>
                                     @if(Auth()->user()->is_committee_member || Auth()->user()->is_admin )
                                         @if(!$user->has_paid)
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs justify-center font-medium bg-red-100 text-red-800">
+                                            <span
+                                                class="inline-flex items-center px-2 py-1 rounded-full text-xs justify-center font-medium bg-red-100 text-red-800">
                                                         ✗ {{ __('Unpaid') }}
                                                     </span>
                                         @else
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs justify-center font-medium bg-green-100 text-green-800">
+                                            <span
+                                                class="inline-flex items-center px-2 py-1 rounded-full text-xs justify-center font-medium bg-green-100 text-green-800">
                                                         {{ __('Paid') }}
                                                     </span>
                                         @endif
                                     @endif
                                 @else
-                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs justify-center font-medium  bg-gray-100 text-gray-800">
+                                    <span
+                                        class="inline-flex items-center px-2 py-1 rounded-full text-xs justify-center font-medium  bg-gray-100 text-gray-800">
                                                 {{ __('Inactive') }}
                                             </span>
                                 @endif
@@ -350,7 +357,8 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {{ $user->created_at->format('d/m/Y') }}
-                            <div class="text-xs text-gray-400">{{ $user->created_at->timezone('Europe/Brussels')->format('H:i') }}</div>
+                            <div
+                                class="text-xs text-gray-400">{{ $user->created_at->timezone('Europe/Brussels')->format('H:i') }}</div>
                         </td>
 
 
@@ -414,9 +422,9 @@
                                 </div>
                                 <div>
                                     <div class="text-sm font-medium text-gray-900">
-                                        @if ($user->sex === \App\Enums\Gender::MEN->name)
+                                        @if ($user->sex === Gender::MEN->name)
                                             <span class="text-blue-600 mr-1">♂</span>
-                                        @elseif ($user->sex === \App\Enums\Gender::WOMEN->name)
+                                        @elseif ($user->sex === Gender::WOMEN->name)
                                             <span class="text-pink-600 mr-1">♀</span>
                                         @else
                                             <span class="text-gray-600 mr-1">⚲</span>
@@ -459,9 +467,9 @@
                             @endcan
                             @can('delete', Auth()->user())
                                 <button
-                                        wire:click="$set('selectedUserId', {{ $user->id }})"
-                                        @click="$dispatch('open-modal', 'confirm-delete-user')"
-                                        class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-200">
+                                    wire:click="$set('selectedUserId', {{ $user->id }})"
+                                    @click="$dispatch('open-modal', 'confirm-delete-user')"
+                                    class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors duration-200">
                                     {{ __('Delete') }}
                                 </button>
                             @endcan
@@ -552,11 +560,11 @@
                     {{ __('To confirm, type') }} <strong>"DELETE"</strong> {{ __('in the box below') }}:
                 </label>
                 <input
-                        type="text"
-                        x-model="confirmText"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                        placeholder="DELETE"
-                        autocomplete="off"
+                    type="text"
+                    x-model="confirmText"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    placeholder="DELETE"
+                    autocomplete="off"
                 >
             </div>
 
@@ -566,10 +574,10 @@
                 </x-secondary-button>
 
                 <x-danger-button
-                        class="flex-1"
-                        x-bind:disabled="!isValid()"
-                        x-bind:class="{ 'opacity-50 cursor-not-allowed': !isValid() }"
-                        type="submit"
+                    class="flex-1"
+                    x-bind:disabled="!isValid()"
+                    x-bind:class="{ 'opacity-50 cursor-not-allowed': !isValid() }"
+                    type="submit"
                 >
                     {{ __('Delete permanently') }}
                 </x-danger-button>

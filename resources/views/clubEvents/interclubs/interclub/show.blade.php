@@ -12,21 +12,21 @@
 
     <div class="grid grid-flow-row m-auto p-4">
         <div class="grid-flow-col mb-6 ml-8">
-            <h1 class="text-lg font-semibold">Selected Players ({{ count($selectedUsers) }})</h1>
+            <h1 class="text-lg font-semibold">{{ __('Selected players') }} ({{ count($selectedUsers) }})</h1>
             <ul class="flex gap-4">
                 @foreach ($selectedUsers as $user)
                     <li class="bg-yellow-100">
                         {{ $user->last_name }} {{ $user->first_name }} {{ $user->ranking }}
                         <form action="{{ route('interclubs.toggleSelection', [$interclub, $user]) }}" method="POST">
                             @csrf
-                            <x-button class="bg-blue-300">Unselect</x-button>
+                            <x-button class="bg-blue-300">{{ __('Unselect') }}</x-button>
                         </form>
                     </li>
                 @endforeach
             </ul>
         </div>
         <div class="grid-flow-col mb-6 ml-8">
-            <h1 class="text-lg font-semibold">Available Players ({{ count($subscribedUsers) }})</h1>
+            <h1 class="text-lg font-semibold">{{ __('Available Players') }} ({{ count($subscribedUsers) }})</h1>
             <ul class="flex gap-4">
                 @foreach ($subscribedUsers as $user)
                     <li class="bg-yellow-100">
@@ -40,7 +40,7 @@
             </ul>
         </div>
         <div class="grid-flow-col mb-6 ml-8">
-            <h1 class="text-lg font-semibold">Other competitors ({{ count($users) }})</h1>
+            <h1 class="text-lg font-semibold">{{ __('Other competitors') }} ({{ count($users) }})</h1>
             <ul class="flex gap-4">
                 @foreach ($users as $user)
                     <li class="bg-yellow-100">

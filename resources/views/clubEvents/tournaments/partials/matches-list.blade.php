@@ -1,6 +1,6 @@
 <div class="bg-white border border-gray-200 rounded-lg p-6 mb-8">
 
-    <h2 class="text-xl font-bold text-gray-800 mb-6">Liste des matches</h2>
+    <h2 class="text-xl font-bold text-gray-800 mb-6">{{ __('Matches list') }}</h2>
     <div class="overflow-x-auto">
         @if (count($matches) > 0)
             <table class="min-w-full divide-y divide-gray-200">

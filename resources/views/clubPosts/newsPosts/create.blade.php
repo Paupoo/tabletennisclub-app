@@ -1,3 +1,4 @@
+@php use App\Enums\NewsPostCategoryEnum;use App\Enums\NewsPostStatusEnum; @endphp
 <x-app-layout :breadcrumbs="$breadcrumbs">
     <x-admin-block>
         <!-- En-tête de page -->
@@ -8,7 +9,7 @@
                     <p class="text-gray-600 text-sm sm:text-base">{{ __('Fill out the form below to create a new article.') }}</p>
                 </div>
 
-                <a href="{{ route('clubAdmin.clubPosts.index') }}"
+                <a href="{{ route('clubPosts.newsPosts.index') }}"
                    class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base inline-flex items-center">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -20,7 +21,7 @@
         </div>
 
         <!-- Formulaire de création -->
-        <form action="{{ route('clubAdmin.clubPosts.store') }}" method="POST" enctype="multipart/form-data"
+        <form action="{{ route('clubPosts.newsPosts.store') }}" method="POST" enctype="multipart/form-data"
               class="space-y-6">
             @csrf
 
@@ -141,7 +142,8 @@
                                             <p class="text-xs text-gray-500">PNG, JPG, GIF jusqu'à 2MB</p>
                                         </div>
                                         <div x-show="imagePreview" class="relative">
-                                            <img :src="imagePreview" class="mx-auto h-32 w-auto rounded-lg shadow-sm">
+                                            <img :src="imagePreview" class="mx-auto h-32 w-auto rounded-lg shadow-sm"
+                                                 alt="">
                                             <button
                                                 @click="imagePreview = null; document.getElementById('image').value = ''"
                                                 type="button"
@@ -178,7 +180,7 @@
                                 <select id="status"
                                         name="status"
                                         class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-club-blue focus:border-club-blue @error('status') border-red-500 @enderror">
-                                    @foreach(\App\Enums\NewsPostStatusEnum::cases() as $statusEnum)
+                                    @foreach(NewsPostStatusEnum::cases() as $statusEnum)
                                         <option
                                             value="{{ $statusEnum->value }}" {{ old('status', 'draft') === $statusEnum->value ? 'selected' : '' }}>
                                             {{ ucfirst($statusEnum->value) }}
@@ -262,7 +264,7 @@
                                     class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-club-blue focus:border-club-blue @error('category') border-red-500 @enderror"
                                     required>
                                 <option value="">Choisir une catégorie</option>
-                                @foreach(\App\Enums\NewsPostCategoryEnum::cases() as $categoryEnum)
+                                @foreach(NewsPostCategoryEnum::cases() as $categoryEnum)
                                     <option
                                         value="{{ $categoryEnum->value }}" {{ old('category') === $categoryEnum->value ? 'selected' : '' }}>
                                         {{ $categoryEnum->name }}

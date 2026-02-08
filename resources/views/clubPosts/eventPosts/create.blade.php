@@ -1,3 +1,4 @@
+@php use App\Models\ClubPosts\EventPost; @endphp
 {{-- resources/views/clubAdmin/eventPosts/create.blade.php --}}
 <x-app-layout :breadcrumbs="$breadcrumbs">
     <x-admin-block>
@@ -7,7 +8,7 @@
                     <h2 class="text-xl sm:text-2xl font-bold text-club-blue">Créer un nouvel événement</h2>
                     <p class="text-gray-600 mt-1">Remplissez les informations ci-dessous pour créer un événement.</p>
                 </div>
-                <a href="{{ route('clubAdmin.eventPosts.index') }}"
+                <a href="{{ route('clubPosts.eventPosts.index') }}"
                    class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
                     ← Retour à la liste
                 </a>
@@ -25,11 +26,11 @@
                 </div>
             @endif
 
-            <form action="{{ route('clubAdmin.eventPosts.store') }}" method="POST"
+            <form action="{{ route('clubPosts.eventPosts.store') }}" method="POST"
                   x-data="{
                       category: '{{ old('category', 'club-life') }}',
                       status: '{{ old('status', 'draft') }}',
-                      icons: @js(\App\Models\ClubPosts\EventPost::ICONS),
+                      icons: @js(EventPost::ICONS),
                       showPreview: false,
                       updateIcon() {
                           if (this.icons[this.category]) {
@@ -82,7 +83,7 @@
                                         @change="updateIcon()"
                                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent"
                                         required>
-                                    @foreach(\App\Models\ClubPosts\EventPost::CATEGORIES as $key => $label)
+                                    @foreach(EventPost::CATEGORIES as $key => $label)
                                         <option value="{{ $key }}">{{ $label }}</option>
                                     @endforeach
                                 </select>
@@ -184,7 +185,7 @@
                                     x-model="status"
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent"
                                     required>
-                                @foreach(\App\Models\ClubPosts\EventPost::STATUSES as $key => $label)
+                                @foreach(EventPost::STATUSES as $key => $label)
                                     <option value="{{ $key }}">{{ $label }}</option>
                                 @endforeach
                             </select>
@@ -313,7 +314,7 @@
                 <!-- Actions -->
                 <div
                     class="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3 mt-8 pt-6 border-t">
-                    <a href="{{ route('clubAdmin.eventPosts.index') }}"
+                    <a href="{{ route('clubPosts.eventPosts.index') }}"
                        class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium transition-colors text-center">
                         Annuler
                     </a>

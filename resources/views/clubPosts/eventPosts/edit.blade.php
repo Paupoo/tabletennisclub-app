@@ -1,3 +1,4 @@
+@php use App\Models\ClubPosts\EventPost; @endphp
 {{-- resources/views/clubAdmin/eventPosts/edit.blade.php --}}
 <x-app-layout :breadcrumbs="$breadcrumbs">
     <x-admin-block>
@@ -5,10 +6,10 @@
             <div class="flex items-center justify-between mb-6">
                 <div>
                     <h2 class="text-xl sm:text-2xl font-bold text-club-blue">Modifier l'événement</h2>
-                    <p class="text-gray-600 mt-1">{{ $event->title }}</p>
+                    <p class="text-gray-600 mt-1">{{ $eventPost->title }}</p>
                 </div>
                 <div class="flex space-x-2">
-                    <a href="{{ route('clubAdmin.eventPosts.show', $event) }}"
+                    <a href="{{ route('clubPosts.eventPosts.show', $eventPost) }}"
                        class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
                         ← Annuler
                     </a>
@@ -28,11 +29,11 @@
             @endif
 
             {{-- Formulaire principal --}}
-            <form action="{{ route('clubAdmin.eventPosts.update', $event) }}" method="POST"
+            <form action="{{ route('clubPosts.eventPosts.update', $eventPost) }}" method="POST"
                   x-data="{
-                      category: '{{ old('category', $event->category) }}',
-                      status: '{{ old('status', $event->status) }}',
-                      icons: @js(\App\Models\ClubPosts\EventPost::ICONS),
+                      category: '{{ old('category', $eventPost->category) }}',
+                      status: '{{ old('status', $eventPost->status) }}',
+                      icons: @js(EventPost::ICONS),
                       showPreview: false,
                       updateIcon() {
                           if (this.icons[this.category]) {
@@ -51,7 +52,7 @@
                                 Titre de l'événement *
                             </label>
                             <input type="text" id="title" name="title"
-                                   value="{{ old('title', $event->title) }}"
+                                   value="{{ old('title', $eventPost->title) }}"
                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent"
                                    required>
                         </div>
@@ -62,7 +63,7 @@
                             </label>
                             <textarea id="description" name="description" rows="4"
                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent resize-y"
-                                      required>{{ old('description', $event->description) }}</textarea>
+                                      required>{{ old('description', $eventPost->description) }}</textarea>
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -74,9 +75,9 @@
                                         @change="updateIcon()"
                                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent"
                                         required>
-                                    @foreach(\App\Models\ClubPosts\EventPost::CATEGORIES as $key => $label)
+                                    @foreach(EventPost::CATEGORIES as $key => $label)
                                         <option
-                                            value="{{ $key }}" {{ old('category', $event->category) === $key ? 'selected' : '' }}>
+                                            value="{{ $key }}" {{ old('category', $eventPost->category) === $key ? 'selected' : '' }}>
                                             {{ $label }}
                                         </option>
                                     @endforeach
@@ -88,7 +89,7 @@
                                     Icône
                                 </label>
                                 <input type="text" id="icon" name="icon"
-                                       value="{{ old('icon', $event->icon) }}"
+                                       value="{{ old('icon', $eventPost->icon) }}"
                                        x-ref="iconInput"
                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent text-center text-2xl"
                                        maxlength="10">
@@ -100,7 +101,7 @@
                                 Lieu *
                             </label>
                             <input type="text" id="location" name="location"
-                                   value="{{ old('location', $event->location) }}"
+                                   value="{{ old('location', $eventPost->location) }}"
                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent"
                                    required>
                         </div>
@@ -110,7 +111,7 @@
                                 Prix/Information tarifaire
                             </label>
                             <input type="text" id="price" name="price"
-                                   value="{{ old('price', $event->price) }}"
+                                   value="{{ old('price', $eventPost->price) }}"
                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
                         </div>
                     </div>
@@ -122,7 +123,7 @@
                                 Date de l'événement *
                             </label>
                             <input type="date" id="event_date" name="event_date"
-                                   value="{{ old('event_date', $event->event_date->format('Y-m-d')) }}"
+                                   value="{{ old('event_date', $eventPost->event_date->format('Y-m-d')) }}"
                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent"
                                    required>
                         </div>
@@ -133,7 +134,7 @@
                                     Heure de début *
                                 </label>
                                 <input type="time" id="start_time" name="start_time"
-                                       value="{{ old('start_time', $event->start_time->format('H:i')) }}"
+                                       value="{{ old('start_time', $eventPost->start_time->format('H:i')) }}"
                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent"
                                        required>
                             </div>
@@ -143,7 +144,7 @@
                                     Heure de fin
                                 </label>
                                 <input type="time" id="end_time" name="end_time"
-                                       value="{{ old('end_time', $event->end_time?->format('H:i')) }}"
+                                       value="{{ old('end_time', $eventPost->end_time?->format('H:i')) }}"
                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
                             </div>
                         </div>
@@ -155,15 +156,15 @@
                             <select id="status" name="status" x-model="status"
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent"
                                     required>
-                                @foreach(\App\Models\ClubPosts\EventPost::STATUSES as $key => $label)
+                                @foreach(EventPost::STATUSES as $key => $label)
                                     <option
-                                        value="{{ $key }}" {{ old('status', $event->status) === $key ? 'selected' : '' }}>
+                                        value="{{ $key }}" {{ old('status', $eventPost->status) === $key ? 'selected' : '' }}>
                                         {{ $label }}
                                     </option>
                                 @endforeach
                             </select>
 
-                            @if($event->status === 'published')
+                            @if($eventPost->status === 'published')
                                 <div x-show="status === 'archived'" x-transition
                                      class="mt-2 p-3 bg-orange-50 border border-orange-200 rounded-lg">
                                     <p class="text-sm text-orange-700">
@@ -172,7 +173,7 @@
                                 </div>
                             @endif
 
-                            @if($event->status === 'draft')
+                            @if($eventPost->status === 'draft')
                                 <div x-show="status === 'published'" x-transition
                                      class="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
                                     <p class="text-sm text-green-700">
@@ -187,7 +188,7 @@
                                 Nombre maximum de participants
                             </label>
                             <input type="number" id="max_participants" name="max_participants"
-                                   value="{{ old('max_participants', $event->max_participants) }}"
+                                   value="{{ old('max_participants', $eventPost->max_participants) }}"
                                    min="1"
                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
                         </div>
@@ -196,12 +197,12 @@
                             <h3 class="text-sm font-medium text-gray-700 mb-3">Options</h3>
                             <label class="flex items-center space-x-2 cursor-pointer">
                                 <input type="checkbox" name="featured" value="1"
-                                       {{ old('featured', $event->featured) ? 'checked' : '' }}
+                                       {{ old('featured', $eventPost->featured) ? 'checked' : '' }}
                                        class="rounded border-gray-300 text-club-blue focus:ring-club-blue">
                                 <span class="text-sm text-gray-700">⭐ Mettre en avant cet événement</span>
                             </label>
 
-                            @if($event->featured && !old('featured'))
+                            @if($eventPost->featured && !old('featured'))
                                 <p class="text-xs text-yellow-600 mt-1 ml-6">
                                     Actuellement mis en avant
                                 </p>
@@ -213,7 +214,7 @@
                                 Notes privées (admin uniquement)
                             </label>
                             <textarea id="notes" name="notes" rows="3"
-                                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent resize-y">{{ old('notes', $event->notes) }}</textarea>
+                                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent resize-y">{{ old('notes', $eventPost->notes) }}</textarea>
                         </div>
                     </div>
                 </div>
@@ -225,10 +226,10 @@
                                   d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                         <div>
-                            <strong>Créé le :</strong> {{ $event->created_at->format('d/m/Y à H:i') }}
-                            @if($event->updated_at != $event->created_at)
+                            <strong>Créé le :</strong> {{ $eventPost->created_at->format('d/m/Y à H:i') }}
+                            @if($eventPost->updated_at != $eventPost->created_at)
                                 • <strong>Dernière modification
-                                    :</strong> {{ $event->updated_at->format('d/m/Y à H:i') }}
+                                    :</strong> {{ $eventPost->updated_at->format('d/m/Y à H:i') }}
                             @endif
                         </div>
                     </div>
@@ -236,7 +237,7 @@
 
                 <div
                     class="flex flex-col sm:flex-row justify-end items-center space-y-2 sm:space-y-0 sm:space-x-3 mt-8 pt-6 border-t">
-                    <a href="{{ route('clubAdmin.eventPosts.show', $event) }}"
+                    <a href="{{ route('clubPosts.eventPosts.show', $eventPost) }}"
                        class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-medium transition-colors text-center">
                         Annuler
                     </a>
@@ -249,8 +250,8 @@
 
             {{-- Formulaire de suppression séparé (déplacé ici) --}}
             <div class="flex justify-start mt-6">
-                @if($event->canBeDeleted())
-                    <form action="{{ route('clubAdmin.eventPosts.destroy', $event) }}" method="POST" class="inline">
+                @if($eventPost->canBeDeleted())
+                    <form action="{{ route('clubPosts.eventPosts.destroy', $eventPost) }}" method="POST" class="inline">
                         @csrf
                         @method('DELETE')
                         <button type="submit"

@@ -12,7 +12,7 @@
 
                 <!-- Bouton d'ajout -->
                 <div>
-                    <a href="{{ route('clubAdmin.events.create') }}"
+                    <a href="{{ route('clubPosts.eventPosts.create') }}"
                        class="bg-club-blue hover:bg-club-blue-light text-white px-4 py-2 rounded-lg font-medium transition-colors inline-flex items-center">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -199,7 +199,7 @@
                                 <div class="flex items-center justify-end space-x-2">
                                     <!-- Actions rapides de statut -->
                                     @if($event->status === 'draft')
-                                        <form action="{{ route('clubAdmin.events.publish', $event) }}" method="POST"
+                                        <form action="{{ route('clubPosts.eventPosts.publish', $event) }}" method="POST"
                                               class="inline">
                                             @csrf
                                             @method('PATCH')
@@ -216,7 +216,7 @@
                                     @endif
 
                                     @if($event->status === 'published')
-                                        <form action="{{ route('clubAdmin.events.archive', $event) }}" method="POST"
+                                        <form action="{{ route('clubPosts.eventPosts.archive', $event) }}" method="POST"
                                               class="inline">
                                             @csrf
                                             @method('PATCH')
@@ -233,7 +233,7 @@
                                     @endif
 
                                     <!-- Voir -->
-                                    <a href="{{ route('clubAdmin.events.show', $event) }}"
+                                    <a href="{{ route('clubPosts.eventPosts.show', $event) }}"
                                        class="bg-club-blue hover:bg-club-blue-light text-white p-1 rounded transition-colors duration-200"
                                        title="{{ __('View details') }}">
                                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -245,7 +245,7 @@
                                     </a>
 
                                     <!-- Modifier -->
-                                    <a href="{{ route('clubAdmin.events.edit', $event) }}"
+                                    <a href="{{ route('clubPosts.eventPosts.edit', $event) }}"
                                        class="bg-yellow-600 hover:bg-yellow-700 text-white p-1 rounded transition-colors duration-200"
                                        title="Modifier">
                                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -255,7 +255,7 @@
                                     </a>
 
                                     <!-- Dupliquer -->
-                                    <form action="{{ route('clubAdmin.events.duplicate', $event) }}" method="POST"
+                                    <form action="{{ route('clubPosts.eventPosts.duplicate', $event) }}" method="POST"
                                           class="inline">
                                         @csrf
                                         <button type="submit"
@@ -270,7 +270,7 @@
 
                                     <!-- Supprimer (seulement si possible) -->
                                     @if($event->canBeDeleted())
-                                        <form action="{{ route('clubAdmin.events.destroy', $event) }}" method="POST"
+                                        <form action="{{ route('clubPosts.eventPosts.destroy', $event) }}" method="POST"
                                               class="inline">
                                             @csrf
                                             @method('DELETE')
@@ -302,7 +302,7 @@
                                     <h3 class="mt-2 text-sm font-medium text-gray-900">Aucun événement trouvé</h3>
                                     <p class="mt-1 text-sm text-gray-500">Commencez par créer un nouvel événement.</p>
                                     <div class="mt-6">
-                                        <a href="{{ route('clubAdmin.events.create') }}"
+                                        <a href="{{ route('clubPosts.eventPosts.create') }}"
                                            class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-club-blue hover:bg-club-blue-light">
                                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor"
                                                  viewBox="0 0 24 24">
@@ -371,11 +371,11 @@
                             </div>
 
                             <div class="flex justify-end space-x-2">
-                                <a href="{{ route('clubAdmin.events.show', $event) }}"
+                                <a href="{{ route('clubPosts.eventPosts.show', $event) }}"
                                    class="bg-club-blue hover:bg-club-blue-light text-white px-3 py-1 rounded text-xs font-medium transition-colors">
                                     Voir
                                 </a>
-                                <a href="{{ route('clubAdmin.events.edit', $event) }}"
+                                <a href="{{ route('clubPosts.eventPosts.edit', $event) }}"
                                    class="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded text-xs font-medium transition-colors">
                                     Modifier
                                 </a>

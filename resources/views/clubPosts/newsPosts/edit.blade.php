@@ -1,3 +1,4 @@
+@php use App\Enums\NewsPostCategoryEnum;use App\Enums\NewsPostStatusEnum; @endphp
 <x-app-layout :breadcrumbs="$breadcrumbs">
     <x-admin-block>
         <!-- En-tête de page -->
@@ -15,7 +16,7 @@
                 </div>
 
                 <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-                    <a href="{{ route('clubAdmin.clubPosts.show', $article) }}"
+                    <a href="{{ route('clubPosts.newsPosts.show', $article) }}"
                        class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base inline-flex items-center justify-center">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -25,7 +26,7 @@
                         </svg>
                         {{ __('View article') }}
                     </a>
-                    <a href="{{ route('clubAdmin.clubPosts.index') }}"
+                    <a href="{{ route('clubPosts.newsPosts.index') }}"
                        class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base inline-flex items-center justify-center">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -63,7 +64,7 @@
         </div>
 
         <!-- Formulaire de modification -->
-        <form action="{{ route('clubAdmin.clubPosts.update', $article) }}" method="POST" enctype="multipart/form-data"
+        <form action="{{ route('clubPosts.newsPosts.update', $article) }}" method="POST" enctype="multipart/form-data"
               class="space-y-6">
             @csrf
             @method('PUT')
@@ -252,7 +253,7 @@
                                 <select id="status"
                                         name="status"
                                         class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-club-blue focus:border-club-blue @error('status') border-red-500 @enderror">
-                                    @foreach(\App\Enums\NewsPostStatusEnum::cases() as $statusEnum)
+                                    @foreach(NewsPostStatusEnum::cases() as $statusEnum)
                                         <option
                                             value="{{ $statusEnum->value }}" {{ old('status', $article->status->value) === $statusEnum->value ? 'selected' : '' }}>
                                             {{ ucfirst($statusEnum->value) }}
@@ -338,7 +339,7 @@
                                     class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-club-blue focus:border-club-blue @error('category') border-red-500 @enderror"
                                     required>
                                 <option value="">Choisir une catégorie</option>
-                                @foreach(\App\Enums\NewsPostCategoryEnum::cases() as $categoryEnum)
+                                @foreach(NewsPostCategoryEnum::cases() as $categoryEnum)
                                     <option
                                         value="{{ $categoryEnum->value }}" {{ old('category', $article->category->value) === $categoryEnum->value ? 'selected' : '' }}>
                                         {{ $categoryEnum->name }}
@@ -393,7 +394,7 @@
 
                         <div class="space-y-2">
                             @if($article->is_public && $article->status->value === 'published')
-                                <a href="{{ route('clubAdmin.clubPosts.show', $article->slug) }}"
+                                <a href="{{ route('clubPosts.newsPosts.show', $article->slug) }}"
                                    target="_blank"
                                    class="w-full bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg font-medium transition-colors text-sm flex items-center justify-center">
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -456,7 +457,7 @@
         </form>
 
         <!-- Formulaire de duplication (caché) -->
-        <form id="duplicate-form" action="{{ route('clubAdmin.clubPosts.duplicate', $article) }}" method="POST"
+        <form id="duplicate-form" action="{{ route('clubPosts.newsPosts.duplicate', $article) }}" method="POST"
               style="display: none;">
             @csrf
         </form>

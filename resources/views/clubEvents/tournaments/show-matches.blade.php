@@ -4,11 +4,11 @@
     {{-- actions menu --}}
     @push('header-actions')
         <x-tournament.actions-menu :tournament="$tournament" :statusesAllowed="$statusesAllowed ?? []">
-            @include('clubAdmin.tournaments.partials.action-menu')
+            @include('clubEvents.tournaments.partials.action-menu')
         </x-tournament.actions-menu>
     @endpush
 
-    @include('clubAdmin.tournaments.partials.matches-list', ['tables' => $tables])
+    @include('clubEvents.tournaments.partials.matches-list', ['tables' => $tables])
 
 
     @push('modals')

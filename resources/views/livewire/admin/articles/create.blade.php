@@ -8,7 +8,7 @@
                     <p class="text-gray-600 text-sm sm:text-base">{{ __('Fill out the form below to create a new article.') }}</p>
                 </div>
 
-                <a href="{{ route('admin.articles.index') }}"
+                <a href="{{ route('clubPosts.newsPosts.index') }}"
                    class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base inline-flex items-center">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -20,7 +20,7 @@
         </div>
 
         <!-- Formulaire de création -->
-        <form action="{{ route('admin.articles.store') }}" method="POST" enctype="multipart/form-data"
+        <form action="{{ route('clubPosts.newsPosts.store') }}" method="POST" enctype="multipart/form-data"
               class="space-y-6">
             @csrf
 

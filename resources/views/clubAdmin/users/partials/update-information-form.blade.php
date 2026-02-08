@@ -18,7 +18,7 @@
             @method('PUT')
 
             <x-forms.user :user="$user" :rankings="$rankings" :teams="$teams"
-                :sexes="$sexes"></x-forms.user>
+                :genders="$genders"></x-forms.user>
 
 
             <div>

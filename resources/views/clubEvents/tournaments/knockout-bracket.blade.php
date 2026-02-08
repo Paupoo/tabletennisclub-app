@@ -4,7 +4,7 @@
     {{-- actions menu --}}
     @push('header-actions')
         <x-tournament.actions-menu :tournament="$tournament" :statusesAllowed="$statusesAllowed ?? []">
-            @include('clubAdmin.tournaments.partials.action-menu')
+            @include('clubEvents.tournaments.partials.action-menu')
         </x-tournament.actions-menu>
     @endpush
 
@@ -70,7 +70,7 @@
                     @foreach ($rounds[$roundName] as $match)
                         <div
                                 class="match-box border border-gray-200 mb-{{ $spacing }} p-4 rounded-lg shadow-xs bg-white">
-                            @include('clubAdmin.tournaments.partials.knockout-match', ['match' => $match])
+                            @include('clubEvents.tournaments.partials.knockout-match', ['match' => $match])
                         </div>
                     @endforeach
                 </div>
@@ -80,7 +80,7 @@
             <div class="flex flex-col justify-center">
                 @if (isset($rounds['final']) && count($rounds['final']) > 0)
                     <div class="match-box border border-yellow-300 p-4 rounded-lg shadow-md bg-yellow-50">
-                        @include('clubAdmin.tournaments.partials.knockout-match', [
+                        @include('clubEvents.tournaments.partials.knockout-match', [
                             'match' => $rounds['final'][0],
                         ])
                     </div>
@@ -91,7 +91,7 @@
             <div class="flex flex-col justify-center">
                 @if (isset($rounds['bronze']) && count($rounds['bronze']) > 0)
                     <div class="match-box border border-amber-300 p-4 rounded-lg shadow-md bg-amber-50">
-                        @include('clubAdmin.tournaments.partials.knockout-match', [
+                        @include('clubEvents.tournaments.partials.knockout-match', [
                             'match' => $rounds['bronze'][0],
                         ])
                     </div>

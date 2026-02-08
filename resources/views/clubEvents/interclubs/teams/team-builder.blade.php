@@ -32,14 +32,14 @@
                         <option value="{{ $season->id }}" @isset($selectedSeason->id)
                             @selected($selectedSeason->id === $season->id)
                         @endisset>{{ $season->name }} </option>
-                        
+
                     @endforeach
                 </x-select-input>
 
                 <x-input-label class="mt-2"
                     for="playersPerTeamSelector">{{ __('Define your players per teams') }}</x-input-label>
                 <x-text-input class="w-20 h-8 mt-2" type="number" name="playersPerTeam" id="playersPerTeamSelector"
-                    min="5" step="1" value="{{ old('playersPerTeam', isset($playersPerTeam) ? $playersPerTeam : null) }}" required></x-text-input>
+                    min="5" step="1" value="{{ old('playersPerTeam', $playersPerTeam ?? null) }}" required></x-text-input>
                 <x-input-error class="" :messages="$errors->get('playersPerTeam')" />
                 <x-primary-button class="mt-4 w-36">{{ __('Build teams') }}</x-primary-button>
             </form>
@@ -59,9 +59,9 @@
                             <div class="border-2 p-2 border-indigo-400 w-fit rounded-lg border-grey-300">
 
                                 <h1 class="text-center font-extrabold text-xl">{{ $teamName }}</h1>
-                                
+
                                 <hr class="border-2 border-dashed my-4 border-indigo-500">
-                                
+
                                 <div class="flex flex-col">
                                     <label for="league{{ $teamName}}">{{ __('Pick up a league') }}</label>
                                     <div class="flex flex-col gap-2">
@@ -82,7 +82,7 @@
                                 </div>
 
                                 <hr class="border-2 border-dashed my-4 border-indigo-500">
-                                
+
                                 @foreach ($players as $player)
                                     <div class="grid grid-flow-col gap-2 text-sm mt-2 hover:bg-indigo-300 rounded-sm p-1">
                                         <span class="text-left w-40">{{ $player->force_list }} | {{ $player->last_name }}

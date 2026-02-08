@@ -42,7 +42,7 @@
             <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                 <!-- Actions de statut -->
                 @if($event->status === 'draft')
-                    <form action="{{ route('clubAdmin.eventPosts.publish', $event) }}" method="POST" class="inline">
+                    <form action="{{ route('clubPosts.eventPosts.publish', $event) }}" method="POST" class="inline">
                         @csrf
                         @method('PATCH')
                         <button type="submit"
@@ -54,7 +54,7 @@
                         </button>
                     </form>
                 @elseif($event->status === 'published')
-                    <form action="{{ route('clubAdmin.eventPosts.archive', $event) }}" method="POST" class="inline">
+                    <form action="{{ route('clubPosts.eventPosts.archive', $event) }}" method="POST" class="inline">
                         @csrf
                         @method('PATCH')
                         <button type="submit"
@@ -68,7 +68,7 @@
                 @endif
 
                 <!-- Modifier -->
-                <a href="{{ route('clubAdmin.eventPosts.edit', $event) }}"
+                <a href="{{ route('clubPosts.eventPosts.edit', $event) }}"
                    class="bg-club-blue hover:bg-club-blue-light text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base w-full sm:w-auto text-center inline-flex items-center justify-center">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
@@ -77,7 +77,7 @@
                 </a>
 
                 <!-- Dupliquer -->
-                <form action="{{ route('clubAdmin.eventPosts.duplicate', $event) }}" method="POST" class="inline">
+                <form action="{{ route('clubPosts.eventPosts.duplicate', $event) }}" method="POST" class="inline">
                     @csrf
                     <button type="submit"
                             class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base w-full sm:w-auto flex items-center justify-center">
@@ -251,7 +251,7 @@
                     <h3 class="text-lg font-bold text-club-blue mb-4">Actions rapides</h3>
                     <div class="space-y-3">
                         @if($event->status !== 'published')
-                            <form action="{{ route('clubAdmin.eventPosts.publish', $event) }}" method="POST" class="w-full">
+                            <form action="{{ route('clubPosts.eventPosts.publish', $event) }}" method="POST" class="w-full">
                                 @csrf
                                 @method('PATCH')
                                 <button type="submit"
@@ -262,7 +262,7 @@
                         @endif
 
                         @if($event->canBeDeleted())
-                            <form action="{{ route('clubAdmin.eventPosts.destroy', $event) }}" method="POST" class="w-full">
+                            <form action="{{ route('clubPosts.eventPosts.destroy', $event) }}" method="POST" class="w-full">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit"
@@ -273,7 +273,7 @@
                             </form>
                         @endif
 
-                        <a href="{{ route('clubAdmin.eventPosts.index') }}"
+                        <a href="{{ route('clubPosts.eventPosts.index') }}"
                            class="w-full bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm text-center block">
                             ← Retour à la liste
                         </a>

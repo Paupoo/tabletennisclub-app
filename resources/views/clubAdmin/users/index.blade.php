@@ -6,9 +6,9 @@
                 <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start space-y-4 sm:space-y-0">
                     <div>
                         <h2 class="text-xl sm:text-2xl font-bold text-club-blue mb-2">{{ __('Members') }}</h2>
-                        <p class="text-gray-600 text-sm sm:text-base">Gérez les membres du club et leurs informations.</p>
+                        <p class="text-gray-600 text-sm sm:text-base">{{ __('Manage members and their data') }}</p>
                     </div>
-        
+
                     <!-- Menu d'actions modernisé -->
                     <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                         @can('create', $user_model)
@@ -35,7 +35,7 @@
                                 >
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                                 </svg>
-        
+
                                 <!-- Texte du bouton qui change selon l'état -->
                                 <span x-text="showStats ? '{{ __('Hide Statistics') }}' : '{{ __('Show Statistics') }}'"></span>
                             </button>
@@ -66,9 +66,9 @@
                                      style="display: none;">
                                     <div class="py-2">
                                         <div class="px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-100">
-                                            Gestion Force Index
+                                            {{ __('Manage force index') }}
                                         </div>
-        
+
                                         <button @click="$dispatch('open-modal', 'confirm-forceList-reset'); showActionsMenu = false"
                                                 class="w-full flex items-center px-4 py-3 text-sm text-orange-700 hover:bg-orange-50 hover:text-orange-900 transition-colors duration-200">
                                             <div class="flex-shrink-0 w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mr-3">
@@ -78,10 +78,10 @@
                                             </div>
                                             <div>
                                                 <div class="font-medium">{{ __('Reset Force Index') }}</div>
-                                                <div class="text-xs text-gray-500">Remettre à zéro les indices</div>
+                                                <div class="text-xs text-gray-500">{{ __('Set force index to 0') }}</div>
                                             </div>
                                         </button>
-        
+
                                         <button @click="$dispatch('open-modal', 'confirm-forceList-deletion'); showActionsMenu = false"
                                                 class="w-full flex items-center px-4 py-3 text-sm text-red-700 hover:bg-red-50 hover:text-red-900 transition-colors duration-200">
                                             <div class="flex-shrink-0 w-8 h-8 bg-red-100 rounded-full flex items-center justify-center mr-3">
@@ -91,7 +91,7 @@
                                             </div>
                                             <div>
                                                 <div class="font-medium">{{ __('Delete Force Index') }}</div>
-                                                <div class="text-xs text-gray-500">Supprimer tous les indices</div>
+                                                <div class="text-xs text-gray-500">{{ __('Delete all force index') }}</div>
                                             </div>
                                         </button>
                                     </div>
@@ -149,7 +149,7 @@
             </div>
             <!-- Table des utilisateurs -->
             <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-                <livewire:admin.users.users-table>
+                <livewire:admin.users.users-table />
             </div>
             <!-- Modal de confirmation - Reset Force Index -->
             <x-modal name="confirm-forceList-reset" focusable>

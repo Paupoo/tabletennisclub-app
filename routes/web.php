@@ -297,7 +297,7 @@ Route::prefix('clubAdmin')->middleware(['auth', 'verified'])->group(function ():
     Route::resource('trainingpacks', TrainingPackController::class)->names('admin.trainingpacks');
 });
 
-Route::prefix('clubAdmin')->middleware(['auth','verified'])->group(function (): void {
+Route::prefix('clubAdmin')->middleware(['auth', 'verified'])->group(function (): void {
     Route::get('spams', [SpamController::class, 'index'])->name('clubAdmin.spams.index');
     Route::post('contacts/create-new-user', [CreateNewUserAction::class, 'handle'])->name('clubAdmin.contacts.invite-new-user');
     Route::post('/{contact}/send-email', [ContactAdminController::class, 'sendEmail'])->name('clubAdmin.contacts.send-email');
@@ -319,11 +319,11 @@ Route::get('/test2', function () {
 })->middleware(['auth', 'verified']);
 
 Route::middleware(['auth', 'verified'])->group(function (): void {
-    Route::resource('seasons', SeasonController::class)->names('admin.seasons');
+    Route::resource('seasons', SeasonController::class)->names('clubEvents.interclubs.seasons');
     Route::resource('registrations', RegistrationController::class)->names('admin.registrations');
     Route::resource('subscriptions', SubscriptionController::class)->names('admin.subscriptions');
     Route::resource('payments', PaymentController::class)->names('admin.payments');
-    Route::post('seasons/{season}/subscribe/', SubscribeToSeasonController::class)->name('admin.seasons.subscribe');
+    Route::post('seasons/{season}/subscribe/', SubscribeToSeasonController::class)->name('clubEvents.interclubs.seasons.subscribe');
     Route::post('seasons/{season}/unsubscribe', [SubscriptionController::class, 'unsubscribe'])->name('admin.subscriptions.unsubscribe');
     Route::post('subscriptions/sendPaymentInvite/', [PaymentController::class, 'sendInvite'])->name('admin.subscriptions.sendPaymentInvite');
     Route::post('subscriptions/{subscription}/confirm', ConfirmSubscriptionAction::class)->name('admin.subscriptions.confirm');

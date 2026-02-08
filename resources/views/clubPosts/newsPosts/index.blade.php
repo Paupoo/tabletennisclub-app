@@ -34,7 +34,7 @@
             <!-- Bouton d'ajout -->
             <div class="flex justify-start">
                 <a href="{{ route('clubPosts.newsPosts.create') }}"
-                   class="bg-club-blue hover:bg-club-blue-light text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base inline-flex items-center">
+                    class="bg-club-blue hover:bg-club-blue-light text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base inline-flex items-center">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                     </svg>
@@ -43,7 +43,7 @@
             </div>
         </div>
 
-        <livewire:admin.articles.index />
+        <livewire:admin.news-posts.index />
 
 
     </x-admin-block>

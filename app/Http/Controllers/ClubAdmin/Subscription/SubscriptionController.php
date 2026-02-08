@@ -33,7 +33,7 @@ class SubscriptionController extends Controller
         $season = $subscription->season;
         $subscription->forceDelete();
 
-        return redirect(route('admin.seasons.show', $season))
+        return redirect(route('clubEvents.interclubs.seasons.show', $season))
             ->withInput(
                 ['success' => __('The subscription has been deleted')]
             );
@@ -88,7 +88,7 @@ class SubscriptionController extends Controller
         $breadcrumbs = Breadcrumb::make()
             ->home()
             ->seasons()
-            ->add($subscription->season->name, route('admin.seasons.show', $subscription->season->id))
+            ->add($subscription->season->name, route('clubEvents.interclubs.seasons.show', $subscription->season->id))
             ->current($subscription->user->full_name)
             ->toArray();
 

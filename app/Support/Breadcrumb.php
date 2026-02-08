@@ -78,7 +78,7 @@ class Breadcrumb
     }
     public function seasons($url = null): Breadcrumb
     {
-        return $this->add(__('Seasons'), $url ?: route('admin.seasons.index'), 'calendar');
+        return $this->add(__('Seasons'), $url ?: route('clubEvents.interclubs.seasons.index'), 'calendar');
     }
 
     public function subscriptions($url = null): Breadcrumb

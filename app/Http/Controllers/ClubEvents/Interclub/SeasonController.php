@@ -20,7 +20,7 @@ class SeasonController extends Controller
      */
     public function create(): View
     {
-        return view('admin.seasons.create');
+        return view('clubEvents.interclubs.seasons.create');
     }
 
     /**
@@ -54,7 +54,7 @@ class SeasonController extends Controller
 
         $users = User::all();
 
-        return view('admin.seasons.index', compact([
+        return view('clubEvents.interclubs.seasons.index', compact([
             'breadcrumbs',
             'seasons',
             'users',
@@ -79,7 +79,7 @@ class SeasonController extends Controller
             $query->where('season_id', $season->id);
         })->get();
 
-        return view('admin.seasons.show', compact([
+        return view('clubEvents.interclubs.seasons.show', compact([
             'season',
             'subscriptions',
             'notSubscribedUsers',
@@ -101,7 +101,7 @@ class SeasonController extends Controller
 
         Season::create($validated);
 
-        return view('admin.seasons.create');
+        return view('clubEvents.interclubs.seasons.create');
     }
 
     /**

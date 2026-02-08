@@ -19,8 +19,8 @@
 
                     <!-- Lien Dashboard simple -->
                     <a href="{{ route('dashboard') }}"
-                       class="flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 text-gray-700 dark:text-gray-300 hover:text-club-blue dark:hover:text-gray-200 hover:bg-indigo-300 dark:hover:bg-gray-700' }}"
-                       wire:navigate>
+                        class="flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 text-gray-700 dark:text-gray-300 hover:text-club-blue dark:hover:text-gray-200 hover:bg-indigo-300 dark:hover:bg-gray-700' }}"
+                        wire:navigate>
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                         </svg>
@@ -61,7 +61,7 @@
                                 </svg>
                                 {{ __('Contacts') }}
                                 @if(isset($newContactsCount) && $newContactsCount > 0)
-                                    <span class="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full">{{ $newContactsCount }}</span>
+                                <span class="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full">{{ $newContactsCount }}</span>
                                 @endif
                             </a>
                             @endif
@@ -217,8 +217,8 @@
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
                                 <x-dropdown-link :href="route('logout')"
-                                        onclick="event.preventDefault(); this.closest('form').submit();"
-                                        class="flex items-center text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
+                                    onclick="event.preventDefault(); this.closest('form').submit();"
+                                    class="flex items-center text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">
                                     <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                                     </svg>
@@ -231,7 +231,7 @@
             </div>
 
             <!-- Hamburger -->
-            <div class="flex items-center lg:hidden">
+            <div class="flex items-center sm:hidden">
                 <button @click="open = ! open" class="inline-flex items-center justify-center p-2 text-gray-400 hover:text-club-blue hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-all duration-200 focus:outline-none">
                     <svg class="w-6 h-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
                         <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -260,7 +260,7 @@
                 </div>
             </div>
             @if(Auth()->user()->is_committee_member || Auth()->user()->is_admin)
-            <x-responsive-nav-link :href="route('clubPosts.newsPosts.index')" :active="request()->routeIs('admin.articles.index')" wire:navigate class="flex items-center pl-6">
+            <x-responsive-nav-link :href="route('clubPosts.newsPosts.index')" :active="request()->routeIs('clubPosts.newsPosts.index')" wire:navigate class="flex items-center pl-6">
                 <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <x-ui.icon name="article" />
                 </svg>
@@ -272,7 +272,7 @@
                 </svg>
                 {{ __('Contacts') }}
                 @if(isset($newContactsCount) && $newContactsCount > 0)
-                    <span class="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full">{{ $newContactsCount }}</span>
+                <span class="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full">{{ $newContactsCount }}</span>
                 @endif
             </x-responsive-nav-link>
             @endif
@@ -284,7 +284,7 @@
                 <x-ui.icon class="w-4 h-4 mr-3" name="person" />
                 {{ __('Members') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('clubEvents.interclubs.seasons.index')" :active="request()->routeIs('admin.seasons.index')" wire:navigate class="flex items-center pl-6">
+            <x-responsive-nav-link :href="route('clubEvents.interclubs.seasons.index')" :active="request()->routeIs('clubEvents.interclubs.seasons.index')" wire:navigate class="flex items-center pl-6">
                 <x-ui.icon class="w-4 h-4 mr-3" name="calendar" />
                 {{ __('Seasons') }}
             </x-responsive-nav-link>
@@ -368,8 +368,8 @@
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <x-responsive-nav-link :href="route('logout')"
-                            onclick="event.preventDefault(); this.closest('form').submit();"
-                            class="flex items-center text-red-600">
+                        onclick="event.preventDefault(); this.closest('form').submit();"
+                        class="flex items-center text-red-600">
                         <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
                         </svg>

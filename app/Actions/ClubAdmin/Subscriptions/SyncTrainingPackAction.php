@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Actions\ClubAdmin\Subscriptions;
 
 use App\Models\ClubAdmin\Subscription\Subscription;
@@ -7,7 +9,7 @@ use Exception;
 
 use function App\Actions\Subscriptions\__;
 
-class SyncTrainingPack
+class SyncTrainingPackAction
 {
 
     public function __invoke(array $trainingPacksIds, Subscription $subscription): void

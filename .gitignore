@@ -1,25 +1,110 @@
+# ============================================
+# Laravel - Fichiers système
+# ============================================
 /.phpunit.cache
-/node_modules
-/public/build
-/public/hot
-/public/storage
-/storage/debugbar/
-/storage/*.key
-/tests/Coverage
+.phpunit.result.cache
 /vendor
+auth.json
+
+# ============================================
+# Environment & Configuration
+# ============================================
 .env
 .env.backup
 .env.production
-.phpunit.result.cache
-Homestead.json
-Homestead.yaml
-auth.json
+.env.testing
+.env.local
+
+# ============================================
+# Node.js & Frontend
+# ============================================
+/node_modules
+/public/build
+/public/hot
 npm-debug.log
 yarn-error.log
-/.fleet
+package-lock.json
+yarn.lock
+
+# ============================================
+# Storage & Cache
+# ============================================
+/public/storage
+/storage/*.key
+/storage/debugbar/
+/bootstrap/cache/*.php
+!/bootstrap/cache/.gitkeep
+
+# ============================================
+# Test Coverage & Tests
+# ============================================
+/tests/Coverage/
+coverage-report/
+.pest/
+
+# ============================================
+# IDE & Editors
+# ============================================
+# PhpStorm / IntelliJ
 /.idea
-/.vscode
-laravel
-.env.testing
 _ide_helper*.php
+_ide_helper_models.php
 .phpstorm.meta.php
+
+# VS Code
+/.vscode
+
+# Fleet
+/.fleet
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# ============================================
+# Deployment & Homestead
+# ============================================
+Homestead.json
+Homestead.yaml
+laravel
+/.vagrant
+
+# ============================================
+# Docker & Sail
+# ============================================
+docker-compose.override.yml
+
+# ============================================
+# OS Files
+# ============================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~
+
+# ============================================
+# Logs
+# ============================================
+*.log
+/storage/logs/*.log
+
+# ============================================
+# Database
+# ============================================
+*.sql
+*.sqlite
+*.sqlite-journal
+/database/*.sqlite
+
+# ============================================
+# Backup files
+# ============================================
+*.bak
+*.backup

@@ -7,7 +7,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Symfony\Component\Finder\Finder;
 
-class ExtractTranslations extends Command
+class ExtractTranslationsCommand extends Command
 {
     /**
      * La description de la commande.
@@ -21,8 +21,8 @@ class ExtractTranslations extends Command
      *
      * @var string
      */
-    protected $signature = 'translations:extract 
-                            {--path= : Répertoire à scanner (par défaut app/ et resources/views/)} 
+    protected $signature = 'translations:extract
+                            {--path= : Répertoire à scanner (par défaut app/ et resources/views/)}
                             {--output=translations.json : Fichier de sortie JSON}';
 
     public function handle(): int

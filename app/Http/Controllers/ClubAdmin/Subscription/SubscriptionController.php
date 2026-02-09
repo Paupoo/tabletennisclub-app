@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\ClubAdmin\Subscription;
 
-use App\Actions\ClubAdmin\Subscriptions\SyncTrainingPack;
+use App\Actions\ClubAdmin\Subscriptions\SyncTrainingPackAction;
 use App\Actions\Subscriptions\AddTrainingPack;
 use App\Http\Controllers\Controller;
 use App\Models\ClubAdmin\Subscription\Subscription;
@@ -123,7 +123,7 @@ class SubscriptionController extends Controller
             $validated['training_packs'] = [];
         }
 
-        new SyncTrainingPack()($validated['training_packs'], $subscription);
+        new SyncTrainingPackAction()($validated['training_packs'], $subscription);
 
         return back()
             ->with([

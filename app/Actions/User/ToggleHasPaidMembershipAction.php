@@ -9,6 +9,10 @@ use Illuminate\Database\Eloquent\Model;
 
 final class ToggleHasPaidMembershipAction extends ToggleHasPaidAction
 {
+    /**
+     * @param Model $model
+     * @return bool
+     */
     public function toggleHasPaid(Model $model): bool
     {
         $this->user->update([

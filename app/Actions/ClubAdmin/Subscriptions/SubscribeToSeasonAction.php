@@ -14,7 +14,7 @@ use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
-class SubscribeToSeasonController extends Controller
+class SubscribeToSeasonAction
 {
     private float $casualLicencePrice = 60;
 

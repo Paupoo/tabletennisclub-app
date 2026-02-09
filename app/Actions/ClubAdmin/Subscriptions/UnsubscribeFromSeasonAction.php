@@ -9,7 +9,7 @@ use App\Models\Season;
 use App\Models\User;
 use Illuminate\Http\Request;
 
-class UnsubscribeFromSeasonController extends Controller
+class UnsubscribeFromSeasonAction
 {
     /**
      * Handle the incoming request.

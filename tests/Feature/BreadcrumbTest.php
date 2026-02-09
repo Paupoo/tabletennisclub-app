@@ -156,16 +156,12 @@ describe('Breadcrumb', function (): void {
             // Create a mock tournament that behaves like an Eloquent model
             $tournament = new class
             {
-                public $id = 1;
-
-                public $name = 'Championship 2024';
-
-                public function __toString()
+                function __toString()
                 {
                     return (string) $this->id;
                 }
 
-                public function getRouteKey()
+                function getRouteKey()
                 {
                     return $this->id;
                 }
@@ -185,16 +181,12 @@ describe('Breadcrumb', function (): void {
 
             $tournament = new class
             {
-                public $id = 1;
-
-                public $name = 'Test Tournament';
-
-                public function __toString()
+                function __toString()
                 {
                     return (string) $this->id;
                 }
 
-                public function getRouteKey()
+                function getRouteKey()
                 {
                     return $this->id;
                 }
@@ -233,16 +225,12 @@ describe('Breadcrumb', function (): void {
 
             $tournament = new class
             {
-                public $id = 5;
-
-                public $name = 'World Cup 2024';
-
-                public function __toString()
+                function __toString()
                 {
                     return (string) $this->id;
                 }
 
-                public function getRouteKey()
+                function getRouteKey()
                 {
                     return $this->id;
                 }
@@ -326,16 +314,12 @@ describe('Breadcrumb', function (): void {
 
             $tournament = new class
             {
-                public $id = 1;
-
-                public $name = 'Tournament & Championship 2024';
-
-                public function __toString()
+                function __toString()
                 {
                     return (string) $this->id;
                 }
 
-                public function getRouteKey()
+                function getRouteKey()
                 {
                     return $this->id;
                 }

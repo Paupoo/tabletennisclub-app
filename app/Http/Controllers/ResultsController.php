@@ -58,7 +58,7 @@ class ResultsController extends Controller
             ],
             [
                 'name' => 'Équipe C - Division 4C',
-                'position' => '5ème place',
+                'position' => '6ème place',
                 'position_class' => 'bg-gray-100 text-gray-800',
                 'matches' => [
                     ['date' => '12 Sep 2025', 'opponent' => 'CTT Limal Wavre F', 'venue' => 'Extérieur', 'score' => '13-3', 'result' => 'Victoire'],
@@ -121,7 +121,7 @@ class ResultsController extends Controller
             ],
             [
                 'name' => 'Équipe A - Division 3B Vétérans',
-                'position' => '2nde place',
+                'position' => '3ème place',
                 'position_class' => 'bg-gray-100 text-gray-800',
                 'matches' => [
                     ['date' => '03 Oct 2025', 'opponent' => 'Uccle Ping B', 'venue' => 'Domicile', 'score' => '10-0', 'result' => 'Victoire'],
@@ -145,7 +145,7 @@ class ResultsController extends Controller
             ],
             [
                 'name' => 'Équipe C - Division 4F Vétérans',
-                'position' => '5ème place',
+                'position' => '2nde place',
                 'position_class' => 'bg-gray-100 text-gray-800',
                 'matches' => [
                     ['date' => '03 Oct 2025', 'opponent' => 'Logis Auderghem D', 'venue' => 'Domicile', 'score' => '7-3', 'result' => 'Victoire'],

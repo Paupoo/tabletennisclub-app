@@ -28,8 +28,12 @@ class ResultsController extends Controller
                     ['date' => '14 Nov 2025', 'opponent' => 'La Hulpe-Rix. C', 'venue' => 'Extérieur', 'score' => '4-12', 'result' => 'Victoire'],
                     ['date' => '21 Nov 2025', 'opponent' => 'Set-Jet Fleur Bleue D', 'venue' => 'Domicile', 'score' => '13-3', 'result' => 'Victoire'],
                     ['date' => '28 Nov 2025', 'opponent' => 'Eveil B', 'venue' => 'Domicile', 'score' => '16-0', 'result' => 'Victoire'],
+                    ['date' => '09 Jan 2026', 'opponent' => 'Arc En Ciel F', 'venue' => 'Extérieur', 'score' => '0-0', 'result' => 'Forfait Général'],
+                    ['date' => '16 Jan 2026', 'opponent' => 'TT Zenith Brussels A', 'venue' => 'Domicile', 'score' => '11-5', 'result' => 'Victoire'],
+                    ['date' => '23 Jan 2026', 'opponent' => 'Braine l\'Alleud I', 'venue' => 'Extérieur', 'score' => '0-16', 'result' => 'Forfait'],
+                    ['date' => '06 Feb 2026', 'opponent' => 'Logis Auderghem I', 'venue' => 'Extérieur', 'score' => '6-10', 'result' => 'Victoire'],
                 ],
-                'stats' => ['played' => 9, 'wins' => 8, 'losses' => 1, 'win_rate' => 89]
+                'stats' => ['played' => 11, 'wins' => 10, 'losses' => 1, 'win_rate' => 91]
             ],
             [
                 'name' => 'Équipe B - Division 3B',
@@ -45,8 +49,12 @@ class ResultsController extends Controller
                     ['date' => '14 Nov 2025', 'opponent' => 'La Hulpe Rix. D', 'venue' => 'Extérieur', 'score' => '11-5', 'result' => 'Défaite'],
                     ['date' => '21 Nov 2025', 'opponent' => 'Ry Ternel C', 'venue' => 'Domicile', 'score' => '5-11', 'result' => 'Défaite'],
                     ['date' => '28 Nov 2025', 'opponent' => 'Eveil D', 'venue' => 'Domicile', 'score' => '11-5', 'result' => 'Victoire'],
+                    ['date' => '09 Jan 2026', 'opponent' => 'Arc En Ciel G', 'venue' => 'Extérieur', 'score' => '6-10', 'result' => 'Victoire'],
+                    ['date' => '16 Jan 2026', 'opponent' => 'REP Nivelles D', 'venue' => 'Domicile', 'score' => '7-9', 'result' => 'Défaite'],
+                    ['date' => '23 Jan 2026', 'opponent' => 'Piranha G', 'venue' => 'Extérieur', 'score' => '7-9', 'result' => 'Victoire'],
+                    ['date' => '06 Feb 2026', 'opponent' => 'Royal 1865 B', 'venue' => 'Extérieur', 'score' => '13-3', 'result' => 'Défaite'],
                 ],
-                'stats' => ['played' => 9, 'wins' => 5, 'losses' => 3, 'win_rate' => 56]
+                'stats' => ['played' => 13, 'wins' => 7, 'losses' => 3, 'win_rate' => 54]
             ],
             [
                 'name' => 'Équipe C - Division 4C',
@@ -62,8 +70,12 @@ class ResultsController extends Controller
                     ['date' => '14 Nov 2025', 'opponent' => 'Witterzee A', 'venue' => 'Domicile', 'score' => '2-14', 'result' => 'Défaite'],
                     ['date' => '21 Nov 2025', 'opponent' => 'Set-Jet Fleur Bleue J', 'venue' => 'Extérieur', 'score' => '3-13', 'result' => 'Victoire'],
                     ['date' => '29 Nov 2025', 'opponent' => 'Logis Auderghem S', 'venue' => 'Extérieur', 'score' => '10-6', 'result' => 'Défaite'],
+                    ['date' => '09 Jan 2026', 'opponent' => 'CTT Limal Wavre F', 'venue' => 'Dpmicile', 'score' => '6-10', 'result' => 'Défaite'],
+                    ['date' => '16 Jan 2026', 'opponent' => 'Safran A', 'venue' => 'Extérieur', 'score' => '8-8', 'result' => 'Nul'],
+                    ['date' => '23 Jan 2026', 'opponent' => 'Braine l\'Alleud M', 'venue' => 'Domicile', 'score' => '7-9', 'result' => 'Défaite'],
+                    ['date' => '06 Feb 2026', 'opponent' => 'Set-Jet Fleur Bleue K', 'venue' => 'Domicile', 'score' => '11-5', 'result' => 'Victoire'],
                 ],
-                'stats' => ['played' => 9, 'wins' => 5, 'losses' => 4, 'win_rate' => 56]
+                'stats' => ['played' => 13, 'wins' => 6, 'losses' => 4, 'win_rate' => 46]
             ],
             [
                 'name' => 'Équipe D - Division 4D',
@@ -79,8 +91,12 @@ class ResultsController extends Controller
                     ['date' => '14 Nov 2025', 'opponent' => 'Smash Evere C', 'venue' => 'Domicile', 'score' => '10-6', 'result' => 'Victoire'],
                     ['date' => '21 Nov 2025', 'opponent' => 'Set-Jet Fleur Bleue F', 'venue' => 'Extérieur', 'score' => '6-10', 'result' => 'Défaite'],
                     ['date' => '28 Nov 2025', 'opponent' => 'Logis Auderghem Q', 'venue' => 'Extérieur', 'score' => '13-3', 'result' => 'Défaite'],
+                    ['date' => '09 Jan 2026', 'opponent' => 'CTT Le Moulin C', 'venue' => 'Domicile', 'score' => '12-4', 'result' => 'Victoire'],
+                    ['date' => '16 Jan 2026', 'opponent' => 'TT Zenith Brussels C', 'venue' => 'Extérieur', 'score' => '13-3', 'result' => 'Défaite'],
+                    ['date' => '23 Jan 2026', 'opponent' => 'Gremlins F', 'venue' => 'Domicile', 'score' => '6-10', 'result' => 'Défaite'],
+                    ['date' => '06 Feb 2026', 'opponent' => 'Piranha I', 'venue' => 'Domicile', 'score' => '9-7', 'result' => 'Victoire'],
                 ],
-                'stats' => ['played' => 9, 'wins' => 4, 'losses' => 5, 'win_rate' => 44]
+                'stats' => ['played' => 13, 'wins' => 6, 'losses' => 5, 'win_rate' => 46]
             ],
             [
                 'name' => 'Équipe E - Division 5H',
@@ -96,8 +112,12 @@ class ResultsController extends Controller
                     ['date' => '14 Nov 2025', 'opponent' => 'Royal Clabecq G', 'venue' => 'Domicile', 'score' => '4-12', 'result' => 'Défaite'],
                     ['date' => '21 Nov 2025', 'opponent' => 'REP Nivelles H', 'venue' => 'Extérieur', 'score' => '3-13', 'result' => 'Victoire'],
                     ['date' => 'Bye', 'opponent' => 'Bye', 'venue' => 'Domicile', 'score' => 'Bye', 'result' => 'Bye'],
+                    ['date' => '09 Jan 2026', 'opponent' => 'CTT Alpa Schaerbeek P', 'venue' => 'Domicile', 'score' => '16-10', 'result' => 'Forfait'],
+                    ['date' => 'Bye', 'opponent' => 'Bye', 'venue' => 'Domicile', 'score' => 'Bye', 'result' => 'Bye'],
+                    ['date' => '23 Jan 2026', 'opponent' => 'Tourinnes E', 'venue' => 'Domicile', 'score' => '16-0', 'result' => 'Défaite'],
+                    ['date' => '06 Feb 2026', 'opponent' => 'Braine l\'Alleud O', 'venue' => 'Domicile', 'score' => '4-12', 'result' => 'Défaite'],
                 ],
-                'stats' => ['played' => 7, 'wins' => 1, 'losses' => 6, 'win_rate' => 14]
+                'stats' => ['played' => 9, 'wins' => 1, 'losses' => 6, 'win_rate' => 11]
             ],
             [
                 'name' => 'Équipe A - Division 3B Vétérans',
@@ -106,8 +126,10 @@ class ResultsController extends Controller
                 'matches' => [
                     ['date' => '03 Oct 2025', 'opponent' => 'Uccle Ping B', 'venue' => 'Domicile', 'score' => '10-0', 'result' => 'Victoire'],
                     ['date' => '31 Oct 2025', 'opponent' => 'Limal Wavre C', 'venue' => 'Domicile', 'score' => '7-3', 'result' => 'Victoire'],
+                    ['date' => '05 Déc 2025', 'opponent' => 'Piranah C', 'venue' => 'Extérieur', 'score' => '5-5', 'result' => 'Nul'],
+                    ['date' => '30 Jan 2026', 'opponent' => 'Fonteny Genappe A', 'venue' => 'Domicile', 'score' => '3-7', 'result' => 'Défaite'],
                 ],
-                'stats' => ['played' => 2, 'wins' => 2, 'losses' => 0, 'win_rate' => 100]
+                'stats' => ['played' => 4, 'wins' => 2, 'losses' => 0, 'win_rate' => 50]
             ],
             [
                 'name' => 'Équipe B - Division 3C Vétérans',
@@ -116,8 +138,10 @@ class ResultsController extends Controller
                 'matches' => [
                     ['date' => '03 Oct 2025', 'opponent' => 'Logis Auderghem C', 'venue' => 'Extérieur', 'score' => '6-4', 'result' => 'Défaite'],
                     ['date' => '31 Oct 2025', 'opponent' => 'Arc En Ciel C', 'venue' => 'Domicile', 'score' => '3-7', 'result' => 'Défaite'],
+                    ['date' => '05 Déc 2025', 'opponent' => 'TT Zenith Brussels A', 'venue' => 'Extérieur', 'score' => '5-5', 'result' => 'Nul'],
+                    ['date' => '30 Jan 2026', 'opponent' => 'Set-Jet Fleur Bleue D', 'venue' => 'Domicile', 'score' => '7-3', 'result' => 'Victoire'],
                 ],
-                'stats' => ['played' => 2, 'wins' => 0, 'losses' => 2, 'win_rate' => 0]
+                'stats' => ['played' => 4, 'wins' => 1, 'losses' => 2, 'win_rate' => 25]
             ],
             [
                 'name' => 'Équipe C - Division 4F Vétérans',
@@ -126,8 +150,10 @@ class ResultsController extends Controller
                 'matches' => [
                     ['date' => '03 Oct 2025', 'opponent' => 'Logis Auderghem D', 'venue' => 'Domicile', 'score' => '7-3', 'result' => 'Victoire'],
                     ['date' => '31 Oct 2025', 'opponent' => 'Bye', 'venue' => 'Bye', 'score' => 'Bye', 'result' => 'Bye'],
+                    ['date' => '05 Déc 2025', 'opponent' => 'Beauchamp B', 'venue' => 'Exétireur', 'score' => '1-9', 'result' => 'Victoire'],
+                    ['date' => '30 Jan 2026', 'opponent' => 'Mont St Guibert B', 'venue' => 'Domicile', 'score' => '7-3', 'result' => 'Victoire'],
                 ],
-                'stats' => ['played' => 1, 'wins' => 1, 'losses' => 0, 'win_rate' => 50]
+                'stats' => ['played' => 3, 'wins' => 3, 'losses' => 0, 'win_rate' => 100]
             ],
         ];
 

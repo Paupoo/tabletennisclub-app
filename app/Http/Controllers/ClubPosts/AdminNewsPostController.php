@@ -9,7 +9,11 @@ use App\Enums\NewsPostStatusEnum;
 use App\Http\Controllers\Controller;
 use App\Models\ClubPosts\NewsPost;
 use App\Support\Breadcrumb;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -19,7 +23,7 @@ class AdminNewsPostController extends Controller
     /**
      * Archive a newsPost
      */
-    public function archive(NewsPost $article)
+    public function archive(NewsPost $article): RedirectResponse
     {
         $article->update([
             'status' => NewsPostStatusEnum::ARCHIVED,
@@ -32,7 +36,7 @@ class AdminNewsPostController extends Controller
     /**
      * API endpoint for autosave (AJAX).
      */
-    public function autoSave(Request $request, NewsPost $article)
+    public function autoSave(Request $request, NewsPost $article): JsonResponse
     {
         // Basic validation for autosave.
         $validated = $request->validate([
@@ -59,7 +63,7 @@ class AdminNewsPostController extends Controller
     /**
      * Show the form to create a new article
      */
-    public function create()
+    public function create(): View
     {
         $breadcrumbs = Breadcrumb::make()
             ->home()
@@ -73,7 +77,7 @@ class AdminNewsPostController extends Controller
     /**
      * Delete an article (soft delete)
      */
-    public function destroy(NewsPost $article)
+    public function destroy(NewsPost $article): RedirectResponse
     {
         // Delete the associated image if it exists
         if ($article->image) {
@@ -89,7 +93,7 @@ class AdminNewsPostController extends Controller
     /**
      * Duplicate an existing article
      */
-    public function duplicate(NewsPost $article)
+    public function duplicate(NewsPost $article): RedirectResponse
     {
         $newArticle = $article->replicate();
 
@@ -120,7 +124,7 @@ class AdminNewsPostController extends Controller
     /**
      * Show the form to edit an article
      */
-    public function edit(NewsPost $article)
+    public function edit(NewsPost $article): View
     {
         $breadcrumbs = Breadcrumb::make()
             ->home()
@@ -135,7 +139,7 @@ class AdminNewsPostController extends Controller
     /**
      * Display the list of clubPosts with filters and pagination
      */
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $query = NewsPost::with('user');
 
@@ -178,7 +182,7 @@ class AdminNewsPostController extends Controller
     /**
      * Publish an article (set status to published)
      */
-    public function publish(NewsPost $article)
+    public function publish(NewsPost $article): RedirectResponse
     {
         $article->update([
             'status' => NewsPostStatusEnum::PUBLISHED,
@@ -191,7 +195,7 @@ class AdminNewsPostController extends Controller
     /**
      * Restore a deleted article (soft deleted)
      */
-    public function restore($id)
+    public function restore($id): RedirectResponse
     {
         $article = NewsPost::withTrashed()->findOrFail($id);
         $article->restore();
@@ -203,7 +207,7 @@ class AdminNewsPostController extends Controller
     /**
      * Display the details of an article
      */
-    public function show(NewsPost $article)
+    public function show(NewsPost $article): View
     {
         $article->load('user');
 
@@ -219,7 +223,7 @@ class AdminNewsPostController extends Controller
     /**
      * Detailed statistics for the dashboard
      */
-    public function statistics()
+    public function statistics(): JsonResponse
     {
         $stats = [
             'total' => NewsPost::count(),
@@ -251,7 +255,7 @@ class AdminNewsPostController extends Controller
     /**
      * Store a new article
      */
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
@@ -299,7 +303,7 @@ class AdminNewsPostController extends Controller
     /**
      * Update an existing article
      */
-    public function update(Request $request, NewsPost $article)
+    public function update(Request $request, NewsPost $article): RedirectResponse
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',

@@ -10,6 +10,12 @@ use App\Models\User;
 
 class CreateSubscriptionAction
 {
+    /**
+     * @param User $user
+     * @param Season $season
+     * @param array $options
+     * @return Subscription
+     */
     public function execute(User $user, Season $season, array $options = []): Subscription
     {
         // Vérifie qu'il n'existe pas déjà une subscription pour cette saison

@@ -25,6 +25,9 @@ class ExtractTranslationsCommand extends Command
                             {--path= : Répertoire à scanner (par défaut app/ et resources/views/)}
                             {--output=translations.json : Fichier de sortie JSON}';
 
+    /**
+     * @return int
+     */
     public function handle(): int
     {
         $path = $this->option('path') ?: base_path();

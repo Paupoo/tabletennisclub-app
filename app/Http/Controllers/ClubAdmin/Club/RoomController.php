@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreOrUpdateRoomRequest;
 use App\Models\ClubAdmin\Club\Room;
 use App\Support\Breadcrumb;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -16,7 +17,7 @@ class RoomController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(): View
     {
         $this->authorize('create', Room::class);
 
@@ -45,7 +46,7 @@ class RoomController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Room $room)
+    public function edit(Room $room): View
     {
 
         $breadcrumbs = Breadcrumb::make()
@@ -65,7 +66,7 @@ class RoomController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(): View
     {
         $breadcrumbs = Breadcrumb::make()
             ->home()
@@ -82,7 +83,7 @@ class RoomController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Room $room)
+    public function show(Room $room): void
     {
         $this->authorize('view', Room::class);
     }
@@ -90,12 +91,9 @@ class RoomController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreOrUpdateRoomRequest $request)
+    public function store(StoreOrUpdateRoomRequest $request): RedirectResponse
     {
-        //
         $validated = $request->validated();
-
-        $room = new Room;
 
         $room = Room::create($validated);
 
@@ -105,7 +103,7 @@ class RoomController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(StoreOrUpdateRoomRequest $request, Room $room)
+    public function update(StoreOrUpdateRoomRequest $request, Room $room): RedirectResponse
     {
         //
         $validated = $request->validated();
@@ -122,14 +120,15 @@ class RoomController extends Controller
      */
     protected function checkCapacity(Request $request): bool
     {
+        // TODO
         // $room = Room::find($request->room_id);
         // $requested_capacity = $request->people;
         // $activity = $request->activity;
 
-        // if ($activity == 'training') {
+        // if ($activity === 'training') {
         //     $response = $requested_capacity <= $room->capacity_trainings ? true : false;
         //     return $response;
-        // } elseif ($activity == 'match') {
+        // } elseif ($activity === 'match') {
         //     $response = $requested_capacity <= $room->capacity_matches ? true : false;
         //     return $response;
         // } else {

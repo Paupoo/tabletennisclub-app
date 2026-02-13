@@ -31,11 +31,14 @@ class GeneratePaymentReference
         $this->verification = $this->getCheckSum();
     }
 
+    /**
+     * @return string
+     */
     public function __invoke(): string
     {
         $string = (string) $this->reference . $this->verification;
 
-        return $this->addSeperators($string);
+        return $this->addSeparators($string);
     }
 
     /**
@@ -43,7 +46,7 @@ class GeneratePaymentReference
      * @param string $string
      * @return string
      */
-    public function addSeperators(string $string): string
+    public function addSeparators(string $string): string
     {
         $string = substr_replace($string, '/', 7, 0);
         $string = substr_replace($string, '/', 3, 0);

@@ -143,7 +143,7 @@ class AdminEventPostController extends Controller
         return view('clubPosts.eventPosts.show', compact('event', 'breadcrumbs'));
     }
 
-    public function showPublicEvents()
+    public function showPublicEvents(): View
     {
         // Récupérer uniquement les événements publiés, triés par date
         $events = EventPost::published()

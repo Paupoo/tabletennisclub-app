@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Http\Controllers\ClubAdmin\Subscription;
 
 use App\Actions\ClubAdmin\Subscriptions\SyncTrainingPackAction;
-use App\Actions\Subscriptions\AddTrainingPack;
 use App\Http\Controllers\Controller;
 use App\Models\ClubAdmin\Subscription\Subscription;
 use App\Models\ClubEvents\Training\TrainingPack;
@@ -21,7 +20,7 @@ class SubscriptionController extends Controller
      */
     public function create()
     {
-        //
+        // TODO
     }
 
     /**
@@ -40,21 +39,12 @@ class SubscriptionController extends Controller
             );
     }
 
-    public function unsubscribe(Subscription $subscription): RedirectResponse
-    {
-        $subscription->delete();
-
-        return back()->with([
-            'success' => __('The user has been unsuscribed successfully'),
-        ]);
-    }
-
     /**
      * Show the form for editing the specified resource.
      */
     public function edit(string $id)
     {
-        //
+        // TODO
     }
 
     /**
@@ -101,15 +91,7 @@ class SubscriptionController extends Controller
      */
     public function store(Request $request)
     {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
+        // TODO
     }
 
     public function syncTrainingPacks(Request $request, Subscription $subscription): RedirectResponse
@@ -119,15 +101,32 @@ class SubscriptionController extends Controller
             'training_packs.*' => 'integer|required|exists:training_packs,id',
         ]);
 
-        if (!array_key_exists('training_packs', $validated)) {
+        if (! array_key_exists('training_packs', $validated)) {
             $validated['training_packs'] = [];
         }
 
-        new SyncTrainingPackAction()($validated['training_packs'], $subscription);
+        new SyncTrainingPackAction($validated['training_packs'], $subscription);
 
         return back()
             ->with([
                 'success' => __('The training has been added to the subscription'),
             ]);
+    }
+
+    public function unsubscribe(Subscription $subscription): RedirectResponse
+    {
+        $subscription->delete();
+
+        return back()->with([
+            'success' => __('The user has been unsuscribed successfully'),
+        ]);
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, string $id)
+    {
+        // TODO
     }
 }

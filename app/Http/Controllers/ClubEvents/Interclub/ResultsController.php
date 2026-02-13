@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace App\Http\Controllers\ClubEvents\Interclub;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
-
 class ResultsController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $selectedSeason = $request->get('season', '2024');
         $seasons = ['2025-2026', '2024-2025', '2023-2024'];
@@ -132,6 +132,6 @@ class ResultsController extends Controller
             ],
         ];
 
-        return view('public.results', compact('teams', 'seasons', 'selectedSeason'));
+        return View('public.results', compact('teams', 'seasons', 'selectedSeason'));
     }
 }

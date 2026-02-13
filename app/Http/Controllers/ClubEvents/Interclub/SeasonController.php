@@ -28,7 +28,7 @@ class SeasonController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        // TODO
     }
 
     /**
@@ -36,7 +36,7 @@ class SeasonController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        // TODO
     }
 
     /**
@@ -109,6 +109,6 @@ class SeasonController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        // TODO
     }
 }

@@ -10,12 +10,13 @@ use App\Mail\ContactFormConfirmationEmail;
 use App\Mail\ContactFormNotificationEmail;
 use App\Models\ClubAdmin\Contact\Contact;
 use Exception;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class ContactController extends Controller
 {
-    public function store(StoreContactRequest $request)
+    public function store(StoreContactRequest $request): RedirectResponse
     {
 
         $validated = $request->validated();

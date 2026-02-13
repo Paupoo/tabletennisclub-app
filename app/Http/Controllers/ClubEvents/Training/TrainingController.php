@@ -19,6 +19,7 @@ use App\Services\TrainingBuilder;
 use App\Services\TrainingDateGenerator;
 use App\Support\Breadcrumb;
 use Exception;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Collection;
 
@@ -37,7 +38,7 @@ class TrainingController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(): View
     {
         $this->authorize('create', Training::class);
 
@@ -91,10 +92,8 @@ class TrainingController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Training $training)
+    public function destroy(Training $training): RedirectResponse
     {
-        //
-
         $training->delete();
 
         return redirect()->route('trainings.index')->with('deleted', 'The training has been deleted.');
@@ -103,7 +102,7 @@ class TrainingController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Training $training)
+    public function edit(Training $training): View
     {
         $breadcrumbs = Breadcrumb::make()
             ->home()
@@ -142,7 +141,7 @@ class TrainingController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(): View
     {
         $this->authorize('viewAny', Training::class);
 

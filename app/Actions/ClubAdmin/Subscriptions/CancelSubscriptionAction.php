@@ -9,6 +9,10 @@ use Illuminate\Http\RedirectResponse;
 
 class CancelSubscriptionAction
 {
+    /**
+     * @param Subscription $subscription
+     * @return RedirectResponse
+     */
     public function __invoke(Subscription $subscription): RedirectResponse
     {
         try {

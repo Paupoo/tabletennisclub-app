@@ -8,13 +8,19 @@ use App\Models\ClubAdmin\Subscription\Subscription;
 
 class ProcessPaymentAction
 {
+    /**
+     * @param Subscription $subscription
+     * @param string $transactionId
+     * @param float $amount
+     * @param string $status
+     * @return Subscription
+     */
     public function execute(
         Subscription $subscription,
         string $transactionId,
         float $amount,
         string $status = 'paid'
-    ) : Subscription 
-    {
+    ): Subscription {
         // Trouve le payment en attente
         $payment = $subscription->payments()
             ->where('status', 'pending')

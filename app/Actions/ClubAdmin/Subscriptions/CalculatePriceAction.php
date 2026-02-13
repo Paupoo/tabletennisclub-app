@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Actions\ClubAdmin\Subscriptions;
@@ -7,11 +8,18 @@ use App\Models\ClubAdmin\Subscription\Subscription;
 
 final class CalculatePriceAction
 {
-    private float $recreativePrice = 60;
     private float $competitivePrice = 125;
-    private float $trainingPrice = 90;
+
+    private float $recreativePrice = 60;
+
     private float $trainingDiscountedPrice = 80;
 
+    private float $trainingPrice = 90;
+
+    /**
+     * @param Subscription $subscription
+     * @return Subscription
+     */
     public function __invoke(Subscription $subscription): Subscription
     {
         $subscription->subscription_price = $subscription->is_competitive ? $this->competitivePrice : $this->recreativePrice;

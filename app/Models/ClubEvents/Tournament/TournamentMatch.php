@@ -6,10 +6,16 @@ namespace App\Models\ClubEvents\Tournament;
 
 use App\Models\ClubAdmin\Club\Table;
 use App\Models\ClubAdmin\Users\User;
+use Database\Factories\ClubEvents\Tournament\TournamentMatchFactory;
+use Eloquent;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -25,52 +31,52 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property string $status
  * @property string|null $started_ad
  * @property int $match_order
- * @property \Illuminate\Support\Carbon|null $scheduled_time
+ * @property Carbon|null $scheduled_time
  * @property int|null $table_number
  * @property int|null $next_match_id
  * @property int|null $bronze_match_id
  * @property int $is_bronze_match
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\ClubAdmin\Users\User|null $player1
- * @property-read \App\Models\ClubAdmin\Users\User|null $player2
- * @property-read \App\Models\ClubEvents\Tournament\Pool|null $pool
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Tournament\MatchSet> $sets
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read User|null $player1
+ * @property-read User|null $player2
+ * @property-read Pool|null $pool
+ * @property-read Collection<int, MatchSet> $sets
  * @property-read int|null $sets_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubAdmin\Club\Table> $table
+ * @property-read Collection<int, Table> $table
  * @property-read int|null $table_count
- * @property-read \App\Models\ClubEvents\Tournament\Tournament|null $tournament
- * @property-read \App\Models\ClubAdmin\Users\User|null $winner
+ * @property-read Tournament|null $tournament
+ * @property-read User|null $winner
  *
- * @method static \Database\Factories\ClubEvents\Tournament\TournamentMatchFactory factory($count = null, $state = [])
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch fromBracket()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch fromPools()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch ordered()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch whereBronzeMatchId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch whereIsBronzeMatch($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch whereMatchOrder($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch whereNextMatchId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch wherePlayer1HandicapPoints($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch wherePlayer1Id($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch wherePlayer2HandicapPoints($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch wherePlayer2Id($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch wherePoolId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch whereRound($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch whereScheduledTime($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch whereStartedAd($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch whereStatus($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch whereTableId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch whereTableNumber($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch whereTournamentId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch whereUpdatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentMatch whereWinnerId($value)
+ * @method static TournamentMatchFactory factory($count = null, $state = [])
+ * @method static Builder<static>|TournamentMatch fromBracket()
+ * @method static Builder<static>|TournamentMatch fromPools()
+ * @method static Builder<static>|TournamentMatch newModelQuery()
+ * @method static Builder<static>|TournamentMatch newQuery()
+ * @method static Builder<static>|TournamentMatch ordered()
+ * @method static Builder<static>|TournamentMatch query()
+ * @method static Builder<static>|TournamentMatch whereBronzeMatchId($value)
+ * @method static Builder<static>|TournamentMatch whereCreatedAt($value)
+ * @method static Builder<static>|TournamentMatch whereId($value)
+ * @method static Builder<static>|TournamentMatch whereIsBronzeMatch($value)
+ * @method static Builder<static>|TournamentMatch whereMatchOrder($value)
+ * @method static Builder<static>|TournamentMatch whereNextMatchId($value)
+ * @method static Builder<static>|TournamentMatch wherePlayer1HandicapPoints($value)
+ * @method static Builder<static>|TournamentMatch wherePlayer1Id($value)
+ * @method static Builder<static>|TournamentMatch wherePlayer2HandicapPoints($value)
+ * @method static Builder<static>|TournamentMatch wherePlayer2Id($value)
+ * @method static Builder<static>|TournamentMatch wherePoolId($value)
+ * @method static Builder<static>|TournamentMatch whereRound($value)
+ * @method static Builder<static>|TournamentMatch whereScheduledTime($value)
+ * @method static Builder<static>|TournamentMatch whereStartedAd($value)
+ * @method static Builder<static>|TournamentMatch whereStatus($value)
+ * @method static Builder<static>|TournamentMatch whereTableId($value)
+ * @method static Builder<static>|TournamentMatch whereTableNumber($value)
+ * @method static Builder<static>|TournamentMatch whereTournamentId($value)
+ * @method static Builder<static>|TournamentMatch whereUpdatedAt($value)
+ * @method static Builder<static>|TournamentMatch whereWinnerId($value)
  *
- * @mixin \Eloquent
+ * @mixin Eloquent
  */
 class TournamentMatch extends Model
 {
@@ -80,7 +86,7 @@ class TournamentMatch extends Model
     protected $casts = [
         'scheduled_time' => 'datetime',
         'player1_handicap_points' => 'integer',
-        'player1_handicap_points' => 'integer',
+        'player2_handicap_points' => 'integer',
     ];
 
     protected $fillable = [
@@ -209,17 +215,17 @@ class TournamentMatch extends Model
         $this->save();
     }
 
-    public function scopeFromBracket($query)
+    public function scopeFromBracket(Builder $query): void
     {
         $query->whereNotNull('round');
     }
 
-    public function scopeFromPools($query)
+    public function scopeFromPools(Builder $query): void
     {
         $query->whereNotNull('pool_id');
     }
 
-    public function scopeOrdered($query)
+    public function scopeOrdered(Builder $query): void
     {
         $query->orderBy('match_order')
             ->orderBy('pool_id')
@@ -229,7 +235,7 @@ class TournamentMatch extends Model
     /**
      * Get the sets for this match
      */
-    public function sets()
+    public function sets(): HasMany
     {
         return $this->hasMany(MatchSet::class);
     }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models\ClubAdmin\Contact;
 
 use App\Enums\ContactReasonEnum;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 class Contact extends Model
@@ -27,7 +28,7 @@ class Contact extends Model
         'status',
     ];
 
-    public function scopeSearch($query, $value): void
+    public function scopeSearch(Builder $query, string $value): void
     {
         $query->where('first_name', 'like', '%' . $value . '%')
             ->orWhere('last_name', 'like', '%' . $value . '%')

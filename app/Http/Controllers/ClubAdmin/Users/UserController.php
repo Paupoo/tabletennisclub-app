@@ -15,6 +15,7 @@ use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Team;
 use App\Services\ForceList;
 use App\Support\Breadcrumb;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 
 class UserController extends Controller
@@ -29,7 +30,7 @@ class UserController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(): View
     {
         $breadcrumbs = Breadcrumb::make()
             ->home()
@@ -59,7 +60,7 @@ class UserController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(User $user)
+    public function destroy(User $user): RedirectResponse
     {
         $this->authorize('delete', $user);
 
@@ -85,7 +86,7 @@ class UserController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(User $user)
+    public function edit(User $user): View
     {
         $breadcrumbs = Breadcrumb::make()
             ->home()
@@ -108,7 +109,7 @@ class UserController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(): View
     {
         $breadcrumbs = Breadcrumb::make()
             ->home()
@@ -170,9 +171,8 @@ class UserController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(User $user)
+    public function show(User $user): View
     {
-        //
         $user->setAge();
 
         $breadcrumbs = Breadcrumb::make()
@@ -197,7 +197,7 @@ class UserController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreUserRequest $request, ForceList $forceList)
+    public function store(StoreUserRequest $request, ForceList $forceList): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -232,7 +232,7 @@ class UserController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateUserRequest $request, User $user)
+    public function update(UpdateUserRequest $request, User $user): RedirectResponse
     {
         $validated = $request->validated();
         $user->update($validated);

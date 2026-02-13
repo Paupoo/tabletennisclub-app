@@ -8,10 +8,15 @@ use App\Models\ClubEvents\Interclub\Club;
 use App\Models\ClubEvents\Interclub\Interclub;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Training\Training;
+use Database\Factories\ClubAdmin\Club\RoomFactory;
+use Eloquent;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -26,39 +31,39 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $capacity_for_interclubs
  * @property int $total_tables
  * @property int $total_playable_tables
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Interclub\Club> $clubs
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Collection<int, Club> $clubs
  * @property-read int|null $clubs_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Interclub\Interclub> $interclubs
+ * @property-read Collection<int, Interclub> $interclubs
  * @property-read int|null $interclubs_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubAdmin\Club\Table> $tables
+ * @property-read Collection<int, Table> $tables
  * @property-read int|null $tables_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Tournament\Tournament> $tournaments
+ * @property-read Collection<int, Tournament> $tournaments
  * @property-read int|null $tournaments_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Training\Training> $training
+ * @property-read Collection<int, Training> $training
  * @property-read int|null $training_count
  *
- * @method static \Database\Factories\ClubAdmin\Club\RoomFactory factory($count = null, $state = [])
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Room newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Room newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Room query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Room whereAccessDescription($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Room whereBuildingName($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Room whereCapacityForInterclubs($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Room whereCapacityForTrainings($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Room whereCityCode($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Room whereCityName($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Room whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Room whereFloor($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Room whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Room whereName($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Room whereStreet($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Room whereTotalPlayableTables($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Room whereTotalTables($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Room whereUpdatedAt($value)
+ * @method static RoomFactory factory($count = null, $state = [])
+ * @method static Builder<static>|Room newModelQuery()
+ * @method static Builder<static>|Room newQuery()
+ * @method static Builder<static>|Room query()
+ * @method static Builder<static>|Room whereAccessDescription($value)
+ * @method static Builder<static>|Room whereBuildingName($value)
+ * @method static Builder<static>|Room whereCapacityForInterclubs($value)
+ * @method static Builder<static>|Room whereCapacityForTrainings($value)
+ * @method static Builder<static>|Room whereCityCode($value)
+ * @method static Builder<static>|Room whereCityName($value)
+ * @method static Builder<static>|Room whereCreatedAt($value)
+ * @method static Builder<static>|Room whereFloor($value)
+ * @method static Builder<static>|Room whereId($value)
+ * @method static Builder<static>|Room whereName($value)
+ * @method static Builder<static>|Room whereStreet($value)
+ * @method static Builder<static>|Room whereTotalPlayableTables($value)
+ * @method static Builder<static>|Room whereTotalTables($value)
+ * @method static Builder<static>|Room whereUpdatedAt($value)
  *
- * @mixin \Eloquent
+ * @mixin Eloquent
  */
 class Room extends Model
 {
@@ -109,7 +114,7 @@ class Room extends Model
         return $this->hasMany(Interclub::class);
     }
 
-    public function scopeSearch($query, $value): void
+    public function scopeSearch(Builder $query, string $value): void
     {
         $query->where('name', 'like', '%' . $value . '%')
             ->orWhere('building_name', 'like', '%' . $value . '%')

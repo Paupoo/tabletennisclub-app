@@ -7,25 +7,33 @@ namespace App\Models\ClubAdmin\Users;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
 use App\Enums\Gender;
+use App\Models\ClubAdmin\Subscription\Subscription;
 use App\Models\ClubEvents\Interclub\Club;
 use App\Models\ClubEvents\Interclub\Interclub;
+use App\Models\ClubEvents\Interclub\Season;
 use App\Models\ClubEvents\Interclub\Team;
 use App\Models\ClubEvents\Tournament\Pool;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Training\Training;
 use App\Models\ClubPosts\NewsPost;
-use App\Models\ClubAdmin\Subscription\Subscription;
 use Carbon\Carbon;
+use Database\Factories\ClubAdmin\Users\UserFactory;
+use Eloquent;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Contracts\Database\Query\Builder;
+use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Notifications\DatabaseNotificationCollection;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Laravel\Sanctum\PersonalAccessToken;
 
 /**
  * @property int $id
@@ -52,55 +60,55 @@ use Laravel\Sanctum\HasApiTokens;
  * @property string|null $licence
  * @property int|null $force_list
  * @property int $club_id
- * @property-read \App\Models\ClubEvents\Interclub\Team|null $captainOf
- * @property-read \App\Models\ClubEvents\Interclub\Club|null $club
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Interclub\Interclub> $interclubs
+ * @property-read Team|null $captainOf
+ * @property-read Club|null $club
+ * @property-read Collection<int, Interclub> $interclubs
  * @property-read int|null $interclubs_count
- * @property-read \Illuminate\Notifications\DatabaseNotificationCollection<int, \Illuminate\Notifications\DatabaseNotification> $notifications
+ * @property-read DatabaseNotificationCollection<int, DatabaseNotification> $notifications
  * @property-read int|null $notifications_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Tournament\Pool> $pools
+ * @property-read Collection<int, Pool> $pools
  * @property-read int|null $pools_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Interclub\Team> $teams
+ * @property-read Collection<int, Team> $teams
  * @property-read int|null $teams_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \Laravel\Sanctum\PersonalAccessToken> $tokens
+ * @property-read Collection<int, PersonalAccessToken> $tokens
  * @property-read int|null $tokens_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Tournament\Tournament> $tournaments
+ * @property-read Collection<int, Tournament> $tournaments
  * @property-read int|null $tournaments_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Training\Training> $trainings
+ * @property-read Collection<int, Training> $trainings
  * @property-read int|null $trainings_count
  *
- * @method static \Database\Factories\ClubAdmin\Users\UserFactory factory($count = null, $state = [])
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User search($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User unregisteredUsers($tournament)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereBirthdate($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereCityCode($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereCityName($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereClubId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereEmail($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereEmailVerifiedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereFirstName($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereForceList($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereHasDebt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereIsActive($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereIsAdmin($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereIsCommitteeMember($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereIsCompetitor($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereLastName($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereLicence($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User wherePassword($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User wherePhoneNumber($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereRanking($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereRememberToken($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereSex($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereStreet($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|User whereUpdatedAt($value)
+ * @method static UserFactory factory($count = null, $state = [])
+ * @method static EloquentBuilder<static>|User newModelQuery()
+ * @method static EloquentBuilder<static>|User newQuery()
+ * @method static EloquentBuilder<static>|User query()
+ * @method static EloquentBuilder<static>|User search($value)
+ * @method static EloquentBuilder<static>|User unregisteredUsers($tournament)
+ * @method static EloquentBuilder<static>|User whereBirthdate($value)
+ * @method static EloquentBuilder<static>|User whereCityCode($value)
+ * @method static EloquentBuilder<static>|User whereCityName($value)
+ * @method static EloquentBuilder<static>|User whereClubId($value)
+ * @method static EloquentBuilder<static>|User whereCreatedAt($value)
+ * @method static EloquentBuilder<static>|User whereEmail($value)
+ * @method static EloquentBuilder<static>|User whereEmailVerifiedAt($value)
+ * @method static EloquentBuilder<static>|User whereFirstName($value)
+ * @method static EloquentBuilder<static>|User whereForceList($value)
+ * @method static EloquentBuilder<static>|User whereHasDebt($value)
+ * @method static EloquentBuilder<static>|User whereId($value)
+ * @method static EloquentBuilder<static>|User whereIsActive($value)
+ * @method static EloquentBuilder<static>|User whereIsAdmin($value)
+ * @method static EloquentBuilder<static>|User whereIsCommitteeMember($value)
+ * @method static EloquentBuilder<static>|User whereIsCompetitor($value)
+ * @method static EloquentBuilder<static>|User whereLastName($value)
+ * @method static EloquentBuilder<static>|User whereLicence($value)
+ * @method static EloquentBuilder<static>|User wherePassword($value)
+ * @method static EloquentBuilder<static>|User wherePhoneNumber($value)
+ * @method static EloquentBuilder<static>|User whereRanking($value)
+ * @method static EloquentBuilder<static>|User whereRememberToken($value)
+ * @method static EloquentBuilder<static>|User whereSex($value)
+ * @method static EloquentBuilder<static>|User whereStreet($value)
+ * @method static EloquentBuilder<static>|User whereUpdatedAt($value)
  *
- * @mixin \Eloquent
+ * @mixin Eloquent
  */
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -225,17 +233,17 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsToMany(Pool::class, 'pool_user');
     }
 
-    public function scopeHasPaid($query): Builder
+    public function scopeHasPaid( Builder $query): Builder
     {
         return $query->where('has_paid', true);
     }
 
-    public function scopeIsActive($query): Builder
+    public function scopeIsActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
     }
 
-    public function scopeIsCompetitor($query): Builder
+    public function scopeIsCompetitor(EloquentBuilder$query): Builder
     {
         return $query->where('is_competitor', true);
     }
@@ -245,10 +253,10 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Scope search to search by last or first name
      *
-     * @param [type] $query
-     * @param [type] $value
+     * @param Builder $query
+     * @param string $value
      */
-    public function scopeSearch($query, $value): void
+    public function scopeSearch(Builder $query, string $value): void
     {
         $query->where('last_name', 'like', '%' . $value . '%')
             ->orWhere('first_name', 'like', '%' . $value . '%');
@@ -259,7 +267,7 @@ class User extends Authenticatable implements MustVerifyEmail
      *
      * @param  mixed  $query
      */
-    public function scopeSearchTerms($query, string $search): void
+    public function scopeSearchTerms(Builder $query, string $search): void
     {
         $terms = collect(explode(' ', strtolower($search)))
             ->filter();
@@ -272,7 +280,7 @@ class User extends Authenticatable implements MustVerifyEmail
         }
     }
 
-    public function scopeUnregisteredUsers($query, $tournament)
+    public function scopeUnregisteredUsers(Builder $query, Tournament $tournament)
     {
         return $query->whereDoesntHave('tournaments', function ($query) use ($tournament): void {
             $query->where('tournaments.id', $tournament->id);
@@ -281,7 +289,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function seasons(): BelongsToMany
     {
-        return $this->belongsToMany(Season::class, 'subsriptions')
+        return $this->belongsToMany(Season::class, 'subscriptions')
             ->withPivot('amount_due', 'is_competitive')
             ->withTimestamps();
     }
@@ -303,10 +311,10 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Capitalize 1 first letter of each words
      *
-     * @param [type] $value
-     * @return void
+     * @param string $value
+     * @return string
      */
-    public function setFirstNameAttribute($value): string
+    public function setFirstNameAttribute(string $value): string
     {
         $cleaned_name = mb_convert_case($value, MB_CASE_TITLE);
 
@@ -316,10 +324,10 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Capitalize 1 first letter of each words
      *
-     * @param [type] $value
-     * @return void
+     * @param string $value
+     * @return string
      */
-    public function setLastNameAttribute($value): string
+    public function setLastNameAttribute(string $value): string
     {
         $cleaned_name = mb_convert_case($value, MB_CASE_TITLE);
 
@@ -341,12 +349,12 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsToMany(Tournament::class, 'tournament_user');
     }
 
-    public function trainings(): BelongsToMany
+    public function trainingPacks(): BelongsToMany
     {
         return $this->belongsToMany(Training::class);
     }
 
-    public function trainingPacks(): BelongsToMany
+    public function trainings(): BelongsToMany
     {
         return $this->belongsToMany(Training::class);
     }

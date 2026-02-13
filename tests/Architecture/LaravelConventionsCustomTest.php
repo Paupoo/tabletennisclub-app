@@ -2,6 +2,10 @@
 
 declare(strict_types=1);
 
+namespace tests\Architecture;
+
+use Throwable;
+
 arch()
     ->expect('App\Enums')
     ->toBeEnums()

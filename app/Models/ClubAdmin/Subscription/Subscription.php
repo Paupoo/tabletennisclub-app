@@ -15,6 +15,8 @@ use App\States\Payments\PaidState;
 use App\States\Payments\PendingState;
 use App\States\Payments\RefundedState;
 use App\States\Payments\ValidatedState;
+use Database\Factories\SubscriptionFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -25,7 +27,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Subscription extends Model implements PayableInterface
 {
-    /** @use HasFactory<\Database\Factories\SubscriptionFactory> */
+    /** @use HasFactory<SubscriptionFactory> */
     use HasFactory, SoftDeletes;
 
     protected $casts = [
@@ -135,7 +137,7 @@ class Subscription extends Model implements PayableInterface
     /**
      * Scope pour récupérer les subscriptions actives (payées)
      */
-    public function scopeActive($query)
+    public function scopeActive(Builder $query): Builder
     {
         return $query->where('status', 'paid');
     }
@@ -145,7 +147,7 @@ class Subscription extends Model implements PayableInterface
     /**
      * Scope pour récupérer les subscriptions d'une saison
      */
-    public function scopeForSeason($query, int|Season $season)
+    public function scopeForSeason(Builder $query, int|Season $season): Builder
     {
         $seasonId = $season instanceof Season ? $season->id : $season;
 
@@ -155,7 +157,7 @@ class Subscription extends Model implements PayableInterface
     /**
      * Scope pour récupérer les subscriptions en attente de paiement
      */
-    public function scopePendingPayment($query)
+    public function scopePendingPayment(Builder $query): Builder
     {
         return $query->whereIn('status', ['pending', 'confirmed']);
     }

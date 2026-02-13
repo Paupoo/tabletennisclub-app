@@ -211,6 +211,7 @@ class TournamentController extends Controller
 
     public function getPlayersForFinalBracket(int $firstRound, Tournament $tournament)
     {
+        // TODO: finish to implement this function!
         /** On récupère le nombre de joueurs à sélectionner par poule pour se rapprocher
          *  le plus près possible du nombre de joueurs nécessaires.
          *  Puis, on récupère le nombre de joueurs à repêcher

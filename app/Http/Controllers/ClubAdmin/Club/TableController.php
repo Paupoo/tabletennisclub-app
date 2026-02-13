@@ -11,6 +11,8 @@ use App\Models\ClubAdmin\Club\Table;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Services\TournamentTableService;
 use App\Support\Breadcrumb;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 
 class TableController extends Controller
 {
@@ -19,7 +21,7 @@ class TableController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(): View
     {
         $this->authorize('create', Table::class);
 
@@ -42,7 +44,7 @@ class TableController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Table $table)
+    public function destroy(Table $table): RedirectResponse
     {
         $this->authorize('delete', $table);
 
@@ -58,7 +60,7 @@ class TableController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Table $table)
+    public function edit(Table $table): View
     {
         $this->authorize('create', Table::class);
 
@@ -79,7 +81,7 @@ class TableController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(): View
     {
         $this->authorize('viewAny', Table::class);
 
@@ -99,13 +101,13 @@ class TableController extends Controller
      */
     public function show(Table $table)
     {
-        //
+        // TODO
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreOrUpdateTableRequest $request)
+    public function store(StoreOrUpdateTableRequest $request): RedirectResponse
     {
         $this->authorize('create', Table::class);
 
@@ -121,7 +123,7 @@ class TableController extends Controller
     /**
      *  Show tables and their current status for a given tournament
      */
-    public function tableOverview(Tournament $tournament)
+    public function tableOverview(Tournament $tournament): View
     {
         $breadcrumbs = Breadcrumb::make()
             ->home()
@@ -149,7 +151,7 @@ class TableController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(StoreOrUpdateTableRequest $request, Table $table)
+    public function update(StoreOrUpdateTableRequest $request, Table $table): RedirectResponse
     {
         $validated = $request->validated();
 

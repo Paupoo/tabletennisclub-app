@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Actions\ClubAdmin\Subscriptions;
 
 use App\Models\ClubAdmin\Subscription\Subscription;
@@ -7,9 +9,14 @@ use Exception;
 
 use function App\Actions\Subscriptions\__;
 
-class SyncTrainingPack
+class SyncTrainingPackAction
 {
-
+    /**
+     * @param array $trainingPacksIds
+     * @param Subscription $subscription
+     * @return void
+     * @throws Exception
+     */
     public function __invoke(array $trainingPacksIds, Subscription $subscription): void
     {
         if ($subscription->status !== 'pending') {
@@ -17,6 +24,6 @@ class SyncTrainingPack
         }
         $subscription->trainingPacks()->sync($trainingPacksIds);
 
-        new CalculatePriceAction()($subscription);
+        new CalculatePriceAction($subscription);
     }
 }

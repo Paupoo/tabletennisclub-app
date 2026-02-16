@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
-    bootstrap="vendor/autoload.php"
-    colors="true"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+         beStrictAboutOutputDuringTests="true"
+         failOnRisky="true"
+         failOnWarning="true"
 >
     <testsuites>
         <testsuite name="Unit">
@@ -11,31 +14,80 @@
         <testsuite name="Feature">
             <directory>tests/Feature</directory>
         </testsuite>
+        <testsuite name="Architecture">
+            <directory>tests/Architecture</directory>
+        </testsuite>
     </testsuites>
+
     <source>
         <include>
             <directory>app</directory>
         </include>
+        <exclude>
+            <!-- Fichiers Laravel de base -->
+            <directory suffix=".php">app/Console</directory>
+            <directory suffix=".php">app/Exceptions</directory>
+            <directory suffix=".php">app/Providers</directory>
+
+            <!-- Middleware standards Laravel -->
+            <file>app/Http/Middleware/Authenticate.php</file>
+            <file>app/Http/Middleware/RedirectIfAuthenticated.php</file>
+            <file>app/Http/Middleware/TrustProxies.php</file>
+            <file>app/Http/Middleware/EncryptCookies.php</file>
+            <file>app/Http/Middleware/ValidateSignature.php</file>
+            <file>app/Http/Middleware/VerifyCsrfToken.php</file>
+
+            <!-- Si vous avez des helpers/config -->
+            <!-- <directory>app/Helpers</directory> -->
+        </exclude>
     </source>
+
     <php>
+        <!-- Environment -->
+        <ini name="memory_limit" value="1G"/>
         <env name="APP_ENV" value="testing" />
+        <env name="APP_KEY" value="base64:TEST_KEY_FOR_TESTING_ONLY=" />
+        <env name="APP_DEBUG" value="true" />
+
+        <!-- Performance -->
         <env name="BCRYPT_ROUNDS" value="4" />
         <env name="CACHE_DRIVER" value="array" />
+        <env name="CACHE_STORE" value="array" />
 
-        <!-- <env name="DB_CONNECTION" value="sqlite"/>
-        <env name="DB_DATABASE" value=":memory:"/> -->
+        <!-- Base de données -->
         <env name="DB_CONNECTION" value="mysql" />
         <env name="DB_DATABASE" value="laraveltest" />
+        <!-- Optionnel: forcer un port/host spécifique -->
+        <!-- <env name="DB_HOST" value="127.0.0.1" /> -->
+        <!-- <env name="DB_PORT" value="3306" /> -->
 
+        <!-- Mail -->
         <env name="MAIL_MAILER" value="array" />
+
+        <!-- Queue -->
         <env name="QUEUE_CONNECTION" value="sync" />
+
+        <!-- Session -->
         <env name="SESSION_DRIVER" value="array" />
+
+        <!-- Services désactivés pendant les tests -->
         <env name="TELESCOPE_ENABLED" value="false" />
+
+        <!-- Optionnel : désactiver autres services -->
+        <!-- <env name="DEBUGBAR_ENABLED" value="false" /> -->
+        <!-- <env name="SENTRY_LARAVEL_DSN" value="" /> -->
     </php>
-    <coverage>
+
+    <coverage processUncoveredFiles="true">
         <report>
-            <html outputDirectory="tests/Coverage/html" />
-            <text outputFile="tests/Coverage/text" />
+            <!-- Rapport HTML détaillé avec couleurs gradient-->
+            <html outputDirectory="tests/Coverage/html" lowUpperBound="50" highLowerBound="80"/>
+
+            <!-- Rapport texte -->
+            <text outputFile="tests/Coverage/coverage.txt" showUncoveredFiles="false"/>
+
+            <!-- Optionnel : pour les CI/CD -->
+            <!-- <clover outputFile="tests/Coverage/clover.xml"/> -->
         </report>
     </coverage>
 </phpunit>

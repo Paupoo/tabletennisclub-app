@@ -6,16 +6,17 @@ namespace App\Http\Controllers\ClubPosts;
 
 use App\Http\Controllers\Controller;
 use App\Models\ClubPosts\NewsPost;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
 class PublicNewsPostController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         return view('public.articles.index');
     }
 
-    public function show($slug)
+    public function show(string $slug): View
     {
 
         $article = NewsPost::whereSlug($slug)
@@ -31,7 +32,7 @@ class PublicNewsPostController extends Controller
         return view('public.articles.show', compact('article', 'relatedArticles'));
     }
 
-    private function getFullArticleContent($slug)
+    private function getFullArticleContent(string $slug): ?array
     {
         // Contenu d'exemple - à remplacer par le vrai contenu depuis la base de données
         $contents = [

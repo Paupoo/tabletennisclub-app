@@ -11,59 +11,63 @@ use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Club\Table;
 use App\Models\ClubAdmin\Users\User;
 use App\Observers\TournamentObserver;
+use Database\Factories\ClubEvents\Tournament\TournamentFactory;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
  * @property string $name
- * @property \Illuminate\Support\Carbon|null $start_date
- * @property \Illuminate\Support\Carbon|null $end_date
+ * @property Carbon|null $start_date
+ * @property Carbon|null $end_date
  * @property int $total_users
  * @property int $max_users
  * @property mixed $price
  * @property TournamentStatusEnum $status
  * @property bool $has_handicap_points
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Tournament\TournamentMatch> $matches
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Collection<int, TournamentMatch> $matches
  * @property-read int|null $matches_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Tournament\Pool> $pools
+ * @property-read Collection<int, Pool> $pools
  * @property-read int|null $pools_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubAdmin\Club\Room> $rooms
+ * @property-read Collection<int, Room> $rooms
  * @property-read int|null $rooms_count
- * @property-read \App\Models\ClubEvents\Tournament\TableTournament|null $pivot
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubAdmin\Club\Table> $tables
+ * @property-read TableTournament|null $pivot
+ * @property-read Collection<int, Table> $tables
  * @property-read int|null $tables_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubAdmin\Users\User> $users
+ * @property-read Collection<int, User> $users
  * @property-read int|null $users_count
  *
- * @method static \Database\Factories\ClubEvents\Tournament\TournamentFactory factory($count = null, $state = [])
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Tournament newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Tournament newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Tournament query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Tournament search($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Tournament whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Tournament whereEndDate($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Tournament whereHasHandicapPoints($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Tournament whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Tournament whereMaxUsers($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Tournament whereName($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Tournament wherePrice($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Tournament whereStartDate($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Tournament whereStatus($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Tournament whereTotalUsers($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Tournament whereUpdatedAt($value)
+ * @method static TournamentFactory factory($count = null, $state = [])
+ * @method static Builder<static>|Tournament newModelQuery()
+ * @method static Builder<static>|Tournament newQuery()
+ * @method static Builder<static>|Tournament query()
+ * @method static Builder<static>|Tournament search($value)
+ * @method static Builder<static>|Tournament whereCreatedAt($value)
+ * @method static Builder<static>|Tournament whereEndDate($value)
+ * @method static Builder<static>|Tournament whereHasHandicapPoints($value)
+ * @method static Builder<static>|Tournament whereId($value)
+ * @method static Builder<static>|Tournament whereMaxUsers($value)
+ * @method static Builder<static>|Tournament whereName($value)
+ * @method static Builder<static>|Tournament wherePrice($value)
+ * @method static Builder<static>|Tournament whereStartDate($value)
+ * @method static Builder<static>|Tournament whereStatus($value)
+ * @method static Builder<static>|Tournament whereTotalUsers($value)
+ * @method static Builder<static>|Tournament whereUpdatedAt($value)
  *
  * @mixin \Eloquent
  */
 #[ObservedBy(TournamentObserver::class)]
 class Tournament extends Model
 {
-    /** @use HasFactory<\Database\Factories\ClubEvents\Tournament\TournamentFactory> */
+    /** @use HasFactory<TournamentFactory> */
     use HasFactory;
 
     protected $casts = [
@@ -115,7 +119,7 @@ class Tournament extends Model
      * @param  string  $value
      * @return void
      */
-    public function scopeSearch($query, $value)
+    public function scopeSearch(Builder $query, string $value): void
     {
         $query->where('name', 'like', '%' . $value . '%')
             ->orWhere('price', 'like', '%' . $value . '%');

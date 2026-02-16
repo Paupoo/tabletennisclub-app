@@ -7,7 +7,7 @@ use App\Actions\ClubAdmin\Subscriptions\CancelSubscriptionAction;
 use App\Actions\ClubAdmin\Subscriptions\ConfirmSubscriptionAction;
 use App\Actions\ClubAdmin\Subscriptions\MarkPaidSubscriptionAction;
 use App\Actions\ClubAdmin\Subscriptions\MarkRefundSubscriptionAction;
-use App\Actions\ClubAdmin\Subscriptions\SubscribeToSeasonController;
+use App\Actions\ClubAdmin\Subscriptions\SubscribeToSeasonAction;
 use App\Actions\ClubAdmin\Subscriptions\UnconfirmSubscriptionAction;
 use App\Actions\User\CreateNewUserAction;
 use App\Actions\User\InviteExistingUserAction;
@@ -323,7 +323,7 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::resource('registrations', RegistrationController::class)->names('clubAdmin.registrations');
     Route::resource('subscriptions', SubscriptionController::class)->names('clubAdmin.subscriptions');
     Route::resource('payments', PaymentController::class)->names('admin.payments');
-    Route::post('seasons/{season}/subscribe/', SubscribeToSeasonController::class)->name('clubEvents.interclubs.seasons.subscribe');
+    Route::post('seasons/{season}/subscribe/', SubscribeToSeasonAction::class)->name('clubEvents.interclubs.seasons.subscribe');
     Route::post('seasons/{season}/unsubscribe', [SubscriptionController::class, 'unsubscribe'])->name('clubAdmin.subscriptions.unsubscribe');
     Route::post('subscriptions/sendPaymentInvite/', [PaymentController::class, 'sendInvite'])->name('clubAdmin.subscriptions.sendPaymentInvite');
     Route::post('subscriptions/{subscription}/confirm', ConfirmSubscriptionAction::class)->name('clubAdmin.subscriptions.confirm');

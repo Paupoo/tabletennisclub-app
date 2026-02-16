@@ -6,6 +6,7 @@ namespace App\Events\Tournament;
 
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Tournament\Tournament;
+use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Foundation\Events\Dispatchable;
@@ -26,7 +27,7 @@ class UserRegisteredToTournament
     /**
      * Get the channels the event should broadcast on.
      *
-     * @return array<int, \Illuminate\Broadcasting\Channel>
+     * @return array<int, Channel>
      */
     public function broadcastOn(): array
     {

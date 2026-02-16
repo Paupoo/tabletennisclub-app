@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\ClubEvents\Training;
 
 use App\Http\Controllers\Controller;
@@ -36,7 +38,7 @@ class TrainingPackController extends Controller
      */
     public function create()
     {
-        //
+        // TODO
     }
 
     /**
@@ -44,7 +46,7 @@ class TrainingPackController extends Controller
      */
     public function store(StoreTrainingPackRequest $request)
     {
-        //
+        // TODO
     }
 
     /**
@@ -52,7 +54,7 @@ class TrainingPackController extends Controller
      */
     public function show(TrainingPack $trainingPack)
     {
-        //
+        // TODO
     }
 
     /**
@@ -60,7 +62,7 @@ class TrainingPackController extends Controller
      */
     public function edit(TrainingPack $trainingPack)
     {
-        //
+        // TODO
     }
 
     /**
@@ -68,7 +70,7 @@ class TrainingPackController extends Controller
      */
     public function update(UpdateTrainingPackRequest $request, TrainingPack $trainingPack)
     {
-        //
+        // TODO
     }
 
     /**
@@ -76,6 +78,6 @@ class TrainingPackController extends Controller
      */
     public function destroy(TrainingPack $trainingPack)
     {
-        //
+        // TODO
     }
 }

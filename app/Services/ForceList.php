@@ -7,10 +7,11 @@ namespace App\Services;
 use App\Models\ClubAdmin\Users\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use stdClass;
 
 class ForceList
 {
-    protected $users;
+    protected Collection $users;
 
     /**
      * Delete all force indexes
@@ -42,7 +43,7 @@ class ForceList
                     ->where('is_competitor', true)
                     ->update(['force_list' => $user->total + $i]);
                 $i += $user->total;
-            } elseif ($user->ranking === 'E6-NC') {
+            } else {
                 User::whereIn('ranking', ['E6', 'NC'])
                     ->where('is_competitor', true)
                     ->update(['force_list' => $user->total + $i]);
@@ -57,14 +58,14 @@ class ForceList
      */
     private function countCompetitorsByRanking(): self
     {
-        $users = User::select('ranking', DB::raw('count(1) as total'))
+        $users = User::select(['ranking', DB::raw('count(1) as total')])
             ->whereNotIn('ranking', ['NA', 'NC', 'E6'])
             ->where('is_competitor', true)
             ->groupby('ranking')
-            ->orderBy('ranking', 'asc')
+            ->orderBy('ranking')
             ->get();
 
-        $totalE6Nc = new \stdClass;
+        $totalE6Nc = new stdClass;
         $totalE6Nc->ranking = 'E6-NC';
         $totalE6Nc->total = User::whereIn('ranking', ['E6', 'NC'])
             ->where('is_competitor', true)

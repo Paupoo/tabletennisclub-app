@@ -7,48 +7,54 @@ namespace App\Models\ClubEvents\Training;
 use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Season;
+use Eloquent;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
  * @property string $level
  * @property string $type
- * @property \Illuminate\Support\Carbon $start
- * @property \Illuminate\Support\Carbon $end
+ * @property Carbon $start
+ * @property Carbon $end
  * @property int $room_id
  * @property int|null $trainer_id
  * @property int $season_id
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\ClubAdmin\Club\Room $room
- * @property-read \App\Models\ClubEvents\Interclub\Season|null $season
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Room $room
+ * @property-read Season|null $season
  * @property-write mixed $trainer_name
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubAdmin\Users\User> $trainees
+ * @property-read Collection<int, User> $trainees
  * @property-read int|null $trainees_count
- * @property-read \App\Models\ClubAdmin\Users\User|null $trainer
+ * @property-read User|null $trainer
  *
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Training newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Training newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Training query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereEnd($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereLevel($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereRoomId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereSeasonId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereStart($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereTrainerId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereType($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereUpdatedAt($value)
+ * @method static Builder<static>|Training newModelQuery()
+ * @method static Builder<static>|Training newQuery()
+ * @method static Builder<static>|Training query()
+ * @method static Builder<static>|Training whereCreatedAt($value)
+ * @method static Builder<static>|Training whereEnd($value)
+ * @method static Builder<static>|Training whereId($value)
+ * @method static Builder<static>|Training whereLevel($value)
+ * @method static Builder<static>|Training whereRoomId($value)
+ * @method static Builder<static>|Training whereSeasonId($value)
+ * @method static Builder<static>|Training whereStart($value)
+ * @method static Builder<static>|Training whereTrainerId($value)
+ * @method static Builder<static>|Training whereType($value)
+ * @method static Builder<static>|Training whereUpdatedAt($value)
  *
- * @mixin \Eloquent
+ * @mixin Eloquent
  */
 class Training extends Model
 {
     use HasFactory;
+
+    // TODO: implement Training factory or remove the using
 
     /**
      * The attributes with their data type in the application.
@@ -96,20 +102,15 @@ class Training extends Model
         return $this->belongsTo(Season::class);
     }
 
-    public function trainingPack(): BelongsTo
-    {
-        return $this->belongsTo(TrainingPack::class);
-    }
-
     // Mutators
 
     /**
      * Make sure case for trainer names is correct.
      *
-     * @param [type] $value
+     * @param string $value
      * @return void
      */
-    public function setTrainerNameAttribute($value)
+    public function setTrainerNameAttribute(string $value): void
     {
         $this->attributes['trainer_name'] = mb_convert_case($value, MB_CASE_TITLE);
     }
@@ -122,6 +123,11 @@ class Training extends Model
     public function trainer(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function trainingPack(): BelongsTo
+    {
+        return $this->belongsTo(TrainingPack::class);
     }
 
     // Accessors

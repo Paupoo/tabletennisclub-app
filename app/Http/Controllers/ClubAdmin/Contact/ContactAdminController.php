@@ -15,13 +15,15 @@ use App\Mail\WelcomeEmail;
 use App\Models\ClubAdmin\Contact\Contact;
 use App\Support\Breadcrumb;
 use Exception;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class ContactAdminController extends Controller
 {
-    public function composeEmail(Contact $contact)
+    public function composeEmail(Contact $contact): View
     {
         $this->authorize('sendEmail', $contact);
 
@@ -34,7 +36,7 @@ class ContactAdminController extends Controller
         return view('clubAdmin.contacts.contact.compose-email', compact('contact', 'breadcrumbs'));
     }
 
-    public function destroy(Contact $contact)
+    public function destroy(Contact $contact): RedirectResponse
     {
         $this->authorize('delete', $contact);
 
@@ -43,7 +45,7 @@ class ContactAdminController extends Controller
         return redirect()->route('clubAdmin.contacts.index')->with('success', 'Contact supprimé.');
     }
 
-    public function index()
+    public function index(): View
     {
         $breadcrumbs = Breadcrumb::make()
             ->home()
@@ -62,7 +64,7 @@ class ContactAdminController extends Controller
         return view('clubAdmin.contacts.contact.index', compact('contacts', 'breadcrumbs', 'stats'));
     }
 
-    public function sendCustomEmail(Request $request, Contact $contact)
+    public function sendCustomEmail(Request $request, Contact $contact): RedirectResponse
     {
         $this->authorize('sendEmail', $contact);
         $request->validate([
@@ -112,7 +114,7 @@ class ContactAdminController extends Controller
         }
     }
 
-    public function sendEmail(SendEmailRequest $request, Contact $contact)
+    public function sendEmail(SendEmailRequest $request, Contact $contact): RedirectResponse
     {
         $this->authorize('sendEmail', $contact);
 
@@ -169,7 +171,7 @@ class ContactAdminController extends Controller
         }
     }
 
-    public function show(Contact $contact)
+    public function show(Contact $contact): View
     {
         $this->authorize('view', $contact);
 
@@ -182,7 +184,7 @@ class ContactAdminController extends Controller
         return view('clubAdmin.contacts.contact.show', compact('contact', 'breadcrumbs'));
     }
 
-    public function update(UpdateContactRequest $request, Contact $contact)
+    public function update(UpdateContactRequest $request, Contact $contact): RedirectResponse
     {
         $this->authorize('update', $contact);
         $validated = $request->validated();

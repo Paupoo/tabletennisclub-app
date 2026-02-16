@@ -22,14 +22,19 @@ class TournamentService
     }
 
     /**
-     * Check if there the tournament has reached its maximum amount of players
+     * Check if the tournament has reached its maximum amount of players
      */
     public function isFull(Tournament $tournament): bool
     {
         return $tournament->total_users >= $tournament->max_users;
     }
 
-    public function registerUser(Tournament $tournament, User $user)
+    /**
+     * @param Tournament $tournament
+     * @param User $user
+     * @return void
+     */
+    public function registerUser(Tournament $tournament, User $user): void
     {
 
         if ($this->isFull($tournament)) {

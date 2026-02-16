@@ -1,11 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Factories;
 
+use App\Models\ClubEvents\Training\TrainingPack;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\ClubEvents\Training\TrainingPack>
+ * @extends Factory<TrainingPack>
  */
 class TrainingPackFactory extends Factory
 {
@@ -17,7 +20,7 @@ class TrainingPackFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            // TODO
         ];
     }
 }

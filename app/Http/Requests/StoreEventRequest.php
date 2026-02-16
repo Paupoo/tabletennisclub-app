@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 // app/Http/Requests/StoreEventRequest.php
 
 namespace App\Http\Requests;

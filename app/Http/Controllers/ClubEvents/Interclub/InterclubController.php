@@ -29,6 +29,11 @@ class InterclubController extends Controller
         $this->interclubService = $interclubService;
     }
 
+    /**
+     * @param Interclub $interclub
+     * @param User $user
+     * @return RedirectResponse
+     */
     public function addToSelection(Interclub $interclub, User $user): RedirectResponse
     {
         /**
@@ -49,7 +54,7 @@ class InterclubController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(): View
     {
         $this->authorize('create', Interclub::class);
 
@@ -159,6 +164,9 @@ class InterclubController extends Controller
         ]);
     }
 
+    /**
+     * @return View
+     */
     public function showSelections(): View
     {
         $breadcrumbs = Breadcrumb::make()
@@ -178,7 +186,7 @@ class InterclubController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreInterclubRequest $request)
+    public function store(StoreInterclubRequest $request): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -188,6 +196,10 @@ class InterclubController extends Controller
 
     }
 
+    /**
+     * @param Request $request
+     * @return RedirectResponse
+     */
     public function subscribe(Request $request): RedirectResponse
     {
 
@@ -200,6 +212,11 @@ class InterclubController extends Controller
         return redirect()->route('interclubs.index')->with('success', __('You have correctly subscribed.'));
     }
 
+    /**
+     * @param Interclub $interclub
+     * @param User $user
+     * @return RedirectResponse
+     */
     public function toggleSelection(Interclub $interclub, User $user): RedirectResponse
     {
         $userWithPivot = $user->interclubs()->where('interclub_id', $interclub->id)->first();

@@ -63,15 +63,17 @@ class AdminEventPostController extends Controller
             ->with('success', __('Event duplicated successfully, you may proceed to edit it'));
     }
 
-    public function edit(EventPost $eventPost): View
+    public function edit(EventPost $event): View
     {
-        $this->authorize('update', $eventPost);
+        $this->authorize('update', $event);
         $breadcrumbs = Breadcrumb::make()
             ->home()
             ->events()
-            ->add($eventPost->title, route('clubPosts.eventPosts.show', $eventPost))
+            ->add($event->title, route('clubPosts.eventPosts.show', $event))
             ->current(__('Edit'))
             ->toArray();
+
+        $eventPost = $event;
 
         return view('clubPosts.eventPosts.edit', compact('eventPost', 'breadcrumbs'));
     }
@@ -134,6 +136,7 @@ class AdminEventPostController extends Controller
 
     public function show(EventPost $event): View
     {
+        dd($event);
         $breadcrumbs = Breadcrumb::make()
             ->home()
             ->events()
@@ -180,8 +183,8 @@ class AdminEventPostController extends Controller
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'required|string',
-            'type' => ['required', Rule::enum(ClubEventTypeEnum::class)],
-            'status' => ['required', Rule::enum(EventPostStatusEnum::class)],
+            'category' => 'required|in:' . implode(',', array_keys(EventPost::CATEGORIES)),
+            'status' => 'required|in:' . implode(',', array_keys(EventPost::STATUSES)),
             'event_date' => 'required|date',
             'start_time' => 'required|date_format:H:i',
             'end_time' => 'nullable|date_format:H:i|after:start_time',

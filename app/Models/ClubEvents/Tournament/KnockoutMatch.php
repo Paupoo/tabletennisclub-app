@@ -5,21 +5,24 @@ declare(strict_types=1);
 namespace App\Models\ClubEvents\Tournament;
 
 use App\Models\ClubAdmin\Users\User;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * @property-read \App\Models\ClubEvents\Tournament\TournamentMatch|null $nextMatch
- * @property-read \App\Models\ClubAdmin\Users\User|null $player1
- * @property-read \App\Models\ClubAdmin\Users\User|null $player2
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Tournament\MatchSet> $sets
+ * @property-read TournamentMatch|null $nextMatch
+ * @property-read User|null $player1
+ * @property-read User|null $player2
+ * @property-read Collection<int, MatchSet> $sets
  * @property-read int|null $sets_count
- * @property-read \App\Models\ClubEvents\Tournament\Tournament|null $tournament
- * @property-read \App\Models\ClubAdmin\Users\User|null $winner
+ * @property-read Tournament|null $tournament
+ * @property-read User|null $winner
  *
- * @method static \Illuminate\Database\Eloquent\Builder<static>|KnockoutMatch newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|KnockoutMatch newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|KnockoutMatch query()
+ * @method static Builder<static>|KnockoutMatch newModelQuery()
+ * @method static Builder<static>|KnockoutMatch newQuery()
+ * @method static Builder<static>|KnockoutMatch query()
  *
  * @mixin \Eloquent
  */
@@ -38,12 +41,12 @@ class KnockoutMatch extends Model
         'is_bronze_match',
     ];
 
-    public function getSetsWon($playerId): int
+    public function getSetsWon(int $playerId): int
     {
         return $this->sets->where('winner_id', $playerId)->count();
     }
 
-    public function getTotalPoints($playerId): int
+    public function getTotalPoints(int $playerId): int
     {
         $totalPoints = 0;
 
@@ -88,7 +91,7 @@ class KnockoutMatch extends Model
         return $this->belongsTo(User::class, 'player2_id');
     }
 
-    public function sets()
+    public function sets(): HasMany
     {
         return $this->hasMany(MatchSet::class, 'tournament_match_id');
     }

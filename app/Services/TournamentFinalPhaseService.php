@@ -12,8 +12,8 @@ use Illuminate\Support\Collection;
 class TournamentFinalPhaseService
 {
     public function __construct(
-        private TournamentMatchService $tournamentMatchService,
-        private TournamentPoolService $tournamentPoolService,
+        private readonly TournamentMatchService $tournamentMatchService,
+        private readonly TournamentPoolService $tournamentPoolService,
     ) {}
 
     public function checkIfAllPoolsAreFinished(Tournament $tournament): bool
@@ -108,10 +108,13 @@ class TournamentFinalPhaseService
         return true;
     }
 
+
     /**
      * Configure knockout phase
-     *
-     * @param  string  $startingRound  ('round_16', 'round_8', 'round_4')
+     * @param Tournament $tournament
+     * @param string $startingRound
+     * @return bool
+     * @throws Exception
      */
     public function configureKnockoutPhase(Tournament $tournament, string $startingRound): bool
     {
@@ -315,7 +318,7 @@ class TournamentFinalPhaseService
      *
      * @param  mixed  $nextMatchIds
      */
-    protected function createRoundMatches(Tournament $tournament, string $round, int $matchCount, $nextMatchIds, ?int $bronzeMatchId = null): Collection
+    protected function createRoundMatches(Tournament $tournament, string $round, int $matchCount, ?array $nextMatchIds, ?int $bronzeMatchId = null): Collection
     {
         $matches = collect();
 

@@ -7,7 +7,7 @@ namespace App\Console\Commands;
 use App\Models\ClubAdmin\Contact\Spam;
 use Illuminate\Console\Command;
 
-final class ParseSpamLog extends Command
+final class ParseSpamLogCommand extends Command
 {
     /**
      * The console command description.

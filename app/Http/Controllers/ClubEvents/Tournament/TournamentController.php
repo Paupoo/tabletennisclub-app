@@ -8,7 +8,7 @@ use App\Actions\Tournament\ToggleHasPaidTournamentAction;
 use App\Enums\TournamentStatusEnum;
 use App\Events\Tournament\UserUnregisteredFromTournament;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StartTournamentMatch;
+use App\Http\Requests\StartTournamentMatchRequest;
 use App\Http\Requests\StoreOrUpdateTournamentRequest;
 use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Club\Table;
@@ -211,6 +211,7 @@ class TournamentController extends Controller
 
     public function getPlayersForFinalBracket(int $firstRound, Tournament $tournament)
     {
+        // TODO: finish to implement this function!
         /** On récupère le nombre de joueurs à sélectionner par poule pour se rapprocher
          *  le plus près possible du nombre de joueurs nécessaires.
          *  Puis, on récupère le nombre de joueurs à repêcher
@@ -609,7 +610,7 @@ class TournamentController extends Controller
     /**
      * Start match
      */
-    public function startMatch(TournamentMatch $match, StartTournamentMatch $request): RedirectResponse
+    public function startMatch(TournamentMatch $match, StartTournamentMatchRequest $request): RedirectResponse
     {
         $tournament = $match->tournament;
 

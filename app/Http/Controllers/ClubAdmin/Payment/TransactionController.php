@@ -38,7 +38,7 @@ class TransactionController extends Controller
         return view('admin.transactions.upload');
     }
 
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         $query = Transaction::query()->orderBy('date', 'desc');
 
@@ -69,7 +69,7 @@ class TransactionController extends Controller
         ]);
     }
 
-    public function reconcile()
+    public function reconcile(): View
     {
         // Transactions non réconciliées = transactions qui n'ont pas de paiement lié
         $unreconciled_transactions = Transaction::whereDoesntHave('payment')
@@ -86,7 +86,7 @@ class TransactionController extends Controller
         return view('admin.transactions.reconcile', compact('unreconciled_transactions', 'pending_payments'));
     }
 
-    public function reconcileStore(Request $request)
+    public function reconcileStore(Request $request): RedirectResponse
     {
         $request->validate([
             'transaction_id' => 'required|exists:transactions,id',
@@ -216,7 +216,7 @@ class TransactionController extends Controller
     /**
      * Parse un montant (gère virgules, points, etc.)
      */
-    private function parseAmount($amountValue): float
+    private function parseAmount(string $amountValue): float
     {
         if (empty($amountValue)) {
             return 0;
@@ -236,7 +236,7 @@ class TransactionController extends Controller
     /**
      * Parse une date dans différents formats
      */
-    private function parseDate($dateValue, int $lineNumber): ?string
+    private function parseDate(string $dateValue, int $lineNumber): ?string
     {
         if (empty($dateValue)) {
             return null;

@@ -9,7 +9,7 @@ use App\Models\ClubAdmin\Subscription\Subscription;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
-class DeleteSubscription extends Controller
+class DeleteSubscriptionAction extends Controller
 {
     /**
      * Handle the incoming request.

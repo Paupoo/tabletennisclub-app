@@ -18,7 +18,7 @@ class PaymentController extends Controller
      */
     public function create()
     {
-        //
+        // TODO
     }
 
     /**
@@ -26,7 +26,7 @@ class PaymentController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        // TODO
     }
 
     /**
@@ -34,7 +34,7 @@ class PaymentController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        // TODO
     }
 
     /**
@@ -69,7 +69,7 @@ class PaymentController extends Controller
      */
     public function show(string $id)
     {
-        //
+        // TODO
     }
 
     /**
@@ -77,7 +77,7 @@ class PaymentController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        // TODO
     }
 
     /**
@@ -85,6 +85,6 @@ class PaymentController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        // TODO
     }
 }

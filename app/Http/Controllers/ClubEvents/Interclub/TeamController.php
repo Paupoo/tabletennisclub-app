@@ -40,11 +40,11 @@ class TeamController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(): View
     {
         $this->authorize('create', Team::class);
 
-        $breadcrumps = Breadcrumb::make()
+        $breadcrumbs = Breadcrumb::make()
             ->home()
             ->teams()
             ->add('Create')
@@ -59,9 +59,9 @@ class TeamController extends Controller
         return view('clubEvents.interclubs.teams.create', [
             'league_categories' => LeagueCategory::cases(),
             'league_levels' => LeagueLevel::cases(),
-            'seasons' => Season::select(['name', 'id', 'start_year'])
-                ->where('end_year', '>=', today()->format('Y'))
-                ->orderBy('start_year')
+            'seasons' => Season::select(['name', 'id', 'start_at'])
+                ->where('end_at', '>=', today()->format('Y'))
+                ->orderBy('start_at')
                 ->get(),
             'team' => $team,
             'team_names' => TeamName::cases(),
@@ -73,7 +73,7 @@ class TeamController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(string $id): RedirectResponse
     {
         $team = Team::find($id);
 
@@ -86,7 +86,7 @@ class TeamController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(string $id): View
     {
         $this->authorize('update', Team::class);
 
@@ -106,9 +106,9 @@ class TeamController extends Controller
                 ->get(),
             'league_levels' => LeagueLevel::cases(),
             'leagues' => League::all(),
-            'seasons' => Season::select(['name', 'id', 'start_year'])
-                ->where('end_year', '>=', today()->format('Y'))
-                ->orderBy('start_year')
+            'seasons' => Season::select(['name', 'id', 'start_at'])
+                ->where('end_at', '>=', today()->format('Y'))
+                ->orderBy('start_at')
                 ->get(),
             'team' => $team,
             'team_names' => TeamName::cases(),
@@ -119,8 +119,6 @@ class TeamController extends Controller
 
     /**
      * Return Seasons in the future, starting from this year
-     * @param string $sorting_order
-     * @return Collection
      */
     public function getUpToDateSeasons(string $sorting_order = 'asc'): Collection
     {
@@ -135,7 +133,7 @@ class TeamController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(): View
     {
         $breadcrumbs = Breadcrumb::make()
             ->home()
@@ -218,7 +216,7 @@ class TeamController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Team $team)
+    public function show(Team $team): View
     {
         $breadcrumbs = Breadcrumb::make()
             ->home()
@@ -236,7 +234,7 @@ class TeamController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreOrUpdateTeamRequest $request)
+    public function store(StoreOrUpdateTeamRequest $request): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -354,12 +352,9 @@ class TeamController extends Controller
 
     /**
      * Add competitors to each teams
-     * @param int $playersPerTeam
-     * @return self
      */
     private function addPlayersToTeams(int $playersPerTeam = 5): self
     {
-
         $this->teamsWithPlayers = collect();
 
         foreach ($this->teams as $team) {
@@ -374,9 +369,8 @@ class TeamController extends Controller
     }
 
     /**
-     * Returns a collection of teams names from A to Z
-     * @param  int  $totalTeamsAmount
-     * @return self
+     * Returns a collection of teams names from A to Z.
+     * @return TeamController
      */
     private function buildTeamsFromAToZ(): self
     {
@@ -391,8 +385,10 @@ class TeamController extends Controller
         return $this;
     }
 
+
     /**
      * Get competitors ordered by ranking, then by last name, both descending.
+     * @return self
      */
     private function getCompetitors(): self
     {

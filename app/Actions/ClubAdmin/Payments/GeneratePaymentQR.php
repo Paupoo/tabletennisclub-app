@@ -8,6 +8,7 @@ use App\Models\ClubAdmin\Payment\Payment;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Encoding\Encoding;
 use Endroid\QrCode\ErrorCorrectionLevel;
+use Endroid\QrCode\Exception\ValidationException;
 use Endroid\QrCode\Writer\PngWriter;
 
 use const App\Actions\Payments\bancontact_qr;
@@ -20,11 +21,13 @@ class GeneratePaymentQR
     /**
      * Create a new class instance.
      */
-    public function __construct()
-    {
-        //
-    }
+    public function __construct() { }
 
+    /**
+     * @param Payment $payment
+     * @return string
+     * @throws ValidationException
+     */
     public function __invoke(Payment $payment): string
     {
         $IBAN = 'BE23732333208791';

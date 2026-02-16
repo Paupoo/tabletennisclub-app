@@ -5,31 +5,33 @@ declare(strict_types=1);
 namespace App\Actions\ClubAdmin\Subscriptions;
 
 use App\Actions\ClubAdmin\Payments\GeneratePayment;
-use App\Http\Controllers\Controller;
 use App\Models\ClubAdmin\Payment\Payment;
 use App\Models\ClubAdmin\Subscription\Subscription;
-use App\Models\ClubEvents\Interclub\Season;
 use App\Models\ClubAdmin\Users\User;
-use Exception;
+use App\Models\ClubEvents\Interclub\Season;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
-class SubscribeToSeasonController extends Controller
+class SubscribeToSeasonAction
 {
     private float $casualLicencePrice = 60;
 
     private float $competitiveLicencePrice = 125;
 
-    private float $trainingPrice = 90;
-
     private bool $is_competitor = false;
 
     private Season $season;
 
+    private float $trainingPrice = 90;
+
     private User $user;
+
 
     /**
      * Handle the incoming request.
+     * @param Season $season
+     * @param Request $request
+     * @return RedirectResponse
      */
     public function __invoke(Season $season, Request $request): RedirectResponse
     {
@@ -37,7 +39,6 @@ class SubscribeToSeasonController extends Controller
             'user_id' => 'string|required|exists:users,id',
             'type' => 'required|in:competitive,casual',
         ]);
-
 
         // Set up parameters
         $this->season = $season;
@@ -54,19 +55,25 @@ class SubscribeToSeasonController extends Controller
         $subscription = $this->subscribe();
 
         // Removed... we need to let the user or the admin choose the options first
-        // Generate the penging payment
+        // Generate the pending payment
         // $payment = new GeneratePayment()($subscription);
 
         return back()->with([
-            'success' => __('The user has been suscribed successfully'),
+            'success' => __('The user has been subscribed successfully'),
         ]);
     }
 
+    /**
+     * @return float
+     */
     public function calculatePrice(): float
     {
         return $this->is_competitor ? $this->competitiveLicencePrice : $this->casualLicencePrice;
     }
 
+    /**
+     * @return Subscription
+     */
     public function subscribe(): Subscription
     {
         return Subscription::create([

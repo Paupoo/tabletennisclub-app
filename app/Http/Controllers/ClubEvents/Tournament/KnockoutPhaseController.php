@@ -12,6 +12,8 @@ use App\Services\TournamentFinalPhaseService;
 use App\States\Tournament\TournamentStateMachine;
 use App\Support\Breadcrumb;
 use Exception;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class KnockoutPhaseController extends Controller
@@ -26,7 +28,7 @@ class KnockoutPhaseController extends Controller
     /**
      * Show knockout phase setup page
      */
-    public function setup(Tournament $tournament)
+    public function setup(Tournament $tournament): View
     {
         return view('clubEvents.tournaments.knockout-setup', compact('tournament'));
     }
@@ -35,7 +37,7 @@ class KnockoutPhaseController extends Controller
      * Configure knockout phase
      * @throws Exception
      */
-    public function configure(Request $request, Tournament $tournament)
+    public function configure(Request $request, Tournament $tournament): RedirectResponse
     {
         $request->validate([
             'starting_round' => 'required|in:round_16,round_8,round_4',
@@ -57,7 +59,7 @@ class KnockoutPhaseController extends Controller
     /**
      * Reset a match
      */
-    public function resetMatch(TournamentMatch $match)
+    public function resetMatch(TournamentMatch $match): RedirectResponse
     {
         // Delete sets
         MatchSet::where('tournament_match_id', $match->id)->delete();
@@ -93,7 +95,7 @@ class KnockoutPhaseController extends Controller
     /**
      * Show knockout bracket
      */
-    public function showBracket(Tournament $tournament)
+    public function showBracket(Tournament $tournament): View
     {
         $breadcrumbs = Breadcrumb::make()
             ->home()
@@ -122,7 +124,7 @@ class KnockoutPhaseController extends Controller
     /**
      * Start a match
      */
-    public function startMatch(Request $request, TournamentMatch $match)
+    public function startMatch(Request $request, TournamentMatch $match): RedirectResponse
     {
         $request->validate([
             'tableNumber' => 'required|integer|min:1|max:8',
@@ -139,7 +141,7 @@ class KnockoutPhaseController extends Controller
     /**
      * Update match
      */
-    public function updateMatch(Request $request, TournamentMatch $match)
+    public function updateMatch(Request $request, TournamentMatch $match): RedirectResponse
     {
         $request->validate([
             'sets' => 'required|array|min:1',

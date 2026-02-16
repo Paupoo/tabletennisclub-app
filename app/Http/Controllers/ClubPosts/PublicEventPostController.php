@@ -6,10 +6,12 @@ namespace App\Http\Controllers\ClubPosts;
 
 use App\Http\Controllers\Controller;
 use App\Models\ClubPosts\EventPost;
+use Illuminate\Contracts\View\View;
+
 
 class PublicEventPostController extends Controller
 {
-    public function index()
+    public function index(): View
     {
         // Récupérer uniquement les événements publiés, triés par date
         $events = EventPost::published()

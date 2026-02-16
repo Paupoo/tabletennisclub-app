@@ -6,7 +6,8 @@ namespace App\Http\Controllers\ClubPosts;
 
 use App\Http\Controllers\Controller;
 use App\Models\ClubPosts\EventPost;
-use Illuminate\Support\Facades\View;
+use Illuminate\Contracts\View\View;
+
 
 class PublicEventPostController extends Controller
 {

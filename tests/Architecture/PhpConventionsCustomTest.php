@@ -14,7 +14,7 @@ arch()
     ->expect('App')
     ->toUseStrictEquality();
 
-//arch()
+// arch()
 //    ->expect('App')
 //    ->classes()
 //    ->toHaveMethodsDocumented();

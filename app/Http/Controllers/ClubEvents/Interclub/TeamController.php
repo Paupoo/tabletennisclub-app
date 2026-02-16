@@ -59,9 +59,9 @@ class TeamController extends Controller
         return view('clubEvents.interclubs.teams.create', [
             'league_categories' => LeagueCategory::cases(),
             'league_levels' => LeagueLevel::cases(),
-            'seasons' => Season::select(['name', 'id', 'start_year'])
-                ->where('end_year', '>=', today()->format('Y'))
-                ->orderBy('start_year')
+            'seasons' => Season::select(['name', 'id', 'start_at'])
+                ->where('end_at', '>=', today()->format('Y'))
+                ->orderBy('start_at')
                 ->get(),
             'team' => $team,
             'team_names' => TeamName::cases(),
@@ -106,9 +106,9 @@ class TeamController extends Controller
                 ->get(),
             'league_levels' => LeagueLevel::cases(),
             'leagues' => League::all(),
-            'seasons' => Season::select(['name', 'id', 'start_year'])
-                ->where('end_year', '>=', today()->format('Y'))
-                ->orderBy('start_year')
+            'seasons' => Season::select(['name', 'id', 'start_at'])
+                ->where('end_at', '>=', today()->format('Y'))
+                ->orderBy('start_at')
                 ->get(),
             'team' => $team,
             'team_names' => TeamName::cases(),

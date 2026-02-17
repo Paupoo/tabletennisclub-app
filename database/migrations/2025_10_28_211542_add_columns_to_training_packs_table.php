@@ -2,7 +2,7 @@
 
 use App\Enums\TrainingLevel;
 use App\Enums\TrainingType;
-use App\Models\Room;
+use App\Models\ClubAdmin\Club\Room;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;

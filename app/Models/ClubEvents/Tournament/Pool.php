@@ -59,7 +59,7 @@ class Pool extends Model
      * Utiliser les événements du modèle pour intercepter
      *  les attachements d'utilisateurs via la relation
      * @param User $user
-     * @return User
+     * @return void
      * @throws Exception
      */
     public function attachUser(User $user): User
@@ -76,8 +76,9 @@ class Pool extends Model
             throw new Exception("L'utilisateur fait déjà partie du pool '{$existingPool->name}' dans ce tournoi.");
         }
 
-        // Si non, attacher l'utilisateur à ce pool
-        return $this->users()->attach($user->id);
+        // Sinon, attacher l'utilisateur à ce pool
+        $this->users()->attach($user->id);
+        return $user;
     }
 
     public function tournament(): BelongsTo

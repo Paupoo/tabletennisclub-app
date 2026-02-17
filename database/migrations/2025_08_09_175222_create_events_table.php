@@ -1,14 +1,23 @@
 <?php
+
 declare(strict_types=1);
 
-use App\Enums\EventPostStatusEnum;
 use App\Enums\ClubEventTypeEnum;
+use App\Enums\EventPostStatusEnum;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('events');
+    }
+
     /**
      * Run the migrations.
      */
@@ -48,15 +57,6 @@ return new class extends Migration
             // Index pour optimiser les requêtes
             $table->index(['status', 'event_date']);
             $table->index(['type', 'status']);
-            $table->index(['eventable_type', 'eventable_id']);
         });
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('events');
     }
 };

@@ -48,6 +48,7 @@ class EventPost extends Model
         'type',
         'title',
         'description',
+        'category',
         'status',
         'event_date',
         'start_time',
@@ -134,7 +135,7 @@ class EventPost extends Model
      */
     public function getPublicUrlAttribute(): string
     {
-        return route('clubAdmin.eventPosts.show', $this);
+        return route('clubPosts.eventPosts.show', $this);
     }
 
     public function getStatusBadgeClasses(): string

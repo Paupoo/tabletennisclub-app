@@ -15,7 +15,7 @@ use App\States\Payments\PaidState;
 use App\States\Payments\PendingState;
 use App\States\Payments\RefundedState;
 use App\States\Payments\ValidatedState;
-use Database\Factories\SubscriptionFactory;
+use Database\Factories\ClubAdmin\Subscription\SubscriptionFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

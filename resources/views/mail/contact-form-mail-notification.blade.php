@@ -18,20 +18,17 @@ Vous avez reçu un message depuis le formulaire de contact du site {{ config('ap
 
 <x-mail::panel>{{ $message }}</x-mail::panel>
 
-@if($interest == ContactReasonEnum::join)
+@if($interest == ContactReasonEnum::JOIN_US)
 
-    # Récapitulatif de la demande :
+# Récapitulatif de la demande :
 
-    <x-mail::table>
-        | Demande | Total |
-        | ------------- | ------------: |
-        | Licence{{ $membership_family_members > 1 ? 's' : '' }}
-        récréative{{ $membership_family_members > 1 ? 's' : '' }} | {{ $membership_family_members }} |
-        | Licence{{ $membership_competitors > 1 ? 's' : '' }}
-        compétitive{{ $membership_competitors > 1 ? 's' : '' }} | {{ $membership_competitors }} |
-        | Entraînement{{ $membership_training_sessions > 1 ? 's' : '' }}
-        dirigé{{ $membership_training_sessions > 1 ? 's' : '' }} | {{ $membership_training_sessions }} |
-    </x-mail::table>
+<x-mail::table>
+    | Demande | Total |
+    | ------------- | ------------: |
+    | Licence{{ $membership_family_members > 1 ? 's' : '' }} récréative{{ $membership_family_members > 1 ? 's' : '' }} | {{ $membership_family_members }} |
+    | Licence{{ $membership_competitors > 1 ? 's' : '' }} compétitive{{ $membership_competitors > 1 ? 's' : '' }} | {{ $membership_competitors }} |
+    | Entraînement{{ $membership_training_sessions > 1 ? 's' : '' }} dirigé{{ $membership_training_sessions > 1 ? 's' : '' }} | {{ $membership_training_sessions }} |
+</x-mail::table>
 @endif
 
 <x-mail::button url="{{ route('clubAdmin.contacts.index') }}">

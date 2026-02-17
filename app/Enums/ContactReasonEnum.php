@@ -6,11 +6,11 @@ namespace App\Enums;
 
 enum ContactReasonEnum: string
 {
-    case become_supporter = 'become_supporter';
-    case info_interclubs = 'info_interclubs';
-    case join = 'join';
-    case partnership = 'partnership';
-    case try = 'try';
+    case BECOME_SUPPORTER = 'become_supporter';
+    case INFO_INTERCLUBS = 'info_interclubs';
+    case JOIN_US = 'join_us';
+    case PARTNERSHIP = 'partnership';
+    case TRIAL = 'trial';
 
     public static function values(): array
     {
@@ -20,11 +20,11 @@ enum ContactReasonEnum: string
     public function getLabel(): string
     {
         return match ($this) {
-            self::join => __('Join us'),
-            self::try => __('Have a try'),
-            self::info_interclubs => __('Info about competitions'),
-            self::become_supporter => __('Become a supporter'),
-            self::partnership => __('Partnership/Sponsoring'),
+            self::JOIN_US => __('Join us'),
+            self::TRIAL => __('Have a try'),
+            self::INFO_INTERCLUBS => __('Info about competitions'),
+            self::BECOME_SUPPORTER => __('Become a supporter'),
+            self::PARTNERSHIP => __('Partnership/Sponsoring'),
         };
     }
 }

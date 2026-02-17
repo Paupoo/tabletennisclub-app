@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreContactRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
+     * This endpoint is public, so authorization is always true.
+     * CSRF protection is handled by the 'web' middleware group automatically.
      */
     public function authorize(): bool
     {
@@ -33,7 +36,7 @@ class StoreContactRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array|string>
      */
     public function rules(): array
     {

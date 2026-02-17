@@ -42,7 +42,7 @@ class ContactAdminController extends Controller
 
         $contact->delete();
 
-        return redirect()->route('clubAdmin.contacts.index')->with('success', 'Contact supprimé.');
+        return redirect()->route('clubAdmin.contacts.index')->with('success', __('Contact deleted successfully'));
     }
 
     public function index(): View

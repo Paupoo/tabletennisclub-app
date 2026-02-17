@@ -4,47 +4,35 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\ClubAdmin\Contact;
 
+use App\Actions\ClubAdmin\Contact\StoreContactAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreContactRequest;
-use App\Mail\ContactFormConfirmationEmail;
-use App\Mail\ContactFormNotificationEmail;
-use App\Models\ClubAdmin\Contact\Contact;
 use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 
 class ContactController extends Controller
 {
+    public function __construct(
+        private readonly StoreContactAction $storeContactAction
+    ) {}
+
     public function store(StoreContactRequest $request): RedirectResponse
     {
-
-        $validated = $request->validated();
-
         try {
-            $contact = Contact::create($validated);
-
-            // Envoyer un email
-            // Mail::to(config('app.club_email'))->send(new ContactFormMail($validated)); --> uncomment this line once the mail of the club is correctly configured
-            Mail::to($request->email)->send(new ContactFormConfirmationEmail($contact));
-            Mail::to(config('app.club_email'))
-                ->send(new ContactFormNotificationEmail($contact));
-
-
-            // Log pour le développement
-            Log::info('Nouveau message de contact', $validated);
+            $this->storeContactAction->execute($request->validated());
 
             return redirect('/#contact')
-                ->with('success', 'Votre message a été envoyé avec succès ! Nous vous répondrons dans les plus brefs délais.');
+                ->with('success', __('Your message was successfully sent! We will return to you shortly'));
 
         } catch (Exception $e) {
-            Log::error('Erreur lors de l\'envoi du message de contact', [
+            Log::error('Contact submission failed', [
                 'error' => $e->getMessage(),
-                'data' => $validated,
+                'ip' => $request->ip(),
             ]);
 
             return redirect('/#contact')
-                ->with('error', 'Une erreur est survenue lors de l\'envoi de votre message. Veuillez réessayer.')
+                ->with('error', __('Something went wrong while sending your message. Please try again later'))
                 ->withInput();
         }
     }

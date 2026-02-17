@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\ClubPosts;
 
-use App\Enums\EventPostStatusEnum;
-use App\Enums\ClubEventTypeEnum;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\EventPostRequest;
 use App\Models\ClubPosts\EventPost;
 use App\Support\Breadcrumb;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class AdminEventPostController extends Controller
@@ -36,25 +34,25 @@ class AdminEventPostController extends Controller
         return view('clubPosts.eventPosts.create', compact('breadcrumbs'));
     }
 
-    public function destroy(EventPost $event): RedirectResponse
+    public function destroy(EventPost $eventPost): RedirectResponse
     {
-        $this->authorize('delete', $event);
-        if (! $event->canBeDeleted()) {
+        $this->authorize('delete', $eventPost);
+        if (! $eventPost->canBeDeleted()) {
             return back()->with('error', __('This event cannot be deleted'));
         }
 
-        $event->delete();
+        $eventPost->delete();
 
         return redirect()
             ->route('clubPosts.eventPosts.index')
             ->with('success', __('Event deleted successfully'));
     }
 
-    public function duplicate(EventPost $event): RedirectResponse
+    public function duplicate(EventPost $eventPost): RedirectResponse
     {
-        $this->authorize('duplicated', $event);
-        $newEvent = $event->replicate();
-        $newEvent->title = $event->title . ' (Copie)';
+        $this->authorize('duplicated', $eventPost);
+        $newEvent = $eventPost->replicate();
+        $newEvent->title = $eventPost->title . ' (Copie)';
         $newEvent->status = 'draft';
         $newEvent->save();
 
@@ -63,17 +61,15 @@ class AdminEventPostController extends Controller
             ->with('success', __('Event duplicated successfully, you may proceed to edit it'));
     }
 
-    public function edit(EventPost $event): View
+    public function edit(EventPost $eventPost): View
     {
-        $this->authorize('update', $event);
+        $this->authorize('update', $eventPost);
         $breadcrumbs = Breadcrumb::make()
             ->home()
             ->events()
-            ->add($event->title, route('clubPosts.eventPosts.show', $event))
+            ->add($eventPost->title, route('clubPosts.eventPosts.show', $eventPost))
             ->current(__('Edit'))
             ->toArray();
-
-        $eventPost = $event;
 
         return view('clubPosts.eventPosts.edit', compact('eventPost', 'breadcrumbs'));
     }
@@ -134,16 +130,15 @@ class AdminEventPostController extends Controller
         return back()->with('success', __('Event published successfully'));
     }
 
-    public function show(EventPost $event): View
+    public function show(EventPost $eventPost): View
     {
-        dd($event);
         $breadcrumbs = Breadcrumb::make()
             ->home()
             ->events()
-            ->current($event->title)
+            ->current($eventPost->title)
             ->toArray();
 
-        return view('clubPosts.eventPosts.show', compact('event', 'breadcrumbs'));
+        return view('clubPosts.eventPosts.show', compact('eventPost', 'breadcrumbs'));
     }
 
     public function showPublicEvents()
@@ -177,61 +172,30 @@ class AdminEventPostController extends Controller
         return view('clubPosts.eventPosts.index', compact('events'));
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(EventPostRequest $request): RedirectResponse
     {
-        $this->authorize('create', EventPost::class);
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'category' => 'required|in:' . implode(',', array_keys(EventPost::CATEGORIES)),
-            'status' => 'required|in:' . implode(',', array_keys(EventPost::STATUSES)),
-            'event_date' => 'required|date',
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'nullable|date_format:H:i|after:start_time',
-            'location' => 'required|string|max:255',
-            'price' => 'nullable|string|max:255',
-            'icon' => 'nullable|string|max:10',
-            'max_participants' => 'nullable|integer|min:1',
-            'notes' => 'nullable|string',
-            'featured' => 'boolean',
-        ]);
+        $validated = $request->validated();
 
         // Si pas d'icône fournie, utiliser l'icône par défaut de la catégorie
         if (empty($validated['icon'])) {
             $validated['icon'] = EventPost::ICONS[$validated['category']] ?? '📅';
         }
 
-        $event = EventPost::create($validated);
+        $eventPost = EventPost::create($validated);
 
         return redirect()
-            ->route('clubPosts.eventPosts.show', $event)
+            ->route('clubPosts.eventPosts.show', $eventPost)
             ->with('success', __('Event created successfully'));
     }
 
-    public function update(Request $request, EventPost $event): RedirectResponse
+    public function update(EventPostRequest $request, EventPost $eventPost): RedirectResponse
     {
-        $this->authorize('update', $event);
+        $validated = $request->validated();
 
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'category' => 'required|in:' . implode(',', array_keys(EventPost::CATEGORIES)),
-            'status' => 'required|in:' . implode(',', array_keys(EventPost::STATUSES)),
-            'event_date' => 'required|date',
-            'start_time' => 'required|date_format:H:i',
-            'end_time' => 'nullable|date_format:H:i|after:start_time',
-            'location' => 'required|string|max:255',
-            'price' => 'nullable|string|max:255',
-            'icon' => 'nullable|string|max:10',
-            'max_participants' => 'nullable|integer|min:1',
-            'notes' => 'nullable|string',
-            'featured' => 'boolean',
-        ]);
-
-        $event->update($validated);
+        $eventPost->update($validated);
 
         return redirect()
-            ->route('clubPosts.eventPosts.show', $event)
+            ->route('clubPosts.eventPosts.show', $$eventPost)
             ->with('success', __('Event updated successfully'));
     }
 }

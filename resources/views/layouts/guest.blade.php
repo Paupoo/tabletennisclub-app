@@ -12,6 +12,7 @@
 </head>
 
 <body class="bg-white text-gray-900 relative" x-data="{ mobileMenuOpen: false }">
+
     <div x-data="scrollAnimations">
 
         <x-navigation />

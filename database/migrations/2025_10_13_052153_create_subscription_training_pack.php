@@ -1,7 +1,7 @@
 <?php
 
-use App\Models\Subscription;
-use App\Models\TrainingPack;
+use App\Models\ClubAdmin\Subscription\Subscription;
+use App\Models\ClubEvents\Training\TrainingPack;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;

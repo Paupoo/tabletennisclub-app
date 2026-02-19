@@ -735,5 +735,14 @@
     "Contact created and emails sent" : "Contact créé et mails envoyés",
     "Your message was successfully sent! We will return to you shortly" : "Votre message a été envoyé avec succès! Nous vous répondrons dans les plus brefs délais",
     "Something went wrong while sending your message. Please try again later" : "Une erreur est survenue lors de l'envoi de votre message. Veuillez réessayer plus tard",
-    "Contact deleted successfully" : "Contact supprimé"
+    "Contact deleted successfully" : "Contact supprimé",
+    "Personalized email" : "Email personnalisé",
+    "Personalized email was sent successfully" : "Email personnalisé envoyé",
+    "Something went wrong while sending personalized email" : "Erreur lors de l'envoi d'email personnalisé",
+    "Contact status updated successfully" : "Statut du contact mis à jour",
+    "Invalid email template" : "Template d'e-mail invalide",
+    "Something went wrong while sending your email" : "Erreur lors de l'envoi de l'email",
+    "Email successfully sent" : "Email envoyé",
+    "Contact details" : "Détails du contact"
+
 }

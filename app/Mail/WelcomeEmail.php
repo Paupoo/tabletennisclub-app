@@ -50,7 +50,7 @@ class WelcomeEmail extends Mailable
                 name: config('app.name') ?? config('mail.from.name')
             ),
             replyTo: config('mail.from.address'),
-            subject: 'Bienvenue dans notre club !',
+            subject: 'Bienvenue dans notre club!',
         );
     }
 }

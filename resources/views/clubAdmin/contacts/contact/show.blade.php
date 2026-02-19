@@ -49,7 +49,7 @@
             <!-- Main actions -->
             <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3"
                  x-data="{ emailTemplateOpen: false }">
-                @if ($contact->interest === ContactReasonEnum::join && !User::where('email', $contact->email)->exists())
+                @if ($contact->interest === ContactReasonEnum::JOIN_US && !User::where('email', $contact->email)->exists())
                     <form action="{{ route('clubAdmin.contacts.invite-new-user') }}" method="POST">
                         @csrf
                         <input type="hidden" name="first_name" value="{{ $contact->first_name }}">

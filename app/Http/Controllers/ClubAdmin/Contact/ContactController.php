@@ -6,7 +6,7 @@ namespace App\Http\Controllers\ClubAdmin\Contact;
 
 use App\Actions\ClubAdmin\Contact\StoreContactAction;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreContactRequest;
+use App\Http\Requests\ClubAdmin\Contact\StoreContactRequest;
 use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Log;

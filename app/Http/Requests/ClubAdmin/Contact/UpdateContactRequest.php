@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\ClubAdmin\Contact;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -14,13 +15,13 @@ class UpdateContactRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        return $this->user()->is_admin || $this->user()->is_committee_member;
     }
 
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array|string>
      */
     public function rules(): array
     {

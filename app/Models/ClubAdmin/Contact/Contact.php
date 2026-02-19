@@ -28,6 +28,23 @@ class Contact extends Model
         'status',
     ];
 
+    /**
+     * @return array
+     */
+    public static function getStatusStats(): array
+    {
+        return self::selectRaw("
+        SUM(status = 'new') as totalNew,
+        SUM(status = 'pending') as totalPending,
+        SUM(status = 'processed') as totalProcessed,
+        SUM(status = 'rejected') as totalRejected")->first()->toArray();
+    }
+
+    public function scopeByStatus(Builder $query, string $status): Builder
+    {
+        return $query->where('status', $status);
+    }
+
     public function scopeSearch(Builder $query, string $value): void
     {
         $query->where('first_name', 'like', '%' . $value . '%')

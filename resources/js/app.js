@@ -74,7 +74,7 @@ Alpine.data("priceCalculator", () => ({
   // Nouvelle méthode pour naviguer vers le contact avec les données
   goToContactWithData() {
     const params = new URLSearchParams({
-      interest: 'join',
+      interest: 'JOIN_US',
       familyMembers: this.familyMembers,
       competitors: this.competitors,
       trainingSessions: this.trainingSessions
@@ -97,7 +97,7 @@ Alpine.data("priceCalculator", () => ({
       // Déclencher l'événement pour mettre à jour le formulaire
       window.dispatchEvent(new CustomEvent('prepopulateContact', {
         detail: {
-          interest: 'join',
+          interest: 'JOIN_US',
           familyMembers: this.familyMembers,
           competitors: this.competitors,
           trainingSessions: this.trainingSessions
@@ -121,7 +121,7 @@ Alpine.data("contactForm", (oldInterest = '', oldFamily = 1, oldCompetitors = 0,
 
   init() {
     // Initialiser en fonction de old() côté Blade
-    this.showMembershipFields = this.selectedInterest === 'join';
+    this.showMembershipFields = this.selectedInterest === 'JOIN_US';
     // Vérifier les paramètres URL au chargement
     this.checkUrlParams();
 
@@ -136,7 +136,7 @@ Alpine.data("contactForm", (oldInterest = '', oldFamily = 1, oldCompetitors = 0,
     const urlParams = new URLSearchParams(window.location.search);
     const interest = urlParams.get('interest');
 
-    if (interest === 'join') {
+    if (interest === 'JOIN_US') {
       const familyMembers = urlParams.get('familyMembers');
       const competitors = urlParams.get('competitors');
       const trainingSessions = urlParams.get('trainingSessions');
@@ -158,7 +158,7 @@ Alpine.data("contactForm", (oldInterest = '', oldFamily = 1, oldCompetitors = 0,
     this.trainingSessions = data.trainingSessions;
 
     // Déclencher l'affichage des champs d'adhésion
-    this.showMembershipFields = data.interest === 'join';
+    this.showMembershipFields = data.interest === 'JOIN_US';
 
     // Mettre à jour le select dans le DOM
     this.$nextTick(() => {
@@ -172,7 +172,7 @@ Alpine.data("contactForm", (oldInterest = '', oldFamily = 1, oldCompetitors = 0,
 
   // Méthode appelée quand le type de demande change
   onRequestTypeChange(event) {
-    this.showMembershipFields = event.target.value === 'join';
+    this.showMembershipFields = event.target.value === 'JOIN_US';
     // Réinitialiser les valeurs si on change d'option
     if (!this.showMembershipFields) {
       this.familyMembers = 1;
@@ -227,7 +227,7 @@ Alpine.data("contactForm", (oldInterest = '', oldFamily = 1, oldCompetitors = 0,
     this.loading = true
     try {
         const formData = new FormData(event.target)
-        
+
         // Ajouter les données d'adhésion si applicable
         if (this.showMembershipFields) {
             formData.append('membership_family_members', this.familyMembers);
@@ -247,23 +247,23 @@ Alpine.data("contactForm", (oldInterest = '', oldFamily = 1, oldCompetitors = 0,
             },
             body: formData,
         })
-        
+
         console.log('Status de la réponse:', response.status);
         console.log('Headers de la réponse:', response.headers);
-        
+
         // Vérifier le type de contenu avant de parser
         const contentType = response.headers.get('content-type');
         console.log('Content-Type:', contentType);
-        
+
         if (!contentType || !contentType.includes('application/json')) {
             // Si ce n'est pas du JSON, lire comme texte pour voir l'erreur
             const text = await response.text();
             console.error('Réponse non-JSON reçue:', text);
             throw new Error('Le serveur a renvoyé du HTML au lieu de JSON. Voir la console pour les détails.');
         }
-        
+
         const result = await response.json()
-        
+
         if (result.success) {
             this.submitted = true
             event.target.reset()

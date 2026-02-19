@@ -7,9 +7,6 @@ use App\Mail\ContactFormConfirmationEmail;
 use App\Mail\ContactFormNotificationEmail;
 use App\Models\ClubAdmin\Contact\Contact;
 use Illuminate\Support\Facades\Mail;
-use Tests\TestCase;
-
-uses(TestCase::class)->group('contact-action');
 
 describe('StoreContactAction', function () {
     beforeEach(function () {

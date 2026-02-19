@@ -6,11 +6,11 @@ namespace App\Enums;
 
 enum ContactReasonEnum: string
 {
-    case BECOME_SUPPORTER = 'become_supporter';
-    case INFO_INTERCLUBS = 'info_interclubs';
-    case JOIN_US = 'join_us';
-    case PARTNERSHIP = 'partnership';
-    case TRIAL = 'trial';
+    case BECOME_SUPPORTER = 'BECOME_SUPPORTER';
+    case INFO_INTERCLUBS = 'INFO_INTERCLUBS';
+    case JOIN_US = 'JOIN_US';
+    case PARTNERSHIP = 'PARTNERSHIP';
+    case TRIAL = 'TRIAL';
 
     public static function values(): array
     {

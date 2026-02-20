@@ -71,6 +71,6 @@ class ContactEmailService
     {
         $contact->update(['status' => 'rejected']);
 
-        return $this->send($contact, $mail, 'polite');
+        return $this->send($contact, $mail, 'polite_decline');
     }
 }

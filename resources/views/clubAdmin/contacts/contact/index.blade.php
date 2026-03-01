@@ -11,19 +11,19 @@
                 <!-- Statistics -->
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
                     <div class="bg-blue-50 rounded-lg p-3 text-center border border-blue-200">
-                        <div class="text-lg sm:text-xl font-bold text-blue-600">{{ $stats->get('totalNew') }}</div>
+                        <div class="text-lg sm:text-xl font-bold text-blue-600">{{ $stats['totalNew'] }}</div>
                         <div class="text-xs text-blue-700">{{ __('New') }}</div>
                     </div>
                     <div class="bg-yellow-50 rounded-lg p-3 text-center border border-yellow-200">
-                        <div class="text-lg sm:text-xl font-bold text-yellow-600">{{ $stats->get('totalPending') }}</div>
+                        <div class="text-lg sm:text-xl font-bold text-yellow-600">{{ $stats['totalPending'] }}</div>
                         <div class="text-xs text-yellow-700">{{ __('Pending') }}</div>
                     </div>
                     <div class="bg-green-50 rounded-lg p-3 text-center border border-green-200">
-                        <div class="text-lg sm:text-xl font-bold text-green-600">{{ $stats->get('totalProcessed') }}</div>
+                        <div class="text-lg sm:text-xl font-bold text-green-600">{{ $stats['totalProcessed'] }}</div>
                         <div class="text-xs text-green-700">{{ __('Processed') }}</div>
                     </div>
                     <div class="bg-red-50 rounded-lg p-3 text-center border border-red-200">
-                        <div class="text-lg sm:text-xl font-bold text-red-600">{{ $stats->get('totalRejected') }}</div>
+                        <div class="text-lg sm:text-xl font-bold text-red-600">{{ $stats['totalRejected'] }}</div>
                         <div class="text-xs text-red-700">{{ __('Refused') }}</div>
                     </div>
                 </div>

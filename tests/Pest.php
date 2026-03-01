@@ -15,8 +15,17 @@ declare(strict_types=1);
 
 uses(
     Tests\TestCase::class,
-    // Illuminate\Foundation\Testing\RefreshDatabase::class,
-)->in('Feature');
+    Illuminate\Foundation\Testing\RefreshDatabase::class,
+)->in('Feature', 'Unit');
+
+use Illuminate\Support\Facades\Artisan;
+
+beforeAll(function (): void {
+    // Run migrations and seed once before the whole test suite to avoid
+    // re-seeding on every test. This speeds up the test run while keeping
+    // a seeded DB available for tests.
+    Artisan::call('migrate:fresh', ['--seed' => true]);
+});
 
 /*
 |--------------------------------------------------------------------------

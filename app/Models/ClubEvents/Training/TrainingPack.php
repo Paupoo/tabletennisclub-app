@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class TrainingPack extends Model
 {
-    /** @use HasFactory<\Database\Factories\TrainingPackFactory> */
+    /** @use HasFactory<\Database\Factories\ClubAdmin\Contact\TrainingPackFactory> */
     use HasFactory;
 
     protected $fillable = [

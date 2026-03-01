@@ -72,7 +72,7 @@ class ContactFormNotificationEmail extends Mailable implements ShouldQueue
                 address: config('mail.from.address'),
                 name: config('app.name') ?? config('mail.from.name')
             ),
-            subject: 'Formulaire de contact - ' . ($this->contact->interest->getLabel() ?? 'Demande générale'),
+            subject: 'Formulaire de contact - ' . ($this->contact->interest->getLabel() ?: 'Demande générale'),
         );
     }
 }

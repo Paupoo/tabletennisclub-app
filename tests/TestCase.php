@@ -17,5 +17,7 @@ abstract class TestCase extends BaseTestCase
      *
      * @var bool
      */
-    protected $seed = true;
+    // Disable automatic seeding before each test to speed up the test suite.
+    // We'll run the seeder once for the whole suite instead.
+    protected $seed = false;
 }

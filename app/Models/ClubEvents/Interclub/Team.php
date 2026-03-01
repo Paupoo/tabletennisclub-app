@@ -30,7 +30,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubAdmin\Users\User> $users
  * @property-read int|null $users_count
  *
- * @method static \Database\Factories\ClubEvents\Interclub\TeamFactory factory($count = null, $state = [])
+ * @method static \Database\Factories\ClubAdmin\Contact\ClubEvents\Interclub\TeamFactory factory($count = null, $state = [])
  * @method static Builder<static>|Team inClub()
  * @method static Builder<static>|Team newModelQuery()
  * @method static Builder<static>|Team newQuery()

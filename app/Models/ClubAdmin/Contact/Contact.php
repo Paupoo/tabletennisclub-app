@@ -6,10 +6,13 @@ namespace App\Models\ClubAdmin\Contact;
 
 use App\Enums\ContactReasonEnum;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Contact extends Model
 {
+    use HasFactory;
+
     protected $casts = [
         'interest' => ContactReasonEnum::class,
     ];

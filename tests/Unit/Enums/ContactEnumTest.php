@@ -37,4 +37,4 @@ describe('ContactReasonEnum', function () {
         $this->assertNull(ContactReasonEnum::tryFrom('join_us'));
     });
 
-});
+})->group('contact');

@@ -144,4 +144,4 @@ describe('StoreContactAction', function () {
             ->phone->toBeNull()
             ->membership_family_members->toBeNull();
     });
-});
+})->group('contact');

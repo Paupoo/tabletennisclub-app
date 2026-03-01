@@ -87,7 +87,7 @@ describe('sendCustom()', function () {
         $this->service->sendCustom($this->contact, $this->mailData, $this->user, true);
 
     });
-});
+})->group('contact');
 
 // ─────────────────────────────────────────────────────────────
 // Suite : sendTemplate()
@@ -103,7 +103,7 @@ describe('sendTemplate()', function () {
         $this->contact = makeContact();
     });
 
-    // ── Templates simples ────────────────────────────────────
+    // ── Templates ────────────────────────────────────
 
     it("Sends the welcome Email when template 'welcome' is called", function () {
         $result = $this->service->sendTemplate($this->contact, 'welcome');
@@ -135,25 +135,25 @@ describe('sendTemplate()', function () {
         expect($result)->toContain('polite_decline');
     });
 
-    // ── Template inconnu ─────────────────────────────────────
+    // ── Unknown template ─────────────────────────────────────
 
-    it('lève une InvalidArgumentException pour un template inconnu', function () {
+    it('Raises InvalidArgumentException for an unknown template', function () {
         expect(fn () => $this->service->sendTemplate($this->contact, 'unknown_template'))
             ->toThrow(InvalidArgumentException::class);
     });
 
-    it('inclut le nom du template dans le message d\'exception', function () {
+    it('Includes the template\'s name in the error message', function () {
         expect(fn () => $this->service->sendTemplate($this->contact, 'bad_template'))
             ->toThrow(InvalidArgumentException::class, 'bad_template');
     });
 
     // ── Log ──────────────────────────────────────────────────
 
-    it('écrit un log info après chaque envoi de template', function () {
+    it('Writes an info log after each template sending', function () {
         Log::shouldReceive('info')->once()->withArgs(function ($message, $context) {
             return isset($context['contact_id']) && isset($context['template']);
         });
         $this->service->sendTemplate($this->contact, 'welcome');
 
     });
-});
+})->group('contact');

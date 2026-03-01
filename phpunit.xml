@@ -46,7 +46,7 @@
         <!-- Environment -->
         <ini name="memory_limit" value="1G"/>
         <env name="APP_ENV" value="testing" />
-        <env name="APP_KEY" value="base64:TEST_KEY_FOR_TESTING_ONLY=" />
+        <env name="APP_KEY" value="base64:txHlJZViO9fLYcviLB7ZlVyCWuzKphDZ2fpQVuaZEaY=" />
         <env name="APP_DEBUG" value="true" />
 
         <!-- Performance -->
@@ -78,7 +78,7 @@
         <!-- <env name="SENTRY_LARAVEL_DSN" value="" /> -->
     </php>
 
-    <coverage processUncoveredFiles="true">
+    <coverage>
         <report>
             <!-- Rapport HTML détaillé avec couleurs gradient-->
             <html outputDirectory="tests/Coverage/html" lowUpperBound="50" highLowerBound="80"/>

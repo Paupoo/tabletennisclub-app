@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Registration extends Model implements PayableInterface
 {
-    /** @use HasFactory<\Database\Factories\RegistrationFactory> */
+    /** @use HasFactory<\Database\Factories\ClubAdmin\Contact\RegistrationFactory> */
     use HasFactory;
 
     // ==================== Mutators ====================

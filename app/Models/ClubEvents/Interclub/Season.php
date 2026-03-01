@@ -8,7 +8,7 @@ use App\Models\ClubAdmin\Subscription\Subscription;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Training\Training;
 use App\Models\ClubEvents\Training\TrainingPack;
-use Database\Factories\ClubEvents\Interclub\SeasonFactory;
+use Database\Factories\ClubAdmin\Contact\ClubEvents\Interclub\SeasonFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

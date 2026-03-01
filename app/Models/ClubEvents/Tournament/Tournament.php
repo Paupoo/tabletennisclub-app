@@ -11,7 +11,7 @@ use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Club\Table;
 use App\Models\ClubAdmin\Users\User;
 use App\Observers\TournamentObserver;
-use Database\Factories\ClubEvents\Tournament\TournamentFactory;
+use Database\Factories\ClubAdmin\Contact\ClubEvents\Tournament\TournamentFactory;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;

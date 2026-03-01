@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Models\ClubEvents\Tournament;
 
 use App\Models\ClubAdmin\Users\User;
-use Database\Factories\ClubEvents\Tournament\PoolFactory;
+use Database\Factories\ClubAdmin\Contact\ClubEvents\Tournament\PoolFactory;
 use Eloquent;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;

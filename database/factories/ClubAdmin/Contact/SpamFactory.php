@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Database\Factories;
+namespace Database\Factories\ClubAdmin\Contact;
 
 use App\Models\ClubAdmin\Contact\Spam;
 use Illuminate\Database\Eloquent\Factories\Factory;

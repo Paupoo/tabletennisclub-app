@@ -8,7 +8,11 @@ use App\Enums\LeagueCategory;
 use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Users\User;
 use Carbon\Carbon;
+use Database\Factories\ClubEvents\Interclub\InterclubFactory;
+use Eloquent;
 use Exception;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -30,36 +34,36 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int|null $season_id
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\ClubEvents\Interclub\League|null $league
- * @property-read \App\Models\ClubAdmin\Club\Room|null $room
- * @property-read \App\Models\ClubEvents\Interclub\Season|null $season
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Interclub\Team> $teams
+ * @property-read League|null $league
+ * @property-read Room|null $room
+ * @property-read Season|null $season
+ * @property-read Collection<int, Team> $teams
  * @property-read int|null $teams_count
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubAdmin\Users\User> $users
+ * @property-read Collection<int, User> $users
  * @property-read int|null $users_count
- * @property-read \App\Models\ClubEvents\Interclub\Team|null $visitedTeam
- * @property-read \App\Models\ClubEvents\Interclub\Team|null $visitingTeam
+ * @property-read Team|null $visitedTeam
+ * @property-read Team|null $visitingTeam
  *
- * @method static \Database\Factories\ClubAdmin\Contact\ClubEvents\Interclub\InterclubFactory factory($count = null, $state = [])
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub whereAddress($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub whereLeagueId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub whereResult($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub whereRoomId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub whereScore($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub whereSeasonId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub whereStartDateTime($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub whereTotalPlayers($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub whereUpdatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub whereVisitedTeamId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub whereVisitingTeamId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Interclub whereWeekNumber($value)
+ * @method static InterclubFactory factory($count = null, $state = [])
+ * @method static Builder<static>|Interclub newModelQuery()
+ * @method static Builder<static>|Interclub newQuery()
+ * @method static Builder<static>|Interclub query()
+ * @method static Builder<static>|Interclub whereAddress($value)
+ * @method static Builder<static>|Interclub whereCreatedAt($value)
+ * @method static Builder<static>|Interclub whereId($value)
+ * @method static Builder<static>|Interclub whereLeagueId($value)
+ * @method static Builder<static>|Interclub whereResult($value)
+ * @method static Builder<static>|Interclub whereRoomId($value)
+ * @method static Builder<static>|Interclub whereScore($value)
+ * @method static Builder<static>|Interclub whereSeasonId($value)
+ * @method static Builder<static>|Interclub whereStartDateTime($value)
+ * @method static Builder<static>|Interclub whereTotalPlayers($value)
+ * @method static Builder<static>|Interclub whereUpdatedAt($value)
+ * @method static Builder<static>|Interclub whereVisitedTeamId($value)
+ * @method static Builder<static>|Interclub whereVisitingTeamId($value)
+ * @method static Builder<static>|Interclub whereWeekNumber($value)
  *
- * @mixin \Eloquent
+ * @mixin Eloquent
  */
 class Interclub extends Model
 {
@@ -95,7 +99,7 @@ class Interclub extends Model
     /**
      * Set attribute to count total players needed to fill up one team.
      */
-    public function setTotalPlayersPerteam(string $type): self
+    public function setTotalPlayersPerTeam(string $type): self
     {
 
         if (in_array($type, array_column(LeagueCategory::cases(), 'name'))) { // If the input exist in the Enum

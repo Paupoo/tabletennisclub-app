@@ -22,7 +22,7 @@ class ContactController extends Controller
         try {
             $this->storeContactAction->execute($request->validated());
 
-            return redirect('/#contact')
+            return redirect()->to(route('home') . '#contact')
                 ->with('success', __('Your message was successfully sent! We will return to you shortly'));
 
         } catch (Exception $e) {
@@ -31,7 +31,7 @@ class ContactController extends Controller
                 'ip' => $request->ip(),
             ]);
 
-            return redirect('/#contact')
+            return redirect()->to(route('home') . '#contact')
                 ->with('error', __('Something went wrong while sending your message. Please try again later'))
                 ->withInput();
         }

@@ -46,36 +46,6 @@
         <!-- Environment -->
         <ini name="memory_limit" value="1G"/>
         <env name="APP_ENV" value="testing" />
-        <env name="APP_KEY" value="base64:txHlJZViO9fLYcviLB7ZlVyCWuzKphDZ2fpQVuaZEaY=" />
-        <env name="APP_DEBUG" value="true" />
-
-        <!-- Performance -->
-        <env name="BCRYPT_ROUNDS" value="4" />
-        <env name="CACHE_DRIVER" value="array" />
-        <env name="CACHE_STORE" value="array" />
-
-        <!-- Base de données -->
-        <env name="DB_CONNECTION" value="mysql" />
-        <env name="DB_DATABASE" value="laraveltest" />
-        <!-- Optionnel: forcer un port/host spécifique -->
-        <!-- <env name="DB_HOST" value="127.0.0.1" /> -->
-        <!-- <env name="DB_PORT" value="3306" /> -->
-
-        <!-- Mail -->
-        <env name="MAIL_MAILER" value="array" />
-
-        <!-- Queue -->
-        <env name="QUEUE_CONNECTION" value="sync" />
-
-        <!-- Session -->
-        <env name="SESSION_DRIVER" value="array" />
-
-        <!-- Services désactivés pendant les tests -->
-        <env name="TELESCOPE_ENABLED" value="false" />
-
-        <!-- Optionnel : désactiver autres services -->
-        <!-- <env name="DEBUGBAR_ENABLED" value="false" /> -->
-        <!-- <env name="SENTRY_LARAVEL_DSN" value="" /> -->
     </php>
 
     <coverage>

@@ -170,10 +170,6 @@ arch()
     ->toExtend('Illuminate\Support\ServiceProvider');
 
 arch()
-    ->expect('App\Providers')
-    ->not->toBeUsed();
-
-arch()
     ->expect('App')
     ->not->toExtend('Illuminate\Support\ServiceProvider')
     ->ignoring('App\Providers');

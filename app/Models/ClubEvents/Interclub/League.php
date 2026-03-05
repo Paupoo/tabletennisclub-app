@@ -23,7 +23,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Interclub\Team> $teams
  * @property-read int|null $teams_count
  *
- * @method static \Database\Factories\ClubAdmin\Contact\ClubEvents\Interclub\LeagueFactory factory($count = null, $state = [])
+ * @method static \Database\Factories\ClubEvents\Interclub\LeagueFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|League newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|League newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|League query()

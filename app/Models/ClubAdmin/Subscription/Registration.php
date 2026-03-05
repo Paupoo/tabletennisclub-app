@@ -7,13 +7,14 @@ namespace App\Models\ClubAdmin\Subscription;
 use App\Contracts\PayableInterface;
 use App\Models\ClubAdmin\Payment\Payment;
 use Attribute;
+use Database\Factories\RegistrationFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Registration extends Model implements PayableInterface
 {
-    /** @use HasFactory<\Database\Factories\ClubAdmin\Contact\RegistrationFactory> */
+    /** @use HasFactory<RegistrationFactory> */
     use HasFactory;
 
     // ==================== Mutators ====================

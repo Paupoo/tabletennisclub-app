@@ -6,7 +6,7 @@ namespace App\Models\ClubEvents\Tournament;
 
 use App\Models\ClubAdmin\Club\Table;
 use App\Models\ClubAdmin\Users\User;
-use Database\Factories\ClubAdmin\Contact\ClubEvents\Tournament\TournamentMatchFactory;
+use Database\Factories\ClubEvents\Tournament\TournamentMatchFactory;
 use Eloquent;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;

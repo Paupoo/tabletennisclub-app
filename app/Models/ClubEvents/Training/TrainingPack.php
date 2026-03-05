@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace App\Models\ClubEvents\Training;
 
+use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Subscription\Subscription;
+use App\Models\ClubAdmin\Users\User;
+use App\Models\ClubEvents\Interclub\Season;
+use Database\Factories\TrainingPackFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -14,7 +18,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class TrainingPack extends Model
 {
-    /** @use HasFactory<\Database\Factories\ClubAdmin\Contact\TrainingPackFactory> */
+    /** @use HasFactory<TrainingPackFactory> */
     use HasFactory;
 
     protected $fillable = [

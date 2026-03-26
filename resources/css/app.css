@@ -35,13 +35,115 @@
   color utility to any element that depends on these defaults.
 */
 @layer base {
-  *,
-  ::after,
-  ::before,
-  ::backdrop,
-  ::file-selector-button {
-    border-color: var(--color-gray-200, currentcolor);
-  }
+
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--color-gray-200, currentColor);
+    }
+
+    /* --- Ajout pour les inputs --- */
+
+    /* Supprime les flèches pour Chrome, Safari, Edge, Opera */
+    input::-webkit-outer-spin-button,
+    input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    /* Supprime les flèches pour Firefox */
+    input[type=number] {
+        -moz-appearance: textfield !important;
+        appearance: textfield !important;
+    }
+}
+
+\[:where(&)\]:size-4 {
+    @apply size-4;
+}
+
+/**
+    The lines above are intact.
+    The lines below were added by maryUI installer.
+*/
+
+/** daisyUI */
+@plugin "daisyui" {
+    themes: bumblebee --default, dark --prefersdark;
+}
+
+
+@plugin "daisyui/theme" {
+  name: "bumblebee";
+  default: true;
+  prefersdark: false;
+  color-scheme: "light";
+  --color-base-100: oklch(100% 0 0);
+  --color-base-200: oklch(97% 0 0);
+  --color-base-300: oklch(92% 0 0);
+  --color-base-content: oklch(20% 0 0);
+  --color-primary: #1e40af;
+  --color-primary-content: oklch(98% 0.003 247.858);
+  --color-secondary: #fbbf24;
+  --color-secondary-content: oklch(98% 0.003 247.858);
+  --color-accent: oklch(0% 0 0);
+  --color-accent-content: oklch(100% 0 0);
+  --color-neutral: oklch(43% 0 0);
+  --color-neutral-content: oklch(92% 0.003 48.717);
+  --color-info: #3b82f6;
+  --color-info-content: oklch(28% 0.091 267.935);
+  --color-success: oklch(76% 0.177 163.223);
+  --color-success-content: oklch(37% 0.077 168.94);
+  --color-warning: oklch(82% 0.189 84.429);
+  --color-warning-content: oklch(41% 0.112 45.904);
+  --color-error: oklch(70% 0.191 22.216);
+  --color-error-content: oklch(39% 0.141 25.723);
+  --radius-selector: 0.5rem;
+  --radius-field: 0.25rem;
+  --radius-box: 0.5rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+@plugin "daisyui/theme" {
+  name: "dark";
+  default: false;
+  prefersdark: true;
+  color-scheme: "dark";
+  --color-primary: #fbbf24;
+  --color-primary-content: #241f31;
+  --color-secondary: #fbbf24;
+  --color-secondary-content: oklch(98% 0.003 247.858);
+  --color-info: #3b82f6;
+  --color-info-content: oklch(28% 0.091 267.935);
+  --color-base-100: oklch(25% 0 0);
+  --color-base-200: oklch(20% 0 0);
+  --color-base-content: oklch(95% 0 0); /* Texte clair sur fond sombre */
+  --radius-box: 1rem; /* On garde la même cohérence que le light */
+}
+
+
+/* maryUI */
+@source "../../vendor/robsontenorio/mary/src/View/Components/**/*.php";
+
+/* Theme toggle */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/**
+* Paginator - Traditional style
+* Because Laravel defaults does not match well the design of daisyUI.
+*/
+
+.mary-table-pagination span[aria-current="page"] > span {
+    @apply bg-primary text-base-100
+}
+
+.mary-table-pagination button {
+    @apply cursor-pointer
 }
 
 /* Animations personnalisées */

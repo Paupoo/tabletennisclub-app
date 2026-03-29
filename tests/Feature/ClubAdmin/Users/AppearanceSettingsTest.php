@@ -20,7 +20,7 @@ it('sets "auto" as the default theme when no theme is stored in the database', f
         ->assertSet('theme_choice', 'auto');
 })->group('Users');
 
-it('restores the theme previously saved in the database', function () {
+it('uses the theme previously saved in the database', function () {
     $this->user->update(['theme' => 'dark']);
 
     Livewire::actingAs($this->user)

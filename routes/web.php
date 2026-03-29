@@ -43,6 +43,7 @@ use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Team;
 use App\Models\ClubEvents\Training\Training;
+use App\Support\Breadcrumb;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -106,10 +107,7 @@ Route::get('/clubAdmin/dashboard', function () {
         'rooms' => Room::orderby('name')->get(),
         'trainings' => Training::latest()->take(5)->get(),
         'teams' => Team::all()->load(['captain', 'users']),
-        'breadcrumbs' => [
-            ['title' => 'Home', 'url' => route('dashboard'), 'icon' => 'home'],
-            ['title' => 'Dashboard', 'url' => route('dashboard'), 'icon' => 'home'],
-        ],
+        'breadcrumbs' => Breadcrumb::make()->home()->toArray(),
     ]);
 })->middleware(['auth', 'verified'])
     ->name('dashboard');

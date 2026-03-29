@@ -24,7 +24,7 @@ class Breadcrumb
 
     public function articles(?string $url = null): Breadcrumb
     {
-        return $this->add('Articles', $url ?: route('clubPosts.newsPosts.index'), 'home');
+        return $this->add('Articles', $url ?: route('clubPosts.newsPosts.index'), 's-home');
     }
 
     public function contacts(?string $url = null): Breadcrumb
@@ -39,7 +39,7 @@ class Breadcrumb
 
     public function events(?string $url = null): Breadcrumb
     {
-        return $this->add('Events', $url ?: route('clubPosts.eventPosts.index'), 'home');
+        return $this->add('Events', $url ?: route('clubPosts.eventPosts.index'), 's-home');
     }
 
     public function home(?string $url = null): Breadcrumb
@@ -49,7 +49,7 @@ class Breadcrumb
 
     public function matches(?string $url = null): Breadcrumb
     {
-        return $this->add('Matches', $url ?: route('interclubs.index'), 'home');
+        return $this->add('Matches', $url ?: route('interclubs.index'), 's-home');
     }
 
     public function profile(?string $url = null): Breadcrumb
@@ -64,12 +64,12 @@ class Breadcrumb
 
     public function seasons(?string $url = null): Breadcrumb
     {
-        return $this->add(__('Seasons'), $url ?: route('clubEvents.interclubs.seasons.index'), 'calendar');
+        return $this->add(__('Seasons'), $url ?: route('clubEvents.interclubs.seasons.index'), 'o-calendar');
     }
 
     public function subscriptions(?string $url = null): Breadcrumb
     {
-        return $this->add(__('Subscriptions'), $url ?: route('clubAdmin.subscriptions.index'), 'calendar');
+        return $this->add(__('Subscriptions'), $url ?: route('clubAdmin.subscriptions.index'), 'o-calendar');
     }
 
     public function tables(?string $url = null): Breadcrumb

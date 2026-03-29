@@ -1,4 +1,8 @@
-<x-app-layout :breadcrumbs="$breadcrumbs">
+
+<x-app-layout>
+    <x-slot:breadcrumbs>
+        <x-breadcrumbs :items="$breadcrumbs" />
+    </x-slot:breadcrumbs>
     <x-slot name="header">
         <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center">
             <div>

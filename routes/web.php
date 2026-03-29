@@ -17,27 +17,27 @@ use App\Http\Controllers\ClubAdmin\Contact\ContactAdminController;
 use App\Http\Controllers\ClubAdmin\Contact\ContactController;
 use App\Http\Controllers\ClubAdmin\Contact\InvitationController;
 use App\Http\Controllers\ClubAdmin\Contact\SpamController;
+use App\Http\Controllers\ClubAdmin\Payment\PaymentController;
+use App\Http\Controllers\ClubAdmin\Payment\TransactionController;
+use App\Http\Controllers\ClubAdmin\Subscription\RegistrationController;
+use App\Http\Controllers\ClubAdmin\Subscription\SubscriptionController;
 use App\Http\Controllers\ClubAdmin\Users\ProfileController;
 use App\Http\Controllers\ClubAdmin\Users\UserController;
 use App\Http\Controllers\ClubEvents\Interclub\InterclubController;
 use App\Http\Controllers\ClubEvents\Interclub\ResultsController;
+use App\Http\Controllers\ClubEvents\Interclub\SeasonController;
 use App\Http\Controllers\ClubEvents\Interclub\TeamController;
 use App\Http\Controllers\ClubEvents\Tournament\ChangeTournamentStatusController;
 use App\Http\Controllers\ClubEvents\Tournament\KnockoutPhaseController;
 use App\Http\Controllers\ClubEvents\Tournament\ToggleHasPaidController;
 use App\Http\Controllers\ClubEvents\Tournament\TournamentController;
 use App\Http\Controllers\ClubEvents\Training\TrainingController;
-use App\Http\Controllers\ClubPosts\AdminNewsPostController;
-use App\Http\Controllers\ClubPosts\PublicNewsPostController;
-use App\Http\Controllers\ClubPosts\AdminEventPostController;
-use App\Http\Controllers\ClubPosts\PublicEventPostController;
-use App\Http\Controllers\HomeController;
-use App\Http\Controllers\ClubAdmin\Payment\PaymentController;
-use App\Http\Controllers\ClubAdmin\Subscription\RegistrationController;
-use App\Http\Controllers\ClubEvents\Interclub\SeasonController;
-use App\Http\Controllers\ClubAdmin\Subscription\SubscriptionController;
 use App\Http\Controllers\ClubEvents\Training\TrainingPackController;
-use App\Http\Controllers\ClubAdmin\Payment\TransactionController;
+use App\Http\Controllers\ClubPosts\AdminEventPostController;
+use App\Http\Controllers\ClubPosts\AdminNewsPostController;
+use App\Http\Controllers\ClubPosts\PublicEventPostController;
+use App\Http\Controllers\ClubPosts\PublicNewsPostController;
+use App\Http\Controllers\HomeController;
 use App\Http\Middleware\ProtectAgainstSpam;
 use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Users\User;
@@ -47,16 +47,14 @@ use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Web Routes
+| Public Routes
 |--------------------------------------------------------------------------
 |
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "web" middleware group. Make something great!
+| Here are defined the routes accessible to all visitors of the website.
+| These routes handle the public-facing pages such as the homepage,
+| content display, and general user interactions.
 |
 */
-
-/** Public routes */
 Route::get('/', [HomeController::class, 'index'])
     ->name('home');
 Route::get('/results', [ResultsController::class, 'index'])
@@ -66,6 +64,34 @@ Route::get('/eventPosts', [PublicEventPostController::class, 'index'])
 Route::post('/contact', [ContactController::class, 'store'])
     ->middleware([ProtectAgainstSpam::class, 'throttle:3,60'])
     ->name('contact.store');
+
+/*
+|--------------------------------------------------------------------------
+| Backoffice Routes
+|--------------------------------------------------------------------------
+|
+| Here are defined the routes dedicated to the administration panel.
+| These routes are restricted and allow authorized users to manage
+| the website's content, settings, and internal features.
+|
+*/
+
+Route::prefix('admin/my-space/')
+    ->middleware(['auth', 'verified'])
+    ->group(function (): void {
+        Route::livewire('{user}/profile', 'pages::club-admin.users.user-space.settings')->name('admin.user.profile');
+    });
+
+/*
+|--------------------------------------------------------------------------
+| Existing Routes Cleanup
+|--------------------------------------------------------------------------
+|
+| The routes defined below are legacy or pre-existing routes.
+| They should be reviewed, refactored, or removed to keep
+| the routing file clean, consistent, and maintainable.
+|
+*/
 
 /**
  * Dashboard with sample of most data

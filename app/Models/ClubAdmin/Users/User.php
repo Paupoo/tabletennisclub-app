@@ -139,6 +139,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'licence' => 'string',
         'force_list' => 'integer',
         'avatar_url' => 'string',
+        'theme' => 'string',
     ];
 
     /**
@@ -165,6 +166,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'sex',
         'street',
         'avatar_url',
+        'theme',
     ];
 
     /**

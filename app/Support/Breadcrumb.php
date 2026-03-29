@@ -15,9 +15,9 @@ class Breadcrumb
         return new static;
     }
 
-    public function add(string $title, ?string $url = null, ?string $icon = null): Breadcrumb
+    public function add(string $label, ?string $link = null, ?string $icon = null): Breadcrumb
     {
-        $this->items[] = compact('title', 'url', 'icon');
+        $this->items[] = compact('label', 'link', 'icon');
 
         return $this;
     }
@@ -44,7 +44,7 @@ class Breadcrumb
 
     public function home(?string $url = null): Breadcrumb
     {
-        return $this->add('Admin', $url ?: route('dashboard'), 'home');
+        return $this->add(__('Admin Pannel'), $url ?: route('dashboard'), 's-home');
     }
 
     public function matches(?string $url = null): Breadcrumb

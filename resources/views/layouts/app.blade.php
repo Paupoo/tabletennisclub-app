@@ -6,9 +6,10 @@
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" name="viewport">
     <meta content="{{ csrf_token() }}" name="csrf-token">
-    <title>{{ isset($title) ? $title . ' - ' . config('app.name') : config('app.name') }}</title>
+    <title>{{ isset($title) ? config('app.name') . ' - ' . $title : config('app.name') }}</title>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @livewireStyles
 
 </head>
 
@@ -73,7 +74,7 @@
                     <x-menu-item icon="o-calendar-days" link="#" title="{{ __('Calendar') }}" />
                     <x-menu-item icon="o-credit-card" link="#" title="{{ __('Affiliation') }}" />
                     <x-menu-item disabled icon="o-lock-closed" title="{{ __('Affiliation') }}" />
-                    <x-menu-item icon="o-cog-8-tooth" link="#" title="{{ __('Settings') }}" />
+                    <x-menu-item icon="o-cog-8-tooth" :link="route('admin.user.profile', $user)" title="{{ __('Settings') }}" />
                     <x-menu-separator />
                     <x-menu-item class="text-error" icon="o-power" link="#" no-wire-navigate
                         title="{{ __('Logout') }}" />
@@ -129,9 +130,7 @@
         {{-- The `$slot` goes here --}}
         <x-slot:content>
             <div class="mb-10 mt-2 flex items-center justify-between">
-                @if (isset($breadcrumbs))
-                    {{ $breadcrumbs }}
-                @endif
+               {{ $breadcrumbs ?? null }}
             </div>
 
             {{ $slot }}
@@ -142,6 +141,7 @@
 
     {{-- TOAST area --}}
     <x-toast position="toast-bottom toast-start" />
+    @livewireScripts
 </body>
 
 </html>

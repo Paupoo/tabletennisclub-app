@@ -76,8 +76,7 @@
                     <x-menu-item disabled icon="o-lock-closed" title="{{ __('Affiliation') }}" />
                     <x-menu-item icon="o-cog-8-tooth" :link="route('admin.user.profile', $user)" title="{{ __('Settings') }}" />
                     <x-menu-separator />
-                    <x-menu-item class="text-error" icon="o-power" link="#" no-wire-navigate
-                        title="{{ __('Logout') }}" />
+                    <livewire:actions.logout />
                 </x-menu-sub>
 
                 <x-menu-separator />

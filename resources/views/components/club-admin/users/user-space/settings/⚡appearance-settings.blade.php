@@ -2,6 +2,7 @@
 
 use App\Models\ClubAdmin\Users\User;
 use Illuminate\Support\Collection;
+use Livewire\Attributes\Rule;
 use Livewire\Component;
 use Mary\Traits\Toast;
 
@@ -13,6 +14,7 @@ new class extends Component
     
     public Collection $theme_options;
     
+    #[Rule('string|required|max:20|in:auto,light,dark')]
     public string $theme_choice;
 
     public function mount(): void

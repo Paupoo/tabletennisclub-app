@@ -25,7 +25,7 @@ class AppBrand extends Component
     {
         return <<<'HTML'
                    
-                <a href="{{ route('dashboard') }}" wire:navigate>
+                <a href="{{ route('home') }}" wire:navigate>
                     <!-- Hidden when collapsed -->
                     <div {{ $attributes->class(["hidden-when-collapsed"]) }}>
                         <div class="flex flex-col items-center shrink-0 gap-2">

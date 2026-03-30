@@ -1,5 +1,8 @@
+@php
+    $user = Auth::user();
+@endphp
 <!DOCTYPE html>
-<html data-db-theme="{{ App\Models\ClubAdmin\Users\User::first()->theme ?? 'auto' }}"
+<html data-db-theme="{{ $user->theme ?? 'auto' }}"
     lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
 <head>
@@ -14,10 +17,19 @@
 </head>
 
 <body class="bg-base-200 min-h-screen font-sans antialiased" x-data="{
+    // On récupère le thème depuis le serveur comme valeur par défaut
+    dbTheme: '{{ App\Models\ClubAdmin\Users\User::first()->theme ?? 'auto' }}',
+    
+    // init() s'exécute automatiquement au chargement de la page ET lors des navigations Livewire
+    init() {
+        // On donne la priorité au localStorage, sinon on prend la DB
+        let currentTheme = localStorage.getItem('theme') || this.dbTheme;
+        this.updateTheme(currentTheme);
+    },
+
     updateTheme(theme) {
         if (theme === 'auto') {
             localStorage.removeItem('theme');
-            // On détecte le thème système actuel
             const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
             document.documentElement.setAttribute('data-theme', systemTheme);
         } else {
@@ -42,12 +54,6 @@
 
     {{-- MAIN --}}
     <x-main>
-
-        @php
-
-            $user = App\Models\ClubAdmin\Users\User::firstOrFail();
-        @endphp
-
         {{-- SIDEBAR --}}
         <x-slot:sidebar class="bg-base-100 lg:bg-inherit" collapsible drawer="main-drawer">
 
@@ -67,14 +73,14 @@
                         </div>
                     </x-slot:title>
 
-                    <x-menu-item icon="o-user" link="{{ route('profile.edit', $user) }}"
+                    <x-menu-item icon="o-user" link="{{ route('admin.user.profile', $user) }}"
                         title="{{ __('My profile') }}" />
                     <x-menu-item icon="o-users" link="#" title="{{ __('My team(s)') }}" />
                     <x-menu-item icon="o-star" link="#" title="{{ __('My registrations') }}" />
                     <x-menu-item icon="o-calendar-days" link="#" title="{{ __('Calendar') }}" />
                     <x-menu-item icon="o-credit-card" link="#" title="{{ __('Affiliation') }}" />
                     <x-menu-item disabled icon="o-lock-closed" title="{{ __('Affiliation') }}" />
-                    <x-menu-item icon="o-cog-8-tooth" :link="route('admin.user.profile', $user)" title="{{ __('Settings') }}" />
+                    <x-menu-item icon="o-cog-8-tooth" :link="route('admin.user.settings', $user)" title="{{ __('Settings') }}" />
                     <x-menu-separator />
                     <livewire:actions.logout />
                 </x-menu-sub>

@@ -186,7 +186,7 @@
 }
 
 /* Styles personnalisés pour le club */
-.btn-primary {
+/* .btn-primary {
   @apply bg-club-blue text-white px-6 py-3 rounded-lg font-semibold hover:bg-club-blue-light transition-colors;
 }
 
@@ -196,7 +196,7 @@
 
 .card {
   @apply bg-white rounded-lg shadow-xs border p-6;
-}
+} */
 
 /* Smooth scroll pour les ancres */
 html {

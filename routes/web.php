@@ -80,7 +80,8 @@ Route::post('/contact', [ContactController::class, 'store'])
 Route::prefix('admin/my-space/')
     ->middleware(['auth', 'verified'])
     ->group(function (): void {
-        Route::livewire('{user}/profile', 'pages::club-admin.users.user-space.settings')->name('admin.user.profile');
+        Route::livewire('{user}/profile', 'pages::club-admin.users.user-space.profile')->name('admin.user.profile');
+        Route::livewire('{user}/settings', 'pages::club-admin.users.user-space.settings')->name('admin.user.settings');
     });
 
 /*
@@ -97,7 +98,7 @@ Route::prefix('admin/my-space/')
 /**
  * Dashboard with sample of most data
  */
-Route::get('/clubAdmin/dashboard', function () {
+Route::get('/admin/dashboard', function () {
     return view('clubAdmin.dashboard', [
         'users' => User::latest()->take(5)->get(),
         'users_total_active' => User::where('is_active', '=', true)->count(),

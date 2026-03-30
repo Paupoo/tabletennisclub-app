@@ -13,6 +13,8 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->string('theme', 20)->default('auto')->nullable();
+            $table->string('guardian_phone_number', 20)->nullable();
+            $table->string('photo')->nullable();
         });
     }
 
@@ -23,6 +25,8 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->dropColumn('theme');
+            $table->dropColumn('guardian_phone_number');
+            $table->dropColumn('photo');
         });
     }
 };

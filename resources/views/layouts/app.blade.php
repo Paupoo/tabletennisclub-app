@@ -75,10 +75,10 @@
 
                     <x-menu-item icon="o-user" link="{{ route('admin.user.profile', $user) }}"
                         title="{{ __('My profile') }}" />
-                    <x-menu-item icon="o-users" link="#" title="{{ __('My team(s)') }}" />
-                    <x-menu-item icon="o-star" link="#" title="{{ __('My registrations') }}" />
-                    <x-menu-item icon="o-calendar-days" link="#" title="{{ __('Calendar') }}" />
-                    <x-menu-item icon="o-credit-card" link="#" title="{{ __('Affiliation') }}" />
+                    <x-menu-item icon="o-users" link="{{ route('admin.user.teams', $user) }}" title="{{ __('My team(s)') }}" />
+                    <x-menu-item icon="o-star" link="{{ route('admin.user.event-subscription', $user) }}" title="{{ __('My registrations') }}" />
+                    <x-menu-item icon="o-calendar-days" link="{{ route('admin.user.calendar', $user) }}" title="{{ __('Calendar') }}" />
+                    <x-menu-item icon="o-credit-card" link="{{ route('admin.user.registration-management', $user) }}" title="{{ __('Affiliation') }}" />
                     <x-menu-item disabled icon="o-lock-closed" title="{{ __('Affiliation') }}" />
                     <x-menu-item icon="o-cog-8-tooth" :link="route('admin.user.settings', $user)" title="{{ __('Settings') }}" />
                     <x-menu-separator />
@@ -95,16 +95,16 @@
                 </x-menu-sub>
 
                 <x-menu-sub icon="o-inbox-stack" title="{{ __('Members Admin') }}">
-                    <x-menu-item icon="o-users" link="" title="{{ __('Users') }}" />
-                    <x-menu-item icon="o-credit-card" link="" title="{{ __('Registrations') }}" />
-                    <x-menu-item icon="o-banknotes" link="" title="{{ __('Payments') }}" />
+                    <x-menu-item icon="o-users" link="{{ route('admin.users.index') }}" title="{{ __('Users') }}" />
+                    <x-menu-item icon="o-credit-card" link="{{  route('admin.users.registrations') }}" title="{{ __('Registrations') }}" />
+                    <x-menu-item icon="o-banknotes" link="{{ route('admin.users.payments') }}" title="{{ __('Payments') }}" />
                 </x-menu-sub>
                 <x-menu-sub icon="o-cog-6-tooth" link="#" title="{{ __('Club') }}">
                 </x-menu-sub>
 
                 <x-menu-separator />
 
-                <x-menu-item icon="o-academic-cap" link="" title="{{ __('Trainings') }}" />
+                <x-menu-item icon="o-academic-cap" link="{{ route('admin.trainings.index') }}" title="{{ __('Trainings') }}" />
 
                 <x-menu-sub icon="o-calendar-days" link="#" title="{{ __('Interclubs') }}">
                     <x-menu-item icon="o-identification" link="" title="{{ __('Teams') }}" />
@@ -115,7 +115,7 @@
                 </x-menu-sub>
 
                 <x-menu-sub icon="o-star" title="{{ __('Events') }}">
-                    <x-menu-item icon="o-trophy" link="" title="{{ __('Tournaments') }}">
+                    <x-menu-item icon="o-trophy" link="{{ route('admin.tournaments.index') }}" title="{{ __('Tournaments') }}">
                     </x-menu-item>
                 </x-menu-sub>
 

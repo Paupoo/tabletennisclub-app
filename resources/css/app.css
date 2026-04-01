@@ -1,7 +1,5 @@
 @import 'tailwindcss';
 
-@plugin '@tailwindcss/forms';
-
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
@@ -145,6 +143,10 @@
 .mary-table-pagination button {
     @apply cursor-pointer
 }
+
+/**
+* Custom styles for the pubic site
+*/
 
 /* Animations personnalisées */
 @keyframes fadeInUp {

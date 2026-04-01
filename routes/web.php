@@ -82,6 +82,29 @@ Route::prefix('admin/my-space/')
     ->group(function (): void {
         Route::livewire('{user}/profile', 'pages::club-admin.users.user-space.profile')->name('admin.user.profile');
         Route::livewire('{user}/settings', 'pages::club-admin.users.user-space.settings')->name('admin.user.settings');
+        Route::livewire('{user}/teams', 'pages::club-admin.users.user-space.user-teams')->name('admin.user.teams');
+        Route::livewire('{user}/calendar', 'pages::club-admin.users.user-space.calendar')->name('admin.user.calendar');
+        Route::livewire('{user}/event-subscription', 'pages::club-admin.users.user-space.event-subscription')->name('admin.user.event-subscription');
+        Route::livewire('{user}/registration-management', 'pages::club-admin.users.user-space.registration-management')->name('admin.user.registration-management');
+    });
+
+Route::prefix('admin/club-events/')
+    ->middleware(['auth', 'verified'])
+    ->group(function (): void {
+        // Users admin
+        Route::livewire('users', 'pages::club-admin.users.index')->name('admin.users.index');
+        Route::livewire('users/create', 'pages::club-admin.users.form')->name('admin.users.create');
+        Route::livewire('users/{user}/edit', 'pages::club-admin.users.form')->name('admin.users.edit');
+        Route::livewire('users/payments', 'pages::club-admin.users.payments')->name('admin.users.payments');
+        Route::livewire('users/registrations', 'pages::club-admin.users.registrations')->name('admin.users.registrations');
+
+        // Tournaments
+        Route::livewire('tournaments', 'pages::club-events.tournaments.index')->name('admin.tournaments.index');
+        Route::livewire('tournaments/{tournament}/live-center', 'pages::club-events.tournaments.live-center')->name('admin.tournaments.live-center');
+        Route::livewire('tournaments/wizard', 'pages::club-events.tournaments.wizard')->name('admin.tournaments.wizard');
+
+        // Trainings
+        Route::livewire('trainings', 'pages::club-events.trainings.index')->name('admin.trainings.index');
     });
 
 /*

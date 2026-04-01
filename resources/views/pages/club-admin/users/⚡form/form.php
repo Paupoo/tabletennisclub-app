@@ -1,0 +1,373 @@
+<?php
+
+use App\Models\ClubAdmin\Users\User;
+use App\Support\Breadcrumb;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
+use Livewire\Attributes\Rule;
+use Livewire\Component;
+use Livewire\WithFileUploads;
+use Mary\Traits\Toast;
+use PHPUnit\Event\Code\Throwable;
+
+new class extends Component
+{
+    use Toast, WithFileUploads;
+
+    public ?User $user = null;
+
+    public int $imageKey = 0; // pour gérer l'état de la photo et son delete en JS
+
+    // Personal Info
+
+    #[Rule('required|string')]
+    public string $first_name = '';
+
+    #[Rule('required|string')]
+    public string $last_name = '';
+
+    #[Rule('required|string')]
+    public ?string $gender = null;
+
+    #[Rule('required|email')]
+    public string $email = '';
+
+    #[Rule('required|string')]
+    public string $street = '';
+
+    #[Rule('required|integer|between:1000,9999')]
+    public string $postal_code = '';
+
+    #[Rule('required|string')]
+    public string $city = '';
+
+    #[Rule('required|string')]
+    public string $phone_number = '';
+
+    #[Rule('required|string')]
+    public string $birthdate = '';
+
+    #[Rule('nullable|string')]
+    public ?string $parent_phone_number = null;
+
+    public $photo = null;          // upload Livewire uniquement
+
+    public ?string $currentPhoto = null; // photo persistée
+
+    // Security
+    public string $password = '';
+
+    public string $password_confirmation = '';
+
+    // Registration
+
+    #[Rule('nullable|string')]
+    public ?string $licence_type = null;
+
+    #[Rule('required_if:licence_type,competitive|nullable|digits:6,')]
+    public ?string $licence = null;
+
+    #[Rule('string|required_if:licence_type,competitive')]
+    public ?string $ranking = null;
+
+    public array $trainings_ids = [];
+
+    // Permissions
+
+    #[Rule('required|boolean')]
+    public bool $is_active = false;
+
+    #[Rule('required|boolean')]
+    public bool $is_committee_member = false;
+
+    #[Rule('required|boolean')]
+    public bool $is_admin = false;
+
+    public bool $deleteModal = false;
+
+    /**
+     * Effacer la photo
+     */
+    public function deletePhoto(): void
+    {
+        if (! $this->user || ! $this->user->photo) {
+            return;
+        }
+
+        $oldPath = str_replace('/storage/', '', $this->user->photo);
+        Storage::disk('public')->delete($oldPath);
+
+        $this->user->update(['photo' => null]);
+
+        $this->currentPhoto = null;
+        $this->photo = null;
+
+        $this->imageKey++;
+        $this->deleteModal = false;
+
+        $this->success(__('Photo deleted'));
+    }
+
+    /**
+     * Gère l'upload et la suppression de l'ancienne image
+     */
+    protected function handlePhotoUpload(User $user): void
+    {
+        if (! $this->photo instanceof \Livewire\Features\SupportFileUploads\TemporaryUploadedFile) {
+            return;
+        }
+
+        // supprimer ancienne
+        if ($user->photo) {
+            $oldPath = str_replace('/storage/', '', $user->photo);
+            Storage::disk('public')->delete($oldPath);
+        }
+
+        // stocker nouvelle
+        $path = $this->photo->store('users', 'public');
+
+        $user->update([
+            'photo' => "/storage/$path",
+        ]);
+
+        $this->currentPhoto = "/storage/$path";
+        $this->photo = null;
+    }
+
+    public function mount(?User $user): void
+    {
+        if ($user && $user->exists) {
+            $this->first_name = $user->first_name;
+            $this->last_name = $user->last_name;
+            $this->gender = $user->gender;
+            $this->email = $user->email;
+            $this->street = $user->street;
+            $this->postal_code = $user->postal_code;
+            $this->city = $user->city;
+            $this->phone_number = $user->phone_number;
+            $this->birthdate = $user->birthdate;
+            $this->parent_phone_number = $user->parent_phone_number;
+            $this->currentPhoto = $user->photo;
+            $this->licence_type = $user->licence_type;
+            $this->licence = $user->licence;
+            $this->ranking = $user->ranking ?? 'N/A';
+            $this->is_active = $user->is_active;
+            $this->is_committee_member = $user->is_committee_member;
+            $this->is_admin = $user->is_admin;
+        }
+    }
+
+    public function with(): array
+    {
+        return [
+            'licence_types' => collect([['id' => 'recreative', 'name' => __('Recreative')], ['id' => 'competitive', 'name' => __('Competitive')]]),
+            'genders' => [['id' => 'male', 'name' => __('Male')], ['id' => 'female', 'name' => __('Female')]],
+            'rankings' => [['id' => 'NA', 'name' => 'N/A'], ['id' => 'B0', 'name' => 'B0'], ['id' => 'B2', 'name' => 'B2'], ['id' => 'B4', 'name' => 'B4'], ['id' => 'B6', 'name' => 'B6'], ['id' => 'C0', 'name' => 'C0'], ['id' => 'C2', 'name' => 'C2'], ['id' => 'C4', 'name' => 'C4'], ['id' => 'C6', 'name' => 'C6'], ['id' => 'D0', 'name' => 'D0'], ['id' => 'D2', 'name' => 'D2'], ['id' => 'D4', 'name' => 'D4'], ['id' => 'D6', 'name' => 'D6'], ['id' => 'E0', 'name' => 'E0'], ['id' => 'E2', 'name' => 'E2'], ['id' => 'E4', 'name' => 'E4'], ['id' => 'E6', 'name' => 'E6'], ['id' => 'NC', 'name' => 'NC']],
+            'trainings' => collect([
+                [
+                    'id' => 1,
+                    'day' => __('Monday'),
+                    'group' => __('Free'),
+                    'availablePlaces' => null,
+                ],
+                [
+                    'id' => 2,
+                    'day' => __('Monday'),
+                    'group' => __('Directed - Starters'),
+                    'availablePlaces' => '2',
+                ],
+                // [
+                //     'id' => 3,
+                //     'day' => __('Tuesday'),
+                //     'group' => __('Directed - Advanced'),
+                //     'availablePlaces' => 0
+                // ],
+                [
+                    'id' => 4,
+                    'day' => __('Wednesday'),
+                    'group' => __('Directed - Kids'),
+                    'availablePlaces' => 3,
+                ],
+                [
+                    'id' => 5,
+                    'day' => __('Wednesday'),
+                    'group' => __('Directed - Kids'),
+                    'availablePlaces' => 1,
+                ],
+                // [
+                //     'id' => 6,
+                //     'day' => __('Saturday'),
+                //     'group' => __('Directed - Starters'),
+                //     'availablePlaces' => 0
+                // ],
+                [
+                    'id' => 7,
+                    'day' => __('Saturday'),
+                    'group' => __('Directed - Advanced'),
+                    'availablePlaces' => 4,
+                ],
+            ]),
+            'quotes' => [
+                [
+                    'text' => "A stranger is just a friend you haven't met yet.",
+                    'author' => 'Will Rogers',
+                ],
+                [
+                    'text' => 'Coming together is a beginning; keeping together is progress; working together is success.',
+                    'author' => 'Henry Ford',
+                ],
+                [
+                    'text' => 'Alone we can do so little; together we can do so much.',
+                    'author' => 'Helen Keller',
+                ],
+                [
+                    'text' => 'The strength of the team is each individual member. The strength of each member is the team.',
+                    'author' => 'Phil Jackson',
+                ],
+                [
+                    'text' => 'Every new friend is a new adventure... the start of more memories.',
+                    'author' => 'Patrick Lindsay',
+                ],
+                [
+                    'text' => 'Growth is never by mere chance; it is the result of forces working together.',
+                    'author' => 'James Cash Penney',
+                ],
+                [
+                    'text' => "Le plus beau métier d'homme est le métier d'unir les hommes.",
+                    'author' => 'Antoine de Saint-Exupéry',
+                ],
+                [
+                    'text' => 'Chacun est responsable de tous. Chacun est seul responsable de tous.',
+                    'author' => 'Antoine de Saint-Exupéry',
+                ],
+                [
+                    'text' => 'On ne peut rien faire sans les autres.',
+                    'author' => 'Paul Éluard',
+                ],
+                [
+                    'text' => "La fraternité n'est qu'une vaine lueur si elle n'est pas une action.",
+                    'author' => 'Albert Camus',
+                ],
+                [
+                    'text' => "Le sport est une causerie entre le corps et l'esprit, mais le club est une conversation entre les hommes.",
+                    'author' => 'Jean Giraudoux',
+                ],
+                [
+                    'text' => "Le sport, c'est l'école de la solidarité et de la fraternité.",
+                    'author' => 'Abdou Diouf',
+                ],
+                [
+                    'text' => "Dans une équipe, il n'y a pas de passagers, il n'y a qu'un équipage.",
+                    'author' => 'Aimé Jacquet',
+                ],
+                [
+                    'text' => "Le sport n'est pas seulement une affaire de muscles, c'est une affaire de cœur et de partage.",
+                    'author' => 'Guy Drut',
+                ],
+                [
+                    'text' => "L'esprit d'équipe, c'est des hommes qui se respectent et qui se font confiance.",
+                    'author' => 'Bernard Laporte',
+                ],
+            ],
+            'breadcrumbs' => Breadcrumb::make()
+                ->home()
+                ->users()
+                ->current($this->user?->exists ? __('Edit') : __('Create'))
+                ->toArray(),
+        ];
+    }
+
+    /**
+     * Pour utiliser l'objet Password, on utilise la méthode rules() protégée.
+     * Note : Livewire fusionne automatiquement les #[Rule] et cette méthode.
+     *
+     * @return array{password: array<Password|string>}
+     */
+    public function rules(): array
+    {
+        return [
+            'password' => [
+                // Si l'utilisateur existe, on autorise 'nullable', sinon 'required'
+                $this->user?->exists
+                    ? 'nullable'
+                    : 'required',
+                'confirmed',
+                Password::min(8)->letters()->numbers()->symbols()->uncompromised(),
+            ],
+            'password_confirmation' => [
+                $this->user?->exists
+                    ? 'nullable'
+                    : 'required',
+            ],
+            'photo' => [
+                'nullable',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:2024',
+            ],
+        ];
+    }
+
+    public function save(): void
+    {
+        try {
+            $validated = $this->validate();
+        } catch (ValidationException $e) {
+            $this->error(
+                'Une erreur est survenue. Veuillez vérifier les champs du formulaire.'
+            );
+
+            throw $e; // important pour conserver l'affichage des erreurs sous les champs
+        } catch (Throwable $e) {
+
+            report($e);
+
+            $this->error(
+                'Une erreur inattendue est survenue. Veuillez réessayer.'
+            );
+        }
+
+        if ($this->user) {
+            unset($validated['password_confirmation']);
+            unset($validated['photo']);
+
+            // $validated['password'] = Hash::make($validated['password']);
+
+            $this->handlePhotoUpload($this->user);
+
+            if (! empty($validated['password'])) {
+                $validated['password'] = Hash::make($validated['password']);
+            } else {
+                unset($validated['password']); // Ne pas écraser le mot de passe s'il est vide
+            }
+
+            $this->user->update($validated);
+
+            $this->success('User '.$this->user->first_name.' created with success', redirectTo: route('admin.users.index'));
+        } else {
+            unset($validated['password_confirmation']);
+            unset($validated['photo']);
+
+            $validated['password'] = Hash::make($validated['password']);
+
+            $newUser = User::create($validated);
+            if ($this->photo) {
+                $url = $this->photo->store('users', 'public');
+                $newUser->update(['photo' => "/storage/$url"]);
+            }
+
+            $this->success('User '.$newUser->first_name.' created with success', redirectTo: route('admin.users.index'));
+        }
+    }
+
+    public function render(): View
+    {
+        return $this->view()
+            ->title($this->user?->exists
+                ? __('Update ').$this->first_name.' '.$this->last_name
+                : __('Create new user'));
+    }
+};

@@ -32,10 +32,10 @@
                     <x-group :options="$genders" class="btn-soft" inline label="{{ __('Gender') }}"
                         wire:model="gender" />
                     <x-input label="{{ __('Street') }}" wire:model="street" />
-                    <x-input autocomplete="postal-code" inputmode="numeric" label="{{ __('Postal Code') }}"
+                    <x-input autocomplete="city_code" inputmode="numeric" label="{{ __('Postal Code') }}"
                         max="9999" min="1000" pattern="[0-9]*" type="number"
-                        wire:model.live.debounce.500ms="postal_code" />
-                    <x-input label="{{ __('City') }}" wire:model="city" />
+                        wire:model.live.debounce.500ms="city_code" />
+                    <x-input label="{{ __('City') }}" wire:model="city_name" />
                     <x-input label="{{ __('Phone Number') }}" wire:model="phone_number" />
                     <x-datetime label="{{ __('Birthdate') }}" wire:model="birthdate" />
                     <x-input label="{{ __('Parent or tutor phone number') }}" wire:model="parent_phone_number" />
@@ -67,8 +67,8 @@
             <div class="col-span-6 md:col-span-4">
                 <x-password
                     hint="{{ __('Minimum 8 charachters, with at least 1 letter, 1 number and 1 special character') }}"
-                    label="Password" wire:model="password" />
-                <x-password label="Password Confirmation" wire:model="password_confirmation" />
+                    label="Password" wire:model.live.debounce="password" />
+                <x-password label="Password Confirmation" wire:model.live.debounce="password_confirmation" />
             </div>
             <div class="col-span-6">
                 <x-menu-separator />
@@ -83,8 +83,8 @@
                 <x-group :options="$licence_types" class="btn-soft" inline label="{{ __('Licence Type') }}"
                     wire:model.live="licence_type" />
                 @if ($licence_type == 'competitive')
-                    <x-input label="{{ __('Licence *') }}" mandatory numeric wire:model="licence" />
-                    <x-select :options="$rankings" icon="o-scale" label="{{ __('Ranking') }}" wire:model="ranking" />
+                    <x-input label="{{ __('Licence *') }}" mandatory numeric wire:model.live.debounce="licence" />
+                    <x-select :options="$rankings" icon="o-scale" label="{{ __('Ranking') }}" wire:model.live="ranking" />
                 @endif
                 <x-choices :options="$trainings"
                     hint="{{ __('Select the trainings you wish to attend to (available sessions only)') }}"
@@ -153,9 +153,18 @@
                 type="submit" />
         </x-slot:actions>
     </x-form>
-
+    
+@if ($errors->any())
+    <div class="p-3 bg-red-100 text-red-700 rounded">
+        <ul>
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
     <!-- FILTER DRAWER -->
-    <x-drawer class="lg:w-1/3" right separator title="Filters" wire:model="drawer" with-close-button>
+    {{-- <x-drawer class="lg:w-1/3" right separator title="Filters" wire:model="drawer" with-close-button>
         <x-input @keydown.enter="$wire.drawer = false" icon="o-magnifying-glass" placeholder="Search..."
             wire:model.live.debounce="search" />
 
@@ -172,8 +181,7 @@
 
         <x-slot:actions>
             <x-button @click="$wire.deleteModal = false" label="{{ __('Cancel') }}" />
-            {{-- Le bouton "Confirm" déclenche la vraie suppression --}}
             <x-button class="btn-error" label="{{ __('Delete') }}" spinner wire:click="deletePhoto" />
         </x-slot:actions>
-    </x-modal>
+    </x-modal> --}}
 </div>

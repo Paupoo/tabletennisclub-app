@@ -1,14 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
+use App\Enums\Gender;
 use App\Models\ClubAdmin\Users\User;
 use App\Support\Breadcrumb;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule as ValidationRule;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Attributes\Rule;
+use Livewire\Attributes\Validate;
 use Livewire\Component;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
 use Mary\Traits\Toast;
 use PHPUnit\Event\Code\Throwable;
@@ -17,63 +24,31 @@ new class extends Component
 {
     use Toast, WithFileUploads;
 
-    public ?User $user = null;
+    #[Rule('nullable')]
+    public Carbon $birthdate;
 
-    public int $imageKey = 0; // pour gérer l'état de la photo et son delete en JS
+    #[Rule('required|integer|between:1000,9999')]
+    public string $city_code = '';
+
+    #[Rule('required|string')]
+    public string $city_name = '';
+
+    public ?string $currentPhoto = null; // photo persistée
+
+    public bool $deleteModal = false;
+
+    #[Rule('required|email')]
+    public string $email = '';
 
     // Personal Info
 
     #[Rule('required|string')]
     public string $first_name = '';
 
-    #[Rule('required|string')]
-    public string $last_name = '';
+    #[Rule('required')]
+    public ?Gender $gender = Gender::MEN;
 
-    #[Rule('required|string')]
-    public ?string $gender = null;
-
-    #[Rule('required|email')]
-    public string $email = '';
-
-    #[Rule('required|string')]
-    public string $street = '';
-
-    #[Rule('required|integer|between:1000,9999')]
-    public string $postal_code = '';
-
-    #[Rule('required|string')]
-    public string $city = '';
-
-    #[Rule('required|string')]
-    public string $phone_number = '';
-
-    #[Rule('required|string')]
-    public string $birthdate = '';
-
-    #[Rule('nullable|string')]
-    public ?string $parent_phone_number = null;
-
-    public $photo = null;          // upload Livewire uniquement
-
-    public ?string $currentPhoto = null; // photo persistée
-
-    // Security
-    public string $password = '';
-
-    public string $password_confirmation = '';
-
-    // Registration
-
-    #[Rule('nullable|string')]
-    public ?string $licence_type = null;
-
-    #[Rule('required_if:licence_type,competitive|nullable|digits:6,')]
-    public ?string $licence = null;
-
-    #[Rule('string|required_if:licence_type,competitive')]
-    public ?string $ranking = null;
-
-    public array $trainings_ids = [];
+    public int $imageKey = 0; // pour gérer l'état de la photo et son delete en JS
 
     // Permissions
 
@@ -81,12 +56,47 @@ new class extends Component
     public bool $is_active = false;
 
     #[Rule('required|boolean')]
-    public bool $is_committee_member = false;
-
-    #[Rule('required|boolean')]
     public bool $is_admin = false;
 
-    public bool $deleteModal = false;
+    #[Rule('required|boolean')]
+    public bool $is_committee_member = false;
+
+    // Registration
+
+    #[Rule('required|boolean')]
+    public bool $is_competitor = false;
+
+    #[Rule('required|string')]
+    public string $last_name = '';
+
+    #[Validate()]
+    public ?string $licence = null;
+
+    #[Rule('nullable|string')]
+    public ?string $licence_type = null;
+
+    #[Rule('nullable|string')]
+    public ?string $parent_phone_number = null;
+
+    // Security
+    #[Validate()]
+    public string $password = '';
+
+    public string $password_confirmation = '';
+
+    #[Rule('required|string')]
+    public string $phone_number = '';
+
+    public $photo = null;          // upload Livewire uniquement
+
+    public ?string $ranking = null;
+
+    #[Rule('required|string')]
+    public string $street = '';
+
+    public array $trainings_ids = [];
+
+    public ?User $user = null;
 
     /**
      * Effacer la photo
@@ -111,32 +121,6 @@ new class extends Component
         $this->success(__('Photo deleted'));
     }
 
-    /**
-     * Gère l'upload et la suppression de l'ancienne image
-     */
-    protected function handlePhotoUpload(User $user): void
-    {
-        if (! $this->photo instanceof \Livewire\Features\SupportFileUploads\TemporaryUploadedFile) {
-            return;
-        }
-
-        // supprimer ancienne
-        if ($user->photo) {
-            $oldPath = str_replace('/storage/', '', $user->photo);
-            Storage::disk('public')->delete($oldPath);
-        }
-
-        // stocker nouvelle
-        $path = $this->photo->store('users', 'public');
-
-        $user->update([
-            'photo' => "/storage/$path",
-        ]);
-
-        $this->currentPhoto = "/storage/$path";
-        $this->photo = null;
-    }
-
     public function mount(?User $user): void
     {
         if ($user && $user->exists) {
@@ -145,18 +129,157 @@ new class extends Component
             $this->gender = $user->gender;
             $this->email = $user->email;
             $this->street = $user->street;
-            $this->postal_code = $user->postal_code;
-            $this->city = $user->city;
+            $this->city_code = $user->city_code;
+            $this->city_name = $user->city_name;
             $this->phone_number = $user->phone_number;
             $this->birthdate = $user->birthdate;
             $this->parent_phone_number = $user->parent_phone_number;
             $this->currentPhoto = $user->photo;
-            $this->licence_type = $user->licence_type;
+            $this->licence_type = $user->is_competitor ? 'competitive' : 'recreative';
             $this->licence = $user->licence;
             $this->ranking = $user->ranking ?? 'N/A';
+            $this->is_competitor = $user->is_competitor;
             $this->is_active = $user->is_active;
             $this->is_committee_member = $user->is_committee_member;
             $this->is_admin = $user->is_admin;
+        }
+    }
+
+    public function render(): View
+    {
+        return $this->view()
+            ->title($this->user?->exists
+                ? __('Update ') . $this->first_name . ' ' . $this->last_name
+                : __('Create new user'));
+    }
+
+    public function updatedLicenceType(string $value): void
+{
+    $this->is_competitor = $value === 'competitive';
+
+    // On nettoie uniquement les erreurs, pas les valeurs
+    $this->resetErrorBag(['licence', 'ranking']);
+}
+
+    // Hook déclenché par wire:model.live à chaque modification du champ
+    // public function updatedLicence(?string $value): void
+    // {
+    //         $this->validateOnly('licence');
+    // }
+
+    
+
+    /**
+     * Pour utiliser l'objet Password, on utilise la méthode rules() protégée.
+     * Note : Livewire fusionne automatiquement les #[Rule] et cette méthode.
+     *
+     * @return array{password: array<Password|string>}
+     */
+    public function rules(): array
+    {
+        return [
+            'licence' => [
+                'nullable',
+                ValidationRule::when(
+                    $this->licence_type === 'competitive',
+                    ['required', 'digits:6', ValidationRule::unique('users', 'licence')->ignore($this->user?->id)]
+                ),
+            ],
+            'password' => [
+                // Si l'utilisateur existe, on autorise 'nullable', sinon 'required'
+                $this->user?->exists
+                    ? 'nullable'
+                    : 'required',
+                'confirmed',
+                Password::min(8)->letters()->numbers()->symbols()->uncompromised(),
+            ],
+            'password_confirmation' => [
+                $this->user?->exists
+                    ? 'nullable'
+                    : 'required',
+            ],
+            'photo' => [
+                'nullable',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:2024',
+            ],
+            'ranking' => [
+                'string',
+                function ($attribute, $value, $fail) {
+
+                    $isCompetitive = $this->licence_type === 'competitive'
+                        || $this->is_competitor;
+
+                    // obligatoire si compétitif
+                    if ($isCompetitive && empty($value)) {
+                        $fail('Ranking is required for competitive players.');
+                        return;
+                    }
+
+                    // interdiction de NA si compétitif
+                    if ($isCompetitive && $value === 'NA') {
+                        $fail('Ranking N/A is not allowed for competitors.');
+                    }
+                },
+            ],
+        ];
+    }
+
+    public function save(): void
+    {
+        try {
+            $validated = $this->validate();
+        } catch (ValidationException $e) {
+            $this->error(
+                'Une erreur est survenue. Veuillez vérifier les champs du formulaire.'
+            );
+
+            throw $e; // important pour conserver l'affichage des erreurs sous les champs
+        } catch (Throwable $e) {
+
+            report($e);
+
+            $this->error(
+                'Une erreur inattendue est survenue. Veuillez réessayer.'
+            );
+        }
+
+        // Ici on est certain que $validated existe et est valide
+        if ($this->licence_type === 'recreative') {
+            $validated['licence'] = null;
+            $validated['ranking'] = 'N/A';        }
+
+        if ($this->user) {
+            unset($validated['password_confirmation']);
+            unset($validated['photo']);
+
+            // $validated['password'] = Hash::make($validated['password']);
+
+            $this->handlePhotoUpload($this->user);
+
+            if (! empty($validated['password'])) {
+                $validated['password'] = Hash::make($validated['password']);
+            } else {
+                unset($validated['password']); // Ne pas écraser le mot de passe s'il est vide
+            }
+
+            $this->user->update($validated);
+
+            $this->success('User ' . $this->user->first_name . ' created with success', redirectTo: route('admin.users.index'));
+        } else {
+            unset($validated['password_confirmation']);
+            unset($validated['photo']);
+
+            $validated['password'] = Hash::make($validated['password']);
+
+            $newUser = User::create($validated);
+            if ($this->photo) {
+                $url = $this->photo->store('users', 'public');
+                $newUser->update(['photo' => "/storage/{$url}"]);
+            }
+
+            $this->success('User ' . $newUser->first_name . ' created with success', redirectTo: route('admin.users.index'));
         }
     }
 
@@ -164,7 +287,7 @@ new class extends Component
     {
         return [
             'licence_types' => collect([['id' => 'recreative', 'name' => __('Recreative')], ['id' => 'competitive', 'name' => __('Competitive')]]),
-            'genders' => [['id' => 'male', 'name' => __('Male')], ['id' => 'female', 'name' => __('Female')]],
+            'genders' => Gender::options(),
             'rankings' => [['id' => 'NA', 'name' => 'N/A'], ['id' => 'B0', 'name' => 'B0'], ['id' => 'B2', 'name' => 'B2'], ['id' => 'B4', 'name' => 'B4'], ['id' => 'B6', 'name' => 'B6'], ['id' => 'C0', 'name' => 'C0'], ['id' => 'C2', 'name' => 'C2'], ['id' => 'C4', 'name' => 'C4'], ['id' => 'C6', 'name' => 'C6'], ['id' => 'D0', 'name' => 'D0'], ['id' => 'D2', 'name' => 'D2'], ['id' => 'D4', 'name' => 'D4'], ['id' => 'D6', 'name' => 'D6'], ['id' => 'E0', 'name' => 'E0'], ['id' => 'E2', 'name' => 'E2'], ['id' => 'E4', 'name' => 'E4'], ['id' => 'E6', 'name' => 'E6'], ['id' => 'NC', 'name' => 'NC']],
             'trainings' => collect([
                 [
@@ -281,93 +404,28 @@ new class extends Component
     }
 
     /**
-     * Pour utiliser l'objet Password, on utilise la méthode rules() protégée.
-     * Note : Livewire fusionne automatiquement les #[Rule] et cette méthode.
-     *
-     * @return array{password: array<Password|string>}
+     * Gère l'upload et la suppression de l'ancienne image
      */
-    public function rules(): array
+    protected function handlePhotoUpload(User $user): void
     {
-        return [
-            'password' => [
-                // Si l'utilisateur existe, on autorise 'nullable', sinon 'required'
-                $this->user?->exists
-                    ? 'nullable'
-                    : 'required',
-                'confirmed',
-                Password::min(8)->letters()->numbers()->symbols()->uncompromised(),
-            ],
-            'password_confirmation' => [
-                $this->user?->exists
-                    ? 'nullable'
-                    : 'required',
-            ],
-            'photo' => [
-                'nullable',
-                'image',
-                'mimes:jpg,jpeg,png,webp',
-                'max:2024',
-            ],
-        ];
-    }
-
-    public function save(): void
-    {
-        try {
-            $validated = $this->validate();
-        } catch (ValidationException $e) {
-            $this->error(
-                'Une erreur est survenue. Veuillez vérifier les champs du formulaire.'
-            );
-
-            throw $e; // important pour conserver l'affichage des erreurs sous les champs
-        } catch (Throwable $e) {
-
-            report($e);
-
-            $this->error(
-                'Une erreur inattendue est survenue. Veuillez réessayer.'
-            );
+        if (! $this->photo instanceof TemporaryUploadedFile) {
+            return;
         }
 
-        if ($this->user) {
-            unset($validated['password_confirmation']);
-            unset($validated['photo']);
-
-            // $validated['password'] = Hash::make($validated['password']);
-
-            $this->handlePhotoUpload($this->user);
-
-            if (! empty($validated['password'])) {
-                $validated['password'] = Hash::make($validated['password']);
-            } else {
-                unset($validated['password']); // Ne pas écraser le mot de passe s'il est vide
-            }
-
-            $this->user->update($validated);
-
-            $this->success('User '.$this->user->first_name.' created with success', redirectTo: route('admin.users.index'));
-        } else {
-            unset($validated['password_confirmation']);
-            unset($validated['photo']);
-
-            $validated['password'] = Hash::make($validated['password']);
-
-            $newUser = User::create($validated);
-            if ($this->photo) {
-                $url = $this->photo->store('users', 'public');
-                $newUser->update(['photo' => "/storage/$url"]);
-            }
-
-            $this->success('User '.$newUser->first_name.' created with success', redirectTo: route('admin.users.index'));
+        // supprimer ancienne
+        if ($user->photo) {
+            $oldPath = str_replace('/storage/', '', $user->photo);
+            Storage::disk('public')->delete($oldPath);
         }
-    }
 
-    public function render(): View
-    {
-        return $this->view()
-            ->title($this->user?->exists
-                ? __('Update ').$this->first_name.' '.$this->last_name
-                : __('Create new user'));
+        // stocker nouvelle
+        $path = $this->photo->store('users', 'public');
+
+        $user->update([
+            'photo' => "/storage/{$path}",
+        ]);
+
+        $this->currentPhoto = "/storage/{$path}";
+        $this->photo = null;
     }
 };

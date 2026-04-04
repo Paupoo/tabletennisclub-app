@@ -61,7 +61,7 @@ class UpdateUserRequest extends FormRequest
                     Rule::in($rankings_enum->reject('NA')),     // Don't allow NA as the player must have a ranking...
                 ),
             ],
-            'sex' => ['required', Rule::in(collect(Gender::cases())->pluck('name'))],
+            'gender' => ['required', Rule::in(collect(Gender::cases())->pluck('name'))],
             'street' => ['nullable', 'string'],
             'team_id' => ['nullable', 'exists:teams,id'],
         ];

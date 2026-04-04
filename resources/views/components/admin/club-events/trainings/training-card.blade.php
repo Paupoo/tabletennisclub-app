@@ -100,18 +100,18 @@
 
             {{-- Links (comme mobile) --}}
             <div class="flex flex-wrap gap-3 text-[12px]">
-                <x-button class="btn-ghost btn-sm text-sm text-base-content/60 transition hover:text-base-content" href="#">
+                <x-button class="btn-ghost btn-sm text-xs text-base-content/60 transition hover:text-base-content" href="#">
                     {{ __('Details') }}
                 </x-button>
 
-                <x-button class="btn-ghost btn-sm text-sm text-base-content/60 transition hover:text-base-content" href="#">
+                <x-button class="btn-ghost btn-sm text-xs text-base-content/60 transition hover:text-base-content" href="#">
                     {{ __('Contact') }}
                 </x-button>
             </div>
 
             {{-- CTA --}}
             @if (!$full)
-                <x-button class="text-primary btn-ghost btn-sm text-sm font-semibold transition hover:opacity-80">
+                <x-button class="text-primary btn-ghost btn-sm text-xs font-semibold transition hover:opacity-80">
                     {{ __('Register') }}
                 </x-button>
             @endif

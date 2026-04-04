@@ -109,6 +109,6 @@ class Breadcrumb
 
     public function users(?string $url = null): Breadcrumb
     {
-        return $this->add('Users', $url ?: route('users.index'));
+        return $this->add('Users', $url ?: route('admin.users.index'));
     }
 }

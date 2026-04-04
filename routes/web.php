@@ -88,7 +88,7 @@ Route::prefix('admin/my-space/')
         Route::livewire('{user}/registration-management', 'pages::club-admin.users.user-space.registration-management')->name('admin.user.registration-management');
     });
 
-Route::prefix('admin/club-events/')
+Route::prefix('admin/club-admin/')
     ->middleware(['auth', 'verified'])
     ->group(function (): void {
         // Users admin
@@ -97,7 +97,11 @@ Route::prefix('admin/club-events/')
         Route::livewire('users/{user}/edit', 'pages::club-admin.users.form')->name('admin.users.edit');
         Route::livewire('users/payments', 'pages::club-admin.users.payments')->name('admin.users.payments');
         Route::livewire('users/registrations', 'pages::club-admin.users.registrations')->name('admin.users.registrations');
+    });
 
+Route::prefix('admin/club-events/')
+    ->middleware(['auth', 'verified'])
+    ->group(function (): void {
         // Tournaments
         Route::livewire('tournaments', 'pages::club-events.tournaments.index')->name('admin.tournaments.index');
         Route::livewire('tournaments/{tournament}/live-center', 'pages::club-events.tournaments.live-center')->name('admin.tournaments.live-center');

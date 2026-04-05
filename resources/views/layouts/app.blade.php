@@ -17,12 +17,8 @@
 </head>
 
 <body class="bg-base-200 min-h-screen font-sans antialiased" x-data="{
-    // On récupère le thème depuis le serveur comme valeur par défaut
     dbTheme: '{{ App\Models\ClubAdmin\Users\User::first()->theme ?? 'auto' }}',
-    
-    // init() s'exécute automatiquement au chargement de la page ET lors des navigations Livewire
     init() {
-        // On donne la priorité au localStorage, sinon on prend la DB
         let currentTheme = localStorage.getItem('theme') || this.dbTheme;
         this.updateTheme(currentTheme);
     },

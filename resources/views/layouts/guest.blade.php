@@ -9,7 +9,7 @@
     <title>{{ $title ?? 'CTT Ottignies-Blocry' }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
-    @if(app()->environment('prod'))
+    @if(app()->environment('production'))
     <script defer src="https://stats.cttottigniesblocry.be/umami-script" data-website-id="9d9befdc-3f9d-4ece-aab7-dc2858457005"></script>
     @endif
 </head>

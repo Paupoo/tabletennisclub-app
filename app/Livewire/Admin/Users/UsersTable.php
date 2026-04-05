@@ -33,7 +33,7 @@ class UsersTable extends Component
 
     public ?int $selectedUserId = null;
 
-    #[Url(as: 'sex')]
+    #[Url(as: 'gender')]
     public string $sex = '';
 
     #[Url(as: 'sort_field')]
@@ -189,7 +189,7 @@ class UsersTable extends Component
         }
 
         if (!empty($this->sex) && $this->sex !== 'all') {
-            $query->where('sex', $this->sex);
+            $query->where('gender', $this->sex);
         }
 
         switch ($this->status) {

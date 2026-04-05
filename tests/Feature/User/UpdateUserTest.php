@@ -28,7 +28,7 @@ test('member can be casual with no ranking and no licence', function (): void {
         ->put(route('users.update', $user), [
             'first_name' => 'Jean',
             'last_name' => 'Lechat',
-            'sex' => 'MEN',
+            'gender' => 'MEN',
             'email' => 'jean.lechat@gmail.com',
             'password' => 'Jean1234!',
             'password_confirmation' => 'Jean1234!',
@@ -49,7 +49,7 @@ test('member can be casual with valid licence and ranking', function (): void {
         ->put(route('users.update', $user), [
             'first_name' => 'Jean',
             'last_name' => 'Lechat',
-            'sex' => 'MEN',
+            'gender' => 'MEN',
             'email' => 'jean.lechat@gmail.com',
             'password' => 'Jean1234!',
             'password_confirmation' => 'Jean1234!',
@@ -78,7 +78,7 @@ test('member cant be competitor without valid licence and ranking', function ():
         ->put(route('users.update', $user), [
             'first_name' => 'Jean',
             'last_name' => 'Lechat',
-            'sex' => 'MEN',
+            'gender' => 'MEN',
             'email' => 'jean.lechat@gmail.com',
             'password' => 'Jean1234!',
             'password_confirmation' => 'Jean1234!',
@@ -110,7 +110,7 @@ test('member update doesnt change entries in the database', function (): void {
             'is_active' => false,
             'first_name' => 'Jean',
             'last_name' => 'Lechat',
-            'sex' => 'MEN',
+            'gender' => 'MEN',
             'email' => 'jean.lechat@gmail.com',
             'password' => 'Jean1234!',
             'password_confirmation' => 'Jean1234!',
@@ -142,7 +142,7 @@ test('member update with invalid data is returning errors', function (): void {
                 Repellat saepe ratione veritatis maxime vel incidunt magni praesentium! Modi quod ullam doloremque, aliquid, rem maxime tempore quasi possimus quia corporis beatae eligendi natus ut? Explicabo earum harum ipsa animi?
                 Quas vitae odio, possimus eius rem aliquid odit praesentium. Recusandae, fugit cupiditate, totam minima, voluptatem ea officia accusamus unde possimus hic aliquid illo excepturi dolorem impedit sed vitae a aut.',
             'last_name' => 1,
-            'sex' => 'femme',
+            'gender' => 'femme',
             'email' => 'test.com',
             'is_active' => 15,
             'is_admin' => 'false',
@@ -154,7 +154,7 @@ test('member update with invalid data is returning errors', function (): void {
         ->assertInvalid([
             'first_name',
             'last_name',
-            'sex',
+            'gender',
             'email',
             'licence',
             'ranking',
@@ -163,7 +163,7 @@ test('member update with invalid data is returning errors', function (): void {
         ->assertSessionHasErrors([
             'first_name',
             'last_name',
-            'sex',
+            'gender',
             'email',
             'licence',
             'ranking',

@@ -16,13 +16,13 @@
 
 {{-- Gender --}}
 <div>
-    <x-input-label for="sex" :value="__('Gender')" />
-    <x-select-input id="sex" name="sex" class="block w-full mt-1" required autofocus>
+    <x-input-label for="gender" :value="__('Gender')" />
+    <x-select-input id="gender" name="gender" class="block w-full mt-1" required autofocus>
         @foreach ($sexes as $sex)
-            <option value="{{ $sex }}" @selected(old('sex', $user?->sex) === $sex)>{{ $sex }}</option>
+            <option value="{{ $sex }}" @selected(old('gender', $user?->sex) === $sex)>{{ $sex }}</option>
         @endforeach
     </x-select-input>
-    <x-input-error class="mt-2" :messages="$errors->get('sex')" />
+    <x-input-error class="mt-2" :messages="$errors->get('gender')" />
 </div>
 
 {{-- Email --}}

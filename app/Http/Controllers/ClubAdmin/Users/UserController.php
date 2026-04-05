@@ -139,10 +139,10 @@ class UserController extends Controller
                 ->where('birthdate', '>', now()->subYears(18))
                 ->count(),
             'totalWomen' => User::isActive()
-                ->where('sex', Gender::WOMEN)
+                ->where('gender', Gender::WOMEN)
                 ->count(),
             'totalMen' => User::isActive()
-                ->where('sex', Gender::MEN)
+                ->where('gender', Gender::MEN)
                 ->count(),
             'totalVeterans' => User::isActive()
                 ->isCompetitor()

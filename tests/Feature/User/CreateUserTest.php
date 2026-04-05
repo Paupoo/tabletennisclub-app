@@ -41,7 +41,7 @@ test('email is not already taken', function (): void {
         ->post('/clubAdmin/users', [
             'last_name' => 'Jules',
             'first_name' => 'Destrée',
-            'sex' => 'MEN',
+            'gender' => 'MEN',
             'email' => 'aurelien.paulus@gmail.com',
             'password' => 'z8XDbhN5sFHjWv!',
             'password_confirmation' => 'z8XDbhN5sFHjWv!',
@@ -82,7 +82,7 @@ test('licence is not already taken', function (): void {
         ->post('/clubAdmin/users', [
             'last_name' => 'Jules',
             'first_name' => 'Destrée',
-            'sex' => 'MEN',
+            'gender' => 'MEN',
             'email' => 'jules.destree@gmail.com',
             'password' => 'z8XDbhN5sFHjWv!',
             'password_confirmation' => 'z8XDbhN5sFHjWv!',
@@ -126,7 +126,7 @@ test('new member creation positive case', function (): void {
             'phone_number' => '0479123456',
             'ranking' => 'B0',
             'remember_token' => Str::random(10),
-            'sex' => 'MEN',
+            'gender' => 'MEN',
         ])
         ->assertValid()
         ->assertRedirect(route('users.create'))
@@ -143,7 +143,7 @@ test('new member creation with invalid paramaters returns errors in the session'
         ->post('/clubAdmin/users', [
             'last_name' => null,
             'first_name' => 'Lorem ipsum dolor sit amet consectetur adipisicing elit. Provident autem, quod eos rerum tempore iure sit inventore. Laboriosam corrupti libero et reiciendis consequuntur cumque alias ex repellat nulla, temporibus dolore. This is mini Lorem exceeding 255 characters',
-            'sex' => 'wrong',
+            'gender' => 'wrong',
             'email' => 'aurelien.paulus@com',
             'password' => '1234',
             'password_confirmation' => '4321',
@@ -155,7 +155,7 @@ test('new member creation with invalid paramaters returns errors in the session'
         ->assertInvalid([
             'last_name',
             'first_name',
-            'sex',
+            'gender',
             'email',
             'password',
             'licence',
@@ -167,7 +167,7 @@ test('new member creation with invalid paramaters returns errors in the session'
         ->assertSessionHasErrors([
             'last_name',
             'first_name',
-            'sex',
+            'gender',
             'email',
             'password',
             'licence',
@@ -185,7 +185,7 @@ test('new member is competitor with valid ranking and licence', function (): voi
             'is_competitor' => 'on',
             'last_name' => 'Jules',
             'first_name' => 'Destrée',
-            'sex' => 'MEN',
+            'gender' => 'MEN',
             'email' => 'jules.destree@gmail.com',
             'password' => 'z8XDbhN5sFHjWv!',
             'password_confirmation' => 'z8XDbhN5sFHjWv!',
@@ -208,7 +208,7 @@ test('new member is competitor without ranking and licence', function (): void {
             'is_competitor' => 'on',
             'last_name' => 'Jules',
             'first_name' => 'Destrée',
-            'sex' => 'MEN',
+            'gender' => 'MEN',
             'email' => 'jules.destree@gmail.com',
             'password' => 'z8XDbhN5sFHjWv!',
             'password_confirmation' => 'z8XDbhN5sFHjWv!',
@@ -238,7 +238,7 @@ test('ranking is invalid', function (): void {
         ->post('/clubAdmin/users', [
             'last_name' => 'Jules',
             'first_name' => 'Destrée',
-            'sex' => 'MEN',
+            'gender' => 'MEN',
             'email' => 'jules.destree@gmail.com',
             'password' => 'z8XDbhN5sFHjWv!',
             'password_confirmation' => 'z8XDbhN5sFHjWv!',

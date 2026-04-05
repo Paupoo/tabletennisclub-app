@@ -172,7 +172,7 @@ class ResultsController extends Controller
             [
                 'name' => 'Équipe C - Division 4F Vétérans',
                 'position' => '1ère place',
-                'position_class' => 'bg-gray-100 text-gray-800',
+                'position_class' => 'bg-yellow-100 text-yellow-800',
                 'matches' => [
                     ['date' => '03 Oct 2025', 'opponent' => 'Logis Auderghem D', 'venue' => 'Domicile', 'score' => '7-3', 'result' => 'Victoire'],
                     ['date' => '31 Oct 2025', 'opponent' => 'Bye', 'venue' => 'Bye', 'score' => 'Bye', 'result' => 'Bye'],

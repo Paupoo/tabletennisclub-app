@@ -6,6 +6,10 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Connexion - {{ config('app.name', 'CTT Ottignies-Blocry') }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @if(app()->environment('production'))
+    <script defer src="https://stats.cttottigniesblocry.be/umami-script" data-website-id="9d9befdc-3f9d-4ece-aab7-dc2858457005"></script>
+    <script defer src="https://stats.cttottigniesblocry.be/recorder.js" data-website-id="9d9befdc-3f9d-4ece-aab7-dc2858457005" data-sample-rate="0.2" data-mask-level="moderate" data-max-duration="300000"></script>
+    @endif
 </head>
 <body class="font-sans antialiased">
     <!-- Background avec dégradé subtil -->

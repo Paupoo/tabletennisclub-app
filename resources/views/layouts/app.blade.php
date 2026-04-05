@@ -108,8 +108,8 @@
 
                 <x-menu-sub icon="o-calendar-days" link="#" title="{{ __('Interclubs') }}">
                     <x-menu-item icon="o-identification" link="" title="{{ __('Teams') }}" />
-                    <x-menu-item icon="o-user-group" link="" title="{{ __('Selections') }}" />
-                    <x-menu-item icon="o-eye" link="" title="{{ __('Overview') }}" />
+                    <x-menu-item icon="o-user-group" link="{{ route('admin.interclubs.captain-selection') }}" title="{{ __('Selections') }}" />
+                    <x-menu-item icon="o-eye" link="{{ route('admin.interclubs.control-center') }}" title="{{ __('Control Center') }}" />
                     <x-menu-item icon="o-squares-2x2" link="" title="{{ __('Results') }}" />
                     {{-- <x-menu-item title="Archives" icon="o-archive-box" link="####" /> --}}
                 </x-menu-sub>

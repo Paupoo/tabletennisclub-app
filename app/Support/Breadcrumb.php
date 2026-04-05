@@ -94,7 +94,7 @@ class Breadcrumb
 
     public function tournaments(?string $url = null): Breadcrumb
     {
-        return $this->add('Tournaments', $url ?: route('tournaments.index'));
+        return $this->add('Tournaments', $url ?: route('admin.tournaments.index'));
     }
 
     public function trainingPacks(?string $url = null): Breadcrumb

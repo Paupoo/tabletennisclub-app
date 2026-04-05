@@ -99,16 +99,23 @@ Route::prefix('admin/club-admin/')
         Route::livewire('users/registrations', 'pages::club-admin.users.registrations')->name('admin.users.registrations');
     });
 
-Route::prefix('admin/club-events/')
+Route::prefix('admin/club-events/tournaments')
     ->middleware(['auth', 'verified'])
     ->group(function (): void {
         // Tournaments
-        Route::livewire('tournaments', 'pages::club-events.tournaments.index')->name('admin.tournaments.index');
-        Route::livewire('tournaments/{tournament}/live-center', 'pages::club-events.tournaments.live-center')->name('admin.tournaments.live-center');
-        Route::livewire('tournaments/wizard', 'pages::club-events.tournaments.wizard')->name('admin.tournaments.wizard');
+        Route::livewire('/', 'pages::club-events.tournaments.index')->name('admin.tournaments.index');
+        Route::livewire('{tournament}/live-center', 'pages::club-events.tournaments.live-center')->name('admin.tournaments.live-center');
+        Route::livewire('wizard', 'pages::club-events.tournaments.wizard')->name('admin.tournaments.wizard');
 
         // Trainings
         Route::livewire('trainings', 'pages::club-events.trainings.index')->name('admin.trainings.index');
+    });
+
+Route::prefix('admin/club-events/interclubs/')
+    ->middleware(['auth', 'verified'])
+    ->group(function (): void {
+        Route::livewire('captain-selection', 'pages::club-events.interclubs.captain-selection')->name('admin.interclubs.captain-selection');
+        Route::livewire('control-center', 'pages::club-events.interclubs.control-center')->name('admin.interclubs.control-center');
     });
 
 /*

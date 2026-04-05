@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Support\Captcha;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreContactRequest extends FormRequest
 {
+    public function __construct(private Captcha $captchaService = new Captcha()){}
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -51,7 +54,35 @@ class StoreContactRequest extends FormRequest
             'membership_competitors' => 'nullable|integer|min:0',
             'membership_training_sessions' => 'nullable|integer|min:0|max:10',
             'membership_total_cost' => 'nullable|numeric|min:0',
+            'captcha' => 'required|integer',
         ];
+    }
+
+    public function withValidator($validator): void
+    {
+        $validator->after(function ($validator) {
+
+            $captcha = session('captcha');
+
+            if (!$captcha || !session('captcha_created_at')) {
+                $validator->errors()->add('captcha', 'Captcha expiré.');
+                return;
+            }
+
+            if (time() - session('captcha_created_at') > 300) {
+                $validator->errors()->add('captcha', 'Captcha expiré.');
+                return;
+            }
+
+            $valid = $this->captchaService->validate(
+                $captcha,
+                (int) $this->input('captcha')
+            );
+
+            if (!$valid) {
+                $validator->errors()->add('captcha', 'Captcha incorrect.');
+            }
+        });
     }
 
     protected function getRedirectUrl(): string

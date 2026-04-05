@@ -157,6 +157,16 @@
     </div>
 
     <div class="mb-6">
+        <label for="captcha" class="block text-sm font-medium text-gray-700 mb-2">Combien font {{ session('captcha.a') }} {{ session('captcha.operation') }} {{ session('captcha.b') }} ? *</label>
+        <input type="number" id="captcha" name="captcha" required
+            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent transition-colors"
+            placeholder="Entrez le résultat">
+        @error('captcha')
+            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+        @enderror
+    </div>
+
+    <div class="mb-6">
         <label class="flex items-start">
             <input type="checkbox" name="consent" required {{ old('consent') ? 'checked' : '' }}
                 class="mt-1 mr-3 h-4 w-4 text-club-blue focus:ring-club-blue border-gray-300 rounded-sm">

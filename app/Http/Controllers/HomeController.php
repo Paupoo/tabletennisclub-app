@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Models\ClubEvents\Interclub\Club;
 use App\Models\ClubPosts\NewsPost;
 use Illuminate\Contracts\View\View;
+use App\Support\Captcha;
 
 class HomeController extends Controller
 {
@@ -108,6 +109,26 @@ class HomeController extends Controller
                 'description' => 'Perfectionnement pour les jeunes',
             ],
         ];
+
+        // Clean d'un éventuel ancien captcha en session pour éviter un brute force sur le captcha
+        session()->forget(['captcha', 'captcha_created_at']);
+
+        $captcha = Captcha::generate();
+
+        session([
+            'captcha' => $captcha,
+            'captcha_created_at' => time(),
+        ]);
+
+        // Clean d'un éventuel ancien captcha en session pour éviter un brute force sur le captcha
+        session()->forget(['captcha', 'captcha_created_at']);
+
+        $captcha = Captcha::generate();
+
+        session([
+            'captcha' => $captcha,
+            'captcha_created_at' => time(),
+        ]);
 
         $club = Club::ourClub()->first();
 

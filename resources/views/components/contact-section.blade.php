@@ -91,12 +91,4 @@
             </div>
         </div>
     </div>
-
-    {{-- <style>
-        .club-blue { color: #1e40af; }
-        .bg-club-blue { background-color: #1e40af; }
-        .bg-club-yellow { background-color: #fbbf24; }
-        .text-club-blue { color: #1e40af; }
-        .focus\:ring-club-blue:focus { --tw-ring-color: #1e40af; }
-    </style> --}}
 </section>

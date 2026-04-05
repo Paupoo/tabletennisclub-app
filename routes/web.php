@@ -51,7 +51,7 @@ Route::get('/results', [ResultsController::class, 'index'])
 Route::get('/events', [EventController::class, 'index'])
     ->name('events');
 Route::post('/contact', [ContactController::class, 'store'])
-    ->middleware(ProtectAgainstSpam::class)
+    ->middleware(ProtectAgainstSpam::class, 'throttle:10,1')
     ->name('contact.store');
 
 /**

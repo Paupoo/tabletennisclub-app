@@ -59,7 +59,7 @@ class Breadcrumb
 
     public function rooms(?string $url = null): Breadcrumb
     {
-        return $this->add('Rooms', $url ?: route('rooms.index'));
+        return $this->add('Rooms', $url ?: route('admin.rooms.index'));
     }
 
     public function seasons(?string $url = null): Breadcrumb

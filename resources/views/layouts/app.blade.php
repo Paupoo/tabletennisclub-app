@@ -85,7 +85,7 @@
 
                 <x-menu-sub icon="o-building-office" title="{{ __('Infrastructure') }}">
                     <x-menu-item icon="o-identification" link="" title="{{ __('Club info') }}" />
-                    <x-menu-item icon="o-building-office-2" link="" title="{{ __('Rooms') }}" />
+                    <x-menu-item icon="o-building-office-2" link="{{ route('admin.rooms.index') }}" title="{{ __('Rooms') }}" />
                     <x-menu-item icon="o-squares-2x2" link="" title="{{ __('Tables') }}" />
                     {{-- <x-menu-item title="Archives" icon="o-archive-box" link="####" /> --}}
                 </x-menu-sub>
@@ -103,7 +103,7 @@
                 <x-menu-item icon="o-academic-cap" link="{{ route('admin.trainings.index') }}" title="{{ __('Trainings') }}" />
 
                 <x-menu-sub icon="o-calendar-days" link="#" title="{{ __('Interclubs') }}">
-                    <x-menu-item icon="o-identification" link="" title="{{ __('Teams') }}" />
+                    <x-menu-item icon="o-identification" link="{{ route('admin.interclubs.teams') }}" title="{{ __('Teams') }}" />
                     <x-menu-item icon="o-user-group" link="{{ route('admin.interclubs.captain-selection') }}" title="{{ __('Selections') }}" />
                     <x-menu-item icon="o-eye" link="{{ route('admin.interclubs.control-center') }}" title="{{ __('Control Center') }}" />
                     <x-menu-item icon="o-squares-2x2" link="" title="{{ __('Results') }}" />

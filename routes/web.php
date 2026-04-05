@@ -88,27 +88,37 @@ Route::prefix('admin/my-space/')
         Route::livewire('{user}/registration-management', 'pages::club-admin.users.user-space.registration-management')->name('admin.user.registration-management');
     });
 
-Route::prefix('admin/club-admin/')
+Route::prefix('admin/club-admin/users/')
     ->middleware(['auth', 'verified'])
     ->group(function (): void {
         // Users admin
-        Route::livewire('users', 'pages::club-admin.users.index')->name('admin.users.index');
-        Route::livewire('users/create', 'pages::club-admin.users.form')->name('admin.users.create');
-        Route::livewire('users/{user}/edit', 'pages::club-admin.users.form')->name('admin.users.edit');
-        Route::livewire('users/payments', 'pages::club-admin.users.payments')->name('admin.users.payments');
-        Route::livewire('users/registrations', 'pages::club-admin.users.registrations')->name('admin.users.registrations');
+        Route::livewire('list', 'pages::club-admin.users.index')->name('admin.users.index');
+        Route::livewire('create', 'pages::club-admin.users.form')->name('admin.users.create');
+        Route::livewire('{user}/edit', 'pages::club-admin.users.form')->name('admin.users.edit');
+        Route::livewire('payments', 'pages::club-admin.users.payments')->name('admin.users.payments');
+        Route::livewire('registrations', 'pages::club-admin.users.registrations')->name('admin.users.registrations');
+    });
+
+Route::prefix('admin/club-admin/rooms/')
+    ->middleware(['auth', 'verified'])
+    ->group(function (): void  {
+        Route::livewire('list', 'pages::club-admin.rooms.index')->name('admin.rooms.index');
+        Route::livewire('{room}/edit', 'pages::club-admin.rooms.form')->name('admin.rooms.edit');
+        Route::livewire('create', 'pages::club-admin.rooms.form')->name('admin.rooms.create');
+    });
+
+Route::prefix('admin/club-events/interclubs/')
+    ->middleware(['auth', 'verified'])
+    ->group(function (): void {
+        Route::livewire('trainings', 'pages::club-events.trainings.index')->name('admin.trainings.index');
     });
 
 Route::prefix('admin/club-events/tournaments')
     ->middleware(['auth', 'verified'])
     ->group(function (): void {
-        // Tournaments
         Route::livewire('/', 'pages::club-events.tournaments.index')->name('admin.tournaments.index');
         Route::livewire('{tournament}/live-center', 'pages::club-events.tournaments.live-center')->name('admin.tournaments.live-center');
-        Route::livewire('wizard', 'pages::club-events.tournaments.wizard')->name('admin.tournaments.wizard');
-
-        // Trainings
-        Route::livewire('trainings', 'pages::club-events.trainings.index')->name('admin.trainings.index');
+        Route::livewire('wizard', 'pages::club-events.tournaments.wizard')->name('admin.tournaments.wizard');        
     });
 
 Route::prefix('admin/club-events/interclubs/')
@@ -116,6 +126,7 @@ Route::prefix('admin/club-events/interclubs/')
     ->group(function (): void {
         Route::livewire('captain-selection', 'pages::club-events.interclubs.captain-selection')->name('admin.interclubs.captain-selection');
         Route::livewire('control-center', 'pages::club-events.interclubs.control-center')->name('admin.interclubs.control-center');
+        Route::livewire('teams', 'pages::club-events.interclubs.teams.index')->name('admin.interclubs.teams');
     });
 
 /*

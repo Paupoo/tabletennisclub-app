@@ -40,7 +40,7 @@ class RoomController extends Controller
         $this->authorize('delete', $room);
         $room->delete();
 
-        return redirect()->route('rooms.index')->with('deleted', 'The room ' . $room->name . ' has been deleted.');
+        return redirect()->route('admin.rooms.index')->with('deleted', 'The room ' . $room->name . ' has been deleted.');
     }
 
     /**

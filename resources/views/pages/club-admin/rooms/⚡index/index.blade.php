@@ -31,9 +31,19 @@
                     <x-icon name="o-map-pin" class="w-4 h-4" />
                     <span>{{ $room->street }}, {{ $room->city_code }} {{ $room->city_name }}</span>
                 </div>
-                <x-admin.shared.compact-event-preview link="https://www.perdu.com" location="Demeester -0"
-                    name="Entraînement libre" startDateTime="2026-02-09 20:30" type="training" />
-
+                @foreach ($room->trainings as $training)
+                <x-admin.shared.compact-event-preview link="#" :organizer="$training->trainer->first_name . ' ' . $training->trainer->last_name"
+                    :name="$training->type" :startDateTime="$training->start" type="training" />  
+                @endforeach
+                @foreach ($room->tournaments as $tournament)
+                <x-admin.shared.compact-event-preview link="#"
+                    :name="$tournament->name" :startDateTime="$tournament->start_date" :remainingSlots="$tournament->max_users - $tournament->users()->count()" type="tournament">  
+                    <x-slot:actions>
+                        <x-button class="btn-outline btn-xs" label="{{ __('Register') }}" link="" />
+                    </x-slot:actions>
+                </x-admin.shared.compact-event-preview>
+                @endforeach
+                
                 <x-admin.shared.compact-event-preview link="https://www.perdu.com" location="Demeester -0"
                     name="CTTOB A vs Auderghem F" startDateTime="2026-02-13 19:45" type="interclub" />
             </div>

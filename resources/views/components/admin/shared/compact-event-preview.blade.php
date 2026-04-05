@@ -1,23 +1,25 @@
 @props([
-'link' => '#',
-'location',
-'name',
-'startDateTime',
-'type',
+    'link' => '#',
+    'location',
+    'organizer',
+    'remainingSlots',
+    'name',
+    'startDateTime',
+    'type',
 ])
 
 @php
-$date = \Carbon\Carbon::parse($startDateTime);
+    $date = \Carbon\Carbon::parse($startDateTime);
 
-$colors = [
-'interclub' => 'border-primary',
-'tournament' => 'border-secondary',
-'training' => 'border-accent',
-'meeting' => 'border-info',
-'socials' => 'border-neutral',
-];
+    $colors = [
+        'interclub' => 'border-primary',
+        'tournament' => 'border-secondary',
+        'training' => 'border-accent',
+        'meeting' => 'border-info',
+        'socials' => 'border-neutral',
+    ];
 
-$borderClass = $colors[$type] ?? 'border-gray-300';
+    $borderClass = $colors[$type] ?? 'border-gray-300';
 @endphp
 
 <a {{ $attributes->merge([
@@ -38,17 +40,36 @@ $borderClass = $colors[$type] ?? 'border-gray-300';
         </div>
 
         <div>
-            <p class="text-sm font-semibold leading-tight">{!! $name !!}</p> {{-- {!! !!} pour régler le souci d'apostrophe --}}
+            <p class="text-sm font-semibold leading-tight">{!! $name !!}</p>
             <p class="flex items-center gap-1 text-xs opacity-60">
-                <x-icon class="h-3 w-3" name="o-clock" /> {{ $date->format('H:i') }} - <x-icon class="h-3 w-3" name="o-map-pin" /> {{ $location }}
+                {{-- On affiche toujours l'heure --}}
+                <x-icon class="h-3 w-3" name="o-clock" /> {{ $date->format('H:i') }}
+
+                {{-- On ajoute le lieu s'il existe --}}
+                @isset($location)
+                    <span class="mx-1">-</span>
+                    <x-icon class="h-3 w-3" name="o-map-pin" /> {{ $location }}
+                @endisset
+
+                {{-- On ajoute l'organisateur s'il existe --}}
+                @isset ($organizer)
+                    <span class="mx-1">-</span>
+                    <x-icon class="h-3 w-3" name="o-user" /> {{ $organizer }}
+                @endisset
+
+                {{-- On ajoute le nombre de place restantes si elles existent --}}
+                @isset ($remainingSlots)
+                    <span class="mx-1">-</span>
+                    <x-icon class="h-3 w-3" name="o-users" /> {{ $remainingSlots }} {{ __('slots left') }}
+                @endisset
             </p>
         </div>
     </div>
 
     {{-- Actions (Droite) --}}
     @if (isset($actions))
-    <div class="relative z-10 flex items-center gap-2 pr-3">
-        {{ $actions }}
-    </div>
+        <div class="relative z-10 flex items-center gap-2 pr-3">
+            {{ $actions }}
+        </div>
     @endif
 </a>

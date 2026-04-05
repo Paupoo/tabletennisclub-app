@@ -197,6 +197,8 @@ class TrainingController extends Controller
          */
         if ($validated['training_pack_name']) {
             $newCreatedPack = TrainingPack::create([
+                'level' => $validated['level'],
+                'type' => $validated['type'],
                 'season_id' => $validated['season_id'],
                 'name' => $validated['training_pack_name'],
                 'price' => $validated['training_pack_price'],

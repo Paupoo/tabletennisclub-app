@@ -17,34 +17,23 @@ new class extends Component
     // Propriétés de contrôle
     public string $search = '';
     public bool $drawer = false;
-    public array $sortBy = ['column' => 'name', 'direction' => 'asc'];
 
-    // On déclare sans initialiser avec des fonctions
-    public array $headers = [];
-    public array $tables = [];
+
 
     public function mount(): void
     {
         // On initialise ici pour éviter l'erreur "Constant expression"
-        $this->rooms = Room::with('tables')->get();
+        $this->rooms = Room::with('trainings')->get();
     }
 
     public function with(): array
     {
-        // On applique le tri et le filtre avant d'envoyer à la vue
-        $rows = collect($this->tables)
-            ->filter(fn($row) => str_contains(strtolower($row['name']), strtolower($this->search)))
-            ->sortBy($this->sortBy['column'], SORT_REGULAR, $this->sortBy['direction'] === 'desc')
-            ->values()
-            ->all();
-
         return [
-            'rows' => $rows,
-            'headers' => $this->headers,
             'breadcrumbs' => Breadcrumb::make()
                 ->home()
                 ->current(__('Rooms'))
                 ->toArray(),
+            ''
         ];
     }
 

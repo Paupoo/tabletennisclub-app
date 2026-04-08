@@ -742,6 +742,7 @@
     "Invalid email template" : "Template d'e-mail invalide",
     "Something went wrong while sending your email" : "Erreur lors de l'envoi de l'email",
     "Email successfully sent" : "Email envoyé",
-    "Contact details" : "Détails du contact"
-
+    "Contact details" : "Détails du contact",
+    "table": "{0} aucune table|{1} :count table|[2,*] :count tables",
+    "for competition": "{0} aucune table de compétition|{1} :count table de compétition|[2,*] :count tables de compétition"
 }

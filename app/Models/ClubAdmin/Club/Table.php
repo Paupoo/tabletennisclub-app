@@ -43,15 +43,25 @@ class Table extends Model
 {
     protected $casts = [
         'name' => 'string',
-        'purchased_on' => 'date',
+        'brand' => 'string',
+        'model' => 'string',
         'state' => 'string',
+        'state_description' => 'string',
+        'is_available' => 'boolean',
+        'is_competition_ready' => 'boolean',
+        'purchased_on' => 'datetime:d-m-Y',
     ];
 
     protected $fillable = [
         'name',
-        'purchased_on',
+        'brand',
+        'model',
         'state',
-        'room_id',
+        'state_description',
+        'is_available',
+        'is_competition_ready',
+        'purchased_on',
+        'room_id'
     ];
 
     public function match(): BelongsToMany
@@ -74,5 +84,14 @@ class Table extends Model
             ])
             ->using(TableTournament::class)
             ->withTimestamps();
+    }
+
+    public static function getStates(): array
+    {
+        return [
+            ['id' => 'Good condition', 'name' => __('Good condition')],
+            ['id' => 'Needs repair', 'name' => __('Needs repair')],
+            ['id' => 'Out of service', 'name' => __('Out of service')],
+        ];
     }
 }

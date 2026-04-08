@@ -74,7 +74,7 @@ class Breadcrumb
 
     public function tables(?string $url = null): Breadcrumb
     {
-        return $this->add('Tables', $url ?: route('tables.index'));
+        return $this->add('Tables', $url ?: route('admin.tables.index'));
     }
 
     public function teams(?string $url = null): Breadcrumb

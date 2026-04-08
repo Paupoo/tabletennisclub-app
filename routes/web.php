@@ -107,6 +107,14 @@ Route::prefix('admin/club-admin/rooms/')
         Route::livewire('create', 'pages::club-admin.rooms.form')->name('admin.rooms.create');
     });
 
+Route::prefix('admin/club-admin/tables/')
+    ->middleware(['auth', 'verified'])
+    ->group(function (): void  {
+        Route::livewire('list', 'pages::club-admin.tables.index')->name('admin.tables.index');
+        Route::livewire('{table}/edit', 'pages::club-admin.tables.form')->name('admin.tables.edit');
+        Route::livewire('create', 'pages::club-admin.tables.form')->name('admin.tables.create');
+    });
+
 Route::prefix('admin/club-events/interclubs/')
     ->middleware(['auth', 'verified'])
     ->group(function (): void {
@@ -206,7 +214,7 @@ Route::post('/invitation/accept/{user}', [InvitationController::class, 'store'])
 /**
  * Tables management
  */
-Route::resource('/clubAdmin/club/tables', TableController::class)->middleware(['auth', 'verified']);
+// Route::resource('/clubAdmin/club/tables', TableController::class)->middleware(['auth', 'verified']);
 
 /**
  * Teams management

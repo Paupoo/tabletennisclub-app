@@ -23,7 +23,7 @@
                 <div class="flex items-center gap-2 mb-4">
                     <div class="badge badge-outline badge-sm gap-2 py-3 px-3">
                         <x-icon name="o-square-3-stack-3d" class="w-3.5 h-3.5" />
-                        <span class="font-medium text-xs">{{ $room->tables()->count() }}
+                        <span class="font-medium text-xs">{{ $room->tables()->where('is_competition_ready', true)->count() }} / {{ $room->tables()->count() }}
                             {{ __('tables') }}</span>
                     </div>
                 </div>
@@ -48,8 +48,8 @@
                     name="CTTOB A vs Auderghem F" startDateTime="2026-02-13 19:45" type="interclub" />
             </div>
             <x-slot:actions>
-                <x-button class="btn-primary btn-sm" label="{{ __('Modify') }}" link="{{ route('admin.rooms.edit', $room) }}" />
-                <x-button class="btn-warning btn-sm bg-red-600" label="{{ __('Delete') }}" wire:click="destroy({{ $room->id }})" wire:confirm="{{ __('Are you sure you want to delete this room? This action cannot be undone.')}}" />
+                <x-button class="btn-primary btn-outline btn-sm" label="{{ __('Modify') }}" link="{{ route('admin.rooms.edit', $room) }}" />
+                <x-button class="btn-error btn-outline btn-sm" label="{{ __('Delete') }}" wire:click="destroy({{ $room->id }})" wire:confirm="{{ __('Are you sure you want to delete this room? This action cannot be undone.')}}" />
             </x-slot:actions>
         </x-card>
         @endforeach

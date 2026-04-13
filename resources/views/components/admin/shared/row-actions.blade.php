@@ -3,7 +3,7 @@
     'icon' => 'o-ellipsis-vertical',
 ])
 
-<x-dropdown>
+<x-dropdown right>
     <x-slot:trigger>
         <x-button {{ $attributes->merge(['class' => 'btn-sm btn-ghost']) }} icon="{{ $icon }}"
             label="{{ $label }}" />

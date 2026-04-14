@@ -6,6 +6,7 @@ namespace App\Models\ClubAdmin\Users;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
+use App\Enums\CommitteeRolesEnum;
 use App\Enums\Gender;
 use App\Models\ClubAdmin\Subscription\Subscription;
 use App\Models\ClubEvents\Interclub\Club;
@@ -142,6 +143,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'force_list' => 'integer',
         'avatar_url' => 'string',
         'theme' => 'string',
+        'committee_role' => CommitteeRolesEnum::class,
     ];
 
     /**
@@ -171,6 +173,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'street',
         'avatar_url',
         'theme',
+        'committee_role',
     ];
 
     /**

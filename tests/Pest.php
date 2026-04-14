@@ -16,7 +16,7 @@ declare(strict_types=1);
 uses(
     Tests\TestCase::class,
     Illuminate\Foundation\Testing\RefreshDatabase::class,
-)->in('Feature', 'Unit');
+)->in('Feature', 'Unit', '../resources/views');
 
 use Illuminate\Support\Facades\Artisan;
 

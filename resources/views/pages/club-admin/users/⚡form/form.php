@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Enums\CommitteeRolesEnum;
 use App\Enums\Gender;
 use App\Models\ClubAdmin\Users\User;
 use App\Support\Breadcrumb;
@@ -9,9 +10,11 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule as ValidationRule;
+use Illuminate\Validation\Rules\Enum;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Rule;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
@@ -60,6 +63,8 @@ new class extends Component
 
     #[Rule('required|boolean')]
     public bool $is_committee_member = false;
+
+    public ?string $committee_role = null;
 
     // Registration
 
@@ -178,6 +183,10 @@ new class extends Component
     public function rules(): array
     {
         return [
+            'committee_role' => [
+                'nullable',
+                ValidationRule::when($this->is_committee_member, ['required', new Enum(CommitteeRolesEnum::class)])
+            ],
             'licence' => [
                 'nullable',
                 ValidationRule::when(
@@ -208,8 +217,7 @@ new class extends Component
                 'string',
                 function ($attribute, $value, $fail) {
 
-                    $isCompetitive = $this->licence_type === 'competitive'
-                        || $this->is_competitor;
+                    $isCompetitive = $this->licence_type === 'competitive' || $this->is_competitor;
 
                     // obligatoire si compétitif
                     if ($isCompetitive && empty($value)) {
@@ -281,6 +289,12 @@ new class extends Component
 
             $this->success('User ' . $newUser->first_name . ' created with success', redirectTo: route('admin.users.index'));
         }
+    }
+
+    #[Computed()]
+    public function CommitteeRoleOptions(): array
+    {
+        return CommitteeRolesEnum::getOptions();
     }
 
     public function with(): array

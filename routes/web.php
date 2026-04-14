@@ -98,6 +98,11 @@ Route::prefix('admin/club-admin/users/')
         Route::livewire('payments', 'pages::club-admin.users.payments')->name('admin.users.payments');
         Route::livewire('registrations', 'pages::club-admin.users.registrations')->name('admin.users.registrations');
     });
+Route::prefix('admin/club-admin/')
+    ->middleware(['auth', 'verified'])
+    ->group(function (): void  {
+        Route::livewire('club-settings', 'pages::club-admin.club-settings')->name('admin.club-settings');
+    });
 
 Route::prefix('admin/club-admin/rooms/')
     ->middleware(['auth', 'verified'])

@@ -84,12 +84,15 @@
                 <x-menu-separator />
 
                 <x-menu-sub icon="o-building-office" title="{{ __('Infrastructure') }}">
-                    <x-menu-item icon="o-identification" link="" title="{{ __('Club info') }}" />
+                    <x-menu-item icon="o-identification" link="{{ route('admin.club-settings') }}" title="{{ __('Club settings') }}" />
                     <x-menu-item icon="o-building-office-2" link="{{ route('admin.rooms.index') }}" title="{{ __('Rooms') }}" />
                     <x-menu-item icon="o-squares-2x2" link="{{ route('admin.tables.index') }}" title="{{ __('Tables') }}" />
                     {{-- <x-menu-item title="Archives" icon="o-archive-box" link="####" /> --}}
                 </x-menu-sub>
 
+                                <x-menu-separator />
+
+                                
                 <x-menu-sub icon="o-inbox-stack" title="{{ __('Members Admin') }}">
                     <x-menu-item icon="o-users" link="{{ route('admin.users.index') }}" title="{{ __('Users') }}" />
                     <x-menu-item icon="o-credit-card" link="{{  route('admin.users.registrations') }}" title="{{ __('Registrations') }}" />

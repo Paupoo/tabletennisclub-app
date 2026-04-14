@@ -6,7 +6,7 @@
     <x-header title="{{ __('Affiliation and Training') }}" subtitle="{{ __('Manage your season subscription') }}"
         separator>
         <x-slot:actions>
-            <x-button label="{{ __('Add a family member') }}" icon="o-plus" class="btn-primary btn-sm   " wire:click="$set('addMemberModal', true)" />
+            <x-button label="{{ __('Add a family member') }}" icon="o-plus" class="btn-outline btn-sm   " wire:click="$set('addMemberModal', true)" />
         </x-slot:actions>
     </x-header>
 
@@ -236,7 +236,7 @@
             <x-input label="{{ __('First Name') }}" wire:model="new_first_name" />
             <x-input label="{{ __('Last Name') }}" wire:model="new_last_name" />
             <x-datetime label="{{ __('Birthdate') }}" wire:model="new_birthdate" />
-            <x-group label="{{ __('Gender') }}" wire:model="new_gender" :options="[['id' => 'male', 'name' => __('Male')], ['id' => 'female', 'name' => __('Female')]]" inline class="btn-soft" />
+            <x-group label="{{ __('Gender') }}" wire:model="new_gender" :options="$genders" inline class="btn-soft" />
             <x-input label="{{ __('Email') }}" wire:model="new_email" />
             <x-input label="{{ __('Phone Number') }}" wire:model="new_phone_number" />
         </div>

@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\Gender;
 use App\Models\Clubadmin\Users\User;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Facades\Hash;
@@ -65,12 +66,15 @@ use Toast;
         $this->validate();
 
         // Création rapide du profil avec un mot de passe aléatoire
-        $newMember = User::create([
+        $newMember = User::firstOrCreate([
+            'email' => $this->new_email,
+        ],
+        [
             'first_name' => $this->new_first_name,
             'last_name' => $this->new_last_name,
+            'email' => $this->new_email,
             'birthdate' => $this->new_birthdate,
             'gender' => $this->new_gender,
-            'email' => $this->new_email,
             'phone_number' => $this->phone_number ?? User::first()->phone_number,
 
             // On hérite des infos du parent
@@ -139,6 +143,7 @@ use Toast;
                 ['id' => 'competitive', 'value' => 'competitive'],
                 ['id' => 'recreative', 'value' => 'recreative'],
             ]),
+            'genders' => Gender::options(),
             'trainings' => [
                 [
                     'id' => 1,

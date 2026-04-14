@@ -119,6 +119,6 @@ new class extends Component
 
     public function render(): View
     {
-        return view('clubAdmin.club.club-settings');
+        return $this->view();
     }
 };

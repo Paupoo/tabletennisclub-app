@@ -83,9 +83,9 @@
         <x-admin.shared.form-section :separator="false" :subtitle="__('System behavior and registration rules')" :title="__('Internal Settings')">
             <div class="col-span-6 space-y-4 md:col-span-4">
                 <x-toggle class="toggle-primary" label="{{ __('Allow online membership renewal') }}"
-                    wire:model="allow_online_renewal" />
+                    wire:model="allow_online_renewal" disabled/>
                 <x-toggle class="toggle-primary" label="{{ __('Show training spots availability publicly') }}"
-                    wire:model="public_trainings" />
+                    wire:model="public_trainings" disabled/>
 
             </div>
         </x-admin.shared.form-section>

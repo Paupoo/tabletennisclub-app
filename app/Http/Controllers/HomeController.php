@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Models\ClubEvents\Interclub\Club;
 use App\Models\ClubPosts\NewsPost;
 use Illuminate\Contracts\View\View;
 
@@ -108,6 +109,8 @@ class HomeController extends Controller
             ],
         ];
 
-        return view('public.home', compact('sponsors', 'articles', 'schedules'));
+        $club = Club::ourClub()->first();
+
+        return view('public.home', compact('sponsors', 'articles', 'schedules', 'club'));
     }
 }

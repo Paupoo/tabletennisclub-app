@@ -57,6 +57,14 @@ class Club extends Model
         'street' => 'string',
         'city_code' => 'string',
         'city_name' => 'string',
+        'building_name' => 'string',
+        'latitude' => 'float',
+        'longitude' => 'float',
+        'email_contact' => 'string',
+        'phone_contact' => 'string',
+        'bank_account' => 'string',
+        'website_url' => 'string',
+        'enterprise_number' => 'string'
     ];
 
     protected $fillable = [
@@ -65,6 +73,14 @@ class Club extends Model
         'street',
         'city_code',
         'city_name',
+        'building_name',
+        'latitude',
+        'longitude',
+        'phone_contact',
+        'email_contact',
+        'bank_account',
+        'website_url',
+        'enterprise_number'
     ];
 
     public function rooms(): BelongsToMany

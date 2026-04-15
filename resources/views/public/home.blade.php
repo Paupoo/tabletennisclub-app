@@ -20,7 +20,7 @@
     </section>
     
     <section id="contact">
-        <x-contact-section />
+        <x-contact-section :club="$club"/>
     </section>
     
     <section id="sponsors">

@@ -101,7 +101,7 @@ Route::prefix('admin/club-admin/users/')
 Route::prefix('admin/club-admin/')
     ->middleware(['auth', 'verified'])
     ->group(function (): void  {
-        Route::livewire('club-settings', 'pages::club-admin.club-settings')->name('admin.club-settings');
+        Route::livewire('club-info', 'pages::club-admin.club-info')->name('admin.club-info');
     });
 
 Route::prefix('admin/club-admin/rooms/')

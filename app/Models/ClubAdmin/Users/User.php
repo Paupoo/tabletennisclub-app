@@ -17,11 +17,13 @@ use App\Models\ClubEvents\Tournament\Pool;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Training\Training;
 use App\Models\ClubPosts\NewsPost;
+use App\Observers\UserObserver;
 use Carbon\Carbon;
 use Database\Factories\ClubAdmin\Users\UserFactory;
 use Eloquent;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Contracts\Database\Query\Builder;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -111,6 +113,8 @@ use Laravel\Sanctum\PersonalAccessToken;
  *
  * @mixin Eloquent
  */
+
+#[ObservedBy(UserObserver::class)]
 class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, HasFactory, Notifiable;

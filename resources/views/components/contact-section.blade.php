@@ -9,6 +9,7 @@
                 </p>
 
                 <div class="space-y-6">
+                    @if (($club->latitude && $club->longitude) || ($club->street && $club->city_code && $club->city_name))
                     <div class="flex items-start">
                         <div class="shrink-0 w-12 h-12 bg-club-blue rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -27,33 +28,16 @@
                             @if ($club->latitude && $club->longitude)
                                 <div class="mt-2 text-sm font-medium text-gray-500">
 
-                                    <div id="map" class="h-[250px] w-[250px] md:h-[350px] md:w-[350px] rounded-lg shadow-sm"></div>
-
-
-                                    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-                                    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
-                                    <script>
-                                        // 1. Initialisation : Latitude et Longitude (peuvent venir du Controller)
-                                        var lat = {{ $club->latitude ?? 50.667593 }};
-                                        var lon = {{ $club->longitude ?? 4.589143 }};
-
-                                        var map = L.map('map').setView([lat, lon], 15);
-
-                                        // 2. Ajout du fond de carte OpenStreetMap
-                                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                                            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                                        }).addTo(map);
-
-                                        // 3. Ajout du marqueur
-                                        L.marker([lat, lon]).addTo(map)
-                                            .bindPopup('{{ $club->name ?? 'Notre Club' }}')
-                                            .openPopup();
-                                    </script>
+                                    <div id="map" 
+                                        class="h-[250px] w-[250px] md:h-[350px] md:w-[350px] rounded-lg shadow-sm"
+                                        data-lat="{{ $club->latitude ?? 50.667593 }}"
+                                        data-lon="{{ $club->longitude ?? 4.589143 }}">
+                                    </div>
                                 </div>
                             @endif
                         </div>
                     </div>
+                    @endif
 
                     @if ($club->phone_contact)
                         <div class="flex items-start">
@@ -133,12 +117,4 @@
             </div>
         </div>
     </div>
-
-    {{-- <style>
-        .club-blue { color: #1e40af; }
-        .bg-club-blue { background-color: #1e40af; }
-        .bg-club-yellow { background-color: #fbbf24; }
-        .text-club-blue { color: #1e40af; }
-        .focus\:ring-club-blue:focus { --tw-ring-color: #1e40af; }
-    </style> --}}
 </section>

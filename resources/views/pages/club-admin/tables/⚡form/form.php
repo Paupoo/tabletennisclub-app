@@ -39,7 +39,6 @@ new class extends Component
 
     public function mount(?Table $table): void
     {
-        if ($table && $table->exists) {
             $this->tableId = $table->id;
             $this->name = $table->name;
             $this->brand = $table->brand ?? '';
@@ -48,7 +47,6 @@ new class extends Component
             $this->purchased_on = $table->purchased_on ? $table->purchased_on->format('Y-m-d') : null;
             $this->state = $table->state;
             $this->state_description = $table->state_description ?? '';
-        }
 
         $this->states = Table::getStates();
     }

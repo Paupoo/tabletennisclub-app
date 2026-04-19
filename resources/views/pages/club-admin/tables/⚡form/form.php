@@ -15,12 +15,6 @@ new class extends Component
     #[Validate('nullable')]
     public ?string $brand = null;
 
-    #[Validate('boolean')]
-    public bool $is_available = true;
-
-    #[Validate('boolean')]
-    public bool $is_competition_ready = false;
-
     #[Validate('nullable')]
     public ?string $model = null;
 
@@ -54,10 +48,6 @@ new class extends Component
             $this->purchased_on = $table->purchased_on ? $table->purchased_on->format('Y-m-d') : null;
             $this->state = $table->state;
             $this->state_description = $table->state_description ?? '';
-            $this->is_available = $table->is_available;
-            $this->is_competition_ready = $table->is_competition_ready;
-        } else {
-            $this->is_available = true;
         }
 
         $this->states = Table::getStates();

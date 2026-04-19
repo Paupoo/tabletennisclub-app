@@ -15,8 +15,6 @@ return new class extends Migration
             $table->string('state_description', 255)->nullable();
             $table->string('brand', 100)->nullable();
             $table->string('model', 100)->nullable();
-            $table->boolean('is_available')->default(true);
-            $table->boolean('is_competition_ready')->default(true);
         });
     }
 
@@ -26,7 +24,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('tables', function (Blueprint $table) {
-            $table->dropColumn(['state_description', 'brand', 'model', 'is_available', 'is_competition_ready']);
+            $table->dropColumn(['state_description', 'brand', 'model']);
         });
     }
 };

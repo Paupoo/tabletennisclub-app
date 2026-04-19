@@ -15,14 +15,6 @@
 
             {{-- Colonne Latérale --}}
             <div class="space-y-6">
-                <x-admin.shared.side-card title="Statut" shadow>
-                    <div class="space-y-4">
-                        <x-toggle label="Disponible à la réservation" wire:model="is_available" />
-                        {{-- Logique inversée pour correspondre au booléen en base --}}
-                        <x-toggle label="Prête pour la compétition" wire:model="is_competition_ready" />
-                    </div>
-                </x-admin.shared.side-card>
-
                 {{-- Aide contextuelle --}}
                 <x-admin.shared.info-bar :description="__('L\'assignation à une salle permet de calculer automatiquement la capacité totale de celle-ci.')">
                     <x-icon name="o-information-circle" class="w-5 h-5" />

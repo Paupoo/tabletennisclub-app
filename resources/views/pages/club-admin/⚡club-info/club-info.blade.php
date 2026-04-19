@@ -25,7 +25,7 @@
             <x-input icon="o-map-pin" label="{{ __('Street') }}" wire:model="street" required/>
             <x-input icon="o-map-pin" label="{{ __('City Code') }}" wire:model="city_code" required/>
             <x-input icon="o-map-pin" label="{{ __('City Name') }}" wire:model="city_name" required/>
-            <x-input icon="o-building-office" label="{{ __('Building Name (Optional)') }}" wire:model="building_name" required/>
+            <x-input icon="o-building-office" label="{{ __('Building Name (Optional)') }}" wire:model="building_name"/>
             <x-input icon="o-map-pin" label="{{ __('Latitude (Optional)') }}" wire:model="latitude" numeric/>
             <x-input icon="o-map-pin" label="{{ __('Longitude (Optional)') }}" wire:model="longitude" numeric/>
             

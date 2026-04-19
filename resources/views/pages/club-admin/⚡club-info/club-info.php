@@ -1,5 +1,7 @@
 <?php
 
+namespace Resources\views\Pages\ClubEvents\Interclubs\Teams;
+
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Club;
 use App\Support\Breadcrumb;
@@ -17,7 +19,7 @@ new class extends Component
 
     public bool $addCommitteeMemberModal = false;
 
-    public string $name;
+    public ?string $name;
 
     public string $licence;
 
@@ -96,19 +98,21 @@ new class extends Component
 
     public function mount(): void
     {
-        $this->name = Club::ourClub()->first()?->name;
+        $club = Club::ourClub()->first();
+
+        $this->name = $club->name ?? '';
         $this->licence = env('APP_CLUB_LICENCE', '');
-        $this->street =  Club::ourClub()->first()?->street;
-        $this->city_code =  Club::ourClub()->first()?->city_code;
-        $this->city_name = env('APP_CLUB_CITY');
-        $this->building_name =  Club::ourClub()->first()?->building_name;
-        $this->latitude =  Club::ourClub()->first()->latitude;
-        $this->longitude =  Club::ourClub()->first()->longitude;
-        $this->email_contact =  Club::ourClub()->first()?->email_contact;
-        $this->phone_contact =  Club::ourClub()->first()?->phone_contact;
-        $this->website_url =  Club::ourClub()->first()?->website_url;
-        $this->bank_account =  Club::ourClub()->first()?->bank_account;
-        $this->enterprise_number =  Club::ourClub()->first()?->enterprise_number;
+        $this->street =  $club->street ?? '';
+        $this->city_code =  $club->city_code ?? '';
+        $this->city_name = $club->city_name ?? '';
+        $this->building_name =  $club->building_name ?? '';
+        $this->latitude =  $club?->latitude;
+        $this->longitude =  $club?->longitude;
+        $this->email_contact =  $club->email_contact ?? '';
+        $this->phone_contact =  $club->phone_contact ?? '';
+        $this->website_url =  $club->website_url ?? '';
+        $this->bank_account =  $club->bank_account ?? '';
+        $this->enterprise_number =  $club->enterprise_number ?? '';
     }
 
     #[On('member-added')]  // 👈 Écoute l'événement du modal

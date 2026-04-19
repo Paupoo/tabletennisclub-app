@@ -1,12 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
+namespace Tests\Feature\ClubAdmin\ClubSettings;
+
 
 use App\Enums\CommitteeRolesEnum;
 use App\Livewire\ClubAdmin\ClubSettings;
 use App\Models\ClubAdmin\Users\User;
+use Illuminate\Support\Facades\Config;
 use Livewire\Livewire;
 
-pest()->group('club-settings');
+pest()->group('club-info');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPERS
@@ -18,9 +23,13 @@ pest()->group('club-settings');
  */
 function clubSettingsComponent(): string
 {
-    return 'pages::club-admin.club-settings';
+    return 'pages::club-admin.club-info';
 }
 
+function committeeModalComponent(): string
+{
+    return 'club-admin.committee-modal';
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MOUNT & RENDER
@@ -33,13 +42,13 @@ describe('Mount & Render', function () {
             ->assertStatus(200);
     });
 
-    it('initialises properties from env on mount', function () {
+    it('initialises properties from the club app defined in the .env', function () {
         // On force des valeurs d'env pour le test
-        config(['app.name' => 'CTT Test']);
+        $testValue = 'ABC123';
+        putenv("APP_CLUB_LICENCE=$testValue");
 
         Livewire::test(clubSettingsComponent())
-            ->assertSet('allow_online_renewal', true)
-            ->assertSet('public_trainings', true);
+            ->assertSet('licence', $testValue);
     });
 
     it('displays committee members in the view', function () {
@@ -64,17 +73,18 @@ describe('Mount & Render', function () {
 
 });
 
+
 // ─────────────────────────────────────────────────────────────────────────────
-// SEARCH MEMBERS
+// SEARCH MEMBERS (In the modal)
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe('searchMembers', function () {
+describe('searchMembers(in the modal)', function () {
 
     it('returns matching users by first name', function () {
         User::factory()->create(['first_name' => 'Jean', 'last_name' => 'Dupont', 'licence' => 'BBW001']);
         User::factory()->create(['first_name' => 'Marie', 'last_name' => 'Curie', 'licence' => 'BBW002']);
 
-        $component = Livewire::test(clubSettingsComponent())
+        $component = Livewire::test(committeeModalComponent())
             ->call('searchMembers', 'Jea');
 
         expect($component->get('membersSearchList'))
@@ -85,7 +95,7 @@ describe('searchMembers', function () {
     it('returns matching users by last name', function () {
         User::factory()->create(['first_name' => 'Jean', 'last_name' => 'Dupont', 'licence' => 'BBW001']);
 
-        $component = Livewire::test(clubSettingsComponent())
+        $component = Livewire::test(committeeModalComponent())
             ->call('searchMembers', 'Dup');
 
         expect($component->get('membersSearchList'))
@@ -95,7 +105,7 @@ describe('searchMembers', function () {
     it('returns matching users by licence number', function () {
         User::factory()->create(['first_name' => 'Jean', 'last_name' => 'Dupont', 'licence' => 'BBW999']);
 
-        $component = Livewire::test(clubSettingsComponent())
+        $component = Livewire::test(committeeModalComponent())
             ->call('searchMembers', 'BBW999');
 
         expect($component->get('membersSearchList'))
@@ -106,14 +116,14 @@ describe('searchMembers', function () {
     it('limits results to 5 users', function () {
         User::factory()->count(10)->create(['first_name' => 'Test']);
 
-        $component = Livewire::test(clubSettingsComponent())
+        $component = Livewire::test(committeeModalComponent())
             ->call('searchMembers', 'Test');
 
         expect($component->get('membersSearchList'))->toHaveCount(5);
     });
 
     it('returns an empty list when nothing matches', function () {
-        $component = Livewire::test(clubSettingsComponent())
+        $component = Livewire::test(committeeModalComponent())
             ->call('searchMembers', 'xxxxxxxxxxxxxxx');
 
         expect($component->get('membersSearchList'))->toBeEmpty();
@@ -126,7 +136,7 @@ describe('searchMembers', function () {
             'licence'    => 'LIC123',
         ]);
 
-        $component = Livewire::test(clubSettingsComponent())
+        $component = Livewire::test(committeeModalComponent())
             ->call('searchMembers', 'Paul');
 
         expect($component->get('membersSearchList'))
@@ -141,15 +151,15 @@ describe('searchMembers', function () {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ADD MEMBER
+// ADD MEMBER (in the modal)
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe('addMember', function () {
+describe('addMember(in the modal)', function () {
 
     it('adds a user to the committee with a valid role', function () {
         $user = User::factory()->create(['is_committee_member' => false]);
 
-        Livewire::test(clubSettingsComponent())
+        Livewire::test(committeeModalComponent())
             ->set('selectedMemberId', $user->id)
             ->set('selectedRoleId', CommitteeRolesEnum::PRESIDENT->value)
             ->call('addMember');
@@ -162,7 +172,7 @@ describe('addMember', function () {
     it('resets selectedMemberId, selectedRoleId and closes modal after adding', function () {
         $user = User::factory()->create(['is_committee_member' => false]);
 
-        Livewire::test(clubSettingsComponent())
+        Livewire::test(committeeModalComponent())
             ->set('selectedMemberId', $user->id)
             ->set('selectedRoleId', CommitteeRolesEnum::SECRETARY->value)
             ->call('addMember')
@@ -172,7 +182,7 @@ describe('addMember', function () {
     });
 
     it('fails validation when no member is selected', function () {
-        Livewire::test(clubSettingsComponent())
+        Livewire::test(committeeModalComponent())
             ->set('selectedMemberId', null)
             ->set('selectedRoleId', CommitteeRolesEnum::PRESIDENT->value)
             ->call('addMember')
@@ -182,7 +192,7 @@ describe('addMember', function () {
     it('fails validation when no role is selected', function () {
         $user = User::factory()->create();
 
-        Livewire::test(clubSettingsComponent())
+        Livewire::test(committeeModalComponent())
             ->set('selectedMemberId', $user->id)
             ->set('selectedRoleId', null)
             ->call('addMember')
@@ -192,7 +202,7 @@ describe('addMember', function () {
     it('fails validation when role is not a valid CommitteeRolesEnum value', function () {
         $user = User::factory()->create();
 
-        Livewire::test(clubSettingsComponent())
+        Livewire::test(committeeModalComponent())
             ->set('selectedMemberId', $user->id)
             ->set('selectedRoleId', 'NOT_A_VALID_ROLE')
             ->call('addMember')
@@ -203,7 +213,7 @@ describe('addMember', function () {
     it('dispatches a success toast after adding', function () {
         $user = User::factory()->create(['is_committee_member' => false]);
 
-        Livewire::test(clubSettingsComponent())
+        Livewire::test(committeeModalComponent())
             ->set('selectedMemberId', $user->id)
             ->set('selectedRoleId', CommitteeRolesEnum::PRESIDENT->value)
             ->call('addMember')
@@ -250,13 +260,13 @@ describe('removeMember', function () {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// COMPUTED PROPERTY : roleOptions
+// COMPUTED PROPERTY : roleOptions (in the Modal)
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe('roleOptions', function () {
+describe('roleOptions(in the modal)', function () {
 
     it('returns an array of options from CommitteeRolesEnum', function () {
-        $component = Livewire::test(clubSettingsComponent());
+        $component = Livewire::test(committeeModalComponent());
 
         // On vérifie que la computed prop est exploitable dans la vue
         // CommitteeRolesEnum::getOptions() doit retourner des entrées [id, name]

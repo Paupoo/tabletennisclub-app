@@ -147,7 +147,7 @@ new class extends Component
             $this->is_active = $user->is_active;
             $this->is_committee_member = $user->is_committee_member;
             $this->is_admin = $user->is_admin;
-            $this->committee_role = $user->committee_role->value;
+            $this->committee_role = $user->committee_role?->value;
         }
     }
 

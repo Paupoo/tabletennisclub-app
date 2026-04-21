@@ -121,5 +121,4 @@ describe('User Appearance Settings Test', function() {
 
         expect($this->user->fresh()->theme)->toBe('dark');
     });
-})->group('Users');
-    
+})->group('club-admin', 'users');

@@ -5,6 +5,8 @@ declare(strict_types=1);
 use App\Models\ClubAdmin\Users\User;
 use App\Providers\RouteServiceProvider;
 
+pest()->group('auth');
+
 test('login screen can be rendered', function (): void {
     $response = $this->get('/login');
 

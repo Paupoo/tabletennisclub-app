@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use App\Models\ClubAdmin\Users\User;
 
+pest()->group('auth');
+
 test('confirm password screen can be rendered', function (): void {
     $user = User::factory()->create();
 

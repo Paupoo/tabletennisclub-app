@@ -3,6 +3,8 @@
 declare(strict_types=1);
 use App\Providers\RouteServiceProvider;
 
+pest()->group('auth');
+
 test('new users can register', function (): void {
     $response = $this->post('/register', [
         'first_name' => 'John',

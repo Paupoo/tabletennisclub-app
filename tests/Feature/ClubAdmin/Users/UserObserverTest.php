@@ -36,4 +36,4 @@ describe('User Observer tests', function () {
     
         expect($user->fresh()->committee_role)->toBe(CommitteeRolesEnum::TREASURER);
     });
-})->group('Users', 'Observers');
+})->group('club-admin', 'Users', 'Observers');

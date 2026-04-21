@@ -5,12 +5,19 @@ declare(strict_types=1);
 use App\Models\ClubAdmin\Club\Table;
 use App\Support\Breadcrumb;
 use Illuminate\View\View;
+use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Mary\Traits\Toast;
 
 new class extends Component
 {
     use Toast;
+
+    public bool $deleteModal = false;
+    public bool $unlinkModal = false;
+    
+    public Table $tableToDelete;
+    public Table $tableToUnlink;
 
     public string $search = '';
 
@@ -23,10 +30,41 @@ new class extends Component
         return $this->view();
     }
 
-    public function unlink(Table $table): void
+    public function confirmUnlink(Table $table): void
     {
-        $table->room()->disassociate()->save();
-        $this->success(__('The table has been unlinked from the room.'));
+        $this->tableToUnlink = $table;
+        $this->unlinkModal = true;
+    }
+
+    public function unlink(): void
+    {
+        try {
+            $this->authorize('edit', $this->tableToUnlink);
+            $this->tableToUnlink->room()->disassociate()->save();
+            $this->unlinkModal = false;
+
+            $this->success(__('The table has been unlinked from the room.'));
+        } catch (\Exception $e) {
+            $this->error('Erreur : ' . $e->getMessage());
+        }
+    }
+    
+    public function confirmDelete(Table $table)
+    {
+        $this->tableToDelete = $table;
+        $this->deleteModal = true;
+    }
+    
+    public function delete(): void
+    {
+        try {
+            $this->authorize('delete', $this->tableToDelete);
+            $this->tableToDelete->delete();
+            $this->deleteModal = false;
+            $this->success(__('The table has been deleted.'));
+        } catch (\Exception $e) {
+            $this->error('Erreur : ' . $e->getMessage());
+        }
     }
 
     public function with(): array

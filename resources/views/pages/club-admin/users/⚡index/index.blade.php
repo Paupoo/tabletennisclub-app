@@ -178,7 +178,7 @@
         </x-card>
     </div>
 
-    {{-- MODALES               --}}
+    {{-- MODALES --}}
     <x-modal subtitle="{{ __('Warning!') }}" title="{{ __('Confirm deletion') }}" wire:model="deleteModal">
         <p>{{ __('Are you sure you want to delete this user? This action is irreversible.') }}</p>
 

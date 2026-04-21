@@ -24,6 +24,14 @@ class TablePolicy
     {
         return $user->is_admin || $user->is_committee_member;
     }
+    
+    /**
+     * Determine whether the user can edit models.
+     */
+    public function edit(User $user): bool
+    {
+        return $user->is_admin || $user->is_committee_member;
+    }
 
     /**
      * Determine whether the user can delete the model.

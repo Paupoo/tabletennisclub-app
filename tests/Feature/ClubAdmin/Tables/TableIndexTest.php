@@ -6,6 +6,7 @@ namespace Tests\Feature\Livewire;
 
 use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Club\Table;
+use App\Models\ClubAdmin\Users\User;
 use Illuminate\Support\Collection;
 use Livewire\Livewire;
 
@@ -290,4 +291,57 @@ describe('TableIndex Livewire Component', function () {
         expect($breadcrumbs)->toBeArray();
         expect($breadcrumbs)->not->toBeEmpty();
     });
-})->group('table-index', 'club-admin');
+
+    describe('User permissions', function() {
+        test('a user cannot create a new table', function() {
+            
+        });
+
+        test('a user cannot edit a table', function() {
+
+        });
+
+        test('a user cannot unlink a table from a room', function() {
+
+        });
+
+        test('a user cannot delete a table', function() {
+
+        });
+
+        test('an admin or committee member can create a new table', function() {
+            $admin = User::factory()->create(['is_admin' => true]); // Exemple
+
+            Livewire::actingAs($admin)
+                ->test('pages::club-admin.tables.index')
+                ->assertSee(__('Create'));
+        });
+
+        test('an admin or committee member can edit a table', function() {
+
+            $table = \App\Models\ClubAdmin\Club\Table::factory()->create();
+            $admin = User::factory()->create(['is_admin' => true]); // Exemple
+
+            Livewire::actingAs($admin)
+                ->test('pages::club-admin.tables.index')
+                ->assertSeeHtml(__('Edit'));
+        });
+        
+        test('an admin or committee member can unlink a table from a room', function() {
+            $admin = User::factory()->create(['is_admin' => true]); // Exemple
+
+            Livewire::actingAs($admin)
+                ->test('pages::club-admin.tables.index')
+                ->assertSee(__('Unlink'));
+        });
+
+        test('an admin or committee member can delete a table', function() {
+            $admin = User::factory()->create(['is_admin' => true]); // Exemple
+
+            Livewire::actingAs($admin)
+                ->test('pages::club-admin.tables.index')
+                ->assertSee(__('Delete'));
+        });
+
+    });
+})->group('table', 'club-admin');

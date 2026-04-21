@@ -8,8 +8,10 @@
             <x-input placeholder="Rechercher..." wire:model.live.debounce.300ms="search" icon="o-magnifying-glass" />
         </x-slot:middle>
         <x-slot:actions>
-            <x-button label="{{ __('Create table') }}" icon="o-plus" class="btn-primary" link="{{ route('admin.tables.create') }}" />
-            <x-button x-on:click="$wire.$refresh()" label="{{ __('Refresh') }}" class="btn-outline"/>
+            @can('create', \App\Models\ClubAdmin\Club\Table::class)
+            <x-button label="{{ __('Create') }}" icon="o-plus" class="btn-primary btn-sm" link="{{ route('admin.tables.create') }}" />
+            <x-button x-on:click="$wire.$refresh()" label="{{ __('Refresh') }}" class="btn-outline btn-sm"/>
+            @endcan
         </x-slot:actions>
     </x-header>
 
@@ -76,16 +78,23 @@
                             @endscope
 
                             @scope('actions', $table)
+                                @canany(['edit', 'delete'], $table)
                                 <x-admin.shared.row-actions>
-                                    <x-menu-item icon="o-pencil" link="{{ route('admin.tables.edit', $table) }}"
-                                        title="{{ __('Edit') }}" class="text-xs" />
-                                    @if ($table->room)
-                                        <x-menu-item icon="o-lock-open" wire:click="unlink({{ $table }})"
-                                            title="{{ __('Unlink') }}" class="text-xs" />
-                                    @endif
-                                    <x-menu-separator />
-                                    <x-menu-item class="text-error text-xs" icon="o-trash" title="{{ __('Delete') }}" />
+                                    @can('edit', $table)
+                                        <x-menu-item icon="o-pencil" link="{{ route('admin.tables.edit', $table) }}"
+                                            title="{{ __('Edit') }}" class="text-xs" />
+                                        @if ($table->room)
+                                            <x-menu-item icon="o-lock-open" wire:click="confirmUnlink({{ $table }})" spinner
+                                                title="{{ __('Unlink') }}" class="text-xs" />
+                                        @endif
+                                    @endcan
+                                   
+                                    @can('delete', $table)
+                                        <x-menu-separator />
+                                        <x-menu-item class="text-error text-xs" icon="o-trash" wire:click="confirmDelete({{ $table }})" title="{{ __('Delete') }}" />
+                                    @endcan
                                 </x-admin.shared.row-actions>
+                                @endcanany
                             @endscope
                         </x-table>
                     </div>
@@ -127,4 +136,24 @@
             </div>
         @endforelse
     </div>
+
+    {{-- Modals --}}
+    <x-modal subtitle="{{ __('Warning!') }}" title="{{ __('Confirm unlink') }}" wire:model="unlinkModal">
+        <p>{{ __('Are you sure you want to unlink the table from its room?') }}</p>
+
+        <x-slot:actions>
+            <x-button label="{{ __('Cancel') }}" wire:click="$set('unlinkModal', false)" />
+            <x-button class="btn-error" label="{{ __('Delete') }}" spinner wire:click="unlink" />
+        </x-slot:actions>
+    </x-modal>
+
+    <x-modal subtitle="{{ __('Warning!') }}" title="{{ __('Confirm deletion') }}" wire:model="deleteModal">
+        <p>{{ __('Are you sure you want to delete this table? This action is irreversible.') }}</p>
+
+        <x-slot:actions>
+            <x-button label="{{ __('Cancel') }}" wire:click="$set('deleteModal', false)" />
+            <x-button class="btn-error" label="{{ __('Delete') }}" spinner wire:click="delete" />
+        </x-slot:actions>
+    </x-modal>
+
 </div>

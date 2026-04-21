@@ -31,32 +31,13 @@
                                 <div class="flex items-center gap-2">
                                     {{-- Badge : Tables prêtes pour la compétition --}}
                                     @if ($room)
-                                    <x-badge class="badge-soft">    
-                                        <div class="font-medium text-xs"> {{ __('Total tables:') }} </div>
-                                        <x-icon name="o-square-3-stack-3d" class="w-3.5 h-3.5" />
-                                        <span class="font-medium text-xs">
-                                            {{ $tablesInRoom->count() }}
-                                        </span>
-                                    </x-badge>
-                                    <x-badge class="badge-soft">
-                                        <div class="font-medium text-xs"> {{ __('Room capacity:') }} </div>
-                                        <x-icon name="o-academic-cap" class="w-3.5 h-3.5" />
-                                        <span class="font-medium text-xs">
-                                            {{ $room?->capacity_for_trainings }}
-                                        </span>
-                                        <x-icon name="o-trophy" class="w-3.5 h-3.5" />
-                                        <span class="font-medium text-xs">
-                                            {{ $room?->capacity_for_interclubs }}
-                                        </span>
-                                    </x-badge>
+                                    <x-admin.shared.tables-counter
+                                        :total_tables="$tablesInRoom->count()" />
+                                    <x-admin.shared.tables-capacity-counter
+                                        :training_capacity="$room?->capacity_for_trainings"
+                                        :interclub_capacity="$room?->capacity_for_interclubs" />
                                     @else
-                                    <x-badge class="badge-soft">    
-                                        <div class="font-medium text-xs"> {{ __('Total tables:') }} </div>
-                                        <x-icon name="o-square-3-stack-3d" class="w-3.5 h-3.5" />
-                                        <span class="font-medium text-xs">
-                                            {{ $tablesInRoom->count() }}
-                                        </span>
-                                    </x-badge>
+                                    <x-admin.shared.tables-counter :total_tables="$tablesInRoom->count()" />
                                     @endif
                                 </div>
                             </div>

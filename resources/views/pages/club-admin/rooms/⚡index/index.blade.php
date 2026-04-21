@@ -21,11 +21,11 @@
 
             <div class="mb-2">
                 <div class="flex items-center gap-2 mb-4">
-                    <div class="badge badge-outline badge-sm gap-2 py-3 px-3">
-                        <x-icon name="o-square-3-stack-3d" class="w-3.5 h-3.5" />
-                        <span class="font-medium text-xs">{{ $room->tables()->where('is_competition_ready', true)->count() }} / {{ $room->tables()->count() }}
-                            {{ __('tables') }}</span>
-                    </div>
+                    <x-admin.shared.tables-counter
+                        :total_tables="$room->tables()->count()" />
+                    <x-admin.shared.tables-capacity-counter
+                        :training_capacity="$room?->capacity_for_trainings"
+                        :interclub_capacity="$room?->capacity_for_interclubs" />
                 </div>
                 <div class="flex items-center gap-1 text-sm text-gray-500 mb-6">
                     <x-icon name="o-map-pin" class="w-4 h-4" />

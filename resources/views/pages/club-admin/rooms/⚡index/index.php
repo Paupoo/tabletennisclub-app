@@ -37,7 +37,7 @@ new class extends Component
         ];
     }
 
-    public function destroy(Room $room): void
+    public function delete(Room $room): void
     {
         $this->authorize('delete', $room);
         $room->delete();

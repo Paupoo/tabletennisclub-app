@@ -145,7 +145,7 @@
     {{-- VUE TABLE (desktop)   --}}
     <div class="hidden lg:block">
         <x-card>
-            <x-table :headers="$headers" :rows="$users" :sort-by="$sortBy" selectable wire:model.live="selected" container-class="">
+            <x-table :headers="$headers" :rows="$users" :sort-by="$sortBy" selectable wire:model.live="selected">
                 @scope('cell_photo', $user)
                     <x-avatar class="h-10 w-10" image="{{ $user->photo ?? '/images/empty-user.jpg' }}" />
                 @endscope

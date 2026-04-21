@@ -19,13 +19,13 @@
                     <x-input label="{{ __('Building Name*') }}" class="col-span-2"
                         wire:model.live.debounce.750ms="building_name" />
                     <x-input label="{{ __('Street') }}" class="col-span-2" wire:model.live.debounce.750ms="street" />
-                    <x-input label="{{ __('city Code*') }}" wire:model.live.debounce.750ms="city_code"
-                        type="number" inputmode="numeric" pattern="[0-9]*" autocomplete="city-code" min="1000"
-                        max="9999" />
+                    <x-input label="{{ __('city Code*') }}" wire:model.live.debounce.750ms="city_code" type="number"
+                        inputmode="numeric" pattern="[0-9]*" autocomplete="city-code" min="1000" max="9999" />
                     <x-input label="{{ __('City*') }}" wire:model.live.debounce.750ms="city_name" />
                 </div>
-                <x-textarea label="{{ __('Access Descriptions*') }}" wire:model.live.debounce.750ms="access_description"
-                    hint="{{ __('Max 255 characters') }}" rows="3" />
+                <x-textarea label="{{ __('Access Descriptions*') }}"
+                    wire:model.live.debounce.750ms="access_description" hint="{{ __('Max 255 characters') }}"
+                    rows="3" />
             </div>
 
             <div class="col-span-5">
@@ -37,55 +37,12 @@
                     subtitle="{{ __('Define capacity for matches and trainings to avoid overbooking') }}"
                     size="text-xl" />
             </div>
-
-            <div class="col-span-3 space-y-6">
-                {{-- Ligne Capacité Entraînement --}}
-                <div class="flex items-center justify-between pb-4 border-b border-base-200">
-                    <div class="flex items-center gap-3">
-                        <x-icon name="o-academic-cap" class="w-5 h-5 opacity-70" />
-                        <div>
-                            <p class="font-medium text-sm">{{ __('Training Capacity') }}</p>
-                            <p class="text-xs opacity-50">{{ __('Max tables for training') }}</p>
-                        </div>
-                    </div>
-
-                    <div class="flex items-center gap-3">
-                        {{-- Contrôles --}}
-                        <div class="join border border-base-300">
-                            <x-button wire:click.stop="decrementTraining($event.shiftKey ? 5 : 1)" icon="o-minus"
-                                class="join-item btn-ghost btn-xs w-8" :disabled="$capacity_for_trainings <= 0" />
-                            <span class="join-item flex items-center px-4 font-mono font-bold text-sm bg-base-100">
-                                {{ str_pad($capacity_for_trainings, 2, '0', STR_PAD_LEFT) }}
-                            </span>
-                            <x-button wire:click.stop="incrementTraining($event.shiftKey ? 5 : 1)" icon="o-plus"
-                                class="join-item btn-ghost btn-xs w-8" :disabled="$capacity_for_trainings >= 99" />
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Ligne Capacité Match --}}
-                <div class="flex items-center justify-between pb-4 border-b border-base-200">
-                    <div class="flex items-center gap-3">
-                        <x-icon name="o-trophy" class="w-5 h-5 opacity-70" />
-                        <div>
-                            <p class="font-medium text-sm">{{ __('Match Capacity') }}</p>
-                            <p class="text-xs opacity-50">{{ __('Tables for official matches') }}</p>
-                        </div>
-                    </div>
-
-                    <div class="flex items-center gap-3">
-                        {{-- Contrôles --}}
-                        <div class="join border border-base-300">
-                            <x-button wire:click.stop="decrementMatch($event.shiftKey ? 5 : 1)" icon="o-minus"
-                                class="join-item btn-ghost btn-xs w-8" :disabled="$capacity_for_interclubs <= 0" />
-                            <span class="join-item flex items-center px-4 font-mono font-bold text-sm bg-base-100">
-                                {{ str_pad($capacity_for_interclubs, 2, '0', STR_PAD_LEFT) }}
-                            </span>
-                            <x-button wire:click.stop="incrementMatch($event.shiftKey ? 5 : 1)" icon="o-plus"
-                                class="join-item btn-ghost btn-xs w-8" :disabled="$capacity_for_interclubs >= 99" />
-                        </div>
-                    </div>
-                </div>
+            <div class="grid lg:grid-cols-1 gap-4">
+                <x-input icon="o-academic-cap" label="{{ __('Training Capacity') }}"
+                    wire:model.live="capacity_for_trainings"
+                    hint="{{ __('This is used mainly to manage training subscriptions') }}" decimal required />
+                <x-input icon="o-trophy" label="{{ __('Matches Capacity') }}" wire:model.live="capacity_for_interclubs"
+                    hint="{{ __('This is used mainly to manage interclubs and tournament') }}" decimal required />
             </div>
             <div class="col-span-5">
                 <x-menu-separator class="my-4" />
@@ -104,18 +61,18 @@
                             search-function="searchTables" searchable>
                             {{-- Personnalisation de l'affichage dans la liste déroulante --}}
                             @scope('item', $table)
-                            <x-list-item :item="$table">
-                                <x-slot:avatar>
-                                    <x-icon name="o-squares-2x2" class="w-5 h-5 text-primary" />
-                                </x-slot:avatar>
+                                <x-list-item :item="$table">
+                                    <x-slot:avatar>
+                                        <x-icon name="o-squares-2x2" class="w-5 h-5 text-primary" />
+                                    </x-slot:avatar>
 
-                                <x-slot:sub-value>
-                                    {{ __('Purchased') }}: {{ $table['purchased_on'] }} -- {{ __('State') }}:
-                                    {{ $table['state'] }}
-                                </x-slot:sub-value>
+                                    <x-slot:sub-value>
+                                        {{ __('Purchased') }}: {{ $table['purchased_on'] }} -- {{ __('State') }}:
+                                        {{ $table['state'] }}
+                                    </x-slot:sub-value>
 
 
-                            </x-list-item>
+                                </x-list-item>
                             @endscope
                         </x-choices>
                     </div>
@@ -127,7 +84,8 @@
 
         <x-slot:actions>
             <x-button label="{{ __('Reset') }}" type="button" wire:click.stop="clearForm()" />
-            <x-button label="{{ $this->room->exists ? __('Update') : __('Create') }}" type="submit" class="btn-primary" spinner="save" />
+            <x-button label="{{ $this->room->exists ? __('Update') : __('Create') }}" type="submit"
+                class="btn-primary" spinner="save" />
         </x-slot:actions>
     </x-form>
 

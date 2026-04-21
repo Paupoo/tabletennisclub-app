@@ -40,7 +40,7 @@ new class extends Component
     public function mount(?Table $table): void
     {
             $this->tableId = $table->id;
-            $this->name = $table->name;
+            $this->name = $table->name ?? '';
             $this->brand = $table->brand ?? '';
             $this->model = $table->model ?? '';
             $this->room_id = $table->room_id;

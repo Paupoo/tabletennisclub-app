@@ -7,7 +7,7 @@ use App\Models\ClubAdmin\Club\Table;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
 use Illuminate\View\View;
-use Livewire\Attributes\Rule;
+use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Mary\Traits\Toast;
 
@@ -15,32 +15,32 @@ new class extends Component
 {
     use Toast;
 
-    #[Rule('string|max:255')]
+    #[Validate('string|max:255')]
     public string $access_description = '';
 
     public array $allTables = [];
 
-    #[Rule('required|string|max:255')]
+    #[Validate('required|string|max:255')]
     public string $building_name = '';
 
-    #[Rule('required|integer|between:0,99')]
-    public int $capacity_for_interclubs = 0;
+    #[Validate('required|integer|between:0,99|lte:capacity_for_trainings')]
+    public int|string $capacity_for_interclubs = 0;
 
-    #[Rule('required|integer|between:0,99')]
-    public int $capacity_for_trainings = 0;
+    #[Validate('required|integer|between:0,99|gte:capacity_for_interclubs')]
+    public int|string $capacity_for_trainings = 0;
 
-    #[Rule('required|integer|between:1000,9999')]
+    #[Validate('required|integer|between:1000,9999')]
     public string $city_code = '';
 
-    #[Rule('required|string|max:255')]
+    #[Validate('required|string|max:255')]
     public string $city_name = '';
 
     public array $filteredTables = [];
 
-    #[Rule('string|max:10')]
+    #[Validate('string|max:10')]
     public string $floor = '';
 
-    #[Rule('required|string|max:255')]
+    #[Validate('required|string|max:255')]
     public string $name = '';
 
     public string $newTableName = '';
@@ -53,7 +53,7 @@ new class extends Component
 
     public bool $showTableModal = false;
 
-    #[Rule('required|string|max:255')]
+    #[Validate('required|string|max:255')]
     public string $street = '';
 
     public function addTableToList(): void
@@ -97,26 +97,6 @@ new class extends Component
         $this->resetValidation();
     }
 
-    public function decrementMatch($amount = 1)
-    {
-        $this->capacity_for_interclubs = max(0, $this->capacity_for_interclubs - $amount);
-    }
-
-    public function decrementTraining($amount = 1)
-    {
-        $this->capacity_for_trainings = max(0, $this->capacity_for_trainings - $amount);
-    }
-
-    public function incrementMatch($amount = 1)
-    {
-        $this->capacity_for_interclubs = min(99, $this->capacity_for_interclubs + $amount);
-    }
-
-    public function incrementTraining($amount = 1)
-    {
-        $this->capacity_for_trainings = min(99, $this->capacity_for_trainings + $amount);
-    }
-
     public function mount(?Room $room = null)
     {
         // 1. On stocke le modèle (ou un nouveau modèle vide)
@@ -141,7 +121,7 @@ new class extends Component
                 ? $this->selectedTables = $this->room->tables()->pluck('id')->toArray()
                 : $this->selectedTables = [];
 
-        $this->allTables = Table::all()->map(function ($table) {
+        $this->allTables = Table::doesntHave('room')->get()->map(function ($table) {
             return [
                 'id' => $table->id,
                 'name' => $table->name,

@@ -7,6 +7,7 @@ namespace App\Models\ClubAdmin\Club;
 use App\Models\ClubEvents\Tournament\TableTournament;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Tournament\TournamentMatch;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -41,6 +42,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  */
 class Table extends Model
 {
+    use HasFactory;
+
     protected $casts = [
         'name' => 'string',
         'brand' => 'string',

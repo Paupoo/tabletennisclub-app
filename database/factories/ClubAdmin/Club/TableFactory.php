@@ -23,7 +23,7 @@ class TableFactory extends Factory
             'name' => fake()->unique()->numberBetween(1, 20),
             'purchased_on' => fake()->dateTimeBetween('-10 years', '-1 year'),
             'state' => 'used',
-            'room_id' => Room::first()->limit(1)->get(),
+            'room_id' => Room::first()->get(),
         ];
     }
 }

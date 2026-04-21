@@ -8,25 +8,56 @@
             <x-input placeholder="Rechercher..." wire:model.live.debounce.300ms="search" icon="o-magnifying-glass" />
         </x-slot:middle>
         <x-slot:actions>
-            <x-button label="Ajouter" icon="o-plus" class="btn-primary" link="{{ route('admin.tables.create') }}" />
+            <x-button label="{{ __('Create table') }}" icon="o-plus" class="btn-primary" link="{{ route('admin.tables.create') }}" />
+            <x-button x-on:click="$wire.$refresh()" label="{{ __('Refresh') }}" class="btn-outline"/>
         </x-slot:actions>
     </x-header>
 
     <div class="space-y-4 mt-6">
-        @forelse ($groupedTables as $roomName => $tablesInRoom)
+        @forelse ($groupedTables as $group)
+            @php
+                $room = $group['room'];
+                $roomDisplay = $group['room_display'];
+                $tablesInRoom = $group['tables'];
+            @endphp
+
             <x-collapse class="bg-base-100 border border-base-300 shadow-sm">
                 <x-slot:heading>
                     <div class="flex items-center justify-between w-full pr-4">
                         <div class="flex items-center gap-3">
                             <x-icon name="o-map-pin" class="w-5 h-5 text-primary" />
                             <div>
-                                <h3 class="font-bold text-lg leading-none mb-2">{{ $roomName }}</h3>
-                                <div class="badge badge-outline badge-sm gap-2 py-3 px-3">
-                                    <x-icon name="o-square-3-stack-3d" class="w-3.5 h-3.5" />
-                                    <span
-                                        class="font-medium text-xs">{{ $tablesInRoom->where('is_competition_ready', true)->count() }}
-                                        / {{ $tablesInRoom->count() }}
-                                        {{ __('tables') }}</span>
+                                <h3 class="font-bold text-lg leading-none mb-2">{{ $roomDisplay }}</h3>
+                                <div class="flex items-center gap-2">
+                                    {{-- Badge : Tables prêtes pour la compétition --}}
+                                    @if ($room)
+                                    <x-badge class="badge-soft">    
+                                        <div class="font-medium text-xs"> {{ __('Total tables:') }} </div>
+                                        <x-icon name="o-square-3-stack-3d" class="w-3.5 h-3.5" />
+                                        <span class="font-medium text-xs">
+                                            {{ $tablesInRoom->count() }}
+                                        </span>
+                                    </x-badge>
+                                    <x-badge class="badge-soft">
+                                        <div class="font-medium text-xs"> {{ __('Room capacity:') }} </div>
+                                        <x-icon name="o-academic-cap" class="w-3.5 h-3.5" />
+                                        <span class="font-medium text-xs">
+                                            {{ $room?->capacity_for_trainings }}
+                                        </span>
+                                        <x-icon name="o-trophy" class="w-3.5 h-3.5" />
+                                        <span class="font-medium text-xs">
+                                            {{ $room?->capacity_for_interclubs }}
+                                        </span>
+                                    </x-badge>
+                                    @else
+                                    <x-badge class="badge-soft">    
+                                        <div class="font-medium text-xs"> {{ __('Total tables:') }} </div>
+                                        <x-icon name="o-square-3-stack-3d" class="w-3.5 h-3.5" />
+                                        <span class="font-medium text-xs">
+                                            {{ $tablesInRoom->count() }}
+                                        </span>
+                                    </x-badge>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -35,6 +66,7 @@
 
                 <x-slot:content>
                     {{-- --- VUE DESKTOP : Table classique --- --}}
+
                     <div class="hidden md:block overflow-x-auto">
                         <x-table :headers="$headers" :rows="$tablesInRoom" class="table-sm">
                             @scope('cell_name', $table)
@@ -66,9 +98,12 @@
                                 <x-admin.shared.row-actions>
                                     <x-menu-item icon="o-pencil" link="{{ route('admin.tables.edit', $table) }}"
                                         title="{{ __('Edit') }}" class="text-xs" />
+                                    @if ($table->room)
+                                        <x-menu-item icon="o-lock-open" wire:click="unlink({{ $table }})"
+                                            title="{{ __('Unlink') }}" class="text-xs" />
+                                    @endif
                                     <x-menu-separator />
-                                    <x-menu-item class="text-error" icon="o-trash" title="{{ __('Delete') }}"
-                                        class="text-xs" />
+                                    <x-menu-item class="text-error text-xs" icon="o-trash" title="{{ __('Delete') }}" />
                                 </x-admin.shared.row-actions>
                             @endscope
                         </x-table>

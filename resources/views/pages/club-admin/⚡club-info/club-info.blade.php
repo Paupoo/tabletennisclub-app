@@ -62,7 +62,7 @@
                             <div class="flex items-center justify-between py-3">
                                 <div class="flex items-center gap-3">
                                     <x-avatar class="!w-8 !rounded-lg"
-                                        placeholder="{{ substr($member->first_name, 0, 1) }}{{ substr($member->last_name, 0,1) }}" />
+                                        placeholder="{{ mb_substr($member->first_name, 0, 1) }}{{ mb_substr($member->last_name, 0,1) }}" />
                                     <div>
                                         <div class="text-sm font-bold">{{ $member->first_name }} {{ $member->last_name }}</div>
                                             <div class="badge badge-outline text-[10px] opacity-70">

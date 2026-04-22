@@ -124,7 +124,7 @@ new class extends Component
         $this->allTables = Table::query()
                 ->where(function ($query) use ($room) {
                     $query->doesntHave('room')
-                        ->orWhere('room_id', $room->id);
+                        ->orWhere('room_id', $room->id ?? null);
                 })                
                 ->get()->map(function ($table) {
             return [

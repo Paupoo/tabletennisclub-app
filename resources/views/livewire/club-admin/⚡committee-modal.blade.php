@@ -28,18 +28,21 @@ new class extends Component
         return CommitteeRolesEnum::getOptions();
     }
 
-    public function searchMembers(string $value = ''): void
+    public function search(string $value = ''): void
     {
-        $this->membersSearchList = User::where('first_name', 'like', "%{$value}%")
+        $this->membersSearchList = User::query()
+            ->where('first_name', 'like', "%{$value}%")
             ->orWhere('last_name', 'like', "%{$value}%")
             ->orWhere('licence', 'like', "%{$value}%")
             ->take(5)
             ->get(['id', 'first_name', 'last_name', 'licence'])
-            ->map(fn($user) => [
+            ->map(function (User $user) {
+                return [
                 'id' => $user->id,
                 'name' => "{$user->first_name} {$user->last_name}",
                 'description' => $user->licence
-            ]);
+                ];
+            });
     }
 
     #[On('open-committee-modal')]
@@ -76,6 +79,11 @@ new class extends Component
         $this->isOpen = false;
     }
 
+    public function mount(): void
+    {
+        $this->search();
+    }
+
     public function render()
     {
         return $this->view();
@@ -90,8 +98,8 @@ new class extends Component
                 label="{{ __('Search Member') }}"
                 wire:model="selectedMemberId"
                 :options="$membersSearchList"
-                search-function="searchMembers"
-                debounce="300ms"
+                no-result-text="{{ __('Oops, nothing found here.') }}"
+                debounce="250"
                 min-chars="2"
                 icon="o-magnifying-glass"
                 hint="{{ __('Search by name or license number') }}"
@@ -102,6 +110,7 @@ new class extends Component
                 @scope('item', $user)
                     <x-list-item :item="$user" sub-value="description" />
                 @endscope
+                
             </x-choices>
 
             <x-select 

@@ -82,7 +82,7 @@
                 </x-menu-sub>
 
                 <x-menu-separator />
-
+                @if(Auth()->user()->is_admin || Auth()->user()->is_committee_member )
                 <x-menu-sub icon="o-building-office" title="{{ __('Club Settings') }}">
                     <x-menu-item icon="o-identification" link="{{ route('admin.club-info') }}" title="{{ __('Informations') }}" />
                     <x-menu-item icon="o-building-office-2" link="{{ route('admin.rooms.index') }}" title="{{ __('Rooms') }}" />
@@ -90,7 +90,7 @@
                     {{-- <x-menu-item title="Archives" icon="o-archive-box" link="####" /> --}}
                 </x-menu-sub>
 
-                                <x-menu-separator />
+                <x-menu-separator />
 
                                 
                 <x-menu-sub icon="o-inbox-stack" title="{{ __('Members Admin') }}">
@@ -102,6 +102,7 @@
                 </x-menu-sub>
 
                 <x-menu-separator />
+                @endif
 
                 <x-menu-item icon="o-academic-cap" link="{{ route('admin.trainings.index') }}" title="{{ __('Trainings') }}" />
 

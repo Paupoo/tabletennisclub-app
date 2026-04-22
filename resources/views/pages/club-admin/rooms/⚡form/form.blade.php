@@ -93,13 +93,17 @@
     <x-modal wire:model="showTableModal" title="{{ __('Create a new table') }}" separator>
         <div class="space-y-4">
             <x-input label="{{ __('Table Name') }}" wire:model.live.debounce="newTableName"
-                placeholder="Ex: Table 16" />
+                placeholder="Ex: Table 16" required />
+            <x-input label="{{ __('Brand') }}" wire:model.live.debounce="newTableBrand"
+                placeholder="Ex: Stiga" />
+            <x-input label="{{ __('Model') }}" wire:model.live.debounce="newTableModel"
+                placeholder="Ex: 2000 S Pro" />
 
             <x-select label="{{ __('State') }}" wire:model.live.debounce="newTableState" :options="[
                 ['id' => 'new', 'name' => 'New'],
                 ['id' => 'used', 'name' => 'Used'],
                 ['id' => 'damaged', 'name' => 'Damaged'],
-            ]" />
+            ]" required />
 
             <x-datepicker label="{{ __('Purchased on') }}" wire:model.live.debounce="newTablePurchasedOn" />
         </div>

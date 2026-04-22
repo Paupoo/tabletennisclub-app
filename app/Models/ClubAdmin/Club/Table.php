@@ -51,7 +51,6 @@ class Table extends Model
         'state' => 'string',
         'state_description' => 'string',
         'is_available' => 'boolean',
-        'is_competition_ready' => 'boolean',
         'purchased_on' => 'datetime:d-m-Y',
     ];
 
@@ -62,7 +61,6 @@ class Table extends Model
         'state',
         'state_description',
         'is_available',
-        'is_competition_ready',
         'purchased_on',
         'room_id'
     ];

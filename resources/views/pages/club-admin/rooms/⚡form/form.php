@@ -44,6 +44,8 @@ new class extends Component
     public string $name = '';
 
     public string $newTableName = '';
+    public string $newTableBrand = '';
+    public string $newTableModel = '';
     public string $newTablePurchasedOn = '';
     public string $newTableState = 'new';
 
@@ -60,33 +62,31 @@ new class extends Component
     {
         // 1. Validation spécifique au modal uniquement !
         $this->validate([
-            'newTableName' => 'required|string|max:10',
-            'newTablePurchasedOn' => 'required|date',
+            'newTableName' => 'required|string|max:255',
+            'newTableBrand' => 'nullable|string|max:100',
+            'newTableModel' => 'nullable|string|max:100',
+            'newTablePurchasedOn' => 'nullable|date',
             'newTableState' => 'required|string|max:10',
         ]);
 
-        // 2. Création d'un ID temporaire unique (négatif pour différencier du hardcodé)
-        $tempId = count($this->allTables) + 100;
-
-        $newTable = [
-            'id' => $tempId,
+        $newTable = Table::create([
             'name' => $this->newTableName,
-            'purchased_on' => $this->newTablePurchasedOn ?: now()->format('Y-m-d'),
+            'brand' => $this->newTableBrand,
+            'model' => $this->newTableModel,
             'state' => $this->newTableState,
-            'room_id' => null,
-            'created_at' => now()->toIso8601String(),
-            'updated_at' => now()->toIso8601String(),
-        ];
+            'state_description' => $this->newTableState,
+            'purchased_on' => $this->newTablePurchasedOn,
+        ]);
 
         // 3. Ajouter au tableau principal et filtré
         $this->allTables[] = $newTable;
         $this->filteredTables[] = $newTable;
 
         // 4. Sélectionner automatiquement la nouvelle table
-        $this->selectedTables[] = $tempId;
+        $this->selectedTables[] = $newTable->id;
 
         // 5. Reset et fermeture
-        $this->reset(['newTableName', 'newTableState', 'newTablePurchasedOn', 'showTableModal']);
+        $this->reset(['newTableName', 'newTableState', 'newTableBrand', 'newTableModel', 'newTableState', 'newTablePurchasedOn', 'showTableModal']);
 
         $this->success(__('Table added to selection!'));
     }
@@ -121,7 +121,12 @@ new class extends Component
                 ? $this->selectedTables = $this->room->tables()->pluck('id')->toArray()
                 : $this->selectedTables = [];
 
-        $this->allTables = Table::doesntHave('room')->get()->map(function ($table) {
+        $this->allTables = Table::query()
+                ->where(function ($query) use ($room) {
+                    $query->doesntHave('room')
+                        ->orWhere('room_id', $room->id);
+                })                
+                ->get()->map(function ($table) {
             return [
                 'id' => $table->id,
                 'name' => $table->name,
@@ -129,6 +134,17 @@ new class extends Component
                 'state' => $table->state,
             ];
         })->toArray();
+
+        // $tables_already_in_room = Table::whereRoomId($room->id)->get()->map(function ($table) {
+        //         return [
+        //             'id' => $table->id,
+        //             'name' => $table->name,
+        //             'purchased_on' => $table->purchased_on?->format('d M Y'),
+        //             'state' => $table->state,
+        //         ];
+        //     })->toArray();
+
+        // $this->allTables = array_merge($this->allTables, $tables_already_in_room);
 
         $this->filteredTables = $this->allTables;
     }

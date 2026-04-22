@@ -15,6 +15,7 @@ return new class extends Migration
             $table->string('state_description', 255)->nullable();
             $table->string('brand', 100)->nullable();
             $table->string('model', 100)->nullable();
+            $table->boolean('is_available', true);
         });
     }
 
@@ -24,7 +25,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('tables', function (Blueprint $table) {
-            $table->dropColumn(['state_description', 'brand', 'model']);
+            $table->dropColumn(['state_description', 'brand', 'model', 'is_available']);
         });
     }
 };

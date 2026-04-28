@@ -10,6 +10,7 @@ use App\Models\ClubPosts\EventPost;
 use App\Support\Breadcrumb;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\View\View;
 
 class AdminEventPostController extends Controller
@@ -76,7 +77,6 @@ class AdminEventPostController extends Controller
 
     public function index(Request $request): View
     {
-        // Statistiques rapides
         $stats = collect([
             'drafts' => EventPost::where('status', 'draft')->count(),
             'published' => EventPost::where('status', 'published')->count(),
@@ -84,10 +84,8 @@ class AdminEventPostController extends Controller
             'upcoming' => EventPost::published()->upcoming()->count(),
         ]);
 
-        // Requête de base avec filtres
         $query = EventPost::query();
 
-        // Filtres
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
@@ -104,21 +102,40 @@ class AdminEventPostController extends Controller
             });
         }
 
-        // Tri par défaut : événements à venir d'abord, puis par date
-        $events = $query->orderByRaw('
-            CASE
-                WHEN event_date >= CURDATE() THEN 0
-                ELSE 1
-            END,
-            event_date ASC
-        ')->paginate($request->get('perPage', 25));
+        $today = now()->startOfDay();
+        $perPage = (int) $request->get('perPage', 25);
+        $currentPage = LengthAwarePaginator::resolveCurrentPage();
+
+        $collection = $query
+            ->orderBy('event_date', 'asc')
+            ->get()
+            ->sortBy(fn (EventPost $event) => [
+                $event->event_date >= $today ? 0 : 1,
+                $event->event_date,
+            ])
+            ->values();
+
+        $events = new LengthAwarePaginator(
+            $collection->forPage($currentPage, $perPage),
+            $collection->count(),
+            $perPage,
+            $currentPage,
+            [
+                'path' => $request->url(),
+                'query' => $request->query(),
+            ]
+        );
 
         $breadcrumbs = Breadcrumb::make()
             ->home()
             ->events()
             ->toArray();
 
-        return view('clubPosts.eventPosts.index', compact('events', 'stats', 'breadcrumbs'));
+        return view('clubPosts.eventPosts.index', compact(
+            'events',
+            'stats',
+            'breadcrumbs'
+        ));
     }
 
     // Actions rapides pour changer le statut
@@ -143,30 +160,27 @@ class AdminEventPostController extends Controller
 
     public function showPublicEvents()
     {
-        // Récupérer uniquement les événements publiés, triés par date
+        $today = now()->startOfDay();
+
         $events = EventPost::published()
-            ->orderByRaw('
-                CASE
-                    WHEN event_date >= CURDATE() THEN 0
-                    ELSE 1
-                END,
-                event_date ASC
-            ')
+            ->orderBy('event_date', 'asc')
             ->get()
-            ->map(function ($event) {
-                // Transformer pour correspondre au format attendu par la vue publique
-                return [
-                    'id' => $event->id,
-                    'category' => $event->category,
-                    'title' => $event->title,
-                    'description' => $event->description,
-                    'date' => $event->formatted_date,
-                    'time' => $event->formatted_time,
-                    'location' => $event->location,
-                    'price' => $event->price ?: __('Free'),
-                    'icon' => $event->icon,
-                ];
-            })
+            ->sortBy(fn (EventPost $event) => [
+                $event->event_date >= $today ? 0 : 1,
+                $event->event_date,
+            ])
+            ->map(fn (EventPost $event) => [
+                'id' => $event->id,
+                'category' => $event->category,
+                'title' => $event->title,
+                'description' => $event->description,
+                'date' => $event->formatted_date,
+                'time' => $event->formatted_time,
+                'location' => $event->location,
+                'price' => $event->price ?: __('Free'),
+                'icon' => $event->icon,
+            ])
+            ->values()
             ->toArray();
 
         return view('clubPosts.eventPosts.index', compact('events'));

@@ -15,7 +15,7 @@ return new class extends Migration
             $table->string('state_description', 255)->nullable();
             $table->string('brand', 100)->nullable();
             $table->string('model', 100)->nullable();
-            $table->boolean('is_available', true);
+            $table->boolean('is_available', true)->nullable();
         });
     }
 

@@ -1,7 +1,7 @@
 <form action="{{ route('contact.store') }}" method="POST" x-data="contactForm('{{ old('interest') }}', {{ old('membership_family_members', 1) }}, {{ old('membership_competitors', 0) }}, {{ old('membership_training_sessions', 0) }})">
     @csrf
 
-    <x-forms.antispam-fields />
+    <x-public.antispam-fields />
     
     <div class="grid md:grid-cols-2 gap-6 mb-6">
         <div>

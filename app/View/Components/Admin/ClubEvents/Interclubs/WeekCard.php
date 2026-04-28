@@ -1,12 +1,10 @@
 <?php
 
-
 declare(strict_types=1);
 
-namespace App\View\Components;
+namespace App\View\Components\Admin\ClubEvents\Interclubs;
 
 use Illuminate\View\Component;
-
 
 class WeekCard extends Component
 {
@@ -24,28 +22,6 @@ class WeekCard extends Component
         // Si un status est fourni explicitement, on l'utilise.
         // Sinon, on le calcule depuis le score.
         $this->status = $status ?? $this->resolveStatus();
-    }
-
-    private function resolveStatus(): string
-    {
-        if ($this->score === null) {
-            return 'future';
-        }
-
-        if ($this->score['home'] > $this->score['away']) {
-            return 'win';
-        }
-        if ($this->score['home'] < $this->score['away']) {
-            return 'loss';
-        }
-
-        return 'draw';
-    }
-
-    public function isExpandable(): bool
-    {
-        return in_array($this->status, ['win', 'loss', 'draw'])
-            && ! empty($this->matches);
     }
 
     public function barColor(): string
@@ -81,6 +57,24 @@ class WeekCard extends Component
         };
     }
 
+    public function isExpandable(): bool
+    {
+        return in_array($this->status, ['win', 'loss', 'draw'])
+            && ! empty($this->matches);
+    }
+
+    public function render()
+    {
+        return view('admin.club-events.interclubs.week-card', [
+            'isExpandable' => $this->isExpandable(),
+            'barColor' => $this->barColor(),
+            'barOpacity' => $this->barOpacity(),
+            'dotStyle' => $this->dotStyle(),
+            'scoreHomeClass' => $this->scoreHomeClass(),
+            'status' => $this->status,
+        ]);
+    }
+
     public function scoreHomeClass(): string
     {
         return match ($this->status) {
@@ -90,15 +84,19 @@ class WeekCard extends Component
         };
     }
 
-    public function render()
-{
-    return view('components.week-card', [
-        'isExpandable'   => $this->isExpandable(),
-        'barColor'       => $this->barColor(),
-        'barOpacity'     => $this->barOpacity(),
-        'dotStyle'       => $this->dotStyle(),
-        'scoreHomeClass' => $this->scoreHomeClass(),
-        'status'         => $this->status,
-    ]);
-}
+    private function resolveStatus(): string
+    {
+        if ($this->score === null) {
+            return 'future';
+        }
+
+        if ($this->score['home'] > $this->score['away']) {
+            return 'win';
+        }
+        if ($this->score['home'] < $this->score['away']) {
+            return 'loss';
+        }
+
+        return 'draw';
+    }
 }

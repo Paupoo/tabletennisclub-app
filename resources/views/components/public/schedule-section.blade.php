@@ -9,17 +9,17 @@
 
         <!-- Affiché uniquement sur les smartphones -->
         <div class="block md:hidden">
-            <x-schedule-mini-overview :schedules="$schedules ?? []" :compact="false" />
+            <x-public.schedule-mini-overview :schedules="$schedules ?? []" :compact="false" />
         </div>
 
         <!-- Affiché uniquement sur les tablettes (iPad par ex.) -->
         <div class="hidden md:block lg:hidden">
-            <x-schedule-week-overview :schedules="$schedules ?? []" />
+            <x-public.schedule-week-overview :schedules="$schedules ?? []" />
         </div>
 
         <!-- Affiché uniquement sur les ordinateurs -->
         <div class="hidden lg:block">
-            <x-schedule-calendar-view :schedules="$schedules ?? []" />
+            <x-public.schedule-calendar-view :schedules="$schedules ?? []" />
         </div>
         
         <!-- Call to Action -->

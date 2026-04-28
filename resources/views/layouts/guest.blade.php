@@ -15,13 +15,13 @@
 
     <div x-data="scrollAnimations">
 
-        <x-navigation />
+        <x-public.navigation />
 
         <main>
             {{ $slot }}
         </main>
 
-        <x-footer />
+        <x-public.footer />
     </div>
     @livewireScripts
 </body>

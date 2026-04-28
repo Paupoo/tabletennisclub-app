@@ -1,5 +1,4 @@
 <x-guest-layout title="Résultats - {{ config('app.name') }}">
-    <x-navigation :fixed="false" />
     
     <!-- Header -->
     <div class="relative h-auto pt-16 text-white flex items-center overflow-hidden">
@@ -34,7 +33,7 @@
     <!-- Results Content -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
         @forelse($teams ?? [] as $team)
-            <x-team-results :team="$team" />
+            <x-public.team-results :team="$team" />
         @empty
             <div class="text-center py-12 bg-gray-50 rounded-lg">
                 <h3 class="text-lg font-medium text-gray-900 mb-2">Aucun résultat disponible</h3>

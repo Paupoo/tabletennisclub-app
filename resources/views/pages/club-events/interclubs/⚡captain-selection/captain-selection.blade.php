@@ -120,8 +120,8 @@
                         @php
                             $count = $w['is_demo'] ? count($selectedPlayers) : ($w['status'] === 'ready' ? 4 : 0);
                         @endphp
-                        <x-week-card :date="$w['date']" :opponent="$w['opp']" :selection-count="$count" :status="$w['status']"
-                            :week="$w['wk']" />
+                        <x-admin.club-events.interclubs.week-card :date="$w['date']" :opponent="$w['opp']" :selection-count="$count" :status="$w['status']"
+                            :week="$w['wk']"/>
                     @endforeach
                 </div>
             </div>

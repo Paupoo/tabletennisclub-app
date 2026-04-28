@@ -164,7 +164,7 @@
                                     ])>
                                         <div class="flex items-center gap-3">
                                             <x-avatar class="!w-7 !rounded-full"
-                                                :image="$isYou ? $user->photo : 'https://picsum.photos/200/300?random=' . $loop->iteration" />
+                                                :image="$mate->photo ?? '/images/empty-user.jpg'" />
                                             <div>
                                                 <div class="flex items-center gap-1.5">
                                                     <span class="text-sm font-semibold leading-none">

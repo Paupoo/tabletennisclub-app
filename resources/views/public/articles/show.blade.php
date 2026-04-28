@@ -1,5 +1,4 @@
 <x-guest-layout :title="($article['title'] ?? 'NewsPost') . ' - Ace Table Tennis Club'">
-    <x-navigation :fixed="false" />
 
     <!-- NewsPost Header -->
     <div class="bg-white">
@@ -129,7 +128,7 @@
                 <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center">Articles Similaires</h2>
                 <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                     @foreach ($relatedArticles as $relatedArticle)
-                        <x-news-card :article="$relatedArticle" />
+                        <x-public.news-card :article="$relatedArticle" />
                     @endforeach
                 </div>
             </div>

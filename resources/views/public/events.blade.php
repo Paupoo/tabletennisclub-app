@@ -1,5 +1,4 @@
 <x-guest-layout title="Événements - Ace Table Tennis Club">
-    <x-navigation :fixed="false" />
 
     <!-- Header -->
     <div class="relative h-auto pt-16 text-white flex items-center overflow-hidden">
@@ -45,10 +44,10 @@
         <!-- Events Grid -->
         <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
             @forelse($events ?? [] as $event)
-                <x-event-card :event="$event" />
+                <x-public.event-card :event="$event" />
             @empty
                 <!-- Default events if no data provided -->
-                <x-event-card :event="[
+                <x-public.event-card :event="[
                     'category' => 'tournament',
                     'title' => 'Championnat du Nouvel An',
                     'description' => 'Championnat annuel du club ouvert à tous les membres. Catégories simple et double disponibles.',
@@ -59,7 +58,7 @@
                     'icon' => '🏆'
                 ]" />
 
-                <x-event-card :event="[
+                <x-public.event-card :event="[
                     'category' => 'training',
                     'title' => 'Atelier Techniques Avancées',
                     'description' => 'Maîtrisez les services avancés, les effets et le jeu tactique avec notre entraîneur professionnel.',
@@ -70,7 +69,7 @@
                     'icon' => '🎯'
                 ]" />
 
-                <x-event-card :event="[
+                <x-public.event-card :event="[
                     'category' => 'club-life',
                     'title' => 'Soirée Sociale Mensuelle',
                     'description' => 'Jeux décontractés, pizza et amusement ! Parfait pour rencontrer d\'autres membres et se détendre.',

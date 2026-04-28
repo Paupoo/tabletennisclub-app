@@ -68,7 +68,7 @@
     <!-- Vue détaillée -->
     <div x-show="showDetails" x-transition class="space-y-3">
         @foreach($schedules as $index => $schedule)
-            <x-schedule-card :schedule="$schedule" :index="$index" />
+            <x-public.schedule-card :schedule="$schedule" :index="$index" />
         @endforeach
     </div>
 </div>

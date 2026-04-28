@@ -111,7 +111,7 @@
                     @endif
 
                     <!-- FORMULAIRE HYBRIDE : Alpine.js pour la logique + Submit classique -->
-                    <x-contact-form />
+                    <x-public.contact-form />
 
                 </div>
             </div>

@@ -98,7 +98,7 @@
         @if($articles->count() > 0)
             <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                 @foreach($articles as $index => $article)
-                    <x-news-card-full :article="$article" :index="$index" />
+                    <x-public.news-card-full :article="$article" :index="$index" />
                 @endforeach
             </div>
     

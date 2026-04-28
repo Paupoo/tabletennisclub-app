@@ -1,6 +1,5 @@
 <div>
     <x-guest-layout title="Actualités - CTT Ottignies-Blocry">
-        <x-navigation :fixed="false" />
         
         <!-- Header -->
 <div class="relative h-auto pt-16 text-white flex items-center overflow-hidden">

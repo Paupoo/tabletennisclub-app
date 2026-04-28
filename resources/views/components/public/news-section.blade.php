@@ -11,7 +11,7 @@
 
         <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             @foreach($articles as $article)
-                <x-news-card :article="$article" />
+                <x-public.news-card :article="$article" />
             @endforeach
         </div>
 

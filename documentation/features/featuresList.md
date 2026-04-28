@@ -18,8 +18,8 @@
 - [x] **Refonte du UI/UX** : Refonte du backend existant sur un UX plus homogène, basé sur les stack Livewire/Mary-UI.
     - [x] **Gestion des infos du club**  : définir les info du club (contact, localisation, numéro de compte)
     - [x] **Gestion du comité** : ajouter ou supprimer un membre dans le comité et lui assigner un rôle
-    - [ ] **Gestion des tables**  : ajouter des tables, les lier à une salle, décrire leur état général
-    - [ ] **Gestion des salles du club**  : ajouter des salles et définir leur adresse et leur capacité, afficher les évènements à venir
+    - [x] **Gestion des tables**  : ajouter des tables, les lier à une salle, décrire leur état général
+    - [x] **Gestion des salles du club**  : ajouter des salles et définir leur adresse et leur capacité, afficher les évènements à venir
     - [ ] **Gestion des membres club**  : Afficher tous les membres, les cherches, afficheur leurs infos principales
     - [ ] **Gestion du profil**  : Permettre aux membres d'adapter certaines informations (avatars, info de contacts,...)
     - [ ] **Gestion des préférences**  : Permettre aux membres de configurer leurs préférences 

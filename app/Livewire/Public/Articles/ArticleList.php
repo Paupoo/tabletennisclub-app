@@ -154,10 +154,15 @@ class ArticleList extends Component
 
     private function loadYears(): Collection
     {
+
         return NewsPost::query()
-            ->selectRaw('YEAR(created_at) as year')
-            ->distinct()
-            ->orderBy('year', 'desc')
-            ->pluck('year');
+            ->whereNotNull('created_at')
+            ->get(['created_at'])
+            ->pluck('created_at')
+            ->map(fn ($date) => $date->year)
+            ->unique()
+            ->sortDesc()
+            ->values();
     }
+
 }

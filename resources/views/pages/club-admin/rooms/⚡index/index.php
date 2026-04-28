@@ -22,8 +22,43 @@ new class extends Component
 
     public function mount(): void
     {
-        // On initialise ici pour éviter l'erreur "Constant expression"
-        $this->rooms = Room::with('trainings')->get();
+        // To do => revisit once events are correctly remodeled. I want all events in the upcoming 2 weeks, ordered by date, to be populated in the UI.
+        $start = now();
+        $end = (clone $start)->addWeeks(2);
+
+        $this->rooms = Room::with([
+            'trainings' => fn ($query) => $query
+                ->whereBetween('start', [$start, $end]),
+
+            'interclubs' => fn ($query) => $query
+                ->whereBetween('start_date_time', [$start, $end]),
+
+            'tournaments' => fn ($query) => $query
+                ->whereBetween('start_date', [$start, $end]),
+        ])
+        ->get()
+        ->map(function ($room) {
+            $room->upcoming_events = collect()
+                ->merge($room->trainings->map(fn ($item) => [
+                    'type' => 'training',
+                    'date' => $item->start,
+                    'model' => $item,
+                ]))
+                ->merge($room->interclubs->map(fn ($item) => [
+                    'type' => 'interclub',
+                    'date' => $item->start_date_time,
+                    'model' => $item,
+                ]))
+                ->merge($room->tournaments->map(fn ($item) => [
+                    'type' => 'tournament',
+                    'date' => $item->start_date,
+                    'model' => $item,
+                ]))
+                ->sortBy('date')
+                ->values();
+
+            return $room;
+        });
     }
 
     public function with(): array

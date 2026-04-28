@@ -35,6 +35,9 @@
                         <x-admin.shared.compact-event-preview link="#" :organizer="$training->trainer->first_name . ' ' . $training->trainer->last_name" :name="$training->type"
                             :startDateTime="$training->start" type="training" />
                     @endforeach
+                    @foreach ($room->interclubs as $interclub)
+                        <x-admin.shared.compact-event-preview link="#" :name="$interclub->week_number" :startDateTime="$interclub->start_date_time" type="interclub" />
+                    @endforeach
                     @foreach ($room->tournaments as $tournament)
                         <x-admin.shared.compact-event-preview link="#" :name="$tournament->name" :startDateTime="$tournament->start_date"
                             :remainingSlots="$tournament->max_users - $tournament->users()->count()" type="tournament">

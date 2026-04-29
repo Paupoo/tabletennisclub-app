@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\ClubAdmin\Users\User;
+use App\Models\ClubEvents\Interclub\Team;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
@@ -24,6 +25,8 @@ new class extends Component
     public bool $showFilters = false;
 
     public array $licenceTypes = [];   // ex: ['competitive', 'recreational']
+
+    public string $selectedLicenceType = 'both';
 
     public array $categories = [];     // ex: ['men', 'women', 'youth']
 
@@ -57,7 +60,7 @@ new class extends Component
     #[Computed]
     public function activeFiltersCount(): int
     {
-        return count($this->licenceTypes)
+        return ($this->selectedLicenceType !== 'both' ? 1 : 0)
             + count($this->categories)
             + ($this->onlyActive ? 1 : 0);
     }
@@ -90,16 +93,27 @@ new class extends Component
                     ->orWhere('email', 'like', "%{$this->search}%")
             ))
             ->when(
-                $this->licenceTypes,
-                fn ($q) => $q->whereIn('licence_type', $this->licenceTypes)
+                $this->selectedLicenceType === 'competitive',
+                fn ($q) => $q->where('is_competitor', true)
+            )
+            ->when(
+                $this->selectedLicenceType === 'recreative',
+                fn ($q) => $q->where('is_competitor', false)
             )
             ->when(
                 $this->categories,
-                fn ($q) => $q->whereIn('category', $this->categories)
+                fn ($q) => $q->whereIn('gender', $this->categories)
             )
             ->when(
                 $this->onlyActive,
                 fn ($q) => $q->where('is_active', true)
+            )
+            ->when(
+                count($this->team_ids) > 0,
+                fn ($q) => $q->whereHas(
+                'teams',
+                fn ($teamQuery) => $teamQuery->whereIn('teams.id', $this->team_ids))
+  
             )
             ->orderBy($this->sortBy['column'], $this->sortBy['direction'])
             ->paginate(15);
@@ -111,11 +125,14 @@ new class extends Component
     #[Computed]
     public function teams(): Collection
     {
-        return collect([
-            ['id' => 1, 'name' => 'Équipe A'],
-            ['id' => 2, 'name' => 'Équipe B'],
-            ['id' => 3, 'name' => 'Équipe C'],
-        ]);
+        return Team::with('captain')
+            ->orderBy('name')
+            ->get() 
+            ->map(fn(Team $team) => [
+                'id' => $team->id,
+                'name' => __('Team') . ' ' . $team->name,
+                'avatar' => $team->captain->photo ?? '/images/empty-user.jpg'
+            ]);
     }
 
     #[Computed]
@@ -147,9 +164,29 @@ new class extends Component
 
     public function resetFilters(): void
     {
-        $this->licenceTypes = [];
+        $this->selectedLicenceType = 'both';
         $this->categories = [];
         $this->onlyActive = false;
+        $this->resetPage();
+    }
+
+    public function updatedSelectedLicenceType(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedCategories(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedOnlyActive(): void
+    {
         $this->resetPage();
     }
 
@@ -219,6 +256,24 @@ new class extends Component
     {
         User::whereIn('id', $this->selected)->update(['is_active' => false]);
         $this->success(__('Users deactivated.'));
+    }
+
+    public function mount(): void
+    {
+        $this->licenceTypes = [
+            [
+                'id' => 'both',
+                'name' => __('Both')
+            ],
+            [
+                'id' => 'competitive',
+                'name' => __('Competitive')
+            ],
+            [
+                'id' => 'recreative',
+                'name' => __('Recreative')
+            ]
+        ];
     }
 
     // ────────────────────────────────────────────────────────────────────────

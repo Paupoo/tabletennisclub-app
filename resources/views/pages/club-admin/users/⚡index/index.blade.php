@@ -36,18 +36,17 @@
                     {{ __('Licence type') }}
                 </p>
                 <div class="space-y-1">
-                    <x-checkbox label="{{ __('Competitive') }}" value="competitive" wire:model.live="licenceTypes" />
-                    <x-checkbox label="{{ __('Recreational') }}" value="recreational" wire:model.live="licenceTypes" />
+                    <x-radio wire:model.live="selectedLicenceType" :options="$licenceTypes" />
                 </div>
             </div>
             <div>
                 <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
-                    {{ __('Category') }}
+                    {{ __('Gender') }}
                 </p>
                 <div class="space-y-1">
-                    <x-checkbox label="{{ __('Men') }}" value="men" wire:model.live="categories" />
-                    <x-checkbox label="{{ __('Women') }}" value="women" wire:model.live="categories" />
-                    <x-checkbox label="{{ __('Youth') }}" value="youth" wire:model.live="categories" />
+                    @foreach (\App\Enums\Gender::options() as $gender)
+                        <x-checkbox :label="$gender['name']" :value="$gender['id']" wire:model.live="categories" />
+                    @endforeach
                 </div>
             </div>
             <div>

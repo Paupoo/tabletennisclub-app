@@ -113,7 +113,6 @@ use Laravel\Sanctum\PersonalAccessToken;
  *
  * @mixin Eloquent
  */
-
 #[ObservedBy(UserObserver::class)]
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -246,7 +245,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsToMany(Pool::class, 'pool_user');
     }
 
-    public function scopeHasPaid( Builder $query): Builder
+    public function scopeHasPaid(Builder $query): Builder
     {
         return $query->where('has_paid', true);
     }
@@ -256,7 +255,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return $query->where('is_active', true);
     }
 
-    public function scopeIsCompetitor(EloquentBuilder$query): Builder
+    public function scopeIsCompetitor(EloquentBuilder $query): Builder
     {
         return $query->where('is_competitor', true);
     }
@@ -265,9 +264,6 @@ class User extends Authenticatable implements MustVerifyEmail
 
     /**
      * Scope search to search by last or first name
-     *
-     * @param Builder $query
-     * @param string $value
      */
     public function scopeSearch(Builder $query, string $value): void
     {
@@ -323,9 +319,6 @@ class User extends Authenticatable implements MustVerifyEmail
 
     /**
      * Capitalize 1 first letter of each words
-     *
-     * @param string $value
-     * @return string
      */
     public function setFirstNameAttribute(string $value): string
     {
@@ -336,9 +329,6 @@ class User extends Authenticatable implements MustVerifyEmail
 
     /**
      * Capitalize 1 first letter of each words
-     *
-     * @param string $value
-     * @return string
      */
     public function setLastNameAttribute(string $value): string
     {

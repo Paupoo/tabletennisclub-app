@@ -133,11 +133,12 @@ class Room extends Model
         return $this->belongsToMany(Tournament::class);
     }
 
-    public function trainings(): HasMany
+    public function trainingPacks(): HasMany
     {
         return $this->hasMany(Training::class);
     }
-    public function trainingPacks(): HasMany
+
+    public function trainings(): HasMany
     {
         return $this->hasMany(Training::class);
     }

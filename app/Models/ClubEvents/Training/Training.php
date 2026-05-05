@@ -106,9 +106,6 @@ class Training extends Model
 
     /**
      * Make sure case for trainer names is correct.
-     *
-     * @param string $value
-     * @return void
      */
     public function setTrainerNameAttribute(string $value): void
     {

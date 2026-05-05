@@ -6,11 +6,10 @@ namespace Tests\Unit\Enums;
 
 use App\Enums\CommitteeRolesEnum;
 
-use function PHPUnit\Framework\assertEquals;
 use function PHPUnit\Framework\assertNull;
 
 describe('CommitteRolesEnum', function () {
-    
+
     it('returns the correct string', function () {
         $this->assertEquals(__('President'), CommitteeRolesEnum::PRESIDENT->label());
         $this->assertEquals(__('Vice-President'), CommitteeRolesEnum::VICE_PRESIDENT->label());
@@ -18,7 +17,7 @@ describe('CommitteRolesEnum', function () {
         $this->assertEquals(__('Secretary'), CommitteeRolesEnum::SECRETARY->label());
         $this->assertEquals(__('Administrator'), CommitteeRolesEnum::ADMINISTRATOR->label());
     });
-    
+
     it('generates an array for Mary-UI options', function () {
         $this->assertEquals([
             ['id' => 'PRESIDENT', 'name' => __('President')],

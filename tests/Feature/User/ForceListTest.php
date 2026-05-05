@@ -3,8 +3,9 @@
 declare(strict_types=1);
 
 use App\Models\ClubAdmin\Users\User;
+use Tests\Trait\CreateUser;
 
-uses(\Tests\Trait\CreateUser::class);
+uses(CreateUser::class);
 
 test('force list are calculated only for competitors', function (): void {
     $admin = $this->createFakeAdmin();

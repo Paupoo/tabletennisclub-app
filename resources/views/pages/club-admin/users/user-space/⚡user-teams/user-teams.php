@@ -1,20 +1,23 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Support\Breadcrumb;
-use Illuminate\View\View;
 use Livewire\Component;
 
 new class extends Component
 {
+    public ?int $activeWeek = 13; // La semaine ouverte dans le chat
+
     public bool $chatDrawer = false;
+
+    public ?string $selectedTeam = null;
 
     public array $teams = [
         ['name' => 'Ottignies C (Seniors)', 'id' => 'c'],
         ['name' => 'Ottignies A (Dames)', 'id' => 'a'],
         ['name' => 'Ottignies B (Vétérans)', 'id' => 'b'],
     ];
-
-    public ?string $selectedTeam = null;
 
     // Dans ton composant Livewire
     public array $weeks = [
@@ -36,8 +39,6 @@ new class extends Component
         ],
     ];
 
-    public ?int $activeWeek = 13; // La semaine ouverte dans le chat
-
     public function openChatDrawer(int $week): void
     {
         $this->activeWeek = $week;
@@ -56,6 +57,6 @@ new class extends Component
                 ->home()
                 ->add(__('My teams'), '#', 'o-users')
                 ->toArray(),
-            ];
+        ];
     }
 };

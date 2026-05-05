@@ -26,12 +26,8 @@ class SubscribeToSeasonAction
 
     private User $user;
 
-
     /**
      * Handle the incoming request.
-     * @param Season $season
-     * @param Request $request
-     * @return RedirectResponse
      */
     public function __invoke(Season $season, Request $request): RedirectResponse
     {
@@ -63,17 +59,11 @@ class SubscribeToSeasonAction
         ]);
     }
 
-    /**
-     * @return float
-     */
     public function calculatePrice(): float
     {
         return $this->is_competitor ? $this->competitiveLicencePrice : $this->casualLicencePrice;
     }
 
-    /**
-     * @return Subscription
-     */
     public function subscribe(): Subscription
     {
         return Subscription::create([

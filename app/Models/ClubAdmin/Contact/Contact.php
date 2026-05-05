@@ -31,9 +31,6 @@ class Contact extends Model
         'status',
     ];
 
-    /**
-     * @return array
-     */
     public static function getStatusStats(): array
     {
         return self::selectRaw("

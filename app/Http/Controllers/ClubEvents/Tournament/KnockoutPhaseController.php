@@ -35,6 +35,7 @@ class KnockoutPhaseController extends Controller
 
     /**
      * Configure knockout phase
+     *
      * @throws Exception
      */
     public function configure(Request $request, Tournament $tournament): RedirectResponse

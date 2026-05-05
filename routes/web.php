@@ -100,20 +100,20 @@ Route::prefix('admin/club-admin/users/')
     });
 Route::prefix('admin/club-admin/')
     ->middleware(['auth', 'verified', 'can:update,App\Models\ClubEvents\Interclub\Club'])
-    ->group(function (): void  {
+    ->group(function (): void {
         Route::livewire('club-info', 'pages::club-admin.club-info')->name('admin.club-info');
     });
 
 Route::prefix('admin/club-admin/rooms/')
     ->middleware(['auth', 'verified'])
-    ->group(function (): void  {
+    ->group(function (): void {
         Route::livewire('list', 'pages::club-admin.rooms.index')->name('admin.rooms.index');
-        
+
         Route::middleware('can:create,App\Models\ClubAdmin\Club\Room')
             ->group(function (): void {
                 Route::livewire('create', 'pages::club-admin.rooms.form')->name('admin.rooms.create');
             });
-        
+
         Route::middleware('can:update,room')
             ->group(function (): void {
                 Route::livewire('{room}/edit', 'pages::club-admin.rooms.form')->name('admin.rooms.edit');
@@ -122,17 +122,17 @@ Route::prefix('admin/club-admin/rooms/')
 
 Route::prefix('admin/club-admin/tables/')
     ->middleware(['auth', 'verified'])
-    ->group(function (): void  {
+    ->group(function (): void {
         Route::livewire('list', 'pages::club-admin.tables.index')->name('admin.tables.index');
 
         Route::middleware('can:update,table')
-        ->group(function (): void {
-            Route::livewire('{table}/edit', 'pages::club-admin.tables.form')->name('admin.tables.edit');
-            });
-            
-            Route::middleware('can:create,App\Models\ClubAdmin\Club\Table')
             ->group(function (): void {
-            Route::livewire('create', 'pages::club-admin.tables.form')->name('admin.tables.create');
+                Route::livewire('{table}/edit', 'pages::club-admin.tables.form')->name('admin.tables.edit');
+            });
+
+        Route::middleware('can:create,App\Models\ClubAdmin\Club\Table')
+            ->group(function (): void {
+                Route::livewire('create', 'pages::club-admin.tables.form')->name('admin.tables.create');
             });
     });
 
@@ -147,7 +147,7 @@ Route::prefix('admin/club-events/tournaments')
     ->group(function (): void {
         Route::livewire('/', 'pages::club-events.tournaments.index')->name('admin.tournaments.index');
         Route::livewire('{tournament}/live-center', 'pages::club-events.tournaments.live-center')->name('admin.tournaments.live-center');
-        Route::livewire('wizard', 'pages::club-events.tournaments.wizard')->name('admin.tournaments.wizard');        
+        Route::livewire('wizard', 'pages::club-events.tournaments.wizard')->name('admin.tournaments.wizard');
     });
 
 Route::prefix('admin/club-events/interclubs/')

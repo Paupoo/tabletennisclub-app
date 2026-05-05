@@ -15,15 +15,15 @@ uses(RefreshDatabase::class);
 describe('Test Tournament Observer', function () {
     it('dispatches event when tournament is published', function () {
         Event::fake();
-    
+
         $tournament = Tournament::factory()->create([
             'status' => TournamentStatusEnum::DRAFT,
         ]);
-    
+
         $tournament->update([
             'status' => TournamentStatusEnum::PUBLISHED,
         ]);
-    
+
         Event::assertDispatched(NewTournamentPublished::class, function ($event) use ($tournament) {
             return $event->tournament->id === $tournament->id;
         });

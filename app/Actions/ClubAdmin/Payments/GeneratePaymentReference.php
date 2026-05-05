@@ -31,9 +31,6 @@ class GeneratePaymentReference
         $this->verification = $this->getCheckSum();
     }
 
-    /**
-     * @return string
-     */
     public function __invoke(): string
     {
         $string = (string) $this->reference . $this->verification;
@@ -43,8 +40,6 @@ class GeneratePaymentReference
 
     /**
      * Add the 2 '/' after the 3rd and the 7th number
-     * @param string $string
-     * @return string
      */
     public function addSeparators(string $string): string
     {

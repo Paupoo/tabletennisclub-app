@@ -29,11 +29,6 @@ class InterclubController extends Controller
         $this->interclubService = $interclubService;
     }
 
-    /**
-     * @param Interclub $interclub
-     * @param User $user
-     * @return RedirectResponse
-     */
     public function addToSelection(Interclub $interclub, User $user): RedirectResponse
     {
         /**
@@ -164,9 +159,6 @@ class InterclubController extends Controller
         ]);
     }
 
-    /**
-     * @return View
-     */
     public function showSelections(): View
     {
         $breadcrumbs = Breadcrumb::make()
@@ -196,14 +188,10 @@ class InterclubController extends Controller
 
     }
 
-    /**
-     * @param Request $request
-     * @return RedirectResponse
-     */
     public function subscribe(Request $request): RedirectResponse
     {
 
-        $subscriptions = array_keys($request->all()['subscriptions']);
+        $subscriptions = array_keys($request->input('subscriptions', []));
 
         $user = Auth::user();
 
@@ -212,11 +200,6 @@ class InterclubController extends Controller
         return redirect()->route('interclubs.index')->with('success', __('You have correctly subscribed.'));
     }
 
-    /**
-     * @param Interclub $interclub
-     * @param User $user
-     * @return RedirectResponse
-     */
     public function toggleSelection(Interclub $interclub, User $user): RedirectResponse
     {
         $userWithPivot = $user->interclubs()->where('interclub_id', $interclub->id)->first();

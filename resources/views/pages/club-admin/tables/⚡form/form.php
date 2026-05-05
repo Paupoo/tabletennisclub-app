@@ -21,11 +21,11 @@ new class extends Component
     #[Validate('required')]
     public string $name = '';
 
-    #[Validate('nullable')]
-    public ?int $room_id = null;
-
     #[Validate('nullable|date')]
     public ?string $purchased_on = null;
+
+    #[Validate('nullable')]
+    public ?int $room_id = null;
 
     #[Validate('nullable')]
     public ?string $state = null;
@@ -39,14 +39,14 @@ new class extends Component
 
     public function mount(?Table $table): void
     {
-            $this->tableId = $table->id;
-            $this->name = $table->name ?? '';
-            $this->brand = $table->brand ?? '';
-            $this->model = $table->model ?? '';
-            $this->room_id = $table->room_id;
-            $this->purchased_on = $table->purchased_on ? $table->purchased_on->format('Y-m-d') : null;
-            $this->state = $table->state;
-            $this->state_description = $table->state_description ?? '';
+        $this->tableId = $table->id;
+        $this->name = $table->name ?? '';
+        $this->brand = $table->brand ?? '';
+        $this->model = $table->model ?? '';
+        $this->room_id = $table->room_id;
+        $this->purchased_on = $table->purchased_on ? $table->purchased_on->format('Y-m-d') : null;
+        $this->state = $table->state;
+        $this->state_description = $table->state_description ?? '';
 
         $this->states = Table::getStates();
     }
@@ -54,6 +54,19 @@ new class extends Component
     public function render(): View
     {
         return $this->view();
+    }
+
+    public function save(): void
+    {
+        $validated = $this->validate();
+
+        $table = $this->tableId
+            ? Table::findOrFail($this->tableId)
+            : new Table;
+
+        $table->fill($validated)->save();
+
+        $this->success('Table enregistrée avec succès.');
     }
 
     public function with(): array
@@ -67,18 +80,5 @@ new class extends Component
             'rooms' => Room::all(),
             'states' => $this->states,
         ];
-    }
-
-    public function save(): void
-    {
-        $validated = $this->validate();
-
-        $table = $this->tableId
-            ? Table::findOrFail($this->tableId)
-            : new Table();
-
-        $table->fill($validated)->save();
-
-        $this->success('Table enregistrée avec succès.');
     }
 };

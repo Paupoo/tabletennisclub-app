@@ -16,10 +16,6 @@ final class CalculatePriceAction
 
     private float $trainingPrice = 90;
 
-    /**
-     * @param Subscription $subscription
-     * @return Subscription
-     */
     public function __invoke(Subscription $subscription): Subscription
     {
         $subscription->subscription_price = $subscription->is_competitive ? $this->competitivePrice : $this->recreativePrice;

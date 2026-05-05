@@ -1,7 +1,9 @@
 <?php
 
 declare(strict_types=1);
-uses(\Tests\Trait\CreateUser::class);
+use Tests\Trait\CreateUser;
+
+uses(CreateUser::class);
 
 test('admin and committee members can see create member and force index buttons from index', function (): void {
     $admin = $this->createFakeAdmin();

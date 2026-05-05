@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Support\Breadcrumb;
 use Livewire\Component;

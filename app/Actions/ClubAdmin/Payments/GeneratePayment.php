@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Actions\ClubAdmin\Payments;
 
-use App\Actions\ClubAdmin\Payments\GeneratePaymentReference;
 use App\Models\ClubAdmin\Payment\Payment;
 use App\Models\ClubAdmin\Subscription\Subscription;
 use Illuminate\Http\RedirectResponse;

@@ -50,12 +50,6 @@ class ContactEmailService
         };
     }
 
-    /**
-     * @param Contact $contact
-     * @param Mailable $mail
-     * @param string $template
-     * @return string
-     */
     private function send(Contact $contact, Mailable $mail, string $template): string
     {
         Mail::to($contact->email)->send($mail);

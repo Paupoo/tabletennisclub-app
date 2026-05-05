@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace Database\Factories\ClubAdmin\Club;
 
 use App\Models\ClubAdmin\Club\Room;
+use App\Models\ClubAdmin\Club\Table;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\ClubAdmin\Club\Table>
+ * @extends Factory<Table>
  */
 class TableFactory extends Factory
 {

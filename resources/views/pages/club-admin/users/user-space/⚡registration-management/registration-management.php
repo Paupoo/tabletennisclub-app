@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Enums\Gender;
 use App\Models\Clubadmin\Users\User;
 use App\Support\Breadcrumb;
@@ -9,53 +11,46 @@ use Livewire\Attributes\Computed;
 use Livewire\Attributes\Rule;
 use Livewire\Component;
 use Mary\Traits\Toast;
+
 new class extends Component
 {
-use Toast;
-
-    // --- Gestion du panier d'inscriptions ---
-    // Contient les données d'inscription pour chaque membre : id, formula, trainings[]
-    public User $user;
-
-    public array $registrations = [];
-
-    public string $selectedTab;
+    use Toast;
 
     // --- Gestion du Modal "Ajouter un membre" ---
     public bool $addMemberModal = false;
 
     #[Rule('required|string')]
-    public string $new_first_name = '';
-
-    #[Rule('required|string')]
-    public string $new_last_name = '';
-
-    #[Rule('required|string')]
     public string $new_birthdate = '';
-
-    #[Rule('required|string')]
-    public string $new_gender = '';
 
     #[Rule('required|string|email')]
     public string $new_email = '';
 
+    #[Rule('required|string')]
+    public string $new_first_name = '';
+
+    #[Rule('required|string')]
+    public string $new_gender = '';
+
+    #[Rule('required|string')]
+    public string $new_last_name = '';
+
     #[Rule('nullable|string')]
     public string $new_phone_number = '';
 
-    public function mount(): void
-    {
-        // On initialise avec le membre connecté par défaut
-        $this->user = User::first();
-        $this->addRegistrationTab($this->user);
-        $this->selectedTab = (string) 'tab-'.$this->user->id;
-    }
+    public array $registrations = [];
+
+    public string $selectedTab;
+
+    // --- Gestion du panier d'inscriptions ---
+    // Contient les données d'inscription pour chaque membre : id, formula, trainings[]
+    public User $user;
 
     public function addRegistrationTab(User $user): void
     {
         // On ajoute le membre au "panier" d'inscriptions
         $this->registrations[$user->id] = [
             'user_id' => $user->id,
-            'name' => $user->first_name.' '.$user->last_name,
+            'name' => $user->first_name . ' ' . $user->last_name,
             'formula' => 'competition', // Valeur par défaut
             'trainings' => [],
         ];
@@ -69,28 +64,36 @@ use Toast;
         $newMember = User::firstOrCreate([
             'email' => $this->new_email,
         ],
-        [
-            'first_name' => $this->new_first_name,
-            'last_name' => $this->new_last_name,
-            'email' => $this->new_email,
-            'birthdate' => $this->new_birthdate,
-            'gender' => $this->new_gender,
-            'phone_number' => $this->phone_number ?? User::first()->phone_number,
+            [
+                'first_name' => $this->new_first_name,
+                'last_name' => $this->new_last_name,
+                'email' => $this->new_email,
+                'birthdate' => $this->new_birthdate,
+                'gender' => $this->new_gender,
+                'phone_number' => $this->phone_number ?? User::first()->phone_number,
 
-            // On hérite des infos du parent
-            'street' => User::first()->street,
-            'postal_code' => User::first()->postal_code,
-            'city' => User::first()->city,
+                // On hérite des infos du parent
+                'street' => User::first()->street,
+                'postal_code' => User::first()->postal_code,
+                'city' => User::first()->city,
 
-            // LA CORRECTION EST ICI 👇
-            'password' => Hash::make(Str::random(16)),
-        ]);
+                // LA CORRECTION EST ICI 👇
+                'password' => Hash::make(Str::random(16)),
+            ]);
 
         $this->addRegistrationTab($newMember);
 
         // Reset du modal
         $this->reset(['new_first_name', 'new_last_name', 'new_birthdate', 'new_gender', 'addMemberModal']);
         $this->success('Membre ajouté avec succès !');
+    }
+
+    public function mount(): void
+    {
+        // On initialise avec le membre connecté par défaut
+        $this->user = User::first();
+        $this->addRegistrationTab($this->user);
+        $this->selectedTab = (string) 'tab-' . $this->user->id;
     }
 
     #[Computed()]

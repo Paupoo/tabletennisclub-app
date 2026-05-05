@@ -39,53 +39,54 @@ class Index extends Component
         'filters' => ['except' => []],
     ];
 
-    public function mount(): void
+    /**
+     * Blocage d'une IP (à adapter selon ton système)
+     */
+    public function blockIp(string $ip): void
     {
-        // Réinitialiser les filtres vides
-        $this->filters = array_filter($this->filters);
-    }
+        try {
+            // Ici tu peux implémenter ta logique de blocage
+            // Par exemple, créer un modèle BlockedIp ou ajouter à un fichier .htaccess
 
-    public function render()
-    {
-        $spamsQuery = $this->getSpamsQuery();
+            // Exemple simple : log de l'action
+            logger()->info("IP blocked by admin: {$ip}");
 
-        return view('livewire.admin.spams.index', [
-            'spams' => $spamsQuery->paginate($this->perPage),
-            'stats' => $this->getStats(),
-            'totalResults' => $spamsQuery->count(),
-        ]);
+            $this->dispatch('ip-blocked', [
+                'message' => "IP {$ip} ajoutée à la liste de blocage.",
+                'type' => 'success',
+            ]);
+        } catch (\Exception $e) {
+            $this->dispatch('spam-error', [
+                'message' => 'Erreur lors du blocage de l\'IP.',
+                'type' => 'error',
+            ]);
+        }
     }
 
     /**
-     * Calcul des statistiques
+     * Suppression en lot
      */
-    private function getStats(): Collection
+    public function bulkDelete(): void
     {
-        $baseQuery = Spam::query();
+        if (empty($this->selectedItems)) {
+            return;
+        }
 
-        return collect([
-            'totalSpams' => $baseQuery->count(),
-            'todaySpams' => $baseQuery->whereDate('created_at', today())->count(),
-            'uniqueIps' => $baseQuery->distinct('ip')->count('ip'),
-            'blockedIps' => 0, // À implémenter avec un modèle BlockedIp si nécessaire
-        ]);
-    }
+        try {
+            $deletedCount = Spam::whereIn('id', $this->selectedItems)->delete();
 
-    /**
-     * Mise à jour de la recherche
-     */
-    public function updatedSearch(): void
-    {
-        $this->resetPage();
-        $this->resetSelection();
-    }
+            $this->resetSelection();
 
-    /**
-     * Basculer l'affichage des filtres
-     */
-    public function toggleFilters(): void
-    {
-        $this->showFilters = !$this->showFilters;
+            $this->dispatch('spam-bulk-deleted', [
+                'message' => "{$deletedCount} spam(s) supprimé(s) avec succès.",
+                'type' => 'success',
+            ]);
+        } catch (\Exception $e) {
+            $this->dispatch('spam-error', [
+                'message' => 'Erreur lors de la suppression en lot.',
+                'type' => 'error',
+            ]);
+        }
     }
 
     /**
@@ -115,7 +116,7 @@ class Index extends Component
             // Retirer de la sélection si présent
             $this->selectedItems = array_filter(
                 $this->selectedItems,
-                fn($id) => $id !== $spamId
+                fn ($id) => $id !== $spamId
             );
 
             $this->dispatch('spam-deleted', [
@@ -125,57 +126,7 @@ class Index extends Component
         } catch (\Exception $e) {
             $this->dispatch('spam-error', [
                 'message' => 'Erreur lors de la suppression du spam.',
-                'type' => 'error'
-            ]);
-        }
-    }
-
-    /**
-     * Suppression en lot
-     */
-    public function bulkDelete(): void
-    {
-        if (empty($this->selectedItems)) {
-            return;
-        }
-
-        try {
-            $deletedCount = Spam::whereIn('id', $this->selectedItems)->delete();
-
-            $this->resetSelection();
-
-            $this->dispatch('spam-bulk-deleted', [
-                'message' => "{$deletedCount} spam(s) supprimé(s) avec succès.",
-                'type' => 'success'
-            ]);
-        } catch (\Exception $e) {
-            $this->dispatch('spam-error', [
-                'message' => 'Erreur lors de la suppression en lot.',
-                'type' => 'error'
-            ]);
-        }
-    }
-
-    /**
-     * Blocage d'une IP (à adapter selon ton système)
-     */
-    public function blockIp(string $ip): void
-    {
-        try {
-            // Ici tu peux implémenter ta logique de blocage
-            // Par exemple, créer un modèle BlockedIp ou ajouter à un fichier .htaccess
-
-            // Exemple simple : log de l'action
-            logger()->info("IP blocked by admin: {$ip}");
-
-            $this->dispatch('ip-blocked', [
-                'message' => "IP {$ip} ajoutée à la liste de blocage.",
-                'type' => 'success'
-            ]);
-        } catch (\Exception $e) {
-            $this->dispatch('spam-error', [
-                'message' => 'Erreur lors du blocage de l\'IP.',
-                'type' => 'error'
+                'type' => 'error',
             ]);
         }
     }
@@ -227,8 +178,33 @@ class Index extends Component
      */
     public function hasActiveFilters(): bool
     {
-        return !empty($this->search) ||
-            !empty(array_filter($this->filters));
+        return ! empty($this->search) ||
+            ! empty(array_filter($this->filters));
+    }
+
+    public function mount(): void
+    {
+        // Réinitialiser les filtres vides
+        $this->filters = array_filter($this->filters);
+    }
+
+    public function render()
+    {
+        $spamsQuery = $this->getSpamsQuery();
+
+        return view('livewire.admin.spams.index', [
+            'spams' => $spamsQuery->paginate($this->perPage),
+            'stats' => $this->getStats(),
+            'totalResults' => $spamsQuery->count(),
+        ]);
+    }
+
+    /**
+     * Basculer l'affichage des filtres
+     */
+    public function toggleFilters(): void
+    {
+        $this->showFilters = ! $this->showFilters;
     }
 
     /**
@@ -243,6 +219,15 @@ class Index extends Component
      * Mise à jour des filtres
      */
     public function updatedFilters(): void
+    {
+        $this->resetPage();
+        $this->resetSelection();
+    }
+
+    /**
+     * Mise à jour de la recherche
+     */
+    public function updatedSearch(): void
     {
         $this->resetPage();
         $this->resetSelection();
@@ -304,6 +289,21 @@ class Index extends Component
         }
 
         return $query;
+    }
+
+    /**
+     * Calcul des statistiques
+     */
+    private function getStats(): Collection
+    {
+        $baseQuery = Spam::query();
+
+        return collect([
+            'totalSpams' => $baseQuery->count(),
+            'todaySpams' => $baseQuery->whereDate('created_at', today())->count(),
+            'uniqueIps' => $baseQuery->distinct('ip')->count('ip'),
+            'blockedIps' => 0, // À implémenter avec un modèle BlockedIp si nécessaire
+        ]);
     }
 
     /**

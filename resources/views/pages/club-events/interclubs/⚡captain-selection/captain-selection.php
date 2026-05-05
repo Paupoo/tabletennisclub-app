@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Support\Breadcrumb;
 use Illuminate\View\View;
 use Livewire\Component;
@@ -9,47 +11,22 @@ new class extends Component
 {
     use Toast;
 
-    // États des interfaces
-    public bool $drawerSelection = false;
+    // Données de saisie
+    public string $captainMessage = '';
 
     public bool $chatDrawer = false;
 
+    // États des interfaces
+    public bool $drawerSelection = false;
+
     public bool $modalMessage = false;
-
-    public ?string $selectedTeam = null;
-
-    // Données de saisie
-    public string $captainMessage = '';
 
     public string $search = '';
 
     // Sélection simulée (WK13)
     public array $selectedPlayers = ['Marc D.', 'Aurelien V.'];
 
-    /**
-     * Gère la sélection/désélection d'un joueur
-     */
-    public function togglePlayer(string $name): void
-    {
-        if (in_array($name, $this->selectedPlayers)) {
-            $this->selectedPlayers = array_diff($this->selectedPlayers, [$name]);
-        } else {
-            if (count($this->selectedPlayers) < 4) {
-                $this->selectedPlayers[] = $name;
-            } else {
-                $this->warning('Équipe complète', 'Maximum 4 joueurs.', position: 'toast-bottom toast-end');
-            }
-        }
-    }
-
-    /**
-     * Déclenché lors du clic sur "Confirmer" dans le drawer
-     */
-    public function saveSelection(): void
-    {
-        $this->drawerSelection = false;
-        $this->modalMessage = true;
-    }
+    public ?string $selectedTeam = null;
 
     /**
      * Finalise la convocation après le message du capitaine
@@ -65,6 +42,36 @@ new class extends Component
         );
 
         $this->captainMessage = '';
+    }
+
+    public function render(): View
+    {
+        return $this->view();
+    }
+
+    /**
+     * Déclenché lors du clic sur "Confirmer" dans le drawer
+     */
+    public function saveSelection(): void
+    {
+        $this->drawerSelection = false;
+        $this->modalMessage = true;
+    }
+
+    /**
+     * Gère la sélection/désélection d'un joueur
+     */
+    public function togglePlayer(string $name): void
+    {
+        if (in_array($name, $this->selectedPlayers)) {
+            $this->selectedPlayers = array_diff($this->selectedPlayers, [$name]);
+        } else {
+            if (count($this->selectedPlayers) < 4) {
+                $this->selectedPlayers[] = $name;
+            } else {
+                $this->warning('Équipe complète', 'Maximum 4 joueurs.', position: 'toast-bottom toast-end');
+            }
+        }
     }
 
     public function with(): array
@@ -99,10 +106,5 @@ new class extends Component
             ],
             'searchResults' => $searchResults,
         ];
-    }
-
-    public function render(): View
-    {
-        return $this->view();
     }
 };

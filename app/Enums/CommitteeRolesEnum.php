@@ -6,12 +6,22 @@ namespace App\Enums;
 
 enum CommitteeRolesEnum: string
 {
-    case PRESIDENT = 'PRESIDENT';
-    case VICE_PRESIDENT = 'VICE_PRESIDENT';
-    case TREASURER = 'TREASURER';
-    case SECRETARY = 'SECRETARY';
     case ADMINISTRATOR = 'ADMINISTRATOR';
+    case PRESIDENT = 'PRESIDENT';
+    case SECRETARY = 'SECRETARY';
+    case TREASURER = 'TREASURER';
+    case VICE_PRESIDENT = 'VICE_PRESIDENT';
 
+    public static function getOptions(): array
+    {
+        return [
+            ['id' => self::PRESIDENT->value, 'name' => self::PRESIDENT->label()],
+            ['id' => self::VICE_PRESIDENT->value, 'name' => self::VICE_PRESIDENT->label()],
+            ['id' => self::TREASURER->value, 'name' => self::TREASURER->label()],
+            ['id' => self::SECRETARY->value, 'name' => self::SECRETARY->label()],
+            ['id' => self::ADMINISTRATOR->value, 'name' => self::ADMINISTRATOR->label()],
+        ];
+    }
 
     public function label(): string
     {
@@ -23,15 +33,4 @@ enum CommitteeRolesEnum: string
             self::ADMINISTRATOR => __('Administrator'),
         };
     }
-
-    public static function getOptions(): array
-    {
-        return [
-            ['id' => self::PRESIDENT->value, 'name' => self::PRESIDENT->label()],
-            ['id' => self::VICE_PRESIDENT->value, 'name' => self::VICE_PRESIDENT->label()],
-            ['id' => self::TREASURER->value, 'name' => self::TREASURER->label()],
-            ['id' => self::SECRETARY->value, 'name' => self::SECRETARY->label()],
-            ['id' => self::ADMINISTRATOR->value, 'name' => self::ADMINISTRATOR->label()],
-        ];
-    }   
 }

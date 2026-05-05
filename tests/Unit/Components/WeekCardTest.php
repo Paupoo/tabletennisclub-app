@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\View\Components\WeekCard;
 
 pest()->group('components', 'weekCard');
@@ -15,8 +17,8 @@ it('détermine correctement le statut basé sur le score', function (array $scor
     expect($component->status)->toBe($expectedStatus);
 })->with([
     'victoire' => [['home' => 10, 'away' => 5], 'win'],
-    'défaite'  => [['home' => 5, 'away' => 10], 'loss'],
-    'nul'      => [['home' => 7, 'away' => 7], 'draw'],
+    'défaite' => [['home' => 5, 'away' => 10], 'loss'],
+    'nul' => [['home' => 7, 'away' => 7], 'draw'],
 ]);
 
 it('utilise le statut fourni explicitement au lieu de le calculer', function () {
@@ -53,10 +55,10 @@ it('vérifie si le composant est extensible', function (string $status, ?array $
 
     expect($component->isExpandable())->toBe($expected);
 })->with([
-    'win avec matches'     => ['win', ['match1'], true],
-    'win sans matches'     => ['win', [], false],
-    'future avec matches'  => ['future', ['match1'], false],
-    'loss avec matches'    => ['loss', ['match1'], true],
+    'win avec matches' => ['win', ['match1'], true],
+    'win sans matches' => ['win', [], false],
+    'future avec matches' => ['future', ['match1'], false],
+    'loss avec matches' => ['loss', ['match1'], true],
 ]);
 
 it('retourne les bonnes classes CSS selon le statut', function (string $status, string $barColor, string $dotStyle) {
@@ -70,8 +72,8 @@ it('retourne les bonnes classes CSS selon le statut', function (string $status, 
     expect($component->barColor())->toBe($barColor);
     expect($component->dotStyle())->toBe($dotStyle);
 })->with([
-    'status win'     => ['win', 'bg-success', 'bg-success'],
-    'status loss'    => ['loss', 'bg-error', 'bg-error'],
+    'status win' => ['win', 'bg-success', 'bg-success'],
+    'status loss' => ['loss', 'bg-error', 'bg-error'],
     'status pending' => ['pending', 'bg-warning', 'border-2 border-warning'],
     'status default' => ['unknown', 'bg-base-300', 'border border-base-300'],
 ]);
@@ -87,8 +89,8 @@ it('calcule la classe CSS du score pour l équipe à domicile', function (string
     expect($component->scoreHomeClass())->toBe($expectedClass);
 })->with([
     'victoire' => ['win', 'bg-success/15 text-success'],
-    'défaite'  => ['loss', 'bg-error/15 text-error'],
-    'autre'    => ['draw', 'bg-base-200 text-base-content'],
+    'défaite' => ['loss', 'bg-error/15 text-error'],
+    'autre' => ['draw', 'bg-base-200 text-base-content'],
 ]);
 
 it('renvoie les bonnes données à la vue lors du rendu', function () {

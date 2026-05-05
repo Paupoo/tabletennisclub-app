@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Database\Factories\ClubEvents\Tournament;
 
+use App\Models\ClubEvents\Tournament\Pool;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\ClubEvents\Tournament\Pool>
+ * @extends Factory<Pool>
  */
 class PoolFactory extends Factory
 {

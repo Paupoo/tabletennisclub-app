@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use App\Actions\Payments\GeneratePayment;
-use App\Models\Payment;
 use App\Models\Subscription;
+use Illuminate\Http\RedirectResponse;
 
 // Méthode 1 : Ajouter le groupe directement dans le fichier
 uses()->group('payment');
@@ -64,7 +64,7 @@ it('redirects back with success message', function (): void {
     $response = $action($subscription);
 
     expect($response)
-        ->toBeInstanceOf(\Illuminate\Http\RedirectResponse::class);
+        ->toBeInstanceOf(RedirectResponse::class);
 
     // Vérifier que le message de succès est présent dans la session
     expect(session('success'))

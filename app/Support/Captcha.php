@@ -1,6 +1,6 @@
 <?php
 
-declare (strict_types=1);
+declare(strict_types=1);
 
 namespace App\Support;
 
@@ -16,10 +16,9 @@ class Captcha
         return [
             'a' => $a,
             'b' => $b,
-            'operation' => $operation
+            'operation' => $operation,
         ];
     }
-
 
     public function validate(array $captcha, int $userResult): bool
     {

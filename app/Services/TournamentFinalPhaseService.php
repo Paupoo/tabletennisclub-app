@@ -108,12 +108,9 @@ class TournamentFinalPhaseService
         return true;
     }
 
-
     /**
      * Configure knockout phase
-     * @param Tournament $tournament
-     * @param string $startingRound
-     * @return bool
+     *
      * @throws Exception
      */
     public function configureKnockoutPhase(Tournament $tournament, string $startingRound): bool

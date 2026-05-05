@@ -1,8 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Support\Breadcrumb;
 use Livewire\Component;
-use Illuminate\View\View;
 
 new class extends Component
 {

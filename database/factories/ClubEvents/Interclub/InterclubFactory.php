@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Database\Factories\ClubEvents\Interclub;
 
+use App\Models\ClubEvents\Interclub\Interclub;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\ClubEvents\Interclub\Interclub>
+ * @extends Factory<Interclub>
  */
 class InterclubFactory extends Factory
 {

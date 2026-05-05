@@ -36,6 +36,8 @@ new class extends Component
     #[Rule('required|string')]
     public string $city_name = '';
 
+    public ?string $committee_role = null;
+
     public ?string $currentPhoto = null; // photo persistée
 
     public bool $deleteModal = false;
@@ -63,8 +65,6 @@ new class extends Component
 
     #[Rule('required|boolean')]
     public bool $is_committee_member = false;
-
-    public ?string $committee_role = null;
 
     // Registration
 
@@ -102,6 +102,12 @@ new class extends Component
     public array $trainings_ids = [];
 
     public ?User $user = null;
+
+    #[Computed()]
+    public function CommitteeRoleOptions(): array
+    {
+        return CommitteeRolesEnum::getOptions();
+    }
 
     /**
      * Effacer la photo
@@ -159,21 +165,11 @@ new class extends Component
                 : __('Create new user'));
     }
 
-    public function updatedLicenceType(string $value): void
-{
-    $this->is_competitor = $value === 'competitive';
-
-    // On nettoie uniquement les erreurs, pas les valeurs
-    $this->resetErrorBag(['licence', 'ranking']);
-}
-
     // Hook déclenché par wire:model.live à chaque modification du champ
     // public function updatedLicence(?string $value): void
     // {
     //         $this->validateOnly('licence');
     // }
-
-    
 
     /**
      * Pour utiliser l'objet Password, on utilise la méthode rules() protégée.
@@ -186,7 +182,7 @@ new class extends Component
         return [
             'committee_role' => [
                 'nullable',
-                ValidationRule::when($this->is_committee_member, ['required', new Enum(CommitteeRolesEnum::class)])
+                ValidationRule::when($this->is_committee_member, ['required', new Enum(CommitteeRolesEnum::class)]),
             ],
             'licence' => [
                 'nullable',
@@ -223,6 +219,7 @@ new class extends Component
                     // obligatoire si compétitif
                     if ($isCompetitive && empty($value)) {
                         $fail('Ranking is required for competitive players.');
+
                         return;
                     }
 
@@ -257,7 +254,8 @@ new class extends Component
         // Ici on est certain que $validated existe et est valide
         if ($this->licence_type === 'recreative') {
             $validated['licence'] = null;
-            $validated['ranking'] = 'N/A';        }
+            $validated['ranking'] = 'N/A';
+        }
 
         if ($this->user) {
             unset($validated['password_confirmation']);
@@ -292,10 +290,12 @@ new class extends Component
         }
     }
 
-    #[Computed()]
-    public function CommitteeRoleOptions(): array
+    public function updatedLicenceType(string $value): void
     {
-        return CommitteeRolesEnum::getOptions();
+        $this->is_competitor = $value === 'competitive';
+
+        // On nettoie uniquement les erreurs, pas les valeurs
+        $this->resetErrorBag(['licence', 'ranking']);
     }
 
     public function with(): array

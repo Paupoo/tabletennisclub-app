@@ -6,26 +6,9 @@ namespace App\Policies;
 
 use App\Models\ClubAdmin\Subscription\Subscription;
 use App\Models\ClubAdmin\Users\User;
-use Illuminate\Auth\Access\Response;
 
 class SubscriptionPolicy
 {
-    /**
-     * Determine whether the user can view any models.
-     */
-    public function viewAny(User $user): bool
-    {
-        return false;
-    }
-
-    /**
-     * Determine whether the user can view the model.
-     */
-    public function view(User $user, Subscription $subscription): bool
-    {
-        return $user->can('update', $subscription->season);
-    }
-
     /**
      * Determine whether the user can create models.
      */
@@ -35,27 +18,11 @@ class SubscriptionPolicy
     }
 
     /**
-     * Determine whether the user can update the model.
-     */
-    public function update(User $user, Subscription $subscription): bool
-    {
-        return $user->can('update', $subscription->season);
-    }
-
-    /**
      * Determine whether the user can delete the model.
      */
     public function delete(User $user, Subscription $subscription): bool
     {
         return $user->is_admin;
-    }
-
-    /**
-     * Determine whether the user can restore the model.
-     */
-    public function restore(User $user, Subscription $subscription): bool
-    {
-        return false;
     }
 
     /**
@@ -69,5 +36,37 @@ class SubscriptionPolicy
     public function generatePayment(User $user, Subscription $subscription): bool
     {
         return $user->is_admin || $user->is_committee_member;
+    }
+
+    /**
+     * Determine whether the user can restore the model.
+     */
+    public function restore(User $user, Subscription $subscription): bool
+    {
+        return false;
+    }
+
+    /**
+     * Determine whether the user can update the model.
+     */
+    public function update(User $user, Subscription $subscription): bool
+    {
+        return $user->can('update', $subscription->season);
+    }
+
+    /**
+     * Determine whether the user can view the model.
+     */
+    public function view(User $user, Subscription $subscription): bool
+    {
+        return $user->can('update', $subscription->season);
+    }
+
+    /**
+     * Determine whether the user can view any models.
+     */
+    public function viewAny(User $user): bool
+    {
+        return false;
     }
 }

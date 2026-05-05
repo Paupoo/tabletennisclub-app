@@ -6,8 +6,9 @@ use App\Enums\TournamentStatusEnum;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Tournament\TournamentMatch;
 use App\Services\TournamentStatusManager;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 test('can cancel from pending', function (): void {
     $tournament = Tournament::factory()->create([

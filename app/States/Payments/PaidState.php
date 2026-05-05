@@ -4,18 +4,31 @@ declare(strict_types=1);
 
 namespace App\States\Payments;
 
+use const App\States\Tournament\Payments\paid;
+
 use App\Contracts\SubscriptionState;
 use App\Models\ClubAdmin\Subscription\Subscription;
 
-use const App\States\Tournament\Payments\paid;
-
 class PaidState implements SubscriptionState
 {
+    public function availableTransitions(): array
+    {
+        return [
+            'markRefunded' => __('Refund'),
+            // 'confirm' => __('Confirm'),
+        ];
+    }
+
     public function cancel(Subscription $subscription): void
     {
         // On ne peut pas annuler une subscription déjà payée
         // Il faut la rembourser
         throw new \LogicException('Cannot cancel a paid subscription. Refund it instead.');
+    }
+
+    public function canGeneratePayment(Subscription $subscription): bool
+    {
+        return false;
     }
 
     public function confirm(Subscription $subscription): void
@@ -45,18 +58,5 @@ class PaidState implements SubscriptionState
     {
         // Déjà confirmée et payée
         throw new \LogicException('Subscription is already paid.');
-    }
-
-        public function availableTransitions(): array
-    {
-        return [
-            'markRefunded' => __('Refund'),
-            // 'confirm' => __('Confirm'),
-        ];
-    }
-
-    public function canGeneratePayment(Subscription $subscription): bool
-    {
-        return false;
     }
 }

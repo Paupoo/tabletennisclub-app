@@ -1,11 +1,23 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('payments', function (Blueprint $table) {
+            $table->dropColumn('invitation_counter');
+        });
+    }
+
     /**
      * Run the migrations.
      */
@@ -14,16 +26,6 @@ return new class extends Migration
         Schema::table('payments', function (Blueprint $table) {
             //
             $table->unsignedSmallInteger('invitation_counter')->default(0);
-        });
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::table('payments', function (Blueprint $table) {
-            $table->dropColumn('invitation_counter');
         });
     }
 };

@@ -8,6 +8,7 @@ use App\Livewire\Public\Articles\ArticleList;
 use App\Models\ClubPosts\NewsPost;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
@@ -41,15 +42,15 @@ it('initializes with correct default values and collections', function (): void 
     expect($component->sort)->toBe('desc');
 
     // Categories loaded correspond à enum values
-    expect($component->categories)->toBeInstanceOf(\Illuminate\Support\Collection::class);
+    expect($component->categories)->toBeInstanceOf(Collection::class);
     expect($component->categories)->toContain(NewsPostCategoryEnum::PARTNERSHIP->value);
 
     // Years loaded
-    expect($component->years)->toBeInstanceOf(\Illuminate\Support\Collection::class);
+    expect($component->years)->toBeInstanceOf(Collection::class);
     expect($component->years->contains(2024))->toBeTrue();
 
     // Months loaded
-    expect($component->months)->toBeInstanceOf(\Illuminate\Support\Collection::class);
+    expect($component->months)->toBeInstanceOf(Collection::class);
     expect($component->months->get('01'))->toBe('Janvier');
 });
 

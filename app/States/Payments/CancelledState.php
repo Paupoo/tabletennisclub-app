@@ -9,10 +9,20 @@ use App\Models\ClubAdmin\Subscription\Subscription;
 
 class CancelledState implements SubscriptionState
 {
+    public function availableTransitions(): array
+    {
+        return [];
+    }
+
     public function cancel(Subscription $subscription): void
     {
         // Déjà annulée
         throw new \LogicException('Subscription is already cancelled.');
+    }
+
+    public function canGeneratePayment(Subscription $subscription): bool
+    {
+        return false;
     }
 
     public function confirm(Subscription $subscription): void
@@ -42,15 +52,5 @@ class CancelledState implements SubscriptionState
     {
         // État final : annulée
         throw new \LogicException('Cannot set a cancelled subscription back to pending.');
-    }
-
-        public function availableTransitions(): array
-    {
-        return [];
-    }
-
-    public function canGeneratePayment(Subscription $subscription): bool
-    {
-        return false;
     }
 }

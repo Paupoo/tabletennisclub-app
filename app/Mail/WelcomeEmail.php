@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Mail;
 
-
 use App\Models\ClubAdmin\Contact\Contact;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;

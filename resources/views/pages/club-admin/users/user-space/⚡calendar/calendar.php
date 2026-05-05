@@ -1,15 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Support\Breadcrumb;
 use Illuminate\Support\Carbon;
-use Illuminate\View\View;
 use Livewire\Component;
 
 new class extends Component
 {
-    public ?string $selectedMonth = null;
-
     public ?string $selectedCategory = null;
+
+    public ?string $selectedMonth = null;
 
     public function with(): array
     {
@@ -17,6 +18,7 @@ new class extends Component
             ->home()
             ->current('Calendar')
             ->toArray();
+
         return [
             'breadcrumbs' => $breadcrumbs,
             'months' => [
@@ -172,5 +174,4 @@ new class extends Component
             ],
         ];
     }
-
 };

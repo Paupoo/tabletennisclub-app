@@ -6,11 +6,13 @@ namespace App\Models\ClubEvents\Interclub;
 
 use App\Models\ClubAdmin\Users\User;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -19,15 +21,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int|null $club_id
  * @property int|null $captain_id
  * @property int $season_id
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Models\ClubAdmin\Users\User|null $captain
- * @property-read \App\Models\ClubEvents\Interclub\Club|null $club
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Interclub\Interclub> $interclubs
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read User|null $captain
+ * @property-read Club|null $club
+ * @property-read Collection<int, Interclub> $interclubs
  * @property-read int|null $interclubs_count
- * @property-read \App\Models\ClubEvents\Interclub\League|null $league
- * @property-read \App\Models\ClubEvents\Interclub\Season $season
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubAdmin\Users\User> $users
+ * @property-read League|null $league
+ * @property-read Season $season
+ * @property-read Collection<int, User> $users
  * @property-read int|null $users_count
  *
  * @method static \Database\Factories\ClubEvents\Interclub\TeamFactory factory($count = null, $state = [])

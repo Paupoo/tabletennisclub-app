@@ -7,24 +7,26 @@ namespace App\Models\ClubAdmin\Club;
 use App\Models\ClubEvents\Tournament\TableTournament;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Tournament\TournamentMatch;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
  * @property string $name
- * @property \Illuminate\Support\Carbon|null $purchased_on
+ * @property Carbon|null $purchased_on
  * @property string|null $state
  * @property int|null $room_id
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Tournament\TournamentMatch> $match
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Collection<int, TournamentMatch> $match
  * @property-read int|null $match_count
- * @property-read \App\Models\ClubAdmin\Club\Room|null $room
- * @property-read \App\Models\ClubEvents\Tournament\TableTournament|null $pivot
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Tournament\Tournament> $tournaments
+ * @property-read Room|null $room
+ * @property-read TableTournament|null $pivot
+ * @property-read Collection<int, Tournament> $tournaments
  * @property-read int|null $tournaments_count
  *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Table newModelQuery()
@@ -62,8 +64,17 @@ class Table extends Model
         'state_description',
         'is_available',
         'purchased_on',
-        'room_id'
+        'room_id',
     ];
+
+    public static function getStates(): array
+    {
+        return [
+            ['id' => 'Good condition', 'name' => __('Good condition')],
+            ['id' => 'Needs repair', 'name' => __('Needs repair')],
+            ['id' => 'Out of service', 'name' => __('Out of service')],
+        ];
+    }
 
     public function match(): BelongsToMany
     {
@@ -85,14 +96,5 @@ class Table extends Model
             ])
             ->using(TableTournament::class)
             ->withTimestamps();
-    }
-
-    public static function getStates(): array
-    {
-        return [
-            ['id' => 'Good condition', 'name' => __('Good condition')],
-            ['id' => 'Needs repair', 'name' => __('Needs repair')],
-            ['id' => 'Out of service', 'name' => __('Out of service')],
-        ];
     }
 }

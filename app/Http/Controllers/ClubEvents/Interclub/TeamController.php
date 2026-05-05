@@ -370,7 +370,6 @@ class TeamController extends Controller
 
     /**
      * Returns a collection of teams names from A to Z.
-     * @return TeamController
      */
     private function buildTeamsFromAToZ(): self
     {
@@ -385,10 +384,8 @@ class TeamController extends Controller
         return $this;
     }
 
-
     /**
      * Get competitors ordered by ranking, then by last name, both descending.
-     * @return self
      */
     private function getCompetitors(): self
     {

@@ -43,10 +43,14 @@ new class extends Component
     #[Validate('required|string|max:255')]
     public string $name = '';
 
-    public string $newTableName = '';
     public string $newTableBrand = '';
+
     public string $newTableModel = '';
+
+    public string $newTableName = '';
+
     public string $newTablePurchasedOn = '';
+
     public string $newTableState = 'new';
 
     public Room $room;
@@ -113,7 +117,7 @@ new class extends Component
             $this->access_description = $this->room->access_description ?? '';
             $this->capacity_for_trainings = $this->room->capacity_for_trainings;
             $this->capacity_for_interclubs = $this->room->capacity_for_interclubs;
-            
+
             $this->selectedTables = $this->room->tables()->pluck('id')->toArray();
         }
 
@@ -122,18 +126,18 @@ new class extends Component
                 : $this->selectedTables = [];
 
         $this->allTables = Table::query()
-                ->where(function ($query) use ($room) {
-                    $query->doesntHave('room')
-                        ->orWhere('room_id', $room->id ?? null);
-                })                
-                ->get()->map(function ($table) {
-            return [
-                'id' => $table->id,
-                'name' => $table->name,
-                'purchased_on' => $table->purchased_on?->format('d M Y'),
-                'state' => $table->state,
-            ];
-        })->toArray();
+            ->where(function ($query) use ($room) {
+                $query->doesntHave('room')
+                    ->orWhere('room_id', $room->id ?? null);
+            })
+            ->get()->map(function ($table) {
+                return [
+                    'id' => $table->id,
+                    'name' => $table->name,
+                    'purchased_on' => $table->purchased_on?->format('d M Y'),
+                    'state' => $table->state,
+                ];
+            })->toArray();
 
         // $tables_already_in_room = Table::whereRoomId($room->id)->get()->map(function ($table) {
         //         return [

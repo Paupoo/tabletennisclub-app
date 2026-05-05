@@ -33,7 +33,6 @@ class SendCustomEmailRequest extends FormRequest
 
     /**
      * Will force the bool for send_copy instead of string
-     * @return void
      */
     protected function prepareForValidation(): void
     {

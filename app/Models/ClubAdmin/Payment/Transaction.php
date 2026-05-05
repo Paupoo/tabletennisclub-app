@@ -25,7 +25,7 @@ class Transaction extends Model
         'free_reference',
     ];
 
-    public function payment(): hasOne
+    public function payment(): HasOne
     {
         return $this->hasOne(Payment::class, 'transaction_id');
     }

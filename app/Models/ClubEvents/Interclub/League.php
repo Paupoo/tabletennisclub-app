@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Models\ClubEvents\Interclub;
 
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -15,12 +17,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $level
  * @property string $category
  * @property int $season_id
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Interclub\Interclub> $interclubs
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Collection<int, Interclub> $interclubs
  * @property-read int|null $interclubs_count
- * @property-read \App\Models\ClubEvents\Interclub\Season $season
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Models\ClubEvents\Interclub\Team> $teams
+ * @property-read Season $season
+ * @property-read Collection<int, Team> $teams
  * @property-read int|null $teams_count
  *
  * @method static \Database\Factories\ClubEvents\Interclub\LeagueFactory factory($count = null, $state = [])

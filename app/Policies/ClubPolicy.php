@@ -6,26 +6,9 @@ namespace App\Policies;
 
 use App\Models\Club;
 use App\Models\ClubAdmin\Users\User;
-use Illuminate\Auth\Access\Response;
 
 class ClubPolicy
 {
-    /**
-     * Determine whether the user can view any models.
-     */
-    public function viewAny(User $user): bool
-    {
-        return false;
-    }
-
-    /**
-     * Determine whether the user can view the model.
-     */
-    public function view(User $user, Club $club): bool
-    {
-        return false;
-    }
-
     /**
      * Determine whether the user can create models.
      */
@@ -35,17 +18,17 @@ class ClubPolicy
     }
 
     /**
-     * Determine whether the user can update the model.
-     */
-    public function update(User $user): bool
-    {
-        return $user->is_admin || $user->is_committee_member;
-    }
-
-    /**
      * Determine whether the user can delete the model.
      */
     public function delete(User $user, Club $club): bool
+    {
+        return false;
+    }
+
+    /**
+     * Determine whether the user can permanently delete the model.
+     */
+    public function forceDelete(User $user, Club $club): bool
     {
         return false;
     }
@@ -59,9 +42,25 @@ class ClubPolicy
     }
 
     /**
-     * Determine whether the user can permanently delete the model.
+     * Determine whether the user can update the model.
      */
-    public function forceDelete(User $user, Club $club): bool
+    public function update(User $user): bool
+    {
+        return $user->is_admin || $user->is_committee_member;
+    }
+
+    /**
+     * Determine whether the user can view the model.
+     */
+    public function view(User $user, Club $club): bool
+    {
+        return false;
+    }
+
+    /**
+     * Determine whether the user can view any models.
+     */
+    public function viewAny(User $user): bool
     {
         return false;
     }

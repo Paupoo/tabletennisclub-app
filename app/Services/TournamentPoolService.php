@@ -80,7 +80,7 @@ class TournamentPoolService
             // Attacher le joueur à la pool
             try {
                 $currentPool->attachUser($player);
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Log l'erreur si besoin
                 throw new Exception('Something went wrong while setting a player into ' . $currentPool->name);
 

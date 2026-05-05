@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Database\Factories\ClubEvents\Interclub;
 
+use App\Models\Competition;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Competition>
+ * @extends Factory<Competition>
  */
 class CompetitionFactory extends Factory
 {

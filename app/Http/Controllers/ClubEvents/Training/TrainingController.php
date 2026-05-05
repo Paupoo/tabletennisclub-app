@@ -65,6 +65,7 @@ class TrainingController extends Controller
 
     /**
      * Get all dates for a specific weekday between 2 dates
+     *
      * @throws Exception
      */
     public function daysBetweenTwoDate(string $start_date, string $end_date, int $week_day): array
@@ -175,6 +176,7 @@ class TrainingController extends Controller
 
     /**
      * Store a newly created resource in storage.
+     *
      * @throws Exception
      */
     public function store(StoreTrainingRequest $request): RedirectResponse
@@ -203,12 +205,11 @@ class TrainingController extends Controller
                 'name' => $validated['training_pack_name'],
                 'price' => $validated['training_pack_price'],
                 'room_id' => $validated['room_id'],
-                'trainer_id' => $validated['trainer_id']
+                'trainer_id' => $validated['trainer_id'],
             ]);
 
             $trainingPack = $newCreatedPack->id;
         }
-
 
         $training_dates = $this->dateGenerator->generateDates($validated['start_date'], $validated['end_date'], $validated['recurrence']);
 

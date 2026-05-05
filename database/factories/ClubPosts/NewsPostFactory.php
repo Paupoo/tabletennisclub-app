@@ -6,11 +6,12 @@ namespace Database\Factories\ClubPosts;
 
 use App\Enums\NewsPostStatusEnum;
 use App\Models\ClubAdmin\Users\User;
+use App\Models\ClubPosts\NewsPost;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\ClubPosts\NewsPost>
+ * @extends Factory<NewsPost>
  */
 class NewsPostFactory extends Factory
 {

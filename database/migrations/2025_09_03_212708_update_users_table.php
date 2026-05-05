@@ -13,19 +13,6 @@ use Illuminate\Support\Str;
 return new class extends Migration
 {
     /**
-     * Run the migrations.
-     */
-    public function up(): void
-    {
-        Schema::table('users', function (Blueprint $table) {
-            // Rend le mot de passe optionnel pour permettre une invitation par mail, sans mot de passe pour la première connexion.
-            $table->string('password', 255)->nullable()->change();
-            // Met à jour la définition de l'enum (l'Enum PHP a changé, ajout d'un nouveau case, mise à jour de la DB)
-            $table->enum('sex', array_column(Gender::cases(), 'name'))->default(Gender::MEN->name)->change();
-        });
-    }
-
-    /**
      * Reverse the migrations.
      */
     public function down(): void
@@ -38,7 +25,7 @@ return new class extends Migration
             DB::table('users')
                 ->where('id', $id)
                 ->update([
-                    'password' => Hash::make(Str::random(12))
+                    'password' => Hash::make(Str::random(12)),
                 ]);
         }
 
@@ -49,6 +36,19 @@ return new class extends Migration
             $table->enum('sex', array_column(Gender::cases(), 'name'))
                 ->default(Gender::MEN->name)
                 ->change();
+        });
+    }
+
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('users', function (Blueprint $table) {
+            // Rend le mot de passe optionnel pour permettre une invitation par mail, sans mot de passe pour la première connexion.
+            $table->string('password', 255)->nullable()->change();
+            // Met à jour la définition de l'enum (l'Enum PHP a changé, ajout d'un nouveau case, mise à jour de la DB)
+            $table->enum('sex', array_column(Gender::cases(), 'name'))->default(Gender::MEN->name)->change();
         });
     }
 };

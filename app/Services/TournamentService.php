@@ -29,11 +29,6 @@ class TournamentService
         return $tournament->total_users >= $tournament->max_users;
     }
 
-    /**
-     * @param Tournament $tournament
-     * @param User $user
-     * @return void
-     */
     public function registerUser(Tournament $tournament, User $user): void
     {
 

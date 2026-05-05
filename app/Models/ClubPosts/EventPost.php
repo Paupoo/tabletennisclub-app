@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Models\ClubPosts;
 
 use App\Enums\ClubEventTypeEnum;
-use App\Enums\EventPostStatusEnum;
 use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

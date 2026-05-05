@@ -4,13 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Feature\ClubAdmin\ClubSettings;
 
-
 use App\Enums\CommitteeRolesEnum;
-use App\Livewire\ClubAdmin\ClubSettings;
 use App\Models\ClubAdmin\Users\User;
-use Illuminate\Support\Facades\Config;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Livewire\Livewire;
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPERS
@@ -45,7 +42,7 @@ describe('Test Club Settings', function () {
         it('initialises properties from the club app defined in the .env', function () {
             // On force des valeurs d'env pour le test
             $testValue = 'ABC123';
-            putenv("APP_CLUB_LICENCE=$testValue");
+            putenv("APP_CLUB_LICENCE={$testValue}");
 
             Livewire::test(clubSettingsComponent())
                 ->assertSet('licence', $testValue);
@@ -54,9 +51,9 @@ describe('Test Club Settings', function () {
         it('displays committee members in the view', function () {
             $member = User::factory()->create([
                 'is_committee_member' => true,
-                'first_name'          => 'Alice',
-                'last_name'           => 'Dumont',
-                'committee_role'      => CommitteeRolesEnum::PRESIDENT,
+                'first_name' => 'Alice',
+                'last_name' => 'Dumont',
+                'committee_role' => CommitteeRolesEnum::PRESIDENT,
             ]);
 
             Livewire::test(clubSettingsComponent())
@@ -72,7 +69,6 @@ describe('Test Club Settings', function () {
         });
 
     });
-
 
     // ─────────────────────────────────────────────────────────────────────────────
     // SEARCH MEMBERS (In the modal)
@@ -132,8 +128,8 @@ describe('Test Club Settings', function () {
         it('maps results with id, name and description keys', function () {
             $user = User::factory()->create([
                 'first_name' => 'Paul',
-                'last_name'  => 'Martin',
-                'licence'    => 'LIC123',
+                'last_name' => 'Martin',
+                'licence' => 'LIC123',
             ]);
 
             $component = Livewire::test(committeeModalComponent())
@@ -142,8 +138,8 @@ describe('Test Club Settings', function () {
             expect($component->get('membersSearchList'))
                 ->first()
                 ->toMatchArray([
-                    'id'          => $user->id,
-                    'name'        => 'Paul Martin',
+                    'id' => $user->id,
+                    'name' => 'Paul Martin',
                     'description' => 'LIC123',
                 ]);
         });
@@ -232,7 +228,7 @@ describe('Test Club Settings', function () {
         it('removes a user from the committee', function () {
             $user = User::factory()->create([
                 'is_committee_member' => true,
-                'committee_role'      => CommitteeRolesEnum::TREASURER,
+                'committee_role' => CommitteeRolesEnum::TREASURER,
             ]);
 
             Livewire::test(clubSettingsComponent())
@@ -255,7 +251,7 @@ describe('Test Club Settings', function () {
         it('throws a 404 when user does not exist', function () {
             Livewire::test(clubSettingsComponent())
                 ->call('removeMember', 99999);
-        })->throws(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
+        })->throws(ModelNotFoundException::class);
 
     });
 

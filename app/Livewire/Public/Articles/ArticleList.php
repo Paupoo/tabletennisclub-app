@@ -164,5 +164,4 @@ class ArticleList extends Component
             ->sortDesc()
             ->values();
     }
-
 }

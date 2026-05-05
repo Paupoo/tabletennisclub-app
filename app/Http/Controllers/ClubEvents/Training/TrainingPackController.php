@@ -11,10 +11,32 @@ use App\Models\ClubEvents\Training\TrainingPack;
 use App\Support\Breadcrumb;
 use Illuminate\View\View;
 
-use const App\Http\Controllers\training_packs;
-
 class TrainingPackController extends Controller
 {
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        // TODO
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(TrainingPack $trainingPack)
+    {
+        // TODO
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(TrainingPack $trainingPack)
+    {
+        // TODO
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -34,9 +56,9 @@ class TrainingPackController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Display the specified resource.
      */
-    public function create()
+    public function show(TrainingPack $trainingPack)
     {
         // TODO
     }
@@ -50,33 +72,9 @@ class TrainingPackController extends Controller
     }
 
     /**
-     * Display the specified resource.
-     */
-    public function show(TrainingPack $trainingPack)
-    {
-        // TODO
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(TrainingPack $trainingPack)
-    {
-        // TODO
-    }
-
-    /**
      * Update the specified resource in storage.
      */
     public function update(UpdateTrainingPackRequest $request, TrainingPack $trainingPack)
-    {
-        // TODO
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(TrainingPack $trainingPack)
     {
         // TODO
     }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Support\Breadcrumb;
 use Illuminate\View\View;
 use Livewire\Component;
@@ -7,35 +9,84 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    Use Toast;
+    use Toast;
+
+    public string $captainMessage = '';
 
     public bool $drawerSelection = false;
+
+    public bool $filterAlerts = false;
 
     public bool $modalMessage = false;
 
     public string $search = '';
 
-    public string $captainMessage = '';
-
-    public string $selectedWeek = 'WK13';
+    // Sélection simulée (WK13)
+    public array $selectedPlayers = ['Marc D.', 'Aurelien V.'];
 
     public ?int $selectedTeam = null;
 
-    public bool $filterAlerts = false;
+    public string $selectedWeek = 'WK13';
 
-    public function prevWeek(): void
+    /**
+     * Finalise la convocation après le message du capitaine
+     */
+    public function confirmAndSend(): void
     {
-        $current = (int) str_replace('WK', '', $this->selectedWeek);
-        if ($current > 1) {
-            $this->selectedWeek = 'WK'.($current - 1);
-        }
+        $this->modalMessage = false;
+
+        $this->success(
+            'Sélection validée !',
+            'Les joueurs ont reçu leur convocation.',
+            icon: 'o-paper-airplane'
+        );
+
+        $this->captainMessage = '';
     }
 
     public function nextWeek(): void
     {
         $current = (int) str_replace('WK', '', $this->selectedWeek);
         if ($current < 22) {
-            $this->selectedWeek = 'WK'.($current + 1);
+            $this->selectedWeek = 'WK' . ($current + 1);
+        }
+    }
+
+    public function prevWeek(): void
+    {
+        $current = (int) str_replace('WK', '', $this->selectedWeek);
+        if ($current > 1) {
+            $this->selectedWeek = 'WK' . ($current - 1);
+        }
+    }
+
+    public function render(): View
+    {
+        return $this->view();
+    }
+
+    /**
+     * Déclenché lors du clic sur "Confirmer" dans le drawer
+     */
+    public function saveSelection(): void
+    {
+        $this->drawerSelection = false;
+        $this->modalMessage = true;
+    }
+
+    /**
+     * Gère la sélection/désélection d'un joueur
+     */
+    public function togglePlayer(string $name): void
+    {
+        if (in_array($name, $this->selectedPlayers)) {
+            $this->selectedPlayers = array_diff($this->selectedPlayers, [$name]);
+        } else {
+            if (count($this->selectedPlayers) < 4) {
+                $this->selectedPlayers[] = $name;
+            } else {
+                $this->warning('Équipe complète', 'Maximum 4 joueurs.', position: 'toast-bottom toast-end');
+            }
         }
     }
 
@@ -77,7 +128,7 @@ new class extends Component
 
             // Logistique (Clé et Argent) - Uniquement si Home
             $team['key_holder'] = ($team['is_home'] && $team['players'] > 0) ? $team['captain'] : null;
-            $team['bar_manager'] = ($team['is_home'] && $weekNum % 2 === 0 && $team['players'] > 1) ? 'Bénévole '.$team['id'] : null;
+            $team['bar_manager'] = ($team['is_home'] && $weekNum % 2 === 0 && $team['players'] > 1) ? 'Bénévole ' . $team['id'] : null;
 
             return $team;
         });
@@ -99,10 +150,10 @@ new class extends Component
         return [
             'headers' => $headers,
             'categories' => $categories,
-            'weeks_options' => collect(range(1, 22))->map(fn ($w) => ['id' => 'WK'.$w, 'name' => __('Week ').$w]),
+            'weeks_options' => collect(range(1, 22))->map(fn ($w) => ['id' => 'WK' . $w, 'name' => __('Week ') . $w]),
             'weeks_monitor' => collect(range(1, 20))->map(fn ($w) => [
                 'wk' => $w,
-                'status' => ($w < $weekNum) ? 'ok' : (($w == $weekNum) ? 'warning' : 'pending'),
+                'status' => ($w < $weekNum) ? 'ok' : (($w === $weekNum) ? 'warning' : 'pending'),
             ]),
             'teams_list' => $raw_teams->map(fn ($t) => ['id' => $t['id'], 'name' => $t['name']]),
             'day_responsibilities' => [
@@ -130,54 +181,5 @@ new class extends Component
             ],
             'searchResults' => $searchResults,
         ];
-    }
-
-    // Sélection simulée (WK13)
-    public array $selectedPlayers = ['Marc D.', 'Aurelien V.'];
-
-    /**
-     * Gère la sélection/désélection d'un joueur
-     */
-    public function togglePlayer(string $name): void
-    {
-        if (in_array($name, $this->selectedPlayers)) {
-            $this->selectedPlayers = array_diff($this->selectedPlayers, [$name]);
-        } else {
-            if (count($this->selectedPlayers) < 4) {
-                $this->selectedPlayers[] = $name;
-            } else {
-                $this->warning('Équipe complète', 'Maximum 4 joueurs.', position: 'toast-bottom toast-end');
-            }
-        }
-    }
-
-    /**
-     * Déclenché lors du clic sur "Confirmer" dans le drawer
-     */
-    public function saveSelection(): void
-    {
-        $this->drawerSelection = false;
-        $this->modalMessage = true;
-    }
-
-    /**
-     * Finalise la convocation après le message du capitaine
-     */
-    public function confirmAndSend(): void
-    {
-        $this->modalMessage = false;
-
-        $this->success(
-            'Sélection validée !',
-            'Les joueurs ont reçu leur convocation.',
-            icon: 'o-paper-airplane'
-        );
-
-        $this->captainMessage = '';
-    }
-
-    public function render(): View
-    {
-        return $this->view();
     }
 };

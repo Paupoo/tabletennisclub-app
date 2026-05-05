@@ -282,6 +282,11 @@ class TournamentController extends Controller
         ]);
     }
 
+    public function managePools()
+    {
+        // TODO: implement
+    }
+
     public function publish(Tournament $tournament): RedirectResponse
     {
 
@@ -651,9 +656,6 @@ class TournamentController extends Controller
     }
 
     /**
-     * @param Tournament $tournament
-     * @param User $user
-     * @return RedirectResponse
      * @throws Exception
      */
     public function toggleHasPaid(Tournament $tournament, User $user): RedirectResponse
@@ -847,10 +849,5 @@ class TournamentController extends Controller
     private function eraseMatches(Pool $pool): void
     {
         $pool->tournamentmatches()->delete();
-    }
-
-    public function managePools()
-    {
-        //TODO: implement
     }
 }

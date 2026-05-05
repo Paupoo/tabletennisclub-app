@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Database\Factories\ClubAdmin\Payment;
 
+use App\Models\ClubAdmin\Payment\Payment;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\ClubAdmin\Payment\Payment>
+ * @extends Factory<Payment>
  */
 class PaymentFactory extends Factory
 {

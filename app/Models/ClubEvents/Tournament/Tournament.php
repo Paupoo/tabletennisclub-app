@@ -115,9 +115,6 @@ class Tournament extends Model
 
     /**
      * Scope search to search by last or first name
-     *
-     * @param  string  $value
-     * @return void
      */
     public function scopeSearch(Builder $query, string $value): void
     {

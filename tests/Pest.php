@@ -14,11 +14,13 @@ declare(strict_types=1);
 */
 
 uses(
-    Tests\TestCase::class,
-    Illuminate\Foundation\Testing\RefreshDatabase::class,
+    TestCase::class,
+    RefreshDatabase::class,
 )->in('Feature', 'Unit', '../resources/views');
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
+use Tests\TestCase;
 
 beforeAll(function (): void {
     // Run migrations and seed once before the whole test suite to avoid

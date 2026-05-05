@@ -15,6 +15,7 @@ class ToggleHasPaidController extends Controller
 {
     /**
      * Handle the incoming request.
+     *
      * @throws Exception
      */
     public function __invoke(Tournament $tournament, User $user): RedirectResponse

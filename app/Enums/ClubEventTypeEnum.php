@@ -14,16 +14,12 @@ enum ClubEventTypeEnum: string
 
     /**
      * Return the values of the enum into an array
-     * @return array
      */
     public static function values(): array
     {
         return array_column(self::cases(), 'value');
     }
 
-    /**
-     * @return string
-     */
     public function getIcon(): string
     {
         return match ($this) {
@@ -36,7 +32,6 @@ enum ClubEventTypeEnum: string
 
     /**
      * Return the localized string of a particular value
-     * @return string
      */
     public function getLabel(): string
     {

@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+use Spatie\Macroable\Macroable;
 
 return [
 
@@ -347,7 +348,7 @@ return [
     |
     */
     'macroable_traits' => [
-        Spatie\Macroable\Macroable::class,
+        Macroable::class,
     ],
 
 ];

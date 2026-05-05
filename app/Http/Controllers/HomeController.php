@@ -6,8 +6,8 @@ namespace App\Http\Controllers;
 
 use App\Models\ClubEvents\Interclub\Club;
 use App\Models\ClubPosts\NewsPost;
-use Illuminate\Contracts\View\View;
 use App\Support\Captcha;
+use Illuminate\Contracts\View\View;
 
 class HomeController extends Controller
 {

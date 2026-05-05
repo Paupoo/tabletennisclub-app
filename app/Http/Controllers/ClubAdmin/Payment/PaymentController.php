@@ -56,7 +56,7 @@ class PaymentController extends Controller
         ]);
 
         $payment = Payment::find($validated['payment_id']);
-        new SendPayementInvite()($payment);
+        new SendPayementInvite($payment);
 
         return back()
             ->with([

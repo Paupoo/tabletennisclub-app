@@ -1,7 +1,8 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Models\ClubAdmin\Club\Room;
-use App\Models\ClubAdmin\Club\Table;
 use App\Support\Breadcrumb;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\View\View;
@@ -12,13 +13,20 @@ new class extends Component
 {
     use Toast;
 
+    public bool $drawer = false;
+
     public Collection $rooms;
 
     // Propriétés de contrôle
     public string $search = '';
-    public bool $drawer = false;
 
+    public function delete(Room $room): void
+    {
+        $this->authorize('delete', $room);
+        $room->delete();
 
+        $this->success(__('The room ' . $room->name . ' has been deleted.'));
+    }
 
     public function mount(): void
     {
@@ -36,29 +44,34 @@ new class extends Component
             'tournaments' => fn ($query) => $query
                 ->whereBetween('start_date', [$start, $end]),
         ])
-        ->get()
-        ->map(function ($room) {
-            $room->upcoming_events = collect()
-                ->merge($room->trainings->map(fn ($item) => [
-                    'type' => 'training',
-                    'date' => $item->start,
-                    'model' => $item,
-                ]))
-                ->merge($room->interclubs->map(fn ($item) => [
-                    'type' => 'interclub',
-                    'date' => $item->start_date_time,
-                    'model' => $item,
-                ]))
-                ->merge($room->tournaments->map(fn ($item) => [
-                    'type' => 'tournament',
-                    'date' => $item->start_date,
-                    'model' => $item,
-                ]))
-                ->sortBy('date')
-                ->values();
+            ->get()
+            ->map(function ($room) {
+                $room->upcoming_events = collect()
+                    ->merge($room->trainings->map(fn ($item) => [
+                        'type' => 'training',
+                        'date' => $item->start,
+                        'model' => $item,
+                    ]))
+                    ->merge($room->interclubs->map(fn ($item) => [
+                        'type' => 'interclub',
+                        'date' => $item->start_date_time,
+                        'model' => $item,
+                    ]))
+                    ->merge($room->tournaments->map(fn ($item) => [
+                        'type' => 'tournament',
+                        'date' => $item->start_date,
+                        'model' => $item,
+                    ]))
+                    ->sortBy('date')
+                    ->values();
 
-            return $room;
-        });
+                return $room;
+            });
+    }
+
+    public function render(): View
+    {
+        return $this->view();
     }
 
     public function with(): array
@@ -68,20 +81,7 @@ new class extends Component
                 ->home()
                 ->current(__('Rooms'))
                 ->toArray(),
-            ''
+            '',
         ];
-    }
-
-    public function delete(Room $room): void
-    {
-        $this->authorize('delete', $room);
-        $room->delete();
-
-        $this->success(__('The room ' . $room->name . ' has been deleted.'));
-    }
-
-    public function render(): View
-    {
-        return $this->view();
     }
 };

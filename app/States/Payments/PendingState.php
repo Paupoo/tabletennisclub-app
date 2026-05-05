@@ -9,10 +9,23 @@ use App\Models\ClubAdmin\Subscription\Subscription;
 
 class PendingState implements SubscriptionState
 {
+    public function availableTransitions(): array
+    {
+        return [
+            'confirm' => __('Confirm'),
+            'cancel' => __('Cancel'),
+        ];
+    }
+
     public function cancel(Subscription $subscription): void
     {
         // Transition autorisée : pending → cancelled
         $subscription->setState(new CancelledState);
+    }
+
+    public function canGeneratePayment(Subscription $subscription): bool
+    {
+        return false;
     }
 
     public function confirm(Subscription $subscription): void
@@ -42,18 +55,5 @@ class PendingState implements SubscriptionState
     {
         // L'instance est déjà pending
         throw new \LogicException(__('The subscription is already pending'));
-    }
-
-    public function availableTransitions(): array
-    {
-        return [
-            'confirm' => __('Confirm'),
-            'cancel' => __('Cancel'),
-        ];
-    }
-
-    public function canGeneratePayment(Subscription $subscription): bool
-    {
-        return false;
     }
 }

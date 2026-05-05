@@ -4,17 +4,31 @@ declare(strict_types=1);
 
 namespace App\States\Payments;
 
+use const App\States\Tournament\Payments\confirmed;
+
 use App\Contracts\SubscriptionState;
 use App\Models\ClubAdmin\Subscription\Subscription;
 
-use const App\States\Tournament\Payments\confirmed;
-
 class ValidatedState implements SubscriptionState
 {
+    public function availableTransitions(): array
+    {
+        return [
+            'cancel' => __('Cancel'),
+            'markPaid' => __('Mark as Paid'),
+            'unconfirm' => __('Unconfirm'),
+        ];
+    }
+
     public function cancel(Subscription $subscription): void
     {
         // Transition autorisée : confirmed → cancelled
         $subscription->setState(new CancelledState);
+    }
+
+    public function canGeneratePayment(Subscription $subscription): bool
+    {
+        return true;
     }
 
     public function confirm(Subscription $subscription): void
@@ -44,19 +58,5 @@ class ValidatedState implements SubscriptionState
     {
         // Déjà confirmée
         $subscription->setState(new PendingState);
-    }
-
-    public function availableTransitions(): array
-    {
-        return [
-            'cancel' => __('Cancel'),
-            'markPaid' => __('Mark as Paid'),
-            'unconfirm' => __('Unconfirm'),
-        ];
-    }
-
-    public function canGeneratePayment(Subscription $subscription): bool
-    {
-        return true;
     }
 }

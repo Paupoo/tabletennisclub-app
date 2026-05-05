@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Enums\Ranking;
 use App\Enums\Gender;
+use App\Enums\Ranking;
 use App\Http\Controllers\ClubAdmin\Users\UserController;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Club;
@@ -12,8 +12,9 @@ use App\Services\ForceList;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Tests\Trait\CreateUser;
 
-uses(\Tests\Trait\CreateUser::class);
+uses(CreateUser::class);
 
 beforeEach(function (): void {
     $this->password = Hash::make('password');

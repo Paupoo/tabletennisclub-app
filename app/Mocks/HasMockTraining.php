@@ -15,6 +15,15 @@ trait HasMockTraining
         ];
     }
 
+    public function getRecurrences(): array
+    {
+        return [
+            ['id' => 'weekly', 'name' => __('Weekly')],
+            ['id' => 'biweekly', 'name' => __('Bi-weekly')],
+            ['id' => 'monthly', 'name' => __('Monthly')],
+        ];
+    }
+
     public function getTrainings(): array
     {
         return [
@@ -74,15 +83,6 @@ trait HasMockTraining
                 'current_spots' => 11,
                 'location' => 'Blocry G3',
             ],
-        ];
-    }
-
-    public function getRecurrences(): array
-    {
-        return [
-            ['id' => 'weekly', 'name' => __('Weekly')],
-            ['id' => 'biweekly', 'name' => __('Bi-weekly')],
-            ['id' => 'monthly', 'name' => __('Monthly')],
         ];
     }
 }

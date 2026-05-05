@@ -5,7 +5,6 @@ declare(strict_types=1);
 use App\Models\ClubAdmin\Club\Table;
 use App\Support\Breadcrumb;
 use Illuminate\View\View;
-use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Mary\Traits\Toast;
 
@@ -14,10 +13,6 @@ new class extends Component
     use Toast;
 
     public bool $deleteModal = false;
-    public bool $unlinkModal = false;
-    
-    public Table $tableToDelete;
-    public Table $tableToUnlink;
 
     public string $search = '';
 
@@ -25,15 +20,39 @@ new class extends Component
 
     public array $sortBy = ['column' => 'name', 'direction' => 'asc'];
 
-    public function render(): View
+    public Table $tableToDelete;
+
+    public Table $tableToUnlink;
+
+    public bool $unlinkModal = false;
+
+    public function confirmDelete(Table $table)
     {
-        return $this->view();
+        $this->tableToDelete = $table;
+        $this->deleteModal = true;
     }
 
     public function confirmUnlink(Table $table): void
     {
         $this->tableToUnlink = $table;
         $this->unlinkModal = true;
+    }
+
+    public function delete(): void
+    {
+        try {
+            $this->authorize('delete', $this->tableToDelete);
+            $this->tableToDelete->delete();
+            $this->deleteModal = false;
+            $this->success(__('The table has been deleted.'));
+        } catch (Exception $e) {
+            $this->error('Erreur : ' . $e->getMessage());
+        }
+    }
+
+    public function render(): View
+    {
+        return $this->view();
     }
 
     public function unlink(): void
@@ -44,25 +63,7 @@ new class extends Component
             $this->unlinkModal = false;
 
             $this->success(__('The table has been unlinked from the room.'));
-        } catch (\Exception $e) {
-            $this->error('Erreur : ' . $e->getMessage());
-        }
-    }
-    
-    public function confirmDelete(Table $table)
-    {
-        $this->tableToDelete = $table;
-        $this->deleteModal = true;
-    }
-    
-    public function delete(): void
-    {
-        try {
-            $this->authorize('delete', $this->tableToDelete);
-            $this->tableToDelete->delete();
-            $this->deleteModal = false;
-            $this->success(__('The table has been deleted.'));
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->error('Erreur : ' . $e->getMessage());
         }
     }

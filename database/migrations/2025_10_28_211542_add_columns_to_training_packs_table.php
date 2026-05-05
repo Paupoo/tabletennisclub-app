@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Enums\TrainingLevel;
 use App\Enums\TrainingType;
 use App\Models\ClubAdmin\Club\Room;
@@ -9,6 +11,17 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('training_packs', function (Blueprint $table) {
+            $table->dropColumn('level');
+            $table->dropColumn('type');
+        });
+    }
+
     /**
      * Run the migrations.
      */
@@ -21,17 +34,6 @@ return new class extends Migration
             $table->unsignedBigInteger('trainer_id')->nullable();
 
             $table->foreign('trainer_id')->references('id')->on('users')->nullable()->constrained();
-        });
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::table('training_packs', function (Blueprint $table) {
-            $table->dropColumn('level');
-            $table->dropColumn('type');
         });
     }
 };

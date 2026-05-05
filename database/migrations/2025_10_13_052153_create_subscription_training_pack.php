@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Models\ClubAdmin\Subscription\Subscription;
 use App\Models\ClubEvents\Training\TrainingPack;
 use Illuminate\Database\Migrations\Migration;
@@ -8,6 +10,14 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('subscription_training_pack');
+    }
+
     /**
      * Run the migrations.
      */
@@ -20,13 +30,5 @@ return new class extends Migration
             $table->boolean('discount')->default(false);
             $table->timestamps();
         });
-    }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('subscription_training_pack');
     }
 };

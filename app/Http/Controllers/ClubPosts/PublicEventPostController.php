@@ -8,10 +8,9 @@ use App\Http\Controllers\Controller;
 use App\Models\ClubPosts\EventPost;
 use Illuminate\Contracts\View\View;
 
-
 class PublicEventPostController extends Controller
 {
-   public function index(): View
+    public function index(): View
     {
         $today = now()->startOfDay();
 

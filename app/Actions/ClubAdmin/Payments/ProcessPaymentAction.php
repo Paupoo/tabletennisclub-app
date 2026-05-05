@@ -8,13 +8,6 @@ use App\Models\ClubAdmin\Subscription\Subscription;
 
 class ProcessPaymentAction
 {
-    /**
-     * @param Subscription $subscription
-     * @param string $transactionId
-     * @param float $amount
-     * @param string $status
-     * @return Subscription
-     */
     public function execute(
         Subscription $subscription,
         string $transactionId,

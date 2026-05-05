@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Database\Factories\ClubAdmin\Users;
 
-use App\Enums\Ranking;
 use App\Enums\Gender;
+use App\Enums\Ranking;
 use App\Models\ClubAdmin\Users\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;

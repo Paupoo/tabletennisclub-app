@@ -11,8 +11,6 @@ use App\Support\Breadcrumb;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
-use const App\Http\Controllers\seasons;
-
 class SeasonController extends Controller
 {
     /**

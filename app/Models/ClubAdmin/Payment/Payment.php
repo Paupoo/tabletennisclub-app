@@ -30,16 +30,16 @@ class Payment extends Model
     public function amountDue(): Attribute
     {
         return Attribute::make(
-            get: fn(int $value): float => round($value / 100, 2),
-            set: fn(int|float $value): int => (int) $value * 100,
+            get: fn (int $value): float => round($value / 100, 2),
+            set: fn (int|float $value): int => (int) $value * 100,
         );
     }
 
     public function amountPaid(): Attribute
     {
         return Attribute::make(
-            get: fn(int $value): float => round($value / 100, 2),
-            set: fn(int|float $value): int => (int) $value * 100,
+            get: fn (int $value): float => round($value / 100, 2),
+            set: fn (int|float $value): int => (int) $value * 100,
         );
     }
 

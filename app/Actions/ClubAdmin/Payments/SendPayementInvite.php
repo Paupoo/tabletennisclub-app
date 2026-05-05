@@ -11,10 +11,6 @@ use Illuminate\Support\Facades\Mail;
 
 class SendPayementInvite
 {
-    /**
-     * @param Payment $payment
-     * @return RedirectResponse
-     */
     public function __invoke(Payment $payment): RedirectResponse
     {
         // Generate the QRCode

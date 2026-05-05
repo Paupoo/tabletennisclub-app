@@ -12,9 +12,6 @@ use function App\Actions\Subscriptions\__;
 class SyncTrainingPackAction
 {
     /**
-     * @param array $trainingPacksIds
-     * @param Subscription $subscription
-     * @return void
      * @throws Exception
      */
     public function __invoke(array $trainingPacksIds, Subscription $subscription): void

@@ -45,6 +45,11 @@ new class extends Component
             });
     }
 
+    public function searchMembers(string $value = ''): void
+    {
+        $this->search($value);
+    }
+
     #[On('open-committee-modal')]
     public function open(): void
     {

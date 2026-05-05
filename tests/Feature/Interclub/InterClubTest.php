@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 use App\Models\ClubEvents\Interclub\Club;
 use App\Models\ClubEvents\Interclub\Interclub;
+use Tests\Trait\CreateInterclub;
+use Tests\Trait\CreateUser;
 
-uses(\Tests\Trait\CreateInterclub::class);
+uses(CreateInterclub::class);
 
-uses(\Tests\Trait\CreateUser::class);
+uses(CreateUser::class);
 
 test('admin or comitte member can create interclub', function (): void {
     $admin = $this->createFakeAdmin();

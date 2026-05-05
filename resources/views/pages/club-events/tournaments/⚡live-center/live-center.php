@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Support\Breadcrumb;
 use Illuminate\View\View;
@@ -10,11 +12,18 @@ new class extends Component
 {
     use Toast;
 
-    public Tournament $tournament;
+    public string $activeTab = 'pools';
 
     public bool $drawer = false;
 
     public bool $launchDrawer = false;
+
+    public Tournament $tournament;
+
+    public function render(): View
+    {
+        return view('pages.club-events.tournaments.⚡live-center.live-center', $this->tournament);
+    }
 
     public function startMatch($matchId)
     {
@@ -26,8 +35,6 @@ new class extends Component
         $this->success(__('Match started successfully!'));
     }
 
-    public string $activeTab = 'pools';
-
     public function with(): array
     {
         return [
@@ -37,10 +44,5 @@ new class extends Component
                 ->current('Live Center - ' . $this->tournament->name)
                 ->toArray(),
         ];
-    }
-
-    public function render(): View
-    {
-        return view('pages.club-events.tournaments.⚡live-center.live-center', $this->tournament);
     }
 };

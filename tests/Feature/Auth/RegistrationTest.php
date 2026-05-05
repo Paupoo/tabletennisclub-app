@@ -6,10 +6,12 @@ use App\Providers\RouteServiceProvider;
 pest()->group('auth');
 
 test('new users can register', function (): void {
+    $email = 'user_' . uniqid() . '@example.com';
+
     $response = $this->post('/register', [
         'first_name' => 'John',
         'last_name' => 'doe',
-        'email' => 'test@example.com',
+        'email' => $email,
         'password' => 'password',
         'password_confirmation' => 'password',
     ]);

@@ -9,10 +9,6 @@ use Illuminate\Http\RedirectResponse;
 
 class MarkRefundSubscriptionAction
 {
-    /**
-     * @param Subscription $subscription
-     * @return RedirectResponse
-     */
     public function __invoke(Subscription $subscription): RedirectResponse
     {
         try {

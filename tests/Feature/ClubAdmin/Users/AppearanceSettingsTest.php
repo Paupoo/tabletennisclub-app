@@ -14,8 +14,8 @@ beforeEach(function () {
     $this->user = User::factory()->create(['theme' => null]);
 });
 
-describe('User Appearance Settings Test', function() {
-// ─────────────────────────────────────────────
+describe('User Appearance Settings Test', function () {
+    // ─────────────────────────────────────────────
     // 1. Default theme
     // ─────────────────────────────────────────────
 

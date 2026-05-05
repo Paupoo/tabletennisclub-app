@@ -23,7 +23,6 @@ enum NewsPostCategoryEnum: string
 
     /**
      * Return the localized string of a particular value
-     * @return string
      */
     public function getLabel(): string
     {

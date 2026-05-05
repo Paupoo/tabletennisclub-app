@@ -6,6 +6,7 @@ use App\Livewire\Admin\Spams\Index;
 use App\Models\ClubAdmin\Contact\Spam;
 use App\Models\ClubAdmin\Users\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
@@ -137,7 +138,7 @@ describe('Selection and pagination', function (): void {
             ->test(Index::class);
 
         $component->assertViewHas('spams', function ($spams) {
-            return $spams instanceof \Illuminate\Pagination\LengthAwarePaginator
+            return $spams instanceof LengthAwarePaginator
                 && $spams->count() === 25
                 && $spams->total() === 30;
         });
@@ -147,8 +148,7 @@ describe('Selection and pagination', function (): void {
         $component->set('perPage', '15')
             ->assertViewHas(
                 'spams',
-                fn($spams) =>
-                $spams->count() === 15
+                fn ($spams) => $spams->count() === 15
                     && $spams->total() === 30
                     && $spams->lastPage() === 2
             );
@@ -156,8 +156,7 @@ describe('Selection and pagination', function (): void {
         $component->set('perPage', '50')
             ->assertViewHas(
                 'spams',
-                fn($spams) =>
-                $spams->count() === 30
+                fn ($spams) => $spams->count() === 30
                     && $spams->lastPage() === 1
             );
     });

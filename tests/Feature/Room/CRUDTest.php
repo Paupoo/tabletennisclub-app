@@ -3,8 +3,9 @@
 declare(strict_types=1);
 
 use App\Models\ClubAdmin\Club\Room;
+use Tests\Trait\CreateUser;
 
-uses(\Tests\Trait\CreateUser::class);
+uses(CreateUser::class);
 
 beforeEach(function (): void {
     $this->valid_room_request = [

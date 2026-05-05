@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Models\ClubAdmin\Users\User;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
@@ -11,26 +13,33 @@ new class extends Component
 {
     use Toast;
 
-    public bool $registrationClosed = false;
-
-    public string $search = '';
-
-    public bool $memberDrawer = false;
-
-    public string $searchMember = '';
-
-    public bool $reviewModal = false;
-
-    public bool $paymentGenerated = false;
+    public array $affiliationForm = [
+        'type' => 'recreative',
+        'trainings' => [],
+        'hasFamilyGroup' => false,
+        'familyId' => null,
+    ];
 
     // Pour stocker la demande en cours de révision
     public array|object $currentRequest = [];
 
-    public $selectedMember = null; // Contiendra l'objet membre sélectionné
+    public array $familyBasket = []; // Contient les configs : ['user_id' => [...], 'user_id' => [...]]
+
+    public bool $memberDrawer = false;
+
+    public bool $paymentGenerated = false;
+
+    public bool $registrationClosed = false;
+
+    public bool $reviewModal = false;
+
+    public string $search = '';
 
     public string $searchFamily = '';
 
-    public array $familyBasket = []; // Contient les configs : ['user_id' => [...], 'user_id' => [...]]
+    public string $searchMember = '';
+
+    public $selectedMember = null; // Contiendra l'objet membre sélectionné
 
     /**
      * Ajoute un membre au panier actuel dans le drawer
@@ -41,7 +50,7 @@ new class extends Component
 
         // On initialise avec des valeurs par défaut pour ce membre précis
         $this->familyBasket[$userId] = [
-            'name' => $user->first_name.' '.$user->last_name,
+            'name' => $user->first_name . ' ' . $user->last_name,
             'licence_type' => 'recreative',
             'trainings' => [],
         ];
@@ -49,17 +58,11 @@ new class extends Component
         $this->searchMember = ''; // Reset la recherche pour en ajouter un autre éventuellement
     }
 
-    /**
-     * Supprime un membre du panier
-     */
-    public function removeFromBasket($userId)
+    public function approve(): void
     {
-        unset($this->familyBasket[$userId]);
-    }
-
-    public function toggleRegistrations(): void
-    {
-        $this->registrationClosed = ! $this->registrationClosed;
+        // Logique de validation ici...
+        $this->paymentGenerated = true; // Affiche les infos de paiement
+        $this->success('Inscription validée. Informations de paiement générées.');
     }
 
     #[Computed()]
@@ -84,64 +87,16 @@ new class extends Component
             ->get();
     }
 
-    public array $affiliationForm = [
-        'type' => 'recreative',
-        'trainings' => [],
-        'hasFamilyGroup' => false,
-        'familyId' => null,
-    ];
-
-    public function trainingOptions(): array
+    public function headers(): array
     {
         return [
-            ['id' => 'lun-18', 'name' => 'Lundi 18h00'],
-            ['id' => 'mer-14', 'name' => 'Mercredi 14h00'],
-            ['id' => 'sam-10', 'name' => 'Samedi 10h00'],
+            ['key' => 'id', 'label' => '#', 'class' => 'w-16 text-gray-400'],
+            ['key' => 'name', 'label' => 'Name'],
+            ['key' => 'type', 'label' => 'Licence'],
+            ['key' => 'members_count', 'label' => 'Members'],
+            ['key' => 'trainings_count', 'label' => 'Trainings', 'sortable' => false],
+            ['key' => 'status', 'label' => 'Status'],
         ];
-    }
-
-    public function selectMember($id)
-    {
-        $this->selectedMember = User::find($id);
-        $this->searchMember = ''; // Reset la recherche
-    }
-
-    public function saveAffiliation()
-    {
-        // Logique de création de la registration
-        // $this->affiliationForm contient tout : type, entraînements, groupement
-
-        $this->memberDrawer = false;
-        $this->selectedMember = null;
-        $this->success('Inscription enregistrée !');
-    }
-
-    public function with(): array
-    {
-        return [
-            'membersFound' => strlen($this->searchMember) > 2
-                ? User::where(function ($q) {
-                    $q->where('first_name', 'like', "%{$this->searchMember}%")
-                        ->orWhere('last_name', 'like', "%{$this->searchMember}%")
-                        ->orWhere('email', 'like', "%{$this->searchMember}%");
-                })->limit(5)->get()
-                : [],
-            // On peut enlever 'trainingOptions' d'ici car on utilise la méthode ci-dessus
-        ];
-    }
-
-    public function saveFamilyRegistration()
-    {
-        // Logique de sauvegarde (foreach sur $this->familyBasket...)
-        $this->success('Inscription de groupe réussie !');
-        $this->memberDrawer = false;
-        $this->familyBasket = [];
-    }
-
-    public function renewAffiliation($memberId)
-    {
-        // Logique de renouvellement ici
-        $this->success("Affiliation de l'utilisateur mise à jour !");
     }
 
     public function registrations(): Collection
@@ -180,16 +135,32 @@ new class extends Component
         });
     }
 
-    public function headers(): array
+    public function reject(): void
     {
-        return [
-            ['key' => 'id', 'label' => '#', 'class' => 'w-16 text-gray-400'],
-            ['key' => 'name', 'label' => 'Name'],
-            ['key' => 'type', 'label' => 'Licence'],
-            ['key' => 'members_count', 'label' => 'Members'],
-            ['key' => 'trainings_count', 'label' => 'Trainings', 'sortable' => false],
-            ['key' => 'status', 'label' => 'Status'],
-        ];
+        $this->warning('Demande rejetée.');
+        $this->reviewModal = false;
+    }
+
+    /**
+     * Supprime un membre du panier
+     */
+    public function removeFromBasket($userId)
+    {
+        unset($this->familyBasket[$userId]);
+    }
+
+    public function render(): View
+    {
+        return $this->view([
+            'headers' => $this->headers(),
+            'registrations' => $this->registrations(),
+        ]);
+    }
+
+    public function renewAffiliation($memberId)
+    {
+        // Logique de renouvellement ici
+        $this->success("Affiliation de l'utilisateur mise à jour !");
     }
 
     public function review(int $id): void
@@ -199,24 +170,55 @@ new class extends Component
         $this->reviewModal = true;
     }
 
-    public function approve(): void
+    public function saveAffiliation()
     {
-        // Logique de validation ici...
-        $this->paymentGenerated = true; // Affiche les infos de paiement
-        $this->success('Inscription validée. Informations de paiement générées.');
+        // Logique de création de la registration
+        // $this->affiliationForm contient tout : type, entraînements, groupement
+
+        $this->memberDrawer = false;
+        $this->selectedMember = null;
+        $this->success('Inscription enregistrée !');
     }
 
-    public function reject(): void
+    public function saveFamilyRegistration()
     {
-        $this->warning('Demande rejetée.');
-        $this->reviewModal = false;
+        // Logique de sauvegarde (foreach sur $this->familyBasket...)
+        $this->success('Inscription de groupe réussie !');
+        $this->memberDrawer = false;
+        $this->familyBasket = [];
     }
 
-    public function render(): View
+    public function selectMember($id)
     {
-        return $this->view([
-            'headers' => $this->headers(),
-            'registrations' => $this->registrations(),
-        ]);
+        $this->selectedMember = User::find($id);
+        $this->searchMember = ''; // Reset la recherche
+    }
+
+    public function toggleRegistrations(): void
+    {
+        $this->registrationClosed = ! $this->registrationClosed;
+    }
+
+    public function trainingOptions(): array
+    {
+        return [
+            ['id' => 'lun-18', 'name' => 'Lundi 18h00'],
+            ['id' => 'mer-14', 'name' => 'Mercredi 14h00'],
+            ['id' => 'sam-10', 'name' => 'Samedi 10h00'],
+        ];
+    }
+
+    public function with(): array
+    {
+        return [
+            'membersFound' => strlen($this->searchMember) > 2
+                ? User::where(function ($q) {
+                    $q->where('first_name', 'like', "%{$this->searchMember}%")
+                        ->orWhere('last_name', 'like', "%{$this->searchMember}%")
+                        ->orWhere('email', 'like', "%{$this->searchMember}%");
+                })->limit(5)->get()
+                : [],
+            // On peut enlever 'trainingOptions' d'ici car on utilise la méthode ci-dessus
+        ];
     }
 };

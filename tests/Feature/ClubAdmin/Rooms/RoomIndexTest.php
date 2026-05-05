@@ -2,18 +2,16 @@
 
 declare(strict_types=1);
 
-use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubAdmin\Club\Room;
+use App\Models\ClubAdmin\Users\User;
 use Livewire\Livewire;
-use App\Livewire\Pages\ClubAdmin\Rooms\Index;
 
 beforeEach(function () {
     // On crée un utilisateur pour les tests
     $this->user = User::factory()->create();
 });
 
-
-describe('Room index tests', function() {
+describe('Room index tests', function () {
     // 1. Tester que la page est accessible
     it('renders the rooms index page', function () {
         $this->actingAs($this->user)
@@ -71,7 +69,7 @@ describe('Room index tests', function() {
             ->test('pages::club-admin.rooms.index')
             ->call('delete', $room->id)
             ->assertStatus(403); // Ou assertForbidden()
-        
+
         expect(Room::where('id', $room->id)->exists())->toBeTrue();
     });
-})->group('club-admin','room');
+})->group('club-admin', 'room');

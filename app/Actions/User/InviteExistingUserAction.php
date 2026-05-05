@@ -12,10 +12,6 @@ use Illuminate\Support\Facades\URL;
 
 class InviteExistingUserAction
 {
-    /**
-     * @param User $user
-     * @return RedirectResponse
-     */
     public static function handle(User $user): RedirectResponse
     {
         $link = URL::temporarySignedRoute(

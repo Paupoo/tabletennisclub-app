@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\ClubAdmin\Contact;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use App\Support\Captcha;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreContactRequest extends FormRequest
 {
-    public function __construct(private Captcha $captchaService = new Captcha()){}
+    public function __construct(private Captcha $captchaService = new Captcha) {}
 
     /**
      * Determine if the user is authorized to make this request.
@@ -67,13 +67,15 @@ class StoreContactRequest extends FormRequest
 
             $captcha = session('captcha');
 
-            if (!$captcha || !session('captcha_created_at')) {
+            if (! $captcha || ! session('captcha_created_at')) {
                 $validator->errors()->add('captcha', 'Captcha expiré.');
+
                 return;
             }
 
             if (time() - session('captcha_created_at') > 300) {
                 $validator->errors()->add('captcha', 'Captcha expiré.');
+
                 return;
             }
 
@@ -82,7 +84,7 @@ class StoreContactRequest extends FormRequest
                 (int) $this->input('captcha')
             );
 
-            if (!$valid) {
+            if (! $valid) {
                 $validator->errors()->add('captcha', 'Captcha incorrect.');
             }
         });

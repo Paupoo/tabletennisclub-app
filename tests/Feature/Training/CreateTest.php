@@ -7,8 +7,9 @@ use App\Enums\TrainingLevel;
 use App\Enums\TrainingType;
 use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubEvents\Training\Training;
+use Tests\Trait\CreateUser;
 
-uses(\Tests\Trait\CreateUser::class);
+uses(CreateUser::class);
 
 beforeEach(function (): void {
     $date_in_the_past = today()->subDay()->format('Y-m-d');

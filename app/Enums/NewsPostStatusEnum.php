@@ -18,9 +18,6 @@ enum NewsPostStatusEnum: string
         return array_column(self::cases(), 'value');
     }
 
-    /**
-     * @return string
-     */
     public function getLabel(): string
     {
         return match ($this) {

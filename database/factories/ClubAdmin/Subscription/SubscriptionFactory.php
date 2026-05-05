@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Database\Factories\ClubAdmin\Subscription;
 
+use App\Models\ClubAdmin\Subscription\Subscription;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Season;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\ClubAdmin\Subscription\Subscription>
+ * @extends Factory<Subscription>
  */
 class SubscriptionFactory extends Factory
 {

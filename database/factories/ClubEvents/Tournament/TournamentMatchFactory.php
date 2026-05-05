@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace Database\Factories\ClubEvents\Tournament;
 
 use App\Models\ClubAdmin\Users\User;
+use App\Models\ClubEvents\Tournament\TournamentMatch;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\ClubEvents\Tournament\TournamentMatch>
+ * @extends Factory<TournamentMatch>
  */
 class TournamentMatchFactory extends Factory
 {

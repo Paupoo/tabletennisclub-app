@@ -9,10 +9,22 @@ use App\Models\ClubAdmin\Subscription\Subscription;
 
 class RefundedState implements SubscriptionState
 {
+    public function availableTransitions(): array
+    {
+        return [
+            'markPaid' => __('Mark as Paid'),
+        ];
+    }
+
     public function cancel(Subscription $subscription): void
     {
         // État final : remboursée
         throw new \LogicException('Subscription is already refunded.');
+    }
+
+    public function canGeneratePayment(Subscription $subscription): bool
+    {
+        return false;
     }
 
     public function confirm(Subscription $subscription): void
@@ -42,17 +54,5 @@ class RefundedState implements SubscriptionState
     {
         // État final : remboursée
         throw new \LogicException('Cannot set a refunded subscription back to pending.');
-    }
-
-    public function availableTransitions(): array
-    {
-        return [
-            'markPaid' => __('Mark as Paid'),
-        ];
-    }
-
-    public function canGeneratePayment(Subscription $subscription): bool
-    {
-        return false;
     }
 }

@@ -42,4 +42,3 @@ class EventPostRequest extends FormRequest
         ];
     }
 }
-

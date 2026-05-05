@@ -54,12 +54,12 @@ class Pool extends Model
         'name',
     ];
 
-
     /**
      * Utiliser les événements du modèle pour intercepter
      *  les attachements d'utilisateurs via la relation
-     * @param User $user
+     *
      * @return void
+     *
      * @throws Exception
      */
     public function attachUser(User $user): User
@@ -78,6 +78,7 @@ class Pool extends Model
 
         // Sinon, attacher l'utilisateur à ce pool
         $this->users()->attach($user->id);
+
         return $user;
     }
 

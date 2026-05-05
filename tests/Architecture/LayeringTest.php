@@ -3,13 +3,14 @@
 declare(strict_types=1);
 
 namespace tests\Architecture;
+
 // TODO ?
 
-//test('controllers ne dépendent pas des repositories directement')
+// test('controllers ne dépendent pas des repositories directement')
 //    ->expect('App\Http\Controllers')
 //    ->not->toUse('App\Repositories');
 //
-//test('models ne dépendent que de Eloquent')
+// test('models ne dépendent que de Eloquent')
 //    ->expect('App\Models')
 //    ->toOnlyUse([
 //        'Illuminate\Database\Eloquent',
@@ -17,8 +18,6 @@ namespace tests\Architecture;
 //        'Carbon\Carbon',
 //    ]);
 //
-//test('services peuvent utiliser repositories')
+// test('services peuvent utiliser repositories')
 //    ->expect('App\Services')
 //    ->toUse('App\Repositories');
-
-

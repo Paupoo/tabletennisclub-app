@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Mocks\HasMockTraining;
 use App\Support\Breadcrumb;
 use Illuminate\View\View;
@@ -10,15 +12,7 @@ new class extends Component
 {
     use HasMockTraining;
 
-    public bool $showModal = false;
-
-    public ?int $selectedId = null;
-
     public ?string $categoryFilter = null;
-
-    public array $selectedCategory = [];
-
-    public ?string $formRecurrence = null;
 
     // Une seule déclaration pour le formulaire avec ses valeurs par défaut
     public array $form = [
@@ -30,26 +24,22 @@ new class extends Component
         'max_spots' => 0,
     ];
 
-    /**
-     * Récupère l'entraînement sélectionné via son ID.
-     * Accessible dans la vue via $this->selectedTraining
-     */
-    #[Computed()]
-    public function selectedTraining()
-    {
-        return collect($this->getTrainings())->firstWhere('id', $this->selectedId);
-    }
+    public ?string $formRecurrence = null;
 
-    // --- Actions de navigation ---
+    public array $selectedCategory = [];
 
-    public function showAttendance(int $id): void
-    {
-        $this->selectedId = $id;
-    }
+    public ?int $selectedId = null;
+
+    public bool $showModal = false;
 
     public function backToList(): void
     {
         $this->selectedId = null;
+    }
+
+    public function delete(int $id): void
+    {
+        // Logique de suppression
     }
 
     // --- Actions CRUD (Mock) ---
@@ -71,6 +61,11 @@ new class extends Component
         }
     }
 
+    public function render(): View
+    {
+        return $this->view();
+    }
+
     public function save(): void
     {
         // Ici, logique de sauvegarde réelle plus tard...
@@ -79,9 +74,21 @@ new class extends Component
         // $this->toast()->success('Enregistré !');
     }
 
-    public function delete(int $id): void
+    /**
+     * Récupère l'entraînement sélectionné via son ID.
+     * Accessible dans la vue via $this->selectedTraining
+     */
+    #[Computed()]
+    public function selectedTraining()
     {
-        // Logique de suppression
+        return collect($this->getTrainings())->firstWhere('id', $this->selectedId);
+    }
+
+    // --- Actions de navigation ---
+
+    public function showAttendance(int $id): void
+    {
+        $this->selectedId = $id;
     }
 
     /**
@@ -107,10 +114,5 @@ new class extends Component
             'recurrenceOptions' => $this->getRecurrences(), // Vient du Trait
 
         ];
-    }
-
-    public function render(): View
-    {
-        return $this->view();
     }
 };

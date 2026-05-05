@@ -52,6 +52,11 @@ class UserPolicy
         return true;
     }
 
+    public function manageSubscription(User $user, User $model): bool
+    {
+        return $user->is_admin || $user->is_committee_member || $user->is($model);
+    }
+
     /**
      * Determine whether the user can restore the model.
      */
@@ -105,10 +110,5 @@ class UserPolicy
     {
         //
         return true;
-    }
-
-    public function manageSubscription(User $user, User $model): bool
-    {
-        return $user->is_admin || $user->is_committee_member || $user->is($model);
     }
 }

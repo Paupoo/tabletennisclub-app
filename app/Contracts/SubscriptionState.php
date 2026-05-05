@@ -8,7 +8,11 @@ use App\Models\ClubAdmin\Subscription\Subscription;
 
 interface SubscriptionState
 {
+    public function availableTransitions(): array;
+
     public function cancel(Subscription $subscription): void;
+
+    public function canGeneratePayment(Subscription $subscription): bool;
 
     public function confirm(Subscription $subscription): void;
 
@@ -19,8 +23,4 @@ interface SubscriptionState
     public function refund(Subscription $subscription): void;
 
     public function unconfirm(Subscription $subscription): void;
-
-    public function availableTransitions(): array;
-
-    public function canGeneratePayment(Subscription $subscription): bool;
 }

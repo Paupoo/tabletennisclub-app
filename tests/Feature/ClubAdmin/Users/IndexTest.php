@@ -94,7 +94,7 @@ describe('search functionality', function () {
 
     it('resets pagination when searching', function () {
         User::factory()->count(20)->create();
-        
+
         Livewire::test(USER_INDEX_COMPONENT)
             ->call('setPage', 2)
             ->set('search', 'test')
@@ -218,7 +218,7 @@ describe('team filtering', function () {
         $team = Team::factory(['name' => 'A'])->create();
         $userInTeam = User::factory()->create();
         $userNotInTeam = User::factory()->create();
-        
+
         $team->members()->attach($userInTeam);
 
         Livewire::test(USER_INDEX_COMPONENT)
@@ -233,7 +233,7 @@ describe('team filtering', function () {
         $user1 = User::factory()->create();
         $user2 = User::factory()->create();
         $user3 = User::factory()->create();
-        
+
         $team1->members()->attach($user1);
         $team2->members()->attach($user2);
 
@@ -270,7 +270,7 @@ describe('filter combination', function () {
             'gender' => 'male',
             'is_active' => true,
         ]);
-        
+
         $wrong = User::factory()->create([
             'first_name' => 'Jane',
             'is_competitor' => false,
@@ -355,9 +355,9 @@ describe('sorting', function () {
         $charlie = User::factory()->create(['last_name' => 'Charlie']);
 
         $component = Livewire::test(USER_INDEX_COMPONENT);
-        
+
         $users = $component->get('users');
-        
+
         expect($users->first()->id)->toBe($alice->id);
         expect($users->last()->id)->toBe($charlie->id);
     });

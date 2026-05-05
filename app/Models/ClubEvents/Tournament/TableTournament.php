@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models\ClubEvents\Tournament;
 
 use Illuminate\Database\Eloquent\Relations\Pivot;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -12,10 +13,10 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
  * @property int|null $table_id
  * @property int|null $tournament_match_id
  * @property int $is_table_free
- * @property \Illuminate\Support\Carbon|null $match_started_at
+ * @property Carbon|null $match_started_at
  * @property string|null $match_ended_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TableTournament newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TableTournament newQuery()

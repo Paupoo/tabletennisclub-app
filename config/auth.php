@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+use App\Models\ClubAdmin\Users\User;
 
 return [
 
@@ -64,7 +65,7 @@ return [
     'providers' => [
         'users' => [
             'driver' => 'eloquent',
-            'model' => \App\Models\ClubAdmin\Users\User::class,
+            'model' => User::class,
         ],
 
         // 'users' => [

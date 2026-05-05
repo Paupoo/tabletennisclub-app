@@ -26,9 +26,9 @@ class NewsPostPolicy
     }
 
     /**
-     * Determine whether the user can permanently delete the model.
+     * Determine whether the user can view any models.
      */
-    public function view(User $user, NewsPost $article): bool
+    public function forceDelete(User $user, NewsPost $article): bool
     {
         return false;
     }
@@ -50,9 +50,9 @@ class NewsPostPolicy
     }
 
     /**
-     * Determine whether the user can view any models.
+     * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(User $user, NewsPost $article): bool
+    public function view(User $user, NewsPost $article): bool
     {
         return false;
     }

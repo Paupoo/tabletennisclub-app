@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Resources\views\Pages\ClubEvents\Interclubs\Teams;
 
 use App\Support\Breadcrumb;
@@ -12,18 +14,47 @@ new class extends Component
 {
     use Toast;
 
+    public string $captain = '';
+
+    public string $category = '';
+
+    public string $division = '';
+
+    public string $name = '';
+
     // Supprime "public Collection $teams" pour laisser getTeamsProperty faire le travail
     public string $search = '';
 
     public bool $teamModal = false;
 
-    public string $name = '';
+    public function headers(): array
+    {
+        return [
+            ['key' => 'name', 'label' => 'Lettre'],
+            ['key' => 'division', 'label' => 'Division'],
+            ['key' => 'category', 'label' => 'Catégorie'],
+            ['key' => 'captain_name', 'label' => 'Capitaine'],
+        ];
+    }
 
-    public string $division = '';
+    public function render(): View
+    {
+        return $this->view();
+    }
 
-    public string $category = '';
+    public function save(): void
+    {
+        // Validation basique pour le mockup
+        if (empty($this->name)) {
+            $this->error('La lettre est requise');
 
-    public string $captain = '';
+            return;
+        }
+
+        $this->success("Équipe {$this->name} ajoutée avec succès !");
+        $this->teamModal = false;
+        $this->reset(['name', 'division', 'category', 'captain']);
+    }
 
     /**
      * Cette "Computed Property" est accessible via $this->teams dans le render
@@ -56,30 +87,6 @@ new class extends Component
         });
     }
 
-    public function headers(): array
-    {
-        return [
-            ['key' => 'name', 'label' => 'Lettre'],
-            ['key' => 'division', 'label' => 'Division'],
-            ['key' => 'category', 'label' => 'Catégorie'],
-            ['key' => 'captain_name', 'label' => 'Capitaine'],
-        ];
-    }
-
-    public function save(): void
-    {
-        // Validation basique pour le mockup
-        if (empty($this->name)) {
-            $this->error('La lettre est requise');
-
-            return;
-        }
-
-        $this->success("Équipe {$this->name} ajoutée avec succès !");
-        $this->teamModal = false;
-        $this->reset(['name', 'division', 'category', 'captain']);
-    }
-
     public function with(): array
     {
         return [
@@ -91,10 +98,5 @@ new class extends Component
             'headers' => $this->headers(),
             'teams' => $this->teams(),
         ];
-    }
-
-    public function render(): View
-    {
-        return $this->view();
     }
 };

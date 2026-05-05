@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Support\Breadcrumb;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
@@ -10,15 +12,31 @@ new class extends Component
 {
     use Toast;
 
-    public string $search = '';
-
-    public string $statusFilter = 'pending'; // 'pending' ou 'paid'
+    // Pour le fichier CSV (nécessite le trait WithFileUploads)
+    public $csvFile;
 
     // État de la modal d'importation
     public bool $importModal = false;
 
-    // Pour le fichier CSV (nécessite le trait WithFileUploads)
-    public $csvFile;
+    public string $search = '';
+
+    public string $statusFilter = 'pending'; // 'pending' ou 'paid'
+
+    public function headers(): array
+    {
+        return [
+            ['key' => 'comm', 'label' => __('Reference')],
+            ['key' => 'family', 'label' => __('Family')],
+            ['key' => 'amount', 'label' => __('Amount')],
+            ['key' => 'date', 'label' => __('Date')],
+        ];
+    }
+
+    public function markAsPaid(int $id): void
+    {
+        // Logique de mise à jour en BDD...
+        $this->success('Paiement validé avec succès.');
+    }
 
     public function payments(): Collection
     {
@@ -38,22 +56,6 @@ new class extends Component
             });
     }
 
-    public function headers(): array
-    {
-        return [
-            ['key' => 'comm', 'label' => __('Reference')],
-            ['key' => 'family', 'label' => __('Family')],
-            ['key' => 'amount', 'label' => __('Amount')],
-            ['key' => 'date', 'label' => __('Date')],
-        ];
-    }
-
-    public function markAsPaid(int $id): void
-    {
-        // Logique de mise à jour en BDD...
-        $this->success('Paiement validé avec succès.');
-    }
-
     public function render(): View
     {
         return $this->view([
@@ -61,7 +63,7 @@ new class extends Component
             'payments' => $this->payments(),
             'statusFilter' => $this->statusFilter,
             'breadcrumbs' => Breadcrumb::make()->home()->add(__('Payments'), route('admin.users.payments'))
-            ->toArray(),
+                ->toArray(),
         ]);
     }
 };

@@ -7,7 +7,6 @@ namespace App\Livewire\Admin\Users;
 use App\Models\ClubAdmin\Users\User;
 use App\Services\ForceList;
 use Illuminate\Contracts\Database\Eloquent\Builder;
-use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -16,10 +15,6 @@ use Livewire\WithPagination;
 class UsersTable extends Component
 {
     use WithPagination;
-
-    // --- Propriétés de sélection (Manquantes précédemment) ---
-    public array $selectedItems = [];
-    public bool $selectAll = false;
 
     // --- Filtres et État de l'URL ---
     #[Url(as: 'competitor')]
@@ -30,6 +25,11 @@ class UsersTable extends Component
 
     #[Url(as: 'search')]
     public string $search = '';
+
+    public bool $selectAll = false;
+
+    // --- Propriétés de sélection (Manquantes précédemment) ---
+    public array $selectedItems = [];
 
     public ?int $selectedUserId = null;
 
@@ -46,6 +46,7 @@ class UsersTable extends Component
     public string $status = '';
 
     protected ForceList $forceList;
+
     protected string $paginationTheme = 'tailwind';
 
     // Injection de dépendances via boot
@@ -106,60 +107,12 @@ class UsersTable extends Component
         $this->resetSelection();
     }
 
-    // --- Gestion de la sélection ---
-
-    public function updatedSelectAll($value): void
+    public function render()
     {
-        if ($value) {
-            // Sélectionne uniquement les IDs de la page actuelle (convertis en string pour les checkboxes)
-            $this->selectedItems = $this->getUsers()
-                ->paginate($this->perPage)
-                ->pluck('id')
-                ->map(fn($id) => (string)$id)
-                ->toArray();
-        } else {
-            $this->selectedItems = [];
-        }
-    }
-
-    public function updatedSelectedItems(): void
-    {
-        // Si on décoche un item manuellement, on décoche le "Tout sélectionner"
-        $this->selectAll = false;
-    }
-
-    private function resetSelection(): void
-    {
-        $this->selectedItems = [];
-        $this->selectAll = false;
-    }
-
-    // --- Cycle de vie et Filtres ---
-
-    public function updatedSearch(): void
-    {
-        $this->resetPage();
-        $this->resetSelection();
-    }
-    public function updatedCompetitor(): void
-    {
-        $this->resetPage();
-        $this->resetSelection();
-    }
-    public function updatedSex(): void
-    {
-        $this->resetPage();
-        $this->resetSelection();
-    }
-    public function updatedStatus(): void
-    {
-        $this->resetPage();
-        $this->resetSelection();
-    }
-    public function updatedPerPage(): void
-    {
-        $this->resetPage();
-        $this->resetSelection();
+        return view('livewire.admin.users.users-table', [
+            'users' => $this->getUsers()->paginate($this->perPage),
+            'user_model' => User::class,
+        ]);
     }
 
     public function sortBy($field)
@@ -174,13 +127,67 @@ class UsersTable extends Component
         $this->resetPage();
     }
 
+    public function updatedCompetitor(): void
+    {
+        $this->resetPage();
+        $this->resetSelection();
+    }
+
+    public function updatedPerPage(): void
+    {
+        $this->resetPage();
+        $this->resetSelection();
+    }
+
+    // --- Cycle de vie et Filtres ---
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+        $this->resetSelection();
+    }
+
+    // --- Gestion de la sélection ---
+
+    public function updatedSelectAll($value): void
+    {
+        if ($value) {
+            // Sélectionne uniquement les IDs de la page actuelle (convertis en string pour les checkboxes)
+            $this->selectedItems = $this->getUsers()
+                ->paginate($this->perPage)
+                ->pluck('id')
+                ->map(fn ($id) => (string) $id)
+                ->toArray();
+        } else {
+            $this->selectedItems = [];
+        }
+    }
+
+    public function updatedSelectedItems(): void
+    {
+        // Si on décoche un item manuellement, on décoche le "Tout sélectionner"
+        $this->selectAll = false;
+    }
+
+    public function updatedSex(): void
+    {
+        $this->resetPage();
+        $this->resetSelection();
+    }
+
+    public function updatedStatus(): void
+    {
+        $this->resetPage();
+        $this->resetSelection();
+    }
+
     // --- Logique métier (Query) ---
 
     private function getUsers(): Builder
     {
         $query = User::query();
 
-        if (!empty($this->search)) {
+        if (! empty($this->search)) {
             $query->searchTerms($this->search);
         }
 
@@ -188,7 +195,7 @@ class UsersTable extends Component
             $query->where('is_competitor', $this->competitor === '1');
         }
 
-        if (!empty($this->sex) && $this->sex !== 'all') {
+        if (! empty($this->sex) && $this->sex !== 'all') {
             $query->where('gender', $this->sex);
         }
 
@@ -222,11 +229,9 @@ class UsersTable extends Component
         return $query->with('teams');
     }
 
-    public function render()
+    private function resetSelection(): void
     {
-        return view('livewire.admin.users.users-table', [
-            'users' => $this->getUsers()->paginate($this->perPage),
-            'user_model' => User::class,
-        ]);
+        $this->selectedItems = [];
+        $this->selectAll = false;
     }
 }

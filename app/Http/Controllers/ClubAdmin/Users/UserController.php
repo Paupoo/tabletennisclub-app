@@ -99,7 +99,7 @@ class UserController extends Controller
 
         return view('clubAdmin.users.edit', [
             'user' => $user,
-            'teams' => Team::all(),
+            'teams' => Team::with(['league', 'captain'])->get(),
             'rankings' => array_column(Ranking::cases(), 'name'),
             'sexes' => array_column(Gender::cases(), 'name'),
             'breadcrumbs' => $breadcrumbs,

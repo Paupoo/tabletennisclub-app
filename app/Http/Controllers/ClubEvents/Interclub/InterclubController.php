@@ -167,7 +167,7 @@ class InterclubController extends Controller
             ->add('Selections')
             ->toArray();
 
-        $interclubs = Interclub::all();
+        $interclubs = Interclub::with(['league', 'room', 'season'])->get();
 
         return View('clubEvents.interclubs.interclub.selections', [
             'interclubs' => $interclubs,

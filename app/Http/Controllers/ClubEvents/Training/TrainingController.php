@@ -49,7 +49,7 @@ class TrainingController extends Controller
             ->toArray();
 
         $training = new Training;
-        $trainingPacks = TrainingPack::all();
+        $trainingPacks = TrainingPack::with(['room', 'trainer'])->get();
 
         return view('clubEvents.trainings.create', [
             'levels' => TrainingLevel::cases(),
@@ -119,7 +119,7 @@ class TrainingController extends Controller
         $notSubscribedUsers = User::whereDoesntHave('trainings', function ($query) use ($training) {
             $query->where('training_id', $training->id);
         })->get();
-        $trainingPacks = TrainingPack::all();
+        $trainingPacks = TrainingPack::with(['room', 'trainer'])->get();
 
         return view('clubEvents.trainings.edit', compact([
             'breadcrumbs',

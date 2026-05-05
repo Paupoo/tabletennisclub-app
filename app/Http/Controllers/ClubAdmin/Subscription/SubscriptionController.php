@@ -52,7 +52,7 @@ class SubscriptionController extends Controller
      */
     public function index(): View
     {
-        $subscriptions = Subscription::all();
+        $subscriptions = Subscription::with(['season', 'user'])->get();
 
         return view('clubAdmin.subscriptions.index', compact([
             'subscriptions',

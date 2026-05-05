@@ -105,7 +105,7 @@ class TeamController extends Controller
             'league_divisions' => League::select(['division', 'id'])
                 ->get(),
             'league_levels' => LeagueLevel::cases(),
-            'leagues' => League::all(),
+            'leagues' => League::with('season')->get(),
             'seasons' => Season::select(['name', 'id', 'start_at'])
                 ->where('end_at', '>=', today()->format('Y'))
                 ->orderBy('start_at')

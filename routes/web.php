@@ -181,7 +181,7 @@ Route::get('/admin/dashboard', function () {
         'users_total_casuals' => User::where('is_competitor', '=', false)->count(),
         'rooms' => Room::orderby('name')->get(),
         'trainings' => Training::latest()->take(5)->get(),
-        'teams' => Team::all()->load(['captain', 'users']),
+        'teams' => Team::all()->load(['captain', 'users','league']),
         'breadcrumbs' => Breadcrumb::make()->home()->toArray(),
     ]);
 })->middleware(['auth', 'verified'])

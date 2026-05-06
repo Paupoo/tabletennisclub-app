@@ -53,7 +53,7 @@
                 <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
                     {{ __('Status') }}
                 </p>
-                <x-toggle label="{{ __('Active members only') }}" wire:model.live="onlyActive" />
+                <x-toggle label="{{ __('Show inactive users') }}" wire:model.live="showInactiveUsers" />
             </div>
             <div>
                 <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">

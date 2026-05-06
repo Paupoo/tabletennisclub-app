@@ -27,7 +27,7 @@ new class extends Component
 
     public array $licenceTypes = [];   // ex: ['competitive', 'recreational']
 
-    public bool $onlyActive = false;
+    public bool $showInactiveUsers = false;
 
     // ── Recherche & tri ──────────────────────────────────────────────────────
     public string $search = '';
@@ -64,7 +64,7 @@ new class extends Component
     {
         return ($this->selectedLicenceType !== 'both' ? 1 : 0)
             + count($this->categories)
-            + ($this->onlyActive ? 1 : 0);
+            + ($this->showInactiveUsers ? 1 : 0);
     }
 
     // ────────────────────────────────────────────────────────────────────────
@@ -207,7 +207,7 @@ new class extends Component
     {
         $this->selectedLicenceType = 'both';
         $this->categories = [];
-        $this->onlyActive = false;
+        $this->showInactiveUsers = false;
         $this->resetPage();
     }
 
@@ -244,7 +244,7 @@ new class extends Component
         $this->resetPage();
     }
 
-    public function updatedOnlyActive(): void
+    public function updatedShowInactiveUsers(): void
     {
         $this->resetPage();
     }
@@ -284,7 +284,7 @@ new class extends Component
                 fn ($q) => $q->whereIn('gender', $this->categories)
             )
             ->when(
-                $this->onlyActive,
+                !$this->showInactiveUsers,
                 fn ($q) => $q->where('is_active', true)
             )
             ->when(

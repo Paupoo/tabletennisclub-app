@@ -20,8 +20,8 @@
     - [x] **Gestion du comité** : ajouter ou supprimer un membre dans le comité et lui assigner un rôle
     - [x] **Gestion des tables**  : ajouter des tables, les lier à une salle, décrire leur état général
     - [x] **Gestion des salles du club**  : ajouter des salles et définir leur adresse et leur capacité, afficher les évènements à venir
-    - [ ] **Gestion des membres club**  : Afficher tous les membres, les cherches, afficheur leurs infos principales
-    - [ ] **Gestion du profil**  : Permettre aux membres d'adapter certaines informations (avatars, info de contacts,...)
+    - [x] **Gestion des membres club**  : Afficher tous les membres, les cherches, afficheur leurs infos principales
+    - [x] **Gestion du profil**  : Permettre aux membres d'adapter certaines informations (avatars, info de contacts,...)
     - [ ] **Gestion des préférences**  : Permettre aux membres de configurer leurs préférences 
 - [ ] **Stabilisation des features existantes** : Débugage, optimization et création de test pour les features. Refonte architecturale. Suppression du code obsolète.
 

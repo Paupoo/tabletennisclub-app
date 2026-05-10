@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\States\Payments;
 
-use const App\States\Tournament\Payments\confirmed;
-
 use App\Contracts\SubscriptionState;
 use App\Models\ClubAdmin\Subscription\Subscription;
 

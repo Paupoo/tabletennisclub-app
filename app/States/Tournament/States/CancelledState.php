@@ -7,7 +7,7 @@ namespace App\States\Tournament\States;
 use App\Enums\TournamentStatusEnum;
 use App\States\Tournament\AbstractTournamentState;
 
-final class LockedState extends AbstractTournamentState
+final class CancelledState extends AbstractTournamentState
 {
     public function canCreatePools(): bool
     {

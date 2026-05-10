@@ -2,6 +2,10 @@
 
 declare(strict_types=1);
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Artisan;
+use Tests\TestCase;
+
 /*
 |--------------------------------------------------------------------------
 | Test Case
@@ -18,9 +22,7 @@ uses(
     RefreshDatabase::class,
 )->in('Feature', 'Unit', '../resources/views');
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Artisan;
-use Tests\TestCase;
+
 
 beforeAll(function (): void {
     // Run migrations and seed once before the whole test suite to avoid

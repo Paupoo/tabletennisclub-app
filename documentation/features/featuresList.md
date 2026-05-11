@@ -21,12 +21,13 @@
     - [x] **Gestion des tables**  : ajouter des tables, les lier à une salle, décrire leur état général
     - [x] **Gestion des salles du club**  : ajouter des salles et définir leur adresse et leur capacité, afficher les évènements à venir
     - [x] **Gestion des membres club**  : Afficher tous les membres, les cherches, afficheur leurs infos principales
-    - [x] **Gestion du profil**  : Permettre aux membres d'adapter certaines informations (avatars, info de contacts,...)
-    - [ ] **Gestion des préférences**  : Permettre aux membres de configurer leurs préférences 
+    - [x] **Gestion du profil**  : Permettre aux membres d'adapter certaines informations (avatars, info de contacts,...) 
+    - [x] **Migration to Laravel 13** : Migration technique sur la dernière version du framework
 - [ ] **Stabilisation des features existantes** : Débugage, optimization et création de test pour les features. Refonte architecturale. Suppression du code obsolète.
 
 ### 🗓️ Moyen Terme (v1.x)
 
+- [ ] **Gestion des préférences**  : Permettre aux membres de configurer leurs préférences
 - [ ] **Publication des résultats** : Remplacer les résultats hardcodés par un outil UI afin de les publier plus facilement/sans code change
 - [ ] **Gestion de saisons** : Permettre au comité d'ouvrir/fermer une saison et gérer les inscriptions
 - [ ] **Gestion de entraînements** : Permettre au comité d'ouvrir/fermer des sessions d'entraînements et de gérer les inscriptions/présences

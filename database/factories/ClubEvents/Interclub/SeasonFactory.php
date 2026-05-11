@@ -23,9 +23,10 @@ class SeasonFactory extends Factory
         $year = fake()->unique()->numberBetween(2024, 2034);
 
         return [
-            'name' => $year . ' - ' . $year + 1,
+            'name' => $year . ' - ' . ($year + 1),
             'start_at' => Carbon::parse('first day of September ' . $year),
             'end_at' => Carbon::parse('last day of June ' . $year + 1),
+            'is_active' => false,
         ];
     }
 }

@@ -16,6 +16,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 /**
  * @property int $id
@@ -54,7 +56,66 @@ class Season extends Model
         'name',
         'start_at',
         'end_at',
+        'is_active',
     ];
+
+    protected $casts = [
+        'name' => 'string',
+        'start_at' => 'datetime',
+        'end_at' => 'datetime',
+        'is_active' => 'boolean',
+    ];
+
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('is_active', true);
+    }
+
+    public function activate():void
+    {
+        DB::transaction(function() {
+            // Deactivate all other seasons
+            self::query()->where('is_active', true)->update(['is_active' => false]);
+            // Activate the current season
+            $this->is_active = true;
+            $this->save();
+        });
+    }
+
+    public static function current(): ?self
+    {
+        return Cache::remember(
+            'season.current', 
+            now()->addHours(1),
+            fn() => static::active()->first()
+        );
+    }
+
+    protected static function booted()
+    {
+        static::saving(function ($season) {
+            if ($season->start_at >= $season->end_at) {
+                throw new \DomainException(__('start_at must be before end_at'));
+            }
+        });
+    }
+
+    public function isCurrent(): bool
+    {
+        return $this->is_active;
+    }
+
+    public function isPast(): bool
+    {
+        return $this->end_at < now() && !$this->is_active;
+    }
+
+    public function isFuture(): bool
+    {
+        return $this->start_at > now() && !$this->is_active;
+    }
+
+    // Relationships
 
     public function interclubs(): HasMany
     {

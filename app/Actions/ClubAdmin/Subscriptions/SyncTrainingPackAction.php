@@ -7,8 +7,6 @@ namespace App\Actions\ClubAdmin\Subscriptions;
 use App\Models\ClubAdmin\Subscription\Subscription;
 use Exception;
 
-use function App\Actions\Subscriptions\__;
-
 class SyncTrainingPackAction
 {
     /**
@@ -16,11 +14,16 @@ class SyncTrainingPackAction
      */
     public function __invoke(array $trainingPacksIds, Subscription $subscription): void
     {
-        if ($subscription->status !== 'pending') {
-            throw new Exception(__('The subscription can not be modified'));
+        // Only pending and confirmed subscriptions can be modified
+        if (!in_array($subscription->status, ['pending', 'confirmed'])) {
+            throw new \DomainException(
+                __('The subscription cannot be modified in this state')
+            );
         }
+
         $subscription->trainingPacks()->sync($trainingPacksIds);
 
+        // Recalculate the price of the subscription
         new CalculatePriceAction($subscription);
     }
 }

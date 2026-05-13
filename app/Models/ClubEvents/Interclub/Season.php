@@ -57,13 +57,15 @@ class Season extends Model
         'start_at',
         'end_at',
         'is_active',
+        'registrations_open',
     ];
 
     protected $casts = [
-        'name' => 'string',
-        'start_at' => 'datetime',
-        'end_at' => 'datetime',
-        'is_active' => 'boolean',
+        'name'               => 'string',
+        'start_at'           => 'datetime',
+        'end_at'             => 'datetime',
+        'is_active'          => 'boolean',
+        'registrations_open' => 'boolean',
     ];
 
     public function scopeActive(Builder $query): Builder
@@ -85,10 +87,22 @@ class Season extends Model
     public static function current(): ?self
     {
         return Cache::remember(
-            'season.current', 
+            'season.current',
             now()->addHours(1),
-            fn() => static::active()->first()
+            fn () => static::active()->first()
         );
+    }
+
+    public function openRegistrations(): void
+    {
+        $this->update(['registrations_open' => true]);
+        Cache::forget('season.current');
+    }
+
+    public function closeRegistrations(): void
+    {
+        $this->update(['registrations_open' => false]);
+        Cache::forget('season.current');
     }
 
     protected static function booted()

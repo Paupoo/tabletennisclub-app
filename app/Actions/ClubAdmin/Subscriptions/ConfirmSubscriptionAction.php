@@ -16,7 +16,7 @@ class ConfirmSubscriptionAction
             $subscription->confirm();
         } catch (\Throwable $th) {
             return back()
-                ->withErrors(['errror' => $th->getMessage()]);
+                ->withErrors(['error' => $th->getMessage()]);
         }
 
         return back()

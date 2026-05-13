@@ -78,7 +78,6 @@
                     <x-menu-item icon="o-star" link="{{ route('admin.user.event-subscription', $user) }}" title="{{ __('My registrations') }}" />
                     <x-menu-item icon="o-calendar-days" link="{{ route('admin.user.calendar', $user) }}" title="{{ __('Calendar') }}" />
                     <x-menu-item icon="o-credit-card" link="{{ route('admin.user.registration-management', $user) }}" title="{{ __('Affiliation') }}" />
-                    <x-menu-item disabled icon="o-lock-closed" title="{{ __('Affiliation') }}" />
                     <x-menu-item icon="o-cog-8-tooth" :link="route('admin.user.settings', $user)" title="{{ __('Settings') }}" />
                     <x-menu-separator />
                     <livewire:actions.logout />

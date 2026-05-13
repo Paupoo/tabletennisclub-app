@@ -28,8 +28,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('training_packs', function (Blueprint $table) {
-            $table->enum('level', array_column(TrainingLevel::cases(), 'name'));
-            $table->enum('type', array_column(TrainingType::cases(), 'name'));
+            $table->enum('level', array_column(TrainingLevel::cases(), 'value'));
+            $table->enum('type', array_column(TrainingType::cases(), 'value'));
             $table->foreignIdFor(Room::class)->constrained();
             $table->unsignedBigInteger('trainer_id')->nullable();
 

@@ -5,17 +5,26 @@ declare(strict_types=1);
 namespace App\Actions\ClubAdmin\Subscriptions;
 
 use App\Models\ClubAdmin\Subscription\Subscription;
-use App\Models\Season;
-use App\Models\User;
+use App\Models\ClubAdmin\Users\User;
+use App\Models\ClubEvents\Interclub\Season;
+
 
 class CreateSubscriptionAction
 {
     public function execute(User $user, Season $season, array $options = []): Subscription
     {
+        if (! $season->is_active) {
+            throw new \DomainException('Cannot subscribe to an inactive season');
+        }
+
+        if (! $season->registrations_open) {
+            throw new \DomainException('Registrations are currently closed');
+        }
+        
         // Vérifie qu'il n'existe pas déjà une subscription pour cette saison
         $existing = Subscription::where('user_id', $user->id)
             ->where('season_id', $season->id)
-            ->whereNotIn('status', ['canceled'])
+            ->whereNotIn('status', ['cancelled'])
             ->first();
 
         if ($existing) {

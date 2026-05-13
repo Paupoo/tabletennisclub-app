@@ -85,6 +85,21 @@ class Subscription extends Model implements PayableInterface
         return $this->getCurrentState()->canGeneratePayment($this);
     }
 
+    /**
+     * Check if a user can subscribe to this season (i.e. no active subscription for this season and season is active)
+     */
+    public function canUserSubscribe(User $user): bool
+    {
+        if (!$this->is_active) {
+            return false;
+        }
+
+        return !Subscription::where('user_id', $user->id)
+            ->where('season_id', $this->id)
+            ->whereNotIn('status', ['cancelled'])
+            ->exists();
+    }
+
     // ==================== Status ====================
     public function confirm(): void
     {

@@ -2,68 +2,374 @@
 
 declare(strict_types=1);
 
+use App\Mail\PaymentInvitationEmail;
+use App\Models\ClubAdmin\Payment\Payment;
+use App\Models\ClubAdmin\Payment\Transaction;
+use App\Models\ClubAdmin\Subscription\Subscription;
 use App\Support\Breadcrumb;
+use Illuminate\Support\Facades\Mail;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
+use Livewire\Attributes\Computed;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 use Mary\Traits\Toast;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 
 new class extends Component
 {
-    use Toast;
+    use Toast, WithFileUploads;
 
-    // Pour le fichier CSV (nécessite le trait WithFileUploads)
-    public $csvFile;
+    public $importFile;
+    public bool $importModal        = false;
+    public bool $reconcileModal     = false;
+    public bool $batchModal         = false;
+    public ?int $reconcilePaymentId    = null;
+    public ?int $selectedTransactionId = null;
+    public array $batchMatches      = [];
+    public string $search           = '';
+    public string $statusFilter     = 'pending';
 
-    // État de la modal d'importation
-    public bool $importModal = false;
+    // ==================== Actions ====================
 
-    public string $search = '';
+    public function sendReminder(int $paymentId): void
+    {
+        $payment = Payment::with(['payable.user', 'payable.season'])->find($paymentId);
 
-    public string $statusFilter = 'pending'; // 'pending' ou 'paid'
+        if (! $payment?->payable?->user) {
+            $this->error(__('Could not find user for this payment.'));
+            return;
+        }
+
+        Mail::to($payment->payable->user)->send(new PaymentInvitationEmail($payment));
+        $payment->increment('invitation_counter');
+
+        $this->success(__('Reminder sent to :email.', ['email' => $payment->payable->user->email]));
+    }
+
+    public function openReconcile(int $paymentId): void
+    {
+        $this->reconcilePaymentId    = $paymentId;
+        $this->selectedTransactionId = null;
+        $this->reconcileModal        = true;
+    }
+
+    public function confirmReconcile(): void
+    {
+        if (! $this->reconcilePaymentId || ! $this->selectedTransactionId) {
+            $this->error(__('Please select a transaction.'));
+            return;
+        }
+
+        $payment     = Payment::findOrFail($this->reconcilePaymentId);
+        $transaction = Transaction::findOrFail($this->selectedTransactionId);
+
+        $payment->update([
+            'transaction_id' => $transaction->id,
+            'amount_paid'    => $transaction->amount,
+            'status'         => 'paid',
+        ]);
+
+        if ($payment->payable instanceof Subscription) {
+            $payment->payable->update(['amount_paid' => $transaction->amount]);
+            $payment->payable->markAsPaid();
+        }
+
+        $this->reconcileModal        = false;
+        $this->reconcilePaymentId    = null;
+        $this->selectedTransactionId = null;
+        $this->success(__('Payment reconciled successfully.'));
+    }
+
+    public function processImport(): void
+    {
+        $this->validate(['importFile' => 'required|file|mimes:ods,xlsx,xls,csv,txt']);
+
+        $path = $this->importFile->getRealPath();
+
+        try {
+            $spreadsheet = IOFactory::load($path);
+            $sheet       = $spreadsheet->getActiveSheet();
+            $rows        = $sheet->toArray(null, true, true, true);
+
+            if (empty($rows)) {
+                $this->error(__('Empty or invalid file.'));
+                return;
+            }
+
+            $headerRow = array_shift($rows);
+            $header    = array_map(fn ($h) => $this->normalizeHeader($h ?? ''), $headerRow);
+
+            $importedCount = 0;
+
+            foreach ($rows as $row) {
+                $row      = array_map(fn ($v) => ($v === null || trim((string) $v) === '') ? null : trim((string) $v), $row);
+                $row      = array_pad(array_slice($row, 0, count($header)), count($header), null);
+                $rowAssoc = array_combine($header, $row);
+
+                if ($rowAssoc === false) {
+                    continue;
+                }
+
+                try {
+                    Transaction::create([
+                        'date'                      => $this->parseDate($rowAssoc['date'] ?? null),
+                        'description'               => $rowAssoc['description'] ?? null,
+                        'amount'                    => $this->parseAmount($rowAssoc['montant'] ?? $rowAssoc['amount'] ?? null),
+                        'counterparty_name'         => $rowAssoc['nom contrepartie'] ?? null,
+                        'counterparty_bank_account' => $rowAssoc['numero de compte contrepartie'] ?? null,
+                        'structured_reference'      => $rowAssoc['communication structuree'] ?? null,
+                        'free_reference'            => $rowAssoc['communication libre'] ?? null,
+                    ]);
+                    $importedCount++;
+                } catch (\Exception) {
+                    continue;
+                }
+            }
+
+            $this->importModal = false;
+            $this->importFile  = null;
+            $this->success(__(':count transactions imported successfully.', ['count' => $importedCount]));
+        } catch (\Exception $e) {
+            $this->error(__('Error reading file: :message', ['message' => $e->getMessage()]));
+        }
+    }
+
+    // ==================== Data ====================
+
+    #[Computed]
+    public function stats(): array
+    {
+        return [
+            'pending_count' => Payment::where('status', 'pending')->count(),
+            'pending_total' => round(Payment::where('status', 'pending')->sum('amount_due') / 100, 2),
+            'paid_count'    => Payment::where('status', 'paid')->count(),
+            'paid_total'    => round(Payment::where('status', 'paid')->sum('amount_paid') / 100, 2),
+        ];
+    }
 
     public function headers(): array
     {
         return [
-            ['key' => 'comm', 'label' => __('Reference')],
-            ['key' => 'family', 'label' => __('Family')],
-            ['key' => 'amount', 'label' => __('Amount')],
-            ['key' => 'date', 'label' => __('Date')],
+            ['key' => 'reference',  'label' => __('Reference')],
+            ['key' => 'member',     'label' => __('Member')],
+            ['key' => 'amount_due', 'label' => __('Amount')],
+            ['key' => 'created_at', 'label' => __('Date')],
         ];
-    }
-
-    public function markAsPaid(int $id): void
-    {
-        // Logique de mise à jour en BDD...
-        $this->success('Paiement validé avec succès.');
     }
 
     public function payments(): Collection
     {
-        $data = collect([
-            (object) ['id' => 1, 'family' => 'Dupont', 'amount' => 280, 'comm' => '+++123/4567/89012+++', 'status' => 'pending', 'date' => '2023-09-01'],
-            (object) ['id' => 2, 'family' => 'Martin', 'amount' => 110, 'comm' => '+++987/6543/21098+++', 'status' => 'pending', 'date' => '2023-09-02'],
-            (object) ['id' => 3, 'family' => 'Peeters', 'amount' => 150, 'comm' => '+++111/2222/33334+++', 'status' => 'paid', 'date' => '2023-08-25'],
-        ]);
+        return Payment::with(['payable.user'])
+            ->where('status', $this->statusFilter)
+            ->when($this->search, fn ($q) => $q
+                ->where('reference', 'like', "%{$this->search}%")
+                ->orWhereHas('payable.user', fn ($u) => $u
+                    ->where('first_name', 'like', "%{$this->search}%")
+                    ->orWhere('last_name', 'like', "%{$this->search}%")
+                )
+            )
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(fn (Payment $p) => (object) [
+                'id'                  => $p->id,
+                'reference'           => $p->reference,
+                'member'              => $p->payable?->user
+                    ? $p->payable->user->first_name . ' ' . $p->payable->user->last_name
+                    : '—',
+                'amount_due'          => $p->amount_due,
+                'amount_paid'         => $p->amount_paid,
+                'status'              => $p->status,
+                'created_at'          => $p->created_at,
+                'invitation_counter'  => $p->invitation_counter,
+            ]);
+    }
 
-        return $data
-            ->filter(fn ($p) => $p->status === $this->statusFilter)
-            ->when($this->search, function ($collection) {
-                return $collection->filter(
-                    fn ($p) => str_contains(strtolower($p->family), strtolower($this->search)) ||
-                        str_contains($p->comm, $this->search)
-                );
-            });
+    public function pendingTransactions(): Collection
+    {
+        $payment = $this->reconcilePaymentId ? Payment::find($this->reconcilePaymentId) : null;
+        $normalizedPayRef = $payment ? $this->normalizeReference($payment->reference) : null;
+
+        return Transaction::whereDoesntHave('payment')
+            ->where('amount', '>', 0)
+            ->orderBy('date', 'desc')
+            ->get()
+            ->map(function (Transaction $t) use ($payment, $normalizedPayRef) {
+                if (! $payment) {
+                    $t->match_score = 'none';
+                    return $t;
+                }
+
+                $normalizedTransRef = $this->normalizeReference($t->structured_reference ?? '');
+                $refMatch    = $normalizedPayRef && $normalizedTransRef && $normalizedPayRef === $normalizedTransRef;
+                $amountMatch = abs($t->amount - $payment->amount_due) < 0.01;
+
+                $t->match_score = match (true) {
+                    $refMatch && $amountMatch => 'perfect',
+                    $refMatch                 => 'reference',
+                    $amountMatch              => 'amount',
+                    default                   => 'none',
+                };
+
+                return $t;
+            })
+            ->sortByDesc(fn ($t) => match ($t->match_score) {
+                'perfect'   => 3,
+                'reference' => 2,
+                'amount'    => 1,
+                default     => 0,
+            })
+            ->values();
+    }
+
+    public function previewBatchMatch(): void
+    {
+        $pendingPayments = Payment::with(['payable.user'])
+            ->where('status', 'pending')
+            ->whereNull('transaction_id')
+            ->get();
+
+        $unreconciledTransactions = Transaction::whereDoesntHave('payment')
+            ->where('amount', '>', 0)
+            ->get()
+            ->keyBy(fn ($t) => $this->normalizeReference($t->structured_reference ?? '___'.$t->id));
+
+        $this->batchMatches = [];
+
+        foreach ($pendingPayments as $payment) {
+            $normalizedRef = $this->normalizeReference($payment->reference);
+            if (! $normalizedRef) {
+                continue;
+            }
+
+            $transaction = $unreconciledTransactions->get($normalizedRef);
+
+            if ($transaction && abs($transaction->amount - $payment->amount_due) < 0.01) {
+                $this->batchMatches[] = [
+                    'payment_id'       => $payment->id,
+                    'transaction_id'   => $transaction->id,
+                    'reference'        => $payment->reference,
+                    'member'           => $payment->payable?->user
+                        ? $payment->payable->user->first_name . ' ' . $payment->payable->user->last_name
+                        : '—',
+                    'amount'           => $payment->amount_due,
+                    'transaction_date' => $transaction->date,
+                    'counterparty'     => $transaction->counterparty_name ?? '—',
+                ];
+                // On retire la transaction du pool pour éviter les doublons
+                $unreconciledTransactions->forget($normalizedRef);
+            }
+        }
+
+        if (empty($this->batchMatches)) {
+            $this->warning(__('No perfect matches found. Import a bank statement or reconcile manually.'));
+            return;
+        }
+
+        $this->batchModal = true;
+    }
+
+    public function confirmBatchReconcile(): void
+    {
+        $count = 0;
+        foreach ($this->batchMatches as $match) {
+            $payment     = Payment::find($match['payment_id']);
+            $transaction = Transaction::find($match['transaction_id']);
+
+            if (! $payment || ! $transaction) {
+                continue;
+            }
+
+            $payment->update([
+                'transaction_id' => $transaction->id,
+                'amount_paid'    => $transaction->amount,
+                'status'         => 'paid',
+            ]);
+
+            if ($payment->payable instanceof Subscription) {
+                $payment->payable->update(['amount_paid' => $transaction->amount]);
+                $payment->payable->markAsPaid();
+            }
+
+            $count++;
+        }
+
+        $this->batchModal   = false;
+        $this->batchMatches = [];
+        $this->success(__(':count payment(s) reconciled successfully.', ['count' => $count]));
     }
 
     public function render(): View
     {
         return $this->view([
-            'headers' => $this->headers(),
-            'payments' => $this->payments(),
-            'statusFilter' => $this->statusFilter,
-            'breadcrumbs' => Breadcrumb::make()->home()->add(__('Payments'), route('admin.users.payments'))
+            'headers'             => $this->headers(),
+            'payments'            => $this->payments(),
+            'pendingTransactions' => $this->reconcileModal ? $this->pendingTransactions() : collect(),
+            'currentPayment'      => $this->reconcilePaymentId
+                ? Payment::with(['payable.user'])->find($this->reconcilePaymentId)
+                : null,
+            'breadcrumbs'         => Breadcrumb::make()
+                ->home()
+                ->current(__('Payments'))
                 ->toArray(),
         ]);
+    }
+
+    private function normalizeReference(string $ref): string
+    {
+        return preg_replace('/[^0-9]/', '', $ref) ?? '';
+    }
+
+    // ==================== Helpers ====================
+
+    private function normalizeHeader(string $h): string
+    {
+        $h       = strtolower(trim($h));
+        $accents = ['é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e', 'à' => 'a', 'â' => 'a', 'ä' => 'a', 'ù' => 'u', 'û' => 'u', 'ü' => 'u', 'ô' => 'o', 'ö' => 'o', 'î' => 'i', 'ï' => 'i', 'ç' => 'c'];
+
+        return str_replace(array_keys($accents), array_values($accents), $h);
+    }
+
+    private function parseAmount(mixed $v): float
+    {
+        if (empty($v)) {
+            return 0;
+        }
+
+        if (is_numeric($v)) {
+            return (float) $v;
+        }
+
+        return (float) str_replace([' ', ','], ['', '.'], (string) $v);
+    }
+
+    private function parseDate(mixed $v): ?string
+    {
+        if (empty($v)) {
+            return null;
+        }
+
+        if (is_numeric($v)) {
+            try {
+                return ExcelDate::excelToDateTimeObject($v)->format('Y-m-d');
+            } catch (\Exception) {
+                return null;
+            }
+        }
+
+        foreach (['d/m/Y', 'Y-m-d', 'd-m-Y', 'd.m.Y'] as $fmt) {
+            try {
+                $d = Carbon::createFromFormat($fmt, (string) $v);
+                if ($d) {
+                    return $d->format('Y-m-d');
+                }
+            } catch (\Exception) {
+                continue;
+            }
+        }
+
+        return null;
     }
 };

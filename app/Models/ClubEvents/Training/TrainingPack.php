@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models\ClubEvents\Training;
 
+use App\Enums\TrainingLevel;
+use App\Enums\TrainingType;
 use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Subscription\Subscription;
 use App\Models\ClubAdmin\Users\User;
@@ -25,8 +27,20 @@ class TrainingPack extends Model
         'season_id',
         'name',
         'price',
+        'level',
+        'type',
         'trainer_id',
         'room_id',
+    ];
+
+    protected $casts = [
+        'season_id' => 'integer',
+        'name' => 'string',
+        'price' => 'integer',
+        'level' => TrainingLevel::class,
+        'type' => TrainingType::class,
+        'trainer_id' => 'integer',
+        'room_id' => 'integer',
     ];
 
     public function price(): Attribute

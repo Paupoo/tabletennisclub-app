@@ -8,15 +8,15 @@
                 class="border-none bg-base-200" />
         </x-slot:middle>
         <x-slot:actions>
-            @if($this->registrationClosed)
+            @if(!$this->registrationClosed)
             <x-button
                 label="{{ __('Register a member') }}"
                 icon="o-user-plus"
                 class="btn-primary btn-sm"
                 @click="$wire.memberDrawer = true" />
             @endif
-            <x-button :label="!$this->registrationClosed ? __('Open Registrations') : __('Close Registrations')"
-                :icon="!$this->registrationClosed ? 'o-lock-open' : 'o-lock-closed'"
+            <x-button :label="$this->registrationClosed ? __('Open Registrations') : __('Close Registrations')"
+                :icon="$this->registrationClosed ? 'o-lock-open' : 'o-lock-closed'"
                 class="btn-outline btn-sm"
                 wire:click="toggleRegistrations" />
 
@@ -64,7 +64,8 @@
     {{-- Modal de traitement --}}
     <x-modal wire:model="reviewModal" title="{{ __('Family File') }} {{ $currentRequest->name ?? '' }}" separator class="backdrop-blur-sm">
 
-        @if($currentRequest)
+        {{-- État 1 : Dossier à traiter (avant validation) --}}
+        @if(!$paymentGenerated && $currentRequest)
         <div class="space-y-6">
             <div>
                 <h3 class="text-xs font-bold opacity-40 uppercase tracking-widest mb-4">{{ __('Members & Trainings') }}</h3>
@@ -79,23 +80,62 @@
                     @endforeach
                 </div>
             </div>
+        </div>
+        @endif
 
-            @if($paymentGenerated)
-            <div class="bg-primary/10 border border-primary/20 p-6 rounded-2xl flex flex-col items-center text-center space-y-4">
-                <div class="p-4 bg-white rounded-lg text-black">
-                    <x-icon name="o-qr-code" class="w-24 h-24" />
+        {{-- État 2 : Paiement généré — QR + infos à envoyer --}}
+        @if($paymentGenerated && !empty($paymentData))
+        <div class="space-y-6">
+
+            {{-- QR Code --}}
+            <div class="flex flex-col items-center gap-3">
+                <img src="{{ $paymentData['qr_code'] }}" alt="QR Code" class="w-48 h-48 rounded-xl border border-base-200 shadow" />
+                <p class="text-xs opacity-50 text-center">{{ __('Scan this QR code with your banking app') }}</p>
+            </div>
+
+            <x-menu-separator />
+
+            {{-- Détails bancaires --}}
+            <div class="space-y-3 text-sm">
+                <div class="flex justify-between">
+                    <span class="opacity-60">{{ __('Beneficiary') }}</span>
+                    <span class="font-semibold">{{ $paymentData['beneficiary'] }}</span>
                 </div>
-
-                <div class="w-full text-left space-y-2 pt-2">
-                    <div class="text-sm flex justify-between"><span class="opacity-50">{{ __('IBAN') }}</span> <span class="font-mono">BE45 0001 2345 6789</span></div>
-                    <div class="text-sm flex justify-between"><span class="opacity-50">{{ __('Amount') }}</span> <span class="font-bold text-primary text-lg">€{{ $currentRequest->total_price }}</span></div>
-                    <div class="text-sm flex justify-between items-center py-2 border-t border-primary/10">
-                        <span class="opacity-50">{{ __('Reference') }}</span>
-                        <span class="font-mono bg-base-100 px-2 py-1 rounded border border-primary/20">+++{{ rand(100,999) }}/{{ rand(1000,9999) }}/{{ rand(10000,99999) }}+++</span>
-                    </div>
+                <div class="flex justify-between">
+                    <span class="opacity-60">{{ __('IBAN') }}</span>
+                    <span class="font-mono font-semibold tracking-wide">{{ $paymentData['iban'] }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="opacity-60">{{ __('BIC') }}</span>
+                    <span class="font-mono font-semibold">{{ $paymentData['bic'] }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="opacity-60">{{ __('Structured reference') }}</span>
+                    <span class="font-mono font-bold text-primary">{{ $paymentData['reference'] }}</span>
+                </div>
+                <div class="flex justify-between items-center pt-1 border-t border-base-200">
+                    <span class="font-bold">{{ __('Amount') }}</span>
+                    <span class="text-lg font-black text-primary">{{ $paymentData['amount_due'] }} €</span>
                 </div>
             </div>
-            @endif
+
+            {{-- Avertissement référence --}}
+            <div class="flex gap-2 p-3 rounded-lg bg-warning/10 border border-warning/20 text-xs">
+                <x-icon name="o-exclamation-triangle" class="w-4 h-4 text-warning shrink-0 mt-0.5" />
+                <span class="opacity-80">{{ __('Always include the structured reference when making your transfer so your payment is automatically matched.') }}</span>
+            </div>
+
+            {{-- Destinataire --}}
+            <div class="flex items-center gap-3 p-3 rounded-xl bg-base-200/50 border border-base-300 text-sm">
+                <x-icon name="o-envelope" class="w-4 h-4 opacity-50 shrink-0" />
+                <span class="flex-1 opacity-70">{{ $paymentData['member_name'] }} &lt;{{ $paymentData['member_email'] }}&gt;</span>
+                @if($paymentData['invitation_counter'] > 0)
+                <span class="text-xs opacity-50 italic shrink-0">
+                    {{ __('Sent :n×', ['n' => $paymentData['invitation_counter']]) }}
+                </span>
+                @endif
+            </div>
+
         </div>
         @endif
 
@@ -105,7 +145,7 @@
             <x-button label="{{ __('Approve and Invoice') }}" wire:click="approve" class="btn-primary shadow-lg" />
             @else
             <x-button label="{{ __('Close') }}" @click="$wire.reviewModal = false" class="btn-ghost" />
-            <x-button label="{{ __('Send by email') }}" icon="o-paper-airplane" class="btn-primary" />
+            <x-button label="{{ __('Send by email') }}" icon="o-paper-airplane" class="btn-primary" wire:click="sendPaymentEmail" spinner />
             @endif
         </x-slot:actions>
     </x-modal>

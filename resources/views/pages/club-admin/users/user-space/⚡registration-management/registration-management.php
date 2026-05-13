@@ -2,9 +2,17 @@
 
 declare(strict_types=1);
 
+use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
+use App\Actions\ClubAdmin\Subscriptions\CalculatePriceAction;
+use App\Actions\ClubAdmin\Subscriptions\CreateSubscriptionAction;
 use App\Enums\Gender;
+use App\Enums\TrainingLevel;
+use App\Models\ClubAdmin\Subscription\Subscription;
 use App\Models\Clubadmin\Users\User;
+use App\Models\ClubEvents\Interclub\Season;
+use App\Models\ClubEvents\Training\TrainingPack;
 use App\Support\Breadcrumb;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
@@ -39,6 +47,17 @@ new class extends Component
 
     public array $registrations = [];
 
+    // Subscriptions existantes pour la saison courante, indexées par user_id
+    public array $existingSubscriptions = [];
+
+    // Modal de détails de paiement
+    public bool $paymentModal = false;
+    public array $paymentDetails = [];
+
+    // Modal "Add a family member" — recherche vs création
+    public string $memberSearchQuery = '';
+    public string $memberModalMode   = 'search'; // 'search' | 'create'
+
     public string $selectedTab;
 
     // --- Gestion du panier d'inscriptions ---
@@ -47,13 +66,125 @@ new class extends Component
 
     public function addRegistrationTab(User $user): void
     {
-        // On ajoute le membre au "panier" d'inscriptions
+        $season = Season::current();
+
+        // Cherche une subscription existante (non annulée) pour la saison courante
+        $existing = $season
+            ? Subscription::where('user_id', $user->id)
+                ->where('season_id', $season->id)
+                ->whereNotIn('status', ['cancelled'])
+                ->with('trainingPacks')
+                ->first()
+            : null;
+
+        if ($existing) {
+            $paidPayment = $existing->status === 'paid'
+                ? $existing->payments()->where('status', 'paid')->latest()->first()
+                : null;
+
+            $this->existingSubscriptions[$user->id] = [
+                'status'      => $existing->status,
+                'amount_due'  => $existing->amount_due,
+                'amount_paid' => $paidPayment?->amount_paid ?? 0,
+                'paid_at'     => $paidPayment?->updated_at?->format('d/m/Y'),
+                'formula'     => $existing->is_competitive ? 'competitive' : 'recreative',
+                'trainings'   => $existing->trainingPacks->pluck('id')->map(fn ($id) => (string) $id)->toArray(),
+            ];
+        }
+
         $this->registrations[$user->id] = [
-            'user_id' => $user->id,
-            'name' => $user->first_name . ' ' . $user->last_name,
-            'formula' => 'competition', // Valeur par défaut
-            'trainings' => [],
+            'user_id'   => $user->id,
+            'name'      => $user->first_name . ' ' . $user->last_name,
+            'formula'   => $existing?->is_competitive ? 'competitive' : 'recreative',
+            'trainings' => $existing ? $existing->trainingPacks->pluck('id')->map(fn ($id) => (string) $id)->toArray() : [],
         ];
+    }
+
+    public function confirmSubscription(): void
+    {
+        $season = Season::current();
+        if (! $season) {
+            $this->error(__('No active season found.'));
+            return;
+        }
+
+        if (! $season->registrations_open) {
+            $this->error(__('Registrations are currently closed.'));
+            return;
+        }
+
+        $createAction = new CreateSubscriptionAction;
+        $calculateAction = new CalculatePriceAction;
+
+        foreach ($this->registrations as $userId => $reg) {
+            // Ignore les membres qui ont déjà une subscription active
+            if (isset($this->existingSubscriptions[$userId])) {
+                continue;
+            }
+
+            $user = User::find((int) $userId);
+            $subscription = $createAction->execute($user, $season, [
+                'is_competitive'  => ($reg['formula'] ?? 'recreative') === 'competitive',
+                'trainings_count' => count($reg['trainings'] ?? []),
+            ]);
+
+            if (! empty($reg['trainings'])) {
+                $subscription->trainingPacks()->sync($reg['trainings']);
+            }
+
+            $calculateAction($subscription);
+        }
+
+        $this->success(__('Your registration has been submitted. The club will process it shortly.'));
+    }
+
+    public function openPaymentModal(int $userId): void
+    {
+        $existingSub = $this->existingSubscriptions[$userId] ?? null;
+        if (! $existingSub || $existingSub['status'] !== 'confirmed') {
+            return;
+        }
+
+        $season = Season::current();
+        $subscription = Subscription::where('user_id', $userId)
+            ->where('season_id', $season->id)
+            ->where('status', 'confirmed')
+            ->first();
+
+        $payment = $subscription?->payments()
+            ->where('status', 'pending')
+            ->latest()
+            ->first();
+
+        if (! $payment) {
+            $this->error(__('No payment found. Please contact the club.'));
+
+            return;
+        }
+
+        $this->paymentDetails = [
+            'name'        => $this->registrations[$userId]['name'] ?? '',
+            'reference'   => $payment->reference,
+            'amount_due'  => $payment->amount_due,
+            'iban'        => 'BE23 7323 3320 8791',
+            'bic'         => 'CREGBEBB',
+            'beneficiary' => 'CTT Ottignies-Blocry ASBL',
+            'qr_code'     => (new GeneratePaymentQR)($payment),
+        ];
+        $this->paymentModal = true;
+    }
+
+    public function addExistingMember(int $userId): void
+    {
+        $user = User::find($userId);
+        if (! $user) {
+            return;
+        }
+
+        $this->addRegistrationTab($user);
+        $this->reset(['addMemberModal', 'memberSearchQuery']);
+        $this->memberModalMode = 'search';
+        $this->success(__(':name added to the registration.', ['name' => $user->first_name]));
     }
 
     public function createFamilyMember(): void
@@ -73,9 +204,9 @@ new class extends Component
                 'phone_number' => $this->phone_number ?? User::first()->phone_number,
 
                 // On hérite des infos du parent
-                'street' => User::first()->street,
-                'postal_code' => User::first()->postal_code,
-                'city' => User::first()->city,
+                'street' => Auth::user()->street,
+                'postal_code' => Auth::user()->postal_code,
+                'city' => Auth::user()->city,
 
                 // LA CORRECTION EST ICI 👇
                 'password' => Hash::make(Str::random(16)),
@@ -83,15 +214,15 @@ new class extends Component
 
         $this->addRegistrationTab($newMember);
 
-        // Reset du modal
-        $this->reset(['new_first_name', 'new_last_name', 'new_birthdate', 'new_gender', 'addMemberModal']);
-        $this->success('Membre ajouté avec succès !');
+        $this->reset(['new_first_name', 'new_last_name', 'new_birthdate', 'new_gender', 'new_email', 'new_phone_number', 'addMemberModal', 'memberSearchQuery']);
+        $this->memberModalMode = 'search';
+        $this->success(__('Member added successfully!'));
     }
 
     public function mount(): void
     {
         // On initialise avec le membre connecté par défaut
-        $this->user = User::first();
+        $this->user = Auth::user();
         $this->addRegistrationTab($this->user);
         $this->selectedTab = (string) 'tab-' . $this->user->id;
     }
@@ -137,7 +268,21 @@ new class extends Component
 
     public function with(): array
     {
+        $season = Season::current();
+        $alreadyAddedIds = array_keys($this->registrations);
+
         return [
+            'registrationsOpen' => $season?->registrations_open ?? false,
+            'memberSearchResults' => strlen($this->memberSearchQuery) >= 2
+                ? User::where(function ($q) {
+                    $q->where('first_name', 'like', "%{$this->memberSearchQuery}%")
+                      ->orWhere('last_name', 'like', "%{$this->memberSearchQuery}%")
+                      ->orWhere('email', 'like', "%{$this->memberSearchQuery}%");
+                })
+                ->whereNotIn('id', $alreadyAddedIds)
+                ->limit(6)
+                ->get()
+                : collect(),
             'breadcrumbs' => Breadcrumb::make()
                 ->home()
                 ->current(__('Registration management'))
@@ -147,48 +292,28 @@ new class extends Component
                 ['id' => 'recreative', 'value' => 'recreative'],
             ]),
             'genders' => Gender::options(),
-            'trainings' => [
-                [
-                    'id' => 1,
-                    'day' => 'Monday',
-                    'time' => '18:00 - 20:00',
-                    'coach' => 'Coach Jean',
-                    'level' => __('D & E series'),
-                    'dot_color' => 'bg-info',
-                    'spots' => 4,
-                    'full' => false,
-                ],
-                [
-                    'id' => 2,
-                    'day' => 'Wednesday',
-                    'time' => '14:00 - 16:00',
-                    'coach' => 'Coach Sarah',
-                    'level' => __('Juniors (U12)'),
-                    'dot_color' => 'bg-warning',
-                    'spots' => 2,
-                    'full' => false,
-                ],
-                [
-                    'id' => 3,
-                    'day' => 'Wednesday',
-                    'time' => '18:00 - 20:00',
-                    'coach' => 'Coach Sarah',
-                    'level' => __('Advanced (B & C)'),
-                    'dot_color' => 'bg-error',
-                    'spots' => 0,
-                    'full' => true,
-                ],
-                [
-                    'id' => 4,
-                    'day' => 'Friday',
-                    'time' => '19:00 - 21:00',
-                    'coach' => 'Coach Marc',
-                    'level' => __('Beginners / Fun'),
-                    'dot_color' => 'bg-success',
-                    'spots' => 12,
-                    'full' => false,
-                ],
-            ],
+            'trainings' => TrainingPack::with('trainer')
+                ->where('season_id', $season?->id)
+                ->get()
+                ->map(fn (TrainingPack $pack) => [
+                    'id'        => $pack->id,
+                    'day'       => $pack->name,
+                    'time'      => $pack->type->value,
+                    'coach'     => $pack->trainer
+                        ? $pack->trainer->first_name . ' ' . $pack->trainer->last_name
+                        : '—',
+                    'level'     => $pack->level->value,
+                    'dot_color' => match ($pack->level) {
+                        TrainingLevel::ELITE, TrainingLevel::INTERMEDIATE => 'bg-error',
+                        TrainingLevel::YOUNG_POTENTIAL                    => 'bg-info',
+                        TrainingLevel::KIDS                               => 'bg-warning',
+                        TrainingLevel::BEGINNERS                          => 'bg-success',
+                        default                                           => 'bg-primary',
+                    },
+                    'spots' => 99,
+                    'full'  => false,
+                ])
+                ->toArray(),
         ];
     }
 };

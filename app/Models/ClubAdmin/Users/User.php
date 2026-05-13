@@ -177,6 +177,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'avatar_url',
         'theme',
         'committee_role',
+        'force_list',
     ];
 
     /**

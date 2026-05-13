@@ -141,58 +141,84 @@
 
             {{-- Équipes --}}
             <x-card title="{{ __('My Teams') }}" icon="o-user-group" shadow separator>
-                <x-tabs wire:model="activeTeamTab">
-                    @foreach($user->teams as $team)
-                        <x-tab name="team-{{ $team->id }}" label="{{ $team->name }}" icon="o-user-group">
+                @if($user->teams->isEmpty())
+                    <div class="flex flex-col items-center gap-3 py-10 text-center">
+                        <x-icon name="o-user-group" class="h-10 w-10 opacity-20" />
+                        <p class="text-sm text-gray-400">Vous ne faites partie d'aucune équipe cette saison.</p>
+                    </div>
+                @else
+                    @php
+                        $categoryLabels = [
+                            'MEN'      => 'Hommes',
+                            'VETERANS' => 'Vétérans',
+                            'WOMEN'    => 'Dames',
+                        ];
+                    @endphp
+                    <x-tabs wire:model="activeTeamTab">
+                        @foreach($user->teams as $team)
+                            @php
+                                $rawCategory  = $team->league?->category ?? '';
+                                $frenchCat    = $categoryLabels[$rawCategory] ?? $rawCategory;
+                                $tabLabel     = $team->name . ($frenchCat ? ' — ' . $frenchCat : '');
+                                $clubName     = $team->club?->name ?? '';
+                                $seasonName   = $team->season?->name ?? '';
+                                $division     = implode(' – ', array_filter([
+                                    $team->league?->level,
+                                    $team->league?->division,
+                                ]));
+                            @endphp
+                            <x-tab name="team-{{ $team->id }}" label="{{ $tabLabel }}" icon="o-user-group">
 
-                            <div class="flex items-center justify-between mb-4 pt-2">
-                                <div>
-                                    <p class="text-base font-bold">Ottignies-Blocry · {{ $team->name }}</p>
+                                <div class="mb-4 pt-2">
+                                    <p class="text-base font-bold">
+                                        {{ trim($clubName . ' ' . $team->name) ?: $team->name }}
+                                    </p>
                                     <p class="text-xs opacity-50">
-                                        {{ $team->league->category ?? 'Division 3' }} · {{ __('Season 2025–2026') }}
+                                        {{ implode(' · ', array_filter([$frenchCat, $division, $seasonName ? 'Saison ' . $seasonName : ''])) ?: '—' }}
                                     </p>
                                 </div>
-                            </div>
 
-                            <div class="grid grid-cols-2 gap-2">
-                                @foreach ($team->users as $mate)
-                                    @php $isYou = $mate->id === Auth::id(); @endphp
-                                    <div @class([
-                                        'flex items-center justify-between p-2 rounded-lg border transition-all',
-                                        'bg-primary/5 border-primary/20 ring-1 ring-primary/30' => $isYou,
-                                        'bg-base-200/40 border-base-200/50 hover:shadow-sm'    => !$isYou,
-                                    ])>
-                                        <div class="flex items-center gap-3">
-                                            <x-avatar class="!w-7 !rounded-full"
-                                                :image="$mate->photo ?? '/images/empty-user.jpg'" />
-                                            <div>
-                                                <div class="flex items-center gap-1.5">
-                                                    <span class="text-sm font-semibold leading-none">
-                                                        {{ $mate->first_name }} {{ $mate->last_name }}
-                                                    </span>
-                                                    @if ($isYou)
-                                                        <span class="text-[9px] font-black uppercase tracking-widest opacity-40">
-                                                            {{ __('(you)') }}
+                                <div class="grid grid-cols-2 gap-2">
+                                    @foreach ($team->users as $mate)
+                                        @php $isYou = $mate->id === Auth::id(); @endphp
+                                        <div @class([
+                                            'flex items-center justify-between p-2 rounded-lg border transition-all',
+                                            'bg-primary/5 border-primary/20 ring-1 ring-primary/30' => $isYou,
+                                            'bg-base-200/40 border-base-200/50 hover:shadow-sm'    => !$isYou,
+                                        ])>
+                                            <div class="flex items-center gap-3">
+                                                <x-avatar class="!w-7 !rounded-full"
+                                                    :image="$mate->photo ?? '/images/empty-user.jpg'" />
+                                                <div>
+                                                    <div class="flex items-center gap-1.5">
+                                                        <span class="text-sm font-semibold leading-none">
+                                                            {{ $mate->first_name }} {{ $mate->last_name }}
                                                         </span>
-                                                    @endif
+                                                        @if ($isYou)
+                                                            <span class="text-[9px] font-black uppercase tracking-widest opacity-40">
+                                                                {{ __('(you)') }}
+                                                            </span>
+                                                        @endif
+                                                    </div>
+                                                    <span class="text-[10px] opacity-40 font-black uppercase">
+                                                        {{ $mate->ranking }}
+                                                    </span>
                                                 </div>
-                                                <span class="text-[10px] opacity-40 font-black uppercase">
-                                                    {{ $mate->ranking }}
-                                                </span>
                                             </div>
                                         </div>
-                                    </div>
-                                @endforeach
-                            </div>
+                                    @endforeach
+                                </div>
 
-                            <div class="mt-4 flex justify-end">
-                                <x-button label="{{ __('Team page') }}" icon="o-arrow-right"
-                                    class="btn-ghost btn-sm text-xs opacity-50" />
-                            </div>
+                                <div class="mt-4 flex justify-end">
+                                    <x-button label="{{ __('Team page') }}" icon="o-arrow-right"
+                                        class="btn-ghost btn-sm text-xs opacity-50"
+                                        link="{{ route('admin.interclubs.teams.show', $team->id) }}" />
+                                </div>
 
-                        </x-tab>
-                    @endforeach
-                </x-tabs>
+                            </x-tab>
+                        @endforeach
+                    </x-tabs>
+                @endif
             </x-card>
 
             {{-- Historique --}}

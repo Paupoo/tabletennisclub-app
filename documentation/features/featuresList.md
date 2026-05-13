@@ -23,6 +23,7 @@
     - [x] **Gestion des membres club**  : Afficher tous les membres, les cherches, afficheur leurs infos principales
     - [x] **Gestion du profil**  : Permettre aux membres d'adapter certaines informations (avatars, info de contacts,...) 
     - [x] **Migration to Laravel 13** : Migration technique sur la dernière version du framework
+    - [x] **Gestion des équipes**: Composer rapidement les équipes et les noyaux en début de saisons et les modifier. Nomination des capitaines.
 - [ ] **Stabilisation des features existantes** : Débugage, optimization et création de test pour les features. Refonte architecturale. Suppression du code obsolète.
 
 ### 🗓️ Moyen Terme (v1.x)

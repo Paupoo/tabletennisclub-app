@@ -6,7 +6,6 @@ use App\Enums\CommitteeRolesEnum;
 use App\Enums\Gender;
 use App\Models\ClubAdmin\Users\User;
 use App\Support\Breadcrumb;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule as ValidationRule;
@@ -27,8 +26,8 @@ new class extends Component
 {
     use Toast, WithFileUploads;
 
-    #[Rule('nullable')]
-    public Carbon $birthdate;
+    #[Rule('nullable|date')]
+    public ?string $birthdate = null;
 
     #[Rule('required|integer|between:1000,9999')]
     public string $city_code = '';
@@ -143,7 +142,7 @@ new class extends Component
             $this->city_code = $user->city_code;
             $this->city_name = $user->city_name;
             $this->phone_number = $user->phone_number;
-            $this->birthdate = $user->birthdate;
+            $this->birthdate = $user->birthdate?->format('Y-m-d');
             $this->parent_phone_number = $user->parent_phone_number;
             $this->currentPhoto = $user->photo;
             $this->licence_type = $user->is_competitor ? 'competitive' : 'recreative';

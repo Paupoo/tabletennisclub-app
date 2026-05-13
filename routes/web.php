@@ -156,6 +156,9 @@ Route::prefix('admin/club-events/interclubs/')
         Route::livewire('captain-selection', 'pages::club-events.interclubs.captain-selection')->name('admin.interclubs.captain-selection');
         Route::livewire('control-center', 'pages::club-events.interclubs.control-center')->name('admin.interclubs.control-center');
         Route::livewire('teams', 'pages::club-events.interclubs.teams.index')->name('admin.interclubs.teams');
+        Route::livewire('teams/builder', 'pages::club-events.interclubs.teams.builder')->name('admin.interclubs.teams.builder');
+        Route::livewire('teams/{team}', 'pages::club-events.interclubs.teams.show')->name('admin.interclubs.teams.show');
+        Route::livewire('teams/{team}/edit', 'pages::club-events.interclubs.teams.edit')->name('admin.interclubs.teams.edit');
     });
 
 /*
@@ -181,7 +184,7 @@ Route::get('/admin/dashboard', function () {
         'users_total_casuals' => User::where('is_competitor', '=', false)->count(),
         'rooms' => Room::orderby('name')->get(),
         'trainings' => Training::latest()->take(5)->get(),
-        'teams' => Team::all()->load(['captain', 'users','league']),
+        'teams' => Team::all()->load(['captain', 'users', 'league']),
         'breadcrumbs' => Breadcrumb::make()->home()->toArray(),
     ]);
 })->middleware(['auth', 'verified'])

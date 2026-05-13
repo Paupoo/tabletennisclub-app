@@ -126,6 +126,8 @@ new class extends Component
 
     public function with(): array
     {
+        $this->user->loadMissing('teams.league', 'teams.users', 'teams.club', 'teams.season');
+
         return [
             'breadcrumbs' => Breadcrumb::make()->home()->add(__('My profile'), null, null)->toArray(),
         ];

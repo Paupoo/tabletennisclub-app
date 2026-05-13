@@ -36,7 +36,7 @@
                         min="1000" pattern="[0-9]*" type="number" wire:model.live.debounce.500ms="city_code" />
                     <x-input label="{{ __('City') }}" wire:model="city_name" />
                     <x-input label="{{ __('Phone Number') }}" wire:model="phone_number" />
-                    <x-datetime label="{{ __('Birthdate') }}" wire:model="birthdate" />
+                    <x-input label="{{ __('Birthdate') }}" type="date" wire:model="birthdate" />
                     <x-input label="{{ __('Parent or tutor phone number') }}" wire:model="parent_phone_number" />
                     <div>
                         <div wire:key="photo-container-{{ $imageKey }}">

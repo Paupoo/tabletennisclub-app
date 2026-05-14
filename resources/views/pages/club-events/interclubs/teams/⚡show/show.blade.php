@@ -1,4 +1,8 @@
 <div>
+    <x-slot:breadcrumbs>
+        <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
+    </x-slot:breadcrumbs>
+
     <x-header progress-indicator separator
         :title="($team->club?->name ?? '') . ' ' . $team->name">
         <x-slot:actions>
@@ -8,8 +12,6 @@
                 icon="o-pencil" label="Modifier" />
         </x-slot:actions>
     </x-header>
-
-    <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
 
     {{-- ── Fiche équipe ─────────────────────────────────────────────────── --}}
     <div class="mb-8 grid gap-5 lg:grid-cols-3">

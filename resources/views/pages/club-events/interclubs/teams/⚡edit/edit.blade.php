@@ -1,4 +1,8 @@
 <div>
+    <x-slot:breadcrumbs>
+        <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
+    </x-slot:breadcrumbs>
+
     <x-header progress-indicator separator
         :title="'Modifier — ' . ($team->club?->name ?? '') . ' ' . $team->name">
         <x-slot:actions>
@@ -6,8 +10,6 @@
                 icon="o-arrow-left" label="Retour" />
         </x-slot:actions>
     </x-header>
-
-    <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
 
     <div class="grid gap-6 lg:grid-cols-3">
 
@@ -26,8 +28,7 @@
                     @if ($team->league)
                         <div class="rounded-lg bg-gray-50 p-3 text-sm text-gray-600">
                             <p class="font-medium text-gray-800">Ligue</p>
-                            <p class="mt-1">{{ $team->league->level }} · {{ $team->league->division }}</p>
-                            <p class="text-xs text-gray-400">{{ $team->league->category }}</p>
+                            <p class="mt-1">{{ $division }}</p>
                         </div>
                     @endif
 
@@ -64,7 +65,7 @@
                     Désigner parmi le noyau
                 </p>
                 <div class="max-h-48 space-y-1 overflow-y-auto">
-                    @foreach ($competitors->whereIn('id', $memberIds) as $member)
+                    @foreach ($teamMembers as $member)
                         <button
                             wire:click="setCaptain({{ $member->id }})"
                             wire:key="cap-{{ $member->id }}"

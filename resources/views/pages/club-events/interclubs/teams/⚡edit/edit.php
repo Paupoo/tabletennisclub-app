@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Resources\views\Pages\ClubEvents\Interclubs\Teams\Edit;
 
+use App\Enums\Gender;
+use App\Enums\LeagueLevel;
 use App\Enums\TeamName;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\League;
@@ -87,9 +89,27 @@ new class extends Component
 
     public function with(): array
     {
-        $team = Team::with(['league', 'captain', 'users', 'club', 'season'])->findOrFail($this->teamId);
+        $team     = Team::with(['league', 'captain', 'users', 'club', 'season'])->findOrFail($this->teamId);
+        $category = $team->league?->category;
+        $season   = $team->season;
 
+        $levelLabels = array_column(LeagueLevel::cases(), 'value', 'name');
+        $levelLabel  = $levelLabels[$team->league?->level] ?? $team->league?->level;
+        $division    = implode(' – ', array_filter([$levelLabel, $team->league?->division]));
+
+        // Membres actuels de l'équipe — toujours chargés pour le panel capitaine
+        $teamMembers = User::whereIn('id', $this->memberIds)
+            ->orderBy('force_list')
+            ->orderBy('last_name')
+            ->get();
+
+        // Liste complète des candidats, filtrée selon la catégorie de l'équipe
         $competitors = User::where('is_competitor', true)
+            ->when($category === Gender::WOMEN->value, fn ($q) => $q->where('gender', Gender::WOMEN->value))
+            ->when($category === 'VETERANS' && $season?->end_at, function ($q) use ($season) {
+                $cutoff = $season->end_at->copy()->subYears(40);
+                $q->whereNotNull('birthdate')->where('birthdate', '<=', $cutoff->toDateString());
+            })
             ->when($this->memberSearch, fn ($q) => $q->where(fn ($q2) => $q2
                 ->where('first_name', 'like', "%{$this->memberSearch}%")
                 ->orWhere('last_name', 'like', "%{$this->memberSearch}%")
@@ -111,7 +131,9 @@ new class extends Component
                 ->current('Modifier')
                 ->toArray(),
             'team'            => $team,
+            'division'        => $division ?: '—',
             'competitors'     => $competitors,
+            'teamMembers'     => $teamMembers,
             'teamNameOptions' => $teamNameOptions,
         ];
     }

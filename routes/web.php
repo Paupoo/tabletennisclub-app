@@ -159,6 +159,7 @@ Route::prefix('admin/club-events/interclubs/')
         Route::livewire('teams/builder', 'pages::club-events.interclubs.teams.builder')->name('admin.interclubs.teams.builder');
         Route::livewire('teams/{team}', 'pages::club-events.interclubs.teams.show')->name('admin.interclubs.teams.show');
         Route::livewire('teams/{team}/edit', 'pages::club-events.interclubs.teams.edit')->name('admin.interclubs.teams.edit');
+        Route::livewire('results', 'pages::club-events.interclubs.results')->name('admin.interclubs.results');
     });
 
 /*

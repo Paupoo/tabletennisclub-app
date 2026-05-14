@@ -29,7 +29,13 @@
                             <td class="py-3 px-4 hidden md:block">{{ $match['venue'] }}</td>
                             <td class="py-3 px-4 font-mono ">{{ $match['score'] }}</td>
                             <td class="py-3 px-4 hidden md:block">
-                                <span class="@if($match['result'] === 'Victoire') bg-green-100 text-green-800 @elseif($match['result'] === 'Défaite') bg-red-100 text-red-800 @else bg-gray-100 text-gray-800 @endif px-2 py-1 rounded-sm text-sm font-medium">
+                                <span @class([
+                                    'px-2 py-1 rounded-sm text-sm font-medium',
+                                    'bg-green-100 text-green-800' => in_array($match['result'], ['Victoire', 'Forfait Adverse']),
+                                    'bg-red-100 text-red-800'    => in_array($match['result'], ['Défaite', 'Forfait']),
+                                    'bg-orange-100 text-orange-700' => in_array($match['result'], ['Forfait Général', 'Forfait Général Adverse']),
+                                    'bg-gray-100 text-gray-800'  => ! in_array($match['result'], ['Victoire', 'Forfait Adverse', 'Défaite', 'Forfait', 'Forfait Général', 'Forfait Général Adverse']),
+                                ])>
                                     {{ $match['result'] }}
                                 </span>
                             </td>

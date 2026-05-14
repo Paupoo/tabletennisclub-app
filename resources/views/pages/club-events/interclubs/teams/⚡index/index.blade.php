@@ -37,24 +37,37 @@
             </div>
         </x-card>
     @else
-        @php $groupedTeams = $teams->groupBy('category'); @endphp
+        @php
+            $groupedTeams = $teams->groupBy('category');
+            $catMeta = [
+                'Hommes'   => ['bg' => 'bg-blue-50',  'border' => 'border-blue-200',  'text' => 'text-blue-700',  'dot' => 'bg-blue-500'],
+                'Vétérans' => ['bg' => 'bg-amber-50', 'border' => 'border-amber-200', 'text' => 'text-amber-700', 'dot' => 'bg-amber-500'],
+                'Dames'    => ['bg' => 'bg-pink-50',  'border' => 'border-pink-200',  'text' => 'text-pink-700',  'dot' => 'bg-pink-500'],
+            ];
+        @endphp
 
-        @foreach ($groupedTeams as $category => $group)
-            <section class="mb-8">
-                <div class="mb-3 flex items-center justify-between">
-                    <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-500">
-                        {{ $category }}
-                    </h2>
-                    <span class="text-xs text-gray-400">{{ $group->count() }} équipe{{ $group->count() > 1 ? 's' : '' }}</span>
-                </div>
+        <div class="space-y-10">
+            @foreach ($groupedTeams as $category => $group)
+                @php $cat = $catMeta[$category] ?? ['bg' => 'bg-gray-50', 'border' => 'border-gray-200', 'text' => 'text-gray-700', 'dot' => 'bg-gray-400']; @endphp
 
-                <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    @foreach ($group as $team)
-                        <x-admin.club-events.teams.team-card :team="$team" wire:key="team-{{ $team->id }}" />
-                    @endforeach
-                </div>
-            </section>
-        @endforeach
+                <section>
+                    <div class="mb-4 flex items-center gap-3">
+                        <span class="inline-flex items-center gap-2 rounded-full {{ $cat['bg'] }} {{ $cat['border'] }} border px-4 py-1.5">
+                            <span class="h-2 w-2 rounded-full {{ $cat['dot'] }}"></span>
+                            <span class="text-sm font-bold {{ $cat['text'] }} uppercase tracking-wide">{{ $category }}</span>
+                            <span class="text-xs {{ $cat['text'] }} opacity-60">{{ $group->count() }} équipe{{ $group->count() > 1 ? 's' : '' }}</span>
+                        </span>
+                        <div class="flex-1 border-t {{ $cat['border'] }}"></div>
+                    </div>
+
+                    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                        @foreach ($group as $team)
+                            <x-admin.club-events.teams.team-card :team="$team" wire:key="team-{{ $team->id }}" />
+                        @endforeach
+                    </div>
+                </section>
+            @endforeach
+        </div>
     @endif
 
     {{-- Modal création libre --}}

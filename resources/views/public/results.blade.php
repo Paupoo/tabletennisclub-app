@@ -32,8 +32,28 @@
 
     <!-- Results Content -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
-        @forelse($teams ?? [] as $team)
-            <x-public.team-results :team="$team" />
+        @forelse($teamsByCategory ?? [] as $group)
+            @php
+                $catStyles = [
+                    'MEN'      => ['border' => 'border-blue-200',  'bg' => 'bg-blue-50',  'text' => 'text-blue-700',  'dot' => 'bg-blue-500'],
+                    'WOMEN'    => ['border' => 'border-pink-200',  'bg' => 'bg-pink-50',  'text' => 'text-pink-700',  'dot' => 'bg-pink-500'],
+                    'VETERANS' => ['border' => 'border-amber-200', 'bg' => 'bg-amber-50', 'text' => 'text-amber-700', 'dot' => 'bg-amber-500'],
+                ];
+                $style = $catStyles[$group['category']] ?? $catStyles['MEN'];
+            @endphp
+
+            {{-- Category separator --}}
+            <div class="flex items-center gap-4 mb-8 mt-10 first:mt-0">
+                <span class="inline-flex items-center gap-2 rounded-full {{ $style['bg'] }} border {{ $style['border'] }} px-5 py-2 shadow-xs">
+                    <span class="h-2.5 w-2.5 rounded-full {{ $style['dot'] }}"></span>
+                    <span class="text-base font-bold {{ $style['text'] }} tracking-wide">{{ $group['label'] }}</span>
+                </span>
+                <div class="flex-1 border-t {{ $style['border'] }}"></div>
+            </div>
+
+            @foreach($group['teams'] as $team)
+                <x-public.team-results :team="$team" />
+            @endforeach
         @empty
             <div class="text-center py-12 bg-gray-50 rounded-lg">
                 <h3 class="text-lg font-medium text-gray-900 mb-2">Aucun résultat disponible</h3>

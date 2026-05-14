@@ -162,10 +162,9 @@ new class extends Component
                 $rawCategory = $team->league?->category ?? '';
                 $category    = $categoryLabels[$rawCategory] ?? $rawCategory;
 
-                $division = implode(' – ', array_filter([
-                    $team->league?->level,
-                    $team->league?->division,
-                ]));
+                $levelLabels = array_column(LeagueLevel::cases(), 'value', 'name');
+                $levelLabel  = $levelLabels[$team->league?->level] ?? $team->league?->level;
+                $division    = implode(' – ', array_filter([$levelLabel, $team->league?->division]));
 
                 return (object) [
                     'id'            => $team->id,

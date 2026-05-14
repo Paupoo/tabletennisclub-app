@@ -57,6 +57,11 @@ class Breadcrumb
         return $this->add('Profile', $url ?: route('profile.edit'));
     }
 
+    public function results(?string $url = null): Breadcrumb
+    {
+        return $this->add(__('Results'), $url ?: route('admin.interclubs.results'));
+    }
+
     public function rooms(?string $url = null): Breadcrumb
     {
         return $this->add('Rooms', $url ?: route('admin.rooms.index'));

@@ -386,5 +386,7 @@ class DatabaseSeeder extends Seeder
         $this->call(SubscriptionSeeder::class);
 
         $this->call(PaymentSeeder::class);
+
+        $this->call(InterclubResultsSeeder::class);
     }
 }

@@ -21,6 +21,7 @@ use Illuminate\Support\Carbon;
  * @property int|null $club_id
  * @property int|null $captain_id
  * @property int $season_id
+ * @property string|null $final_position
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read User|null $captain
@@ -28,6 +29,8 @@ use Illuminate\Support\Carbon;
  * @property-read Collection<int, Interclub> $interclubs
  * @property-read int|null $interclubs_count
  * @property-read League|null $league
+ * @property-read Collection<int, MatchResult> $matchResults
+ * @property-read int|null $match_results_count
  * @property-read Season $season
  * @property-read Collection<int, User> $users
  * @property-read int|null $users_count
@@ -60,6 +63,7 @@ class Team extends Model
     protected $fillable = [
         'captain_id',
         'club_id',
+        'final_position',
         'league_id',
         'name',
         'season_id',
@@ -83,6 +87,11 @@ class Team extends Model
     public function league(): BelongsTo
     {
         return $this->belongsTo(League::class);
+    }
+
+    public function matchResults(): HasMany
+    {
+        return $this->hasMany(MatchResult::class);
     }
 
     public function scopeInClub(Builder $query): void

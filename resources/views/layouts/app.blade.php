@@ -112,7 +112,7 @@
                     <x-menu-item icon="o-identification" link="{{ route('admin.interclubs.teams') }}" title="{{ __('Teams') }}" />
                     <x-menu-item icon="o-user-group" link="{{ route('admin.interclubs.captain-selection') }}" title="{{ __('Selections') }}" />
                     <x-menu-item icon="o-eye" link="{{ route('admin.interclubs.control-center') }}" title="{{ __('Control Center') }}" />
-                    <x-menu-item icon="o-squares-2x2" link="" title="{{ __('Results') }}" />
+                    <x-menu-item icon="o-squares-2x2" link="{{ route('admin.interclubs.results') }}" title="{{ __('Results') }}" />
                     {{-- <x-menu-item title="Archives" icon="o-archive-box" link="####" /> --}}
                 </x-menu-sub>
 

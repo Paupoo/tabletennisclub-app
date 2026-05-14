@@ -123,9 +123,10 @@
 
                 <x-menu-separator />
 
-                <x-menu-sub icon="o-globe-alt" link="#" title="{{ __('Website') }}">
-                    <x-menu-item icon="o-envelope-open" link="#" title="{{ __('Contacts') }}" />
-                    <x-menu-item icon="o-newspaper" link="#" title="{{ __('News') }}" />
+                <x-menu-sub icon="o-globe-alt" title="{{ __('Website') }}">
+                    <x-menu-item icon="o-newspaper" link="{{ route('admin.website.articles.index') }}" title="{{ __('Articles') }}" />
+                    <x-menu-item icon="o-envelope-open" link="{{ route('admin.website.contacts.index') }}" title="{{ __('Contacts') }}" />
+                    <x-menu-item icon="o-shield-exclamation" link="{{ route('admin.website.spams.index') }}" title="{{ __('Spam') }}" />
                 </x-menu-sub>
 
                 <x-menu-separator />

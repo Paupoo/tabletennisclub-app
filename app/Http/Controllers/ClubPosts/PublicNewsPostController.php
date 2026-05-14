@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ClubPosts\NewsPost;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class PublicNewsPostController extends Controller
 {
@@ -29,7 +30,11 @@ class PublicNewsPostController extends Controller
             ->take(3)
             ->get();
 
-        return view('public.articles.show', compact('article', 'relatedArticles'));
+        return view('public.articles.show', [
+            'article' => $article,
+            'renderedContent' => Str::markdown($article->content ?? ''),
+            'relatedArticles' => $relatedArticles,
+        ]);
     }
 
     private function getFullArticleContent(string $slug): ?array

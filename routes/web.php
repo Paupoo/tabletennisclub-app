@@ -9,14 +9,11 @@ use App\Actions\ClubAdmin\Subscriptions\MarkPaidSubscriptionAction;
 use App\Actions\ClubAdmin\Subscriptions\MarkRefundSubscriptionAction;
 use App\Actions\ClubAdmin\Subscriptions\SubscribeToSeasonAction;
 use App\Actions\ClubAdmin\Subscriptions\UnconfirmSubscriptionAction;
-use App\Actions\User\CreateNewUserAction;
 use App\Actions\User\InviteExistingUserAction;
 use App\Http\Controllers\ClubAdmin\Club\RoomController;
 use App\Http\Controllers\ClubAdmin\Club\TableController;
-use App\Http\Controllers\ClubAdmin\Contact\ContactAdminController;
 use App\Http\Controllers\ClubAdmin\Contact\ContactController;
 use App\Http\Controllers\ClubAdmin\Contact\InvitationController;
-use App\Http\Controllers\ClubAdmin\Contact\SpamController;
 use App\Http\Controllers\ClubAdmin\Payment\PaymentController;
 use App\Http\Controllers\ClubAdmin\Payment\TransactionController;
 use App\Http\Controllers\ClubAdmin\Subscription\RegistrationController;
@@ -34,7 +31,6 @@ use App\Http\Controllers\ClubEvents\Tournament\TournamentController;
 use App\Http\Controllers\ClubEvents\Training\TrainingController;
 use App\Http\Controllers\ClubEvents\Training\TrainingPackController;
 use App\Http\Controllers\ClubPosts\AdminEventPostController;
-use App\Http\Controllers\ClubPosts\AdminNewsPostController;
 use App\Http\Controllers\ClubPosts\PublicEventPostController;
 use App\Http\Controllers\ClubPosts\PublicNewsPostController;
 use App\Http\Controllers\HomeController;
@@ -203,12 +199,6 @@ Route::resource('/clubAdmin/club/rooms', RoomController::class)->middleware(['au
  * This route is protected by authentication and verification middleware.
  */
 Route::prefix('clubPosts')->middleware('auth')->group(function (): void {
-    // Admin NewsPosts
-    Route::resource('newsPosts', AdminNewsPostController::class)->names('clubPosts.newsPosts');
-    Route::patch('newsPosts/{newspost}/publish', [AdminNewsPostController::class, 'publish'])->name('clubPosts.newsPosts.publish');
-    Route::patch('newsPosts/{newspost}/archive', [AdminNewsPostController::class, 'archive'])->name('clubPosts.newsPosts.archive');
-    Route::post('newsPosts/{newspost}/duplicate', [AdminNewsPostController::class, 'duplicate'])->name('clubPosts.newsPosts.duplicate');
-    // Admin EventPosts
     Route::resource('eventPosts', AdminEventPostController::class)->names('clubPosts.eventPosts');
     Route::patch('eventPosts/{event}/publish', [AdminEventPostController::class, 'publish'])->name('clubPosts.eventPosts.publish');
     Route::patch('eventPosts/{event}/archive', [AdminEventPostController::class, 'archive'])->name('clubPosts.eventPosts.archive');
@@ -391,21 +381,16 @@ Route::middleware(['auth', 'verified'])
             ->name('resetKnockoutMatch');
     });
 
-Route::prefix('clubAdmin')->middleware(['auth', 'verified'])->group(function (): void {
-    Route::resource('contacts', ContactAdminController::class)->names('clubAdmin.contacts');
-    Route::post('contacts/create-new-user', [CreateNewUserAction::class, 'handle'])->name('clubAdmin.contacts.invite-new-user');
-    Route::post('/{contact}/send-email', [ContactAdminController::class, 'sendEmail'])->name('clubAdmin.contacts.send-email');
-    Route::get('/{contact}/compose-email', [ContactAdminController::class, 'composeEmail'])->name('clubAdmin.contacts.compose-email');
-    Route::post('/{contact}/send-custom-email', [ContactAdminController::class, 'sendCustomEmail'])->name('clubAdmin.contacts.send-custom-email');
-    Route::resource('trainingpacks', TrainingPackController::class)->names('admin.trainingpacks');
+Route::prefix('admin/website')->middleware(['auth', 'verified'])->group(function (): void {
+    Route::livewire('/articles', 'pages::website.articles.index')->name('admin.website.articles.index');
+    Route::livewire('/articles/create', 'pages::website.articles.edit')->name('admin.website.articles.create');
+    Route::livewire('/articles/{newsPost}/edit', 'pages::website.articles.edit')->name('admin.website.articles.edit');
+    Route::livewire('/contacts', 'pages::website.contacts.index')->name('admin.website.contacts.index');
+    Route::livewire('/spams', 'pages::website.spams.index')->name('admin.website.spams.index');
 });
 
 Route::prefix('clubAdmin')->middleware(['auth', 'verified'])->group(function (): void {
-    Route::get('spams', [SpamController::class, 'index'])->name('clubAdmin.spams.index');
-    Route::post('contacts/create-new-user', [CreateNewUserAction::class, 'handle'])->name('clubAdmin.contacts.invite-new-user');
-    Route::post('/{contact}/send-email', [ContactAdminController::class, 'sendEmail'])->name('clubAdmin.contacts.send-email');
-    Route::get('/{contact}/compose-email', [ContactAdminController::class, 'composeEmail'])->name('clubAdmin.contacts.compose-email');
-    Route::post('/{contact}/send-custom-email', [ContactAdminController::class, 'sendCustomEmail'])->name('clubAdmin.contacts.send-custom-email');
+    Route::resource('trainingpacks', TrainingPackController::class)->names('admin.trainingpacks');
 });
 
 Route::middleware(['auth', 'verified'])->group(function (): void {

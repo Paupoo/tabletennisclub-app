@@ -39,7 +39,7 @@ Ceci est une copie de l'email envoyé au contact.
 > *"{{ $contact->message }}"*
 @endif
 
-<x-mail::button :url="route('clubAdmin.contacts.show', $contact)" color="primary">
+<x-mail::button :url="route('admin.website.contacts.index')" color="primary">
 👁️ Voir le contact complet
 </x-mail::button>
 

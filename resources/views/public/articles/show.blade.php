@@ -80,10 +80,8 @@
 
     <!-- NewsPost Content -->
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="prose prose-lg max-w-none whitespace-pre-line">
-            <div class="text-gray-700 leading-relaxed">
-                {!! $article['content'] ?? '<p>Contenu de l\'article à venir...</p>' !!}
-            </div>
+        <div class="prose prose-lg max-w-none">
+            {!! $renderedContent ?? '<p>Contenu de l\'article à venir...</p>' !!}
         </div>
 
         <!-- Share -->

@@ -31,7 +31,7 @@ Vous avez reçu un message depuis le formulaire de contact du site {{ config('ap
 </x-mail::table>
 @endif
 
-<x-mail::button url="{{ route('clubAdmin.contacts.index') }}">
+<x-mail::button url="{{ route('admin.website.contacts.index') }}">
     Gérer la demande sur le site
 </x-mail::button>
 

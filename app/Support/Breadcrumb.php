@@ -24,12 +24,12 @@ class Breadcrumb
 
     public function articles(?string $url = null): Breadcrumb
     {
-        return $this->add('Articles', $url ?: route('clubPosts.newsPosts.index'), 's-home');
+        return $this->add('Articles', $url ?: route('admin.website.articles.index'));
     }
 
     public function contacts(?string $url = null): Breadcrumb
     {
-        return $this->add('Contacts', $url ?: route('clubAdmin.contacts.index'));
+        return $this->add('Contacts', $url ?: route('admin.website.contacts.index'));
     }
 
     public function current(string $title): Breadcrumb
@@ -115,5 +115,20 @@ class Breadcrumb
     public function users(?string $url = null): Breadcrumb
     {
         return $this->add('Users', $url ?: route('admin.users.index'));
+    }
+
+    public function websiteArticles(?string $url = null): Breadcrumb
+    {
+        return $this->add(__('Articles'), $url ?: route('admin.website.articles.index'));
+    }
+
+    public function websiteContacts(?string $url = null): Breadcrumb
+    {
+        return $this->add(__('Contacts'), $url ?: route('admin.website.contacts.index'));
+    }
+
+    public function websiteSpams(?string $url = null): Breadcrumb
+    {
+        return $this->add(__('Spam'), $url ?: route('admin.website.spams.index'));
     }
 }

@@ -24,9 +24,7 @@ use App\Http\Controllers\ClubEvents\Interclub\InterclubController;
 use App\Http\Controllers\ClubEvents\Interclub\ResultsController;
 use App\Http\Controllers\ClubEvents\Interclub\SeasonController;
 use App\Http\Controllers\ClubEvents\Interclub\TeamController;
-use App\Http\Controllers\ClubEvents\Tournament\ChangeTournamentStatusController;
-use App\Http\Controllers\ClubEvents\Tournament\KnockoutPhaseController;
-use App\Http\Controllers\ClubEvents\Tournament\ToggleHasPaidController;
+use App\Http\Controllers\ClubEvents\Tournament\TableScoreController;
 use App\Http\Controllers\ClubEvents\Tournament\TournamentController;
 use App\Http\Controllers\ClubEvents\Training\TrainingController;
 use App\Http\Controllers\ClubEvents\Training\TrainingPackController;
@@ -327,74 +325,13 @@ Route::get('/tournament/{tournament}/registration-confirmed', [TournamentControl
 Route::get('/tournament/{tournament}/calendar.ics', [TournamentController::class, 'downloadIcal'])
     ->name('tournament.calendar.ical');
 
-// Tournaments
+// Tournament QR table score (auth, URL stable = imprimable/affichable sur table)
 Route::middleware(['auth', 'verified'])
     ->group(function (): void {
-        // Tournament CRUD
-        Route::get('/clubEvents/tournaments', [TournamentController::class, 'index'])->name('tournaments.index');
-        Route::get('/clubEvents/tournaments/create', [TournamentController::class, 'create'])->name('tournaments.create');
-        Route::post('/clubEvents/tournaments/store', [TournamentController::class, 'store'])->name('tournaments.store');
-        Route::put('/clubEvents/tournaments/{tournament}/update', [TournamentController::class, 'update'])->name('tournaments.update');
-        Route::get('/clubEvents/tournament/{id}', [TournamentController::class, 'show'])->name('tournaments.show');
-        Route::get('/clubEvents/tournament/{tournament}/edit', [TournamentController::class, 'edit'])->name('tournament.edit');
-        Route::get('/clubEvents/tournament/{tournament}/delete', [TournamentController::class, 'destroy'])->name('tournaments.destroy');
-
-        // Tournament Actions
-        Route::get('/clubEvents/tournament/{tournament}/register/{user}', [TournamentController::class, 'registerUser'])->name('tournament.register');
-        Route::get('/clubEvents/tournament/{tournament}/unregister/{user}', [TournamentController::class, 'unregisterUser'])->name('tournament.unregister');
-        Route::get('/clubEvents/tournament/payment/{tournament}/{user}', ToggleHasPaidController::class)->name('tournaments.toggleHasPaid');
-
-        // Others to sort
-        Route::get('/clubEvents/tournament/{id}/players', [TournamentController::class, 'showPlayers'])->name('tournamentShowPlayers');
-        Route::get('/clubEvents/tournament/{id}/pools', [TournamentController::class, 'showPools'])->name('tournamentShowPools');
-        Route::get('/clubEvents/tournament/{id}/matches', [TournamentController::class, 'showMatches'])->name('tournamentShowMatches');
-        Route::get('/clubEvents/tournament/{id}/tables', [TournamentController::class, 'showTables'])->name('tournamentShowTables');
-        Route::get('/clubEvents/tournament/{tournament}/erasePools', [TournamentController::class, 'erasePools'])->name('erasePools');
-        Route::get('/clubEvents/tournament/{tournament}/updateStatus/{newStatus}', ChangeTournamentStatusController::class)->name('tournament.changeStatus');
-        // Route::get('/clubEvents/tournament/{tournament}/draft', [TournamentController::class, 'unpublish'])->name('unpublishTournament'); // has been refactored with change status
-        // Route::get('/clubEvents/tournament/{tournament}/publish', [TournamentController::class, 'publish'])->name('publishTournament'); // has been refactored with change status
-        // Route::get('/clubEvents/tournament/{tournament}/start', [TournamentController::class, 'startTournament'])->name('startTournament'); // has been refactored with change status
-        // Route::get('/clubEvents/tournament/{tournament}/closed', [TournamentController::class, 'closeTournament'])->name('closeTournament'); // has been refactored with change status
-        Route::get('/clubEvents/tournament/{tournament}/set_max_players', [TournamentController::class, 'setMaxPlayers'])->name('tournamentSetMaxPlayers');
-        Route::get('/clubEvents/tournament/{tournament}/set_start_date', [TournamentController::class, 'setStartTime'])->name('tournamentSetStartTime');
-        Route::get('/clubEvents/tournament/{tournament}/set_end_date', [TournamentController::class, 'setEndTime'])->name('tournamentSetEndTime');
-        Route::get('/clubEvents/tournaments/{tournament}/pools', [TournamentController::class, 'managePools'])
-            ->name('tournaments.manage-pools');
-        Route::post('/clubEvents/tournaments/{tournament}/generate-pools', [TournamentController::class, 'generatePools'])
-            ->name('tournaments.generate-pools');
-
-        Route::put('/clubEvents/tournaments/{tournament}/generate-pools', [TournamentController::class, 'updatePoolPlayers'])
-            ->name('tournament.updatePoolPlayers');
-
-        // Routes pour les matches
-        Route::post('/clubEvents/tournaments/{tournament}/generate-matches', [TournamentController::class, 'generatePoolMatches'])
-            ->name('generatePoolMatches');
-        Route::get('/pools/{pool}/matches', [TournamentController::class, 'showPoolMatches'])
-            ->name('showPoolMatches');
-        Route::get('/matches/{match}/edit', [TournamentController::class, 'editMatch'])
-            ->name('editMatch');
-        Route::post('/matches/{match}/start', [TournamentController::class, 'startMatch'])
-            ->name('startMatch');
-        Route::put('/matches/{match}', [TournamentController::class, 'updateMatch'])
-            ->name('updateMatch');
-        Route::delete('/matches/{match}/reset', [TournamentController::class, 'resetMatch'])
-            ->name('resetMatch');
-
-        // Routes pour les tables
-        Route::get('/clubEvents/tournament/{tournament}/tables-overview', [TableController::class, 'tableOverview'])
-            ->name('tablesOverview');
-
-        // Routes pour la phase finale
-        Route::get('/clubEvents/tournaments/{tournament}/knockout/setup', [KnockoutPhaseController::class, 'setup'])
-            ->name('knockoutSetup');
-        Route::post('/clubEvents/tournaments/{tournament}/knockout/configure', [KnockoutPhaseController::class, 'configure'])
-            ->name('configureKnockout');
-        Route::get('/clubEvents/tournaments/{tournament}/knockout/bracket', [KnockoutPhaseController::class, 'showBracket'])
-            ->name('knockoutBracket');
-        Route::get('/knockout-matches/{match}/start', [KnockoutPhaseController::class, 'startMatch'])
-            ->name('startKnockoutMatch');
-        Route::delete('/knockout-matches/{match}/reset', [KnockoutPhaseController::class, 'resetMatch'])
-            ->name('resetKnockoutMatch');
+        Route::get('/tournament/{tournament}/table/{table}/score', [TableScoreController::class, 'show'])
+            ->name('tournament.table.score');
+        Route::post('/tournament/{tournament}/table/{table}/score', [TableScoreController::class, 'submit'])
+            ->name('tournament.table.score.submit');
     });
 
 Route::prefix('admin/website')->middleware(['auth', 'verified'])->group(function (): void {

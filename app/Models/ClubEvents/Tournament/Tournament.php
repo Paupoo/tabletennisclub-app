@@ -185,6 +185,7 @@ class Tournament extends Model
                 'is_table_free',
                 'tournament_match_id',
                 'match_started_at',
+                'match_ended_at',
             ])
             ->using(TableTournament::class)
             ->withTimestamps();

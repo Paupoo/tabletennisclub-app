@@ -100,7 +100,7 @@ describe('Breadcrumb', function (): void {
             // Define routes
             Route::get('/dashboard', fn () => 'dashboard')->name('dashboard');
             Route::get('/tournaments', fn () => 'tournaments')->name('tournaments.index');
-            Route::get('/tournaments/{tournament}', fn ($tournament) => 'tournament')->name('tournaments.show');
+            Route::get('/tournaments/{tournament}/live', fn ($tournament) => 'tournament')->name('admin.tournaments.live-center');
 
             $tournament = Tournament::factory()->create(['name' => 'World Cup 2024']);
 
@@ -117,7 +117,7 @@ describe('Breadcrumb', function (): void {
                 ->and($items[0]['icon'])->toBe('s-home')
                 ->and($items[1]['label'])->toBe('Tournaments')
                 ->and($items[2]['label'])->toBe('World Cup 2024')
-                ->and($items[2]['link'])->toContain('/tournament/' . $tournament->id)
+                ->and($items[2]['link'])->toContain((string) $tournament->id)
                 ->and($items[3]['label'])->toBe('Edit')
                 ->and($items[3]['link'])->toBe(null);
         });
@@ -178,7 +178,7 @@ describe('Breadcrumb', function (): void {
         });
 
         it('handles tournament with special characters in name', function (): void {
-            Route::get('/tournaments/{tournament}', fn ($tournament) => 'tournament')->name('tournaments.show');
+            Route::get('/tournaments/{tournament}/live', fn ($tournament) => 'tournament')->name('admin.tournaments.live-center');
 
             $tournament = Tournament::factory()->create(['name' => 'Tournament & Championship 2024']);
 
@@ -186,7 +186,7 @@ describe('Breadcrumb', function (): void {
             $items = $breadcrumb->toArray();
 
             expect($items[0]['label'])->toBe('Tournament & Championship 2024')
-                ->and($items[0]['link'])->toContain('/tournament/' . $tournament->id);
+                ->and($items[0]['link'])->toContain((string) $tournament->id);
         });
     });
 

@@ -94,7 +94,7 @@ class Breadcrumb
 
     public function tournament(Tournament $tournament): Breadcrumb
     {
-        return $this->add($tournament->name, route('tournaments.show', $tournament));
+        return $this->add($tournament->name, route('admin.tournaments.live-center', $tournament));
     }
 
     public function tournaments(?string $url = null): Breadcrumb

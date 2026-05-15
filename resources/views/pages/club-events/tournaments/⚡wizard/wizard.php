@@ -9,6 +9,7 @@ use App\Enums\NewsPostStatusEnum;
 use App\Enums\TournamentObjectiveEnum;
 use App\Enums\TournamentStatusEnum;
 use App\Models\ClubAdmin\Club\Room;
+use App\Models\ClubAdmin\Club\Table;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Tournament\Pool;
 use App\Models\ClubEvents\Tournament\Tournament;
@@ -709,6 +710,14 @@ new class extends Component
         }
 
         $tournament->update(['status' => TournamentStatusEnum::PENDING]);
+
+        // Populate table_tournament pivot from the tournament's linked rooms
+        $tableIds = Table::whereHas('room', fn ($q) => $q->whereIn('rooms.id', $tournament->rooms()->pluck('rooms.id')))
+            ->pluck('id');
+
+        $tournament->tables()->sync(
+            $tableIds->mapWithKeys(fn ($id) => [$id => ['is_table_free' => true]])->all()
+        );
 
         return redirect()->route('admin.tournaments.live-center', $tournament->id);
     }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\ClubEvents\Tournament;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Support\Carbon;
 
@@ -43,5 +44,11 @@ class TableTournament extends Pivot
         'is_table_free',
         'tournament_match_id',
         'match_started_at',
+        'match_ended_at',
     ];
+
+    public function currentMatch(): BelongsTo
+    {
+        return $this->belongsTo(TournamentMatch::class, 'tournament_match_id');
+    }
 }

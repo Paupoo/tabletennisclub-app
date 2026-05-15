@@ -387,7 +387,7 @@ class TournamentMatchService
     {
         $pool->loadMissing('users');
         $players = $pool->users;
-        $matches = TournamentMatch::where('pool_id', $pool->id)->get();
+        $matches = TournamentMatch::where('pool_id', $pool->id)->with('sets')->get();
 
         $standings = $players->map(function ($player) use ($matches) {
             $playerMatches = $matches->filter(function ($match) use ($player) {

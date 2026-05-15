@@ -7,6 +7,7 @@ namespace App\Models\ClubAdmin\Payment;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Payment extends Model
@@ -24,6 +25,7 @@ class Payment extends Model
         'amount_paid',
         'status',
         'transaction_id',
+        'refund_transaction_id',
     ];
 
     // Accessor pour les prix
@@ -43,11 +45,13 @@ class Payment extends Model
         );
     }
 
-    /**
-     * Relation polymorphique vers l'entité payée
-     */
     public function payable(): MorphTo
     {
         return $this->morphTo();
+    }
+
+    public function refundTransaction(): BelongsTo
+    {
+        return $this->belongsTo(Transaction::class, 'refund_transaction_id');
     }
 }

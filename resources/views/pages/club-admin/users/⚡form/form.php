@@ -82,6 +82,9 @@ new class extends Component
     #[Rule('nullable|string')]
     public ?string $parent_phone_number = null;
 
+    #[Rule(['nullable', new \App\Rules\ValidIban])]
+    public ?string $iban = null;
+
     // Security
     #[Validate()]
     public string $password = '';
@@ -144,6 +147,7 @@ new class extends Component
             $this->phone_number = $user->phone_number;
             $this->birthdate = $user->birthdate?->format('Y-m-d');
             $this->parent_phone_number = $user->parent_phone_number;
+            $this->iban = $user->iban;
             $this->currentPhoto = $user->photo;
             $this->licence_type = $user->is_competitor ? 'competitive' : 'recreative';
             $this->licence = $user->licence;

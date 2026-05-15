@@ -55,6 +55,7 @@ use Laravel\Sanctum\PersonalAccessToken;
  * @property string $last_name
  * @property string $sex
  * @property string|null $phone_number
+ * @property string|null $iban
  * @property \Illuminate\Support\Carbon|null $birthdate
  * @property string|null $street
  * @property string|null $city_code
@@ -169,6 +170,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'licence',
         'password',
         'phone_number',
+        'iban',
         'guardian_phone_number',
         'photo',
         'ranking',

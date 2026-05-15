@@ -40,8 +40,12 @@
         ],
     ];
 
-    $status = $statusMap[$tournament->status->value] ?? $statusMap['closed'];
-    $percent = ($tournament->total_users / max(1, $tournament->max_users)) * 100;
+    $status      = $statusMap[$tournament->status->value] ?? $statusMap['closed'];
+    $activeCount = $tournament->active_registrations_count ?? $tournament->activeRegistrationsCount();
+    $waitingCount = $tournament->waiting_count ?? 0;
+    $percent     = $tournament->max_users > 0
+        ? min(100, ($activeCount / $tournament->max_users) * 100)
+        : 0;
 @endphp
 
 {{-- On utilise base-100 (fond) et base-200 (bordure) --}}
@@ -81,7 +85,10 @@
 
             <div class="flex items-center gap-2">
                 <x-icon class="h-4 w-4 opacity-50" name="o-users" />
-                {{ $tournament->total_users }} / {{ $tournament->max_users }}
+                {{ $activeCount }} / {{ $tournament->max_users > 0 ? $tournament->max_users : '∞' }}
+                @if($waitingCount > 0)
+                    <span class="text-warning text-[11px] font-medium">(+{{ $waitingCount }} {{ __('waiting') }})</span>
+                @endif
             </div>
 
             <div class="flex items-center gap-2">
@@ -106,13 +113,13 @@
             <div class="flex items-center gap-1">
 
                 <a class="btn btn-ghost btn-sm btn-square text-base-content/60 hover:text-primary"
-                    href="{{ route('admin.tournaments.wizard') }}" title="{{ __('Settings') }}">
+                    href="{{ route('admin.tournaments.wizard.edit', $tournament) }}" title="{{ __('Settings') }}">
                     <x-heroicon-o-cog-6-tooth class="h-4 w-4" />
                 </a>
 
-                @if ($tournament->status !== 'closed')
+                @if ($tournament->status !== \App\Enums\TournamentStatusEnum::CLOSED)
                     <a class="btn btn-ghost btn-sm btn-square text-base-content/60 hover:text-info"
-                        href="{{ route('admin.tournaments.live-center', 1) }}" title="{{ __('Live') }}">
+                        href="{{ route('admin.tournaments.live-center', $tournament->id) }}" title="{{ __('Live') }}">
                         <x-heroicon-o-rocket-launch class="h-4 w-4" />
                     </a>
                 @endif

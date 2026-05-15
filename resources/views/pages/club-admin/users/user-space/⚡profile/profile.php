@@ -42,6 +42,9 @@ new class extends Component
     #[Rule('string|nullable')]
     public ?string $guardian_phone_number = null;
 
+    #[Rule(['nullable', new \App\Rules\ValidIban])]
+    public ?string $iban = null;
+
     public $photo = null;          // upload Livewire uniquement
 
     public ?string $currentPhoto = null; // photo persist\C3\A9e
@@ -104,6 +107,7 @@ new class extends Component
         $this->city_name = $user->city_name;
         $this->phone_number = $user->phone_number;
         $this->guardian_phone_number = $user->guardian_phone_number;
+        $this->iban = $user->iban;
         $this->currentPhoto = $user->photo;
         $this->activeTeamTab = 'team-' . $this->user->teams->first()?->id;
         
@@ -173,4 +177,4 @@ new class extends Component
             $this->success('User '.$this->user->first_name.' created with success');
         }
     }
-}
+};

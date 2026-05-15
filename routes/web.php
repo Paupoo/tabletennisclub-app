@@ -144,6 +144,7 @@ Route::prefix('admin/club-events/tournaments')
         Route::livewire('/', 'pages::club-events.tournaments.index')->name('admin.tournaments.index');
         Route::livewire('{tournament}/live-center', 'pages::club-events.tournaments.live-center')->name('admin.tournaments.live-center');
         Route::livewire('wizard', 'pages::club-events.tournaments.wizard')->name('admin.tournaments.wizard');
+        Route::livewire('{tournament}/wizard', 'pages::club-events.tournaments.wizard')->name('admin.tournaments.wizard.edit');
     });
 
 Route::prefix('admin/club-events/interclubs/')
@@ -310,6 +311,21 @@ Route::get('/clubAdmin/{user}/subscription', [UserController::class, 'toggleHasP
 Route::resource('clubAdmin/users', UserController::class)->middleware(['auth', 'verified']);
 
 Route::post('clubAdmin/users/{user}/invite', [InviteExistingUserAction::class, 'handle'])->name('clubAdmin.users.invite-existing-user');
+
+// Tournament email registration / waitlist actions (signed URLs, no auth required)
+Route::get('/tournament/{tournament}/join/{user}', [TournamentController::class, 'registerViaEmail'])
+    ->name('tournament.register.email')
+    ->middleware('signed');
+
+Route::get('/tournament/{tournament}/leave-waitlist/{user}', [TournamentController::class, 'leaveWaitlistViaEmail'])
+    ->name('tournament.leave-waitlist.email')
+    ->middleware('signed');
+
+Route::get('/tournament/{tournament}/registration-confirmed', [TournamentController::class, 'registrationConfirmed'])
+    ->name('tournament.registration.confirmed');
+
+Route::get('/tournament/{tournament}/calendar.ics', [TournamentController::class, 'downloadIcal'])
+    ->name('tournament.calendar.ical');
 
 // Tournaments
 Route::middleware(['auth', 'verified'])

@@ -15,6 +15,10 @@ class Transaction extends Model
 
     // TODO : implement TransactionFactory or remove the using
 
+    protected $casts = [
+        'amount' => 'float',
+    ];
+
     protected $fillable = [
         'date',
         'description',
@@ -28,5 +32,10 @@ class Transaction extends Model
     public function payment(): HasOne
     {
         return $this->hasOne(Payment::class, 'transaction_id');
+    }
+
+    public function refundPayment(): HasOne
+    {
+        return $this->hasOne(Payment::class, 'refund_transaction_id');
     }
 }

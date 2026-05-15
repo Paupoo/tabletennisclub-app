@@ -29,7 +29,9 @@ use Exception;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Throwable;
 
@@ -103,6 +105,53 @@ class TournamentController extends Controller
         return redirect()
             ->route('tournaments.index')
             ->with('success', __('The tournament ' . $tournament->name . ' has been deleted.'));
+    }
+
+    public function downloadIcal(Tournament $tournament): Response
+    {
+        $start = $tournament->start_date->copy();
+
+        if ($tournament->start_time) {
+            [$h, $m] = explode(':', $tournament->start_time);
+            $start->setTime((int) $h, (int) $m);
+        }
+
+        $end = $start->copy()->addMinutes($tournament->duration_minutes ?: 180);
+
+        // Store times as entered (no UTC conversion) and declare the timezone
+        // explicitly with TZID so every calendar app displays the exact time encoded.
+        $tz = 'Europe/Brussels';
+        $dtStart = 'DTSTART;TZID=' . $tz . ':' . $start->format('Ymd\THis');
+        $dtEnd = 'DTEND;TZID=' . $tz . ':' . $end->format('Ymd\THis');
+        $stamp = now()->utc()->format('Ymd\THis\Z');
+
+        $properties = [
+            'BEGIN:VCALENDAR',
+            'VERSION:2.0',
+            'PRODID:-//CTT Ottignies Blocry//Tournament//FR',
+            'CALSCALE:GREGORIAN',
+            'METHOD:PUBLISH',
+            'BEGIN:VEVENT',
+            'UID:tournament-' . $tournament->id . '@cttottigniesblocry.be',
+            'DTSTAMP:' . $stamp,
+            $dtStart,
+            $dtEnd,
+            'SUMMARY:' . $this->icalEscape($tournament->name),
+            'DESCRIPTION:' . $this->icalEscape(__('Table tennis tournament') . ($tournament->description ? ' — ' . $tournament->description : '')),
+            'LOCATION:' . $this->icalEscape($tournament->location ?? ''),
+            'END:VEVENT',
+            'END:VCALENDAR',
+        ];
+
+        // RFC 5545 §3.1: fold lines longer than 75 octets with CRLF + SPACE.
+        $lines = array_map(fn (string $line) => $this->icalFold($line), $properties);
+
+        $slug = Str::slug($tournament->name);
+
+        return response(implode("\r\n", $lines) . "\r\n", 200, [
+            'Content-Type' => 'text/calendar; charset=utf-8',
+            'Content-Disposition' => "attachment; filename=\"{$slug}.ics\"",
+        ]);
     }
 
     public function edit(Tournament $tournament): View
@@ -282,6 +331,22 @@ class TournamentController extends Controller
         ]);
     }
 
+    public function leaveWaitlistViaEmail(Tournament $tournament, User $user): RedirectResponse
+    {
+        $existingPivot = $tournament->users()
+            ->where('users.id', $user->id)
+            ->wherePivotIn('registration_status', ['waiting', 'spot_offered'])
+            ->first()?->pivot;
+
+        if ($existingPivot) {
+            $this->tournamentService->cancelRegistration($tournament, $user);
+        }
+
+        return redirect()
+            ->route('tournament.registration.confirmed', $tournament)
+            ->with('registration_status', 'left_waitlist');
+    }
+
     public function managePools()
     {
         // TODO: implement
@@ -311,14 +376,80 @@ class TournamentController extends Controller
         try {
             $this->tournamentService->registerUser($tournament, $user);
         } catch (Throwable $th) {
+            return redirect()->back()->with('error', $th->getMessage());
+        }
+
+        return redirect()->back()->with('success', $user->first_name . ' ' . $user->last_name . ' has been registered to the tournament');
+    }
+
+    public function registerViaEmail(Tournament $tournament, User $user): RedirectResponse
+    {
+        $existingPivot = $tournament->users()
+            ->where('users.id', $user->id)
+            ->wherePivotIn('registration_status', ['registered', 'confirmed', 'waiting', 'spot_offered'])
+            ->first()?->pivot;
+
+        if ($existingPivot?->registration_status === 'waiting') {
             return redirect()
-                ->back()
+                ->route('tournament.registration.confirmed', $tournament)
+                ->with('registration_status', 'waiting')
+                ->with('waitlist_position', $existingPivot->waitlist_position)
+                ->with('already_on_list', true);
+        }
+
+        // spot_offered: user was promoted from waitlist, this is their confirmation click.
+        if ($existingPivot?->registration_status === 'spot_offered') {
+            DB::table('tournament_user')
+                ->where('tournament_id', $tournament->id)
+                ->where('user_id', $user->id)
+                ->update(['registration_status' => 'registered', 'confirmation_deadline' => null]);
+
+            return redirect()
+                ->route('tournament.registration.confirmed', $tournament)
+                ->with('registration_status', 'registered');
+        }
+
+        if (in_array($existingPivot?->registration_status, ['registered', 'confirmed'], true)) {
+            return redirect()
+                ->route('tournament.registration.confirmed', $tournament)
+                ->with('registration_status', 'registered')
+                ->with('already_on_list', true);
+        }
+
+        if ($tournament->status !== TournamentStatusEnum::PUBLISHED) {
+            return redirect()
+                ->route('tournament.registration.confirmed', $tournament)
+                ->with('error', 'Registrations are closed for this tournament.');
+        }
+
+        try {
+            $this->tournamentService->registerUser($tournament, $user);
+        } catch (Throwable $th) {
+            return redirect()
+                ->route('tournament.registration.confirmed', $tournament)
                 ->with('error', $th->getMessage());
         }
 
+        $pivot = $tournament->users()
+            ->where('users.id', $user->id)
+            ->first()?->pivot;
+
         return redirect()
-            ->back()
-            ->with('success', $user->first_name . ' ' . $user->last_name . ' has been registered to the tournament');
+            ->route('tournament.registration.confirmed', $tournament)
+            ->with('registration_status', $pivot?->registration_status ?? 'registered')
+            ->with('waitlist_position', $pivot?->waitlist_position);
+    }
+
+    public function registrationConfirmed(Tournament $tournament): View
+    {
+        $registrationStatus = session('registration_status');
+        $waitlistPosition = session('waitlist_position');
+
+        return view('public.tournament.registration-confirmed', compact(
+            'tournament',
+            'registrationStatus',
+            'waitlistPosition',
+        ));
     }
 
     /**
@@ -849,5 +980,25 @@ class TournamentController extends Controller
     private function eraseMatches(Pool $pool): void
     {
         $pool->tournamentmatches()->delete();
+    }
+
+    private function icalEscape(string $value): string
+    {
+        return str_replace(["\r\n", "\n", "\r", ',', ';', '\\'], ['\\n', '\\n', '\\n', '\\,', '\\;', '\\\\'], $value);
+    }
+
+    private function icalFold(string $line): string
+    {
+        if (strlen($line) <= 75) {
+            return $line;
+        }
+
+        $folded = '';
+        while (strlen($line) > 75) {
+            $folded .= mb_substr($line, 0, 75) . "\r\n ";
+            $line = mb_substr($line, 75);
+        }
+
+        return $folded . $line;
     }
 }

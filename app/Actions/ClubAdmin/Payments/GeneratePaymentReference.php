@@ -33,9 +33,17 @@ class GeneratePaymentReference
 
     public function __invoke(): string
     {
-        $string = (string) $this->reference . $this->verification;
+        $sequence = (int) $this->sequence;
 
-        return $this->addSeparators($string);
+        do {
+            $this->sequence = str_pad((string) $sequence, 3, '0', STR_PAD_LEFT);
+            $this->reference = '0' . $this->date . $this->sequence;
+            $this->verification = $this->getCheckSum();
+            $reference = $this->addSeparators($this->reference . $this->verification);
+            $sequence++;
+        } while (Payment::where('reference', $reference)->exists());
+
+        return $reference;
     }
 
     /**

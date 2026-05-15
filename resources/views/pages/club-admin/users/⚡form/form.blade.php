@@ -38,6 +38,9 @@
                     <x-input label="{{ __('Phone Number') }}" wire:model="phone_number" />
                     <x-input label="{{ __('Birthdate') }}" type="date" wire:model="birthdate" />
                     <x-input label="{{ __('Parent or tutor phone number') }}" wire:model="parent_phone_number" />
+                    <x-input label="{{ __('IBAN') }}" wire:model="iban"
+                        placeholder="BE00 0000 0000 0000"
+                        hint="{{ __('Used for refunds. Leave empty if unknown.') }}" />
                     <div>
                         <div wire:key="photo-container-{{ $imageKey }}">
                             <x-file accept="image/png, image/jpeg, image/webp" crop-after-change

@@ -23,7 +23,10 @@ new class extends Component
                 ['key' => 'registered_count', 'label' => 'Inscriptions', 'class' => 'text-center'],
                 ['key' => 'price', 'label' => 'Prix', 'class' => 'text-right'],
             ],
-            'tournaments' => Tournament::take(10)->get(),
+            'tournaments' => Tournament::withCount([
+                'users AS active_registrations_count' => fn ($q) => $q->whereIn('tournament_user.registration_status', ['registered', 'confirmed', 'spot_offered']),
+                'users AS waiting_count' => fn ($q) => $q->where('tournament_user.registration_status', 'waiting'),
+            ])->take(10)->get(),
             // 'tournaments' => [
             //     [
             //         'id' => 1,

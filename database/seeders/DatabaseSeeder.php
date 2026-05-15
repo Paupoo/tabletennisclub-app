@@ -10,6 +10,7 @@ use App\Enums\Gender;
 use App\Enums\LeagueCategory;
 use App\Enums\LeagueLevel;
 use App\Enums\Ranking;
+use App\Enums\TournamentStatusEnum;
 use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Club\Table;
 use App\Models\ClubAdmin\Users\User;
@@ -21,6 +22,7 @@ use App\Models\ClubEvents\Tournament\Tournament;
 use App\Services\ForceList;
 use App\Services\TournamentMatchService;
 use App\Services\TournamentPoolService;
+use App\Services\TournamentService;
 use App\Services\TournamentTableService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -32,6 +34,7 @@ class DatabaseSeeder extends Seeder
 
     public function __construct(
         private ForceList $forceList,
+        private TournamentService $tournamentService,
         private TournamentTableService $tableService,
         private TournamentPoolService $poolService,
         private TournamentMatchService $matchService,
@@ -327,61 +330,65 @@ class DatabaseSeeder extends Seeder
 
         // Gestion du tournoi
         Tournament::factory(3)->create();
+
+        // Tournoi 1 : brouillon, pas d'inscrits
         $this->tournament = Tournament::find(1);
         $this->tournament->name = 'Tournoi des crêpes';
-
+        $this->tournament->status = TournamentStatusEnum::DRAFT;
         $this->tournament->save();
 
+        // Tournoi 2 : inscriptions fermées, pools et matchs générés
         $this->tournament = Tournament::find(2);
         $this->tournament->name = 'Petit tournoi amical';
-        $this->tournament->total_users = 16;
         $this->tournament->max_users = 16;
         $this->tournament->has_handicap_points = true;
+        $this->tournament->status = TournamentStatusEnum::SETUP;
         $this->tournament->save();
         $this->tournament->rooms()->sync([1, 2]);
 
-        // Link tables
         $this->tableService->linkAvailableTables($this->tournament);
 
-        // Add users
-        for ($i = 1; $i < 17; $i++) {
-            $user = User::find($i);
-            $this->tournament->users()->attach($user);
+        for ($i = 1; $i <= 16; $i++) {
+            $status = match (true) {
+                $i <= 10 => 'confirmed',
+                $i <= 14 => 'registered',
+                default => 'cancelled',
+            };
+            $this->tournament->users()->attach(User::find($i), ['registration_status' => $status]);
         }
 
-        // Generate pools
-        $this->poolService->distributePlayersInPools($this->tournament, 4);
+        $this->tournamentService->countRegisteredUsers($this->tournament);
 
-        // Generate matches
+        $this->poolService->distributePlayersInPools($this->tournament, 4);
+        $this->tournament->loadMissing('pools');
         foreach ($this->tournament->pools as $pool) {
             $this->matchService->generateMatches($pool);
         }
 
+        // Tournoi 3 : inscriptions ouvertes (published), liste d'attente incluse
         $this->tournament = Tournament::find(3);
         $this->tournament->name = 'Tournoi de doubles';
-        $this->tournament->max_users = 50;
-        $this->tournament->total_users = 50;
+        $this->tournament->max_users = 40;
         $this->tournament->has_handicap_points = true;
+        $this->tournament->status = TournamentStatusEnum::PUBLISHED;
         $this->tournament->save();
         $this->tournament->rooms()->sync([1, 2]);
 
-        // Link tables
         $this->tableService->linkAvailableTables($this->tournament);
 
-        // Add users
-
-        for ($i = 1; $i < 50; $i++) {
-            $user = User::find($i);
-            $this->tournament->users()->attach($user);
+        for ($i = 1; $i <= 49; $i++) {
+            $status = match (true) {
+                $i <= 40 => 'registered',
+                default => 'waiting',
+            };
+            $waitlistPosition = $i > 40 ? $i - 40 : null;
+            $this->tournament->users()->attach(User::find($i), [
+                'registration_status' => $status,
+                'waitlist_position' => $waitlistPosition,
+            ]);
         }
 
-        // Generate pools
-        $this->poolService->distributePlayersInPools($this->tournament, 10);
-
-        // Generate matches
-        foreach ($this->tournament->pools as $pool) {
-            $this->matchService->generateMatches($pool);
-        }
+        $this->tournamentService->countRegisteredUsers($this->tournament);
 
         $this->call(SubscriptionSeeder::class);
 

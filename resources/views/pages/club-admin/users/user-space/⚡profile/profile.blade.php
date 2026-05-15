@@ -94,6 +94,15 @@
                         <div class="text-sm font-semibold truncate">{{ $user->phone_number }}</div>
                     </div>
                 </div>
+                @if ($user->iban)
+                <div class="flex items-center gap-3 px-4 py-3">
+                    <x-icon name="o-building-library" class="w-4 h-4 opacity-40 shrink-0" />
+                    <div class="min-w-0">
+                        <div class="text-[10px] opacity-40 uppercase tracking-wider font-black">{{ __('IBAN') }}</div>
+                        <div class="text-sm font-semibold font-mono truncate">{{ $user->iban }}</div>
+                    </div>
+                </div>
+                @endif
                 @if ($user->parent_phone_number)
                     <div class="flex items-center gap-3 px-4 py-3">
                         <x-icon name="o-phone" class="w-4 h-4 opacity-40 shrink-0" />
@@ -338,6 +347,9 @@
                         <x-input label="{{ __('City') }}" wire:model="city_name" />
                         <x-input label="{{ __('Phone Number') }}" wire:model="phone_number" />
                         <x-input label="{{ __('Parent or tutor phone number') }}" wire:model="guardian_phone_number" />
+                        <x-input label="{{ __('IBAN') }}" wire:model="iban"
+                            placeholder="BE00 0000 0000 0000"
+                            hint="{{ __('Used for refunds. Format: BE23 7323 3320 8791') }}" />
                         <div>
                             <div wire:key="photo-container-{{ $imageKey }}">
                                 <x-file label="{{ __('Photo') }}" wire:model="photo"

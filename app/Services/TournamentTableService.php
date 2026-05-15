@@ -28,7 +28,9 @@ class TournamentTableService
      */
     public function linkAvailableTables(Tournament $tournament): void
     {
-        $tablesToSync = []; // Collect tables to keep or add to the tournament
+        $tournament->loadMissing('rooms.tables');
+
+        $tablesToSync = [];
 
         foreach ($tournament->rooms as $room) {
             foreach ($room->tables as $table) {

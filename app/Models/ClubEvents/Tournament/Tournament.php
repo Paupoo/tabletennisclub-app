@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace App\Models\ClubEvents\Tournament;
 
 use App\Casts\MoneyCast;
+use App\Enums\TournamentObjectiveEnum;
 use App\Enums\TournamentStatusEnum;
 use App\Events\Tournament\NewTournamentPublished;
 use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Club\Table;
 use App\Models\ClubAdmin\Users\User;
+use App\Models\ClubPosts\NewsPost;
 use App\Observers\TournamentObserver;
 use Database\Factories\ClubEvents\Tournament\TournamentFactory;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -17,6 +19,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
@@ -25,12 +28,21 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property string $name
  * @property Carbon|null $start_date
+ * @property string|null $start_time
+ * @property Carbon|null $registration_deadline
  * @property Carbon|null $end_date
  * @property int $total_users
  * @property int $max_users
  * @property mixed $price
  * @property TournamentStatusEnum $status
  * @property bool $has_handicap_points
+ * @property int $duration_minutes
+ * @property int $pool_size
+ * @property int $nb_pools
+ * @property int $nb_qualifiers_per_pool
+ * @property int $sets_to_win
+ * @property int $logistics_buffer_minutes
+ * @property string $match_type
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Collection<int, TournamentMatch> $matches
@@ -74,11 +86,19 @@ class Tournament extends Model
         'name',
         'start_date' => 'datetime:Y-m-d\TH:i',
         'end_date' => 'datetime:Y-m-d\TH:i',
+        'registration_deadline' => 'datetime',
         'price' => MoneyCast::class,
         'total_users' => 'integer',
         'max_users' => 'integer',
         'status' => TournamentStatusEnum::class,
+        'objective' => TournamentObjectiveEnum::class,
         'has_handicap_points' => 'boolean',
+        'duration_minutes' => 'integer',
+        'pool_size' => 'integer',
+        'nb_pools' => 'integer',
+        'nb_qualifiers_per_pool' => 'integer',
+        'sets_to_win' => 'integer',
+        'logistics_buffer_minutes' => 'integer',
     ];
 
     protected $dispatchesEvents = [
@@ -88,17 +108,53 @@ class Tournament extends Model
     protected $fillable = [
         'name',
         'start_date',
+        'start_time',
         'end_date',
         'price',
         'total_users',
         'max_users',
         'status',
         'has_handicap_points',
+        'duration_minutes',
+        'pool_size',
+        'nb_pools',
+        'nb_qualifiers_per_pool',
+        'sets_to_win',
+        'logistics_buffer_minutes',
+        'match_type',
+        'objective',
+        'news_post_id',
+        'registration_deadline',
     ];
+
+    /** Count only active (registered/confirmed) participants, ignoring waitlist. */
+    public function activeRegistrationsCount(): int
+    {
+        return $this->users()
+            ->wherePivotIn('registration_status', ['registered', 'confirmed', 'spot_offered'])
+            ->count();
+    }
+
+    public function isPaid(): bool
+    {
+        return $this->price > 0;
+    }
 
     public function matches(): HasMany
     {
         return $this->hasMany(TournamentMatch::class);
+    }
+
+    public function newsPost(): BelongsTo
+    {
+        return $this->belongsTo(NewsPost::class);
+    }
+
+    public function nextWaitlistPosition(): int
+    {
+        return ($this->users()
+            ->wherePivot('registration_status', 'waiting')
+            ->max('tournament_user.waitlist_position') ?? 0) + 1;
     }
 
     public function pools(): HasMany
@@ -140,7 +196,19 @@ class Tournament extends Model
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class)
-            ->withPivot(['has_paid', 'matches_won', 'sets_won', 'points_won'])
+            ->using(TournamentRegistration::class)
+            ->withPivot([
+                'id', 'has_paid',
+                'registration_status', 'waitlist_position',
+                'confirmation_deadline', 'payment_deadline', 'payment_id',
+            ])
             ->withTimestamps();
+    }
+
+    public function waitlistCount(): int
+    {
+        return $this->users()
+            ->wherePivot('registration_status', 'waiting')
+            ->count();
     }
 }

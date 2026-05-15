@@ -385,6 +385,7 @@ class TournamentMatchService
      */
     public function calculatePoolStandings(Pool $pool): Collection
     {
+        $pool->loadMissing('users');
         $players = $pool->users;
         $matches = TournamentMatch::where('pool_id', $pool->id)->get();
 
@@ -428,6 +429,7 @@ class TournamentMatchService
      */
     public function calculateRowStandings(Tournament $tournament): Collection
     {
+        $tournament->loadMissing('users');
         $players = $tournament->users;
         $matches = TournamentMatch::where('tournament_id', $tournament->id)->get();
 
@@ -473,6 +475,7 @@ class TournamentMatchService
      */
     public function generateMatches(Pool $pool): Collection
     {
+        $pool->loadMissing(['users', 'tournament']);
         $players = $pool->users->toArray();
         $numberOfPlayers = count($players);
 
@@ -538,6 +541,7 @@ class TournamentMatchService
      */
     public function generateTournamentMatches(Tournament $tournament): array
     {
+        $tournament->loadMissing(['pools.users', 'pools.tournament']);
         $result = [];
 
         foreach ($tournament->pools as $pool) {

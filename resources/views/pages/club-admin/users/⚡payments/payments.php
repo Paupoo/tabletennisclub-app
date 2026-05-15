@@ -7,6 +7,8 @@ use App\Models\ClubAdmin\Payment\Payment;
 use App\Models\ClubAdmin\Payment\Transaction;
 use App\Models\ClubAdmin\Subscription\Subscription;
 use App\Support\Breadcrumb;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -14,29 +16,44 @@ use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use Livewire\WithPagination;
 use Mary\Traits\Toast;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 
 new class extends Component
 {
-    use Toast, WithFileUploads;
+    use Toast, WithFileUploads, WithPagination;
 
     public $importFile;
-    public bool $importModal        = false;
-    public bool $reconcileModal     = false;
-    public bool $batchModal         = false;
-    public ?int $reconcilePaymentId    = null;
-    public ?int $selectedTransactionId = null;
-    public array $batchMatches      = [];
-    public string $search           = '';
-    public string $statusFilter     = 'pending';
+    public bool $importModal             = false;
+    public bool $reconcileModal          = false;
+    public bool $batchModal              = false;
+    public bool $refundModal             = false;
+    public bool $refundBatchModal        = false;
+    public ?int $reconcilePaymentId      = null;
+    public ?int $selectedTransactionId   = null;
+    public ?int $refundPaymentId         = null;
+    public ?int $selectedRefundTransactionId = null;
+    public array $batchMatches           = [];
+    public array $refundBatchMatches     = [];
+    public string $search                = '';
+    public array  $sortBy                = ['column' => 'created_at', 'direction' => 'desc'];
+    public string $statusFilter          = 'pending';
+
+    public function updatedSearch(): void { $this->resetPage(); }
+    public function updatedStatusFilter(): void { $this->resetPage(); }
+    public function updatedSortBy(): void { $this->resetPage(); }
 
     // ==================== Actions ====================
 
     public function sendReminder(int $paymentId): void
     {
-        $payment = Payment::with(['payable.user', 'payable.season'])->find($paymentId);
+        $payment = Payment::with(['payable.user'])->find($paymentId);
+
+        if ($payment?->payable instanceof Subscription) {
+            $payment->load('payable.season');
+        }
 
         if (! $payment?->payable?->user) {
             $this->error(__('Could not find user for this payment.'));
@@ -73,8 +90,7 @@ new class extends Component
         ]);
 
         if ($payment->payable instanceof Subscription) {
-            $payment->payable->update(['amount_paid' => $transaction->amount]);
-            $payment->payable->markAsPaid();
+            $this->reconcileSubscription($payment->payable, $transaction->amount);
         }
 
         $this->reconcileModal        = false;
@@ -143,26 +159,37 @@ new class extends Component
     public function stats(): array
     {
         return [
-            'pending_count' => Payment::where('status', 'pending')->count(),
-            'pending_total' => round(Payment::where('status', 'pending')->sum('amount_due') / 100, 2),
-            'paid_count'    => Payment::where('status', 'paid')->count(),
-            'paid_total'    => round(Payment::where('status', 'paid')->sum('amount_paid') / 100, 2),
+            'pending_count'   => Payment::where('status', 'pending')->count(),
+            'pending_total'   => round(Payment::where('status', 'pending')->sum('amount_due') / 100, 2),
+            'paid_count'      => Payment::where('status', 'paid')->count(),
+            'paid_total'      => round(Payment::where('status', 'paid')->sum('amount_paid') / 100, 2),
+            'to_refund_count' => Payment::where('status', 'to_refund')->count(),
+            'to_refund_total' => round(Payment::where('status', 'to_refund')->sum('amount_due') / 100, 2),
         ];
     }
 
     public function headers(): array
     {
-        return [
-            ['key' => 'reference',  'label' => __('Reference')],
-            ['key' => 'member',     'label' => __('Member')],
-            ['key' => 'amount_due', 'label' => __('Amount')],
-            ['key' => 'created_at', 'label' => __('Date')],
+        $headers = [
+            ['key' => 'reference',  'label' => __('Reference'), 'sortable' => true],
+            ['key' => 'member',     'label' => __('Member'),    'sortable' => true],
+            ['key' => 'amount_due', 'label' => __('Amount'),    'sortable' => true],
+            ['key' => 'created_at', 'label' => __('Date'),      'sortable' => true],
         ];
+
+        if ($this->statusFilter === 'to_refund') {
+            $headers[] = ['key' => 'iban', 'label' => __('IBAN'), 'sortable' => false];
+        }
+
+        return $headers;
     }
 
-    public function payments(): Collection
+    public function payments(): LengthAwarePaginator
     {
-        return Payment::with(['payable.user'])
+        $col = $this->sortBy['column'];
+        $dir = $this->sortBy['direction'];
+
+        $rows = Payment::with(['payable.user'])
             ->where('status', $this->statusFilter)
             ->when($this->search, fn ($q) => $q
                 ->where('reference', 'like', "%{$this->search}%")
@@ -171,20 +198,33 @@ new class extends Component
                     ->orWhere('last_name', 'like', "%{$this->search}%")
                 )
             )
-            ->orderBy('created_at', 'desc')
             ->get()
             ->map(fn (Payment $p) => (object) [
-                'id'                  => $p->id,
-                'reference'           => $p->reference,
-                'member'              => $p->payable?->user
+                'id'                 => $p->id,
+                'reference'          => $p->reference,
+                'member'             => $p->payable?->user
                     ? $p->payable->user->first_name . ' ' . $p->payable->user->last_name
                     : '—',
-                'amount_due'          => $p->amount_due,
-                'amount_paid'         => $p->amount_paid,
-                'status'              => $p->status,
-                'created_at'          => $p->created_at,
-                'invitation_counter'  => $p->invitation_counter,
+                'amount_due'         => $p->amount_due,
+                'amount_paid'        => $p->amount_paid,
+                'status'             => $p->status,
+                'created_at'         => $p->created_at,
+                'invitation_counter' => $p->invitation_counter,
+                'iban'               => $p->payable?->user?->iban,
             ]);
+
+        $sorted = $dir === 'asc' ? $rows->sortBy($col)->values() : $rows->sortByDesc($col)->values();
+
+        $perPage = 25;
+        $page    = $this->getPage();
+
+        return new LengthAwarePaginator(
+            $sorted->forPage($page, $perPage),
+            $sorted->count(),
+            $perPage,
+            $page,
+            ['path' => LengthAwarePaginator::resolveCurrentPath()],
+        );
     }
 
     public function pendingTransactions(): Collection
@@ -274,26 +314,28 @@ new class extends Component
     public function confirmBatchReconcile(): void
     {
         $count = 0;
+
         foreach ($this->batchMatches as $match) {
-            $payment     = Payment::find($match['payment_id']);
-            $transaction = Transaction::find($match['transaction_id']);
+            DB::transaction(function () use ($match, &$count): void {
+                $payment     = Payment::find($match['payment_id']);
+                $transaction = Transaction::find($match['transaction_id']);
 
-            if (! $payment || ! $transaction) {
-                continue;
-            }
+                if (! $payment || ! $transaction) {
+                    return;
+                }
 
-            $payment->update([
-                'transaction_id' => $transaction->id,
-                'amount_paid'    => $transaction->amount,
-                'status'         => 'paid',
-            ]);
+                $payment->update([
+                    'transaction_id' => $transaction->id,
+                    'amount_paid'    => $transaction->amount,
+                    'status'         => 'paid',
+                ]);
 
-            if ($payment->payable instanceof Subscription) {
-                $payment->payable->update(['amount_paid' => $transaction->amount]);
-                $payment->payable->markAsPaid();
-            }
+                if ($payment->payable instanceof Subscription) {
+                    $this->reconcileSubscription($payment->payable, $transaction->amount);
+                }
 
-            $count++;
+                $count++;
+            });
         }
 
         $this->batchModal   = false;
@@ -301,16 +343,188 @@ new class extends Component
         $this->success(__(':count payment(s) reconciled successfully.', ['count' => $count]));
     }
 
+    // ==================== Refund reconciliation ====================
+
+    public function openRefundReconcile(int $paymentId): void
+    {
+        $this->refundPaymentId             = $paymentId;
+        $this->selectedRefundTransactionId = null;
+        $this->refundModal                 = true;
+    }
+
+    public function confirmRefundReconcile(): void
+    {
+        if (! $this->refundPaymentId || ! $this->selectedRefundTransactionId) {
+            $this->error(__('Please select a transaction.'));
+
+            return;
+        }
+
+        DB::transaction(function (): void {
+            $payment     = Payment::findOrFail($this->refundPaymentId);
+            $transaction = Transaction::findOrFail($this->selectedRefundTransactionId);
+
+            $payment->update([
+                'refund_transaction_id' => $transaction->id,
+                'status'                => 'refunded',
+            ]);
+        });
+
+        $this->refundModal                 = false;
+        $this->refundPaymentId             = null;
+        $this->selectedRefundTransactionId = null;
+        $this->success(__('Refund confirmed successfully.'));
+    }
+
+    public function previewBatchRefundMatch(): void
+    {
+        $toRefundPayments = Payment::with(['payable.user'])
+            ->where('status', 'to_refund')
+            ->whereNull('refund_transaction_id')
+            ->get();
+
+        $outgoingTransactions = Transaction::whereDoesntHave('refundPayment')
+            ->where('amount', '<', 0)
+            ->get();
+
+        $this->refundBatchMatches = [];
+
+        foreach ($toRefundPayments as $payment) {
+            $user = $payment->payable?->user;
+            if (! $user) {
+                continue;
+            }
+
+            $normalizedIban = $this->normalizeIban($user->iban ?? '');
+
+            foreach ($outgoingTransactions as $key => $transaction) {
+                $ibanMatch   = $normalizedIban && $this->normalizeIban($transaction->counterparty_bank_account ?? '') === $normalizedIban;
+                $amountMatch = abs(abs($transaction->amount) - $payment->amount_paid) < 0.01;
+
+                if ($ibanMatch && $amountMatch) {
+                    $this->refundBatchMatches[] = [
+                        'payment_id'       => $payment->id,
+                        'transaction_id'   => $transaction->id,
+                        'reference'        => $payment->reference,
+                        'member'           => $user->full_name,
+                        'iban'             => $user->iban,
+                        'amount'           => $payment->amount_paid,
+                        'transaction_date' => $transaction->date,
+                        'counterparty'     => $transaction->counterparty_name ?? '—',
+                    ];
+                    $outgoingTransactions->forget($key);
+                    break;
+                }
+            }
+        }
+
+        if (empty($this->refundBatchMatches)) {
+            $this->warning(__('No refund matches found. Import a bank statement containing outgoing transfers or reconcile manually.'));
+
+            return;
+        }
+
+        $this->refundBatchModal = true;
+    }
+
+    public function confirmBatchRefundReconcile(): void
+    {
+        $count = 0;
+
+        foreach ($this->refundBatchMatches as $match) {
+            DB::transaction(function () use ($match, &$count): void {
+                $payment     = Payment::find($match['payment_id']);
+                $transaction = Transaction::find($match['transaction_id']);
+
+                if (! $payment || ! $transaction) {
+                    return;
+                }
+
+                $payment->update([
+                    'refund_transaction_id' => $transaction->id,
+                    'status'                => 'refunded',
+                ]);
+
+                $count++;
+            });
+        }
+
+        $this->refundBatchModal   = false;
+        $this->refundBatchMatches = [];
+        $this->success(__(':count refund(s) confirmed successfully.', ['count' => $count]));
+    }
+
+    #[Computed]
+    public function refundTransactions(): Collection
+    {
+        $payment = $this->refundPaymentId ? Payment::with(['payable.user'])->find($this->refundPaymentId) : null;
+        $user    = $payment?->payable?->user;
+
+        $normalizedIban = $this->normalizeIban($user?->iban ?? '');
+
+        return Transaction::whereDoesntHave('refundPayment')
+            ->where('amount', '<', 0)
+            ->orderBy('date', 'desc')
+            ->get()
+            ->map(function (Transaction $t) use ($payment, $normalizedIban): Transaction {
+                if (! $payment) {
+                    $t->match_score = 'none';
+
+                    return $t;
+                }
+
+                $ibanMatch   = $normalizedIban && $this->normalizeIban($t->counterparty_bank_account ?? '') === $normalizedIban;
+                $amountMatch = abs(abs($t->amount) - $payment->amount_paid) < 0.01;
+
+                $t->match_score = match (true) {
+                    $ibanMatch && $amountMatch => 'perfect',
+                    $ibanMatch                 => 'iban',
+                    $amountMatch               => 'amount',
+                    default                    => 'none',
+                };
+
+                return $t;
+            })
+            ->sortByDesc(fn (Transaction $t) => match ($t->match_score) {
+                'perfect' => 3,
+                'iban'    => 2,
+                'amount'  => 1,
+                default   => 0,
+            })
+            ->values();
+    }
+
+    private function reconcileSubscription(Subscription $subscription, int $amount): void
+    {
+        $subscription->update(['amount_paid' => $amount]);
+
+        $status = $subscription->getStatus();
+
+        if ($status === 'paid') {
+            return;
+        }
+
+        if ($status === 'pending') {
+            $subscription->confirm();
+        }
+
+        $subscription->markAsPaid();
+    }
+
     public function render(): View
     {
         return $this->view([
-            'headers'             => $this->headers(),
-            'payments'            => $this->payments(),
-            'pendingTransactions' => $this->reconcileModal ? $this->pendingTransactions() : collect(),
-            'currentPayment'      => $this->reconcilePaymentId
+            'headers'              => $this->headers(),
+            'payments'             => $this->payments(),
+            'pendingTransactions'  => $this->reconcileModal ? $this->pendingTransactions() : collect(),
+            'currentPayment'       => $this->reconcilePaymentId
                 ? Payment::with(['payable.user'])->find($this->reconcilePaymentId)
                 : null,
-            'breadcrumbs'         => Breadcrumb::make()
+            'refundTransactions'   => $this->refundModal ? $this->refundTransactions : collect(),
+            'currentRefundPayment' => $this->refundPaymentId
+                ? Payment::with(['payable.user'])->find($this->refundPaymentId)
+                : null,
+            'breadcrumbs'          => Breadcrumb::make()
                 ->home()
                 ->current(__('Payments'))
                 ->toArray(),
@@ -320,6 +534,11 @@ new class extends Component
     private function normalizeReference(string $ref): string
     {
         return preg_replace('/[^0-9]/', '', $ref) ?? '';
+    }
+
+    private function normalizeIban(string $iban): string
+    {
+        return strtoupper(str_replace([' ', '-'], '', $iban));
     }
 
     // ==================== Helpers ====================

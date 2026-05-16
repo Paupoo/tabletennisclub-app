@@ -20,6 +20,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ClubAdmin\Payment\Payment;
 use App\Models\ClubAdmin\Payment\Transaction;
 use App\Models\ClubAdmin\Subscription\Subscription;
+use App\Models\ClubEvents\Tournament\TournamentRegistration;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -50,20 +51,6 @@ class TransactionController extends Controller
         $transactions = $query->paginate(50);
 
         return view('admin.transactions.index', compact('transactions'));
-    }
-
-    public function markSubscriptionPaid(Payment $payment): void
-    {
-        $subscription = Subscription::find($payment->payable_id);
-        $subscription->markAsPaid();
-    }
-
-    public function recalculateSubscriptionPaidAmount(Payment $payment)
-    {
-        $subscription = Subscription::find($payment->payable_id);
-        $subscription->update([
-            'amount_paid' => $payment->amount_paid,
-        ]);
     }
 
     public function reconcile(): View
@@ -100,8 +87,15 @@ class TransactionController extends Controller
             'status' => 'paid',
         ]);
 
-        $this->recalculateSubscriptionPaidAmount($payment);
-        $this->markSubscriptionPaid($payment);
+        $payment->refresh();
+        $payable = $payment->payable;
+
+        if ($payable instanceof Subscription) {
+            $payable->update(['amount_paid' => $payment->amount_paid]);
+            $payable->markAsPaid();
+        } elseif ($payable instanceof TournamentRegistration) {
+            $payable->update(['has_paid' => true]);
+        }
 
         return redirect()->route('admin.transactions.reconcile')
             ->with('success', 'Paiement réconcilié avec succès !');

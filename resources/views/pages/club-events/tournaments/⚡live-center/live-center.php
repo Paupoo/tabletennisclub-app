@@ -2,28 +2,40 @@
 
 declare(strict_types=1);
 
+use App\Enums\NewsPostCategoryEnum;
+use App\Enums\NewsPostStatusEnum;
+use App\Enums\TournamentStatusEnum;
+use App\Mail\TournamentResultsMail;
 use App\Models\ClubAdmin\Club\Table;
+use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Tournament\Pool;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Tournament\TournamentMatch;
+use App\Models\ClubPosts\NewsPost;
 use App\Services\TournamentFinalPhaseService;
 use App\Services\TournamentMatchService;
 use App\Services\TournamentPoolService;
 use App\Services\TournamentTableService;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast;
+    use Toast, WithFileUploads;
 
     public Tournament $tournament;
 
     public string $activeTab = 'pools';
+
+    // ── Score entry drawer
 
     public bool $scoreDrawer = false;
 
@@ -39,6 +51,59 @@ new class extends Component
 
     /** @var array<int, array{p1: string, p2: string}> */
     public array $setScores = [];
+
+    // ── Closure tab fields
+
+    public bool $sendThankYou = true;
+
+    public string $thankYouSubject = '';
+
+    public string $thankYouBody = '';
+
+    public bool $createNewsPost = false;
+
+    public string $newsPostTitle = '';
+
+    public string $newsPostContent = '';
+
+    public mixed $newsPostImage = null;
+
+    public function mount(): void
+    {
+        $this->thankYouSubject  = __('Results') . ' — ' . $this->tournament->name;
+        $this->thankYouBody     = __('Dear participants,') . "\n\n"
+            . __('Thank you for joining us for :name! It was a great day of table tennis.', ['name' => $this->tournament->name]) . "\n\n"
+            . __('See you at the next tournament!');
+
+        $this->newsPostTitle   = __('Results') . ' — ' . $this->tournament->name;
+        $this->newsPostContent = "## " . $this->tournament->name . "\n\n"
+            . "**" . __('Podium') . " :**\n\n"
+            . "1. \n2. \n3. \n\n"
+            . __('Congratulations to all participants!');
+    }
+
+    public function fillClosureFromRankings(): void
+    {
+        $top3 = $this->rankings->take(3);
+
+        if ($top3->isEmpty()) {
+            $this->error(__('No rankings available yet.'));
+
+            return;
+        }
+
+        $podiumLines = $top3->map(fn ($e) => $e['rank'] . '. ' . $e['user']->full_name . ' (' . $e['result'] . ')')->implode("\n");
+
+        $this->thankYouBody = __('Dear participants,') . "\n\n"
+            . __('Thank you for joining us for :name! It was a great day of table tennis.', ['name' => $this->tournament->name]) . "\n\n"
+            . __('Final podium:') . "\n" . $podiumLines . "\n\n"
+            . __('See you at the next tournament!');
+
+        $this->newsPostContent = "## " . $this->tournament->name . "\n\n"
+            . "**" . __('Podium') . " :**\n\n"
+            . $top3->map(fn ($e) => '- **' . $e['rank'] . '. ' . $e['user']->full_name . '** — ' . $e['result'])->implode("\n")
+            . "\n\n" . __('Congratulations to all participants!');
+    }
 
     // ── Computed: phase flags
 
@@ -70,9 +135,17 @@ new class extends Component
     }
 
     #[Computed]
+    public function allMatchesComplete(): bool
+    {
+        return ! TournamentMatch::where('tournament_id', $this->tournament->id)
+            ->whereIn('status', ['scheduled', 'in_progress'])
+            ->exists();
+    }
+
+    #[Computed]
     public function tournamentClosed(): bool
     {
-        return $this->tournament->status === \App\Enums\TournamentStatusEnum::CLOSED;
+        return $this->tournament->status === TournamentStatusEnum::CLOSED;
     }
 
     // ── Computed: tab data
@@ -196,6 +269,25 @@ new class extends Component
     }
 
     #[Computed]
+    public function unpaidParticipants(): Collection
+    {
+        if (! $this->tournament->isPaid()) {
+            return collect();
+        }
+
+        return $this->tournament->users()
+            ->wherePivotIn('registration_status', ['registered', 'confirmed', 'spot_offered'])
+            ->wherePivot('has_paid', false)
+            ->get();
+    }
+
+    #[Computed]
+    public function newsPostMarkdownPreview(): string
+    {
+        return Str::markdown($this->newsPostContent ?: '');
+    }
+
+    #[Computed]
     public function knockoutMatches(): array
     {
         return app(TournamentFinalPhaseService::class)
@@ -227,7 +319,6 @@ new class extends Component
 
         $this->setScores = array_fill(0, $maxSets, ['p1' => (string) $this->p1Handicap, 'p2' => (string) $this->p2Handicap]);
 
-        // Pre-load any previously saved sets
         if ($match) {
             foreach ($match->sets as $set) {
                 $idx = $set->set_number - 1;
@@ -242,16 +333,13 @@ new class extends Component
     }
 
     /**
-     * Parse current setScores into valid set results, stopping once a winner is determined.
-     * Empty detection uses handicap starting values (Approach B).
-     *
      * @return array{results: array<int, array{player1_score: int, player2_score: int}>, p1Sets: int, p2Sets: int}
      */
     private function parseSetResults(): array
     {
         $results = [];
-        $p1Sets = 0;
-        $p2Sets = 0;
+        $p1Sets  = 0;
+        $p2Sets  = 0;
 
         foreach ($this->setScores as $set) {
             $p1 = (int) ($set['p1'] ?? 0);
@@ -289,7 +377,7 @@ new class extends Component
         }
 
         $match->saveDraft($setResults);
-        $this->scoreDrawer = false;
+        $this->scoreDrawer    = false;
         $this->selectedMatchId = null;
         unset($this->selectedMatch);
         $this->success(__('Sets saved.'));
@@ -330,15 +418,13 @@ new class extends Component
 
         $match->recordResult($setResults);
 
-        // Free the table
         app(TournamentTableService::class)->freeUsedTable($match);
 
-        // Progress bracket if knockout match
         if ($match->round !== null && $match->winner_id) {
             app(TournamentFinalPhaseService::class)->completeMatch($match, $match->winner_id);
         }
 
-        $this->scoreDrawer = false;
+        $this->scoreDrawer    = false;
         $this->selectedMatchId = null;
         unset($this->tables, $this->upcomingMatches, $this->pools, $this->knockoutMatches, $this->selectedMatch);
 
@@ -351,7 +437,7 @@ new class extends Component
     public function openLaunchDrawer(int $tableId): void
     {
         $this->selectedTableId = $tableId;
-        $this->launchDrawer = true;
+        $this->launchDrawer    = true;
     }
 
     public function startMatch(int $matchId): void
@@ -366,15 +452,15 @@ new class extends Component
             ->where('tournament_id', $this->tournament->id)
             ->where('table_id', $this->selectedTableId)
             ->update([
-                'is_table_free'        => false,
-                'tournament_match_id'  => $matchId,
-                'match_started_at'     => now(),
-                'match_ended_at'       => null,
+                'is_table_free'       => false,
+                'tournament_match_id' => $matchId,
+                'match_started_at'    => now(),
+                'match_ended_at'      => null,
             ]);
 
         TournamentMatch::where('id', $matchId)->update(['status' => 'in_progress']);
 
-        $this->launchDrawer = false;
+        $this->launchDrawer    = false;
         $this->selectedTableId = null;
         unset($this->tables, $this->upcomingMatches);
 
@@ -391,12 +477,11 @@ new class extends Component
             return;
         }
 
-        // Determine starting round based on total qualifiers
         $totalQualifiers = $this->tournament->nb_pools * $this->tournament->nb_qualifiers_per_pool;
-        $startingRound = match (true) {
-            $totalQualifiers >= 9  => 'round_16',
-            $totalQualifiers >= 5  => 'quarterfinal',
-            default                => 'semifinal',
+        $startingRound   = match (true) {
+            $totalQualifiers >= 9 => 'round_16',
+            $totalQualifiers >= 5 => 'quarterfinal',
+            default               => 'semifinal',
         };
 
         try {
@@ -413,10 +498,66 @@ new class extends Component
         $this->success(__('Bracket created!'));
     }
 
+    // ── Actions: closure
+
+    public function removeNewsPostImage(): void
+    {
+        $this->newsPostImage = null;
+    }
+
     public function closeTournament(): void
     {
-        $this->tournament->update(['status' => \App\Enums\TournamentStatusEnum::CLOSED]);
-        unset($this->tournamentClosed);
+        if (! $this->allMatchesComplete) {
+            $this->error(__('All matches must be completed before closing the tournament.'));
+
+            return;
+        }
+
+        $this->validate([
+            'newsPostImage' => ['nullable', 'image', 'max:4096'],
+        ]);
+
+        $this->tournament->update(['status' => TournamentStatusEnum::CLOSED]);
+
+        if ($this->sendThankYou && $this->thankYouSubject !== '' && $this->thankYouBody !== '') {
+            $rankings = $this->rankings;
+
+            $this->tournament->users()
+                ->wherePivotIn('registration_status', ['registered', 'confirmed'])
+                ->get()
+                ->each(function (User $user) use ($rankings): void {
+                    Mail::to($user->email)->queue(new TournamentResultsMail(
+                        tournament: $this->tournament,
+                        recipient: $user,
+                        emailSubject: $this->thankYouSubject,
+                        emailBody: $this->thankYouBody,
+                        rankings: $rankings,
+                    ));
+                });
+        }
+
+        if ($this->createNewsPost && $this->newsPostTitle !== '' && $this->newsPostContent !== '') {
+            $imagePath = null;
+
+            if ($this->newsPostImage) {
+                $imagePath = $this->newsPostImage->store('clubPosts', 'public');
+            }
+
+            $newsPost = NewsPost::create([
+                'title'    => $this->newsPostTitle,
+                'slug'     => Str::slug($this->newsPostTitle . '-' . now()->year),
+                'content'  => $this->newsPostContent,
+                'category' => NewsPostCategoryEnum::COMPETITION,
+                'status'   => NewsPostStatusEnum::DRAFT,
+                'is_public' => false,
+                'image'    => $imagePath,
+                'user_id'  => auth()->id(),
+            ]);
+
+            $this->tournament->update(['news_post_id' => $newsPost->id]);
+        }
+
+        unset($this->tournamentClosed, $this->allMatchesComplete);
         $this->success(__('Tournament closed. Congratulations to all participants!'));
     }
 

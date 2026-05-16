@@ -102,13 +102,13 @@
             </div>
         @endif
 
-        {{-- Close tournament button --}}
+        {{-- Close tournament button
         @if ($this->bracketPhaseComplete && ! $this->tournamentClosed)
             <div class="mt-12 flex justify-center">
                 <x-button label="{{ __('Close tournament') }}" icon="o-flag"
                     class="btn-error btn-outline"
                     wire:click="closeTournament" wire:confirm="{{ __('This will mark the tournament as closed. Continue?') }}" />
             </div>
-        @endif
+        @endif --}}
     @endif
 </div>

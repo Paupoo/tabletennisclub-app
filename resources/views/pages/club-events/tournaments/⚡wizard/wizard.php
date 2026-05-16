@@ -147,6 +147,10 @@ new class extends Component
     // ── Paramètres sportifs
     public int $totalSets = 3;
 
+    public bool $deuceEnabled = true;
+
+    public bool $hasHandicapPoints = true;
+
     public string $registration_deadline = '';
 
     public int $memberToRegister = 0;
@@ -178,6 +182,8 @@ new class extends Component
         $this->pool_size = $config->poolSize;
         $this->nb_qualifies = $config->nbQualifiersPerPool;
         $this->totalSets = $config->setsToWin;
+        $this->deuceEnabled = $config->deuceEnabled;
+        $this->hasHandicapPoints = $config->hasHandicapPoints;
         $this->logistics_buffer = $config->logisticsBufferMinutes;
         $this->matchType = $config->matchType;
 
@@ -602,6 +608,8 @@ new class extends Component
             $this->tournament_minutes = $tournament->duration_minutes;
             $this->logistics_buffer = $tournament->logistics_buffer_minutes;
             $this->totalSets = $tournament->sets_to_win;
+            $this->deuceEnabled = $tournament->deuce_enabled;
+            $this->hasHandicapPoints = $tournament->has_handicap_points;
             $this->matchType = $tournament->match_type;
             $this->nb_poules = $tournament->nb_pools;
             $this->pool_size = $tournament->pool_size;
@@ -924,6 +932,8 @@ new class extends Component
             'pool_size' => 'required|integer|min:2|max:10',
             'nb_qualifies' => 'required|integer|min:1',
             'totalSets' => 'required|integer|min:1|max:5',
+            'deuceEnabled' => 'boolean',
+            'hasHandicapPoints' => 'boolean',
             'logistics_buffer' => 'required|integer|min:0|max:30',
             'matchType' => 'required|in:single,double',
             'maxUsers' => 'required|integer|min:0',
@@ -963,6 +973,8 @@ new class extends Component
                 'nb_pools' => $this->nb_poules,
                 'nb_qualifiers_per_pool' => $this->nb_qualifies,
                 'sets_to_win' => $this->totalSets,
+                'deuce_enabled' => $this->deuceEnabled,
+                'has_handicap_points' => $this->hasHandicapPoints,
                 'logistics_buffer_minutes' => $this->logistics_buffer,
                 'match_type' => $this->matchType,
                 'objective' => $this->selectedObjective ?: null,

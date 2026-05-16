@@ -24,12 +24,20 @@ new class extends Component
     /** @var array<int, array{p1: string, p2: string}> */
     public array $setScores = [];
 
+    public int $p1Handicap = 0;
+
+    public int $p2Handicap = 0;
+
     public bool $submitted = false;
 
     public function mount(): void
     {
         $maxSets = ($this->tournament->sets_to_win * 2) - 1;
-        $this->setScores = array_fill(0, $maxSets, ['p1' => '', 'p2' => '']);
+
+        $this->p1Handicap = $this->tournament->has_handicap_points ? $this->match->player1_handicap_points : 0;
+        $this->p2Handicap = $this->tournament->has_handicap_points ? $this->match->player2_handicap_points : 0;
+
+        $this->setScores = array_fill(0, $maxSets, ['p1' => (string) $this->p1Handicap, 'p2' => (string) $this->p2Handicap]);
 
         // Pre-load any previously saved sets
         $this->match->loadMissing('sets');
@@ -43,6 +51,7 @@ new class extends Component
 
     /**
      * Parse current setScores into valid set results, stopping once a winner is found.
+     * Empty detection uses handicap starting values (Approach B).
      *
      * @return array{results: array<int, array{player1_score: int, player2_score: int}>, p1Sets: int, p2Sets: int}
      */
@@ -56,7 +65,7 @@ new class extends Component
             $p1 = (int) ($set['p1'] ?? 0);
             $p2 = (int) ($set['p2'] ?? 0);
 
-            if ($p1 === 0 && $p2 === 0) {
+            if ($p1 === $this->p1Handicap && $p2 === $this->p2Handicap) {
                 continue;
             }
 
@@ -101,6 +110,15 @@ new class extends Component
             return;
         }
 
+        foreach ($setResults as $i => $set) {
+            $error = $this->tournament->validateSetScore($set['player1_score'], $set['player2_score'], $i + 1, $this->p1Handicap, $this->p2Handicap);
+            if ($error) {
+                $this->error($error);
+
+                return;
+            }
+        }
+
         $this->match->recordResult($setResults);
 
         app(TournamentTableService::class)->freeUsedTable($this->match);
@@ -139,12 +157,15 @@ new class extends Component
         </div>
     @else
         @php
-            $maxSets = ($tournament->sets_to_win * 2) - 1;
-            $p1Sets  = collect($setScores)->filter(fn ($s) => (int)($s['p1'] ?? 0) > (int)($s['p2'] ?? 0))->count();
-            $p2Sets  = collect($setScores)->filter(fn ($s) => (int)($s['p2'] ?? 0) > (int)($s['p1'] ?? 0))->count();
+            $maxSets  = ($tournament->sets_to_win * 2) - 1;
+            $hp1      = $p1Handicap ?? 0;
+            $hp2      = $p2Handicap ?? 0;
+            $doneSets = collect($setScores)->filter(fn ($s) => !((int)($s['p1'] ?? 0) === $hp1 && (int)($s['p2'] ?? 0) === $hp2));
+            $p1Sets   = $doneSets->filter(fn ($s) => (int)($s['p1'] ?? 0) > (int)($s['p2'] ?? 0))->count();
+            $p2Sets   = $doneSets->filter(fn ($s) => (int)($s['p2'] ?? 0) > (int)($s['p1'] ?? 0))->count();
             $matchFinished = $p1Sets >= $tournament->sets_to_win || $p2Sets >= $tournament->sets_to_win;
-            $hasSets = collect($setScores)->contains(fn ($s) => (int)($s['p1'] ?? 0) > 0 || (int)($s['p2'] ?? 0) > 0);
-            $winner = $matchFinished
+            $hasSets  = $doneSets->isNotEmpty();
+            $winner   = $matchFinished
                 ? ($p1Sets >= $tournament->sets_to_win ? $match->player1 : $match->player2)
                 : null;
         @endphp
@@ -180,14 +201,44 @@ new class extends Component
             </div>
         </div>
 
+        {{-- Handicap info bar --}}
+        @if ($tournament->has_handicap_points && ($hp1 > 0 || $hp2 > 0))
+            <div class="bg-base-100 rounded-2xl shadow px-5 py-4">
+                <p class="text-[10px] font-bold uppercase tracking-widest text-warning text-center mb-3">
+                    ⚡ {{ __('Handicap per set — starting scores') }}
+                </p>
+                <div class="flex justify-between items-center gap-4">
+                    <div class="flex-1 text-center">
+                        <div class="text-[10px] font-bold opacity-60 truncate">{{ $match->player1?->full_name ?? '—' }}</div>
+                        <div @class(['text-3xl font-extrabold leading-none mt-1', 'text-warning' => $hp1 > 0, 'text-base-content/30' => $hp1 === 0])>
+                            +{{ $hp1 }}
+                        </div>
+                    </div>
+                    <div class="text-xs font-bold opacity-30">pts</div>
+                    <div class="flex-1 text-center">
+                        <div class="text-[10px] font-bold opacity-60 truncate">{{ $match->player2?->full_name ?? '—' }}</div>
+                        <div @class(['text-3xl font-extrabold leading-none mt-1', 'text-warning' => $hp2 > 0, 'text-base-content/30' => $hp2 === 0])>
+                            +{{ $hp2 }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         {{-- Set inputs (all always editable) --}}
         <div class="space-y-3">
             @for ($i = 0; $i < $maxSets; $i++)
                 @php
-                    $p1 = (int)($setScores[$i]['p1'] ?? 0);
-                    $p2 = (int)($setScores[$i]['p2'] ?? 0);
-                    $setHasScores = $p1 > 0 || $p2 > 0;
-                    $setWon = $setHasScores && $p1 !== $p2;
+                    $p1      = (int)($setScores[$i]['p1'] ?? $hp1);
+                    $p2      = (int)($setScores[$i]['p2'] ?? $hp2);
+                    $isEmpty = ($p1 === $hp1 && $p2 === $hp2);
+                    $sMax    = max($p1, $p2);
+                    $sMin    = min($p1, $p2);
+                    $setWon  = ! $isEmpty && $p1 !== $p2 && (
+                        $tournament->deuce_enabled
+                            ? (($sMin < 10 && $sMax === 11) || ($sMin >= 10 && $sMax - $sMin === 2))
+                            : ($sMax === 11)
+                    );
                 @endphp
 
                 <div @class([
@@ -204,13 +255,13 @@ new class extends Component
                     </div>
 
                     <x-input wire:model.live="setScores.{{ $i }}.p1"
-                        type="number" min="0" max="30" placeholder="0"
+                        type="number" min="{{ $hp1 }}" max="30" placeholder="{{ $hp1 }}"
                         class="input-lg text-center font-mono font-black text-2xl flex-1 p-1" />
 
                     <span class="text-lg font-black opacity-20">:</span>
 
                     <x-input wire:model.live="setScores.{{ $i }}.p2"
-                        type="number" min="0" max="30" placeholder="0"
+                        type="number" min="{{ $hp2 }}" max="30" placeholder="{{ $hp2 }}"
                         class="input-lg text-center font-mono font-black text-2xl flex-1 p-1" />
                 </div>
             @endfor

@@ -3,12 +3,15 @@
 
     @if ($this->selectedMatch)
         @php
-            $match         = $this->selectedMatch;
-            $maxSets       = ($tournament->sets_to_win * 2) - 1;
-            $p1Sets        = collect($setScores)->filter(fn ($s) => (int)($s['p1'] ?? 0) > (int)($s['p2'] ?? 0))->count();
-            $p2Sets        = collect($setScores)->filter(fn ($s) => (int)($s['p2'] ?? 0) > (int)($s['p1'] ?? 0))->count();
+            $match    = $this->selectedMatch;
+            $maxSets  = ($tournament->sets_to_win * 2) - 1;
+            $hp1      = $p1Handicap ?? 0;
+            $hp2      = $p2Handicap ?? 0;
+            $doneSets = collect($setScores)->filter(fn ($s) => !((int)($s['p1'] ?? 0) === $hp1 && (int)($s['p2'] ?? 0) === $hp2));
+            $p1Sets   = $doneSets->filter(fn ($s) => (int)($s['p1'] ?? 0) > (int)($s['p2'] ?? 0))->count();
+            $p2Sets   = $doneSets->filter(fn ($s) => (int)($s['p2'] ?? 0) > (int)($s['p1'] ?? 0))->count();
             $matchFinished = $p1Sets >= $tournament->sets_to_win || $p2Sets >= $tournament->sets_to_win;
-            $hasSets       = collect($setScores)->contains(fn ($s) => (int)($s['p1'] ?? 0) > 0 || (int)($s['p2'] ?? 0) > 0);
+            $hasSets       = $doneSets->isNotEmpty();
             $winner        = $matchFinished
                 ? ($p1Sets >= $tournament->sets_to_win ? $match->player1 : $match->player2)
                 : null;
@@ -44,6 +47,30 @@
             </div>
         </div>
 
+        {{-- Handicap info bar --}}
+        @if ($tournament->has_handicap_points && ($hp1 > 0 || $hp2 > 0))
+            <div class="rounded-xl border border-warning/40 bg-warning/10 p-3 mb-4">
+                <p class="text-[10px] font-bold uppercase tracking-widest text-warning text-center mb-2">
+                    {{ __('Handicap per set — starting scores') }}
+                </p>
+                <div class="flex justify-between items-center">
+                    <div class="flex-1 text-center">
+                        <div class="text-[10px] font-bold opacity-60 truncate">{{ $match->player1?->full_name ?? '—' }}</div>
+                        <div @class(['text-2xl font-extrabold leading-none', 'text-warning' => $hp1 > 0, 'text-base-content/30' => $hp1 === 0])>
+                            +{{ $hp1 }}
+                        </div>
+                    </div>
+                    <div class="text-[10px] font-bold opacity-40 uppercase">pts</div>
+                    <div class="flex-1 text-center">
+                        <div class="text-[10px] font-bold opacity-60 truncate">{{ $match->player2?->full_name ?? '—' }}</div>
+                        <div @class(['text-2xl font-extrabold leading-none', 'text-warning' => $hp2 > 0, 'text-base-content/30' => $hp2 === 0])>
+                            +{{ $hp2 }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         {{-- Set scores (all always editable) --}}
         <div class="space-y-3">
             <div class="flex items-center gap-2 mb-4">
@@ -53,9 +80,16 @@
 
             @for ($i = 0; $i < $maxSets; $i++)
                 @php
-                    $p1      = (int)($setScores[$i]['p1'] ?? 0);
-                    $p2      = (int)($setScores[$i]['p2'] ?? 0);
-                    $setDone = ($p1 > 0 || $p2 > 0) && $p1 !== $p2;
+                    $p1      = (int)($setScores[$i]['p1'] ?? $hp1);
+                    $p2      = (int)($setScores[$i]['p2'] ?? $hp2);
+                    $isEmpty = ($p1 === $hp1 && $p2 === $hp2);
+                    $sMax    = max($p1, $p2);
+                    $sMin    = min($p1, $p2);
+                    $setDone = ! $isEmpty && $p1 !== $p2 && (
+                        $tournament->deuce_enabled
+                            ? (($sMin < 10 && $sMax === 11) || ($sMin >= 10 && $sMax - $sMin === 2))
+                            : ($sMax === 11)
+                    );
                 @endphp
 
                 <div @class([
@@ -74,11 +108,11 @@
 
                     <div class="flex grow items-center gap-2">
                         <x-input wire:model.live="setScores.{{ $i }}.p1"
-                            type="number" min="0" max="30" placeholder="0"
+                            type="number" min="{{ $hp1 }}" max="30" placeholder="{{ $hp1 }}"
                             class="input-sm text-center font-mono font-bold text-lg" />
                         <span class="opacity-30 font-bold">:</span>
                         <x-input wire:model.live="setScores.{{ $i }}.p2"
-                            type="number" min="0" max="30" placeholder="0"
+                            type="number" min="{{ $hp2 }}" max="30" placeholder="{{ $hp2 }}"
                             class="input-sm text-center font-mono font-bold text-lg" />
                     </div>
 

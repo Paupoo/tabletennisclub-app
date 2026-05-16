@@ -95,6 +95,11 @@
             @include('admin.club-events.tournaments.partials.live.tabs.bracket')
         </x-tab>
 
+        <x-tab name="rankings" icon="o-chart-bar">
+            <x-slot:label>{{ __('Rankings') }}</x-slot:label>
+            @include('admin.club-events.tournaments.partials.live.tabs.rankings')
+        </x-tab>
+
     </x-tabs>
 
     {{-- ── Drawers ──────────────────────────────────────────────────── --}}

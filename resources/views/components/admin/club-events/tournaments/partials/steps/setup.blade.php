@@ -109,6 +109,32 @@
         <x-select wire:model.live.debounce.500ms="totalSets" :options="$this->setOptions"
             label="{{ __('Winning sets(*)') }}" icon="o-star"
             hint="Best of {{ ($this->totalSets * 2) - 1 }}" />
+        <div class="flex flex-col gap-1">
+            <x-toggle wire:model.live="deuceEnabled" label="{{ __('Deuce rule') }}" right />
+            <p class="text-[11px] text-base-content/50 leading-tight">
+                @if ($deuceEnabled)
+                    {{ __('Standard: win at 11 with a 2-point lead. At 10-10, play continues until +2 (e.g. 12-10).') }}
+                @else
+                    {{ __('Simplified: first to 11 wins — 10-10 becomes 11-10. Faster matches.') }}
+                @endif
+            </p>
+            @if (! $deuceEnabled)
+                <p class="text-[11px] text-warning/80 font-semibold mt-0.5">
+                    ⚡ {{ __('Recommended for "Minimize duration" objective.') }}
+                </p>
+            @endif
+        </div>
+        <div class="flex flex-col gap-1">
+            <x-toggle wire:model.live="hasHandicapPoints" label="{{ __('Handicap points (AFTT)') }}" right />
+            <p class="text-[11px] text-base-content/50 leading-tight">
+                {{ __('Each set starts with a score advantage based on player rankings. Ideal for friendly or mixed-level tournaments.') }}
+            </p>
+            @if (! $hasHandicapPoints)
+                <p class="text-[11px] text-warning/80 font-semibold mt-0.5">
+                    🏆 {{ __('Disabled for "Competitive format" objective.') }}
+                </p>
+            @endif
+        </div>
         <x-input wire:model.live.debounce.500ms="nb_poules" label="{{ __('Number of pools(*)') }}"
             icon="o-calculator" type="number" min="1" />
         <x-select wire:model.live.debounce.500ms="pool_size" label="{{ __('Players per pool(*)') }}"
@@ -116,7 +142,6 @@
         <x-input wire:model.live.debounce.500ms="nb_qualifies" label="{{ __('Qualified per pool(*)') }}"
             icon="o-trophy" type="number" hint="Players advancing to the bracket" min="1"
             numeric />
-        <x-toggle label="Handicap points" right />
 
         {{-- Estimated capacity --}}
         @php $estimatedCapacity = (int)$nb_poules * (int)$pool_size; @endphp

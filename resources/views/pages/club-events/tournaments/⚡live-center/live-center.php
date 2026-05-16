@@ -33,6 +33,10 @@ new class extends Component
 
     public ?int $selectedTableId = null;
 
+    public int $p1Handicap = 0;
+
+    public int $p2Handicap = 0;
+
     /** @var array<int, array{p1: string, p2: string}> */
     public array $setScores = [];
 
@@ -128,6 +132,70 @@ new class extends Component
     }
 
     #[Computed]
+    public function rankings(): Collection
+    {
+        /** @var array<int, array{user: mixed, rank: int, result: string}> */
+        $ranked = [];
+
+        $bracketMatches = TournamentMatch::where('tournament_id', $this->tournament->id)
+            ->whereNotNull('round')
+            ->where('status', 'completed')
+            ->with(['player1', 'player2'])
+            ->get();
+
+        $place = function (TournamentMatch $match, int $winnerRank, int $loserRank, string $winnerLabel, string $loserLabel) use (&$ranked): void {
+            if (! $match->winner_id) {
+                return;
+            }
+            $isP1 = $match->winner_id === $match->player1_id;
+            $wid  = $match->winner_id;
+            $lid  = $isP1 ? $match->player2_id : $match->player1_id;
+            $wu   = $isP1 ? $match->player1 : $match->player2;
+            $lu   = $isP1 ? $match->player2 : $match->player1;
+
+            $ranked[$wid] = ['user' => $wu, 'rank' => $winnerRank, 'result' => $winnerLabel];
+            $ranked[$lid] = ['user' => $lu, 'rank' => $loserRank,  'result' => $loserLabel];
+        };
+
+        if ($final = $bracketMatches->firstWhere('round', 'final')) {
+            $place($final, 1, 2, __('Champion'), __('Runner-up'));
+        }
+
+        if ($bronze = $bracketMatches->firstWhere('round', 'bronze')) {
+            $place($bronze, 3, 4, __('3rd place'), __('4th place'));
+        }
+
+        foreach (['quarterfinal' => [5, 'Quarterfinalist'], 'round_16' => [9, 'Round of 16']] as $round => [$startRank, $label]) {
+            $pos = $startRank;
+            foreach ($bracketMatches->where('round', $round) as $match) {
+                if (! $match->winner_id) {
+                    continue;
+                }
+                $isP1 = $match->winner_id === $match->player1_id;
+                $lid  = $isP1 ? $match->player2_id : $match->player1_id;
+                $lu   = $isP1 ? $match->player2 : $match->player1;
+                if (! isset($ranked[$lid])) {
+                    $ranked[$lid] = ['user' => $lu, 'rank' => $pos++, 'result' => __($label)];
+                }
+            }
+        }
+
+        $matchService = app(TournamentMatchService::class);
+        $nextRank     = empty($ranked) ? 1 : collect($ranked)->max('rank') + 1;
+
+        foreach ($this->tournament->pools as $pool) {
+            foreach ($matchService->calculatePoolStandings($pool) as $standing) {
+                $pid = $standing['player']->id;
+                if (! isset($ranked[$pid])) {
+                    $ranked[$pid] = ['user' => $standing['player'], 'rank' => $nextRank++, 'result' => $pool->name];
+                }
+            }
+        }
+
+        return collect($ranked)->sortBy('rank')->values();
+    }
+
+    #[Computed]
     public function knockoutMatches(): array
     {
         return app(TournamentFinalPhaseService::class)
@@ -151,10 +219,15 @@ new class extends Component
         $this->selectedMatchId = $matchId;
         $this->selectedTableId = $tableId;
         $maxSets = ($this->tournament->sets_to_win * 2) - 1;
-        $this->setScores = array_fill(0, $maxSets, ['p1' => '', 'p2' => '']);
+
+        $match = TournamentMatch::with('sets')->find($matchId);
+
+        $this->p1Handicap = ($this->tournament->has_handicap_points && $match) ? $match->player1_handicap_points : 0;
+        $this->p2Handicap = ($this->tournament->has_handicap_points && $match) ? $match->player2_handicap_points : 0;
+
+        $this->setScores = array_fill(0, $maxSets, ['p1' => (string) $this->p1Handicap, 'p2' => (string) $this->p2Handicap]);
 
         // Pre-load any previously saved sets
-        $match = TournamentMatch::with('sets')->find($matchId);
         if ($match) {
             foreach ($match->sets as $set) {
                 $idx = $set->set_number - 1;
@@ -170,6 +243,7 @@ new class extends Component
 
     /**
      * Parse current setScores into valid set results, stopping once a winner is determined.
+     * Empty detection uses handicap starting values (Approach B).
      *
      * @return array{results: array<int, array{player1_score: int, player2_score: int}>, p1Sets: int, p2Sets: int}
      */
@@ -183,7 +257,7 @@ new class extends Component
             $p1 = (int) ($set['p1'] ?? 0);
             $p2 = (int) ($set['p2'] ?? 0);
 
-            if ($p1 === 0 && $p2 === 0) {
+            if ($p1 === $this->p1Handicap && $p2 === $this->p2Handicap) {
                 continue;
             }
 
@@ -243,6 +317,15 @@ new class extends Component
             $this->error(__('Match not finished — a player must win :n sets.', ['n' => $this->tournament->sets_to_win]));
 
             return;
+        }
+
+        foreach ($setResults as $i => $set) {
+            $error = $this->tournament->validateSetScore($set['player1_score'], $set['player2_score'], $i + 1, $this->p1Handicap, $this->p2Handicap);
+            if ($error) {
+                $this->error($error);
+
+                return;
+            }
         }
 
         $match->recordResult($setResults);

@@ -16,5 +16,7 @@ readonly class TournamentConfig
         public int $setsToWin,
         public string $matchType,
         public float $congestionCoefficient = 0.80,
+        public bool $deuceEnabled = true,
+        public bool $hasHandicapPoints = true,
     ) {}
 }

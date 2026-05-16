@@ -215,7 +215,7 @@ class TournamentFinalPhaseService
         // Get all matches
         $matches = TournamentMatch::where('tournament_id', $tournament->id)
             ->fromBracket()
-            ->with(['player1', 'player2', 'sets'])
+            ->with(['player1', 'player2', 'sets', 'winner'])
             ->orderBy('match_order')
             ->get();
 

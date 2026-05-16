@@ -139,6 +139,7 @@ class TournamentSimulator
                 setsToWin: 3,
                 matchType: 'single',
                 congestionCoefficient: $congestion,
+                hasHandicapPoints: false,
             );
 
             $result = $this->simulate($config);
@@ -249,6 +250,7 @@ class TournamentSimulator
             setsToWin: 2,
             matchType: 'single',
             congestionCoefficient: $congestion,
+            deuceEnabled: false,
         );
     }
 }

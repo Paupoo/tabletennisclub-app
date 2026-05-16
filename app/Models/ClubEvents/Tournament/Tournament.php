@@ -98,6 +98,7 @@ class Tournament extends Model
         'nb_pools' => 'integer',
         'nb_qualifiers_per_pool' => 'integer',
         'sets_to_win' => 'integer',
+        'deuce_enabled' => 'boolean',
         'logistics_buffer_minutes' => 'integer',
     ];
 
@@ -120,6 +121,7 @@ class Tournament extends Model
         'nb_pools',
         'nb_qualifiers_per_pool',
         'sets_to_win',
+        'deuce_enabled',
         'logistics_buffer_minutes',
         'match_type',
         'objective',
@@ -204,6 +206,48 @@ class Tournament extends Model
                 'confirmation_deadline', 'payment_deadline', 'payment_id',
             ])
             ->withTimestamps();
+    }
+
+    /**
+     * Validate a single set score against this tournament's scoring rules.
+     * Returns null if valid, or a translated error string.
+     *
+     * $p1Handicap / $p2Handicap are the per-set starting scores (Approach B AFTT).
+     * Each player's final score must be ≥ their handicap starting value.
+     */
+    public function validateSetScore(int $p1, int $p2, int $setNumber, int $p1Handicap = 0, int $p2Handicap = 0): ?string
+    {
+        if ($p1 < $p1Handicap) {
+            return __("Set :n: player 1's score (:score) cannot be below their starting handicap (:min).", ['n' => $setNumber, 'score' => $p1, 'min' => $p1Handicap]);
+        }
+
+        if ($p2 < $p2Handicap) {
+            return __("Set :n: player 2's score (:score) cannot be below their starting handicap (:min).", ['n' => $setNumber, 'score' => $p2, 'min' => $p2Handicap]);
+        }
+
+        $max = max($p1, $p2);
+        $min = min($p1, $p2);
+
+        if ($this->deuce_enabled) {
+            // Standard TT: win at 11 with ≥2-point lead; deuce if both reach 10+
+            if ($min < 10) {
+                if ($max !== 11) {
+                    return __('Set :n: the winner must reach exactly 11 points (:score).', ['n' => $setNumber, 'score' => "{$p1}-{$p2}"]);
+                }
+            } else {
+                // Deuce: both reached 10+, must win by exactly 2
+                if ($max - $min !== 2) {
+                    return __('Set :n: at deuce, win by exactly 2 points — e.g. 12-10, 13-11 (:score).', ['n' => $setNumber, 'score' => "{$p1}-{$p2}"]);
+                }
+            }
+        } else {
+            // Simplified: first to 11 wins, no deuce (10-10 → 11-10 is valid)
+            if ($max !== 11 || $max === $min) {
+                return __('Set :n: first to 11 points wins the set (:score).', ['n' => $setNumber, 'score' => "{$p1}-{$p2}"]);
+            }
+        }
+
+        return null;
     }
 
     public function waitlistCount(): int

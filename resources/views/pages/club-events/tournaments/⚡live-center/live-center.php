@@ -120,6 +120,8 @@ new class extends Component
             ->where('status', 'scheduled')
             ->with(['player1', 'player2', 'pool'])
             ->orderByRaw("CASE WHEN pool_id IS NOT NULL THEN 0 ELSE 1 END")
+            ->orderByRaw("CASE WHEN player1_id IS NOT NULL AND player2_id IS NOT NULL THEN 0 ELSE 1 END")
+            ->orderByRaw("CASE round WHEN 'round_16' THEN 1 WHEN 'quarterfinal' THEN 2 WHEN 'semifinal' THEN 3 WHEN 'final' THEN 4 WHEN 'bronze' THEN 5 ELSE 0 END")
             ->orderBy('match_order')
             ->limit(20)
             ->get();
@@ -150,8 +152,73 @@ new class extends Component
         $this->selectedTableId = $tableId;
         $maxSets = ($this->tournament->sets_to_win * 2) - 1;
         $this->setScores = array_fill(0, $maxSets, ['p1' => '', 'p2' => '']);
+
+        // Pre-load any previously saved sets
+        $match = TournamentMatch::with('sets')->find($matchId);
+        if ($match) {
+            foreach ($match->sets as $set) {
+                $idx = $set->set_number - 1;
+                if (isset($this->setScores[$idx])) {
+                    $this->setScores[$idx] = ['p1' => (string) $set->player1_score, 'p2' => (string) $set->player2_score];
+                }
+            }
+        }
+
         unset($this->selectedMatch);
         $this->scoreDrawer = true;
+    }
+
+    /**
+     * Parse current setScores into valid set results, stopping once a winner is determined.
+     *
+     * @return array{results: array<int, array{player1_score: int, player2_score: int}>, p1Sets: int, p2Sets: int}
+     */
+    private function parseSetResults(): array
+    {
+        $results = [];
+        $p1Sets = 0;
+        $p2Sets = 0;
+
+        foreach ($this->setScores as $set) {
+            $p1 = (int) ($set['p1'] ?? 0);
+            $p2 = (int) ($set['p2'] ?? 0);
+
+            if ($p1 === 0 && $p2 === 0) {
+                continue;
+            }
+
+            $results[] = ['player1_score' => $p1, 'player2_score' => $p2];
+            $p1 > $p2 ? $p1Sets++ : $p2Sets++;
+
+            if ($p1Sets >= $this->tournament->sets_to_win || $p2Sets >= $this->tournament->sets_to_win) {
+                break;
+            }
+        }
+
+        return compact('results', 'p1Sets', 'p2Sets');
+    }
+
+    public function saveDraft(): void
+    {
+        $match = TournamentMatch::find($this->selectedMatchId);
+
+        if (! $match) {
+            return;
+        }
+
+        ['results' => $setResults] = $this->parseSetResults();
+
+        if (empty($setResults)) {
+            $this->error(__('No set scores to save.'));
+
+            return;
+        }
+
+        $match->saveDraft($setResults);
+        $this->scoreDrawer = false;
+        $this->selectedMatchId = null;
+        unset($this->selectedMatch);
+        $this->success(__('Sets saved.'));
     }
 
     public function submitScore(): void
@@ -164,27 +231,7 @@ new class extends Component
             return;
         }
 
-        // Build setResults, skipping empty sets
-        $setResults = [];
-        $p1Sets = 0;
-        $p2Sets = 0;
-
-        foreach ($this->setScores as $set) {
-            $p1 = (int) ($set['p1'] ?? 0);
-            $p2 = (int) ($set['p2'] ?? 0);
-
-            if ($p1 === 0 && $p2 === 0) {
-                continue;
-            }
-
-            $setResults[] = ['player1_score' => $p1, 'player2_score' => $p2];
-            $p1 > $p2 ? $p1Sets++ : $p2Sets++;
-
-            // Stop once a winner is determined
-            if ($p1Sets >= $this->tournament->sets_to_win || $p2Sets >= $this->tournament->sets_to_win) {
-                break;
-            }
-        }
+        ['results' => $setResults, 'p1Sets' => $p1Sets, 'p2Sets' => $p2Sets] = $this->parseSetResults();
 
         if (empty($setResults)) {
             $this->error(__('Please enter at least one set score.'));

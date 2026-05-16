@@ -30,11 +30,25 @@ new class extends Component
     {
         $maxSets = ($this->tournament->sets_to_win * 2) - 1;
         $this->setScores = array_fill(0, $maxSets, ['p1' => '', 'p2' => '']);
+
+        // Pre-load any previously saved sets
+        $this->match->loadMissing('sets');
+        foreach ($this->match->sets as $set) {
+            $idx = $set->set_number - 1;
+            if (isset($this->setScores[$idx])) {
+                $this->setScores[$idx] = ['p1' => (string) $set->player1_score, 'p2' => (string) $set->player2_score];
+            }
+        }
     }
 
-    public function submitScore(): void
+    /**
+     * Parse current setScores into valid set results, stopping once a winner is found.
+     *
+     * @return array{results: array<int, array{player1_score: int, player2_score: int}>, p1Sets: int, p2Sets: int}
+     */
+    private function parseSetResults(): array
     {
-        $setResults = [];
+        $results = [];
         $p1Sets = 0;
         $p2Sets = 0;
 
@@ -46,13 +60,34 @@ new class extends Component
                 continue;
             }
 
-            $setResults[] = ['player1_score' => $p1, 'player2_score' => $p2];
+            $results[] = ['player1_score' => $p1, 'player2_score' => $p2];
             $p1 > $p2 ? $p1Sets++ : $p2Sets++;
 
             if ($p1Sets >= $this->tournament->sets_to_win || $p2Sets >= $this->tournament->sets_to_win) {
                 break;
             }
         }
+
+        return compact('results', 'p1Sets', 'p2Sets');
+    }
+
+    public function saveDraft(): void
+    {
+        ['results' => $setResults] = $this->parseSetResults();
+
+        if (empty($setResults)) {
+            $this->error(__('No set scores to save.'));
+
+            return;
+        }
+
+        $this->match->saveDraft($setResults);
+        $this->success(__('Sets saved.'));
+    }
+
+    public function submitScore(): void
+    {
+        ['results' => $setResults, 'p1Sets' => $p1Sets, 'p2Sets' => $p2Sets] = $this->parseSetResults();
 
         if (empty($setResults)) {
             $this->error(__('Please enter at least one set score.'));
@@ -75,6 +110,7 @@ new class extends Component
         }
 
         $this->submitted = true;
+
         $winner = $this->match->winner_id === $this->match->player1_id
             ? $this->match->player1
             : $this->match->player2;
@@ -89,7 +125,8 @@ new class extends Component
 };
 ?>
 
-<div class="w-full max-w-sm mx-auto space-y-4">
+<div class="w-full max-w-sm mx-auto space-y-4"
+    x-data="{ confirmOpen: false }">
 
     @if ($submitted)
         <div class="bg-base-100 rounded-2xl shadow p-8 text-center space-y-4">
@@ -101,6 +138,17 @@ new class extends Component
             </a>
         </div>
     @else
+        @php
+            $maxSets = ($tournament->sets_to_win * 2) - 1;
+            $p1Sets  = collect($setScores)->filter(fn ($s) => (int)($s['p1'] ?? 0) > (int)($s['p2'] ?? 0))->count();
+            $p2Sets  = collect($setScores)->filter(fn ($s) => (int)($s['p2'] ?? 0) > (int)($s['p1'] ?? 0))->count();
+            $matchFinished = $p1Sets >= $tournament->sets_to_win || $p2Sets >= $tournament->sets_to_win;
+            $hasSets = collect($setScores)->contains(fn ($s) => (int)($s['p1'] ?? 0) > 0 || (int)($s['p2'] ?? 0) > 0);
+            $winner = $matchFinished
+                ? ($p1Sets >= $tournament->sets_to_win ? $match->player1 : $match->player2)
+                : null;
+        @endphp
+
         {{-- Match header --}}
         <div class="bg-base-100 rounded-2xl shadow p-5">
             <div class="text-[10px] font-bold uppercase tracking-widest opacity-40 mb-3 text-center">
@@ -108,48 +156,48 @@ new class extends Component
             </div>
 
             <div class="flex justify-between items-center gap-4">
-                @php
-                    $p1Sets = collect($setScores)->filter(fn ($s) => (int)($s['p1'] ?? 0) > (int)($s['p2'] ?? 0))->count();
-                    $p2Sets = collect($setScores)->filter(fn ($s) => (int)($s['p2'] ?? 0) > (int)($s['p1'] ?? 0))->count();
-                @endphp
                 <div class="flex-1 text-center">
-                    <div class="font-black text-sm uppercase leading-tight wrap-break-word hyphens-auto">{{ $match->player1?->full_name ?? '—' }}</div>
-                    <div class="text-4xl font-extrabold text-primary mt-1">{{ $p1Sets }}</div>
+                    <div class="font-black text-sm uppercase leading-tight wrap-break-word hyphens-auto
+                        {{ $matchFinished && $p1Sets >= $tournament->sets_to_win ? 'text-success' : '' }}">
+                        {{ $match->player1?->full_name ?? '—' }}
+                    </div>
+                    <div class="text-4xl font-extrabold mt-1
+                        {{ $matchFinished && $p1Sets >= $tournament->sets_to_win ? 'text-success' : 'text-primary' }}">
+                        {{ $p1Sets }}
+                    </div>
                 </div>
                 <div class="text-lg font-black opacity-20 italic shrink-0">VS</div>
                 <div class="flex-1 text-center">
-                    <div class="font-black text-sm uppercase leading-tight wrap-break-word hyphens-auto">{{ $match->player2?->full_name ?? '—' }}</div>
-                    <div class="text-4xl font-extrabold mt-1">{{ $p2Sets }}</div>
+                    <div class="font-black text-sm uppercase leading-tight wrap-break-word hyphens-auto
+                        {{ $matchFinished && $p2Sets >= $tournament->sets_to_win ? 'text-success' : '' }}">
+                        {{ $match->player2?->full_name ?? '—' }}
+                    </div>
+                    <div class="text-4xl font-extrabold mt-1
+                        {{ $matchFinished && $p2Sets >= $tournament->sets_to_win ? 'text-success' : '' }}">
+                        {{ $p2Sets }}
+                    </div>
                 </div>
             </div>
         </div>
 
-        {{-- Set inputs --}}
-        @php $maxSets = ($tournament->sets_to_win * 2) - 1; @endphp
+        {{-- Set inputs (all always editable) --}}
         <div class="space-y-3">
             @for ($i = 0; $i < $maxSets; $i++)
                 @php
                     $p1 = (int)($setScores[$i]['p1'] ?? 0);
                     $p2 = (int)($setScores[$i]['p2'] ?? 0);
-                    $setDone = $p1 > 0 || $p2 > 0;
-                    $p1Won = 0; $p2Won = 0;
-                    for ($j = 0; $j < $i; $j++) {
-                        $sp1 = (int)($setScores[$j]['p1'] ?? 0);
-                        $sp2 = (int)($setScores[$j]['p2'] ?? 0);
-                        if ($sp1 > $sp2) $p1Won++; else if ($sp2 > $sp1) $p2Won++;
-                    }
-                    $locked = $p1Won >= $tournament->sets_to_win || $p2Won >= $tournament->sets_to_win;
+                    $setHasScores = $p1 > 0 || $p2 > 0;
+                    $setWon = $setHasScores && $p1 !== $p2;
                 @endphp
 
                 <div @class([
                     'bg-base-100 rounded-xl shadow p-4 flex items-center gap-4 transition-all',
-                    'opacity-30' => $locked,
-                    'ring-2 ring-success/40' => $setDone && !$locked,
+                    'ring-2 ring-success/40' => $setWon,
                 ])>
                     <div @class([
                         'w-10 h-10 rounded-lg flex flex-col items-center justify-center shrink-0',
-                        'bg-success text-success-content' => $setDone && !$locked,
-                        'bg-base-200 text-base-content/40' => !$setDone || $locked,
+                        'bg-success text-success-content' => $setWon,
+                        'bg-base-200 text-base-content/40' => ! $setWon,
                     ])>
                         <span class="text-[8px] uppercase font-bold">Set</span>
                         <span class="text-base font-black leading-none">{{ $i + 1 }}</span>
@@ -157,23 +205,67 @@ new class extends Component
 
                     <x-input wire:model.live="setScores.{{ $i }}.p1"
                         type="number" min="0" max="30" placeholder="0"
-                        class="input-lg text-center font-mono font-black text-2xl flex-1 p-1"
-                        :disabled="$locked" />
+                        class="input-lg text-center font-mono font-black text-2xl flex-1 p-1" />
 
                     <span class="text-lg font-black opacity-20">:</span>
 
                     <x-input wire:model.live="setScores.{{ $i }}.p2"
                         type="number" min="0" max="30" placeholder="0"
-                        class="input-lg text-center font-mono font-black text-2xl flex-1 p-1"
-                        :disabled="$locked" />
+                        class="input-lg text-center font-mono font-black text-2xl flex-1 p-1" />
                 </div>
             @endfor
         </div>
 
-        <div class="pt-2">
-            <x-button label="{{ __('Submit score') }}" icon="o-check"
-                class="btn-primary w-full btn-lg"
-                wire:click="submitScore" spinner="submitScore" />
+        {{-- Actions --}}
+        <div class="pt-2 flex flex-col gap-2">
+            @if ($matchFinished)
+                <button @click="confirmOpen = true"
+                    class="btn btn-success w-full btn-lg">
+                    <x-icon name="o-trophy" class="w-5 h-5" />
+                    {{ __('Submit score') }}
+                </button>
+            @endif
+
+            @if ($hasSets && ! $matchFinished)
+                <x-button label="{{ __('Save sets') }}" icon="o-arrow-down-tray"
+                    class="btn-outline w-full btn-lg"
+                    wire:click="saveDraft" spinner="saveDraft" />
+            @endif
+        </div>
+
+        {{-- Confirm modal --}}
+        <div x-show="confirmOpen" x-cloak
+            @click.self="confirmOpen = false"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+            <div class="bg-base-100 rounded-2xl shadow-2xl p-6 w-full max-w-xs space-y-4 text-center">
+                <x-icon name="o-trophy" class="w-12 h-12 mx-auto text-success" />
+
+                @if ($winner)
+                    <div>
+                        <p class="text-xs uppercase font-bold opacity-40 mb-1">{{ __('Winner') }}</p>
+                        <p class="text-xl font-black">{{ $winner->full_name }}</p>
+                        <p class="text-4xl font-extrabold text-success mt-1">{{ $p1Sets }} — {{ $p2Sets }}</p>
+                    </div>
+                @endif
+
+                <p class="text-sm opacity-60">{{ __('Confirm and record this result?') }}</p>
+
+                <div class="flex gap-2 pt-1">
+                    <button @click="confirmOpen = false" class="btn btn-ghost flex-1">
+                        {{ __('Cancel') }}
+                    </button>
+                    <button
+                        wire:click="submitScore"
+                        wire:loading.attr="disabled"
+                        @click="confirmOpen = false"
+                        class="btn btn-success flex-1">
+                        <wire:loading wire:target="submitScore">
+                            <span class="loading loading-spinner loading-sm"></span>
+                        </wire:loading>
+                        {{ __('Confirm') }}
+                    </button>
+                </div>
+            </div>
         </div>
     @endif
 

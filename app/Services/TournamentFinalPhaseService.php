@@ -32,7 +32,7 @@ class TournamentFinalPhaseService
     {
         $result = true;
         foreach ($tournament->pools as $pool) {
-            if ($pool->tournamentMatches->count() === 0) {
+            if ($pool->tournamentMatches()->count() === 0) {
                 $result = false;
             }
         }
@@ -159,7 +159,7 @@ class TournamentFinalPhaseService
             'is_bronze_match' => true,
         ]);
 
-        $semifinalMatches = $this->createRoundMatches($tournament, 'semifinal', 2, $finalMatch->id, $bronzeMatch->id);
+        $semifinalMatches = $this->createRoundMatches($tournament, 'semifinal', 2, [$finalMatch->id], $bronzeMatch->id);
 
         if ($startingRound === 'round_4' || $totalPlayers <= 4) {
             // If starting with semifinals, assign players directly
@@ -215,6 +215,7 @@ class TournamentFinalPhaseService
         // Get all matches
         $matches = TournamentMatch::where('tournament_id', $tournament->id)
             ->fromBracket()
+            ->with(['player1', 'player2', 'sets'])
             ->orderBy('match_order')
             ->get();
 
@@ -368,57 +369,71 @@ class TournamentFinalPhaseService
     }
 
     /**
-     * Seed players in bracket to avoid early matchups between top players from same pool
+     * Seed players so that rank-N players face rank-(N+1) players from a different pool.
+     * Players from the same pool are placed in opposite bracket halves.
+     *
+     * For 4 pools with 2 qualifiers each the result is:
+     *   [A#1, C#2, B#1, D#2, C#1, A#2, D#1, B#2]
+     * giving QF pairs: A#1-C#2, B#1-D#2, C#1-A#2, D#1-B#2.
      */
     protected function seedPlayers(Collection $qualifiedPlayers): Collection
     {
         $seededPlayers = collect();
         $poolGroups = $qualifiedPlayers->groupBy('pool.id');
 
-        // Ensure we have enough players
         if ($poolGroups->count() < 2) {
             return $qualifiedPlayers;
         }
 
-        // Get pools in consistent order
-        $orderedPools = $poolGroups->keys()->sort()->values();
-
-        // Pair pools opposite to each other (first vs last, second vs second-to-last, etc.)
-        $poolPairs = collect();
-        for ($i = 0; $i < intdiv($orderedPools->count(), 2); $i++) {
-            $poolPairs->push([
-                $orderedPools[$i],
-                $orderedPools[$orderedPools->count() - 1 - $i],
-            ]);
-        }
-
-        // For each position (1st place, 2nd place, etc.)
+        $orderedPoolIds = $poolGroups->keys()->sort()->values();
         $maxPosition = $qualifiedPlayers->max('position');
-        for ($position = 1; $position <= $maxPosition; $position++) {
-            foreach ($poolPairs as $poolPair) {
-                // Add 1st from pool A, then 2nd from pool B
-                foreach ($poolGroups[$poolPair[0]] as $player) {
-                    if ($player['position'] === $position) {
-                        $seededPlayers->push($player);
-                        break;
-                    }
-                }
 
-                // Add 2nd from pool B, then 1st from pool A (for next iteration)
-                foreach ($poolGroups[$poolPair[1]] as $player) {
-                    if ($player['position'] === $position) {
-                        $seededPlayers->push($player);
+        // Build one ordered group per rank (pool order is consistent within each rank)
+        $rankGroups = collect();
+        for ($rank = 1; $rank <= $maxPosition; $rank++) {
+            $group = collect();
+            foreach ($orderedPoolIds as $poolId) {
+                foreach ($poolGroups[$poolId] as $player) {
+                    if ($player['position'] === $rank) {
+                        $group->push($player);
                         break;
                     }
                 }
             }
+            if ($group->isNotEmpty()) {
+                $rankGroups->push($group);
+            }
         }
 
-        // Add any remaining players (from repêchage)
+        // Cross-seed consecutive rank pairs: rank1 vs rank2, rank3 vs rank4, …
+        // Shift the lower-rank group by half its size so rank1[i] faces rank2[i + N/2].
+        for ($pairIdx = 0; $pairIdx + 1 < $rankGroups->count(); $pairIdx += 2) {
+            $higher = $rankGroups[$pairIdx];
+            $lower = $rankGroups[$pairIdx + 1];
+            $count = max($higher->count(), $lower->count());
+            $offset = intdiv($count, 2);
+
+            for ($i = 0; $i < $count; $i++) {
+                if ($i < $higher->count()) {
+                    $seededPlayers->push($higher[$i]);
+                }
+                $lowerIdx = ($i + $offset) % $count;
+                if ($lowerIdx < $lower->count()) {
+                    $seededPlayers->push($lower[$lowerIdx]);
+                }
+            }
+        }
+
+        // If odd number of rank groups, append the last unpaired group as-is
+        if ($rankGroups->count() % 2 === 1) {
+            foreach ($rankGroups->last() as $player) {
+                $seededPlayers->push($player);
+            }
+        }
+
+        // Append any repêchage or overflow players not yet placed
         foreach ($qualifiedPlayers as $player) {
-            if (! $seededPlayers->contains(function ($value, $key) use ($player) {
-                return $value['player']->id === $player['player']->id;
-            })) {
+            if (! $seededPlayers->contains(fn ($v) => $v['player']->id === $player['player']->id)) {
                 $seededPlayers->push($player);
             }
         }

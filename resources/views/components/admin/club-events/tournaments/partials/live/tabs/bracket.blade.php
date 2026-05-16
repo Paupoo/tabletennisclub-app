@@ -64,13 +64,7 @@
                                         <span class="font-mono shrink-0">{{ $match->getSetsWon($match->player2_id ?? 0) }}</span>
                                     </div>
 
-                                    @if ($match->status !== 'completed')
-                                        <x-button
-                                            label="{{ $match->status === 'in_progress' ? __('Update score') : __('Enter score') }}"
-                                            icon="o-pencil"
-                                            class="{{ $match->status === 'in_progress' ? 'btn-primary' : 'btn-ghost' }} btn-xs w-full mt-1"
-                                            wire:click="openScoreEntry({{ $match->id }})" />
-                                    @elseif ($isFinal)
+                                    @if ($isFinal && $match->status === 'completed')
                                         <div class="text-center text-xs font-bold text-yellow-500 mt-1">
                                             🏆 {{ $match->winner?->full_name }}
                                         </div>
@@ -105,11 +99,6 @@
                     <span class="truncate">{{ $bronze->player2?->full_name ?? '—' }}</span>
                     <span class="font-mono">{{ $bronze->getSetsWon($bronze->player2_id ?? 0) }}</span>
                 </div>
-                @if ($bronze->status !== 'completed')
-                    <x-button label="{{ __('Enter score') }}" icon="o-pencil"
-                        class="btn-ghost btn-xs w-full"
-                        wire:click="openScoreEntry({{ $bronze->id }})" />
-                @endif
             </div>
         @endif
 

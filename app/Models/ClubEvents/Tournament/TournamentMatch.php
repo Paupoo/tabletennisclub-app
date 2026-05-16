@@ -215,6 +215,28 @@ class TournamentMatch extends Model
         $this->save();
     }
 
+    /**
+     * Save set scores as a draft without completing the match.
+     *
+     * @param  array<int, array{player1_score: int, player2_score: int}>  $setResults
+     */
+    public function saveDraft(array $setResults): void
+    {
+        $this->sets()->delete();
+
+        foreach ($setResults as $index => $result) {
+            $p1 = $result['player1_score'];
+            $p2 = $result['player2_score'];
+
+            $this->sets()->create([
+                'set_number' => $index + 1,
+                'player1_score' => $p1,
+                'player2_score' => $p2,
+                'winner_id' => $p1 > $p2 ? $this->player1_id : $this->player2_id,
+            ]);
+        }
+    }
+
     public function scopeFromBracket(Builder $query): void
     {
         $query->whereNotNull('round');

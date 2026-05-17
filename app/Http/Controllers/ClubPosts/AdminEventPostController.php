@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\ClubPosts;
 
+use App\Enums\EventPostStatusEnum;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\EventPostRequest;
 use App\Models\ClubPosts\EventPost;
@@ -18,7 +19,7 @@ class AdminEventPostController extends Controller
     public function archive(EventPost $event): RedirectResponse
     {
         $this->authorize('archive', $event);
-        $event->update(['status' => 'archived']);
+        $event->update(['status' => EventPostStatusEnum::ARCHIVED]);
 
         return back()->with('success', __('Event put in archives'));
     }
@@ -54,7 +55,7 @@ class AdminEventPostController extends Controller
         $this->authorize('duplicated', $eventPost);
         $newEvent = $eventPost->replicate();
         $newEvent->title = $eventPost->title . ' (Copie)';
-        $newEvent->status = 'draft';
+        $newEvent->status = EventPostStatusEnum::DRAFT;
         $newEvent->save();
 
         return redirect()
@@ -78,9 +79,9 @@ class AdminEventPostController extends Controller
     public function index(Request $request): View
     {
         $stats = collect([
-            'drafts' => EventPost::where('status', 'draft')->count(),
-            'published' => EventPost::where('status', 'published')->count(),
-            'archived' => EventPost::where('status', 'archived')->count(),
+            'drafts' => EventPost::where('status', EventPostStatusEnum::DRAFT)->count(),
+            'published' => EventPost::where('status', EventPostStatusEnum::PUBLISHED)->count(),
+            'archived' => EventPost::where('status', EventPostStatusEnum::ARCHIVED)->count(),
             'upcoming' => EventPost::published()->upcoming()->count(),
         ]);
 
@@ -142,7 +143,7 @@ class AdminEventPostController extends Controller
     public function publish(EventPost $event): RedirectResponse
     {
         $this->authorize('publish', $event);
-        $event->update(['status' => 'published']);
+        $event->update(['status' => EventPostStatusEnum::PUBLISHED]);
 
         return back()->with('success', __('Event published successfully'));
     }

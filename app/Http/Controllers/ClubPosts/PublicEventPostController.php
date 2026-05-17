@@ -23,13 +23,15 @@ class PublicEventPostController extends Controller
             ])
             ->map(fn (EventPost $event) => [
                 'id' => $event->id,
-                'category' => $event->category,
+                'category' => strtolower($event->type->value),
                 'title' => $event->title,
                 'description' => $event->description,
                 'date' => $event->formatted_date,
                 'time' => $event->formatted_time,
                 'location' => $event->location,
-                'price' => $event->price ?: __('Gratuit'),
+                'price' => $event->price && (float) $event->price > 0
+                    ? number_format((float) $event->price, 2, ',', ' ') . ' €'
+                    : __('Gratuit'),
                 'icon' => $event->icon,
             ])
             ->values()

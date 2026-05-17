@@ -10,9 +10,9 @@
         <x-textarea label="Message personnalisé (optionnel)" wire:model="inviteMessage"
             placeholder="Ex: Pensez à prendre vos raquettes et vos gourdes !" rows="3" />
 
-        @if ($publishedArticleId)
-            <x-toggle label="Inclure un lien vers l'article" wire:model.live="inviteIncludeArticle"
-                hint="Un lien vers le brouillon de l'article sera inclus dans l'email." />
+        @if ($eventPostId)
+            <x-toggle label="Inclure un lien vers l'événement web" wire:model.live="inviteIncludeArticle"
+                hint="Un lien vers l'événement web sera inclus dans l'email." />
         @endif
     </div>
 

@@ -35,7 +35,7 @@
 
             $wizardSteps = [
                 1 => ['label' => __('Configuration'), 'icon' => 'o-cog-6-tooth'],
-                2 => ['label' => __('Article'),        'icon' => 'o-document-text'],
+                2 => ['label' => __('Web event'),      'icon' => 'o-globe-alt'],
                 3 => ['label' => __('Validation'),     'icon' => 'o-lock-closed'],
                 4 => ['label' => __('Invitations'),    'icon' => 'o-envelope'],
                 5 => ['label' => __('Registrations'),  'icon' => 'o-users'],
@@ -94,9 +94,6 @@
 
     {{-- Modal d'invitation --}}
     @include('admin.club-events.tournaments.partials.modals.invite')
-
-    {{-- Modal de publication d'article --}}
-    @include('admin.club-events.tournaments.partials.modals.publish-article')
 
     {{-- Modal de lancement du tournoi --}}
     @include('admin.club-events.tournaments.partials.modals.launch')

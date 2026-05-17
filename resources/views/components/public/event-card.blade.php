@@ -26,18 +26,24 @@
                 <span class="mr-3 w-4">📅</span>
                 <span>{{ $event['date'] }}</span>
             </div>
-            <div class="flex items-center text-sm text-gray-600">
-                <span class="mr-3 w-4">⏰</span>
-                <span>{{ $event['time'] }}</span>
-            </div>
-            <div class="flex items-center text-sm text-gray-600">
-                <span class="mr-3 w-4">📍</span>
-                <span>{{ $event['location'] }}</span>
-            </div>
-            <div class="flex items-center text-sm text-gray-600">
-                <span class="mr-3 w-4">{{ $event['category'] === 'tournament' ? '💰' : ($event['category'] === 'training' ? '👥' : '🍕') }}</span>
-                <span>{{ $event['price'] }}</span>
-            </div>
+            @if (!empty($event['time']) && $event['time'] !== '00:00')
+                <div class="flex items-center text-sm text-gray-600">
+                    <span class="mr-3 w-4">⏰</span>
+                    <span>{{ $event['time'] }}</span>
+                </div>
+            @endif
+            @if (!empty($event['location']))
+                <div class="flex items-center text-sm text-gray-600">
+                    <span class="mr-3 w-4">📍</span>
+                    <span>{{ $event['location'] }}</span>
+                </div>
+            @endif
+            @if (!empty($event['price']))
+                <div class="flex items-center text-sm text-gray-600">
+                    <span class="mr-3 w-4">🎟️</span>
+                    <span>{{ $event['price'] }}</span>
+                </div>
+            @endif
         </div>
         
         {{-- <button class="w-full @if($event['category'] === 'tournament') bg-club-blue hover:bg-club-blue-light @elseif($event['category'] === 'training') bg-gray-800 hover:bg-gray-700 @else bg-club-yellow hover:bg-club-yellow-light @endif @if($event['category'] === 'social') text-club-blue @else text-white @endif py-3 px-4 rounded-lg transition-colors font-medium">

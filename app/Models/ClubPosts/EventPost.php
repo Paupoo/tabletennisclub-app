@@ -5,11 +5,16 @@ declare(strict_types=1);
 namespace App\Models\ClubPosts;
 
 use App\Enums\ClubEventTypeEnum;
-use Illuminate\Contracts\Database\Query\Builder;
+use App\Enums\EventPostStatusEnum;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
+/**
+ * @property EventPostStatusEnum $status
+ * @property ClubEventTypeEnum $type
+ */
 class EventPost extends Model
 {
     use HasFactory;
@@ -34,7 +39,7 @@ class EventPost extends Model
 
     protected $casts = [
         'type' => ClubEventTypeEnum::class,
-        'status' => 'string',
+        'status' => EventPostStatusEnum::class,
         'event_date' => 'date',
         'start_time' => 'datetime',
         'end_time' => 'datetime',
@@ -47,7 +52,6 @@ class EventPost extends Model
         'type',
         'title',
         'description',
-        'category',
         'status',
         'event_date',
         'start_time',
@@ -63,8 +67,7 @@ class EventPost extends Model
     // Méthodes utilitaires
     public function canBeDeleted(): bool
     {
-        // Un événement peut être supprimé s'il est en brouillon ou archivé
-        return in_array($this->status, ['draft', 'archived']);
+        return in_array($this->status, [EventPostStatusEnum::DRAFT, EventPostStatusEnum::ARCHIVED]);
     }
 
     /**
@@ -140,16 +143,15 @@ class EventPost extends Model
     public function getStatusBadgeClasses(): string
     {
         return match ($this->status) {
-            // 'draft' => 'bg-gray-100 text-gray-800',
-            'published' => 'bg-green-100 text-green-800',
-            'archived' => 'bg-red-100 text-red-800',
-            default => 'bg-gray-100 text-gray-800'
+            EventPostStatusEnum::PUBLISHED => 'bg-green-100 text-green-800',
+            EventPostStatusEnum::ARCHIVED => 'bg-red-100 text-red-800',
+            default => 'bg-gray-100 text-gray-800',
         };
     }
 
     public function getStatusLabelAttribute(): string
     {
-        return self::STATUSES[$this->status] ?? $this->status;
+        return $this->status->getLabel();
     }
 
     /**
@@ -207,10 +209,9 @@ class EventPost extends Model
         return $query->where('event_date', '<', now()->startOfDay());
     }
 
-    // Scopes pour les requêtes courantes
     public function scopePublished(Builder $query): Builder
     {
-        return $query->where('status', 'published');
+        return $query->where('status', EventPostStatusEnum::PUBLISHED);
     }
 
     public function scopeUpcoming(Builder $query): Builder

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 use App\Data\Tournament\SimulationResult;
 use App\Data\Tournament\TournamentConfig;
-use App\Enums\NewsPostCategoryEnum;
-use App\Enums\NewsPostStatusEnum;
+use App\Enums\ClubEventTypeEnum;
+use App\Enums\EventPostStatusEnum;
 use App\Enums\TournamentObjectiveEnum;
 use App\Enums\TournamentStatusEnum;
 use App\Models\ClubAdmin\Club\Room;
@@ -13,7 +13,7 @@ use App\Models\ClubAdmin\Club\Table;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Tournament\Pool;
 use App\Models\ClubEvents\Tournament\Tournament;
-use App\Models\ClubPosts\NewsPost;
+use App\Models\ClubPosts\EventPost;
 use App\Notifications\Tournament\TournamentCancelledNotification;
 use App\Notifications\Tournament\TournamentInvitationNotification;
 use App\Notifications\Tournament\TournamentUpdatedNotification;
@@ -25,8 +25,7 @@ use App\Services\TournamentSimulator;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
+
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -36,17 +35,19 @@ new class extends Component
 {
     use Toast, WithFileUploads;
 
-    public string $articleContent = '';
-
-    public ?string $articleExistingImage = null;
-
-    public mixed $articleImage = null;
-
-    public string $articleSavedStatus = '';
-
-    public string $articleTitle = '';
-
     public bool $bulkDrawer = false;
+
+    public string $eventDescription = '';
+
+    public bool $eventFeatured = false;
+
+    public string $eventLocation = '';
+
+    public ?int $eventPostId = null;
+
+    public string $eventStatus = 'DRAFT';
+
+    public string $eventTitle = '';
 
     public bool $inviteIncludeArticle = false;
 
@@ -88,12 +89,7 @@ new class extends Component
     // ── Frais d'inscription (0 = gratuit)
     public float $price = 0;
 
-    // ── Article
-    public string $publicationDate = '';
-
     public bool $publicRegistration = false;
-
-    public ?int $publishedArticleId = null;
 
     public array $selectedMembers = [];
 
@@ -127,8 +123,6 @@ new class extends Component
     public bool $showOpenRegistrationsModal = false;
 
     public bool $showLaunchModal = false;
-
-    public bool $showPublishModal = false;
 
     public bool $showRegisterModal = false;
 
@@ -595,7 +589,6 @@ new class extends Component
 
     public function mount(?Tournament $tournament = null): void
     {
-        $this->publicationDate = today()->format('Y-m-d');
         $this->tournamentDate = today()->addWeek()->format('Y-m-d');
 
         if ($tournament !== null) {
@@ -629,15 +622,17 @@ new class extends Component
                 default                         => '1',
             };
 
-            $newsPost = $tournament->newsPost;
-            if ($newsPost) {
-                $this->publishedArticleId = $newsPost->id;
-                $this->articleTitle = $newsPost->title;
-                $this->articleContent = $newsPost->content ?? '';
-                $this->articleExistingImage = $newsPost->image;
-                $this->articleSavedStatus = $newsPost->status->value;
+            $ep = $tournament->eventPost;
+            if ($ep) {
+                $this->eventPostId      = $ep->id;
+                $this->eventTitle       = $ep->title;
+                $this->eventDescription = $ep->description ?? '';
+                $this->eventLocation    = $ep->location ?? '';
+                $this->eventFeatured    = (bool) $ep->featured;
+                $this->eventStatus      = $ep->status->value;
             } else {
-                $this->articleTitle = $tournament->name;
+                $this->eventTitle    = $tournament->name;
+                $this->eventLocation = $tournament->location ?? '';
             }
         }
     }
@@ -761,73 +756,59 @@ new class extends Component
         $this->success($user->full_name . ' ' . __('has been moved to the registered list.'));
     }
 
-    public function publishArticle(string $status = 'draft'): void
+    public function saveEventPost(string $status = 'draft'): void
     {
         $this->validate([
-            'articleTitle' => 'required|min:5',
-            'articleContent' => 'required',
-            'articleImage' => 'nullable|image|max:4096',
+            'eventTitle'       => 'required|min:3',
+            'eventDescription' => 'nullable|string',
         ]);
 
-        $imagePath = $this->articleExistingImage;
+        $enumStatus = $status === 'published'
+            ? EventPostStatusEnum::PUBLISHED
+            : EventPostStatusEnum::DRAFT;
 
-        if ($this->articleImage) {
-            if ($imagePath) {
-                Storage::disk('public')->delete($imagePath);
-            }
-            $imagePath = $this->articleImage->store('clubPosts', 'public');
-            $this->articleExistingImage = $imagePath;
-            $this->articleImage = null;
-        }
+        $tournament = Tournament::findOrFail($this->tournamentId);
 
-        $newsStatus = NewsPostStatusEnum::from($status);
+        $startTime = $tournament->start_time
+            ? \Carbon\Carbon::parse($tournament->start_time)
+            : null;
 
-        $baseSlug = Str::slug($this->articleTitle);
-        $slug = $baseSlug;
-        $i = 1;
-        while (
-            NewsPost::where('slug', $slug)
-                ->when($this->publishedArticleId, fn ($q) => $q->where('id', '!=', $this->publishedArticleId))
-                ->exists()
-        ) {
-            $slug = $baseSlug . '-' . $i++;
-        }
+        $endTime = $startTime && $tournament->duration_minutes > 0
+            ? $startTime->copy()->addMinutes($tournament->duration_minutes)
+            : null;
 
         $data = [
-            'title' => $this->articleTitle,
-            'slug' => $slug,
-            'content' => $this->articleContent,
-            'category' => NewsPostCategoryEnum::COMPETITION,
-            'status' => $newsStatus,
-            'is_public' => $newsStatus === NewsPostStatusEnum::PUBLISHED,
-            'image' => $imagePath,
-            'user_id' => auth()->id(),
+            'eventable_type'   => Tournament::class,
+            'eventable_id'     => $tournament->id,
+            'type'             => ClubEventTypeEnum::TOURNAMENT,
+            'title'            => $this->eventTitle,
+            'description'      => $this->eventDescription,
+            'status'           => $enumStatus->value,
+            'location'         => $this->eventLocation,
+            'event_date'       => $tournament->start_date->toDateString(),
+            'start_time'       => $startTime?->format('H:i:s') ?? '00:00:00',
+            'end_time'         => $endTime?->format('H:i:s'),
+            'price'            => (string) $tournament->price,
+            'max_participants' => $tournament->max_users ?: null,
+            'featured'         => $this->eventFeatured,
+            'icon'             => '🏆',
         ];
 
-        if ($this->publishedArticleId) {
-            NewsPost::findOrFail($this->publishedArticleId)->update($data);
+        if ($this->eventPostId) {
+            EventPost::findOrFail($this->eventPostId)->update($data);
         } else {
-            $newsPost = NewsPost::create($data);
-            $this->publishedArticleId = $newsPost->id;
-
-            if ($this->tournamentId) {
-                Tournament::whereKey($this->tournamentId)->update(['news_post_id' => $newsPost->id]);
-            }
+            $ep = EventPost::create($data);
+            $this->eventPostId = $ep->id;
         }
 
-        $this->articleSavedStatus = $status;
+        $this->eventStatus = $enumStatus->value;
 
         $this->success(
-            title: $newsStatus === NewsPostStatusEnum::PUBLISHED
-                ? __('Article published!')
-                : __('Article saved as draft!'),
-            description: $newsStatus === NewsPostStatusEnum::DRAFT
-                ? __('You can now include a link to it in your invitations.')
-                : null,
-            icon: 'o-document-text',
+            title: $enumStatus === EventPostStatusEnum::PUBLISHED
+                ? __('Event published on the website!')
+                : __('Event saved as draft.'),
+            icon: 'o-globe-alt',
         );
-
-        $this->showPublishModal = false;
     }
 
     // ── Computed: registration status
@@ -916,7 +897,6 @@ new class extends Component
 
         return $this->view([
             'filteredMembers' => $filteredMembers,
-            'markdownPreview' => Str::markdown($this->articleContent ?: ''),
         ]);
     }
 
@@ -1046,8 +1026,8 @@ new class extends Component
         $notification = new TournamentInvitationNotification(
             tournament: $tournament,
             customMessage: $this->inviteMessage,
-            includeArticleLink: $this->inviteIncludeArticle && $this->publishedArticleId !== null,
-            newsPostId: $this->inviteIncludeArticle ? $this->publishedArticleId : null,
+            includeArticleLink: $this->inviteIncludeArticle && $this->eventPostId !== null,
+            newsPostId: $this->inviteIncludeArticle ? $this->eventPostId : null,
         );
 
         foreach ($users as $user) {
@@ -1058,7 +1038,7 @@ new class extends Component
             'tournament_id' => $this->tournamentId,
             'user_count' => $users->count(),
             'message' => $this->inviteMessage ?: null,
-            'include_article' => $this->inviteIncludeArticle && $this->publishedArticleId !== null,
+            'include_article' => $this->inviteIncludeArticle && $this->eventPostId !== null,
             'sent_at' => now(),
         ]);
 

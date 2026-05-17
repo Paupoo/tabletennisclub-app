@@ -11,6 +11,7 @@ use App\Events\Tournament\NewTournamentPublished;
 use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Club\Table;
 use App\Models\ClubAdmin\Users\User;
+use App\Models\ClubPosts\EventPost;
 use App\Models\ClubPosts\NewsPost;
 use App\Observers\TournamentObserver;
 use Database\Factories\ClubEvents\Tournament\TournamentFactory;
@@ -22,6 +23,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Support\Carbon;
 
 /**
@@ -135,6 +137,11 @@ class Tournament extends Model
         return $this->users()
             ->wherePivotIn('registration_status', ['registered', 'confirmed', 'spot_offered'])
             ->count();
+    }
+
+    public function eventPost(): MorphOne
+    {
+        return $this->morphOne(EventPost::class, 'eventable');
     }
 
     public function isPaid(): bool

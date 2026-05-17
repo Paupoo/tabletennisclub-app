@@ -21,7 +21,7 @@
         </div>
         <x-badge value="{{ __('Closed') }}" class="badge-error ml-auto shrink-0" />
     </div>
-    @else
+    @elseif(!$this->user->isAffiliatedForCurrentSeason())
     <x-admin.shared.info-bar :title="__('Season 2024-2025 Registration')" :description="__('The new season is open! Do not forget to register your family members and all your training sessions here to take advantage of the best price!')" class="mb-6" />
     @endif
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -226,6 +226,80 @@
                         </x-card>
 
                         </div>{{-- fin wrapper grisé --}}
+
+                        {{-- 3. Documents obligatoires --}}
+                        <x-card title="3. {{ __('Required Documents') }}" shadow>
+                            <div class="space-y-4">
+
+                                {{-- Certificat médical --}}
+                                <div class="flex items-center gap-4">
+                                    @if(!empty($reg['medical_certificate_path']))
+                                    <x-icon name="o-document-check" class="w-6 h-6 text-success shrink-0" />
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-sm font-semibold">{{ __('Medical Certificate') }}</div>
+                                        <div class="text-xs opacity-60">{{ __('Uploaded') }}</div>
+                                    </div>
+                                    <a href="{{ asset($reg['medical_certificate_path']) }}" target="_blank" class="btn btn-ghost btn-xs gap-1">
+                                        <x-icon name="o-eye" class="w-3.5 h-3.5" />
+                                        {{ __('View') }}
+                                    </a>
+                                    @else
+                                    <x-icon name="o-exclamation-triangle" class="w-6 h-6 text-warning shrink-0" />
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-sm font-semibold">{{ __('Medical Certificate') }}</div>
+                                        <div class="text-xs opacity-60">{{ __('Missing — required for registration') }}</div>
+                                    </div>
+                                    @endif
+                                </div>
+
+                                <div class="flex items-center gap-3">
+                                    <input type="file" wire:model="medicalCertificate" id="medical-{{ $userId }}" class="hidden" accept=".jpg,.jpeg,.png,.pdf" />
+                                    <label for="medical-{{ $userId }}" class="btn btn-outline btn-xs gap-1 cursor-pointer">
+                                        <x-icon name="o-arrow-up-tray" class="w-3.5 h-3.5" />
+                                        {{ empty($reg['medical_certificate_path']) ? __('Upload') : __('Replace') }}
+                                    </label>
+                                    @if($medicalCertificate)
+                                    <x-button label="{{ __('Save') }}" icon="o-check" class="btn-success btn-xs" wire:click="uploadMedicalCertificate({{ $userId }})" spinner />
+                                    @endif
+                                </div>
+
+                                @if(!empty($reg['is_minor']))
+                                <x-menu-separator />
+                                {{-- Autorisation parentale (mineurs uniquement) --}}
+                                <div class="flex items-center gap-4">
+                                    @if(!empty($reg['parental_consent_path']))
+                                    <x-icon name="o-document-check" class="w-6 h-6 text-success shrink-0" />
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-sm font-semibold">{{ __('Parental Consent') }}</div>
+                                        <div class="text-xs opacity-60">{{ __('Uploaded') }}</div>
+                                    </div>
+                                    <a href="{{ asset($reg['parental_consent_path']) }}" target="_blank" class="btn btn-ghost btn-xs gap-1">
+                                        <x-icon name="o-eye" class="w-3.5 h-3.5" />
+                                        {{ __('View') }}
+                                    </a>
+                                    @else
+                                    <x-icon name="o-exclamation-triangle" class="w-6 h-6 text-warning shrink-0" />
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-sm font-semibold">{{ __('Parental Consent') }}</div>
+                                        <div class="text-xs opacity-60">{{ __('Required for members under 18') }}</div>
+                                    </div>
+                                    @endif
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <input type="file" wire:model="parentalConsent" id="parental-{{ $userId }}" class="hidden" accept=".jpg,.jpeg,.png,.pdf" />
+                                    <label for="parental-{{ $userId }}" class="btn btn-outline btn-xs gap-1 cursor-pointer">
+                                        <x-icon name="o-arrow-up-tray" class="w-3.5 h-3.5" />
+                                        {{ empty($reg['parental_consent_path']) ? __('Upload') : __('Replace') }}
+                                    </label>
+                                    @if($parentalConsent)
+                                    <x-button label="{{ __('Save') }}" icon="o-check" class="btn-success btn-xs" wire:click="uploadParentalConsent({{ $userId }})" spinner />
+                                    @endif
+                                </div>
+                                @endif
+
+                            </div>
+                        </x-card>
+
                     </div>
 
                 </x-tab>
@@ -321,23 +395,20 @@
                 </span>
             </div>
 
-            {{-- Rappel des documents --}}
-            <x-card title="{{ __('Required Documents') }}" shadow>
-                <x-list-item :item="[]" no-separator no-hover>
-                    <x-slot:avatar>
-                        <x-icon name="o-document-check" class="text-success w-6 h-6" />
-                    </x-slot:avatar>
-                    <x-slot:value>Medical Certificate</x-slot:value>
-                    <x-slot:sub-value>Already uploaded</x-slot:sub-value>
-                </x-list-item>
-                <x-list-item :item="[]" no-separator no-hover>
-                    <x-slot:avatar>
-                        <x-icon name="o-exclamation-triangle" class="text-warning w-6 h-6" />
-                    </x-slot:avatar>
-                    <x-slot:value>Parental Consent</x-slot:value>
-                    <x-slot:sub-value>Missing for minors</x-slot:sub-value>
-                </x-list-item>
-            </x-card>
+            {{-- Statut documents (résumé global) --}}
+            @php
+                $docsOk = true;
+                foreach ($registrations as $uid => $reg) {
+                    if (empty($reg['medical_certificate_path'])) { $docsOk = false; break; }
+                    if (!empty($reg['is_minor']) && empty($reg['parental_consent_path'])) { $docsOk = false; break; }
+                }
+            @endphp
+            <div @class(['flex items-start gap-3 p-4 rounded-xl text-xs', 'bg-success/10 border border-success/30' => $docsOk, 'bg-warning/10 border border-warning/30' => !$docsOk])>
+                <x-icon name="{{ $docsOk ? 'o-document-check' : 'o-exclamation-triangle' }}" class="w-5 h-5 shrink-0 mt-0.5 {{ $docsOk ? 'text-success' : 'text-warning' }}" />
+                <span class="opacity-80">
+                    {{ $docsOk ? __('All required documents have been uploaded.') : __('Some required documents are missing. See each member tab.') }}
+                </span>
+            </div>
         </div>
 
     </div>

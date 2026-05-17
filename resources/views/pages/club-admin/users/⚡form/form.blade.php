@@ -138,6 +138,43 @@
                     label="{{ __('Is an administrator') }}" wire:model="is_admin" />
             </div>
 
+            @if ($user && ($user->medical_certificate_path || $user->parental_consent_path))
+                <div class="col-span-6">
+                    <x-menu-separator />
+                </div>
+
+                <!-- Section Documents -->
+                <div class="col-span-6 md:col-span-2">
+                    <x-header subtitle="{{ __('Uploaded by the member') }}" title="{{ __('Documents') }}" />
+                </div>
+                <div class="col-span-6 md:col-span-4 space-y-3">
+                    @if ($user->medical_certificate_path)
+                    <div class="flex items-center gap-3 p-3 rounded-lg border border-base-200 bg-base-100">
+                        <x-icon name="o-document-check" class="w-5 h-5 text-success shrink-0" />
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm font-semibold">{{ __('Medical Certificate') }}</div>
+                        </div>
+                        <a href="{{ asset($user->medical_certificate_path) }}" target="_blank" class="btn btn-ghost btn-sm gap-1">
+                            <x-icon name="o-arrow-down-tray" class="w-4 h-4" />
+                            {{ __('Download') }}
+                        </a>
+                    </div>
+                    @endif
+                    @if ($user->parental_consent_path)
+                    <div class="flex items-center gap-3 p-3 rounded-lg border border-base-200 bg-base-100">
+                        <x-icon name="o-document-check" class="w-5 h-5 text-success shrink-0" />
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm font-semibold">{{ __('Parental Consent') }}</div>
+                        </div>
+                        <a href="{{ asset($user->parental_consent_path) }}" target="_blank" class="btn btn-ghost btn-sm gap-1">
+                            <x-icon name="o-arrow-down-tray" class="w-4 h-4" />
+                            {{ __('Download') }}
+                        </a>
+                    </div>
+                    @endif
+                </div>
+            @endif
+
             @if ($user)
                 <div class="col-span-6">
                     <x-menu-separator />

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
 use App\Actions\ClubAdmin\Subscriptions\CalculatePriceAction;
 use App\Actions\ClubAdmin\Subscriptions\CreateSubscriptionAction;
+use App\Notifications\Subscription\SubscriptionCreatedNotification;
 use App\Enums\Gender;
 use App\Enums\TrainingLevel;
 use App\Models\ClubAdmin\Subscription\Subscription;
@@ -15,14 +16,16 @@ use App\Support\Breadcrumb;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Rule;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast;
+    use Toast, WithFileUploads;
 
     // --- Gestion du Modal "Ajouter un membre" ---
     public bool $addMemberModal = false;
@@ -60,6 +63,10 @@ new class extends Component
 
     public string $selectedTab;
 
+    public $medicalCertificate = null;
+
+    public $parentalConsent = null;
+
     // --- Gestion du panier d'inscriptions ---
     // Contient les données d'inscription pour chaque membre : id, formula, trainings[]
     public User $user;
@@ -93,10 +100,13 @@ new class extends Component
         }
 
         $this->registrations[$user->id] = [
-            'user_id'   => $user->id,
-            'name'      => $user->first_name . ' ' . $user->last_name,
-            'formula'   => $existing?->is_competitive ? 'competitive' : 'recreative',
-            'trainings' => $existing ? $existing->trainingPacks->pluck('id')->map(fn ($id) => (string) $id)->toArray() : [],
+            'user_id'                  => $user->id,
+            'name'                     => $user->first_name . ' ' . $user->last_name,
+            'formula'                  => $existing?->is_competitive ? 'competitive' : 'recreative',
+            'trainings'                => $existing ? $existing->trainingPacks->pluck('id')->map(fn ($id) => (string) $id)->toArray() : [],
+            'is_minor'                 => $user->birthdate && $user->birthdate->age < 18,
+            'medical_certificate_path' => $user->medical_certificate_path,
+            'parental_consent_path'    => $user->parental_consent_path,
         ];
     }
 
@@ -133,6 +143,9 @@ new class extends Component
             }
 
             $calculateAction($subscription);
+
+            $subscription->load(['season', 'trainingPacks']);
+            $user->notify(new SubscriptionCreatedNotification($subscription));
         }
 
         $this->success(__('Your registration has been submitted. The club will process it shortly.'));
@@ -217,6 +230,56 @@ new class extends Component
         $this->reset(['new_first_name', 'new_last_name', 'new_birthdate', 'new_gender', 'new_email', 'new_phone_number', 'addMemberModal', 'memberSearchQuery']);
         $this->memberModalMode = 'search';
         $this->success(__('Member added successfully!'));
+    }
+
+    public function uploadMedicalCertificate(int $userId): void
+    {
+        $this->validate([
+            'medicalCertificate' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
+        ]);
+
+        $user = User::find($userId);
+        if (! $user) {
+            return;
+        }
+
+        if ($user->medical_certificate_path) {
+            Storage::disk('public')->delete(str_replace('/storage/', '', $user->medical_certificate_path));
+        }
+
+        $extension = $this->medicalCertificate->getClientOriginalExtension();
+        $path = $this->medicalCertificate->storeAs("documents/{$userId}", "medical.{$extension}", 'public');
+
+        $user->update(['medical_certificate_path' => "/storage/{$path}"]);
+        $this->registrations[$userId]['medical_certificate_path'] = "/storage/{$path}";
+        $this->medicalCertificate = null;
+
+        $this->success(__('Medical certificate uploaded successfully.'));
+    }
+
+    public function uploadParentalConsent(int $userId): void
+    {
+        $this->validate([
+            'parentalConsent' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
+        ]);
+
+        $user = User::find($userId);
+        if (! $user) {
+            return;
+        }
+
+        if ($user->parental_consent_path) {
+            Storage::disk('public')->delete(str_replace('/storage/', '', $user->parental_consent_path));
+        }
+
+        $extension = $this->parentalConsent->getClientOriginalExtension();
+        $path = $this->parentalConsent->storeAs("documents/{$userId}", "parental_consent.{$extension}", 'public');
+
+        $user->update(['parental_consent_path' => "/storage/{$path}"]);
+        $this->registrations[$userId]['parental_consent_path'] = "/storage/{$path}";
+        $this->parentalConsent = null;
+
+        $this->success(__('Parental consent uploaded successfully.'));
     }
 
     public function mount(): void

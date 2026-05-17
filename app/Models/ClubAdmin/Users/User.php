@@ -182,6 +182,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'committee_role',
         'force_list',
         'is_coach',
+        'medical_certificate_path',
+        'parental_consent_path',
     ];
 
     /**
@@ -245,9 +247,32 @@ class User extends Authenticatable implements MustVerifyEmail
             ->withTimestamps();
     }
 
+    public function isAffiliatedForCurrentSeason(): bool
+    {
+        $season = Season::current();
+        if (! $season) {
+            return false;
+        }
+
+        return $this->subscriptions()
+            ->where('season_id', $season->id)
+            ->whereIn('status', ['pending', 'confirmed', 'paid'])
+            ->exists();
+    }
+
     public function pools(): BelongsToMany
     {
         return $this->belongsToMany(Pool::class, 'pool_user');
+    }
+
+    public function scopeAffiliatedForCurrentSeason(EloquentBuilder $query): EloquentBuilder
+    {
+        $seasonId = Season::current()?->id;
+
+        return $query->whereHas('subscriptions', fn (EloquentBuilder $q) => $q
+            ->where('season_id', $seasonId)
+            ->whereIn('status', ['pending', 'confirmed', 'paid'])
+        );
     }
 
     public function scopeHasPaid(Builder $query): Builder

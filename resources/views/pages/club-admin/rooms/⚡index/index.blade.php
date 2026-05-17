@@ -52,30 +52,6 @@
                         @endphp
                         <x-admin.shared.compact-event-preview link="#" :name="$tournament->name"
                             :startDateTime="$tournament->start_date" :remainingSlots="$remaining" type="tournament">
-                            <x-slot:actions>
-                                @if ($isActive)
-                                    <x-badge class="badge-success badge-sm" value="{{ __('Registered') }}" />
-                                    <x-button class="btn-ghost btn-xs text-error" icon="o-x-circle"
-                                        label="{{ __('Cancel') }}"
-                                        wire:click="cancelRegistration({{ $tournament->id }})"
-                                        wire:confirm="{{ __('Cancel your registration?') }}" />
-                                @elseif ($isWaiting)
-                                    <x-badge class="badge-warning badge-sm" value="{{ __('Waitlisted') }}" />
-                                    <x-button class="btn-ghost btn-xs text-error" icon="o-x-circle"
-                                        label="{{ __('Leave') }}"
-                                        wire:click="cancelRegistration({{ $tournament->id }})"
-                                        wire:confirm="{{ __('Leave the waitlist?') }}" />
-                                @elseif ($isFull)
-                                    <x-badge class="badge-ghost badge-sm" value="{{ __('Full') }}" />
-                                    <x-button class="btn-outline btn-xs btn-warning"
-                                        label="{{ __('Waitlist') }}"
-                                        wire:click="register({{ $tournament->id }})" />
-                                @else
-                                    <x-button class="btn-primary btn-outline btn-xs"
-                                        label="{{ __('Register') }}"
-                                        wire:click="register({{ $tournament->id }})" />
-                                @endif
-                            </x-slot:actions>
                         </x-admin.shared.compact-event-preview>
                     @endforeach
                 </div>

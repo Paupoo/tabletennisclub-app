@@ -81,17 +81,16 @@
                                 @canany(['edit', 'delete'], $table)
                                 <x-admin.shared.row-actions>
                                     @can('edit', $table)
-                                        <x-menu-item icon="o-pencil" link="{{ route('admin.tables.edit', $table) }}"
-                                            title="{{ __('Edit') }}" class="text-xs" />
+                                        <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
+                                            tooltip="{{ __('Edit') }}" link="{{ route('admin.tables.edit', $table) }}" />
                                         @if ($table->room)
-                                            <x-menu-item icon="o-lock-open" wire:click="confirmUnlink({{ $table }})" spinner
-                                                title="{{ __('Unlink') }}" class="text-xs" />
+                                            <x-button class="btn-ghost btn-sm btn-circle" icon="o-lock-open"
+                                                tooltip="{{ __('Unlink') }}" wire:click="confirmUnlink({{ $table }})" spinner />
                                         @endif
                                     @endcan
-                                   
                                     @can('delete', $table)
-                                        <x-menu-separator />
-                                        <x-menu-item class="text-error text-xs" icon="o-trash" wire:click="confirmDelete({{ $table }})" title="{{ __('Delete') }}" />
+                                        <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
+                                            tooltip="{{ __('Delete') }}" wire:click="confirmDelete({{ $table }})" />
                                     @endcan
                                 </x-admin.shared.row-actions>
                                 @endcanany

@@ -154,7 +154,7 @@ new class extends Component
             $this->currentPhoto = $user->photo;
             $this->licence_type = $user->is_competitor ? 'competitive' : 'recreative';
             $this->licence = $user->licence;
-            $this->ranking = $user->ranking ?? 'N/A';
+            $this->ranking = $user->ranking ?? 'NA';
             $this->is_competitor = $user->is_competitor;
             $this->is_active = $user->is_active;
             $this->is_committee_member = $user->is_committee_member;
@@ -261,7 +261,7 @@ new class extends Component
         // Ici on est certain que $validated existe et est valide
         if ($this->licence_type === 'recreative') {
             $validated['licence'] = null;
-            $validated['ranking'] = 'N/A';
+            $validated['ranking'] = 'NA';
         }
 
         if ($this->user) {

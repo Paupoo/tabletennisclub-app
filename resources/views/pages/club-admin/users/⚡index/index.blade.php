@@ -122,20 +122,14 @@
                 </x-slot:sub-value>
 
                 <x-slot:actions>
-                    <x-dropdown>
-                        <x-slot:trigger>
-                            <x-button class="btn-ghost btn-sm" icon="o-ellipsis-vertical" />
-                        </x-slot:trigger>
-                        <x-menu-item class="text-xs" icon="o-eye" link="{{ route('admin.users.edit', $user) }}"
-                            title="{{ __('View details') }}" />
-                        <x-menu-item class="text-xs" icon="o-pencil" link="{{ route('admin.users.edit', $user) }}"
-                            title="{{ __('Edit') }}" />
-                        <x-menu-item class="text-xs" icon="o-envelope" link="#"
-                            title="{{ __('Send message') }}" />
-                        <x-menu-separator />
-                        <x-menu-item class="text-error text-xs" icon="o-trash" title="{{ __('Delete') }}"
-                            wire:click="confirmDelete({{ $user->id }})" />
-                    </x-dropdown>
+                    <div class="flex items-center gap-1">
+                        <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
+                            tooltip="{{ __('Edit') }}" link="{{ route('admin.users.edit', $user) }}" />
+                        <x-button class="btn-ghost btn-sm btn-circle" icon="o-envelope"
+                            tooltip="{{ __('Send message') }}" link="#" />
+                        <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
+                            tooltip="{{ __('Delete') }}" wire:click="confirmDelete({{ $user->id }})" />
+                    </div>
                 </x-slot:actions>
             </x-list-item>
         @endforeach
@@ -158,16 +152,19 @@
                         <span class="font-medium text-accent">{{ __('Recreational') }}</span>
                     @endif
                 @endscope
+                @scope('cell_name', $user)
+                    <a class="font-medium hover:underline" href="{{ route('admin.users.edit', $user) }}">
+                        {{ $user->first_name }} {{ $user->last_name }}
+                    </a>
+                @endscope
                 @scope('actions', $user)
                     <x-admin.shared.row-actions>
-                        <x-menu-item icon="o-eye" link="{{ route('admin.users.edit', $user->id) }}"
-                            title="{{ __('View details') }}" />
-                        <x-menu-item icon="o-pencil" link="{{ route('admin.users.edit', $user->id) }}"
-                            title="{{ __('Edit') }}" />
-                        <x-menu-item icon="o-envelope" link="#" title="{{ __('Send message') }}" />
-                        <x-menu-separator />
-                        <x-menu-item class="text-error" icon="o-trash" title="{{ __('Delete') }}"
-                            wire:click="confirmDelete({{ $user->id }})" />
+                        <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
+                            tooltip="{{ __('Edit') }}" link="{{ route('admin.users.edit', $user->id) }}" />
+                        <x-button class="btn-ghost btn-sm btn-circle" icon="o-envelope"
+                            tooltip="{{ __('Send message') }}" link="#" />
+                        <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
+                            tooltip="{{ __('Delete') }}" wire:click="confirmDelete({{ $user->id }})" />
                     </x-admin.shared.row-actions>
                 @endscope
             </x-table>

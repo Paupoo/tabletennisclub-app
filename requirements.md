@@ -21,8 +21,7 @@ Un membre à un matricule[^1] unique, un nom, un prénom, un classement homme, u
 - Technologie : PHP/MYSQL/Javascript
 - Framework : Laravel
 - Domain name : <https://cttottigniesblocry.be>
+- Admin : Aurélien Paulus - <aurelien.paulus@gmail.com>
 
 
 
-
-changement à retirer

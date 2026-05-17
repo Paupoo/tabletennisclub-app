@@ -55,7 +55,7 @@ class WeeklyRefundReminderNotification extends Notification
         }
 
         return $mail
-            ->action(__('View pending refunds'), route('admin.payments'))
+            ->action(__('View pending refunds'), route('admin.users.payments'))
             ->line(__('Please process these refunds or contact the members who have no IBAN on file.'));
     }
 

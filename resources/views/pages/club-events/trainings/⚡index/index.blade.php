@@ -11,18 +11,25 @@
         </x-header>
     @else
         {{-- PACK LIST HEADER --}}
-        <x-header separator subtitle="{{ __('Manage training packs for the active season') }}"
+        <x-header separator :subtitle="$viewSeason?->name ?? __('Select a season')"
             title="{{ __('Trainings') }}">
             <x-slot:actions>
+                <x-select class="select-sm w-44" :options="$seasonOptions" wire:model.live="viewSeasonId"
+                    placeholder="{{ __('Season…') }}" />
                 <x-button class="btn-primary" icon="o-plus" label="{{ __('New pack') }}" wire:click="openCreate" />
             </x-slot:actions>
         </x-header>
     @endif
 
-    {{-- ── No active season ────────────────────────────────────────────────── --}}
-    @if (! $activeSeason)
-        <x-alert class="alert-warning" icon="o-exclamation-triangle"
-            title="{{ __('No active season. Activate a season first.') }}" />
+    {{-- ── Season guard ────────────────────────────────────────────────────── --}}
+    @if (! $viewSeason && ! $selectedPackId)
+        @if (empty($seasonOptions))
+            <x-alert class="alert-warning" icon="o-exclamation-triangle"
+                title="{{ __('No seasons found. Create a season first.') }}" />
+        @else
+            <x-alert class="alert-info" icon="o-information-circle"
+                title="{{ __('Select a season above to view training packs.') }}" />
+        @endif
     @elseif ($selectedPackId)
         {{-- ================================================================
              SESSION DRILL-DOWN

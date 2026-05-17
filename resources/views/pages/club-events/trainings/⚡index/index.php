@@ -68,6 +68,9 @@ new class extends Component
     // Step 3 — Price (in euros)
     public float $formPrice = 90;
 
+    // ── View filter ───────────────────────────────────────────────────────────
+    public int $viewSeasonId = 0;
+
     // ── Session drill-down ────────────────────────────────────────────────────
     public ?int $selectedPackId = null;
 
@@ -80,6 +83,13 @@ new class extends Component
 
     public string $cancelNote = '';
 
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
+
+    public function mount(): void
+    {
+        $this->viewSeasonId = Season::where('is_active', true)->value('id') ?? 0;
+    }
+
     // ── Computed ──────────────────────────────────────────────────────────────
 
     #[Computed]
@@ -88,16 +98,22 @@ new class extends Component
         return Season::where('is_active', true)->first();
     }
 
+    #[Computed]
+    public function viewSeason(): ?Season
+    {
+        return $this->viewSeasonId ? Season::find($this->viewSeasonId) : null;
+    }
+
     /** @return Collection<int, TrainingPack> */
     #[Computed]
     public function packs(): Collection
     {
-        if (! $this->activeSeason) {
+        if (! $this->viewSeason) {
             return new Collection();
         }
 
         return TrainingPack::with(['room', 'trainer'])
-            ->where('season_id', $this->activeSeason->id)
+            ->where('season_id', $this->viewSeason->id)
             ->where('is_active', true)
             ->orderBy('level')
             ->orderBy('name')
@@ -518,6 +534,7 @@ new class extends Component
     {
         return [
             'activeSeason' => $this->activeSeason,
+            'viewSeason' => $this->viewSeason,
             'packs' => $this->packs,
             'selectedPack' => $this->selectedPack,
             'sessions' => $this->sessions,

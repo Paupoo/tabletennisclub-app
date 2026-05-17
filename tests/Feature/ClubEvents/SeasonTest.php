@@ -157,14 +157,16 @@ describe('Season Model', function () {
     test('isFuture returns true for upcoming inactive seasons', function () {
         $future = Season::factory()->create([
             'is_active' => false,
-            'start_at' => now()->addMonth(),
+            'start_at' => now()->addYear(),
+            'end_at' => now()->addYears(2),
         ]);
-        
+
         $current = Season::factory()->create([
             'is_active' => true,
-            'start_at' => now()->subMonth(),
+            'start_at' => now()->subMonths(6),
+            'end_at' => now()->addMonths(6),
         ]);
-        
+
         expect($future->isFuture())->toBeTrue()
             ->and($current->isFuture())->toBeFalse();
     });

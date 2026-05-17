@@ -32,5 +32,9 @@ class Kernel extends ConsoleKernel
 
         // Send weekly refund reminder to treasurer + secretary every Monday at 08:00.
         $schedule->command('payment:send-refund-reminder')->weeklyOn(1, '08:00');
+
+        // On July 1st, ensure the upcoming two seasons are provisioned (+1 and +2).
+        // Safe to run any time — idempotent, creates only what is missing.
+        $schedule->command('season:provision')->yearlyOn(7, 1, '06:00');
     }
 }

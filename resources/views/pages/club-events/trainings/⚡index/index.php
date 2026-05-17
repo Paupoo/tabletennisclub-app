@@ -24,71 +24,64 @@ new class extends Component
 {
     use Toast;
 
-    // ── Wizard state ──────────────────────────────────────────────────────────
-    public bool $wizardOpen = false;
+    // ── Cancellation modal ────────────────────────────────────────────────────
+    public bool $cancelModal = false;
 
-    public string $step = '1';
+    public string $cancelNote = '';
 
-    public ?int $packId = null;
+    public ?int $cancelTrainingId = null;
 
-    // Step 1 — Pack info
-    public int $formSeasonId = 0;
+    public string $cancelType = 'FREE';
 
-    public string $formName = '';
+    public ?int $formDayOfWeek = null;
+
+    public string $formDescription = '';
+
+    public int $formDurationMinutes = 90;
+
+    /** @var array<int, string> */
+    public array $formExcludedDates = [];
 
     public string $formLevel = '';
 
-    public string $formType = '';
+    public string $formName = '';
 
-    public int $formTrainerId = 0;
+    public string $formPackEndDate = '';
 
-    public int $formRoomId = 0;
+    public string $formPackStartDate = '';
 
-    public string $formDescription = '';
+    // Step 3 — Price (in euros)
+    public float $formPrice = 90;
 
     // Step 2 — Planning
     public string $formRecurrenceType = 'weekly'; // 'weekly' | 'specific_days'
 
-    public ?int $formDayOfWeek = null;
+    public int $formRoomId = 0;
+
+    // Step 1 — Pack info
+    public int $formSeasonId = 0;
 
     /** @var array<int, int|string> */
     public array $formSpecificDays = [];
 
     public string $formStartTime = '18:00';
 
-    public int $formDurationMinutes = 90;
+    public int $formTrainerId = 0;
 
-    public string $formPackStartDate = '';
+    public string $formType = '';
 
-    public string $formPackEndDate = '';
-
-    /** @var array<int, string> */
-    public array $formExcludedDates = [];
-
-    // Step 3 — Price (in euros)
-    public float $formPrice = 90;
-
-    // ── View filter ───────────────────────────────────────────────────────────
-    public int $viewSeasonId = 0;
+    public ?int $packId = null;
 
     // ── Session drill-down ────────────────────────────────────────────────────
     public ?int $selectedPackId = null;
 
-    // ── Cancellation modal ────────────────────────────────────────────────────
-    public bool $cancelModal = false;
+    public string $step = '1';
 
-    public ?int $cancelTrainingId = null;
+    // ── View filter ───────────────────────────────────────────────────────────
+    public int $viewSeasonId = 0;
 
-    public string $cancelType = 'FREE';
-
-    public string $cancelNote = '';
-
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
-
-    public function mount(): void
-    {
-        $this->viewSeasonId = Season::where('is_active', true)->value('id') ?? 0;
-    }
+    // ── Wizard state ──────────────────────────────────────────────────────────
+    public bool $wizardOpen = false;
 
     // ── Computed ──────────────────────────────────────────────────────────────
 
@@ -98,10 +91,160 @@ new class extends Component
         return Season::where('is_active', true)->first();
     }
 
-    #[Computed]
-    public function viewSeason(): ?Season
+    public function backToList(): void
     {
-        return $this->viewSeasonId ? Season::find($this->viewSeasonId) : null;
+        $this->selectedPackId = null;
+    }
+
+    public function closeWizard(): void
+    {
+        $this->wizardOpen = false;
+        $this->resetWizardFields();
+    }
+
+    public function confirmCancel(): void
+    {
+        $training = Training::with(['trainingPack.subscriptions.user'])->findOrFail($this->cancelTrainingId);
+
+        $type = $this->cancelType === 'CLOSED'
+            ? TrainingCancellationType::CLOSED
+            : TrainingCancellationType::FREE;
+
+        $training->cancel($type, $this->cancelNote ?: null);
+
+        // Notify enrolled members
+        if ($training->trainingPack) {
+            $training->trainingPack->trainees()
+                ->where('emails_notifications', true)
+                ->get()
+                ->each->notify(new TrainingSessionCancelledNotification($training, $type, $this->cancelNote ?: null));
+        }
+
+        unset($this->sessions);
+        $this->cancelModal = false;
+        $this->warning(__('Session cancelled. Members have been notified.'), icon: 'o-x-circle');
+    }
+
+    #[Computed]
+    public function dayOptions(): array
+    {
+        return [
+            ['id' => 1, 'name' => __('Monday')],
+            ['id' => 2, 'name' => __('Tuesday')],
+            ['id' => 3, 'name' => __('Wednesday')],
+            ['id' => 4, 'name' => __('Thursday')],
+            ['id' => 5, 'name' => __('Friday')],
+            ['id' => 6, 'name' => __('Saturday')],
+            ['id' => 7, 'name' => __('Sunday')],
+        ];
+    }
+
+    public function deactivatePack(int $packId): void
+    {
+        TrainingPack::findOrFail($packId)->update(['is_active' => false]);
+        unset($this->packs);
+        $this->warning(__('Pack deactivated.'));
+    }
+
+    #[Computed]
+    public function levelOptions(): array
+    {
+        return collect(TrainingLevel::cases())
+            ->map(fn ($e) => ['id' => $e->value, 'name' => $e->value])
+            ->toArray();
+    }
+
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
+
+    public function mount(): void
+    {
+        $this->viewSeasonId = Season::where('is_active', true)->value('id') ?? 0;
+    }
+
+    public function nextStep(): void
+    {
+        if ($this->step === '1') {
+            $rules = [
+                'formSeasonId' => 'required|integer|min:1',
+                'formName' => 'required|min:2|max:255',
+                'formLevel' => 'required',
+                'formType' => 'required',
+                'formRoomId' => 'required|integer|min:1',
+            ];
+
+            if ($this->formType !== '' && $this->formType !== TrainingType::FREE->value) {
+                $rules['formTrainerId'] = 'required|integer|min:1';
+            }
+
+            $this->validate($rules);
+        }
+
+        if ($this->step === '2') {
+            $rules = [
+                'formStartTime' => 'required',
+                'formDurationMinutes' => 'required|integer|min:15|max:480',
+            ];
+
+            if ($this->formRecurrenceType === 'weekly') {
+                $rules['formDayOfWeek'] = 'required|integer|between:1,7';
+            } else {
+                $rules['formSpecificDays'] = 'required|array|min:1';
+            }
+
+            if ($this->formPackStartDate || $this->formPackEndDate) {
+                $rules['formPackStartDate'] = 'required|date';
+                $rules['formPackEndDate'] = 'required|date|after_or_equal:formPackStartDate';
+            }
+
+            $this->validate($rules);
+        }
+
+        $this->step = (string) ((int) $this->step + 1);
+    }
+
+    // ── Cancellation ──────────────────────────────────────────────────────────
+
+    public function openCancel(int $trainingId): void
+    {
+        $this->cancelTrainingId = $trainingId;
+        $this->cancelType = 'FREE';
+        $this->cancelNote = '';
+        $this->cancelModal = true;
+    }
+
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
+
+    public function openCreate(): void
+    {
+        $this->resetWizardFields();
+        $this->wizardOpen = true;
+        $this->step = '1';
+    }
+
+    public function openEdit(int $packId): void
+    {
+        $pack = TrainingPack::findOrFail($packId);
+
+        $this->packId = $pack->id;
+        $this->formSeasonId = $pack->season_id;
+        $this->formName = $pack->name;
+        $this->formLevel = $pack->level->value;
+        $this->formType = $pack->type->value;
+        $this->formTrainerId = $pack->trainer_id ?? 0;
+        $this->formRoomId = $pack->room_id;
+        $this->formDescription = $pack->description ?? '';
+        $this->formDayOfWeek = $pack->day_of_week;
+        $this->formSpecificDays = $pack->days_of_week ?? [];
+        $this->formRecurrenceType = ! empty($pack->days_of_week) ? 'specific_days' : 'weekly';
+        $this->formStartTime = $pack->start_time ?? '18:00';
+        $this->formDurationMinutes = $pack->duration_minutes ?? 90;
+        $this->formPackStartDate = $pack->pack_start_date?->toDateString() ?? '';
+        $this->formPackEndDate = $pack->pack_end_date?->toDateString() ?? '';
+        $this->formExcludedDates = $pack->excluded_dates ?? [];
+        $this->formPrice = round($pack->price / 100, 2);
+
+        $this->wizardOpen = true;
+        $this->step = '1';
     }
 
     /** @return Collection<int, TrainingPack> */
@@ -109,7 +252,7 @@ new class extends Component
     public function packs(): Collection
     {
         if (! $this->viewSeason) {
-            return new Collection();
+            return new Collection;
         }
 
         return TrainingPack::with(['room', 'trainer'])
@@ -118,32 +261,6 @@ new class extends Component
             ->orderBy('level')
             ->orderBy('name')
             ->get();
-    }
-
-    #[Computed]
-    public function selectedPack(): ?TrainingPack
-    {
-        return $this->selectedPackId
-            ? TrainingPack::with(['room', 'trainer'])->find($this->selectedPackId)
-            : null;
-    }
-
-    /** @return Collection<int, Training> */
-    #[Computed]
-    public function sessions(): Collection
-    {
-        return $this->selectedPackId
-            ? Training::with(['room'])
-                ->where('training_pack_id', $this->selectedPackId)
-                ->orderBy('start')
-                ->get()
-            : new Collection();
-    }
-
-    #[Computed]
-    public function wizardSeason(): ?Season
-    {
-        return $this->formSeasonId ? Season::find($this->formSeasonId) : null;
     }
 
     /** @return array<int, Carbon> */
@@ -194,7 +311,7 @@ new class extends Component
                     Recurrence::WEEKLY->name,
                 );
                 $allDates = array_merge($allDates, $dates);
-            } catch (\Exception) {
+            } catch (Exception) {
                 continue;
             }
         }
@@ -207,45 +324,11 @@ new class extends Component
         ));
     }
 
-    // ── Options ───────────────────────────────────────────────────────────────
-
-    #[Computed]
-    public function seasonOptions(): array
+    public function prevStep(): void
     {
-        return Season::orderBy('start_at', 'desc')
-            ->get()
-            ->map(fn (Season $s): array => [
-                'id' => $s->id,
-                'name' => $s->name.($s->is_active ? ' ('.__('Active').')' : ''),
-            ])
-            ->toArray();
-    }
-
-    #[Computed]
-    public function levelOptions(): array
-    {
-        return collect(TrainingLevel::cases())
-            ->map(fn ($e) => ['id' => $e->value, 'name' => $e->value])
-            ->toArray();
-    }
-
-    #[Computed]
-    public function typeOptions(): array
-    {
-        return collect(TrainingType::cases())
-            ->map(fn ($e) => ['id' => $e->value, 'name' => $e->value])
-            ->toArray();
-    }
-
-    #[Computed]
-    public function trainerOptions(): array
-    {
-        return User::where('is_active', true)
-            ->where(fn ($q) => $q->where('is_coach', true)->orWhere('is_admin', true))
-            ->orderBy('first_name')
-            ->get()
-            ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->full_name])
-            ->toArray();
+        if ((int) $this->step > 1) {
+            $this->step = (string) ((int) $this->step - 1);
+        }
     }
 
     #[Computed]
@@ -255,144 +338,6 @@ new class extends Component
             ->get()
             ->map(fn (Room $r) => ['id' => $r->id, 'name' => $r->name])
             ->toArray();
-    }
-
-    #[Computed]
-    public function dayOptions(): array
-    {
-        return [
-            ['id' => 1, 'name' => __('Monday')],
-            ['id' => 2, 'name' => __('Tuesday')],
-            ['id' => 3, 'name' => __('Wednesday')],
-            ['id' => 4, 'name' => __('Thursday')],
-            ['id' => 5, 'name' => __('Friday')],
-            ['id' => 6, 'name' => __('Saturday')],
-            ['id' => 7, 'name' => __('Sunday')],
-        ];
-    }
-
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
-
-    public function openCreate(): void
-    {
-        $this->resetWizardFields();
-        $this->wizardOpen = true;
-        $this->step = '1';
-    }
-
-    public function openEdit(int $packId): void
-    {
-        $pack = TrainingPack::findOrFail($packId);
-
-        $this->packId = $pack->id;
-        $this->formSeasonId = $pack->season_id;
-        $this->formName = $pack->name;
-        $this->formLevel = $pack->level->value;
-        $this->formType = $pack->type->value;
-        $this->formTrainerId = $pack->trainer_id ?? 0;
-        $this->formRoomId = $pack->room_id;
-        $this->formDescription = $pack->description ?? '';
-        $this->formDayOfWeek = $pack->day_of_week;
-        $this->formSpecificDays = $pack->days_of_week ?? [];
-        $this->formRecurrenceType = ! empty($pack->days_of_week) ? 'specific_days' : 'weekly';
-        $this->formStartTime = $pack->start_time ?? '18:00';
-        $this->formDurationMinutes = $pack->duration_minutes ?? 90;
-        $this->formPackStartDate = $pack->pack_start_date?->toDateString() ?? '';
-        $this->formPackEndDate = $pack->pack_end_date?->toDateString() ?? '';
-        $this->formExcludedDates = $pack->excluded_dates ?? [];
-        $this->formPrice = round($pack->price / 100, 2);
-
-        $this->wizardOpen = true;
-        $this->step = '1';
-    }
-
-    public function closeWizard(): void
-    {
-        $this->wizardOpen = false;
-        $this->resetWizardFields();
-    }
-
-    private function resetWizardFields(): void
-    {
-        $this->packId = null;
-        $this->step = '1';
-        $this->formSeasonId = $this->activeSeason?->id ?? 0;
-        $this->formName = '';
-        $this->formLevel = '';
-        $this->formType = '';
-        $this->formTrainerId = 0;
-        $this->formRoomId = 0;
-        $this->formDescription = '';
-        $this->formRecurrenceType = 'weekly';
-        $this->formDayOfWeek = null;
-        $this->formSpecificDays = [];
-        $this->formStartTime = '18:00';
-        $this->formDurationMinutes = 90;
-        $this->formPackStartDate = '';
-        $this->formPackEndDate = '';
-        $this->formExcludedDates = [];
-        $this->formPrice = 90;
-    }
-
-    public function nextStep(): void
-    {
-        if ($this->step === '1') {
-            $rules = [
-                'formSeasonId' => 'required|integer|min:1',
-                'formName' => 'required|min:2|max:255',
-                'formLevel' => 'required',
-                'formType' => 'required',
-                'formRoomId' => 'required|integer|min:1',
-            ];
-
-            if ($this->formType !== '' && $this->formType !== TrainingType::FREE->value) {
-                $rules['formTrainerId'] = 'required|integer|min:1';
-            }
-
-            $this->validate($rules);
-        }
-
-        if ($this->step === '2') {
-            $rules = [
-                'formStartTime' => 'required',
-                'formDurationMinutes' => 'required|integer|min:15|max:480',
-            ];
-
-            if ($this->formRecurrenceType === 'weekly') {
-                $rules['formDayOfWeek'] = 'required|integer|between:1,7';
-            } else {
-                $rules['formSpecificDays'] = 'required|array|min:1';
-            }
-
-            if ($this->formPackStartDate || $this->formPackEndDate) {
-                $rules['formPackStartDate'] = 'required|date';
-                $rules['formPackEndDate'] = 'required|date|after_or_equal:formPackStartDate';
-            }
-
-            $this->validate($rules);
-        }
-
-        $this->step = (string) ((int) $this->step + 1);
-    }
-
-    public function prevStep(): void
-    {
-        if ((int) $this->step > 1) {
-            $this->step = (string) ((int) $this->step - 1);
-        }
-    }
-
-    public function toggleExcludeDate(string $date): void
-    {
-        if (in_array($date, $this->formExcludedDates, true)) {
-            $this->formExcludedDates = array_values(
-                array_filter($this->formExcludedDates, fn (string $d): bool => $d !== $date),
-            );
-        } else {
-            $this->formExcludedDates[] = $date;
-        }
-
-        unset($this->previewDates);
     }
 
     public function save(): void
@@ -475,11 +420,76 @@ new class extends Component
         $this->resetWizardFields();
     }
 
-    public function deactivatePack(int $packId): void
+    // ── Options ───────────────────────────────────────────────────────────────
+
+    #[Computed]
+    public function seasonOptions(): array
     {
-        TrainingPack::findOrFail($packId)->update(['is_active' => false]);
-        unset($this->packs);
-        $this->warning(__('Pack deactivated.'));
+        return Season::orderBy('start_at')
+            ->get()
+            ->map(fn (Season $s): array => [
+                'id' => $s->id,
+                'name' => $s->name . ($s->is_active ? ' (' . __('Active') . ')' : ''),
+            ])
+            ->toArray();
+    }
+
+    #[Computed]
+    public function selectedPack(): ?TrainingPack
+    {
+        return $this->selectedPackId
+            ? TrainingPack::with(['room', 'trainer'])->find($this->selectedPackId)
+            : null;
+    }
+
+    /** @return Collection<int, Training> */
+    #[Computed]
+    public function sessions(): Collection
+    {
+        return $this->selectedPackId
+            ? Training::with(['room'])
+                ->where('training_pack_id', $this->selectedPackId)
+                ->orderBy('start')
+                ->get()
+            : new Collection;
+    }
+
+    public function toggleExcludeDate(string $date): void
+    {
+        if (in_array($date, $this->formExcludedDates, true)) {
+            $this->formExcludedDates = array_values(
+                array_filter($this->formExcludedDates, fn (string $d): bool => $d !== $date),
+            );
+        } else {
+            $this->formExcludedDates[] = $date;
+        }
+
+        unset($this->previewDates);
+    }
+
+    #[Computed]
+    public function trainerOptions(): array
+    {
+        return User::where('is_active', true)
+            ->where(fn ($q) => $q->where('is_coach', true)->orWhere('is_admin', true))
+            ->orderBy('first_name')
+            ->get()
+            ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->full_name])
+            ->toArray();
+    }
+
+    #[Computed]
+    public function typeOptions(): array
+    {
+        return collect(TrainingType::cases())
+            ->map(fn ($e) => ['id' => $e->value, 'name' => $e->value])
+            ->toArray();
+    }
+
+    #[Computed]
+    public function viewSeason(): ?Season
+    {
+        return $this->viewSeasonId ? Season::find($this->viewSeasonId) : null;
     }
 
     // ── Session drill-down ────────────────────────────────────────────────────
@@ -488,44 +498,6 @@ new class extends Component
     {
         $this->selectedPackId = $packId;
         unset($this->selectedPack, $this->sessions);
-    }
-
-    public function backToList(): void
-    {
-        $this->selectedPackId = null;
-    }
-
-    // ── Cancellation ──────────────────────────────────────────────────────────
-
-    public function openCancel(int $trainingId): void
-    {
-        $this->cancelTrainingId = $trainingId;
-        $this->cancelType = 'FREE';
-        $this->cancelNote = '';
-        $this->cancelModal = true;
-    }
-
-    public function confirmCancel(): void
-    {
-        $training = Training::with(['trainingPack.subscriptions.user'])->findOrFail($this->cancelTrainingId);
-
-        $type = $this->cancelType === 'CLOSED'
-            ? TrainingCancellationType::CLOSED
-            : TrainingCancellationType::FREE;
-
-        $training->cancel($type, $this->cancelNote ?: null);
-
-        // Notify enrolled members
-        if ($training->trainingPack) {
-            $training->trainingPack->trainees()
-                ->where('emails_notifications', true)
-                ->get()
-                ->each->notify(new TrainingSessionCancelledNotification($training, $type, $this->cancelNote ?: null));
-        }
-
-        unset($this->sessions);
-        $this->cancelModal = false;
-        $this->warning(__('Session cancelled. Members have been notified.'), icon: 'o-x-circle');
     }
 
     // ── Render ────────────────────────────────────────────────────────────────
@@ -551,5 +523,33 @@ new class extends Component
                 ->current(__('Trainings'))
                 ->toArray(),
         ];
+    }
+
+    #[Computed]
+    public function wizardSeason(): ?Season
+    {
+        return $this->formSeasonId ? Season::find($this->formSeasonId) : null;
+    }
+
+    private function resetWizardFields(): void
+    {
+        $this->packId = null;
+        $this->step = '1';
+        $this->formSeasonId = $this->activeSeason?->id ?? 0;
+        $this->formName = '';
+        $this->formLevel = '';
+        $this->formType = '';
+        $this->formTrainerId = 0;
+        $this->formRoomId = 0;
+        $this->formDescription = '';
+        $this->formRecurrenceType = 'weekly';
+        $this->formDayOfWeek = null;
+        $this->formSpecificDays = [];
+        $this->formStartTime = '18:00';
+        $this->formDurationMinutes = 90;
+        $this->formPackStartDate = '';
+        $this->formPackEndDate = '';
+        $this->formExcludedDates = [];
+        $this->formPrice = 90;
     }
 };

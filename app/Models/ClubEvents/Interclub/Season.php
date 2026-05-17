@@ -109,7 +109,19 @@ class Season extends Model
     {
         static::saving(function ($season) {
             if ($season->start_at >= $season->end_at) {
-                throw new \DomainException(__('start_at must be before end_at'));
+                throw new \DomainException('start_at must be before end_at');
+            }
+
+            // Reject any season whose date range overlaps an existing one.
+            // Standard overlap condition: A.start < B.end AND A.end > B.start
+            $overlaps = static::query()
+                ->when($season->exists, fn ($q) => $q->where('id', '!=', $season->id))
+                ->where('start_at', '<', $season->end_at)
+                ->where('end_at', '>', $season->start_at)
+                ->exists();
+
+            if ($overlaps) {
+                throw new \DomainException('Season dates overlap with an existing season.');
             }
         });
     }

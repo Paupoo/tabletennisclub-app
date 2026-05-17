@@ -96,6 +96,12 @@ Route::prefix('admin/club-admin/')
         Route::livewire('club-info', 'pages::club-admin.club-info')->name('admin.club-info');
     });
 
+Route::prefix('admin/club-admin/seasons/')
+    ->middleware(['auth', 'verified', 'can:viewAny,App\Models\ClubEvents\Interclub\Season'])
+    ->group(function (): void {
+        Route::livewire('list', 'pages::club-admin.seasons.index')->name('admin.seasons.index');
+    });
+
 Route::prefix('admin/club-admin/rooms/')
     ->middleware(['auth', 'verified'])
     ->group(function (): void {

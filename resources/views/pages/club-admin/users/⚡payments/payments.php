@@ -6,7 +6,9 @@ use App\Mail\PaymentInvitationEmail;
 use App\Models\ClubAdmin\Payment\Payment;
 use App\Models\ClubAdmin\Payment\Transaction;
 use App\Models\ClubAdmin\Subscription\Subscription;
+use App\Models\ClubEvents\Tournament\TournamentRegistration;
 use App\Support\Breadcrumb;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -189,7 +191,10 @@ new class extends Component
         $col = $this->sortBy['column'];
         $dir = $this->sortBy['direction'];
 
-        $rows = Payment::with(['payable.user'])
+        $rows = Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith([
+            TournamentRegistration::class => ['user', 'tournament'],
+            Subscription::class           => ['user'],
+        ])])
             ->where('status', $this->statusFilter)
             ->when($this->search, fn ($q) => $q
                 ->where('reference', 'like', "%{$this->search}%")
@@ -211,6 +216,8 @@ new class extends Component
                 'created_at'         => $p->created_at,
                 'invitation_counter' => $p->invitation_counter,
                 'iban'               => $p->payable?->user?->iban,
+                'event_name'         => $p->payable?->tournament?->name,
+                'event_type'         => $p->payable?->tournament ? __('Tournament') : null,
             ]);
 
         $sorted = $dir === 'asc' ? $rows->sortBy($col)->values() : $rows->sortByDesc($col)->values();
@@ -518,11 +525,17 @@ new class extends Component
             'payments'             => $this->payments(),
             'pendingTransactions'  => $this->reconcileModal ? $this->pendingTransactions() : collect(),
             'currentPayment'       => $this->reconcilePaymentId
-                ? Payment::with(['payable.user'])->find($this->reconcilePaymentId)
+                ? Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith([
+                    TournamentRegistration::class => ['user', 'tournament'],
+                    Subscription::class           => ['user'],
+                ])])->find($this->reconcilePaymentId)
                 : null,
             'refundTransactions'   => $this->refundModal ? $this->refundTransactions : collect(),
             'currentRefundPayment' => $this->refundPaymentId
-                ? Payment::with(['payable.user'])->find($this->refundPaymentId)
+                ? Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith([
+                    TournamentRegistration::class => ['user', 'tournament'],
+                    Subscription::class           => ['user'],
+                ])])->find($this->refundPaymentId)
                 : null,
             'breadcrumbs'          => Breadcrumb::make()
                 ->home()

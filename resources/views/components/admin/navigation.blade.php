@@ -36,11 +36,20 @@
                         {{ __('Tables') }}
                     </x-nav-link>
                 </div>
+                @if (auth()->user()->is_coach)
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('trainings.index')" :active="request()->routeIs('trainings.index')" wire:navigate>
+                    <x-nav-link :href="route('coach.trainings')" :active="request()->routeIs('coach.trainings')" wire:navigate>
+                        {{ __('My sessions') }}
+                    </x-nav-link>
+                </div>
+                @endif
+                @if (auth()->user()->is_committee_member || auth()->user()->is_admin)
+                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                    <x-nav-link :href="route('admin.trainings.index')" :active="request()->routeIs('admin.trainings.index')" wire:navigate>
                         {{ __('Trainings') }}
                     </x-nav-link>
                 </div>
+                @endif
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                     <x-nav-link :href="route('interclubs.index')" :active="request()->routeIs('interclubs.index')" wire:navigate>
                         {{ __('Matches') }}
@@ -69,8 +78,14 @@
                     </x-slot>
 
                     <x-slot name="content">
-                        <x-dropdown-link :href="route('profile.edit')" wire:navigate>
-                            {{ __('Profile') }}
+                        <x-dropdown-link :href="route('admin.user.profile', auth()->user())" wire:navigate>
+                            {{ __('My Profile') }}
+                        </x-dropdown-link>
+                        <x-dropdown-link :href="route('admin.user.calendar', auth()->user())" wire:navigate>
+                            {{ __('My Calendar') }}
+                        </x-dropdown-link>
+                        <x-dropdown-link :href="route('admin.user.registration-management', auth()->user())" wire:navigate>
+                            {{ __('My Trainings') }}
                         </x-dropdown-link>
 
                         <!-- Authentication -->
@@ -120,9 +135,16 @@
             <x-responsive-nav-link :href="route('tables.index')" :active="request()->routeIs('tables.index')" wire:navigate>
                 {{ __('Tables') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('home')" :active="request()->routeIs('home')" wire:navigate>
+            @if (auth()->user()->is_coach)
+            <x-responsive-nav-link :href="route('coach.trainings')" :active="request()->routeIs('coach.trainings')" wire:navigate>
+                {{ __('My sessions') }}
+            </x-responsive-nav-link>
+            @endif
+            @if (auth()->user()->is_committee_member || auth()->user()->is_admin)
+            <x-responsive-nav-link :href="route('admin.trainings.index')" :active="request()->routeIs('admin.trainings.index')" wire:navigate>
                 {{ __('Trainings') }}
             </x-responsive-nav-link>
+            @endif
             <x-responsive-nav-link :href="route('interclubs.index')" :active="request()->routeIs('interclubs.index')" wire:navigate>
                 {{ __('Matches') }}
             </x-responsive-nav-link>
@@ -139,8 +161,14 @@
             </div>
 
             <div class="mt-3 space-y-1">
-                <x-responsive-nav-link :href="route('profile.edit')" wire:navigate>
-                    {{ __('Profile') }}
+                <x-responsive-nav-link :href="route('admin.user.profile', auth()->user())" wire:navigate>
+                    {{ __('My Profile') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('admin.user.calendar', auth()->user())" wire:navigate>
+                    {{ __('My Calendar') }}
+                </x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('admin.user.registration-management', auth()->user())" wire:navigate>
+                    {{ __('My Trainings') }}
                 </x-responsive-nav-link>
 
                 <!-- Authentication -->

@@ -48,45 +48,6 @@
             @endif
         </x-card>
 
-        {{-- ── 2. Payment report ───────────────────────────────────────── --}}
-        @if ($tournament->isPaid())
-            <x-card>
-                <x-slot:title>
-                    <div class="flex items-center gap-2">
-                        <x-icon name="o-banknotes" class="w-5 h-5 opacity-60" />
-                        {{ __('Payment report') }}
-                    </div>
-                </x-slot:title>
-
-                @if ($this->unpaidParticipants->isEmpty())
-                    <div class="flex items-center gap-3 rounded-lg bg-success/10 border border-success/20 px-4 py-3">
-                        <x-icon name="o-check-circle" class="w-5 h-5 text-success shrink-0" />
-                        <span class="text-sm font-medium text-success">{{ __('All participants have paid.') }}</span>
-                    </div>
-                @else
-                    <div class="rounded-xl border border-warning/30 bg-warning/5 overflow-hidden">
-                        <div class="flex items-center gap-2 px-4 py-2.5 bg-warning/10 border-b border-warning/20">
-                            <x-icon name="o-exclamation-circle" class="w-4 h-4 text-warning shrink-0" />
-                            <span class="text-xs font-bold text-warning">
-                                {{ trans_choice(':n participant has not paid|:n participants have not paid', $this->unpaidParticipants->count(), ['n' => $this->unpaidParticipants->count()]) }}
-                            </span>
-                        </div>
-                        <div class="divide-y divide-base-200">
-                            @foreach ($this->unpaidParticipants as $user)
-                                <div class="flex items-center gap-3 px-4 py-2.5">
-                                    <div class="w-7 h-7 rounded-full bg-base-200 flex items-center justify-center text-[10px] font-black shrink-0">
-                                        {{ mb_strtoupper(mb_substr($user->first_name ?? '?', 0, 1)) }}{{ mb_strtoupper(mb_substr($user->last_name ?? '', 0, 1)) }}
-                                    </div>
-                                    <span class="flex-1 text-sm font-medium">{{ $user->full_name }}</span>
-                                    <span class="text-xs text-base-content/40">{{ $user->email }}</span>
-                                </div>
-                            @endforeach
-                        </div>
-                    </div>
-                @endif
-            </x-card>
-        @endif
-
         {{-- ── 3. Thank-you email ──────────────────────────────────────── --}}
         <x-card>
             <x-slot:title>
@@ -215,11 +176,52 @@
             @endif
         </x-card>
 
+         {{-- ── 2. Payment report ───────────────────────────────────────── --}}
+        @if ($tournament->isPaid())
+            <x-card>
+                <x-slot:title>
+                    <div class="flex items-center gap-2">
+                        <x-icon name="o-banknotes" class="w-5 h-5 opacity-60" />
+                        {{ __('Payment report') }}
+                    </div>
+                </x-slot:title>
+
+                @if ($this->unpaidParticipants->isEmpty())
+                    <div class="flex items-center gap-3 rounded-lg bg-success/10 border border-success/20 px-4 py-3">
+                        <x-icon name="o-check-circle" class="w-5 h-5 text-success shrink-0" />
+                        <span class="text-sm font-medium text-success">{{ __('All participants have paid.') }}</span>
+                    </div>
+                @else
+                    <div class="rounded-xl border border-warning/30 bg-warning/5 overflow-hidden">
+                        <div class="flex items-center gap-2 px-4 py-2.5 bg-warning/10 border-b border-warning/20">
+                            <x-icon name="o-exclamation-circle" class="w-4 h-4 text-warning shrink-0" />
+                            <span class="text-xs font-bold text-warning">
+                                {{ trans_choice(':n participant has not paid|:n participants have not paid', $this->unpaidParticipants->count(), ['n' => $this->unpaidParticipants->count()]) }}
+                            </span>
+                        </div>
+                        <div class="divide-y divide-base-200">
+                            @foreach ($this->unpaidParticipants as $user)
+                                <div class="flex items-center gap-3 px-4 py-2.5">
+                                    <div class="w-7 h-7 rounded-full bg-base-200 flex items-center justify-center text-[10px] font-black shrink-0">
+                                        {{ mb_strtoupper(mb_substr($user->first_name ?? '?', 0, 1)) }}{{ mb_strtoupper(mb_substr($user->last_name ?? '', 0, 1)) }}
+                                    </div>
+                                    <span class="flex-1 text-sm font-medium">{{ $user->full_name }}</span>
+                                    <span class="text-xs text-base-content/40">{{ $user->email }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+            </x-card>
+        @endif
+
+      
+
         {{-- ── Close button ────────────────────────────────────────────── --}}
         <div class="flex justify-end pt-2 pb-8" x-data="{ confirm: false }">
             <div x-show="! confirm">
                 <x-button label="{{ __('Close tournament') }}" icon="o-lock-closed"
-                    class="btn-error btn-lg"
+                    class="btn-error btn-sm"
                     :disabled="! $this->allMatchesComplete"
                     @click="confirm = true" />
             </div>

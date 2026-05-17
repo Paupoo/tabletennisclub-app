@@ -60,6 +60,9 @@ new class extends Component
     public bool $is_active = false;
 
     #[Rule('required|boolean')]
+    public bool $is_coach = false;
+
+    #[Rule('required|boolean')]
     public bool $is_admin = false;
 
     #[Rule('required|boolean')]
@@ -155,6 +158,7 @@ new class extends Component
             $this->is_competitor = $user->is_competitor;
             $this->is_active = $user->is_active;
             $this->is_committee_member = $user->is_committee_member;
+            $this->is_coach = $user->is_coach;
             $this->is_admin = $user->is_admin;
             $this->committee_role = $user->committee_role?->value;
         }

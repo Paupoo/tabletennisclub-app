@@ -96,7 +96,15 @@
             @endscope
 
             @scope('cell_member', $payment)
-            <span class="font-medium">{{ $payment->member }}</span>
+            <div>
+                <span class="font-medium">{{ $payment->member }}</span>
+                @if ($payment->event_name)
+                    <div class="text-[10px] opacity-50 mt-0.5">
+                        <span class="font-medium">{{ $payment->event_type }}</span>
+                        · {{ $payment->event_name }}
+                    </div>
+                @endif
+            </div>
             @endscope
 
             @scope('cell_amount_due', $payment)
@@ -175,6 +183,11 @@
             <x-icon name="o-document-text" class="w-8 h-8 text-primary shrink-0" />
             <div class="flex-1 min-w-0">
                 <div class="font-bold text-sm">{{ $currentPayment->payable?->user?->first_name }} {{ $currentPayment->payable?->user?->last_name }}</div>
+                @if ($currentPayment->payable?->tournament)
+                    <div class="text-xs text-primary/70 mt-0.5">
+                        {{ __('Tournament') }} · {{ $currentPayment->payable->tournament->name }}
+                    </div>
+                @endif
                 <div class="font-mono text-xs text-primary mt-0.5">{{ $currentPayment->reference }}</div>
             </div>
             <div class="text-right shrink-0">
@@ -319,6 +332,11 @@
             <x-icon name="o-arrow-uturn-left" class="w-8 h-8 text-error shrink-0" />
             <div class="flex-1 min-w-0">
                 <div class="font-bold text-sm">{{ $currentRefundPayment->payable?->user?->full_name }}</div>
+                @if ($currentRefundPayment->payable?->tournament)
+                    <div class="text-xs text-primary/70 mt-0.5">
+                        {{ __('Tournament') }} · {{ $currentRefundPayment->payable->tournament->name }}
+                    </div>
+                @endif
                 <div class="font-mono text-xs text-primary mt-0.5">{{ $currentRefundPayment->reference }}</div>
                 @if($currentRefundPayment->payable?->user?->iban)
                 <div class="text-xs text-base-content/60 mt-0.5">IBAN : <span class="font-mono">{{ $currentRefundPayment->payable->user->iban }}</span></div>

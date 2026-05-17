@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Enums\TournamentStatusEnum;
+use App\Models\ClubEvents\Tournament\Tournament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Tests\TestCase;
@@ -21,8 +23,6 @@ uses(
     TestCase::class,
     RefreshDatabase::class,
 )->in('Feature', 'Unit', '../resources/views');
-
-
 
 beforeAll(function (): void {
     // Run migrations and seed once before the whole test suite to avoid
@@ -57,7 +57,22 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+function paymentTournament(array $overrides = []): Tournament
 {
-    // ..
+    return Tournament::factory()->create(array_merge([
+        'status' => TournamentStatusEnum::PUBLISHED,
+        'price' => 10,
+        'max_users' => 16,
+        'duration_minutes' => 180,
+        'logistics_buffer_minutes' => 3,
+        'sets_to_win' => 3,
+        'nb_pools' => 2,
+        'pool_size' => 4,
+        'nb_qualifiers_per_pool' => 2,
+        'match_type' => 'single',
+        'has_handicap_points' => false,
+        'deuce_enabled' => true,
+        'start_time' => '10:00:00',
+        'location' => 'Club House',
+    ], $overrides));
 }

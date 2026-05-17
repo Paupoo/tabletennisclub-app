@@ -132,6 +132,8 @@
                             placeholder="{{ __('Select a role') }}" :options="$this->CommitteeRoleOptions" wire:model="committee_role" />
                     </div>
                 @endif
+                <x-checkbox hint="{{ __('Can access the coach view and be assigned to training packs') }}"
+                    label="{{ __('Is a coach') }}" wire:model="is_coach" />
                 <x-checkbox hint="{{ __('With great power comes great responsibility...') }}"
                     label="{{ __('Is an administrator') }}" wire:model="is_admin" />
             </div>

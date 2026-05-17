@@ -8,6 +8,7 @@ use App\Models\ClubEvents\Interclub\Club;
 use App\Models\ClubEvents\Interclub\Interclub;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Training\Training;
+use App\Models\ClubEvents\Training\TrainingPack;
 use Database\Factories\ClubAdmin\Club\RoomFactory;
 use Eloquent;
 use Illuminate\Database\Eloquent\Builder;
@@ -135,7 +136,7 @@ class Room extends Model
 
     public function trainingPacks(): HasMany
     {
-        return $this->hasMany(Training::class);
+        return $this->hasMany(TrainingPack::class);
     }
 
     public function trainings(): HasMany

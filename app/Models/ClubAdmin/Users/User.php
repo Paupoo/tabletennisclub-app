@@ -130,6 +130,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'is_committee_member' => 'boolean',
         'is_competitor' => 'boolean',
         'has_paid' => 'boolean',
+        'is_coach' => 'boolean',
         'email' => 'string',
         'password' => 'hashed',
         'first_name' => 'string',
@@ -180,6 +181,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'theme',
         'committee_role',
         'force_list',
+        'is_coach',
     ];
 
     /**
@@ -355,13 +357,8 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsToMany(Tournament::class, 'tournament_user');
     }
 
-    public function trainingPacks(): BelongsToMany
-    {
-        return $this->belongsToMany(Training::class);
-    }
-
     public function trainings(): BelongsToMany
     {
-        return $this->belongsToMany(Training::class);
+        return $this->belongsToMany(Training::class)->withPivot('status')->withTimestamps();
     }
 }

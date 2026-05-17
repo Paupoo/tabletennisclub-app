@@ -77,7 +77,7 @@
                     <x-menu-item icon="o-users" link="{{ route('admin.user.teams', $user) }}" title="{{ __('My team(s)') }}" />
                     <x-menu-item icon="o-star" link="{{ route('admin.user.event-subscription', $user) }}" title="{{ __('My registrations') }}" />
                     <x-menu-item icon="o-calendar-days" link="{{ route('admin.user.calendar', $user) }}" title="{{ __('Calendar') }}" />
-                    <x-menu-item icon="o-credit-card" link="{{ route('admin.user.registration-management', $user) }}" title="{{ __('Affiliation') }}" />
+                    <x-menu-item icon="o-academic-cap" link="{{ route('admin.user.registration-management', $user) }}" :title="__('Affiliation & Trainings')" />
                     <x-menu-item icon="o-cog-8-tooth" :link="route('admin.user.settings', $user)" title="{{ __('Settings') }}" />
                     <x-menu-separator />
                     <livewire:actions.logout />
@@ -106,7 +106,12 @@
                 <x-menu-separator />
                 @endif
 
+                @if($user->is_coach)
+                <x-menu-item icon="o-academic-cap" link="{{ route('coach.trainings') }}" title="{{ __('My sessions') }}" />
+                @endif
+                @if($user->is_committee_member || $user->is_admin)
                 <x-menu-item icon="o-academic-cap" link="{{ route('admin.trainings.index') }}" title="{{ __('Trainings') }}" />
+                @endif
 
                 <x-menu-sub icon="o-calendar-days" link="#" title="{{ __('Interclubs') }}">
                     <x-menu-item icon="o-identification" link="{{ route('admin.interclubs.teams') }}" title="{{ __('Teams') }}" />

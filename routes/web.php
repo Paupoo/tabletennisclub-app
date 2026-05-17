@@ -26,8 +26,6 @@ use App\Http\Controllers\ClubEvents\Interclub\SeasonController;
 use App\Http\Controllers\ClubEvents\Interclub\TeamController;
 use App\Http\Controllers\ClubEvents\Tournament\TableScoreController;
 use App\Http\Controllers\ClubEvents\Tournament\TournamentController;
-use App\Http\Controllers\ClubEvents\Training\TrainingController;
-use App\Http\Controllers\ClubEvents\Training\TrainingPackController;
 use App\Http\Controllers\ClubPosts\AdminEventPostController;
 use App\Http\Controllers\ClubPosts\PublicEventPostController;
 use App\Http\Controllers\ClubPosts\PublicNewsPostController;
@@ -134,6 +132,12 @@ Route::prefix('admin/club-events/interclubs/')
     ->middleware(['auth', 'verified'])
     ->group(function (): void {
         Route::livewire('trainings', 'pages::club-events.trainings.index')->name('admin.trainings.index');
+    });
+
+Route::prefix('coach')
+    ->middleware(['auth', 'verified'])
+    ->group(function (): void {
+        Route::livewire('trainings', 'pages::club-events.trainings.coach')->name('coach.trainings');
     });
 
 Route::prefix('admin/club-events/tournaments')
@@ -251,18 +255,6 @@ Route::post('clubEvents/interclubs/teams/saveTeams', [
 Route::resource('clubEvents/interclubs/teams', TeamController::class)->middleware(['auth', 'verified']);
 
 /**
- * Training management
- */
-Route::resource('/clubEvents/trainings', TrainingController::class)
-    ->middleware(['auth', 'verified']);
-Route::get('/clubAdmin/trainings/{training}/register', [TrainingController::class, 'register'])
-    ->middleware(['auth', 'verified'])
-    ->name('trainings.register');
-Route::get('/clubAdmin/trainings/{training}/unregister', [TrainingController::class, 'unregister'])
-    ->middleware(['auth', 'verified'])
-    ->name('trainings.unregister');
-
-/**
  * Interclub management
  */
 Route::post('clubEvents/interclubs/subscribe', [
@@ -340,10 +332,6 @@ Route::prefix('admin/website')->middleware(['auth', 'verified'])->group(function
     Route::livewire('/articles/{newsPost}/edit', 'pages::website.articles.edit')->name('admin.website.articles.edit');
     Route::livewire('/contacts', 'pages::website.contacts.index')->name('admin.website.contacts.index');
     Route::livewire('/spams', 'pages::website.spams.index')->name('admin.website.spams.index');
-});
-
-Route::prefix('clubAdmin')->middleware(['auth', 'verified'])->group(function (): void {
-    Route::resource('trainingpacks', TrainingPackController::class)->names('admin.trainingpacks');
 });
 
 Route::middleware(['auth', 'verified'])->group(function (): void {

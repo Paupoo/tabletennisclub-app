@@ -37,24 +37,28 @@
                             $regStatus = $event['registrationStatus'] ?? null;
                             $isActive  = in_array($regStatus, ['registered', 'confirmed', 'spot_offered']);
                             $isWaiting = $regStatus === 'waiting';
+                            $isTraining = $event['type'] === 'training';
                         @endphp
                         <x-admin.shared.compact-event-preview
                             :name="$event['title']"
                             :startDateTime="$event['startDateTime']"
                             :type="$event['type']"
                             link="#"
-                            location=""
+                            :location="$event['room'] ?? ''"
                         >
                             <x-slot:actions>
-                                @if ($isActive)
+                                @if ($isTraining)
+                                    @if (isset($event['level']))
+                                        <x-badge class="badge-primary badge-soft badge-sm" value="{{ $event['level'] }}" />
+                                    @endif
+                                    <x-badge class="badge-success badge-sm" value="{{ __('Enrolled') }}" />
+                                @elseif ($isActive)
                                     <x-badge class="badge-success badge-sm" value="{{ __('Registered') }}" />
                                 @elseif ($isWaiting)
                                     <x-badge class="badge-warning badge-sm" value="{{ __('Waitlisted') }}" />
                                 @else
-                                    <a
-                                        class="btn btn-primary btn-outline btn-xs"
-                                        href="{{ route('admin.user.event-subscription', $user) }}"
-                                    >
+                                    <a class="btn btn-primary btn-outline btn-xs"
+                                        href="{{ route('admin.user.event-subscription', $user) }}">
                                         {{ __('Register') }}
                                     </a>
                                 @endif

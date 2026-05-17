@@ -109,7 +109,7 @@ class Breadcrumb
 
     public function trainings(?string $url = null): Breadcrumb
     {
-        return $this->add('Trainings', $url ?: route('trainings.index'));
+        return $this->add('Trainings', $url ?: route('admin.trainings.index'));
     }
 
     public function users(?string $url = null): Breadcrumb

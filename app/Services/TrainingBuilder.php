@@ -77,9 +77,7 @@ class TrainingBuilder
     public function setTrainingPack(?int $trainingPackId = null): self
     {
         if ($trainingPackId !== null) {
-            $trainingPack = TrainingPack::findOrFail($trainingPackId);
-
-            $this->training->TrainingPack()->associate($trainingPackId);
+            $this->training->trainingPack()->associate(TrainingPack::findOrFail($trainingPackId));
         }
 
         return $this;

@@ -292,7 +292,7 @@ new class extends Component
                 ['id' => 'recreative', 'value' => 'recreative'],
             ]),
             'genders' => Gender::options(),
-            'trainings' => TrainingPack::with('trainer')
+            'trainings' => TrainingPack::with(['trainer', 'room'])
                 ->where('season_id', $season?->id)
                 ->get()
                 ->map(fn (TrainingPack $pack) => [
@@ -310,8 +310,8 @@ new class extends Component
                         TrainingLevel::BEGINNERS                          => 'bg-success',
                         default                                           => 'bg-primary',
                     },
-                    'spots' => 99,
-                    'full'  => false,
+                    'spots' => $pack->effectiveMaxParticipants(),
+                    'full'  => $pack->effectiveMaxParticipants() > 0 && $pack->enrolledCount() >= $pack->effectiveMaxParticipants(),
                 ])
                 ->toArray(),
         ];

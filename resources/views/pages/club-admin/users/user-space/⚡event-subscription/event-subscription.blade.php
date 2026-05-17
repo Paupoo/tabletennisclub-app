@@ -10,6 +10,7 @@
 
         {{-- ── Sidebar filtres ──────────────────────────────────────────────── --}}
         <div class="space-y-4">
+
             <x-card class="border border-primary/10 bg-primary/5" shadow title="{{ __('Filters') }}">
                 <x-checkbox
                     class="mt-2"
@@ -38,6 +39,34 @@
                             wire:click="register({{ $nextTournament->id }})"
                         />
                     @endif
+                </x-card>
+            @endif
+
+            {{-- Paiements en attente --}}
+            @if ($this->pendingPayments->isNotEmpty())
+                <x-card class="border border-warning/30 bg-warning/5" shadow>
+                    <div class="mb-3 text-[10px] font-bold uppercase tracking-wider text-warning">
+                        {{ __('Payments due') }}
+                    </div>
+                    <div class="space-y-3">
+                        @foreach ($this->pendingPayments as $payment)
+                            @php $tournament = $payment->payable->tournament; @endphp
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="min-w-0">
+                                    <div class="truncate text-xs font-semibold">{{ $tournament->name }}</div>
+                                    <div class="text-[10px] opacity-60">
+                                        {{ number_format($payment->amount_due, 2, ',', ' ') }} €
+                                    </div>
+                                </div>
+                                <x-button
+                                    class="btn-warning btn-xs shrink-0"
+                                    icon="o-credit-card"
+                                    spinner="openPaymentModal"
+                                    wire:click="openPaymentModal({{ $payment->id }})"
+                                />
+                            </div>
+                        @endforeach
+                    </div>
                 </x-card>
             @endif
         </div>
@@ -74,6 +103,15 @@
                             {{-- Statut inscription --}}
                             @if ($isActive)
                                 <x-badge class="badge-success badge-sm" value="{{ __('Registered') }}" />
+                                @if ($reg->payment_id && ! $reg->has_paid)
+                                    <x-button
+                                        class="btn-warning btn-xs"
+                                        icon="o-credit-card"
+                                        :label="__('Pay')"
+                                        spinner="openPaymentModal"
+                                        wire:click="openPaymentModal({{ $reg->payment_id }})"
+                                    />
+                                @endif
                                 <x-button
                                     class="btn-ghost btn-sm text-error"
                                     icon="o-x-circle"
@@ -126,6 +164,37 @@
 
             </x-card>
 
+            {{-- Section : Mes entraînements ────────────────────────────────── --}}
+            @if ($this->upcomingTrainingSessions->isNotEmpty())
+                <x-card icon="o-academic-cap" separator shadow title="{{ __('My upcoming sessions') }}">
+                    <div class="space-y-2">
+                        @foreach ($this->upcomingTrainingSessions as $session)
+                            <div class="flex items-center justify-between rounded-lg border border-base-200 px-3 py-2">
+                                <div class="flex items-center gap-3">
+                                    <div class="text-center">
+                                        <div class="text-[10px] font-bold uppercase text-base-content/40">
+                                            {{ $session->start->translatedFormat('M') }}
+                                        </div>
+                                        <div class="text-lg font-bold leading-none">
+                                            {{ $session->start->format('d') }}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-medium">{{ $session->trainingPack?->name }}</p>
+                                        <p class="text-xs text-base-content/60">
+                                            {{ $session->start->format('H:i') }} – {{ $session->end->format('H:i') }}
+                                            · {{ $session->room?->name }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <x-badge value="{{ $session->trainingPack?->level?->value }}"
+                                    class="badge-primary badge-soft badge-sm" />
+                            </div>
+                        @endforeach
+                    </div>
+                </x-card>
+            @endif
+
             {{-- Section : Passés (collapse) --}}
             @if ($this->myPastTournaments->isNotEmpty())
                 <x-collapse>
@@ -152,4 +221,48 @@
 
         </div>
     </div>
+
+    {{-- Modal détails paiement --}}
+    <x-modal wire:model="paymentModal" :title="__('Payment details')" box-class="max-w-sm">
+    @if ($paymentQr && $selectedPaymentId)
+        @php
+            $payment = \App\Models\ClubAdmin\Payment\Payment::with(['payable.tournament'])->find($selectedPaymentId);
+            $eventName = $payment?->payable?->tournament?->name;
+        @endphp
+        <div class="flex flex-col items-center gap-5">
+            @if ($eventName)
+                <div class="w-full rounded-xl bg-primary/5 border border-primary/10 px-4 py-3 text-center">
+                    <div class="text-[10px] font-bold uppercase tracking-wider opacity-50 mb-0.5">{{ __('Tournament') }}</div>
+                    <div class="font-bold text-sm text-primary">{{ $eventName }}</div>
+                </div>
+            @endif
+            <img
+                alt="QR Code"
+                class="w-48 h-48 rounded-xl border border-base-200 shadow"
+                src="{{ $paymentQr }}"
+            />
+            <div class="w-full divide-y divide-base-200 text-sm">
+                <div class="flex items-center justify-between py-2">
+                    <span class="opacity-60">{{ __('Amount') }}</span>
+                    <span class="font-bold">{{ number_format($payment->amount_due, 2, ',', ' ') }} €</span>
+                </div>
+                <div class="flex items-center justify-between py-2">
+                    <span class="opacity-60">{{ __('Reference') }}</span>
+                    <span class="font-mono text-xs">{{ $payment->reference }}</span>
+                </div>
+                <div class="flex items-center justify-between py-2">
+                    <span class="opacity-60">IBAN</span>
+                    <span class="font-mono text-xs">BE23 7323 3320 8791</span>
+                </div>
+                <div class="flex items-center justify-between py-2">
+                    <span class="opacity-60">BIC</span>
+                    <span class="font-mono text-xs">CREGBEBB</span>
+                </div>
+            </div>
+        </div>
+    @endif
+    <x-slot:actions>
+        <x-button :label="__('Close')" wire:click="$set('paymentModal', false)" />
+    </x-slot:actions>
+    </x-modal>
 </div>

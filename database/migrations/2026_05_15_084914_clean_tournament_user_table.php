@@ -2,98 +2,51 @@
 
 declare(strict_types=1);
 
+use App\Models\ClubEvents\Tournament\Pool;
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     public function down(): void
     {
-        DB::statement('PRAGMA foreign_keys = OFF');
+        // Drop user_id FK first — it's backed by the unique(user_id, tournament_id) index
+        Schema::table('tournament_user', function (Blueprint $table) {
+            $table->dropForeign(['user_id']);
+            $table->dropUnique(['user_id', 'tournament_id']);
+        });
 
-        DB::statement('
-            CREATE TABLE tournament_user_old (
-                id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id     INTEGER,
-                tournament_id INTEGER,
-                pool_id     INTEGER,
-                has_paid    TINYINT(1) NOT NULL DEFAULT 0,
-                matches_won INTEGER NOT NULL DEFAULT 0,
-                sets_won    INTEGER NOT NULL DEFAULT 0,
-                points_won  INTEGER NOT NULL DEFAULT 0,
-                registration_status VARCHAR NOT NULL DEFAULT \'registered\',
-                waitlist_position   INTEGER,
-                confirmation_deadline DATETIME,
-                payment_deadline    DATETIME,
-                payment_id  INTEGER,
-                created_at  DATETIME,
-                updated_at  DATETIME,
-                UNIQUE (user_id, tournament_id, pool_id),
-                FOREIGN KEY (user_id)       REFERENCES users(id)       ON DELETE SET NULL,
-                FOREIGN KEY (tournament_id) REFERENCES tournaments(id) ON DELETE SET NULL,
-                FOREIGN KEY (pool_id)       REFERENCES pools(id)       ON DELETE SET NULL,
-                FOREIGN KEY (payment_id)    REFERENCES payments(id)    ON DELETE SET NULL
-            )
-        ');
+        Schema::table('tournament_user', function (Blueprint $table) {
+            $table->foreignIdFor(Pool::class)->nullable()->constrained()->nullOnDelete();
+            $table->integer('matches_won')->default(0);
+            $table->integer('sets_won')->default(0);
+            $table->integer('points_won')->default(0);
+            $table->unique(['user_id', 'tournament_id', 'pool_id']);
+        });
 
-        DB::statement('
-            INSERT INTO tournament_user_old
-                (id, user_id, tournament_id, has_paid, registration_status,
-                 waitlist_position, confirmation_deadline, payment_deadline, payment_id,
-                 created_at, updated_at)
-            SELECT id, user_id, tournament_id, has_paid, registration_status,
-                   waitlist_position, confirmation_deadline, payment_deadline, payment_id,
-                   created_at, updated_at
-            FROM tournament_user
-        ');
-
-        Schema::drop('tournament_user');
-
-        DB::statement('ALTER TABLE tournament_user_old RENAME TO tournament_user');
-
-        DB::statement('PRAGMA foreign_keys = ON');
+        Schema::table('tournament_user', function (Blueprint $table) {
+            $table->foreign('user_id')->references('id')->on('users')->nullOnDelete();
+        });
     }
 
     public function up(): void
     {
-        DB::statement('PRAGMA foreign_keys = OFF');
+        // MySQL reuses the unique(user_id, tournament_id, pool_id) index as backing
+        // for the user_id FK. Both FKs must be dropped before the unique index can be removed.
+        Schema::table('tournament_user', function (Blueprint $table) {
+            $table->dropForeign(['pool_id']);
+            $table->dropForeign(['user_id']);
+        });
 
-        DB::statement('
-            CREATE TABLE tournament_user_new (
-                id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id     INTEGER,
-                tournament_id INTEGER,
-                has_paid    TINYINT(1) NOT NULL DEFAULT 0,
-                registration_status VARCHAR NOT NULL DEFAULT \'registered\',
-                waitlist_position   INTEGER,
-                confirmation_deadline DATETIME,
-                payment_deadline    DATETIME,
-                payment_id  INTEGER,
-                created_at  DATETIME,
-                updated_at  DATETIME,
-                UNIQUE (user_id, tournament_id),
-                FOREIGN KEY (user_id)       REFERENCES users(id)       ON DELETE SET NULL,
-                FOREIGN KEY (tournament_id) REFERENCES tournaments(id) ON DELETE SET NULL,
-                FOREIGN KEY (payment_id)    REFERENCES payments(id)    ON DELETE SET NULL
-            )
-        ');
+        Schema::table('tournament_user', function (Blueprint $table) {
+            $table->dropUnique(['user_id', 'tournament_id', 'pool_id']);
+            $table->dropColumn(['pool_id', 'matches_won', 'sets_won', 'points_won']);
+            $table->unique(['user_id', 'tournament_id']);
+        });
 
-        DB::statement('
-            INSERT INTO tournament_user_new
-                (id, user_id, tournament_id, has_paid, registration_status,
-                 waitlist_position, confirmation_deadline, payment_deadline, payment_id,
-                 created_at, updated_at)
-            SELECT id, user_id, tournament_id, has_paid, registration_status,
-                   waitlist_position, confirmation_deadline, payment_deadline, payment_id,
-                   created_at, updated_at
-            FROM tournament_user
-        ');
-
-        Schema::drop('tournament_user');
-
-        DB::statement('ALTER TABLE tournament_user_new RENAME TO tournament_user');
-
-        DB::statement('PRAGMA foreign_keys = ON');
+        Schema::table('tournament_user', function (Blueprint $table) {
+            $table->foreign('user_id')->references('id')->on('users')->nullOnDelete();
+        });
     }
 };

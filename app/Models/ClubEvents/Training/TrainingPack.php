@@ -36,6 +36,10 @@ class TrainingPack extends Model
         'trainer_id' => 'integer',
         'room_id' => 'integer',
         'day_of_week' => 'integer',
+        'days_of_week' => 'array',
+        'pack_start_date' => 'date',
+        'pack_end_date' => 'date',
+        'excluded_dates' => 'array',
         'duration_minutes' => 'integer',
         'max_participants' => 'integer',
         'is_active' => 'boolean',
@@ -50,8 +54,12 @@ class TrainingPack extends Model
         'trainer_id',
         'room_id',
         'day_of_week',
+        'days_of_week',
         'start_time',
         'duration_minutes',
+        'pack_start_date',
+        'pack_end_date',
+        'excluded_dates',
         'description',
         'max_participants',
         'is_active',
@@ -68,49 +76,78 @@ class TrainingPack extends Model
     }
 
     /**
-     * Generate all weekly sessions for this pack within the given season.
+     * Generate sessions for this pack within the given season (or custom date range).
+     * Supports multi-day recurrence and excluded dates.
      * Skips dates where a session for this pack already exists.
      */
     public function generateSessions(Season $season): void
     {
-        if ($this->day_of_week === null || $this->start_time === null || $this->duration_minutes === null) {
+        if ($this->start_time === null || $this->duration_minutes === null) {
             return;
         }
 
-        // Find first occurrence of day_of_week on or after the season start
-        $firstDate = $season->start_at->copy()->startOfDay();
-        $diff = ($this->day_of_week - $firstDate->isoWeekday() + 7) % 7;
-        $firstDate->addDays($diff);
+        // Determine which weekdays to generate for
+        $daysToGenerate = $this->days_of_week
+            ?? ($this->day_of_week !== null ? [$this->day_of_week] : []);
 
-        if ($firstDate->gt($season->end_at)) {
+        if (empty($daysToGenerate)) {
             return;
         }
 
+        // Determine date bounds (custom range overrides season)
+        $startBound = $this->pack_start_date
+            ? $this->pack_start_date->copy()->startOfDay()
+            : $season->start_at->copy()->startOfDay();
+
+        $endBound = $this->pack_end_date
+            ? $this->pack_end_date->copy()->endOfDay()
+            : $season->end_at->copy();
+
+        $excludedDates = collect($this->excluded_dates ?? []);
         $endTime = Carbon::parse($this->start_time)->addMinutes($this->duration_minutes)->format('H:i:s');
-
-        $dates = app(TrainingDateGenerator::class)->generateDates(
-            $firstDate->toDateString(),
-            $season->end_at->toDateString(),
-            Recurrence::WEEKLY->name,
-        );
-
         $builder = app(TrainingBuilder::class);
+        $generator = app(TrainingDateGenerator::class);
 
-        foreach ($dates as $date) {
-            // Skip if a session already exists for this pack on this date
-            $dateString = $date->toDateString();
-            if ($this->trainings()->whereDate('start', $dateString)->exists()) {
+        foreach ($daysToGenerate as $dayOfWeek) {
+            $dayOfWeek = (int) $dayOfWeek;
+            $firstDate = $startBound->copy();
+            $diff = ($dayOfWeek - $firstDate->isoWeekday() + 7) % 7;
+            $firstDate->addDays($diff);
+
+            if ($firstDate->gt($endBound)) {
                 continue;
             }
 
-            $builder
-                ->setAttributes(['level' => $this->level->value, 'type' => $this->type->value])
-                ->mergeDateAndTime($date, $this->start_time, $endTime)
-                ->setRoom($this->room_id)
-                ->setSeason($season->id)
-                ->setTrainer($this->trainer_id)
-                ->setTrainingPack($this->id)
-                ->buildAndSave();
+            try {
+                $dates = $generator->generateDates(
+                    $firstDate->toDateString(),
+                    $endBound->toDateString(),
+                    Recurrence::WEEKLY->name,
+                );
+            } catch (\Exception) {
+                continue;
+            }
+
+            foreach ($dates as $date) {
+                $dateString = $date->toDateString();
+
+                if ($excludedDates->contains($dateString)) {
+                    continue;
+                }
+
+                if ($this->trainings()->whereDate('start', $dateString)->exists()) {
+                    continue;
+                }
+
+                $builder
+                    ->setAttributes(['level' => $this->level->value, 'type' => $this->type->value])
+                    ->mergeDateAndTime($date, $this->start_time, $endTime)
+                    ->setRoom($this->room_id)
+                    ->setSeason($season->id)
+                    ->setTrainer($this->trainer_id)
+                    ->setTrainingPack($this->id)
+                    ->buildAndSave();
+            }
         }
     }
 

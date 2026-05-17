@@ -99,6 +99,65 @@ describe('generateSessions', function () {
         expect($pack->trainings()->count())->toBe(0);
     });
 
+    it('generates sessions on multiple specific days', function () {
+        $season = Season::factory()->create([
+            'is_active' => true,
+            'start_at' => now()->startOfMonth(),
+            'end_at' => now()->startOfMonth()->addDays(13),
+        ]);
+        $pack = makeTrainingPack($season, [
+            'day_of_week' => null,
+            'days_of_week' => [1, 3], // Monday and Wednesday
+        ]);
+
+        $pack->generateSessions($season);
+
+        // Expect sessions on both Mon and Wed within the 2-week window
+        expect($pack->trainings()->count())->toBeGreaterThanOrEqual(2);
+    });
+
+    it('skips excluded dates when generating', function () {
+        $season = Season::factory()->create([
+            'is_active' => true,
+            'start_at' => now()->startOfMonth(),
+            'end_at' => now()->startOfMonth()->addDays(27),
+        ]);
+
+        // Find first Monday of the month
+        $firstMonday = now()->startOfMonth()->startOfDay();
+        $firstMonday->addDays((1 - $firstMonday->isoWeekday() + 7) % 7);
+        $excluded = $firstMonday->toDateString();
+
+        $pack = makeTrainingPack($season, [
+            'day_of_week' => 1, // Monday
+            'excluded_dates' => [$excluded],
+        ]);
+
+        $pack->generateSessions($season);
+
+        $dates = $pack->trainings()->pluck('start')->map(fn ($d) => $d->toDateString());
+        expect($dates)->not->toContain($excluded);
+    });
+
+    it('respects custom pack_start_date and pack_end_date', function () {
+        $season = makeActiveSeason();
+        $customStart = now()->startOfMonth()->addDays(10)->toDateString();
+        $customEnd = now()->startOfMonth()->addDays(17)->toDateString();
+
+        $pack = makeTrainingPack($season, [
+            'day_of_week' => 2, // Tuesday
+            'pack_start_date' => $customStart,
+            'pack_end_date' => $customEnd,
+        ]);
+
+        $pack->generateSessions($season);
+
+        $pack->trainings()->each(function ($t) use ($customStart, $customEnd) {
+            expect($t->start->toDateString())->toBeGreaterThanOrEqual($customStart);
+            expect($t->start->toDateString())->toBeLessThanOrEqual($customEnd);
+        });
+    });
+
     it('links generated sessions to the correct pack', function () {
         $season = makeActiveSeason();
         $pack = makeTrainingPack($season);

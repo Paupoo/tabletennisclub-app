@@ -201,18 +201,35 @@
         {{-- Step 1 — Pack info --}}
         @if ($step === '1')
             <div class="space-y-4">
+                {{-- Season selector --}}
+                <x-select :options="$seasonOptions" label="{{ __('Season') }}" wire:model.live="formSeasonId"
+                    placeholder="{{ __('Select a season…') }}" />
+
                 <x-input label="{{ __('Pack name') }}" placeholder="{{ __('E.g. Tuesday Elite') }}"
                     wire:model="formName" />
 
                 <div class="grid grid-cols-2 gap-4">
                     <x-select :options="$levelOptions" label="{{ __('Level') }}" wire:model="formLevel"
                         placeholder="{{ __('Select…') }}" />
-                    <x-select :options="$typeOptions" label="{{ __('Type') }}" wire:model="formType"
+                    <x-select :options="$typeOptions" label="{{ __('Type') }}" wire:model.live="formType"
                         placeholder="{{ __('Select…') }}" />
                 </div>
 
-                <x-select :options="$trainerOptions" label="{{ __('Coach') }}" wire:model="formTrainerId"
-                    placeholder="{{ __('No coach') }}" />
+                {{-- Coach — required for non-free types --}}
+                <div>
+                    <x-select :options="$trainerOptions" label="{{ __('Coach') }}" wire:model="formTrainerId"
+                        placeholder="{{ __('No coach') }}" />
+                    @if ($formType && $formType !== \App\Enums\TrainingType::FREE->value && ! $formTrainerId)
+                        <p class="mt-1 text-xs text-warning">
+                            <x-icon class="inline h-3 w-3" name="o-exclamation-triangle" />
+                            {{ __('A coach is required for this training type.') }}
+                        </p>
+                    @elseif ($formType === \App\Enums\TrainingType::FREE->value)
+                        <p class="mt-1 text-xs text-base-content/40">
+                            {{ __('Free practice — no coach needed.') }}
+                        </p>
+                    @endif
+                </div>
 
                 <x-select :options="$roomOptions" label="{{ __('Room') }}" wire:model="formRoomId"
                     placeholder="{{ __('Select…') }}" />
@@ -225,13 +242,69 @@
         {{-- Step 2 — Planning --}}
         @if ($step === '2')
             <div class="space-y-4">
-                <x-select :options="$dayOptions" label="{{ __('Day of week') }}" wire:model.live="formDayOfWeek"
-                    placeholder="{{ __('Select…') }}" />
+                {{-- Recurrence type toggle --}}
+                <div>
+                    <p class="mb-2 text-sm font-medium">{{ __('Recurrence') }}</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div @class([
+                            'cursor-pointer rounded-xl border-2 p-3 text-center transition',
+                            'border-primary bg-primary/10' => $formRecurrenceType === 'weekly',
+                            'border-base-200' => $formRecurrenceType !== 'weekly',
+                        ]) wire:click="$set('formRecurrenceType', 'weekly')">
+                            <x-icon class="mx-auto mb-1 h-5 w-5 text-primary" name="o-calendar" />
+                            <p class="text-sm font-semibold">{{ __('Once a week') }}</p>
+                            <p class="text-xs text-base-content/60">{{ __('Same day every week') }}</p>
+                        </div>
+                        <div @class([
+                            'cursor-pointer rounded-xl border-2 p-3 text-center transition',
+                            'border-primary bg-primary/10' => $formRecurrenceType === 'specific_days',
+                            'border-base-200' => $formRecurrenceType !== 'specific_days',
+                        ]) wire:click="$set('formRecurrenceType', 'specific_days')">
+                            <x-icon class="mx-auto mb-1 h-5 w-5 text-primary" name="o-calendar-days" />
+                            <p class="text-sm font-semibold">{{ __('Several days') }}</p>
+                            <p class="text-xs text-base-content/60">{{ __('Pick multiple weekdays') }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Day selection depending on recurrence type --}}
+                @if ($formRecurrenceType === 'weekly')
+                    <x-select :options="$dayOptions" label="{{ __('Day of week') }}"
+                        wire:model.live="formDayOfWeek" placeholder="{{ __('Select…') }}" />
+                @else
+                    <div>
+                        <p class="mb-2 text-sm font-medium">{{ __('Days of the week') }}</p>
+                        <div class="flex flex-wrap gap-2">
+                            @foreach ($dayOptions as $day)
+                                <label @class([
+                                    'cursor-pointer select-none rounded-full border px-3 py-1 text-xs font-medium transition',
+                                    'border-primary bg-primary text-primary-content' => in_array($day['id'], array_map('intval', $formSpecificDays)),
+                                    'border-base-200 text-base-content/70 hover:border-primary/50' => ! in_array($day['id'], array_map('intval', $formSpecificDays)),
+                                ])>
+                                    <input class="sr-only" type="checkbox" wire:model.live="formSpecificDays"
+                                        value="{{ $day['id'] }}" />
+                                    {{ $day['name'] }}
+                                </label>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
 
                 <div class="grid grid-cols-2 gap-4">
                     <x-input label="{{ __('Start time') }}" type="time" wire:model.live="formStartTime" />
                     <x-input label="{{ __('Duration (min)') }}" type="number" min="15" max="480"
                         wire:model.live="formDurationMinutes" />
+                </div>
+
+                {{-- Custom date range --}}
+                <div>
+                    <p class="mb-1 text-xs text-base-content/50">
+                        {{ __('Custom date range (optional — overrides season dates)') }}
+                    </p>
+                    <div class="grid grid-cols-2 gap-4">
+                        <x-input label="{{ __('From') }}" type="date" wire:model.live="formPackStartDate" />
+                        <x-input label="{{ __('To') }}" type="date" wire:model.live="formPackEndDate" />
+                    </div>
                 </div>
 
                 {{-- Preview --}}
@@ -242,15 +315,45 @@
                         </p>
                         <div class="flex flex-wrap gap-1.5">
                             @foreach ($previewDates as $d)
-                                <span class="rounded-md bg-primary/10 px-2 py-0.5 text-[11px] text-primary">
+                                <span class="group relative inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-0.5 text-[11px] text-primary">
                                     {{ $d->translatedFormat('D d M') }}
+                                    <button
+                                        class="ml-0.5 rounded-full opacity-50 transition hover:opacity-100 hover:text-error"
+                                        title="{{ __('Exclude this date') }}"
+                                        wire:click="toggleExcludeDate('{{ $d->toDateString() }}')"
+                                        wire:key="include-{{ $d->toDateString() }}"
+                                        type="button">
+                                        ×
+                                    </button>
                                 </span>
                             @endforeach
                         </div>
                     </div>
-                @elseif ($formDayOfWeek)
+
+                    {{-- Excluded dates (re-includable) --}}
+                    @if (count($formExcludedDates) > 0)
+                        <div class="rounded-lg border border-base-200 p-3">
+                            <p class="mb-2 text-xs font-semibold uppercase tracking-wider text-base-content/40">
+                                {{ __(':count excluded', ['count' => count($formExcludedDates)]) }}
+                            </p>
+                            <div class="flex flex-wrap gap-1.5">
+                                @foreach ($formExcludedDates as $excluded)
+                                    <button
+                                        class="inline-flex items-center gap-1 rounded-md border border-dashed border-base-300 px-2 py-0.5 text-[11px] text-base-content/40 line-through transition hover:border-primary hover:text-primary hover:no-underline"
+                                        title="{{ __('Re-include this date') }}"
+                                        wire:click="toggleExcludeDate('{{ $excluded }}')"
+                                        wire:key="exclude-{{ $excluded }}"
+                                        type="button">
+                                        {{ \Carbon\Carbon::parse($excluded)->translatedFormat('D d M') }}
+                                        <span class="no-underline">↩</span>
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+                @elseif ($formDayOfWeek || count($formSpecificDays) > 0)
                     <x-alert class="alert-warning" icon="o-exclamation-triangle"
-                        title="{{ __('No dates can be generated for this season.') }}" />
+                        title="{{ __('No dates can be generated for this period.') }}" />
                 @endif
             </div>
         @endif
@@ -268,6 +371,12 @@
                     <h3 class="mb-3 font-semibold">{{ __('Summary') }}</h3>
                     <div class="space-y-1 text-base-content/70">
                         <div class="flex justify-between">
+                            <span>{{ __('Season') }}</span>
+                            <span class="font-medium text-base-content">
+                                {{ collect($seasonOptions)->firstWhere('id', $formSeasonId)['name'] ?? '—' }}
+                            </span>
+                        </div>
+                        <div class="flex justify-between">
                             <span>{{ __('Name') }}</span>
                             <span class="font-medium text-base-content">{{ $formName }}</span>
                         </div>
@@ -280,6 +389,14 @@
                             <span class="font-medium text-base-content">{{ count($previewDates) }}
                                 {{ __('sessions') }}</span>
                         </div>
+                        @if (count($formExcludedDates) > 0)
+                            <div class="flex justify-between">
+                                <span>{{ __('Excluded') }}</span>
+                                <span class="font-medium text-base-content/50">
+                                    {{ count($formExcludedDates) }} {{ __('date(s)') }}
+                                </span>
+                            </div>
+                        @endif
                         <div class="flex justify-between">
                             <span>{{ __('Price') }}</span>
                             <span class="font-semibold text-primary">{{ number_format($formPrice, 2) }} €</span>

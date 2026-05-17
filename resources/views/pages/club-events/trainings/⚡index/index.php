@@ -14,6 +14,7 @@ use App\Models\ClubEvents\Training\TrainingPack;
 use App\Notifications\Training\TrainingSessionCancelledNotification;
 use App\Services\TrainingDateGenerator;
 use App\Support\Breadcrumb;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -31,6 +32,8 @@ new class extends Component
     public ?int $packId = null;
 
     // Step 1 — Pack info
+    public int $formSeasonId = 0;
+
     public string $formName = '';
 
     public string $formLevel = '';
@@ -44,11 +47,23 @@ new class extends Component
     public string $formDescription = '';
 
     // Step 2 — Planning
+    public string $formRecurrenceType = 'weekly'; // 'weekly' | 'specific_days'
+
     public ?int $formDayOfWeek = null;
+
+    /** @var array<int, int|string> */
+    public array $formSpecificDays = [];
 
     public string $formStartTime = '18:00';
 
     public int $formDurationMinutes = 90;
+
+    public string $formPackStartDate = '';
+
+    public string $formPackEndDate = '';
+
+    /** @var array<int, string> */
+    public array $formExcludedDates = [];
 
     // Step 3 — Price (in euros)
     public float $formPrice = 90;
@@ -110,32 +125,85 @@ new class extends Component
     }
 
     #[Computed]
+    public function wizardSeason(): ?Season
+    {
+        return $this->formSeasonId ? Season::find($this->formSeasonId) : null;
+    }
+
+    /** @return array<int, Carbon> */
+    #[Computed]
     public function previewDates(): array
     {
-        if (! $this->formDayOfWeek || ! $this->formStartTime || ! $this->activeSeason) {
+        if (! $this->formStartTime) {
             return [];
         }
 
-        $firstDate = $this->activeSeason->start_at->copy()->startOfDay();
-        $diff = ($this->formDayOfWeek - $firstDate->isoWeekday() + 7) % 7;
-        $firstDate->addDays($diff);
+        $daysToGenerate = $this->formRecurrenceType === 'specific_days'
+            ? array_map('intval', $this->formSpecificDays)
+            : ($this->formDayOfWeek ? [$this->formDayOfWeek] : []);
 
-        if ($firstDate->gt($this->activeSeason->end_at)) {
+        if (empty($daysToGenerate)) {
             return [];
         }
 
-        try {
-            return app(TrainingDateGenerator::class)->generateDates(
-                $firstDate->toDateString(),
-                $this->activeSeason->end_at->toDateString(),
-                Recurrence::WEEKLY->name,
-            );
-        } catch (\Exception) {
+        // Custom dates override season bounds
+        $season = $this->wizardSeason;
+        $startBound = $this->formPackStartDate
+            ? Carbon::parse($this->formPackStartDate)->startOfDay()
+            : $season?->start_at?->copy()->startOfDay();
+        $endBound = $this->formPackEndDate
+            ? Carbon::parse($this->formPackEndDate)->endOfDay()
+            : $season?->end_at?->copy();
+
+        if (! $startBound || ! $endBound) {
             return [];
         }
+
+        $generator = app(TrainingDateGenerator::class);
+        $allDates = [];
+
+        foreach ($daysToGenerate as $dayOfWeek) {
+            $firstDate = $startBound->copy();
+            $diff = ($dayOfWeek - $firstDate->isoWeekday() + 7) % 7;
+            $firstDate->addDays($diff);
+
+            if ($firstDate->gt($endBound)) {
+                continue;
+            }
+
+            try {
+                $dates = $generator->generateDates(
+                    $firstDate->toDateString(),
+                    $endBound->toDateString(),
+                    Recurrence::WEEKLY->name,
+                );
+                $allDates = array_merge($allDates, $dates);
+            } catch (\Exception) {
+                continue;
+            }
+        }
+
+        usort($allDates, fn (Carbon $a, Carbon $b): int => $a->timestamp <=> $b->timestamp);
+
+        return array_values(array_filter(
+            $allDates,
+            fn (Carbon $d): bool => ! in_array($d->toDateString(), $this->formExcludedDates, true),
+        ));
     }
 
     // ── Options ───────────────────────────────────────────────────────────────
+
+    #[Computed]
+    public function seasonOptions(): array
+    {
+        return Season::orderBy('start_at', 'desc')
+            ->get()
+            ->map(fn (Season $s): array => [
+                'id' => $s->id,
+                'name' => $s->name.($s->is_active ? ' ('.__('Active').')' : ''),
+            ])
+            ->toArray();
+    }
 
     #[Computed]
     public function levelOptions(): array
@@ -201,6 +269,7 @@ new class extends Component
         $pack = TrainingPack::findOrFail($packId);
 
         $this->packId = $pack->id;
+        $this->formSeasonId = $pack->season_id;
         $this->formName = $pack->name;
         $this->formLevel = $pack->level->value;
         $this->formType = $pack->type->value;
@@ -208,8 +277,13 @@ new class extends Component
         $this->formRoomId = $pack->room_id;
         $this->formDescription = $pack->description ?? '';
         $this->formDayOfWeek = $pack->day_of_week;
+        $this->formSpecificDays = $pack->days_of_week ?? [];
+        $this->formRecurrenceType = ! empty($pack->days_of_week) ? 'specific_days' : 'weekly';
         $this->formStartTime = $pack->start_time ?? '18:00';
         $this->formDurationMinutes = $pack->duration_minutes ?? 90;
+        $this->formPackStartDate = $pack->pack_start_date?->toDateString() ?? '';
+        $this->formPackEndDate = $pack->pack_end_date?->toDateString() ?? '';
+        $this->formExcludedDates = $pack->excluded_dates ?? [];
         $this->formPrice = round($pack->price / 100, 2);
 
         $this->wizardOpen = true;
@@ -226,35 +300,60 @@ new class extends Component
     {
         $this->packId = null;
         $this->step = '1';
+        $this->formSeasonId = $this->activeSeason?->id ?? 0;
         $this->formName = '';
         $this->formLevel = '';
         $this->formType = '';
         $this->formTrainerId = 0;
         $this->formRoomId = 0;
         $this->formDescription = '';
+        $this->formRecurrenceType = 'weekly';
         $this->formDayOfWeek = null;
+        $this->formSpecificDays = [];
         $this->formStartTime = '18:00';
         $this->formDurationMinutes = 90;
+        $this->formPackStartDate = '';
+        $this->formPackEndDate = '';
+        $this->formExcludedDates = [];
         $this->formPrice = 90;
     }
 
     public function nextStep(): void
     {
         if ($this->step === '1') {
-            $this->validate([
+            $rules = [
+                'formSeasonId' => 'required|integer|min:1',
                 'formName' => 'required|min:2|max:255',
                 'formLevel' => 'required',
                 'formType' => 'required',
                 'formRoomId' => 'required|integer|min:1',
-            ]);
+            ];
+
+            if ($this->formType !== '' && $this->formType !== TrainingType::FREE->value) {
+                $rules['formTrainerId'] = 'required|integer|min:1';
+            }
+
+            $this->validate($rules);
         }
 
         if ($this->step === '2') {
-            $this->validate([
-                'formDayOfWeek' => 'required|integer|between:1,7',
+            $rules = [
                 'formStartTime' => 'required',
                 'formDurationMinutes' => 'required|integer|min:15|max:480',
-            ]);
+            ];
+
+            if ($this->formRecurrenceType === 'weekly') {
+                $rules['formDayOfWeek'] = 'required|integer|between:1,7';
+            } else {
+                $rules['formSpecificDays'] = 'required|array|min:1';
+            }
+
+            if ($this->formPackStartDate || $this->formPackEndDate) {
+                $rules['formPackStartDate'] = 'required|date';
+                $rules['formPackEndDate'] = 'required|date|after_or_equal:formPackStartDate';
+            }
+
+            $this->validate($rules);
         }
 
         $this->step = (string) ((int) $this->step + 1);
@@ -267,41 +366,75 @@ new class extends Component
         }
     }
 
+    public function toggleExcludeDate(string $date): void
+    {
+        if (in_array($date, $this->formExcludedDates, true)) {
+            $this->formExcludedDates = array_values(
+                array_filter($this->formExcludedDates, fn (string $d): bool => $d !== $date),
+            );
+        } else {
+            $this->formExcludedDates[] = $date;
+        }
+
+        unset($this->previewDates);
+    }
+
     public function save(): void
     {
-        $this->validate([
+        $rules = [
+            'formSeasonId' => 'required|integer|min:1',
             'formName' => 'required|min:2|max:255',
             'formLevel' => 'required',
             'formType' => 'required',
             'formRoomId' => 'required|integer|min:1',
-            'formDayOfWeek' => 'required|integer|between:1,7',
             'formStartTime' => 'required',
             'formDurationMinutes' => 'required|integer|min:15|max:480',
             'formPrice' => 'required|numeric|min:0',
-        ]);
+        ];
 
-        if (! $this->activeSeason) {
-            $this->error(__('No active season found.'));
+        if ($this->formType !== '' && $this->formType !== TrainingType::FREE->value) {
+            $rules['formTrainerId'] = 'required|integer|min:1';
+        }
 
-            return;
+        if ($this->formRecurrenceType === 'weekly') {
+            $rules['formDayOfWeek'] = 'required|integer|between:1,7';
+        } else {
+            $rules['formSpecificDays'] = 'required|array|min:1';
+        }
+
+        $this->validate($rules);
+
+        $season = Season::findOrFail($this->formSeasonId);
+
+        // Build recurrence data
+        if ($this->formRecurrenceType === 'specific_days') {
+            $days = array_values(array_map('intval', $this->formSpecificDays));
+            sort($days);
+            $dayOfWeek = $days[0];
+            $daysOfWeek = $days;
+        } else {
+            $dayOfWeek = $this->formDayOfWeek;
+            $daysOfWeek = null;
         }
 
         $data = [
-            'season_id' => $this->activeSeason->id,
+            'season_id' => $season->id,
             'name' => $this->formName,
             'level' => $this->formLevel,
             'type' => $this->formType,
             'trainer_id' => $this->formTrainerId ?: null,
             'room_id' => $this->formRoomId,
             'description' => $this->formDescription ?: null,
-            'day_of_week' => $this->formDayOfWeek,
+            'day_of_week' => $dayOfWeek,
+            'days_of_week' => $daysOfWeek,
             'start_time' => $this->formStartTime,
             'duration_minutes' => $this->formDurationMinutes,
+            'pack_start_date' => $this->formPackStartDate ?: null,
+            'pack_end_date' => $this->formPackEndDate ?: null,
+            'excluded_dates' => ! empty($this->formExcludedDates) ? array_values($this->formExcludedDates) : null,
             'is_active' => true,
+            'price' => (int) ($this->formPrice * 100),
         ];
-
-        // Price stored in cents
-        $data['price'] = (int) ($this->formPrice * 100);
 
         $pack = $this->packId
             ? tap(TrainingPack::findOrFail($this->packId))->update($data)
@@ -309,7 +442,7 @@ new class extends Component
 
         // Generate sessions only on create
         if (! $this->packId) {
-            $pack->generateSessions($this->activeSeason);
+            $pack->generateSessions($season);
 
             $count = $pack->trainings()->count();
             $this->success(
@@ -389,6 +522,7 @@ new class extends Component
             'selectedPack' => $this->selectedPack,
             'sessions' => $this->sessions,
             'previewDates' => $this->previewDates,
+            'seasonOptions' => $this->seasonOptions,
             'levelOptions' => $this->levelOptions,
             'typeOptions' => $this->typeOptions,
             'trainerOptions' => $this->trainerOptions,

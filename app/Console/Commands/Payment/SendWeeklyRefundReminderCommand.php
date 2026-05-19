@@ -14,7 +14,7 @@ use Illuminate\Console\Command;
 
 #[Signature('payment:send-refund-reminder')]
 #[Description('Send a weekly email to the treasurer and secretary listing all payments awaiting refund.')]
-class SendWeeklyRefundReminder extends Command
+class SendWeeklyRefundReminderCommand extends Command
 {
     public function handle(): int
     {

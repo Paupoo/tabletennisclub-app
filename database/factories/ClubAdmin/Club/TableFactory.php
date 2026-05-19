@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Database\Factories\ClubAdmin\Club;
 
-use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Club\Table;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -24,7 +23,7 @@ class TableFactory extends Factory
             'name' => fake()->unique()->numberBetween(1, 20),
             'purchased_on' => fake()->dateTimeBetween('-10 years', '-1 year'),
             'state' => 'used',
-            'room_id' => Room::first()->get(),
+            'room_id' => null,
         ];
     }
 }

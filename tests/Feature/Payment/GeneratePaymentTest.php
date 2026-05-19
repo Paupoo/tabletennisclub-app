@@ -2,30 +2,30 @@
 
 declare(strict_types=1);
 
-use App\Actions\Payments\GeneratePayment;
-use App\Models\Subscription;
+use App\Actions\ClubAdmin\Payments\GeneratePayment;
+use App\Models\ClubAdmin\Subscription\Subscription;
+use App\Models\ClubAdmin\Users\User;
 use Illuminate\Http\RedirectResponse;
 
-// Méthode 1 : Ajouter le groupe directement dans le fichier
 uses()->group('payment');
 
-// Test basique : vérifier qu'un paiement est bien créé
+beforeEach(function (): void {
+    $this->actingAs(User::factory()->isAdmin()->create());
+});
+
 it('creates a payment for a subscription', function (): void {
-    // Arrange : préparer les données
-    $subscription = Subscription::factory()->create();
+    $subscription = Subscription::factory()->create(['status' => 'confirmed']);
     $action = new GeneratePayment;
 
-    // Act : exécuter l'action
     $action($subscription);
 
-    // Assert : vérifier les résultats
     expect($subscription->payments()->count())->toBe(1);
 });
 
-// Test : vérifier les attributs du paiement créé
 it('creates a payment with correct attributes', function (): void {
     $subscription = Subscription::factory()->create([
-        'amount_due' => (int) 50,
+        'status' => 'confirmed',
+        'amount_due' => 50,
     ]);
     $action = new GeneratePayment;
 
@@ -40,40 +40,31 @@ it('creates a payment with correct attributes', function (): void {
         ->status->toBe('pending');
 });
 
-// Test : vérifier que la référence est unique
 it('generates unique payment references', function (): void {
-    $subscription = Subscription::factory()->create();
+    $subscription = Subscription::factory()->create(['status' => 'confirmed']);
     $action = new GeneratePayment;
 
-    // Créer deux paiements
     $action($subscription);
     $action($subscription);
 
     $references = $subscription->payments()->pluck('reference')->toArray();
 
-    // Les deux références doivent être différentes
     expect($references)->toHaveCount(2)
         ->and($references[0])->not->toBe($references[1]);
 });
 
-// Test : vérifier la redirection avec message de succès
 it('redirects back with success message', function (): void {
-    $subscription = Subscription::factory()->create();
+    $subscription = Subscription::factory()->create(['status' => 'confirmed']);
     $action = new GeneratePayment;
 
     $response = $action($subscription);
 
-    expect($response)
-        ->toBeInstanceOf(RedirectResponse::class);
-
-    // Vérifier que le message de succès est présent dans la session
-    expect(session('success'))
-        ->toBe(__('A new payment has been generated'));
+    expect($response)->toBeInstanceOf(RedirectResponse::class);
+    expect(session('success'))->toBe(__('A new payment has been generated'));
 });
 
-// Test : vérifier le comportement avec plusieurs paiements
 it('can generate multiple payments for the same subscription', function (): void {
-    $subscription = Subscription::factory()->create();
+    $subscription = Subscription::factory()->create(['status' => 'confirmed']);
     $action = new GeneratePayment;
 
     $action($subscription);
@@ -82,7 +73,6 @@ it('can generate multiple payments for the same subscription', function (): void
 
     expect($subscription->payments()->count())->toBe(3);
 
-    // Tous les paiements doivent être 'pending'
     $allPending = $subscription->payments()
         ->where('status', 'pending')
         ->count();

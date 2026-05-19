@@ -66,7 +66,7 @@ test('profile page is displayed', function (): void {
 
     $response = $this
         ->actingAs($user)
-        ->get('/profile');
+        ->get(route('admin.user.profile', $user));
 
     $response->assertOk();
 });

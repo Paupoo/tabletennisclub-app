@@ -12,6 +12,10 @@ describe('Contact Form Submission', function () {
     beforeEach(function () {
         $this->withoutMiddleware(VerifyCsrfToken::class);
         $this->withoutMiddleware(ThrottleRequests::class);
+        $this->withSession([
+            'captcha' => ['a' => 3, 'b' => 2, 'operation' => '+'],
+            'captcha_created_at' => time(),
+        ]);
     });
 
     // TODO: This test keeps sending success in session and so the errors expectations don't work
@@ -22,16 +26,15 @@ describe('Contact Form Submission', function () {
             'first_name' => 'Jean',
             'last_name' => 'Dupont',
             'email' => 'jean@test.com',
-            'interest' => 'INFORMATION',
+            'interest' => 'JOIN_US',
             'message' => 'Test message',
             'consent' => true,
+            'captcha' => 5,
         ];
 
         $response = $this->post(route('contact.store'), $data);
 
-        $response->assertRedirect(route('home'));
-        //        $response->assertSessionHasInput('first_name', 'Jean')
-        //            ->assertSessionHas('error', 'Une erreur est survenue lors de l\'envoi de votre message. Veuillez réessayer.');
+        $response->assertRedirect(route('home') . '#contact');
     });
 
     it('redirects to the home page on success', function () {
@@ -42,9 +45,10 @@ describe('Contact Form Submission', function () {
             'interest' => 'JOIN_US',
             'message' => 'Hello',
             'consent' => true,
+            'captcha' => 5,
         ];
 
         $response = $this->post(route('contact.store'), $data);
-        $response->assertRedirect(route('home'));
+        $response->assertRedirect(route('home') . '#contact');
     });
 })->group('contact');

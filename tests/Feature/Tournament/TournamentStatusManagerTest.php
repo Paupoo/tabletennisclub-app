@@ -59,6 +59,9 @@ test('cannot lock pending tournament with started matches', function (): void {
 
     $match = TournamentMatch::factory()->create([
         'status' => 'in_progress',
+        'pool_id' => null,
+        'table_id' => null,
+        'tournament_id' => $tournament->id,
     ]);
 
     $tournament->matches()->save($match);

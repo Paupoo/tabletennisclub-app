@@ -24,7 +24,7 @@ class Breadcrumb
 
     public function articles(?string $url = null): Breadcrumb
     {
-        return $this->add('Articles', $url ?: route('admin.website.articles.index'));
+        return $this->add('Articles', $url ?: route('admin.website.articles.index'), 's-home');
     }
 
     public function contacts(?string $url = null): Breadcrumb
@@ -104,7 +104,7 @@ class Breadcrumb
 
     public function trainingPacks(?string $url = null): Breadcrumb
     {
-        return $this->add('Training Packs', $url ?: route('admin.trainingpacks.index'));
+        return $this->add('Training Packs', $url ?: route('admin.trainings.index'));
     }
 
     public function trainings(?string $url = null): Breadcrumb

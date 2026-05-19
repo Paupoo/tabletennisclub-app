@@ -5,22 +5,28 @@ declare(strict_types=1);
 use App\Enums\LeagueCategory;
 use App\Enums\LeagueLevel;
 use App\Models\ClubAdmin\Users\User;
+use App\Models\ClubEvents\Interclub\Season;
 use App\Models\ClubEvents\Interclub\Team;
 
 beforeEach(function (): void {
+    Season::factory()->create();
+
     $this->user = User::factory()
         ->isNotCompetitor()
-        ->make();
+        ->create();
 
     $this->committee_member = User::factory()
         ->isCommitteeMember()
         ->isNotCompetitor()
-        ->make();
+        ->create();
 
     $this->admin = User::factory()
         ->isAdmin()
         ->isNotCompetitor()
-        ->make();
+        ->create();
+
+    User::factory()->create();
+    User::factory()->create();
 
     $this->less_than_5_players_request = [
         'captain_id' => 1,
@@ -54,22 +60,17 @@ beforeEach(function (): void {
     ];
 });
 test('admin or committee member can create a team', function (): void {
-    $admin = User::firstWhere('is_admin', true)
-        ->firstWhere('is_committee_member', false);
-    $response = $this->actingAs($admin)
-        ->get(route('teams.create'));
+    $response = $this->actingAs($this->admin)
+        ->get(route('admin.interclubs.teams'));
 
     $response->assertStatus(200);
 
-    $committee_member = User::firstWhere('is_admin', false)
-        ->firstWhere('is_committee_member', true);
-
-    $response = $this->actingAs($committee_member)
-        ->get(route('teams.create'))
+    $response = $this->actingAs($this->committee_member)
+        ->get(route('admin.interclubs.teams'))
         ->assertStatus(200);
 
-    $response = $this->actingAs($committee_member)
-        ->from('teams.create')
+    $response = $this->actingAs($this->committee_member)
+        ->from(route('admin.interclubs.teams'))
         ->post(route('teams.store'), $this->valid_request)
         ->assertRedirectToRoute('teams.index');
 });
@@ -91,7 +92,7 @@ test('member cant create a team', function (): void {
 });
 test('members dont see create teams button', function (): void {
     $this->actingAs($this->user)
-        ->get(route('teams.index'))
+        ->get(route('admin.interclubs.teams'))
         ->assertDontSee('Create new team')
         ->assertDontSee('Team Builder');
 });

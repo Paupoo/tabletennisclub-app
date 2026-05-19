@@ -13,11 +13,11 @@ test('admin and committee members can access edit member page', function (): voi
     $user = $this->createFakeUser();
 
     $this->actingAs($admin)
-        ->get(route('users.edit', $user))
+        ->get(route('admin.users.edit', $user))
         ->assertOK();
 
     $this->actingAs($committee_member)
-        ->get(route('users.edit', $user))
+        ->get(route('admin.users.edit', $user))
         ->assertOK();
 });
 test('member can be casual with no ranking and no licence', function (): void {
@@ -148,7 +148,7 @@ test('member update with invalid data is returning errors', function (): void {
             'is_active' => 15,
             'is_admin' => 'false',
             'is_committee_member' => null,
-            'licence' => '114399',
+            'licence' => '1245',
             'is_competitor' => true,
             'ranking' => 'E5',
         ])

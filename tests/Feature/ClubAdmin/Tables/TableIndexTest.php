@@ -167,15 +167,17 @@ describe('TableIndex Livewire Component', function () {
         // Arrange
         $room = Room::factory()->create();
         $table = Table::factory()->for($room)->create();
+        $admin = User::factory()->create(['is_admin' => true]);
 
         expect($table->room_id)->toBe($room->id);
 
         // Act
-        $component = Livewire::test('pages::club-admin.tables');
-        $component->call('unlink', $table);
+        $component = Livewire::actingAs($admin)->test('pages::club-admin.tables');
+        $component->call('confirmUnlink', $table);
+        $component->call('unlink');
 
         // Assert
-        $table->refresh(); // Recharger depuis la DB
+        $table->refresh();
         expect($table->room_id)->toBeNull();
     });
 
@@ -249,12 +251,13 @@ describe('TableIndex Livewire Component', function () {
         // Arrange
         $room1 = Room::factory()->create(['name' => 'Room A']);
         $room2 = Room::factory()->create(['name' => 'Room B']);
+        $admin = User::factory()->create(['is_admin' => true]);
 
         $table1 = Table::factory()->for($room1)->create(['name' => 'Competition Table', 'state' => 'Good condition']);
         $table2 = Table::factory()->for($room1)->create(['name' => 'Training Table', 'state' => 'Good condition']);
         $table3 = Table::factory()->for($room2)->create(['name' => 'Competition Table', 'state' => 'Needs repair']);
 
-        $component = Livewire::test('pages::club-admin.tables');
+        $component = Livewire::actingAs($admin)->test('pages::club-admin.tables');
 
         // Act 1 : Rechercher "Competition"
         $component->set('search', 'Competition');
@@ -265,7 +268,8 @@ describe('TableIndex Livewire Component', function () {
         expect($totalTables)->toBe(2);
 
         // Act 2 : Délier la première table de sa room
-        $component->call('unlink', $table1);
+        $component->call('confirmUnlink', $table1);
+        $component->call('unlink');
 
         // Assert 2 : La table n'a plus de room
         $table1->refresh();
@@ -293,13 +297,13 @@ describe('TableIndex Livewire Component', function () {
     });
 
     describe('User permissions', function () {
-        test('a user cannot create a new table', function () {});
+        test('a user cannot create a new table', function () {})->todo();
 
-        test('a user cannot edit a table', function () {});
+        test('a user cannot edit a table', function () {})->todo();
 
-        test('a user cannot unlink a table from a room', function () {});
+        test('a user cannot unlink a table from a room', function () {})->todo();
 
-        test('a user cannot delete a table', function () {});
+        test('a user cannot delete a table', function () {})->todo();
 
         test('an admin or committee member can create a new table', function () {
             $admin = User::factory()->create(['is_admin' => true]); // Exemple
@@ -320,7 +324,9 @@ describe('TableIndex Livewire Component', function () {
         });
 
         test('an admin or committee member can unlink a table from a room', function () {
-            $admin = User::factory()->create(['is_admin' => true]); // Exemple
+            $admin = User::factory()->create(['is_admin' => true]);
+            $room = Room::factory()->create();
+            Table::factory()->for($room)->create();
 
             Livewire::actingAs($admin)
                 ->test('pages::club-admin.tables.index')

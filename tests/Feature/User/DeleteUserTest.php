@@ -89,7 +89,7 @@ test('user cant see delete button from users index view', function (): void {
 
     $response = $this
         ->actingAs($this->user)
-        ->get(route('users.index'));
+        ->get(route('admin.users.index'));
 
     $response->assertDontSee('Delete user');
 });
@@ -97,7 +97,7 @@ test('user cant see delete button from users show view', function (): void {
 
     $response = $this
         ->actingAs($this->user)
-        ->get(route('users.show', $this->user));
+        ->get(route('admin.user.profile', $this->user));
 
     $response->assertDontSee('Delete user');
 });

@@ -17,7 +17,7 @@ dataset('simple_methods', [
     ['subscriptions', 'Subscriptions',  'clubAdmin.subscriptions.index',        '/custom-subscriptions', 'o-calendar'],
     ['tables',        'Tables',         'tables.index',                         '/custom-tables',         null],
     ['teams',         'Teams',          'teams.index',                          '/custom-teams',          null],
-    ['trainingPacks', 'Training Packs', 'admin.trainingpacks.index',            '/custom-training-packs', null],
+    ['trainingPacks', 'Training Packs', 'admin.trainings.index',                '/custom-trainings', null],
     ['trainings',     'Trainings',      'trainings.index',                      '/custom-trainings',      null],
 ]);
 

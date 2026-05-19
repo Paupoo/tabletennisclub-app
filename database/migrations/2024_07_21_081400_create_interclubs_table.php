@@ -40,8 +40,8 @@ return new class extends Migration
             $table->foreignIdFor(Season::class)->nullable();
             $table->timestamps();
 
-            $table->foreign('visited_team_id')->references('id')->on('users');
-            $table->foreign('visiting_team_id')->references('id')->on('users');
+            $table->foreign('visited_team_id')->references('id')->on('teams')->nullOnDelete();
+            $table->foreign('visiting_team_id')->references('id')->on('teams')->nullOnDelete();
         });
     }
 };

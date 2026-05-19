@@ -2,8 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubEvents\Interclub\Club;
 use App\Models\ClubEvents\Interclub\Interclub;
+use App\Models\ClubEvents\Interclub\League;
+use App\Models\ClubEvents\Interclub\Season;
+use App\Models\ClubEvents\Interclub\Team;
 use Tests\Trait\CreateInterclub;
 use Tests\Trait\CreateUser;
 
@@ -11,20 +15,42 @@ uses(CreateInterclub::class);
 
 uses(CreateUser::class);
 
+beforeEach(function (): void {
+    $season = Season::factory()->create(['is_active' => true]);
+    $league = League::create([
+        'division' => '1A',
+        'level' => 'PROVINCIAL_BW',
+        'category' => 'MEN',
+        'season_id' => $season->id,
+    ]);
+    $ourClub = Club::factory()->create(['licence' => config('app.club_licence')]);
+    Club::factory()->create();
+    $room = Room::factory()->create([
+        'capacity_for_interclubs' => 2,
+        'street' => $ourClub->street,
+        'city_code' => $ourClub->city_code,
+        'city_name' => $ourClub->city_name,
+    ]);
+    Team::create([
+        'name' => 'A',
+        'season_id' => $season->id,
+        'league_id' => $league->id,
+        'club_id' => $ourClub->id,
+    ]);
+});
+
 test('admin or comitte member can create interclub', function (): void {
     $admin = $this->createFakeAdmin();
 
     $this->actingAs($admin)
-        ->get(route('interclubs.create'))
-        ->assertOK()
-        ->assertViewIs('admin.interclubs.create');
+        ->get(route('admin.interclubs.control-center'))
+        ->assertOK();
 
     $committee_member = $this->createFakeCommitteeMember();
 
     $this->actingAs($committee_member)
-        ->get(route('interclubs.create'))
-        ->assertOK()
-        ->assertViewIs('admin.interclubs.create');
+        ->get(route('admin.interclubs.control-center'))
+        ->assertOK();
 });
 test('admin or committee member can store interclub', function (): void {
     $admin = $this->createFakeAdmin();
@@ -60,8 +86,7 @@ test('route index', function (): void {
     $user = $this->createFakeUser();
 
     $this->actingAs($user)
-        ->get(route('interclubs.index'))
-        ->assertViewIs('admin.interclubs.index')
+        ->get(route('admin.interclubs.control-center'))
         ->assertOk();
 });
 test('storing interclub in the club stores club address and the room id', function (): void {

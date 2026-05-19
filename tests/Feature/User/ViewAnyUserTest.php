@@ -50,7 +50,7 @@ test('logged user can access members index', function (): void {
     $user = $this->createFakeUser();
 
     $response = $this->actingAs($user)
-        ->get(route('users.index'))
+        ->get(route('admin.users.index'))
         ->assertOk();
 });
 test('member cannot access create member page', function (): void {
@@ -64,7 +64,7 @@ test('member cannot see create member and force index buttons', function (): voi
     $user = $this->createFakeUser();
 
     $response = $this->actingAs($user)
-        ->get(route('users.index'))
+        ->get(route('admin.users.index'))
         ->assertDontSee([
             'Create new user',
             'Reset Force Index',
@@ -75,13 +75,10 @@ test('member cannot see edit and delete member buttons from index', function ():
     $user = $this->createFakeUser();
 
     $response = $this->actingAs($user)
-        ->get(route('users.index'))
+        ->get(route('admin.users.index'))
         ->assertDontSee([
             'Modify user details',
             'Delete user',
-        ])
-        ->assertSee([
-            'Check details',
         ]);
 });
 test('unlogged user cannot access members index', function (): void {

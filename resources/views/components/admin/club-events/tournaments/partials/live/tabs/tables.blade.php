@@ -49,15 +49,20 @@
 
                             <div class="space-y-3">
                                 @if (! $table['is_free'] && $table['match'])
-                                    @php $match = $table['match']; @endphp
+                                    @php
+                                        $match      = $table['match'];
+                                        $isDoubles  = $match->pair1_id !== null;
+                                        $side1Name  = $isDoubles ? ($match->pair1?->displayName() ?? '—') : ($match->player1?->full_name ?? '—');
+                                        $side2Name  = $isDoubles ? ($match->pair2?->displayName() ?? '—') : ($match->player2?->full_name ?? '—');
+                                    @endphp
                                     <div class="bg-base-200 rounded-lg p-2 border border-base-300">
-                                        <div class="text-[11px] font-bold truncate">{{ $match->player1?->full_name ?? '—' }}</div>
+                                        <div class="text-[11px] font-bold truncate">{{ $side1Name }}</div>
                                         <div class="flex items-center gap-2 my-1">
                                             <div class="h-px grow bg-base-300"></div>
                                             <span class="text-[9px] font-black opacity-30 italic">VS</span>
                                             <div class="h-px grow bg-base-300"></div>
                                         </div>
-                                        <div class="text-[11px] text-right font-bold truncate">{{ $match->player2?->full_name ?? '—' }}</div>
+                                        <div class="text-[11px] text-right font-bold truncate">{{ $side2Name }}</div>
                                     </div>
 
                                     @if ($match->sets->count())

@@ -14,9 +14,12 @@
             <div class="space-y-3">
                 @foreach ($this->upcomingMatches as $index => $match)
                     @php
-                        $isFirst = $index === 0;
-                        $isPool  = $match->pool_id !== null;
-                        $label   = $isPool ? ($match->pool?->name ?? __('Pool')) : __('Bracket');
+                        $isFirst    = $index === 0;
+                        $isPool     = $match->pool_id !== null;
+                        $label      = $isPool ? ($match->pool?->name ?? __('Pool')) : __('Bracket');
+                        $isDoubles  = $match->pair1_id !== null;
+                        $side1Name  = $isDoubles ? ($match->pair1?->displayName() ?? '—') : ($match->player1?->full_name ?? '—');
+                        $side2Name  = $isDoubles ? ($match->pair2?->displayName() ?? '—') : ($match->player2?->full_name ?? '—');
                     @endphp
 
                     <div class="relative group" wire:key="launch-match-{{ $match->id }}">
@@ -36,9 +39,9 @@
                                         class="{{ $isPool ? 'badge-ghost' : 'badge-warning' }} badge-xs uppercase font-bold" />
                                 </div>
                                 <div class="flex flex-col">
-                                    <span class="font-bold text-sm truncate">{{ $match->player1?->full_name ?? '—' }}</span>
+                                    <span class="font-bold text-sm truncate">{{ $side1Name }}</span>
                                     <span class="text-[10px] opacity-30 italic font-black my-0.5">VS</span>
-                                    <span class="font-bold text-sm truncate">{{ $match->player2?->full_name ?? '—' }}</span>
+                                    <span class="font-bold text-sm truncate">{{ $side2Name }}</span>
                                 </div>
                             </div>
 

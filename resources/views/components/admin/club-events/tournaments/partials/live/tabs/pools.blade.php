@@ -30,16 +30,23 @@
                         </div>
 
                         @foreach ($pool['players'] as $i => $entry)
-                            @php $user = $entry['player']; @endphp
-                            <div wire:key="pool-{{ $pool['id'] }}-player-{{ $user->id ?? $i }}"
+                            @php
+                                $hasPair     = isset($entry['pair']);
+                                $displayName = $hasPair ? $entry['pair']->displayName() : ($entry['player']->full_name ?? '—');
+                                $entryUserId = $entry['player']->id ?? null;
+                                $isMe        = $hasPair
+                                    ? (auth()->id() === $entry['pair']->player1_id || auth()->id() === $entry['pair']->player2_id)
+                                    : ($entryUserId === auth()->id());
+                            @endphp
+                            <div wire:key="pool-{{ $pool['id'] }}-player-{{ $entryUserId ?? $i }}"
                                 @class([
                                     'flex justify-between items-center border-b border-base-300/30 py-1.5',
-                                    'text-primary font-semibold' => $user->id === auth()->id(),
+                                    'text-primary font-semibold' => $isMe,
                                 ])>
                                 <div class="flex items-center gap-2 flex-1 min-w-0">
                                     <span class="text-xs font-mono opacity-30 w-4 shrink-0">{{ $i + 1 }}</span>
-                                    <span class="truncate text-sm font-medium">{{ $user->full_name ?? '—' }}</span>
-                                    @if ($user->id === auth()->id())
+                                    <span class="truncate text-sm font-medium">{{ $displayName }}</span>
+                                    @if ($isMe)
                                         <x-icon name="o-arrow-left" class="w-3 h-3 ml-1 shrink-0" />
                                     @endif
                                 </div>

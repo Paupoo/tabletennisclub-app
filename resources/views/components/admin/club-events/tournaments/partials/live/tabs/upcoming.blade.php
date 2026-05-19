@@ -9,6 +9,11 @@
         <div class="flex flex-col gap-3 lg:max-w-2xl">
             @foreach ($this->upcomingMatches as $index => $match)
                 @php
+                    $isDoubles = $match->pair1_id !== null;
+                    $side1Name = $isDoubles ? ($match->pair1?->displayName() ?? '—') : ($match->player1?->full_name ?? '—');
+                    $side2Name = $isDoubles ? ($match->pair2?->displayName() ?? '—') : ($match->player2?->full_name ?? '—');
+                    $side1Rank = $isDoubles ? ($match->pair1?->averageRanking() ?? 'NC') : ($match->player1?->ranking ?? 'NC');
+                    $side2Rank = $isDoubles ? ($match->pair2?->averageRanking() ?? 'NC') : ($match->player2?->ranking ?? 'NC');
                     $isPool  = $match->pool_id !== null;
                     $isReady = $match->player1_id !== null && $match->player2_id !== null;
                     $label   = $isPool
@@ -47,19 +52,19 @@
                             @endif
                         </div>
                         <div class="flex justify-between items-center gap-2">
-                            <div @class(['text-sm font-bold flex-1 truncate', 'italic opacity-40' => ! $match->player1_id])>
-                                @if ($match->player1_id)
-                                    {{ $match->player1?->full_name }}
-                                    <span class="text-[10px] opacity-40 font-normal ml-1">({{ $match->player1?->ranking ?? 'NC' }})</span>
+                            <div @class(['text-sm font-bold flex-1 truncate', 'italic opacity-40' => ! $isReady])>
+                                @if ($isReady)
+                                    {{ $side1Name }}
+                                    <span class="text-[10px] opacity-40 font-normal ml-1">({{ $side1Rank }})</span>
                                 @else
                                     {{ __('TBD') }}
                                 @endif
                             </div>
                             <div class="text-xs font-black italic opacity-25 shrink-0">VS</div>
-                            <div @class(['text-sm font-bold flex-1 truncate text-right', 'italic opacity-40' => ! $match->player2_id])>
-                                @if ($match->player2_id)
-                                    <span class="text-[10px] opacity-40 font-normal mr-1">({{ $match->player2?->ranking ?? 'NC' }})</span>
-                                    {{ $match->player2?->full_name }}
+                            <div @class(['text-sm font-bold flex-1 truncate text-right', 'italic opacity-40' => ! $isReady])>
+                                @if ($isReady)
+                                    <span class="text-[10px] opacity-40 font-normal mr-1">({{ $side2Rank }})</span>
+                                    {{ $side2Name }}
                                 @else
                                     {{ __('TBD') }}
                                 @endif

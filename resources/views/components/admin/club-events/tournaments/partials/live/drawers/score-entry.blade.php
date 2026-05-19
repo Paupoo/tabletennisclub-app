@@ -3,17 +3,23 @@
 
     @if ($this->selectedMatch)
         @php
-            $match    = $this->selectedMatch;
-            $maxSets  = ($tournament->sets_to_win * 2) - 1;
-            $hp1      = $p1Handicap ?? 0;
-            $hp2      = $p2Handicap ?? 0;
-            $doneSets = collect($setScores)->filter(fn ($s) => !((int)($s['p1'] ?? 0) === $hp1 && (int)($s['p2'] ?? 0) === $hp2));
-            $p1Sets   = $doneSets->filter(fn ($s) => (int)($s['p1'] ?? 0) > (int)($s['p2'] ?? 0))->count();
-            $p2Sets   = $doneSets->filter(fn ($s) => (int)($s['p2'] ?? 0) > (int)($s['p1'] ?? 0))->count();
+            $match      = $this->selectedMatch;
+            $maxSets    = ($tournament->sets_to_win * 2) - 1;
+            $hp1        = $p1Handicap ?? 0;
+            $hp2        = $p2Handicap ?? 0;
+            $doneSets   = collect($setScores)->filter(fn ($s) => !((int)($s['p1'] ?? 0) === $hp1 && (int)($s['p2'] ?? 0) === $hp2));
+            $p1Sets     = $doneSets->filter(fn ($s) => (int)($s['p1'] ?? 0) > (int)($s['p2'] ?? 0))->count();
+            $p2Sets     = $doneSets->filter(fn ($s) => (int)($s['p2'] ?? 0) > (int)($s['p1'] ?? 0))->count();
             $matchFinished = $p1Sets >= $tournament->sets_to_win || $p2Sets >= $tournament->sets_to_win;
-            $hasSets       = $doneSets->isNotEmpty();
-            $winner        = $matchFinished
+            $hasSets    = $doneSets->isNotEmpty();
+            $winner     = $matchFinished
                 ? ($p1Sets >= $tournament->sets_to_win ? $match->player1 : $match->player2)
+                : null;
+            $isDoubles  = $match->pair1_id !== null;
+            $side1Name  = $isDoubles ? ($match->pair1?->displayName() ?? '—') : ($match->player1?->full_name ?? '—');
+            $side2Name  = $isDoubles ? ($match->pair2?->displayName() ?? '—') : ($match->player2?->full_name ?? '—');
+            $winnerName = $matchFinished
+                ? ($p1Sets >= $tournament->sets_to_win ? $side1Name : $side2Name)
                 : null;
         @endphp
 
@@ -29,7 +35,7 @@
             <div class="flex justify-between items-center gap-4">
                 <div class="flex-1 text-center">
                     <div @class(['font-black text-sm truncate uppercase', 'text-success' => $matchFinished && $p1Sets >= $tournament->sets_to_win])>
-                        {{ $match->player1?->full_name ?? '—' }}
+                        {{ $side1Name }}
                     </div>
                     <div @class(['text-3xl font-extrabold', 'text-success' => $matchFinished && $p1Sets >= $tournament->sets_to_win, 'text-primary' => ! ($matchFinished && $p1Sets >= $tournament->sets_to_win)])>
                         {{ $p1Sets }}
@@ -38,7 +44,7 @@
                 <div class="text-xl font-black opacity-20 italic">VS</div>
                 <div class="flex-1 text-center">
                     <div @class(['font-black text-sm truncate uppercase', 'text-success' => $matchFinished && $p2Sets >= $tournament->sets_to_win])>
-                        {{ $match->player2?->full_name ?? '—' }}
+                        {{ $side2Name }}
                     </div>
                     <div @class(['text-3xl font-extrabold', 'text-success' => $matchFinished && $p2Sets >= $tournament->sets_to_win])>
                         {{ $p2Sets }}
@@ -55,14 +61,14 @@
                 </p>
                 <div class="flex justify-between items-center">
                     <div class="flex-1 text-center">
-                        <div class="text-[10px] font-bold opacity-60 truncate">{{ $match->player1?->full_name ?? '—' }}</div>
+                        <div class="text-[10px] font-bold opacity-60 truncate">{{ $side1Name }}</div>
                         <div @class(['text-2xl font-extrabold leading-none', 'text-warning' => $hp1 > 0, 'text-base-content/30' => $hp1 === 0])>
                             +{{ $hp1 }}
                         </div>
                     </div>
                     <div class="text-[10px] font-bold opacity-40 uppercase">pts</div>
                     <div class="flex-1 text-center">
-                        <div class="text-[10px] font-bold opacity-60 truncate">{{ $match->player2?->full_name ?? '—' }}</div>
+                        <div class="text-[10px] font-bold opacity-60 truncate">{{ $side2Name }}</div>
                         <div @class(['text-2xl font-extrabold leading-none', 'text-warning' => $hp2 > 0, 'text-base-content/30' => $hp2 === 0])>
                             +{{ $hp2 }}
                         </div>
@@ -146,10 +152,10 @@
             class="absolute inset-0 z-10 flex items-end justify-center bg-base-100/90 backdrop-blur-sm p-6">
             <div class="w-full bg-base-100 rounded-2xl shadow-2xl border border-base-300 p-6 space-y-4 text-center">
                 <x-icon name="o-trophy" class="w-12 h-12 mx-auto text-success" />
-                @if ($winner)
+                @if ($winnerName)
                     <div>
                         <p class="text-xs uppercase font-bold opacity-40 mb-1">{{ __('Winner') }}</p>
-                        <p class="text-xl font-black">{{ $winner->full_name }}</p>
+                        <p class="text-xl font-black">{{ $winnerName }}</p>
                         <p class="text-3xl font-extrabold text-success mt-1">{{ $p1Sets }} — {{ $p2Sets }}</p>
                     </div>
                 @endif

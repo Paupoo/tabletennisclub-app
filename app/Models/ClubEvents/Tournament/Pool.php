@@ -54,6 +54,13 @@ class Pool extends Model
         'name',
     ];
 
+    public function attachPair(TournamentPair $pair): TournamentPair
+    {
+        $this->pairs()->attach($pair->id);
+
+        return $pair;
+    }
+
     /**
      * Utiliser les événements du modèle pour intercepter
      *  les attachements d'utilisateurs via la relation
@@ -80,6 +87,11 @@ class Pool extends Model
         $this->users()->attach($user->id);
 
         return $user;
+    }
+
+    public function pairs(): BelongsToMany
+    {
+        return $this->belongsToMany(TournamentPair::class, 'pool_pair');
     }
 
     public function tournament(): BelongsTo

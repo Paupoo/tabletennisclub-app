@@ -174,7 +174,7 @@ new class extends Component
                 $match = null;
 
                 if ($pivot->tournament_match_id) {
-                    $match = TournamentMatch::with(['player1', 'player2', 'sets'])
+                    $match = TournamentMatch::with(['player1', 'player2', 'pair1.player1', 'pair1.player2', 'pair2.player1', 'pair2.player2', 'sets'])
                         ->find($pivot->tournament_match_id);
                 }
 
@@ -195,7 +195,7 @@ new class extends Component
     {
         return TournamentMatch::where('tournament_id', $this->tournament->id)
             ->where('status', 'scheduled')
-            ->with(['player1', 'player2', 'pool'])
+            ->with(['player1', 'player2', 'pair1.player1', 'pair1.player2', 'pair2.player1', 'pair2.player2', 'pool'])
             ->orderByRaw("CASE WHEN pool_id IS NOT NULL THEN 0 ELSE 1 END")
             ->orderByRaw("CASE WHEN player1_id IS NOT NULL AND player2_id IS NOT NULL THEN 0 ELSE 1 END")
             ->orderByRaw("CASE round WHEN 'round_16' THEN 1 WHEN 'quarterfinal' THEN 2 WHEN 'semifinal' THEN 3 WHEN 'final' THEN 4 WHEN 'bronze' THEN 5 ELSE 0 END")
@@ -301,7 +301,7 @@ new class extends Component
             return null;
         }
 
-        return TournamentMatch::with(['player1', 'player2', 'sets'])->find($this->selectedMatchId);
+        return TournamentMatch::with(['player1', 'player2', 'pair1.player1', 'pair1.player2', 'pair2.player1', 'pair2.player2', 'sets'])->find($this->selectedMatchId);
     }
 
     // ── Actions: score entry
@@ -428,8 +428,12 @@ new class extends Component
         $this->selectedMatchId = null;
         unset($this->tables, $this->upcomingMatches, $this->pools, $this->knockoutMatches, $this->selectedMatch);
 
-        $winner = $match->winner_id === $match->player1_id ? $match->player1 : $match->player2;
-        $this->success($winner->full_name . ' ' . __('wins!'));
+        $match->loadMissing(['pair1.player1', 'pair1.player2', 'pair2.player1', 'pair2.player2']);
+        $isDoubles   = $match->pair1_id !== null;
+        $winnerName  = $isDoubles
+            ? ($match->winner_id === $match->player1_id ? $match->pair1?->displayName() : $match->pair2?->displayName())
+            : ($match->winner_id === $match->player1_id ? $match->player1?->full_name : $match->player2?->full_name);
+        $this->success(($winnerName ?? '—') . ' ' . __('wins!'));
     }
 
     // ── Actions: launch match

@@ -9,6 +9,7 @@ use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Tournament\Pool;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Tournament\TournamentMatch;
+use App\Models\ClubEvents\Tournament\TournamentPair;
 use Illuminate\Support\Collection;
 use InvalidArgumentException;
 
@@ -378,6 +379,64 @@ class TournamentMatchService
     ];
 
     /**
+     * Doubles handicap: average of the 4 individual cross-handicaps, rounded up.
+     * Returns ['pair1_handicap' => int, 'pair2_handicap' => int].
+     * The handicap is assigned to the weaker pair (higher handicap = more points given).
+     *
+     * Example — Pair A: Alice (B2) + Bob (C4) vs Pair B: Clara (B4) + David (D0)
+     *   A1vsB1(AlicevClara)=1, A1vsB2(AlicevDavid)=4, A2vsB1(BobvClara)=3, A2vsB2(BobvDavid)=5
+     *   total=13, avg=13/4=3.25 → ceil=4 pts to Pair B (weaker)
+     *
+     * @return array{pair1_handicap: int, pair2_handicap: int}
+     */
+    public function calculateDoublesHandicap(TournamentPair $pair1, TournamentPair $pair2): array
+    {
+        $p1a = $pair1->player1;
+        $p1b = $pair1->player2;
+        $p2a = $pair2->player1;
+        $p2b = $pair2->player2;
+
+        if (! $p1a || ! $p1b || ! $p2a || ! $p2b) {
+            return ['pair1_handicap' => 0, 'pair2_handicap' => 0];
+        }
+
+        $valid = $this->isValidRanking($p1a->ranking ?? 'NC')
+            && $this->isValidRanking($p1b->ranking ?? 'NC')
+            && $this->isValidRanking($p2a->ranking ?? 'NC')
+            && $this->isValidRanking($p2b->ranking ?? 'NC');
+
+        if (! $valid) {
+            return ['pair1_handicap' => 0, 'pair2_handicap' => 0];
+        }
+
+        // Sum of the 4 individual handicaps (pair1 member vs pair2 member, weaker receives points)
+        $h11 = $this->calculateHandicapPointsToReceive($p1a, $p2a); // A1 vs B1
+        $h12 = $this->calculateHandicapPointsToReceive($p1a, $p2b); // A1 vs B2
+        $h21 = $this->calculateHandicapPointsToReceive($p1b, $p2a); // A2 vs B1
+        $h22 = $this->calculateHandicapPointsToReceive($p1b, $p2b); // A2 vs B2
+
+        $totalForPair1 = $h11 + $h12 + $h21 + $h22;
+
+        $h11r = $this->calculateHandicapPointsToReceive($p2a, $p1a); // B1 vs A1
+        $h12r = $this->calculateHandicapPointsToReceive($p2a, $p1b); // B1 vs A2
+        $h21r = $this->calculateHandicapPointsToReceive($p2b, $p1a); // B2 vs A1
+        $h22r = $this->calculateHandicapPointsToReceive($p2b, $p1b); // B2 vs A2
+
+        $totalForPair2 = $h11r + $h12r + $h21r + $h22r;
+
+        // The weaker pair receives the ceil average; stronger pair receives 0
+        $pair1Hcp = (int) ceil($totalForPair1 / 4);
+        $pair2Hcp = (int) ceil($totalForPair2 / 4);
+
+        // Only assign handicap to the weaker pair (higher value), zero out the stronger
+        if ($pair1Hcp >= $pair2Hcp) {
+            return ['pair1_handicap' => $pair1Hcp, 'pair2_handicap' => 0];
+        }
+
+        return ['pair1_handicap' => 0, 'pair2_handicap' => $pair2Hcp];
+    }
+
+    /**
      * Calculate standings for a pool
      *
      * @param  Pool  $pool  The pool to calculate standings for
@@ -385,6 +444,12 @@ class TournamentMatchService
      */
     public function calculatePoolStandings(Pool $pool): Collection
     {
+        $pool->loadMissing('tournament');
+
+        if ($pool->tournament->match_type === 'double') {
+            return $this->calculateDoublesPoolStandings($pool);
+        }
+
         $pool->loadMissing('users');
         $players = $pool->users;
         $matches = TournamentMatch::where('pool_id', $pool->id)->with('sets')->get();
@@ -475,7 +540,13 @@ class TournamentMatchService
      */
     public function generateMatches(Pool $pool): Collection
     {
-        $pool->loadMissing(['users', 'tournament']);
+        $pool->loadMissing(['tournament']);
+
+        if ($pool->tournament->match_type === 'double') {
+            return $this->generateDoublesMatches($pool);
+        }
+
+        $pool->loadMissing(['users']);
         $players = $pool->users->toArray();
         $numberOfPlayers = count($players);
 
@@ -551,6 +622,44 @@ class TournamentMatchService
         return $result;
     }
 
+    private function calculateDoublesPoolStandings(Pool $pool): Collection
+    {
+        $pool->loadMissing(['pairs.player1', 'pairs.player2']);
+        $pairs = $pool->pairs;
+        $matches = TournamentMatch::where('pool_id', $pool->id)->with('sets')->get();
+
+        $standings = $pairs->map(function ($pair) use ($matches) {
+            $proxyId = $pair->player1_id;
+            $pairMatches = $matches->filter(
+                fn ($m) => $m->pair1_id === $pair->id || $m->pair2_id === $pair->id
+            );
+
+            $matchesWon = $pairMatches->where('winner_id', $proxyId)->count();
+            $setsWon = 0;
+            $totalPoints = 0;
+
+            foreach ($pairMatches as $match) {
+                if ($match->isCompleted()) {
+                    $setsWon += $match->getSetsWon($proxyId);
+                    $totalPoints += $match->getTotalPoints($proxyId);
+                }
+            }
+
+            return [
+                'player' => $pair->player1,
+                'pair' => $pair,
+                'matches_played' => $pairMatches->where('status', 'completed')->count(),
+                'matches_won' => $matchesWon,
+                'sets_won' => $setsWon,
+                'total_points' => $totalPoints,
+            ];
+        });
+
+        return $standings->sortByDesc(function ($item) {
+            return sprintf('%06d%06d%06d', $item['matches_won'], $item['sets_won'], $item['total_points']);
+        })->values();
+    }
+
     /**
      * This function caculates the handicap points to receive for player 1 vs player 2 based on both their ranking.
      * Base on referece document : https://bbw.aftt.be/wp-content/uploads/2014/02/handicaps-M-D.pdf
@@ -562,6 +671,82 @@ class TournamentMatchService
         }
 
         return $this->handicapPoints[$player2->ranking][$player1->ranking];
+    }
+
+    /**
+     * Round-robin match generation for a doubles pool.
+     * Uses pair1_id / pair2_id. Sets player1_id / player2_id to each pair's player1
+     * so that winner_id and standings logic remain unchanged.
+     */
+    private function generateDoublesMatches(Pool $pool): Collection
+    {
+        $pool->loadMissing(['pairs.player1', 'pairs.player2', 'tournament']);
+        $pairs = $pool->pairs->values()->toArray();
+        $count = count($pairs);
+
+        if ($count < 2) {
+            return collect();
+        }
+
+        $hasDummy = false;
+        if ($count % 2 !== 0) {
+            $pairs[] = null;
+            $hasDummy = true;
+            $count++;
+        }
+
+        $rounds = $count - 1;
+        $perRound = $count / 2;
+        $matches = [];
+        $order = 1;
+
+        for ($round = 0; $round < $rounds; $round++) {
+            for ($m = 0; $m < $perRound; $m++) {
+                $homeIdx = ($round + $m) % ($count - 1);
+                $awayIdx = ($count - 1 - $m + $round) % ($count - 1);
+
+                if ($m === 0) {
+                    $awayIdx = $count - 1;
+                }
+
+                $pair1 = $pairs[$homeIdx];
+                $pair2 = $pairs[$awayIdx];
+
+                if ($hasDummy && ($pair1 === null || $pair2 === null)) {
+                    continue;
+                }
+
+                /** @var TournamentPair $p1 */
+                $p1 = TournamentPair::with(['player1', 'player2'])->find($pair1['id']);
+                /** @var TournamentPair $p2 */
+                $p2 = TournamentPair::with(['player1', 'player2'])->find($pair2['id']);
+
+                $handicap = $pool->tournament->has_handicap_points
+                    ? $this->calculateDoublesHandicap($p1, $p2)
+                    : ['pair1_handicap' => 0, 'pair2_handicap' => 0];
+
+                $matches[] = [
+                    'pool_id' => $pool->id,
+                    'tournament_id' => $pool->tournament->id,
+                    'pair1_id' => $p1->id,
+                    'pair2_id' => $p2->id,
+                    // Proxy player IDs so winner_id and scoring logic stay intact
+                    'player1_id' => $p1->player1_id,
+                    'player2_id' => $p2->player1_id,
+                    'player1_handicap_points' => $handicap['pair1_handicap'],
+                    'player2_handicap_points' => $handicap['pair2_handicap'],
+                    'status' => 'scheduled',
+                    'match_order' => $order++,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+        }
+
+        TournamentMatch::where('pool_id', $pool->id)->delete();
+        TournamentMatch::insert($matches);
+
+        return TournamentMatch::where('pool_id', $pool->id)->get();
     }
 
     /**

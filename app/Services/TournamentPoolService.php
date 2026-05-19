@@ -6,11 +6,37 @@ namespace App\Services;
 
 use App\Models\ClubEvents\Tournament\Pool;
 use App\Models\ClubEvents\Tournament\Tournament;
+use App\Models\ClubEvents\Tournament\TournamentPair;
 use Exception;
 use Illuminate\Support\Collection;
 
 class TournamentPoolService
 {
+    public function distributePairsInPools(Tournament $tournament, int $numberOfPools): array
+    {
+        $pairs = TournamentPair::where('tournament_id', $tournament->id)
+            ->with(['player1', 'player2'])
+            ->get()
+            ->sortBy(fn (TournamentPair $p) => $p->averageRanking())
+            ->values();
+
+        if ($pairs->isEmpty()) {
+            return [];
+        }
+
+        $pools = $this->createPools($tournament, $numberOfPools);
+        $poolCount = $pools->count();
+        $poolIndex = 0;
+
+        foreach ($pairs as $pair) {
+            $pools[$poolIndex]->attachPair($pair);
+
+            $poolIndex = ($poolIndex === $poolCount - 1) ? 0 : $poolIndex + 1;
+        }
+
+        return $pools->toArray();
+    }
+
     /**
      * Répartit les joueurs inscrits à un tournoi dans des pools
      *
@@ -20,7 +46,10 @@ class TournamentPoolService
      */
     public function distributePlayersInPools(Tournament $tournament, int $numberOfPools): array
     {
-        // 1. Récupérer tous les joueurs inscrits au tournoi, triés par ranking
+        if ($tournament->match_type === 'double') {
+            return $this->distributePairsInPools($tournament, $numberOfPools);
+        }
+
         $players = $tournament->users()
             ->whereIn('tournament_user.registration_status', ['registered', 'confirmed'])
             ->orderBy('ranking')
@@ -32,10 +61,7 @@ class TournamentPoolService
             return [];
         }
 
-        // 2. Créer les pools avec les noms A, B, C, etc.
         $pools = $this->createPools($tournament, $numberOfPools);
-
-        // 3. Répartir les joueurs en serpentin (le meilleur dans la pool A, le 2ème dans la B, etc.)
         $this->assignPlayersToPools($players, $pools);
 
         return $pools->toArray();

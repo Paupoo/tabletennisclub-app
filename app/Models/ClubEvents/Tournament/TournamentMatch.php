@@ -94,6 +94,8 @@ class TournamentMatch extends Model
         'table_id',
         'player1_id',
         'player2_id',
+        'pair1_id',
+        'pair2_id',
         'player1_handicap_points',
         'player2_handicap_points',
         'winner_id',
@@ -148,6 +150,16 @@ class TournamentMatch extends Model
     public function isInProgress(): bool
     {
         return $this->status === 'in_progress';
+    }
+
+    public function pair1(): BelongsTo
+    {
+        return $this->belongsTo(TournamentPair::class, 'pair1_id');
+    }
+
+    public function pair2(): BelongsTo
+    {
+        return $this->belongsTo(TournamentPair::class, 'pair2_id');
     }
 
     /**

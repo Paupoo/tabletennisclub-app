@@ -106,6 +106,30 @@
 
         <x-select label="{{ __('Match type(*)') }}" icon="o-user" wire:model.live="matchType"
             :options="[['id' => 'single', 'name' => 'Singles'], ['id' => 'double', 'name' => 'Doubles']]" />
+
+        @if ($matchType === 'double')
+            <div class="flex flex-col gap-2">
+                <p class="text-sm font-medium">{{ __('Pair registration mode') }}</p>
+                <div class="flex gap-4">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" wire:model.live="doublesRegistrationMode" value="club" class="radio radio-sm radio-primary" />
+                        <span class="text-sm">{{ __('Club composes pairs') }}</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" wire:model.live="doublesRegistrationMode" value="self" class="radio radio-sm radio-primary" />
+                        <span class="text-sm">{{ __('Players choose partners') }}</span>
+                    </label>
+                </div>
+                <p class="text-[11px] text-base-content/50">
+                    @if ($doublesRegistrationMode === 'club')
+                        {{ __('Admin composes pairs in the Registrations tab.') }}
+                    @else
+                        {{ __('Players pick their partner from their profile page.') }}
+                    @endif
+                </p>
+            </div>
+        @endif
+
         <x-select wire:model.live.debounce.500ms="totalSets" :options="$this->setOptions"
             label="{{ __('Winning sets(*)') }}" icon="o-star"
             hint="Best of {{ ($this->totalSets * 2) - 1 }}" />

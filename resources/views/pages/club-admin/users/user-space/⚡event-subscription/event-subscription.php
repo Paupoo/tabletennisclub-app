@@ -8,6 +8,7 @@ use App\Models\ClubAdmin\Payment\Payment;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Season;
 use App\Models\ClubEvents\Tournament\Tournament;
+use App\Models\ClubEvents\Tournament\TournamentPair;
 use App\Models\ClubEvents\Tournament\TournamentRegistration;
 use App\Models\ClubEvents\Training\Training;
 use App\Services\TournamentService;
@@ -32,6 +33,11 @@ new class extends Component
 
     public ?string $paymentQr = null;
 
+    // ── Doubles self-pairing
+    public int $partnerTournamentId = 0;
+
+    public int $selectedPartnerId = 0;
+
     #[Computed]
     public function upcomingTournaments(): Collection
     {
@@ -41,9 +47,92 @@ new class extends Component
                 'users AS active_registrations_count' => fn ($q) =>
                     $q->whereIn('tournament_user.registration_status', ['registered', 'confirmed', 'spot_offered']),
             ])
-            ->with(['users' => fn ($q) => $q->where('tournament_user.user_id', $this->user->id)])
+            ->with([
+                'users' => fn ($q) => $q->where('tournament_user.user_id', $this->user->id),
+                'pairs' => fn ($q) => $q
+                    ->where(fn ($q2) => $q2
+                        ->where('player1_id', $this->user->id)
+                        ->orWhere('player2_id', $this->user->id)
+                    )
+                    ->with(['player1', 'player2']),
+            ])
             ->orderBy('start_date')
             ->get();
+    }
+
+    #[Computed]
+    public function availablePartners(): array
+    {
+        if (! $this->partnerTournamentId) {
+            return [];
+        }
+
+        $pairedIds = TournamentPair::where('tournament_id', $this->partnerTournamentId)
+            ->get()
+            ->flatMap(fn ($p) => [$p->player1_id, $p->player2_id])
+            ->unique()
+            ->toArray();
+
+        return Tournament::findOrFail($this->partnerTournamentId)
+            ->users()
+            ->wherePivotIn('registration_status', ['registered', 'confirmed', 'spot_offered'])
+            ->whereNotIn('users.id', $pairedIds)
+            ->where('users.id', '!=', $this->user->id)
+            ->get()
+            ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->full_name])
+            ->toArray();
+    }
+
+    public function openPartnerSelect(int $tournamentId): void
+    {
+        $this->partnerTournamentId = $tournamentId;
+        $this->selectedPartnerId = 0;
+        unset($this->availablePartners);
+    }
+
+    public function registerAsPair(int $tournamentId): void
+    {
+        if (! $this->selectedPartnerId) {
+            $this->error(__('Please select a partner.'));
+
+            return;
+        }
+
+        TournamentPair::create([
+            'tournament_id' => $tournamentId,
+            'player1_id'    => $this->user->id,
+            'player2_id'    => $this->selectedPartnerId,
+            'registered_by' => $this->user->id,
+        ]);
+
+        $partner = User::find($this->selectedPartnerId);
+        if ($partner) {
+            $tournament = Tournament::findOrFail($tournamentId);
+            if (! $tournament->users()->where('users.id', $this->selectedPartnerId)
+                ->wherePivotIn('registration_status', ['registered', 'confirmed', 'spot_offered'])
+                ->exists()
+            ) {
+                app(TournamentService::class)->registerUser($tournament, $partner);
+            }
+        }
+
+        $this->partnerTournamentId = 0;
+        $this->selectedPartnerId = 0;
+        unset($this->upcomingTournaments, $this->availablePartners);
+        $this->success(__('Pair registered!'), icon: 'o-user-group');
+    }
+
+    public function removeFromPair(int $tournamentId): void
+    {
+        TournamentPair::where('tournament_id', $tournamentId)
+            ->where(fn ($q) => $q
+                ->where('player1_id', $this->user->id)
+                ->orWhere('player2_id', $this->user->id)
+            )
+            ->delete();
+
+        unset($this->upcomingTournaments);
+        $this->warning(__('Pair removed.'));
     }
 
     #[Computed]

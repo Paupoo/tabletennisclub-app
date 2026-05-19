@@ -186,6 +186,57 @@
 
 </div>
 
+{{-- ── Pair composition (doubles only, club mode) ─────────────────── --}}
+@if ($this->currentTournament?->match_type === 'double' && $this->currentTournament?->doubles_registration_mode === 'club')
+    <x-card title="{{ __('Pair composition') }}" shadow class="mt-6">
+        <x-slot:menu>
+            @if (! $this->isLaunched)
+                <span class="text-xs text-base-content/50">{{ count($this->pairs) }} {{ __('pairs') }} &mdash; {{ count($this->unpaired) }} {{ __('unpaired') }}</span>
+            @endif
+        </x-slot:menu>
+
+        {{-- Existing pairs --}}
+        @if (! empty($this->pairs))
+            <div class="space-y-1 mb-4">
+                @foreach ($this->pairs as $pair)
+                    <div wire:key="pair-{{ $pair['id'] }}" class="flex items-center justify-between p-2 rounded-lg bg-base-200/50 text-sm">
+                        <div class="flex items-center gap-2">
+                            <x-icon name="o-user-group" class="w-4 h-4 text-primary shrink-0" />
+                            <span class="font-medium">{{ $pair['p1_name'] }}</span>
+                            <span class="text-base-content/40">&amp;</span>
+                            <span class="font-medium">{{ $pair['p2_name'] }}</span>
+                        </div>
+                        @if (! $this->isLaunched)
+                            <x-button icon="o-x-mark" class="btn-ghost btn-xs text-error"
+                                tooltip="{{ __('Delete pair') }}"
+                                wire:click="deletePair({{ $pair['id'] }})" />
+                        @endif
+                    </div>
+                @endforeach
+            </div>
+        @endif
+
+        {{-- Create pair form --}}
+        @if (! $this->isLaunched && ! empty($this->unpaired))
+            <div class="flex items-end gap-3 mt-2">
+                <x-select label="{{ __('Player 1') }}" wire:model.live="pairPlayer1Id"
+                    :options="$this->unpaired" placeholder="{{ __('Select…') }}" class="flex-1" />
+                <x-select label="{{ __('Player 2') }}" wire:model.live="pairPlayer2Id"
+                    :options="$this->unpaired" placeholder="{{ __('Select…') }}" class="flex-1" />
+                <x-button label="{{ __('Create pair') }}" icon="o-user-group" class="btn-primary btn-sm mb-0.5"
+                    wire:click="createPair" spinner="createPair"
+                    :disabled="! $pairPlayer1Id || ! $pairPlayer2Id" />
+            </div>
+        @elseif (! $this->isLaunched && empty($this->unpaired) && empty($this->pairs))
+            <p class="text-sm text-base-content/50">{{ __('No registered players yet.') }}</p>
+        @elseif (! $this->isLaunched && empty($this->unpaired))
+            <p class="text-sm text-success/80 flex items-center gap-1.5">
+                <x-icon name="o-check-circle" class="w-4 h-4" /> {{ __('All registered players are paired.') }}
+            </p>
+        @endif
+    </x-card>
+@endif
+
 {{-- Manual register modal --}}
 <x-modal wire:model="showRegisterModal" title="{{ __('Register a member') }}" class="backdrop-blur">
     <div class="space-y-4">

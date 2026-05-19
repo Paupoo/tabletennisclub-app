@@ -126,6 +126,7 @@ class Tournament extends Model
         'deuce_enabled',
         'logistics_buffer_minutes',
         'match_type',
+        'doubles_registration_mode',
         'objective',
         'news_post_id',
         'registration_deadline',
@@ -164,6 +165,11 @@ class Tournament extends Model
         return ($this->users()
             ->wherePivot('registration_status', 'waiting')
             ->max('tournament_user.waitlist_position') ?? 0) + 1;
+    }
+
+    public function pairs(): HasMany
+    {
+        return $this->hasMany(TournamentPair::class);
     }
 
     public function pools(): HasMany

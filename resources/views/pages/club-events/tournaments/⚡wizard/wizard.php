@@ -27,6 +27,7 @@ use App\Services\TournamentService;
 use App\Services\TournamentSimulator;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 use Livewire\Attributes\Computed;
@@ -61,6 +62,11 @@ new class extends Component
     public string $matchType = 'single';
 
     public string $doublesRegistrationMode = 'club';
+
+    // ── Doubles pair composition
+    public int $pairPlayer1Id = 0;
+
+    public int $pairPlayer2Id = 0;
 
     // ── Limite d'inscriptions (0 = illimité)
     public int $maxUsers = 0;
@@ -969,6 +975,105 @@ new class extends Component
         return $dir === 'asc'
             ? $rows->sortBy($col)->values()
             : $rows->sortByDesc($col)->values();
+    }
+
+    // ── Pair management (doubles)
+
+    public function createPair(): void
+    {
+        if (! $this->tournamentId || ! $this->pairPlayer1Id || ! $this->pairPlayer2Id) {
+            $this->error(__('Select two different players.'));
+
+            return;
+        }
+
+        if ($this->pairPlayer1Id === $this->pairPlayer2Id) {
+            $this->error(__('A player cannot be paired with themselves.'));
+
+            return;
+        }
+
+        $existing = TournamentPair::where('tournament_id', $this->tournamentId)
+            ->where(fn ($q) => $q
+                ->whereIn('player1_id', [$this->pairPlayer1Id, $this->pairPlayer2Id])
+                ->orWhereIn('player2_id', [$this->pairPlayer1Id, $this->pairPlayer2Id])
+            )
+            ->exists();
+
+        if ($existing) {
+            $this->error(__('One of these players is already in a pair.'));
+
+            return;
+        }
+
+        TournamentPair::create([
+            'tournament_id' => $this->tournamentId,
+            'player1_id' => $this->pairPlayer1Id,
+            'player2_id' => $this->pairPlayer2Id,
+            'registered_by' => Auth::id() ?? 0,
+        ]);
+
+        unset($this->pairs);
+        $this->pairPlayer1Id = 0;
+        $this->pairPlayer2Id = 0;
+        $this->success(__('Pair created.'), icon: 'o-user-group');
+    }
+
+    public function deletePair(int $pairId): void
+    {
+        if (! $this->tournamentId) {
+            return;
+        }
+
+        TournamentPair::where('id', $pairId)
+            ->where('tournament_id', $this->tournamentId)
+            ->delete();
+
+        unset($this->pairs);
+        $this->warning(__('Pair deleted.'));
+    }
+
+    #[Computed]
+    public function pairs(): array
+    {
+        if (! $this->tournamentId) {
+            return [];
+        }
+
+        return TournamentPair::where('tournament_id', $this->tournamentId)
+            ->with(['player1', 'player2'])
+            ->get()
+            ->map(fn (TournamentPair $p) => [
+                'id'      => $p->id,
+                'name'    => $p->displayName(),
+                'p1_id'   => $p->player1_id,
+                'p1_name' => $p->player1?->full_name ?? '?',
+                'p2_id'   => $p->player2_id,
+                'p2_name' => $p->player2?->full_name ?? '?',
+            ])
+            ->toArray();
+    }
+
+    #[Computed]
+    public function unpaired(): array
+    {
+        if (! $this->tournamentId) {
+            return [];
+        }
+
+        $pairedIds = TournamentPair::where('tournament_id', $this->tournamentId)
+            ->get()
+            ->flatMap(fn ($p) => [$p->player1_id, $p->player2_id])
+            ->unique()
+            ->toArray();
+
+        return Tournament::findOrFail($this->tournamentId)
+            ->users()
+            ->wherePivotIn('registration_status', ['registered', 'confirmed', 'spot_offered'])
+            ->whereNotIn('users.id', $pairedIds)
+            ->get()
+            ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->full_name])
+            ->toArray();
     }
 
     public function removeFromWaitlist(int $userId): void

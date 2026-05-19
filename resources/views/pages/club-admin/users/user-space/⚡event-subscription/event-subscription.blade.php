@@ -112,6 +112,34 @@
                                         wire:click="openPaymentModal({{ $reg->payment_id }})"
                                     />
                                 @endif
+
+                                {{-- Doubles self-pair --}}
+                                @if ($tournament->match_type === 'double' && $tournament->doubles_registration_mode === 'self')
+                                    @php $myPair = $tournament->pairs->first(); @endphp
+                                    @if ($myPair)
+                                        <x-badge class="badge-info badge-sm" icon="o-user-group"
+                                            value="{{ $myPair->player1_id === $this->user->id ? $myPair->player2?->full_name : $myPair->player1?->full_name }}" />
+                                        <x-button class="btn-ghost btn-xs text-error" icon="o-x-mark"
+                                            tooltip="{{ __('Remove pair') }}"
+                                            wire:click="removeFromPair({{ $tournament->id }})" />
+                                    @elseif ($partnerTournamentId === $tournament->id)
+                                        <x-select wire:model.live="selectedPartnerId"
+                                            :options="$this->availablePartners"
+                                            placeholder="{{ __('Choose partner…') }}"
+                                            class="select-xs max-w-40" />
+                                        <x-button class="btn-primary btn-xs" icon="o-user-group"
+                                            label="{{ __('Confirm') }}"
+                                            wire:click="registerAsPair({{ $tournament->id }})"
+                                            :disabled="! $selectedPartnerId" />
+                                        <x-button class="btn-ghost btn-xs" icon="o-x-mark"
+                                            wire:click="$set('partnerTournamentId', 0)" />
+                                    @else
+                                        <x-button class="btn-outline btn-xs" icon="o-user-group"
+                                            label="{{ __('Choose partner') }}"
+                                            wire:click="openPartnerSelect({{ $tournament->id }})" />
+                                    @endif
+                                @endif
+
                                 <x-button
                                     class="btn-ghost btn-sm text-error"
                                     icon="o-x-circle"

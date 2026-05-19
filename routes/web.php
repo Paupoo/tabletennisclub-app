@@ -87,9 +87,18 @@ Route::prefix('admin/club-admin/users/')
         Route::livewire('list', 'pages::club-admin.users.index')->name('admin.users.index');
         Route::livewire('create', 'pages::club-admin.users.form')->name('admin.users.create');
         Route::livewire('{user}/edit', 'pages::club-admin.users.form')->name('admin.users.edit');
-        Route::livewire('payments', 'pages::club-admin.users.payments')->name('admin.users.payments');
         Route::livewire('registrations', 'pages::club-admin.users.registrations')->name('admin.users.registrations');
+        // Legacy redirect — kept for backward compatibility
+        Route::get('payments', fn () => redirect()->route('admin.treasury.payments'))->name('admin.users.payments');
     });
+Route::prefix('admin/treasury/')
+    ->middleware(['auth', 'verified'])
+    ->group(function (): void {
+        Route::livewire('payments', 'pages::club-admin.treasury.payments')->name('admin.treasury.payments');
+        Route::livewire('transactions', 'pages::club-admin.treasury.transactions')->name('admin.treasury.transactions');
+        Route::livewire('cash-register', 'pages::club-admin.treasury.cash-register')->name('admin.treasury.cash');
+    });
+
 Route::prefix('admin/club-admin/')
     ->middleware(['auth', 'verified', 'can:update,App\Models\ClubEvents\Interclub\Club'])
     ->group(function (): void {

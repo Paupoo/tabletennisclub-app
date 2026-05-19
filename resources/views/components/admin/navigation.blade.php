@@ -35,8 +35,13 @@
                     
     <x-menu-sub icon="o-inbox-stack" title="{{ __('Members Admin') }}">
         <x-menu-item icon="o-users" link="{{ route('admin.users.index') }}" title="{{ __('Users') }}" />
-        <x-menu-item icon="o-credit-card" link="{{  route('admin.users.registrations') }}" title="{{ __('Registrations') }}" />
-        <x-menu-item icon="o-banknotes" link="{{ route('admin.users.payments') }}" title="{{ __('Payments') }}" />
+        <x-menu-item icon="o-credit-card" link="{{ route('admin.users.registrations') }}" title="{{ __('Registrations') }}" />
+    </x-menu-sub>
+
+    <x-menu-sub icon="o-banknotes" title="{{ __('Treasury') }}">
+        <x-menu-item icon="o-credit-card" link="{{ route('admin.treasury.payments') }}" title="{{ __('Payments') }}" />
+        <x-menu-item icon="o-building-library" link="{{ route('admin.treasury.transactions') }}" title="{{ __('Bank Transactions') }}" />
+        <x-menu-item icon="o-currency-euro" link="{{ route('admin.treasury.cash') }}" title="{{ __('Cash Register') }}" />
     </x-menu-sub>
     <x-menu-sub icon="o-cog-6-tooth" link="#" title="{{ __('Club') }}">
     </x-menu-sub>

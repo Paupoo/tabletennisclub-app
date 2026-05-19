@@ -24,6 +24,7 @@ class Payment extends Model
         'amount_due',
         'amount_paid',
         'status',
+        'payment_method',
         'transaction_id',
         'refund_transaction_id',
     ];

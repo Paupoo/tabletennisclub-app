@@ -2,12 +2,15 @@
 
 declare(strict_types=1);
 
+use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
 use App\Data\Tournament\SimulationResult;
+use App\Models\ClubEvents\Tournament\TournamentPair;
 use App\Data\Tournament\TournamentConfig;
 use App\Enums\ClubEventTypeEnum;
 use App\Enums\EventPostStatusEnum;
 use App\Enums\TournamentObjectiveEnum;
 use App\Enums\TournamentStatusEnum;
+use App\Models\ClubAdmin\Payment\CashRegister;
 use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Club\Table;
 use App\Models\ClubAdmin\Users\User;
@@ -56,6 +59,8 @@ new class extends Component
     public int $logistics_buffer = 3;
 
     public string $matchType = 'single';
+
+    public string $doublesRegistrationMode = 'club';
 
     // ── Limite d'inscriptions (0 = illimité)
     public int $maxUsers = 0;
@@ -125,6 +130,19 @@ new class extends Component
     public bool $showLaunchModal = false;
 
     public bool $showRegisterModal = false;
+
+    // ── Payment modals
+    public bool $showQrModal = false;
+
+    public bool $showCashConfirmModal = false;
+
+    public bool $showDebtModal = false;
+
+    public ?int $paymentActionUserId = null;
+
+    public string $qrCodeData = '';
+
+    public array $qrPaymentDetails = [];
 
     public array $sortBy = ['column' => 'registered_at', 'direction' => 'asc'];
 
@@ -520,6 +538,99 @@ new class extends Component
         $this->warning(__('No-show recorded.'));
     }
 
+    // ── Payment actions
+
+    public function openQrModal(int $userId): void
+    {
+        if (! $this->tournamentId) {
+            return;
+        }
+
+        $tournament = Tournament::findOrFail($this->tournamentId);
+        $registration = DB::table('tournament_user')
+            ->where('tournament_id', $this->tournamentId)
+            ->where('user_id', $userId)
+            ->first();
+
+        $payment = $registration?->payment_id
+            ? \App\Models\ClubAdmin\Payment\Payment::find($registration->payment_id)
+            : null;
+
+        if (! $payment) {
+            $this->error(__('No payment found for this player.'));
+            return;
+        }
+
+        $user = User::findOrFail($userId);
+
+        $this->qrPaymentDetails = [
+            'name'        => $user->full_name,
+            'reference'   => $payment->reference,
+            'amount_due'  => $payment->amount_due,
+            'iban'        => 'BE23 7323 3320 8791',
+            'bic'         => 'CREGBEBB',
+            'beneficiary' => 'CTT Ottignies-Blocry ASBL',
+        ];
+        $this->qrCodeData = (new GeneratePaymentQR)($payment);
+        $this->paymentActionUserId = $userId;
+        $this->showQrModal = true;
+    }
+
+    public function openCashConfirmModal(int $userId): void
+    {
+        $register = CashRegister::first();
+        if (! $register) {
+            $this->error(__('No cash register found. Create one in Treasury first.'));
+            return;
+        }
+
+        $this->paymentActionUserId = $userId;
+        $this->showCashConfirmModal = true;
+    }
+
+    public function confirmCashPayment(): void
+    {
+        if (! $this->tournamentId || ! $this->paymentActionUserId) {
+            return;
+        }
+
+        $register = CashRegister::first();
+        if (! $register) {
+            $this->error(__('No cash register found.'));
+            return;
+        }
+
+        $tournament = Tournament::findOrFail($this->tournamentId);
+        $user = User::findOrFail($this->paymentActionUserId);
+
+        app(TournamentService::class)->recordCashPayment($tournament, $user, $register);
+
+        unset($this->registrations);
+        $this->reset(['showCashConfirmModal', 'paymentActionUserId']);
+        $this->success(__('Cash payment recorded.'), icon: 'o-currency-euro');
+    }
+
+    public function openDebtModal(int $userId): void
+    {
+        $this->paymentActionUserId = $userId;
+        $this->showDebtModal = true;
+    }
+
+    public function confirmDebt(): void
+    {
+        if (! $this->tournamentId || ! $this->paymentActionUserId) {
+            return;
+        }
+
+        $tournament = Tournament::findOrFail($this->tournamentId);
+        $user = User::findOrFail($this->paymentActionUserId);
+
+        app(TournamentService::class)->recordDebt($tournament, $user);
+
+        $this->reset(['showDebtModal', 'paymentActionUserId']);
+        $this->warning(__('Debt recorded. A reminder will be sent tomorrow at 9h.'), icon: 'o-exclamation-triangle');
+    }
+
     // ── Computed: matches list for verification
 
     #[Computed]
@@ -604,6 +715,7 @@ new class extends Component
             $this->deuceEnabled = $tournament->deuce_enabled;
             $this->hasHandicapPoints = $tournament->has_handicap_points;
             $this->matchType = $tournament->match_type;
+            $this->doublesRegistrationMode = $tournament->doubles_registration_mode ?? 'club';
             $this->nb_poules = $tournament->nb_pools;
             $this->pool_size = $tournament->pool_size;
             $this->nb_qualifies = $tournament->nb_qualifiers_per_pool;
@@ -844,13 +956,14 @@ new class extends Component
             ->wherePivotIn('registration_status', ['registered', 'confirmed', 'spot_offered', 'no_show'])
             ->get()
             ->map(fn (User $u) => [
-                'id'            => $u->id,
-                'name'          => $u->full_name,
-                'ranking'       => $u->ranking ?? 'NC',
-                'status'        => $u->pivot->registration_status,
-                'has_paid'      => (bool) $u->pivot->has_paid,
+                'id'               => $u->id,
+                'name'             => $u->full_name,
+                'ranking'          => $u->ranking ?? 'NC',
+                'status'           => $u->pivot->registration_status,
+                'has_paid'         => (bool) $u->pivot->has_paid,
+                'payment_id'       => $u->pivot->payment_id,
                 'payment_deadline' => $u->pivot->payment_deadline,
-                'registered_at' => $u->pivot->created_at,
+                'registered_at'    => $u->pivot->created_at,
             ]);
 
         return $dir === 'asc'
@@ -916,6 +1029,7 @@ new class extends Component
             'hasHandicapPoints' => 'boolean',
             'logistics_buffer' => 'required|integer|min:0|max:30',
             'matchType' => 'required|in:single,double',
+            'doublesRegistrationMode' => 'nullable|in:club,self',
             'maxUsers' => 'required|integer|min:0',
             'price' => 'required|numeric|min:0',
         ]);
@@ -957,6 +1071,7 @@ new class extends Component
                 'has_handicap_points' => $this->hasHandicapPoints,
                 'logistics_buffer_minutes' => $this->logistics_buffer,
                 'match_type' => $this->matchType,
+                'doubles_registration_mode' => $this->matchType === 'double' ? $this->doublesRegistrationMode : null,
                 'objective' => $this->selectedObjective ?: null,
                 'max_users' => $this->maxUsers,
                 'price' => $this->price,

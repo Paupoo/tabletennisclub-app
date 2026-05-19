@@ -40,23 +40,39 @@
         $headers = [
             ['key' => 'name',          'label' => __('Player'),      'sortable' => true],
             ['key' => 'ranking',       'label' => __('Ranking'),     'sortable' => true],
-            ['key' => 'status',        'label' => __('Status'),      'sortable' => true],
+            ['key' => 'status',        'label' => __('Presence'),    'sortable' => true],
             ['key' => 'registered_at', 'label' => __('Registered'),  'sortable' => true],
         ];
         if ($isPaidTournament) {
-            $headers[] = ['key' => 'has_paid', 'label' => __('Payment'), 'sortable' => true];
+            $headers[] = ['key' => 'has_paid', 'label' => __('Payment'), 'sortable' => false];
         }
     @endphp
     <x-table wire:model.live="selectedPeople" :headers="$headers" :rows="$this->registrations"
         :sort-by="$sortBy" selectable>
             @scope('cell_status', $row)
-                <x-badge :value="$row['status']"
-                    :class="match($row['status']) {
-                        'confirmed' => 'badge-success',
-                        'no_show'   => 'badge-warning',
-                        'cancelled' => 'badge-error',
-                        default     => 'badge-ghost',
-                    }" class="badge-sm" />
+                @if (! $this->isLaunched && $row['status'] !== 'no_show')
+                    <div class="flex items-center gap-1">
+                        <x-button
+                            icon="o-check"
+                            class="btn-ghost btn-xs text-success"
+                            tooltip="{{ __('Confirm') }}"
+                            wire:click="confirmPresence({{ $row['id'] }})"
+                            wire:loading.attr="disabled" />
+                        <x-button
+                            icon="o-no-symbol"
+                            class="btn-ghost btn-xs text-warning"
+                            tooltip="{{ __('No show') }}"
+                            wire:click="markNoShow({{ $row['id'] }})" />
+                    </div>
+                @else
+                    <x-badge :value="$row['status']"
+                        :class="match($row['status']) {
+                            'confirmed' => 'badge-success',
+                            'no_show'   => 'badge-warning',
+                            'cancelled' => 'badge-error',
+                            default     => 'badge-ghost',
+                        }" class="badge-sm" />
+                @endif
             @endscope
 
             @scope('cell_registered_at', $row)
@@ -68,24 +84,38 @@
             @scope('cell_has_paid', $row)
                 @if($row['has_paid'])
                     <x-badge value="{{ __('Paid') }}" class="badge-success badge-sm" icon="o-check-circle" />
+                @elseif(! $row['payment_id'])
+                    <x-badge value="{{ __('Free') }}" class="badge-ghost badge-sm" />
                 @else
-                    <x-badge value="{{ __('Pending') }}" class="badge-warning badge-sm" icon="o-clock" />
+                    @if (! $this->isLaunched)
+                        <div class="flex items-center gap-1">
+                            <x-button
+                                icon="o-qr-code"
+                                class="btn-ghost btn-xs"
+                                tooltip="{{ __('QR / bank transfer') }}"
+                                wire:click="openQrModal({{ $row['id'] }})" />
+                            <x-button
+                                icon="o-currency-euro"
+                                class="btn-ghost btn-xs text-success"
+                                tooltip="{{ __('Cash') }}"
+                                wire:click="openCashConfirmModal({{ $row['id'] }})" />
+                            <x-button
+                                icon="o-exclamation-triangle"
+                                class="btn-ghost btn-xs text-warning"
+                                tooltip="{{ __('Record debt') }}"
+                                wire:click="openDebtModal({{ $row['id'] }})" />
+                        </div>
+                    @else
+                        <x-badge value="{{ __('Pending') }}" class="badge-warning badge-sm" icon="o-clock" />
+                    @endif
                 @endif
             @endscope
 
             @scope('actions', $row)
                 @if (! $this->isLaunched)
-                    <div class="flex flex-row">
-                        <x-button icon="o-check" class="btn-ghost btn-sm text-success"
-                            tooltip-left="{{ __('Confirm presence') }}"
-                            wire:click="confirmPresence({{ $row['id'] }})" wire:loading.attr="disabled" />
-                        <x-button icon="o-no-symbol" class="btn-ghost btn-sm text-warning"
-                            tooltip-left="{{ __('No show') }}"
-                            wire:click="markNoShow({{ $row['id'] }})" />
-                        <x-button icon="o-trash" class="btn-ghost btn-sm text-error"
-                            tooltip-left="{{ __('Cancel registration') }}"
-                            wire:click="cancelUserRegistration({{ $row['id'] }})" />
-                    </div>
+                    <x-button icon="o-trash" class="btn-ghost btn-sm text-error"
+                        tooltip-left="{{ __('Cancel registration') }}"
+                        wire:click="cancelUserRegistration({{ $row['id'] }})" />
                 @endif
             @endscope
         </x-table>
@@ -221,5 +251,72 @@
         <x-button label="{{ __('Cancel') }}" wire:click="$set('showOpenRegistrationsModal', false)" />
         <x-button label="{{ __('Reopen registrations') }}" icon="o-lock-open" class="btn-warning"
             wire:click="confirmOpenRegistrations" />
+    </x-slot:actions>
+</x-modal>
+
+{{-- ── QR / bank transfer modal ──────────────────────────── --}}
+<x-modal wire:model="showQrModal" title="{{ __('Payment by QR / Bank Transfer') }}" separator box-class="max-w-lg">
+    @if($qrCodeData)
+    <div class="flex flex-col items-center gap-4">
+        <img src="{{ $qrCodeData }}" alt="SEPA QR" class="w-48 h-48 rounded-xl border border-base-200" />
+        <div class="w-full space-y-2 text-sm">
+            <div class="flex justify-between py-1 border-b border-base-200">
+                <span class="opacity-60">{{ __('Beneficiary') }}</span>
+                <span class="font-semibold">{{ $qrPaymentDetails['beneficiary'] ?? '' }}</span>
+            </div>
+            <div class="flex justify-between py-1 border-b border-base-200">
+                <span class="opacity-60">{{ __('IBAN') }}</span>
+                <span class="font-mono">{{ $qrPaymentDetails['iban'] ?? '' }}</span>
+            </div>
+            <div class="flex justify-between py-1 border-b border-base-200">
+                <span class="opacity-60">{{ __('BIC') }}</span>
+                <span class="font-mono">{{ $qrPaymentDetails['bic'] ?? '' }}</span>
+            </div>
+            <div class="flex justify-between py-1 border-b border-base-200">
+                <span class="opacity-60">{{ __('Reference') }}</span>
+                <span class="font-mono text-primary font-bold">{{ $qrPaymentDetails['reference'] ?? '' }}</span>
+            </div>
+            <div class="flex justify-between py-1">
+                <span class="opacity-60">{{ __('Amount') }}</span>
+                <span class="font-black text-lg">{{ number_format($qrPaymentDetails['amount_due'] ?? 0, 2, ',', ' ') }} €</span>
+            </div>
+        </div>
+        <p class="text-xs text-center opacity-50">{{ __('Scan the QR code with your banking app or use the details above.') }}</p>
+    </div>
+    @endif
+    <x-slot:actions>
+        <x-button label="{{ __('Close') }}" wire:click="$set('showQrModal', false)" class="btn-ghost" />
+    </x-slot:actions>
+</x-modal>
+
+{{-- ── Cash payment confirm modal ────────────────────────── --}}
+<x-modal wire:model="showCashConfirmModal" title="{{ __('Confirm cash payment') }}" separator>
+    <div class="flex items-start gap-3 p-4 bg-success/10 border border-success/20 rounded-xl text-sm">
+        <x-icon name="o-currency-euro" class="w-5 h-5 shrink-0 mt-0.5 text-success" />
+        <div>
+            <p class="font-semibold">{{ __('Record a cash payment?') }}</p>
+            <p class="opacity-70 mt-1">{{ __('This will mark the player as paid, record the amount in the cash register, and close their pending payment.') }}</p>
+        </div>
+    </div>
+    <x-slot:actions>
+        <x-button label="{{ __('Cancel') }}" wire:click="$set('showCashConfirmModal', false)" class="btn-ghost" />
+        <x-button label="{{ __('Confirm cash payment') }}" icon="o-currency-euro" class="btn-success"
+            wire:click="confirmCashPayment" spinner />
+    </x-slot:actions>
+</x-modal>
+
+{{-- ── Debt modal ─────────────────────────────────────────── --}}
+<x-modal wire:model="showDebtModal" title="{{ __('Record debt') }}" separator>
+    <div class="flex items-start gap-3 p-4 bg-warning/10 border border-warning/20 rounded-xl text-sm">
+        <x-icon name="o-exclamation-triangle" class="w-5 h-5 shrink-0 mt-0.5 text-warning" />
+        <div>
+            <p class="font-semibold">{{ __('Act the debt?') }}</p>
+            <p class="opacity-70 mt-1">{{ __('The payment will remain pending. The player will receive an email reminder tomorrow at 9h.') }}</p>
+        </div>
+    </div>
+    <x-slot:actions>
+        <x-button label="{{ __('Cancel') }}" wire:click="$set('showDebtModal', false)" class="btn-ghost" />
+        <x-button label="{{ __('Act the debt') }}" icon="o-exclamation-triangle" class="btn-warning"
+            wire:click="confirmDebt" spinner />
     </x-slot:actions>
 </x-modal>

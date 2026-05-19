@@ -8,6 +8,9 @@ use App\Actions\ClubAdmin\Payments\GeneratePaymentReference;
 use App\Enums\CommitteeRolesEnum;
 use App\Enums\TournamentStatusEnum;
 use App\Events\Tournament\UserRegisteredToTournament;
+use App\Jobs\SendDebtReminderNotification;
+use App\Models\ClubAdmin\Payment\CashRegister;
+use App\Models\ClubAdmin\Payment\CashRegisterEntry;
 use App\Models\ClubAdmin\Payment\Payment;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Tournament\Tournament;
@@ -176,6 +179,55 @@ class TournamentService
                 userId: $user->id,
                 deadline: $deadline,
             ));
+        }
+    }
+
+    /**
+     * Record a cash payment for an on-site registration.
+     * Marks the payment as paid (method = cash), creates a CashRegisterEntry, and updates has_paid.
+     */
+    public function recordCashPayment(Tournament $tournament, User $user, CashRegister $register): void
+    {
+        $registration = TournamentRegistration::where('tournament_id', $tournament->id)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        if ($registration->payment_id) {
+            Payment::where('id', $registration->payment_id)->update([
+                'status' => 'paid',
+                'payment_method' => 'cash',
+                'amount_paid' => $tournament->price,
+            ]);
+        }
+
+        DB::table('tournament_user')
+            ->where('tournament_id', $tournament->id)
+            ->where('user_id', $user->id)
+            ->update(['has_paid' => true]);
+
+        CashRegisterEntry::create([
+            'cash_register_id' => $register->id,
+            'amount' => (int) ($tournament->price * 100),
+            'reason' => 'tournament_payment',
+            'payable_type' => Tournament::class,
+            'payable_id' => $tournament->id,
+            'recorded_by_id' => auth()->id(),
+            'notes' => $user->full_name . ' — ' . $tournament->name,
+        ]);
+    }
+
+    /**
+     * Record a payment debt: leave the payment pending and dispatch a reminder for tomorrow at 9h.
+     */
+    public function recordDebt(Tournament $tournament, User $user): void
+    {
+        $registration = TournamentRegistration::where('tournament_id', $tournament->id)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        if ($registration->payment_id) {
+            SendDebtReminderNotification::dispatch($registration->payment_id, $user->id, $tournament->id)
+                ->delay(now()->addDay()->setTime(9, 0));
         }
     }
 

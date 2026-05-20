@@ -2,10 +2,13 @@
 
 declare(strict_types=1);
 
+use App\Mail\InviteNewUserMail;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Team;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -121,6 +124,21 @@ new class extends Component
     // ────────────────────────────────────────────────────────────────────────
     // Suppression simple
     // ────────────────────────────────────────────────────────────────────────
+
+    public function sendInvitation(int $userId): void
+    {
+        $user = User::findOrFail($userId);
+
+        $link = URL::temporarySignedRoute(
+            'invitation.accept',
+            now()->addHours(48),
+            ['user' => $user->id]
+        );
+
+        Mail::to($user->email)->send(new InviteNewUserMail($user, $link));
+
+        $this->success(__('Invitation sent to :email.', ['email' => $user->email]));
+    }
 
     public function confirmDelete(int $userId): void
     {

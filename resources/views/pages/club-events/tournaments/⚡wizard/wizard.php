@@ -326,7 +326,7 @@ new class extends Component
             return;
         }
 
-        $tournament = Tournament::with(['pools.users', 'pools.tournament'])->findOrFail($this->tournamentId);
+        $tournament = Tournament::with(['pools.users', 'pools.pairs', 'pools.tournament'])->findOrFail($this->tournamentId);
         app(TournamentMatchService::class)->generateTournamentMatches($tournament);
 
         $this->success(__('Matches generated!'), icon: 'o-table-cells');
@@ -344,7 +344,13 @@ new class extends Component
 
         $tournament = Tournament::with('users')->findOrFail($this->tournamentId);
 
-        if ($tournament->users()->count() === 0) {
+        if ($tournament->match_type === 'double') {
+            if ($tournament->pairs()->count() === 0) {
+                $this->error(__('No pairs composed. Please compose pairs before generating pools.'));
+
+                return;
+            }
+        } elseif ($tournament->users()->count() === 0) {
             $this->error(__('No registered players.'));
 
             return;
@@ -646,9 +652,15 @@ new class extends Component
             return [];
         }
 
-        return Tournament::find($this->tournamentId)
+        $tournament = Tournament::find($this->tournamentId);
+        $isDoubles = $tournament->match_type === 'double';
+
+        return $tournament
             ->matches()
-            ->with(['player1', 'player2', 'pool'])
+            ->with($isDoubles
+                ? ['pair1.player1', 'pair1.player2', 'pair2.player1', 'pair2.player2', 'pool']
+                : ['player1', 'player2', 'pool']
+            )
             ->whereNotNull('pool_id')
             ->orderBy('pool_id')
             ->orderBy('match_order')
@@ -658,8 +670,8 @@ new class extends Component
                 'name' => $matches->first()->pool?->name ?? "Pool {$poolId}",
                 'matches' => $matches->map(fn ($m) => [
                     'order' => $m->match_order,
-                    'p1' => $m->player1?->full_name ?? '—',
-                    'p2' => $m->player2?->full_name ?? '—',
+                    'p1' => $isDoubles ? ($m->pair1?->displayName() ?? '—') : ($m->player1?->full_name ?? '—'),
+                    'p2' => $isDoubles ? ($m->pair2?->displayName() ?? '—') : ($m->player2?->full_name ?? '—'),
                 ])->toArray(),
             ])
             ->toArray();
@@ -778,7 +790,28 @@ new class extends Component
             return [];
         }
 
-        return Tournament::find($this->tournamentId)
+        $tournament = Tournament::find($this->tournamentId);
+
+        if ($tournament->match_type === 'double') {
+            return $tournament
+                ->pools()
+                ->with(['pairs.player1', 'pairs.player2'])
+                ->get()
+                ->mapWithKeys(fn (Pool $pool) => [
+                    $pool->id => [
+                        'name' => $pool->name,
+                        'players' => $pool->pairs->map(fn ($pair) => [
+                            'id' => $pair->id,
+                            'name' => $pair->displayName(),
+                            'rank' => $pair->averageRanking(),
+                            'pts' => 0,
+                        ])->toArray(),
+                    ],
+                ])
+                ->toArray();
+        }
+
+        return $tournament
             ->pools()
             ->with(['users' => fn ($q) => $q
                 ->orderByRaw('ranking IS NULL')

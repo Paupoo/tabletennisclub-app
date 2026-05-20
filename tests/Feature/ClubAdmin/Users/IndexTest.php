@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Mail\InviteNewUserMail;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Season;
 use App\Models\ClubEvents\Interclub\Team;
+use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
 
 use function Pest\Laravel\actingAs;
@@ -647,4 +649,29 @@ describe('subscriptions dropdown', function () {
         expect($events)->toHaveCount(3);
         expect($trainings)->toHaveCount(2);
     });
+});
+
+// ── sendInvitation ────────────────────────────────────────────────────────────
+
+describe('sendInvitation', function () {
+    it('queues InviteNewUserMail to the target user', function () {
+        Mail::fake();
+
+        $target = User::factory()->create(['email' => 'member@example.com']);
+
+        Livewire::test(USER_INDEX_COMPONENT)
+            ->call('sendInvitation', $target->id);
+
+        Mail::assertQueued(InviteNewUserMail::class, fn ($mail) => $mail->hasTo('member@example.com'));
+    });
+
+    it('shows a success toast after sending', function () {
+        Mail::fake();
+
+        $target = User::factory()->create(['email' => 'toast@example.com']);
+
+        Livewire::test(USER_INDEX_COMPONENT)
+            ->call('sendInvitation', $target->id)
+            ->assertDispatched('toast');
+    })->skip('Mary UI toast events are not assertable in this test setup');
 });

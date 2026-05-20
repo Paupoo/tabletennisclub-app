@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Enums\TournamentStatusEnum;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Tournament\Tournament;
+use App\Models\ClubEvents\Tournament\TournamentPair;
 use App\Notifications\Tournament\TournamentInvitationNotification;
 use App\Services\TournamentMatchService;
 use App\Services\TournamentPoolService;
@@ -207,3 +208,43 @@ describe('processLaunch', function () {
         expect($tournament->matches()->exists())->toBeFalse();
     });
 })->group('Tournament', 'Wizard');
+
+// ── generatePools for doubles ─────────────────────────────────────────────────
+
+describe('generatePools for doubles', function () {
+    it('distributes pairs across pools', function () {
+        $tournament = wizardTournament(['match_type' => 'double', 'nb_pools' => 2]);
+        $admin = User::factory()->create();
+
+        foreach (range(1, 4) as $_) {
+            $p1 = User::factory()->create(['ranking' => 'B2']);
+            $p2 = User::factory()->create(['ranking' => 'C4']);
+            TournamentPair::create([
+                'tournament_id' => $tournament->id,
+                'player1_id' => $p1->id,
+                'player2_id' => $p2->id,
+                'registered_by' => $admin->id,
+            ]);
+        }
+
+        app(TournamentPoolService::class)->distributePlayersInPools($tournament, 2);
+
+        expect($tournament->pools()->count())->toBe(2);
+
+        $totalPairsInPools = $tournament->pools()
+            ->with('pairs')
+            ->get()
+            ->sum(fn ($pool) => $pool->pairs->count());
+
+        expect($totalPairsInPools)->toBe(4);
+    });
+
+    it('returns empty and creates no pools when no pairs exist', function () {
+        $tournament = wizardTournament(['match_type' => 'double', 'nb_pools' => 2]);
+
+        $result = app(TournamentPoolService::class)->distributePlayersInPools($tournament, 2);
+
+        expect($result)->toBeEmpty();
+        expect($tournament->pools()->count())->toBe(0);
+    });
+})->group('Tournament', 'Wizard', 'Doubles');

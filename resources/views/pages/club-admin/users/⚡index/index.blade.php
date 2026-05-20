@@ -126,7 +126,8 @@
                         <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
                             tooltip="{{ __('Edit') }}" link="{{ route('admin.users.edit', $user) }}" />
                         <x-button class="btn-ghost btn-sm btn-circle" icon="o-envelope"
-                            tooltip="{{ __('Send message') }}" link="#" />
+                            tooltip="{{ __('Send invitation') }}"
+                            wire:click="sendInvitation({{ $user->id }})" spinner />
                         <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
                             tooltip="{{ __('Delete') }}" wire:click="confirmDelete({{ $user->id }})" />
                     </div>
@@ -162,7 +163,8 @@
                         <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
                             tooltip="{{ __('Edit') }}" link="{{ route('admin.users.edit', $user->id) }}" />
                         <x-button class="btn-ghost btn-sm btn-circle" icon="o-envelope"
-                            tooltip="{{ __('Send message') }}" link="#" />
+                            tooltip="{{ __('Send invitation') }}"
+                            wire:click="sendInvitation({{ $user->id }})" spinner />
                         <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
                             tooltip="{{ __('Delete') }}" wire:click="confirmDelete({{ $user->id }})" />
                     </x-admin.shared.row-actions>

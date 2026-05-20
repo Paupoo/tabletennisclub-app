@@ -174,7 +174,7 @@ new class extends Component
                 $match = null;
 
                 if ($pivot->tournament_match_id) {
-                    $match = TournamentMatch::with(['player1', 'player2', 'pair1.player1', 'pair1.player2', 'pair2.player1', 'pair2.player2', 'sets'])
+                    $match = TournamentMatch::with(['player1', 'player2', 'pair1.player1', 'pair1.player2', 'pair2.player1', 'pair2.player2', 'sets', 'referee'])
                         ->find($pivot->tournament_match_id);
                 }
 
@@ -195,7 +195,7 @@ new class extends Component
     {
         return TournamentMatch::where('tournament_id', $this->tournament->id)
             ->where('status', 'scheduled')
-            ->with(['player1', 'player2', 'pair1.player1', 'pair1.player2', 'pair2.player1', 'pair2.player2', 'pool'])
+            ->with(['player1', 'player2', 'pair1.player1', 'pair1.player2', 'pair2.player1', 'pair2.player2', 'pool', 'referee'])
             ->orderByRaw("CASE WHEN pool_id IS NOT NULL THEN 0 ELSE 1 END")
             ->orderByRaw("CASE WHEN player1_id IS NOT NULL AND player2_id IS NOT NULL THEN 0 ELSE 1 END")
             ->orderByRaw("CASE round WHEN 'round_16' THEN 1 WHEN 'quarterfinal' THEN 2 WHEN 'semifinal' THEN 3 WHEN 'final' THEN 4 WHEN 'bronze' THEN 5 ELSE 0 END")
@@ -452,6 +452,15 @@ new class extends Component
             return;
         }
 
+        $match = TournamentMatch::with(['pair1', 'pair2'])->findOrFail($matchId);
+
+        $conflict = app(TournamentMatchService::class)->detectStartConflict($this->tournament, $match);
+        if ($conflict !== null) {
+            $this->error($conflict);
+
+            return;
+        }
+
         \Illuminate\Support\Facades\DB::table('table_tournament')
             ->where('tournament_id', $this->tournament->id)
             ->where('table_id', $this->selectedTableId)
@@ -470,6 +479,7 @@ new class extends Component
 
         $this->success(__('Match started!'));
     }
+
 
     // ── Actions: bracket
 

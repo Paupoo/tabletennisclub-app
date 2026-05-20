@@ -329,6 +329,11 @@ new class extends Component
         $tournament = Tournament::with(['pools.users', 'pools.pairs', 'pools.tournament'])->findOrFail($this->tournamentId);
         app(TournamentMatchService::class)->generateTournamentMatches($tournament);
 
+        $matchService = app(TournamentMatchService::class);
+        foreach ($tournament->pools()->with('users')->get() as $pool) {
+            $matchService->assignRefereesToPool($pool);
+        }
+
         $this->success(__('Matches generated!'), icon: 'o-table-cells');
     }
 

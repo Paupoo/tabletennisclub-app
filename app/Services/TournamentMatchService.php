@@ -379,6 +379,79 @@ class TournamentMatchService
     ];
 
     /**
+     * Assign referees to all matches in a pool using a min-count algorithm.
+     * For each match (in match_order), pick the eligible player (not playing) with
+     * the fewest prior referee assignments. Ties are broken randomly.
+     * Supports both singles (pool_user) and doubles (pool_pair — all individual
+     * players from every pair are candidates).
+     */
+    public function assignRefereesToPool(Pool $pool): void
+    {
+        $pool->loadMissing(['tournament', 'users', 'pairs.player1', 'pairs.player2']);
+
+        $matches = TournamentMatch::where('pool_id', $pool->id)
+            ->orderBy('match_order')
+            ->with(['pair1', 'pair2'])
+            ->get();
+
+        if ($matches->isEmpty()) {
+            return;
+        }
+
+        $isDoubles = $pool->tournament?->match_type === 'double';
+
+        if ($isDoubles) {
+            // Build candidate list from all individual players in the pool's pairs
+            $allPlayerIds = $pool->pairs->flatMap(
+                fn ($pair) => array_filter([$pair->player1_id, $pair->player2_id])
+            )->unique()->values()->toArray();
+        } else {
+            $allPlayerIds = $pool->users->pluck('id')->toArray();
+        }
+
+        if (empty($allPlayerIds)) {
+            return;
+        }
+
+        /** @var array<int, int> player_id => referee assignment count */
+        $refereeCount = array_fill_keys($allPlayerIds, 0);
+
+        foreach ($matches as $match) {
+            if ($isDoubles) {
+                $playing = array_filter([
+                    $match->pair1?->player1_id,
+                    $match->pair1?->player2_id,
+                    $match->pair2?->player1_id,
+                    $match->pair2?->player2_id,
+                ]);
+            } else {
+                if ($match->player1_id === null || $match->player2_id === null) {
+                    continue;
+                }
+                $playing = [$match->player1_id, $match->player2_id];
+            }
+
+            $eligible = array_keys(array_filter(
+                $refereeCount,
+                fn ($count, $id) => ! in_array($id, $playing, true),
+                ARRAY_FILTER_USE_BOTH
+            ));
+
+            if (empty($eligible)) {
+                continue;
+            }
+
+            shuffle($eligible);
+            $minCount = min(array_map(fn ($id) => $refereeCount[$id], $eligible));
+            $candidates = array_filter($eligible, fn ($id) => $refereeCount[$id] === $minCount);
+            $refereeId = (int) array_values($candidates)[0];
+
+            $match->update(['referee_id' => $refereeId]);
+            $refereeCount[$refereeId]++;
+        }
+    }
+
+    /**
      * Doubles handicap: average of the 4 individual cross-handicaps, rounded up.
      * Returns ['pair1_handicap' => int, 'pair2_handicap' => int].
      * The handicap is assigned to the weaker pair (higher handicap = more points given).
@@ -530,6 +603,55 @@ class TournamentMatchService
             ['sets_won', 'desc'],
             ['total_points', 'desc'],
         ])->values();
+    }
+
+    /**
+     * Returns a human-readable conflict message if any player or the referee of $match
+     * is already involved in another in-progress match of the same tournament, null otherwise.
+     * Handles both singles (player1/2_id) and doubles (all 4 pair members).
+     */
+    public function detectStartConflict(Tournament $tournament, TournamentMatch $match): ?string
+    {
+        $activeMatches = TournamentMatch::where('tournament_id', $tournament->id)
+            ->where('status', 'in_progress')
+            ->with(['pair1', 'pair2'])
+            ->get();
+
+        $busyIds = collect();
+        foreach ($activeMatches as $active) {
+            if ($active->pair1_id) {
+                $busyIds->push($active->pair1?->player1_id, $active->pair1?->player2_id);
+                $busyIds->push($active->pair2?->player1_id, $active->pair2?->player2_id);
+            } else {
+                $busyIds->push($active->player1_id, $active->player2_id);
+            }
+            if ($active->referee_id) {
+                $busyIds->push($active->referee_id);
+            }
+        }
+        $busyIds = $busyIds->filter()->unique()->values();
+
+        if ($match->pair1_id) {
+            $incomingIds = collect([
+                $match->pair1?->player1_id,
+                $match->pair1?->player2_id,
+                $match->pair2?->player1_id,
+                $match->pair2?->player2_id,
+                $match->referee_id,
+            ])->filter();
+        } else {
+            $incomingIds = collect([$match->player1_id, $match->player2_id, $match->referee_id])->filter();
+        }
+
+        $conflicts = $incomingIds->intersect($busyIds);
+
+        if ($conflicts->isEmpty()) {
+            return null;
+        }
+
+        $names = $conflicts->map(fn ($id) => User::find($id)?->full_name ?? "#{$id}")->join(', ');
+
+        return __('Conflict: :names already in an active match.', ['names' => $names]);
     }
 
     /**

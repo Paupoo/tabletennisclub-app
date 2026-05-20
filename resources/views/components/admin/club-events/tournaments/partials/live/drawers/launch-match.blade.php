@@ -14,12 +14,13 @@
             <div class="space-y-3">
                 @foreach ($this->upcomingMatches as $index => $match)
                     @php
-                        $isFirst    = $index === 0;
-                        $isPool     = $match->pool_id !== null;
-                        $label      = $isPool ? ($match->pool?->name ?? __('Pool')) : __('Bracket');
-                        $isDoubles  = $match->pair1_id !== null;
-                        $side1Name  = $isDoubles ? ($match->pair1?->displayName() ?? '—') : ($match->player1?->full_name ?? '—');
-                        $side2Name  = $isDoubles ? ($match->pair2?->displayName() ?? '—') : ($match->player2?->full_name ?? '—');
+                        $isFirst      = $index === 0;
+                        $isPool       = $match->pool_id !== null;
+                        $label        = $isPool ? ($match->pool?->name ?? __('Pool')) : __('Bracket');
+                        $isDoubles    = $match->pair1_id !== null;
+                        $side1Name    = $isDoubles ? ($match->pair1?->displayName() ?? '—') : ($match->player1?->full_name ?? '—');
+                        $side2Name    = $isDoubles ? ($match->pair2?->displayName() ?? '—') : ($match->player2?->full_name ?? '—');
+                        $refereeName  = $match->referee?->full_name;
                     @endphp
 
                     <div class="relative group" wire:key="launch-match-{{ $match->id }}">
@@ -43,6 +44,12 @@
                                     <span class="text-[10px] opacity-30 italic font-black my-0.5">VS</span>
                                     <span class="font-bold text-sm truncate">{{ $side2Name }}</span>
                                 </div>
+                                @if ($refereeName)
+                                    <div class="mt-1.5 flex items-center gap-1 text-xs opacity-50">
+                                        <x-icon name="o-eye" class="w-3 h-3 shrink-0" />
+                                        <span>{{ $refereeName }}</span>
+                                    </div>
+                                @endif
                             </div>
 
                             <div class="ml-4 shrink-0">

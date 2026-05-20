@@ -9,11 +9,12 @@
         <div class="flex flex-col gap-3 lg:max-w-2xl">
             @foreach ($this->upcomingMatches as $index => $match)
                 @php
-                    $isDoubles = $match->pair1_id !== null;
-                    $side1Name = $isDoubles ? ($match->pair1?->displayName() ?? '—') : ($match->player1?->full_name ?? '—');
-                    $side2Name = $isDoubles ? ($match->pair2?->displayName() ?? '—') : ($match->player2?->full_name ?? '—');
-                    $side1Rank = $isDoubles ? ($match->pair1?->averageRanking() ?? 'NC') : ($match->player1?->ranking ?? 'NC');
-                    $side2Rank = $isDoubles ? ($match->pair2?->averageRanking() ?? 'NC') : ($match->player2?->ranking ?? 'NC');
+                    $isDoubles    = $match->pair1_id !== null;
+                    $side1Name    = $isDoubles ? ($match->pair1?->displayName() ?? '—') : ($match->player1?->full_name ?? '—');
+                    $side2Name    = $isDoubles ? ($match->pair2?->displayName() ?? '—') : ($match->player2?->full_name ?? '—');
+                    $side1Rank    = $isDoubles ? ($match->pair1?->averageRanking() ?? 'NC') : ($match->player1?->ranking ?? 'NC');
+                    $side2Rank    = $isDoubles ? ($match->pair2?->averageRanking() ?? 'NC') : ($match->player2?->ranking ?? 'NC');
+                    $refereeName  = $match->referee?->full_name;
                     $isPool  = $match->pool_id !== null;
                     $isReady = $match->player1_id !== null && $match->player2_id !== null;
                     $label   = $isPool
@@ -70,16 +71,15 @@
                                 @endif
                             </div>
                         </div>
+                        @if ($refereeName)
+                            <div class="mt-1.5 flex items-center gap-1 text-xs opacity-50">
+                                <x-icon name="o-eye" class="w-3 h-3 shrink-0" />
+                                <span>{{ $refereeName }}</span>
+                            </div>
+                        @endif
                     </div>
                 </div>
             @endforeach
-        </div>
-
-        <div class="mt-12 p-4 bg-primary/10 border border-primary/20 rounded-lg flex items-center gap-4 lg:max-w-2xl">
-            <x-icon name="o-information-circle" class="w-6 h-6 text-primary shrink-0" />
-            <p class="text-xs leading-tight text-base-content/70">
-                {{ __('Matches are refereed by the players from the previous match on the same table.') }}
-            </p>
         </div>
     @endif
 

@@ -99,6 +99,7 @@ class TournamentMatch extends Model
         'player1_handicap_points',
         'player2_handicap_points',
         'winner_id',
+        'referee_id',
         'status', // 'scheduled', 'in_progress', 'completed'
         'match_order',
         'scheduled_time',
@@ -225,6 +226,11 @@ class TournamentMatch extends Model
         $this->winner_id = ($player1SetsWon > $player2SetsWon) ? $this->player1_id : $this->player2_id;
         $this->status = 'completed';
         $this->save();
+    }
+
+    public function referee(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'referee_id');
     }
 
     /**

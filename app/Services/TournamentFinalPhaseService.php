@@ -16,6 +16,40 @@ class TournamentFinalPhaseService
         private readonly TournamentPoolService $tournamentPoolService,
     ) {}
 
+    /**
+     * After a bracket match completes, assign the loser as referee for the next
+     * unstarted match in the bracket (if they are not already playing in it).
+     * Among multiple candidates, prefer the one with fewest referee assignments.
+     */
+    public function assignBracketReferee(TournamentMatch $completedMatch, int $winnerId): void
+    {
+        $loserId = $completedMatch->player1_id === $winnerId
+            ? $completedMatch->player2_id
+            : $completedMatch->player1_id;
+
+        if ($loserId === null) {
+            return;
+        }
+
+        $nextScheduled = TournamentMatch::where('tournament_id', $completedMatch->tournament_id)
+            ->whereNotNull('round')
+            ->where('status', 'scheduled')
+            ->whereNull('referee_id')
+            ->orderBy('match_order')
+            ->first();
+
+        if ($nextScheduled === null) {
+            return;
+        }
+
+        // Don't assign if the loser is already playing in that match
+        if ($nextScheduled->player1_id === $loserId || $nextScheduled->player2_id === $loserId) {
+            return;
+        }
+
+        $nextScheduled->update(['referee_id' => $loserId]);
+    }
+
     public function checkIfAllPoolsAreFinished(Tournament $tournament): bool
     {
         $result = true;
@@ -67,6 +101,8 @@ class TournamentFinalPhaseService
             'winner_id' => $winnerId,
             'status' => 'completed',
         ]);
+
+        $this->assignBracketReferee($match, $winnerId);
 
         // If there's a next match with one of our players, reset it
         $this->cleanNextMatch($match);

@@ -184,6 +184,32 @@
             </div>
         @endif
 
+        {{-- Table idle warning (referee rule: 3 people per singles match, 5 per doubles) --}}
+        @php $eff = $this->tableEfficiency; @endphp
+        @if ($this->nbTables > 0 && $eff['idle'] > 0)
+            <div class="lg:col-span-2 p-3 rounded-xl border border-warning/40 bg-warning/5 space-y-2">
+                <div class="flex items-center gap-2 text-sm font-semibold text-warning">
+                    <x-icon name="o-exclamation-triangle" class="w-4 h-4 shrink-0" />
+                    {{ __('~:n table(s) may sit idle', ['n' => $eff['idle']]) }}
+                </div>
+                <p class="text-[11px] text-base-content/60">
+                    {{ __('With this setup, not all tables can stay busy at the same time — which stretches the tournament duration.') }}
+                </p>
+                <ul class="text-[11px] text-base-content/70 space-y-0.5 pl-1">
+                    @if ($eff['extraPools'] > 0)
+                        <li>→ {{ __('Add :n pool(s) to reach :t pools total', ['n' => $eff['extraPools'], 't' => $eff['suggestedNbPools']]) }}</li>
+                    @endif
+                    @if ($eff['nextBetterPoolSize'])
+                        <li>→ {{ $matchType === 'double'
+                                ? __('Use :n pairs/pool instead of :c', ['n' => $eff['nextBetterPoolSize'], 'c' => $pool_size])
+                                : __('Use :n players/pool instead of :c', ['n' => $eff['nextBetterPoolSize'], 'c' => $pool_size]) }}
+                        </li>
+                    @endif
+                    <li>→ {{ __('Reduce available tables to :n', ['n' => max(1, $eff['usefulTables'])]) }}</li>
+                </ul>
+            </div>
+        @endif
+
         <div class="lg:col-span-2">
             <x-textarea label="Additional information" rows="4"
                 placeholder="Specific rules, dress code..." />

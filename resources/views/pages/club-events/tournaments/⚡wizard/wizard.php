@@ -1320,6 +1320,46 @@ new class extends Component
         unset($this->invitationHistory);
     }
 
+    // ── Computed: table efficiency (referee constraint)
+
+    /**
+     * Idle tables given the referee rule (3 people per singles match, 5 per doubles).
+     *
+     * @return array{idle: int, usefulTables: int, extraPools: int, suggestedNbPools: int, nextBetterPoolSize: int|null}
+     */
+    #[Computed]
+    public function tableEfficiency(): array
+    {
+        $tablesPerPool = $this->matchType === 'double'
+            ? max(1, (int) floor($this->pool_size * 2 / 5))
+            : max(1, (int) floor($this->pool_size / 3));
+
+        $usefulTables = $this->nb_poules * $tablesPerPool;
+        $idle = max(0, $this->nbTables - $usefulTables);
+        $extraPools = $tablesPerPool > 0 ? (int) floor($idle / $tablesPerPool) : 0;
+
+        $nextBetterPoolSize = null;
+
+        foreach (range($this->pool_size + 1, 6) as $size) {
+            $candidate = $this->matchType === 'double'
+                ? max(1, (int) floor($size * 2 / 5))
+                : max(1, (int) floor($size / 3));
+
+            if ($candidate > $tablesPerPool) {
+                $nextBetterPoolSize = $size;
+                break;
+            }
+        }
+
+        return [
+            'idle' => $idle,
+            'usefulTables' => $usefulTables,
+            'extraPools' => $extraPools,
+            'suggestedNbPools' => $this->nb_poules + $extraPools,
+            'nextBetterPoolSize' => $nextBetterPoolSize,
+        ];
+    }
+
     // ── Computed: simulation
 
     #[Computed]

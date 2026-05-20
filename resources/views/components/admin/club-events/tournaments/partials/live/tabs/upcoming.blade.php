@@ -1,4 +1,4 @@
-<div wire:poll.10s class="mt-6">
+<div @if($tournament->status === \App\Enums\TournamentStatusEnum::PENDING) wire:poll.5s @endif class="mt-6">
 
     @if ($this->upcomingMatches->isEmpty())
         <div class="flex flex-col items-center py-20 opacity-30">

@@ -1,4 +1,4 @@
-<div wire:poll.30s class="mt-6">
+<div @if($tournament->status === \App\Enums\TournamentStatusEnum::PENDING) wire:poll.5s @endif class="mt-6">
     @if ($this->pools->isEmpty())
         <div class="flex flex-col items-center py-20 opacity-30">
             <x-icon name="o-user-group" class="w-12 h-12 mb-3" />

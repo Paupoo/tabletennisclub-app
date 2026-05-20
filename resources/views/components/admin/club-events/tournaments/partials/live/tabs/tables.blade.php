@@ -1,4 +1,4 @@
-<div wire:poll.10s class="mt-6">
+<div @if($tournament->status === \App\Enums\TournamentStatusEnum::PENDING) wire:poll.5s @endif class="mt-6">
     @if ($this->tables->isEmpty())
         <div class="flex flex-col items-center py-20 opacity-30">
             <x-icon name="o-squares-2x2" class="w-12 h-12 mb-3" />
@@ -26,8 +26,21 @@
                             $svgSmall = substr($writer->write($qrSmall)->getString(), 22);
                         @endphp
 
+                        @php
+                            $minutesElapsed = ! $table['is_free'] && $table['match_started_at']
+                                ? (int) \Carbon\Carbon::parse($table['match_started_at'])->diffInMinutes(now())
+                                : 0;
+                            $isOverdue = $minutesElapsed > 20;
+                        @endphp
                         <x-card wire:key="table-{{ $table['id'] }}" shadow
-                            class="border {{ $table['is_free'] ? 'bg-base-200/40 border-base-300' : 'bg-base-100 border-primary/20' }} relative">
+                            class="border transition-all {{ $table['is_free'] ? 'bg-base-200/40 border-base-300' : ($isOverdue ? 'bg-error/5 border-error/50 ring-1 ring-error/30' : 'bg-base-100 border-primary/20') }} relative">
+
+                            @if ($isOverdue)
+                                <div class="flex items-center gap-1.5 text-error text-[11px] font-bold mb-2 animate-pulse">
+                                    <x-icon name="o-exclamation-triangle" class="w-3.5 h-3.5 shrink-0" />
+                                    {{ __(':n min — check the referee!', ['n' => $minutesElapsed]) }}
+                                </div>
+                            @endif
 
                             <div class="flex justify-between items-start mb-4">
                                 <div>
@@ -43,7 +56,9 @@
                                             ? \Carbon\Carbon::parse($table['match_started_at'])->diffForHumans(short: true)
                                             : null;
                                     @endphp
-                                    <x-badge value="{{ $elapsed ?? '—' }}" class="badge-ghost badge-xs" icon="o-clock" />
+                                    <x-badge value="{{ $elapsed ?? '—' }}"
+                                        class="{{ $isOverdue ? 'badge-error' : 'badge-ghost' }} badge-xs"
+                                        icon="o-clock" />
                                 @endif
                             </div>
 
@@ -64,6 +79,12 @@
                                         </div>
                                         <div class="text-[11px] text-right font-bold truncate">{{ $side2Name }}</div>
                                     </div>
+                                    
+                                    <div class="flex gap-2 pt-1">
+                                        <x-button label="{{ __('Score') }}" icon="o-pencil"
+                                            class="btn-ghost btn-xs flex-1 bg-base-200"
+                                            wire:click="openScoreEntry({{ $match->id }}, {{ $table['id'] }})" />
+                                    </div>
 
                                     @if ($match->sets->count())
                                         <div class="flex flex-wrap justify-center gap-1">
@@ -75,11 +96,6 @@
                                         </div>
                                     @endif
 
-                                    <div class="flex gap-2 pt-1">
-                                        <x-button label="{{ __('Score') }}" icon="o-pencil"
-                                            class="btn-ghost btn-xs flex-1 bg-base-200"
-                                            wire:click="openScoreEntry({{ $match->id }}, {{ $table['id'] }})" />
-                                    </div>
                                 @else
                                     <div class="py-4 flex flex-col items-center justify-center border-2 border-dashed border-base-300 rounded-lg gap-3">
                                         <x-button
@@ -91,11 +107,11 @@
                                 @endif
 
                                 {{-- QR code — direct link to mobile score page --}}
-                                <a href="{{ $tableUrl }}" target="_blank"
+                                {{-- <a href="{{ $tableUrl }}" target="_blank"
                                     class="w-full flex justify-center pt-1 opacity-40 hover:opacity-90 transition-opacity"
                                     title="{{ __('Open mobile score page') }}">
                                     {!! $svgSmall !!}
-                                </a>
+                                </a> --}}
                             </div>
                         </x-card>
                     @endforeach

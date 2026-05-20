@@ -23,7 +23,7 @@
     ];
 @endphp
 
-<div class="mt-6">
+<div @if($tournament->status === \App\Enums\TournamentStatusEnum::PENDING) wire:poll.5s @endif class="mt-6">
 
     @if ($rankings->isEmpty())
         <div class="flex flex-col items-center py-20 opacity-30">

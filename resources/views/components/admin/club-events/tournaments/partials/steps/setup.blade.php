@@ -167,48 +167,6 @@
             icon="o-trophy" type="number" hint="Players advancing to the bracket" min="1"
             numeric />
 
-        {{-- Estimated capacity --}}
-        @php $estimatedCapacity = (int)$nb_poules * (int)$pool_size; @endphp
-        @if ($estimatedCapacity > 0)
-            <div class="flex items-center gap-3 p-3 rounded-xl border {{ $estimatedCapacity > $maxUsers && $maxUsers > 0 ? 'border-warning/40 bg-warning/5' : 'border-success/30 bg-success/5' }}">
-                <x-icon name="o-user-group" class="w-5 h-5 {{ $estimatedCapacity > $maxUsers && $maxUsers > 0 ? 'text-warning' : 'text-success' }}" />
-                <div>
-                    <p class="text-xs font-semibold">{{ __('Estimated capacity') }}</p>
-                    <p class="text-sm font-bold tabular-nums">
-                        {{ $estimatedCapacity }} {{ __('players') }}
-                        @if($maxUsers > 0)
-                            <span class="text-base-content/50 font-normal">/ {{ $maxUsers }} max</span>
-                        @endif
-                    </p>
-                </div>
-            </div>
-        @endif
-
-        {{-- Table idle warning (referee rule: 3 people per singles match, 5 per doubles) --}}
-        @php $eff = $this->tableEfficiency; @endphp
-        @if ($this->nbTables > 0 && $eff['idle'] > 0)
-            <div class="lg:col-span-2 p-3 rounded-xl border border-warning/40 bg-warning/5 space-y-2">
-                <div class="flex items-center gap-2 text-sm font-semibold text-warning">
-                    <x-icon name="o-exclamation-triangle" class="w-4 h-4 shrink-0" />
-                    {{ __('~:n table(s) may sit idle', ['n' => $eff['idle']]) }}
-                </div>
-                <p class="text-[11px] text-base-content/60">
-                    {{ __('With this setup, not all tables can stay busy at the same time — which stretches the tournament duration.') }}
-                </p>
-                <ul class="text-[11px] text-base-content/70 space-y-0.5 pl-1">
-                    @if ($eff['extraPools'] > 0)
-                        <li>→ {{ __('Add :n pool(s) to reach :t pools total', ['n' => $eff['extraPools'], 't' => $eff['suggestedNbPools']]) }}</li>
-                    @endif
-                    @if ($eff['nextBetterPoolSize'])
-                        <li>→ {{ $matchType === 'double'
-                                ? __('Use :n pairs/pool instead of :c', ['n' => $eff['nextBetterPoolSize'], 'c' => $pool_size])
-                                : __('Use :n players/pool instead of :c', ['n' => $eff['nextBetterPoolSize'], 'c' => $pool_size]) }}
-                        </li>
-                    @endif
-                    <li>→ {{ __('Reduce available tables to :n', ['n' => max(1, $eff['usefulTables'])]) }}</li>
-                </ul>
-            </div>
-        @endif
 
         <div class="lg:col-span-2">
             <x-textarea label="Additional information" rows="4"
@@ -257,6 +215,7 @@
         $hours = intdiv($sim->estimatedMinutes, 60);
         $mins = $sim->estimatedMinutes % 60;
         $durationLabel = $hours > 0 ? "{$hours}h" . ($mins > 0 ? "{$mins}min" : '') : "{$mins}min";
+        $eff = $this->tableEfficiency;
     @endphp
 
     <div class="col-span-6">
@@ -277,40 +236,73 @@
                 </div>
             </x-slot:title>
 
-            <div class="space-y-5">
+            @php
+                $durationPct = $tournament_minutes > 0
+                    ? min(100, (int) round($sim->estimatedMinutes / $tournament_minutes * 100))
+                    : 0;
+                $durationRisk = $sim->estimatedMinutes > $tournament_minutes ? 'error'
+                    : ($durationPct >= 80 ? 'warning' : 'success');
+                // Efficiency-based color: high occupancy = good (tables well-used).
+                $occupancyColor = $occupancy > 100 ? 'error' : ($occupancy >= 70 ? 'success' : 'warning');
+            @endphp
 
-                {{-- Occupancy bar --}}
-                <div class="space-y-1.5">
-                    <div class="flex items-baseline justify-between gap-2 text-sm">
-                        <span class="text-base-content/60 shrink-0">Table occupancy</span>
-                        <span class="font-medium tabular-nums">{{ min($occupancy, 999) }}%</span>
-                    </div>
-                    <x-progress value="{{ min($occupancy, 100) }}" max="100"
-                        class="progress-{{ $risk === 'ok' ? 'success' : ($risk === 'warning' ? 'warning' : 'error') }} h-2" />
-                    <div class="flex justify-between text-xs text-base-content/40">
-                        <span>{{ $sim->grandTotalMatches }} needed</span>
-                        <span>{{ $sim->totalMatchCapacity }} max</span>
-                    </div>
-                </div>
+            <div class="space-y-5">
 
                 {{-- Key metrics --}}
                 <div class="divide-y divide-base-200">
 
-                    <div class="flex items-center justify-between py-2.5">
-                        <div class="flex items-center gap-2 text-sm text-base-content/60">
-                            <x-icon name="o-clock" class="w-4 h-4 shrink-0" />
-                            <span>Estimated duration</span>
+                    {{-- Duration + progress bar --}}
+                    <div class="py-2.5 space-y-1.5">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2 text-sm text-base-content/60">
+                                <x-icon name="o-clock" class="w-4 h-4 shrink-0" />
+                                <span>Estimated duration</span>
+                            </div>
+                            <div class="text-right text-sm">
+                                <span class="font-semibold tabular-nums {{ $durationRisk === 'error' ? 'text-error' : '' }}">
+                                    {{ $durationLabel }}
+                                </span>
+                                <span class="text-base-content/40 ml-1">/ {{ intdiv($tournament_minutes, 60) }}h</span>
+                            </div>
                         </div>
-                        <div class="text-right text-sm">
-                            <span
-                                class="font-semibold tabular-nums {{ $sim->estimatedMinutes > $tournament_minutes ? 'text-error' : '' }}">
-                                {{ $durationLabel }}
+                        <x-progress value="{{ $durationPct }}" max="100"
+                            class="progress-{{ $durationRisk }} h-1.5" />
+                    </div>
+
+                    {{-- Table occupancy bar (efficiency: green = tables well-used) --}}
+                    <div class="py-2.5 space-y-1.5">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2 text-sm text-base-content/60">
+                                <x-icon name="o-chart-bar" class="w-4 h-4 shrink-0" />
+                                <span>Table occupancy</span>
+                            </div>
+                            <span class="font-medium tabular-nums text-sm">{{ min($occupancy, 999) }}%</span>
+                        </div>
+                        <x-progress value="{{ min($occupancy, 100) }}" max="100"
+                            class="progress-{{ $occupancyColor }} h-1.5" />
+                        <div class="flex justify-between text-xs text-base-content/40">
+                            <span class="tooltip tooltip-bottom cursor-help"
+                                data-tip="{{ __('Matches to play: pool rounds + bracket') }}">
+                                {{ $sim->grandTotalMatches }} {{ __('needed') }}
                             </span>
-                            <span class="text-base-content/40 ml-1">/
-                                {{ intdiv($tournament_minutes, 60) }}h</span>
+                            <span class="tooltip tooltip-bottom cursor-help"
+                                data-tip="{{ __('Table capacity: max matches that fit within the available time') }}">
+                                {{ $sim->totalMatchCapacity }} {{ __('max') }}
+                            </span>
                         </div>
                     </div>
 
+                    <div class="flex items-center justify-between py-2.5">
+                        <div class="flex items-center gap-2 text-sm text-base-content/60">
+                            <x-icon name="o-user-group" class="w-4 h-4 shrink-0" />
+                            <span>Capacity</span>
+                        </div>
+                        <div class="text-right text-sm">
+                            <span class="font-semibold tabular-nums">{{ $sim->totalPlayers }} {{ __('players') }}</span>
+                            <span class="text-base-content/40 ml-1">{{ $nb_poules }}×{{ $pool_size }} → {{ $sim->finalistsCount }} finalists</span>
+                        </div>
+                    </div>
+                    
                     <div class="flex items-center justify-between py-2.5">
                         <div class="flex items-center gap-2 text-sm text-base-content/60">
                             <x-icon name="o-table-cells" class="w-4 h-4 shrink-0" />
@@ -320,18 +312,6 @@
                             <span class="font-semibold tabular-nums">{{ $sim->grandTotalMatches }}</span>
                             <span class="text-base-content/40 ml-1">{{ $sim->poolMatchesTotal }}
                                 pools · {{ $sim->bracketMatchesTotal }} bracket</span>
-                        </div>
-                    </div>
-
-                    <div class="flex items-center justify-between py-2.5">
-                        <div class="flex items-center gap-2 text-sm text-base-content/60">
-                            <x-icon name="o-user-group" class="w-4 h-4 shrink-0" />
-                            <span>Players</span>
-                        </div>
-                        <div class="text-right text-sm">
-                            <span class="font-semibold tabular-nums">{{ $sim->totalPlayers }}</span>
-                            <span class="text-base-content/40 ml-1">→ {{ $sim->finalistsCount }}
-                                finalists</span>
                         </div>
                     </div>
 
@@ -359,21 +339,43 @@
 
                 </div>
 
-                {{-- Contextual alert --}}
-                @if ($risk === 'danger')
-                    <x-alert
-                        title="{{ $sim->grandTotalMatches - $sim->totalMatchCapacity }} matches over capacity"
-                        description="Reduce the number of pools, pool size, or increase available tables / total duration."
-                        icon="o-x-circle" class="alert-error alert-soft" />
-                @elseif ($risk === 'warning')
-                    <x-alert title="Tight schedule"
-                        description="Delays could compromise the end of the tournament. A 20% safety margin is recommended."
-                        icon="o-exclamation-triangle" class="alert-warning alert-soft" />
-                @else
-                    <x-alert title="Configuration looks good"
-                        description="Buffer: {{ $sim->safetyMarginMatches }} matches to absorb unexpected delays."
-                        icon="o-check-circle" class="alert-success alert-soft" />
-                @endif
+                {{-- Recommendations --}}
+                <div class="space-y-2 pt-1">
+                    @if ($risk === 'danger')
+                        <x-alert
+                            title="{{ $sim->grandTotalMatches - $sim->totalMatchCapacity }} matches over capacity"
+                            description="Reduce pools, pool size, or increase available tables / total duration."
+                            icon="o-x-circle" class="alert-error alert-soft" />
+                    @elseif ($risk === 'warning')
+                        <x-alert title="Tight schedule"
+                            description="Delays could compromise the end of the tournament. A 20% safety margin is recommended."
+                            icon="o-exclamation-triangle" class="alert-warning alert-soft" />
+                    @else
+                        <x-alert title="Configuration looks good"
+                            description="Buffer: {{ $sim->safetyMarginMatches }} matches to absorb unexpected delays."
+                            icon="o-check-circle" class="alert-success alert-soft" />
+                    @endif
+
+                    @if ($this->nbTables > 0 && $eff['idle'] > 0)
+                        <div class="p-3 rounded-xl border border-warning/40 bg-warning/5 space-y-1.5">
+                            <div class="flex items-center gap-2 text-xs font-semibold text-warning">
+                                <x-icon name="o-exclamation-triangle" class="w-3.5 h-3.5 shrink-0" />
+                                {{ __('~:n table(s) may sit idle — tournament will run longer than needed', ['n' => $eff['idle']]) }}
+                            </div>
+                            <ul class="text-[11px] text-base-content/60 space-y-0.5 pl-1">
+                                @if ($eff['extraPools'] > 0)
+                                    <li>→ {{ __('Add :n pool(s) → :t total', ['n' => $eff['extraPools'], 't' => $eff['suggestedNbPools']]) }}</li>
+                                @endif
+                                @if ($eff['nextBetterPoolSize'])
+                                    <li>→ {{ $matchType === 'double'
+                                            ? __(':n pairs/pool instead of :c', ['n' => $eff['nextBetterPoolSize'], 'c' => $pool_size])
+                                            : __(':n players/pool instead of :c', ['n' => $eff['nextBetterPoolSize'], 'c' => $pool_size]) }}</li>
+                                @endif
+                                <li>→ {{ __('Reduce to :n tables', ['n' => max(1, $eff['usefulTables'])]) }}</li>
+                            </ul>
+                        </div>
+                    @endif
+                </div>
 
             </div>
 

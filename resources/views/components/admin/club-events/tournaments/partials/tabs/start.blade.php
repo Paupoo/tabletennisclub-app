@@ -33,7 +33,6 @@
     {{-- Generate Pools --}}
     <x-header title="{{ __('Pools') }}" subtitle="Distribute players automatically, then adjust if needed" class="mt-8" size="md">
         <x-slot:actions>
-            <x-button label="{{ __('Final setup') }}" class="btn-ghost btn-sm" @click="$wire.setupDrawer = true" />
             <x-button label="{{ $this->poolsGenerated ? __('Regenerate Pools') : __('Generate Pools') }}"
                 icon="o-user-group"
                 class="btn-primary btn-sm"

@@ -11,6 +11,7 @@ use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Tournament\TournamentMatch;
 use App\Services\TournamentTableService;
 use Illuminate\Support\Facades\DB;
+use Livewire\Livewire;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -244,5 +245,225 @@ describe('TournamentTableService::freeUsedTable', function () {
         expect((bool) $pivot->is_table_free)->toBeTrue()
             ->and($pivot->match_ended_at)->not->toBeNull();
     })->group('score', 'table');
+
+})->group('score');
+
+// ── Table score entry Livewire component ──────────────────────────────────────
+
+describe('TableScoreEntry Livewire component', function () {
+
+    function scoreEntryComponent(User $user, Tournament $tournament, TournamentMatch $match, Table $table)
+    {
+        return Livewire::actingAs($user)
+            ->test('pages::club-events.tournaments.table-score-entry', [
+                'tournament' => $tournament,
+                'table' => $table,
+                'match' => $match,
+            ]);
+    }
+
+    it('redirects to the same page after a valid score submission', function () {
+        $p1 = User::factory()->create();
+        $p2 = User::factory()->create();
+        $tournament = makePendingTournament(['sets_to_win' => 3]);
+        $match = makePoolMatch($tournament, $p1, $p2);
+
+        $room = Room::factory()->create();
+        $table = Table::create([
+            'name' => 'T1', 'state' => 'used',
+            'purchased_on' => now()->subYears(1)->toDateString(),
+            'room_id' => $room->id,
+        ]);
+        $tournament->tables()->attach($table->id, [
+            'is_table_free' => false,
+            'tournament_match_id' => $match->id,
+            'match_started_at' => now()->subMinutes(5),
+        ]);
+
+        scoreEntryComponent($p1, $tournament, $match, $table)
+            ->set('setScores.0.p1', '11')
+            ->set('setScores.0.p2', '5')
+            ->set('setScores.1.p1', '11')
+            ->set('setScores.1.p2', '7')
+            ->set('setScores.2.p1', '11')
+            ->set('setScores.2.p2', '4')
+            ->call('submitScore')
+            ->assertRedirect(route('tournament.table.score', [
+                'tournament' => $tournament->id,
+                'table' => $table->id,
+            ]));
+    })->group('score', 'livewire');
+
+    it('does not set submitted when no sets are entered', function () {
+        $p1 = User::factory()->create();
+        $p2 = User::factory()->create();
+        $tournament = makePendingTournament();
+        $match = makePoolMatch($tournament, $p1, $p2);
+
+        $room = Room::factory()->create();
+        $table = Table::create([
+            'name' => 'T2', 'state' => 'used',
+            'purchased_on' => now()->subYears(1)->toDateString(),
+            'room_id' => $room->id,
+        ]);
+        $tournament->tables()->attach($table->id, [
+            'is_table_free' => false,
+            'tournament_match_id' => $match->id,
+            'match_started_at' => now()->subMinutes(5),
+        ]);
+
+        scoreEntryComponent($p1, $tournament, $match, $table)
+            ->call('submitScore')
+            ->assertSet('submitted', false);
+    })->group('score', 'livewire');
+
+    it('does not set submitted when match is not yet finished', function () {
+        $p1 = User::factory()->create();
+        $p2 = User::factory()->create();
+        $tournament = makePendingTournament(['sets_to_win' => 3]);
+        $match = makePoolMatch($tournament, $p1, $p2);
+
+        $room = Room::factory()->create();
+        $table = Table::create([
+            'name' => 'T3', 'state' => 'used',
+            'purchased_on' => now()->subYears(1)->toDateString(),
+            'room_id' => $room->id,
+        ]);
+        $tournament->tables()->attach($table->id, [
+            'is_table_free' => false,
+            'tournament_match_id' => $match->id,
+            'match_started_at' => now()->subMinutes(5),
+        ]);
+
+        // Only one set entered — not enough for a winner
+        scoreEntryComponent($p1, $tournament, $match, $table)
+            ->set('setScores.0.p1', '11')
+            ->set('setScores.0.p2', '5')
+            ->call('submitScore')
+            ->assertSet('submitted', false);
+    })->group('score', 'livewire');
+
+    it('marks the match as completed after submission', function () {
+        $p1 = User::factory()->create();
+        $p2 = User::factory()->create();
+        $tournament = makePendingTournament(['sets_to_win' => 3]);
+        $match = makePoolMatch($tournament, $p1, $p2);
+
+        $room = Room::factory()->create();
+        $table = Table::create([
+            'name' => 'T4', 'state' => 'used',
+            'purchased_on' => now()->subYears(1)->toDateString(),
+            'room_id' => $room->id,
+        ]);
+        $tournament->tables()->attach($table->id, [
+            'is_table_free' => false,
+            'tournament_match_id' => $match->id,
+            'match_started_at' => now()->subMinutes(5),
+        ]);
+
+        scoreEntryComponent($p1, $tournament, $match, $table)
+            ->set('setScores.0.p1', '11')->set('setScores.0.p2', '5')
+            ->set('setScores.1.p1', '11')->set('setScores.1.p2', '7')
+            ->set('setScores.2.p1', '11')->set('setScores.2.p2', '4')
+            ->call('submitScore');
+
+        expect($match->fresh()->status)->toBe('completed');
+    })->group('score', 'livewire');
+
+    it('frees the table after submission', function () {
+        $p1 = User::factory()->create();
+        $p2 = User::factory()->create();
+        $tournament = makePendingTournament(['sets_to_win' => 3]);
+        $match = makePoolMatch($tournament, $p1, $p2);
+
+        $room = Room::factory()->create();
+        $table = Table::create([
+            'name' => 'T5', 'state' => 'used',
+            'purchased_on' => now()->subYears(1)->toDateString(),
+            'room_id' => $room->id,
+        ]);
+        $tournament->tables()->attach($table->id, [
+            'is_table_free' => false,
+            'tournament_match_id' => $match->id,
+            'match_started_at' => now()->subMinutes(5),
+        ]);
+
+        scoreEntryComponent($p1, $tournament, $match, $table)
+            ->set('setScores.0.p1', '11')->set('setScores.0.p2', '5')
+            ->set('setScores.1.p1', '11')->set('setScores.1.p2', '7')
+            ->set('setScores.2.p1', '11')->set('setScores.2.p2', '4')
+            ->call('submitScore');
+
+        $pivot = DB::table('table_tournament')
+            ->where('tournament_id', $tournament->id)
+            ->where('table_id', $table->id)
+            ->first();
+
+        expect((bool) $pivot->is_table_free)->toBeTrue();
+    })->group('score', 'livewire');
+
+    // ── Live sync (rendering() hook) ─────────────────────────────────────────
+
+    it('syncs setScores from DB on poll when referee has not typed anything', function () {
+        $p1 = User::factory()->create();
+        $p2 = User::factory()->create();
+        $tournament = makePendingTournament(['sets_to_win' => 3]);
+        $match = makePoolMatch($tournament, $p1, $p2);
+
+        $room = Room::factory()->create();
+        $table = Table::create([
+            'name' => 'T6', 'state' => 'used',
+            'purchased_on' => now()->subYears(1)->toDateString(),
+            'room_id' => $room->id,
+        ]);
+        $tournament->tables()->attach($table->id, [
+            'is_table_free' => false,
+            'tournament_match_id' => $match->id,
+            'match_started_at' => now()->subMinutes(5),
+        ]);
+
+        $component = scoreEntryComponent($p1, $tournament, $match, $table);
+
+        // Simulate admin entering a set from the live-center (writes directly to DB)
+        $match->saveDraft([['player1_score' => 11, 'player2_score' => 5]]);
+
+        // Simulate a poll: calling render() re-invokes rendering() which syncs from DB
+        $component->call('$refresh');
+
+        expect($component->get('setScores.0.p1'))->toBe('11')
+            ->and($component->get('setScores.0.p2'))->toBe('5');
+    })->group('score', 'livewire', 'sync');
+
+    it('does not overwrite setScores from DB once the referee has typed', function () {
+        $p1 = User::factory()->create();
+        $p2 = User::factory()->create();
+        $tournament = makePendingTournament(['sets_to_win' => 3]);
+        $match = makePoolMatch($tournament, $p1, $p2);
+
+        $room = Room::factory()->create();
+        $table = Table::create([
+            'name' => 'T7', 'state' => 'used',
+            'purchased_on' => now()->subYears(1)->toDateString(),
+            'room_id' => $room->id,
+        ]);
+        $tournament->tables()->attach($table->id, [
+            'is_table_free' => false,
+            'tournament_match_id' => $match->id,
+            'match_started_at' => now()->subMinutes(5),
+        ]);
+
+        $component = scoreEntryComponent($p1, $tournament, $match, $table);
+
+        // Referee types their own score — sets scoresDirty = true
+        $component->set('setScores.0.p1', '9');
+
+        // Admin enters a different score directly in DB
+        $match->saveDraft([['player1_score' => 11, 'player2_score' => 5]]);
+
+        // Poll fires — should NOT overwrite the referee's "9"
+        $component->call('$refresh');
+
+        expect($component->get('setScores.0.p1'))->toBe('9');
+    })->group('score', 'livewire', 'sync');
 
 })->group('score');

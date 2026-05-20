@@ -14,25 +14,44 @@
             <div class="space-y-3">
                 @foreach ($this->upcomingMatches as $index => $match)
                     @php
-                        $isFirst      = $index === 0;
-                        $isPool       = $match->pool_id !== null;
-                        $label        = $isPool ? ($match->pool?->name ?? __('Pool')) : __('Bracket');
-                        $isDoubles    = $match->pair1_id !== null;
-                        $side1Name    = $isDoubles ? ($match->pair1?->displayName() ?? '—') : ($match->player1?->full_name ?? '—');
-                        $side2Name    = $isDoubles ? ($match->pair2?->displayName() ?? '—') : ($match->player2?->full_name ?? '—');
-                        $refereeName  = $match->referee?->full_name;
+                        $busyIds     = $this->busyPlayerIds;
+                        $isFirst     = $index === 0;
+                        $isPool      = $match->pool_id !== null;
+                        $isReady     = $match->player1_id !== null && $match->player2_id !== null;
+                        $isDoubles   = $match->pair1_id !== null;
+                        $side1Ids    = $isDoubles
+                            ? collect([$match->pair1?->player1_id, $match->pair1?->player2_id])->filter()
+                            : collect([$match->player1_id])->filter();
+                        $side2Ids    = $isDoubles
+                            ? collect([$match->pair2?->player1_id, $match->pair2?->player2_id])->filter()
+                            : collect([$match->player2_id])->filter();
+                        $p1Busy      = $side1Ids->intersect($busyIds)->isNotEmpty();
+                        $p2Busy      = $side2Ids->intersect($busyIds)->isNotEmpty();
+                        $hasConflict = $isReady && ($p1Busy || $p2Busy);
+                        $label       = $isPool ? ($match->pool?->name ?? __('Pool')) : __('Bracket');
+                        $side1Name   = $isDoubles ? ($match->pair1?->displayName() ?? '—') : ($match->player1?->full_name ?? '—');
+                        $side2Name   = $isDoubles ? ($match->pair2?->displayName() ?? '—') : ($match->player2?->full_name ?? '—');
+                        $refereeName = $match->referee?->full_name;
                     @endphp
 
                     <div class="relative group" wire:key="launch-match-{{ $match->id }}">
-                        @if ($isFirst)
+                        @if ($hasConflict)
+                            <div class="absolute -top-2 left-4 z-10">
+                                <x-badge value="{{ __('Player busy') }}" icon="o-exclamation-triangle" class="badge-warning badge-xs font-bold shadow-sm" />
+                            </div>
+                        @elseif ($isFirst && ! $hasConflict)
                             <div class="absolute -top-2 left-4 z-10">
                                 <x-badge value="{{ __('Recommended') }}" class="badge-primary badge-xs font-bold shadow-sm" />
                             </div>
                         @endif
 
                         <div wire:click="startMatch({{ $match->id }})"
-                            class="p-4 rounded-xl border-2 transition-all cursor-pointer flex items-center justify-between
-                            {{ $isFirst ? 'border-primary bg-primary/5 ring-1 ring-primary/20' : 'border-base-200 hover:border-primary/40 bg-base-100' }}">
+                            @class([
+                                'p-4 rounded-xl border-2 transition-all cursor-pointer flex items-center justify-between',
+                                'border-warning/60 bg-warning/5 opacity-60' => $hasConflict,
+                                'border-primary bg-primary/5 ring-1 ring-primary/20' => $isFirst && ! $hasConflict,
+                                'border-base-200 hover:border-primary/40 bg-base-100' => ! $isFirst && ! $hasConflict,
+                            ])>
 
                             <div class="flex-1 min-w-0">
                                 <div class="flex items-center gap-2 mb-1">
@@ -40,9 +59,9 @@
                                         class="{{ $isPool ? 'badge-ghost' : 'badge-warning' }} badge-xs uppercase font-bold" />
                                 </div>
                                 <div class="flex flex-col">
-                                    <span class="font-bold text-sm truncate">{{ $side1Name }}</span>
+                                    <span @class(['font-bold text-sm truncate', 'text-warning line-through' => $p1Busy])>{{ $side1Name }}</span>
                                     <span class="text-[10px] opacity-30 italic font-black my-0.5">VS</span>
-                                    <span class="font-bold text-sm truncate">{{ $side2Name }}</span>
+                                    <span @class(['font-bold text-sm truncate', 'text-warning line-through' => $p2Busy])>{{ $side2Name }}</span>
                                 </div>
                                 @if ($refereeName)
                                     <div class="mt-1.5 flex items-center gap-1 text-xs opacity-50">
@@ -53,9 +72,13 @@
                             </div>
 
                             <div class="ml-4 shrink-0">
-                                <x-button icon="o-play"
-                                    class="btn-circle {{ $isFirst ? 'btn-primary' : 'btn-ghost' }} btn-sm"
-                                    wire:loading.attr="disabled" />
+                                @if ($hasConflict)
+                                    <x-icon name="o-exclamation-triangle" class="w-5 h-5 text-warning" />
+                                @else
+                                    <x-button icon="o-play"
+                                        class="btn-circle {{ $isFirst ? 'btn-primary' : 'btn-ghost' }} btn-sm"
+                                        wire:loading.attr="disabled" />
+                                @endif
                             </div>
                         </div>
                     </div>

@@ -1,6 +1,6 @@
 <x-guest-layout :title="$tournament->name . ' — Table ' . $table->name">
 
-    <div class="min-h-screen bg-base-200 flex flex-col items-center justify-start p-4 pt-8">
+    <div class="min-h-screen bg-base-200 flex flex-col items-center justify-start p-4 pt-20">
 
         {{-- Header --}}
         <div class="w-full max-w-sm mb-6 text-center px-2">

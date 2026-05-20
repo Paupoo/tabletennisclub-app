@@ -80,6 +80,13 @@
                                         <div class="text-[11px] text-right font-bold truncate">{{ $side2Name }}</div>
                                     </div>
                                     
+                                    @if ($match->referee)
+                                        <div class="flex items-center gap-1 text-[10px] opacity-50">
+                                            <x-icon name="o-eye" class="w-3 h-3 shrink-0" />
+                                            <span class="truncate">{{ $match->referee->full_name }}</span>
+                                        </div>
+                                    @endif
+
                                     <div class="flex gap-2 pt-1">
                                         <x-button label="{{ __('Score') }}" icon="o-pencil"
                                             class="btn-ghost btn-xs flex-1 bg-base-200"

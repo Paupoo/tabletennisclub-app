@@ -6,8 +6,10 @@ use App\Enums\TournamentStatusEnum;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Tournament\TournamentMatch;
+use App\Models\ClubEvents\Tournament\TournamentPair;
 use App\Services\TournamentMatchService;
 use App\Services\TournamentPoolService;
+use Livewire\Livewire;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -371,5 +373,201 @@ describe('TournamentMatchService::calculatePoolStandings', function () {
                 ->and($row['sets_won'])->toBe(0);
         }
     })->group('computed', 'standings');
+
+})->group('live-center');
+
+// ── busyPlayerIds ─────────────────────────────────────────────────────────────
+
+describe('busyPlayerIds', function () {
+
+    it('returns an empty array when no matches are in progress', function () {
+        $admin = User::factory()->isAdmin()->create();
+        $tournament = liveCenterTournament();
+        $p1 = User::factory()->create();
+        $p2 = User::factory()->create();
+        $pool = $tournament->pools()->create(['name' => 'A']);
+
+        TournamentMatch::create([
+            'tournament_id' => $tournament->id,
+            'pool_id' => $pool->id,
+            'player1_id' => $p1->id,
+            'player2_id' => $p2->id,
+            'player1_handicap_points' => 0,
+            'player2_handicap_points' => 0,
+            'status' => 'scheduled',
+            'match_order' => 1,
+        ]);
+
+        $component = Livewire::actingAs($admin)
+            ->test('pages::club-events.tournaments.live-center', ['tournament' => $tournament]);
+
+        expect($component->instance()->busyPlayerIds)->toBeEmpty();
+    })->group('computed', 'busy-players');
+
+    it('returns player IDs from in_progress matches', function () {
+        $admin = User::factory()->isAdmin()->create();
+        $tournament = liveCenterTournament();
+        $p1 = User::factory()->create();
+        $p2 = User::factory()->create();
+        $pool = $tournament->pools()->create(['name' => 'A']);
+
+        TournamentMatch::create([
+            'tournament_id' => $tournament->id,
+            'pool_id' => $pool->id,
+            'player1_id' => $p1->id,
+            'player2_id' => $p2->id,
+            'player1_handicap_points' => 0,
+            'player2_handicap_points' => 0,
+            'status' => 'in_progress',
+            'match_order' => 1,
+        ]);
+
+        $component = Livewire::actingAs($admin)
+            ->test('pages::club-events.tournaments.live-center', ['tournament' => $tournament]);
+
+        expect($component->instance()->busyPlayerIds)
+            ->toContain($p1->id)
+            ->toContain($p2->id);
+    })->group('computed', 'busy-players');
+
+    it('does not include players from scheduled or completed matches', function () {
+        $admin = User::factory()->isAdmin()->create();
+        $tournament = liveCenterTournament();
+        [$p1, $p2, $p3, $p4] = User::factory(4)->create()->all();
+        $pool = $tournament->pools()->create(['name' => 'A']);
+
+        TournamentMatch::create([
+            'tournament_id' => $tournament->id,
+            'pool_id' => $pool->id,
+            'player1_id' => $p1->id,
+            'player2_id' => $p2->id,
+            'player1_handicap_points' => 0,
+            'player2_handicap_points' => 0,
+            'status' => 'in_progress',
+            'match_order' => 1,
+        ]);
+
+        TournamentMatch::create([
+            'tournament_id' => $tournament->id,
+            'pool_id' => $pool->id,
+            'player1_id' => $p3->id,
+            'player2_id' => $p4->id,
+            'player1_handicap_points' => 0,
+            'player2_handicap_points' => 0,
+            'status' => 'scheduled',
+            'match_order' => 2,
+        ]);
+
+        $component = Livewire::actingAs($admin)
+            ->test('pages::club-events.tournaments.live-center', ['tournament' => $tournament]);
+
+        $busy = $component->instance()->busyPlayerIds;
+        expect($busy)->toContain($p1->id)
+            ->toContain($p2->id)
+            ->not->toContain($p3->id)
+            ->not->toContain($p4->id);
+    })->group('computed', 'busy-players');
+
+    it('only includes players from the same tournament', function () {
+        $admin = User::factory()->isAdmin()->create();
+        $tournament = liveCenterTournament();
+        $other = liveCenterTournament();
+        [$p1, $p2, $p3, $p4] = User::factory(4)->create()->all();
+
+        $pool = $tournament->pools()->create(['name' => 'A']);
+        $otherPool = $other->pools()->create(['name' => 'A']);
+
+        TournamentMatch::create([
+            'tournament_id' => $other->id,
+            'pool_id' => $otherPool->id,
+            'player1_id' => $p3->id,
+            'player2_id' => $p4->id,
+            'player1_handicap_points' => 0,
+            'player2_handicap_points' => 0,
+            'status' => 'in_progress',
+            'match_order' => 1,
+        ]);
+
+        $component = Livewire::actingAs($admin)
+            ->test('pages::club-events.tournaments.live-center', ['tournament' => $tournament]);
+
+        $busy = $component->instance()->busyPlayerIds;
+        expect($busy)->not->toContain($p3->id)
+            ->not->toContain($p4->id);
+    })->group('computed', 'busy-players');
+
+    it('includes the referee from an in_progress match', function () {
+        $admin = User::factory()->isAdmin()->create();
+        $tournament = liveCenterTournament();
+        [$p1, $p2, $ref] = User::factory(3)->create()->all();
+        $pool = $tournament->pools()->create(['name' => 'A']);
+
+        TournamentMatch::create([
+            'tournament_id' => $tournament->id,
+            'pool_id' => $pool->id,
+            'player1_id' => $p1->id,
+            'player2_id' => $p2->id,
+            'referee_id' => $ref->id,
+            'player1_handicap_points' => 0,
+            'player2_handicap_points' => 0,
+            'status' => 'in_progress',
+            'match_order' => 1,
+        ]);
+
+        $component = Livewire::actingAs($admin)
+            ->test('pages::club-events.tournaments.live-center', ['tournament' => $tournament]);
+
+        expect($component->instance()->busyPlayerIds)->toContain($ref->id);
+    })->group('computed', 'busy-players');
+
+    it('includes all four pair members from an in_progress doubles match', function () {
+        $admin = User::factory()->isAdmin()->create();
+        $tournament = Tournament::factory()->create([
+            'status' => TournamentStatusEnum::PENDING,
+            'match_type' => 'double',
+            'has_handicap_points' => false,
+            'price' => 0,
+        ]);
+        [$a, $b, $c, $d] = User::factory(4)->create()->all();
+
+        $pair1 = TournamentPair::create([
+            'tournament_id' => $tournament->id,
+            'player1_id' => $a->id,
+            'player2_id' => $b->id,
+            'registered_by' => $admin->id,
+        ]);
+        $pair2 = TournamentPair::create([
+            'tournament_id' => $tournament->id,
+            'player1_id' => $c->id,
+            'player2_id' => $d->id,
+            'registered_by' => $admin->id,
+        ]);
+
+        $pool = $tournament->pools()->create(['name' => 'A']);
+
+        TournamentMatch::create([
+            'tournament_id' => $tournament->id,
+            'pool_id' => $pool->id,
+            'pair1_id' => $pair1->id,
+            'pair2_id' => $pair2->id,
+            'player1_id' => $a->id,
+            'player2_id' => $c->id,
+            'player1_handicap_points' => 0,
+            'player2_handicap_points' => 0,
+            'status' => 'in_progress',
+            'match_order' => 1,
+        ]);
+
+        $component = Livewire::actingAs($admin)
+            ->test('pages::club-events.tournaments.live-center', ['tournament' => $tournament]);
+
+        $busy = $component->instance()->busyPlayerIds;
+
+        // All four players — including the second members of each pair — must be busy
+        expect($busy)->toContain($a->id)
+            ->toContain($b->id)
+            ->toContain($c->id)
+            ->toContain($d->id);
+    })->group('computed', 'busy-players', 'doubles');
 
 })->group('live-center');

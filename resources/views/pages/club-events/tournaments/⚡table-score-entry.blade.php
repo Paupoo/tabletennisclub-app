@@ -30,6 +30,8 @@ new class extends Component
 
     public bool $submitted = false;
 
+    public bool $scoresDirty = false;
+
     public function mount(): void
     {
         $maxSets = ($this->tournament->sets_to_win * 2) - 1;
@@ -39,12 +41,44 @@ new class extends Component
 
         $this->setScores = array_fill(0, $maxSets, ['p1' => (string) $this->p1Handicap, 'p2' => (string) $this->p2Handicap]);
 
+        if ($this->match->isCompleted()) {
+            $this->submitted = true;
+
+            return;
+        }
+
         // Pre-load any previously saved sets
         $this->match->loadMissing('sets');
         foreach ($this->match->sets as $set) {
             $idx = $set->set_number - 1;
             if (isset($this->setScores[$idx])) {
                 $this->setScores[$idx] = ['p1' => (string) $set->player1_score, 'p2' => (string) $set->player2_score];
+            }
+        }
+    }
+
+    public function updated(string $name): void
+    {
+        if (str_starts_with($name, 'setScores')) {
+            $this->scoresDirty = true;
+        }
+    }
+
+    public function rendering(): void
+    {
+        if ($this->submitted || $this->scoresDirty) {
+            return;
+        }
+
+        $this->match->load('sets');
+
+        foreach ($this->match->sets as $set) {
+            $idx = $set->set_number - 1;
+            if (array_key_exists($idx, $this->setScores)) {
+                $this->setScores[$idx] = [
+                    'p1' => (string) $set->player1_score,
+                    'p2' => (string) $set->player2_score,
+                ];
             }
         }
     }
@@ -127,13 +161,10 @@ new class extends Component
             app(TournamentFinalPhaseService::class)->completeMatch($this->match, $this->match->winner_id);
         }
 
-        $this->submitted = true;
-
-        $winner = $this->match->winner_id === $this->match->player1_id
-            ? $this->match->player1
-            : $this->match->player2;
-
-        $this->success($winner->full_name . ' ' . __('wins!'));
+        $this->redirect(route('tournament.table.score', [
+            'tournament' => $this->tournament->id,
+            'table'      => $this->table->id,
+        ]));
     }
 
     public function render(): View
@@ -144,18 +175,18 @@ new class extends Component
 ?>
 
 <div class="w-full max-w-sm mx-auto space-y-4"
-    x-data="{ confirmOpen: false }">
+    wire:poll.5s
+    x-data="{ confirmOpen: false, submitted: {{ $submitted ? 'true' : 'false' }} }">
 
-    @if ($submitted)
+    <div x-show="submitted" x-cloak>
         <div class="bg-base-100 rounded-2xl shadow p-8 text-center space-y-4">
             <x-icon name="o-check-circle" class="w-14 h-14 mx-auto text-success" />
             <h2 class="text-lg font-bold text-success">{{ __('Score submitted!') }}</h2>
-            <p class="text-sm text-base-content/60">{{ __('The result has been recorded. Thank you!') }}</p>
-            <a href="{{ route('admin.tournaments.live-center', $tournament) }}" class="btn btn-ghost btn-sm">
-                {{ __('Back to Live Center') }}
-            </a>
+            <p class="text-sm text-base-content/60">{{ __('The result has been sent to the tournament organisation. Thank you!') }}</p>
         </div>
-    @else
+    </div>
+
+    <div x-show="!submitted" class="space-y-4">
         @php
             $maxSets  = ($tournament->sets_to_win * 2) - 1;
             $hp1      = $p1Handicap ?? 0;
@@ -278,9 +309,18 @@ new class extends Component
             @endif
 
             @if ($hasSets && ! $matchFinished)
-                <x-button label="{{ __('Save sets') }}" icon="o-arrow-down-tray"
-                    class="btn-outline w-full btn-lg"
-                    wire:click="saveDraft" spinner="saveDraft" />
+                <button
+                    wire:click="saveDraft"
+                    wire:loading.attr="disabled" wire:target="saveDraft"
+                    class="btn btn-outline w-full btn-lg">
+                    <wire:loading wire:target="saveDraft">
+                        <span class="loading loading-spinner loading-sm"></span>
+                    </wire:loading>
+                    <wire:loading wire:target="saveDraft" remove>
+                        <x-icon name="o-arrow-down-tray" class="w-5 h-5" />
+                        {{ __('Save sets') }}
+                    </wire:loading>
+                </button>
             @endif
         </div>
 
@@ -307,17 +347,12 @@ new class extends Component
                     </button>
                     <button
                         wire:click="submitScore"
-                        wire:loading.attr="disabled"
-                        @click="confirmOpen = false"
                         class="btn btn-success flex-1">
-                        <wire:loading wire:target="submitScore">
-                            <span class="loading loading-spinner loading-sm"></span>
-                        </wire:loading>
                         {{ __('Confirm') }}
                     </button>
                 </div>
             </div>
         </div>
-    @endif
+    </div>
 
 </div>

@@ -9,15 +9,23 @@
         <div class="flex flex-col gap-3 lg:max-w-2xl">
             @foreach ($this->upcomingMatches as $index => $match)
                 @php
+                    $busyIds      = $this->busyPlayerIds;
                     $isDoubles    = $match->pair1_id !== null;
+                    $isPool       = $match->pool_id !== null;
+                    $isReady      = $match->player1_id !== null && $match->player2_id !== null;
+                    $side1Ids     = $isDoubles
+                        ? collect([$match->pair1?->player1_id, $match->pair1?->player2_id])->filter()
+                        : collect([$match->player1_id])->filter();
+                    $side2Ids     = $isDoubles
+                        ? collect([$match->pair2?->player1_id, $match->pair2?->player2_id])->filter()
+                        : collect([$match->player2_id])->filter();
+                    $hasConflict  = $isReady && ($side1Ids->intersect($busyIds)->isNotEmpty() || $side2Ids->intersect($busyIds)->isNotEmpty());
                     $side1Name    = $isDoubles ? ($match->pair1?->displayName() ?? '—') : ($match->player1?->full_name ?? '—');
                     $side2Name    = $isDoubles ? ($match->pair2?->displayName() ?? '—') : ($match->player2?->full_name ?? '—');
                     $side1Rank    = $isDoubles ? ($match->pair1?->averageRanking() ?? 'NC') : ($match->player1?->ranking ?? 'NC');
                     $side2Rank    = $isDoubles ? ($match->pair2?->averageRanking() ?? 'NC') : ($match->player2?->ranking ?? 'NC');
                     $refereeName  = $match->referee?->full_name;
-                    $isPool  = $match->pool_id !== null;
-                    $isReady = $match->player1_id !== null && $match->player2_id !== null;
-                    $label   = $isPool
+                    $label        = $isPool
                         ? ($match->pool?->name ?? __('Pool'))
                         : match($match->round) {
                             'round_16'    => __('Round of 16'),
@@ -31,22 +39,32 @@
                 <div wire:key="upcoming-{{ $match->id }}"
                     @class([
                         'flex items-stretch shadow border rounded-lg overflow-hidden transition-opacity',
-                        'bg-base-300 border-base-content/10'        => $isReady,
+                        'bg-warning/10 border-warning/40'              => $hasConflict,
+                        'bg-base-300 border-base-content/10'           => $isReady && ! $hasConflict,
                         'bg-base-200 border-base-content/5 opacity-50' => ! $isReady,
                     ])>
 
                     {{-- Position indicator --}}
                     <div @class([
                         'w-12 flex items-center justify-center font-black text-lg shrink-0',
-                        'bg-primary text-primary-content' => $index === 0 && $isReady,
-                        'bg-base-200 text-base-content/40' => $index > 0 || ! $isReady,
+                        'bg-warning text-warning-content'  => $hasConflict,
+                        'bg-primary text-primary-content'  => $index === 0 && $isReady && ! $hasConflict,
+                        'bg-base-200 text-base-content/40' => ($index > 0 || ! $isReady) && ! $hasConflict,
                     ])>{{ $index + 1 }}</div>
 
                     <div class="flex-1 p-3">
                         <div class="flex justify-between items-center mb-1">
-                            <x-badge :value="$label"
-                                class="{{ $isPool ? 'badge-ghost' : 'badge-warning' }} badge-xs uppercase font-bold" />
-                            @if ($index === 0 && $isReady)
+                            <div class="flex items-center gap-1.5">
+                                <x-badge :value="$label"
+                                    class="{{ $isPool ? 'badge-ghost' : 'badge-warning' }} badge-xs uppercase font-bold" />
+                                @if ($hasConflict)
+                                    <span class="flex items-center gap-1 text-[10px] font-bold text-warning">
+                                        <x-icon name="o-exclamation-triangle" class="w-3 h-3 shrink-0" />
+                                        {{ __('Player busy') }}
+                                    </span>
+                                @endif
+                            </div>
+                            @if ($index === 0 && $isReady && ! $hasConflict)
                                 <x-badge value="{{ __('Next') }}" class="badge-primary badge-xs" />
                             @elseif (! $isReady)
                                 <x-badge value="{{ __('Awaiting') }}" class="badge-ghost badge-xs opacity-50" />

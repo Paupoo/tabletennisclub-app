@@ -52,6 +52,8 @@ new class extends Component
     /** @var array<int, array{p1: string, p2: string}> */
     public array $setScores = [];
 
+    public bool $scoresDirty = false;
+
     // ── Closure tab fields
 
     public bool $sendThankYou = true;
@@ -103,6 +105,41 @@ new class extends Component
             . "**" . __('Podium') . " :**\n\n"
             . $top3->map(fn ($e) => '- **' . $e['rank'] . '. ' . $e['user']->full_name . '** — ' . $e['result'])->implode("\n")
             . "\n\n" . __('Congratulations to all participants!');
+    }
+
+    // ── Lifecycle hooks
+
+    public function updated(string $name): void
+    {
+        if (str_starts_with($name, 'setScores')) {
+            $this->scoresDirty = true;
+        }
+    }
+
+    public function rendering(): void
+    {
+        if ($this->scoreDrawer && $this->selectedMatchId && ! $this->scoresDirty) {
+            $this->syncSetScoresFromDb();
+        }
+    }
+
+    private function syncSetScoresFromDb(): void
+    {
+        $match = TournamentMatch::with('sets')->find($this->selectedMatchId);
+
+        if (! $match || $match->sets->isEmpty()) {
+            return;
+        }
+
+        foreach ($match->sets as $set) {
+            $idx = $set->set_number - 1;
+            if (array_key_exists($idx, $this->setScores)) {
+                $this->setScores[$idx] = [
+                    'p1' => (string) $set->player1_score,
+                    'p2' => (string) $set->player2_score,
+                ];
+            }
+        }
     }
 
     // ── Computed: phase flags
@@ -188,6 +225,29 @@ new class extends Component
                 ];
             })
             ->groupBy('room_name');
+    }
+
+    /** @return array<int> */
+    #[Computed]
+    public function busyPlayerIds(): array
+    {
+        return TournamentMatch::where('tournament_id', $this->tournament->id)
+            ->where('status', 'in_progress')
+            ->with(['pair1', 'pair2'])
+            ->get()
+            ->flatMap(fn (TournamentMatch $m) => [
+                $m->player1_id,
+                $m->player2_id,
+                $m->pair1?->player1_id,
+                $m->pair1?->player2_id,
+                $m->pair2?->player1_id,
+                $m->pair2?->player2_id,
+                $m->referee_id,
+            ])
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
     }
 
     #[Computed]
@@ -329,6 +389,7 @@ new class extends Component
         }
 
         unset($this->selectedMatch);
+        $this->scoresDirty = false;
         $this->scoreDrawer = true;
     }
 

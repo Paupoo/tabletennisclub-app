@@ -29,7 +29,15 @@
                 <span class="text-[10px] font-black uppercase tracking-widest opacity-60">
                     {{ $match->pool?->name ?? __('Bracket') }}
                 </span>
-                <x-badge value="{{ __('Best of') }} {{ $maxSets }}" class="badge-outline badge-xs opacity-50 font-bold" />
+                <div class="flex items-center gap-2">
+                    @if ($match->referee)
+                        <span class="flex items-center gap-1 text-[10px] opacity-50">
+                            <x-icon name="o-eye" class="w-3 h-3 shrink-0" />
+                            {{ $match->referee->full_name }}
+                        </span>
+                    @endif
+                    <x-badge value="{{ __('Best of') }} {{ $maxSets }}" class="badge-outline badge-xs opacity-50 font-bold" />
+                </div>
             </div>
 
             <div class="flex justify-between items-center gap-4">

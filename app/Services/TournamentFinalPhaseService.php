@@ -17,37 +17,94 @@ class TournamentFinalPhaseService
     ) {}
 
     /**
-     * After a bracket match completes, assign the loser as referee for the next
-     * unstarted match in the bracket (if they are not already playing in it).
-     * Among multiple candidates, prefer the one with fewest referee assignments.
+     * After a bracket match completes, assign referees to ALL bracket matches
+     * that are now ready (both players set, no referee yet). Handles the case
+     * where final and bronze become ready simultaneously after the second semi.
      */
-    public function assignBracketReferee(TournamentMatch $completedMatch, int $winnerId): void
+    public function assignBracketReferee(TournamentMatch $completedMatch): void
     {
-        $loserId = $completedMatch->player1_id === $winnerId
-            ? $completedMatch->player2_id
-            : $completedMatch->player1_id;
-
-        if ($loserId === null) {
-            return;
-        }
-
-        $nextScheduled = TournamentMatch::where('tournament_id', $completedMatch->tournament_id)
+        $unassigned = TournamentMatch::where('tournament_id', $completedMatch->tournament_id)
             ->whereNotNull('round')
+            ->whereNotIn('round', ['final', 'bronze'])
             ->where('status', 'scheduled')
             ->whereNull('referee_id')
+            ->whereNotNull('player1_id')
+            ->whereNotNull('player2_id')
             ->orderBy('match_order')
-            ->first();
+            ->get();
 
-        if ($nextScheduled === null) {
+        foreach ($unassigned as $target) {
+            $this->tryAssignBracketReferee($completedMatch->tournament_id, $target);
+        }
+    }
+
+    /**
+     * Assign referees to the initial bracket matches (first round) using pool
+     * non-qualifiers as candidates. Distributes assignments evenly.
+     */
+    public function assignInitialBracketReferees(Tournament $tournament): void
+    {
+        // All players who participated in pool matches
+        $poolPlayerIds = TournamentMatch::where('tournament_id', $tournament->id)
+            ->whereNotNull('pool_id')
+            ->get()
+            ->flatMap(fn (TournamentMatch $m) => [$m->player1_id, $m->player2_id])
+            ->filter()
+            ->unique()
+            ->values();
+
+        // Players who qualified (present in bracket matches)
+        $qualifiedIds = TournamentMatch::where('tournament_id', $tournament->id)
+            ->whereNotNull('round')
+            ->whereNotNull('player1_id')
+            ->get()
+            ->flatMap(fn (TournamentMatch $m) => [$m->player1_id, $m->player2_id])
+            ->filter()
+            ->unique()
+            ->values();
+
+        // Non-qualifiers are the referee candidates
+        $candidates = $poolPlayerIds->diff($qualifiedIds)->values();
+
+        if ($candidates->isEmpty()) {
             return;
         }
 
-        // Don't assign if the loser is already playing in that match
-        if ($nextScheduled->player1_id === $loserId || $nextScheduled->player2_id === $loserId) {
+        $bracketMatches = TournamentMatch::where('tournament_id', $tournament->id)
+            ->whereNotNull('round')
+            ->whereNotIn('round', ['final', 'bronze'])
+            ->where('status', 'scheduled')
+            ->whereNull('referee_id')
+            ->whereNotNull('player1_id')
+            ->whereNotNull('player2_id')
+            ->orderBy('match_order')
+            ->get();
+
+        if ($bracketMatches->isEmpty()) {
             return;
         }
 
-        $nextScheduled->update(['referee_id' => $loserId]);
+        // Track local assignment counts so we distribute evenly within this batch
+        $refereeCounts = array_fill_keys($candidates->toArray(), 0);
+
+        foreach ($bracketMatches as $match) {
+            $playingIds = collect([$match->player1_id, $match->player2_id])->filter();
+            $eligible = $candidates->diff($playingIds)->values();
+
+            if ($eligible->isEmpty()) {
+                continue;
+            }
+
+            $ranked = $eligible
+                ->map(fn ($id) => ['id' => $id, 'count' => $refereeCounts[$id] ?? 0])
+                ->sortBy('count');
+
+            $minCount = $ranked->first()['count'];
+            $pool = $ranked->filter(fn ($c) => $c['count'] === $minCount)->values()->all();
+            $chosen = $pool[random_int(0, count($pool) - 1)]['id'];
+            $match->update(['referee_id' => $chosen]);
+            $refereeCounts[$chosen]++;
+        }
     }
 
     public function checkIfAllPoolsAreFinished(Tournament $tournament): bool
@@ -102,44 +159,44 @@ class TournamentFinalPhaseService
             'status' => 'completed',
         ]);
 
-        $this->assignBracketReferee($match, $winnerId);
-
         // If there's a next match with one of our players, reset it
         $this->cleanNextMatch($match);
 
-        // If there's a next match, update it with the winner
+        // Propagate winner (and their pair for doubles) to the next bracket match
         if ($match->next_match_id) {
             $nextMatch = TournamentMatch::find($match->next_match_id);
             if ($nextMatch) {
-                // Determine which player field to update
-                $playerField = 'player1_id';
-                if ($nextMatch->player1_id) {
-                    $playerField = 'player2_id';
+                $slot = $nextMatch->player1_id ? 2 : 1;
+                $winnerPairId = $match->player1_id === $winnerId ? $match->pair1_id : $match->pair2_id;
+
+                $update = ["player{$slot}_id" => $winnerId];
+                if ($winnerPairId) {
+                    $update["pair{$slot}_id"] = $winnerPairId;
                 }
-                $nextMatch->update([
-                    $playerField => $winnerId,
-                ]);
+                $nextMatch->update($update);
             }
         }
 
-        // If this is a semifinal, update bronze match with loser
+        // If this is a semifinal, propagate loser (and their pair) to the bronze match
         if ($match->round === 'semifinal' && $match->bronze_match_id) {
             $bronzeMatch = TournamentMatch::find($match->bronze_match_id);
             $loserId = $match->player1_id === $winnerId ? $match->player2_id : $match->player1_id;
+            $loserPairId = $match->player1_id === $winnerId ? $match->pair2_id : $match->pair1_id;
 
             if ($bronzeMatch) {
-                // Determine which player field to update
-                $playerField = 'player1_id';
-                // Only check if player1_id is NULL (not just any value)
-                if ($bronzeMatch->player1_id !== null) {
-                    $playerField = 'player2_id';
-                }
+                $slot = $bronzeMatch->player1_id !== null ? 2 : 1;
 
-                $bronzeMatch->update([
-                    $playerField => $loserId,
-                ]);
+                $update = ["player{$slot}_id" => $loserId];
+                if ($loserPairId) {
+                    $update["pair{$slot}_id"] = $loserPairId;
+                }
+                $bronzeMatch->update($update);
             }
         }
+
+        // Assign referee AFTER next-match players are set, so the query can
+        // exclude candidates who are playing in that now-complete match slot.
+        $this->assignBracketReferee($match);
 
         return true;
     }
@@ -166,7 +223,12 @@ class TournamentFinalPhaseService
         $qualifiedPlayers = $this->getQualifiedPlayers($tournament, $startingRound);
 
         // Create bracket structure
-        return $this->createBracket($tournament, $qualifiedPlayers, $startingRound);
+        $result = $this->createBracket($tournament, $qualifiedPlayers, $startingRound);
+
+        // Assign referees to the first-round bracket matches using pool non-qualifiers
+        $this->assignInitialBracketReferees($tournament);
+
+        return $result;
     }
 
     /**
@@ -198,14 +260,8 @@ class TournamentFinalPhaseService
         $semifinalMatches = $this->createRoundMatches($tournament, 'semifinal', 2, [$finalMatch->id], $bronzeMatch->id);
 
         if ($startingRound === 'round_4' || $totalPlayers <= 4) {
-            // If starting with semifinals, assign players directly
             for ($i = 0; $i < min(count($seededPlayers), 4); $i++) {
-                $matchIndex = intdiv($i, 2);
-                $playerField = $i % 2 === 0 ? 'player1_id' : 'player2_id';
-
-                $semifinalMatches[$matchIndex]->update([
-                    $playerField => $seededPlayers[$i]['player']->id,
-                ]);
+                $semifinalMatches[intdiv($i, 2)]->update($this->buildMatchAssignment($i, $seededPlayers[$i]));
             }
 
             return true;
@@ -214,29 +270,18 @@ class TournamentFinalPhaseService
         $quarterMatches = $this->createRoundMatches($tournament, 'quarterfinal', 4, $semifinalMatches->pluck('id')->toArray());
 
         if ($startingRound === 'round_8' || $totalPlayers <= 8) {
-            // If starting with quarterfinals, assign players directly
             for ($i = 0; $i < min(count($seededPlayers), 8); $i++) {
-                $matchIndex = intdiv($i, 2);
-                $playerField = $i % 2 === 0 ? 'player1_id' : 'player2_id';
-                $quarterMatches[$matchIndex]->update([
-                    $playerField => $seededPlayers[$i]['player']->id,
-                ]);
+                $quarterMatches[intdiv($i, 2)]->update($this->buildMatchAssignment($i, $seededPlayers[$i]));
             }
 
-            return true; // Ceci est correct, mais le code continue malgré tout
+            return true;
         }
 
-        // Il manque les accolades autour de ce bloc
         if ($startingRound === 'round_16') {
             $round16Matches = $this->createRoundMatches($tournament, 'round_16', 8, $quarterMatches->pluck('id')->toArray());
 
-            // Assign players to first round
             for ($i = 0; $i < min(count($seededPlayers), 16); $i++) {
-                $matchIndex = intdiv($i, 2);
-                $playerField = $i % 2 === 0 ? 'player1_id' : 'player2_id';
-                $round16Matches[$matchIndex]->update([
-                    $playerField => $seededPlayers[$i]['player']->id,
-                ]);
+                $round16Matches[intdiv($i, 2)]->update($this->buildMatchAssignment($i, $seededPlayers[$i]));
             }
         }
 
@@ -251,7 +296,7 @@ class TournamentFinalPhaseService
         // Get all matches
         $matches = TournamentMatch::where('tournament_id', $tournament->id)
             ->fromBracket()
-            ->with(['player1', 'player2', 'sets', 'winner'])
+            ->with(['player1', 'player2', 'pair1.player1', 'pair1.player2', 'pair2.player1', 'pair2.player2', 'sets', 'winner', 'referee'])
             ->orderBy('match_order')
             ->get();
 
@@ -303,12 +348,7 @@ class TournamentFinalPhaseService
             $standings = $this->tournamentMatchService->calculatePoolStandings($pool);
             for ($i = 0; $i < $playersPerPool; $i++) {
                 if (isset($standings[$i])) {
-                    $qualifiedPlayers->push([
-                        'player' => $standings[$i]['player'],
-                        'pool' => $pool,
-                        'position' => $i + 1,
-                        'stats' => $standings[$i],
-                    ]);
+                    $qualifiedPlayers->push($this->buildQualifiedEntry($standings[$i], $pool, $i + 1));
                 }
             }
         }
@@ -320,12 +360,7 @@ class TournamentFinalPhaseService
             foreach ($pools as $pool) {
                 $standings = $this->tournamentMatchService->calculatePoolStandings($pool);
                 for ($i = $playersPerPool; $i < count($standings); $i++) {
-                    $repechageCandidates->push([
-                        'player' => $standings[$i]['player'],
-                        'pool' => $pool,
-                        'position' => $i + 1,
-                        'stats' => $standings[$i],
-                    ]);
+                    $repechageCandidates->push($this->buildQualifiedEntry($standings[$i], $pool, $i + 1));
                 }
             }
 
@@ -475,5 +510,75 @@ class TournamentFinalPhaseService
         }
 
         return $seededPlayers;
+    }
+
+    /** @param  array<string, mixed>  $seededPlayer */
+    private function buildMatchAssignment(int $i, array $seededPlayer): array
+    {
+        $playerField = $i % 2 === 0 ? 'player1_id' : 'player2_id';
+        $data = [$playerField => $seededPlayer['player']->id];
+
+        if (isset($seededPlayer['pair'])) {
+            $pairField = $i % 2 === 0 ? 'pair1_id' : 'pair2_id';
+            $data[$pairField] = $seededPlayer['pair']->id;
+        }
+
+        return $data;
+    }
+
+    /** @param  array<string, mixed>  $standing */
+    private function buildQualifiedEntry(array $standing, mixed $pool, int $position): array
+    {
+        $entry = [
+            'player' => $standing['player'],
+            'pool' => $pool,
+            'position' => $position,
+            'stats' => $standing,
+        ];
+
+        if (isset($standing['pair'])) {
+            $entry['pair'] = $standing['pair'];
+        }
+
+        return $entry;
+    }
+
+    private function tryAssignBracketReferee(int $tournamentId, TournamentMatch $target): void
+    {
+        // All players who have lost a bracket match in this tournament
+        $loserIds = TournamentMatch::where('tournament_id', $tournamentId)
+            ->whereNotNull('round')
+            ->whereNotNull('winner_id')
+            ->get()
+            ->map(fn (TournamentMatch $m) => $m->player1_id === $m->winner_id ? $m->player2_id : $m->player1_id)
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($loserIds->isEmpty()) {
+            return;
+        }
+
+        $playingIds = collect([$target->player1_id, $target->player2_id])->filter();
+        $candidates = $loserIds->diff($playingIds)->values();
+
+        if ($candidates->isEmpty()) {
+            return;
+        }
+
+        $refereeCounts = TournamentMatch::where('tournament_id', $tournamentId)
+            ->whereIn('referee_id', $candidates)
+            ->selectRaw('referee_id, COUNT(*) as total')
+            ->groupBy('referee_id')
+            ->pluck('total', 'referee_id')
+            ->toArray();
+
+        $ranked = $candidates
+            ->map(fn ($id) => ['id' => $id, 'count' => $refereeCounts[$id] ?? 0])
+            ->sortBy('count');
+
+        $minCount = $ranked->first()['count'];
+        $pool = $ranked->filter(fn ($c) => $c['count'] === $minCount)->values()->all();
+        $target->update(['referee_id' => $pool[random_int(0, count($pool) - 1)]['id']]);
     }
 }

@@ -6,6 +6,7 @@ use App\Enums\TournamentStatusEnum;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Tournament\TournamentMatch;
+use App\Models\ClubEvents\Tournament\TournamentPair;
 use App\Services\TournamentFinalPhaseService;
 use App\Services\TournamentMatchService;
 use App\Services\TournamentPoolService;
@@ -278,6 +279,120 @@ describe('completeMatch', function () {
     })->group('bracket', 'progression');
 
 })->group('bracket');
+
+// ── completeMatch — doubles pair propagation ──────────────────────────────────
+
+describe('completeMatch doubles pair propagation', function () {
+
+    it('propagates the winner pair_id to player1 slot of the next match', function () {
+        $tournament = Tournament::factory()->create(['status' => TournamentStatusEnum::PENDING]);
+        [$p1, $p2] = User::factory(2)->create()->all();
+        $pair1 = TournamentPair::factory()->create(['tournament_id' => $tournament->id, 'player1_id' => $p1->id, 'player2_id' => User::factory()->create()->id]);
+        $pair2 = TournamentPair::factory()->create(['tournament_id' => $tournament->id, 'player1_id' => $p2->id, 'player2_id' => User::factory()->create()->id]);
+
+        $next = TournamentMatch::create([
+            'tournament_id' => $tournament->id,
+            'round' => 'final',
+            'status' => 'scheduled',
+            'match_order' => 1,
+        ]);
+
+        $semi = TournamentMatch::create([
+            'tournament_id' => $tournament->id,
+            'round' => 'semifinal',
+            'status' => 'scheduled',
+            'match_order' => 2,
+            'player1_id' => $p1->id,
+            'player2_id' => $p2->id,
+            'pair1_id' => $pair1->id,
+            'pair2_id' => $pair2->id,
+            'next_match_id' => $next->id,
+        ]);
+
+        // p1 (pair1) wins
+        app(TournamentFinalPhaseService::class)->completeMatch($semi, $p1->id);
+
+        expect($next->fresh()->player1_id)->toBe($p1->id)
+            ->and($next->fresh()->pair1_id)->toBe($pair1->id);
+    })->group('bracket', 'doubles');
+
+    it('propagates the winner pair_id to player2 slot when player1 is already set', function () {
+        $tournament = Tournament::factory()->create(['status' => TournamentStatusEnum::PENDING]);
+        [$p1, $p2, $p3] = User::factory(3)->create()->all();
+        $pairA = TournamentPair::factory()->create(['tournament_id' => $tournament->id, 'player1_id' => $p1->id, 'player2_id' => User::factory()->create()->id]);
+        $pairB = TournamentPair::factory()->create(['tournament_id' => $tournament->id, 'player1_id' => $p2->id, 'player2_id' => User::factory()->create()->id]);
+        $pairC = TournamentPair::factory()->create(['tournament_id' => $tournament->id, 'player1_id' => $p3->id, 'player2_id' => User::factory()->create()->id]);
+
+        $final = TournamentMatch::create([
+            'tournament_id' => $tournament->id,
+            'round' => 'final',
+            'status' => 'scheduled',
+            'match_order' => 1,
+            'player1_id' => $p1->id,
+            'pair1_id' => $pairA->id,
+        ]);
+
+        $semi = TournamentMatch::create([
+            'tournament_id' => $tournament->id,
+            'round' => 'semifinal',
+            'status' => 'scheduled',
+            'match_order' => 3,
+            'player1_id' => $p2->id,
+            'player2_id' => $p3->id,
+            'pair1_id' => $pairB->id,
+            'pair2_id' => $pairC->id,
+            'next_match_id' => $final->id,
+        ]);
+
+        // p2 (pairB) wins
+        app(TournamentFinalPhaseService::class)->completeMatch($semi, $p2->id);
+
+        expect($final->fresh()->player2_id)->toBe($p2->id)
+            ->and($final->fresh()->pair2_id)->toBe($pairB->id);
+    })->group('bracket', 'doubles');
+
+    it('propagates the loser pair_id to the bronze match', function () {
+        $tournament = Tournament::factory()->create(['status' => TournamentStatusEnum::PENDING]);
+        [$p1, $p2] = User::factory(2)->create()->all();
+        $pair1 = TournamentPair::factory()->create(['tournament_id' => $tournament->id, 'player1_id' => $p1->id, 'player2_id' => User::factory()->create()->id]);
+        $pair2 = TournamentPair::factory()->create(['tournament_id' => $tournament->id, 'player1_id' => $p2->id, 'player2_id' => User::factory()->create()->id]);
+
+        $bronze = TournamentMatch::create([
+            'tournament_id' => $tournament->id,
+            'round' => 'bronze',
+            'status' => 'scheduled',
+            'match_order' => 1,
+            'is_bronze_match' => true,
+        ]);
+
+        $final = TournamentMatch::create([
+            'tournament_id' => $tournament->id,
+            'round' => 'final',
+            'status' => 'scheduled',
+            'match_order' => 2,
+        ]);
+
+        $semi = TournamentMatch::create([
+            'tournament_id' => $tournament->id,
+            'round' => 'semifinal',
+            'status' => 'scheduled',
+            'match_order' => 3,
+            'player1_id' => $p1->id,
+            'player2_id' => $p2->id,
+            'pair1_id' => $pair1->id,
+            'pair2_id' => $pair2->id,
+            'next_match_id' => $final->id,
+            'bronze_match_id' => $bronze->id,
+        ]);
+
+        // p1 (pair1) wins — p2 (pair2) is the loser and should go to bronze
+        app(TournamentFinalPhaseService::class)->completeMatch($semi, $p1->id);
+
+        expect($bronze->fresh()->player1_id)->toBe($p2->id)
+            ->and($bronze->fresh()->pair1_id)->toBe($pair2->id);
+    })->group('bracket', 'doubles');
+
+})->group('bracket', 'doubles');
 
 // ── generateBracket — startingRound logic ─────────────────────────────────────
 

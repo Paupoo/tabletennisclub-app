@@ -273,7 +273,7 @@ new class extends Component
         $bracketMatches = TournamentMatch::where('tournament_id', $this->tournament->id)
             ->whereNotNull('round')
             ->where('status', 'completed')
-            ->with(['player1', 'player2'])
+            ->with(['player1', 'player2', 'pair1.player1', 'pair1.player2', 'pair2.player1', 'pair2.player2'])
             ->get();
 
         $place = function (TournamentMatch $match, int $winnerRank, int $loserRank, string $winnerLabel, string $loserLabel) use (&$ranked): void {
@@ -285,9 +285,11 @@ new class extends Component
             $lid  = $isP1 ? $match->player2_id : $match->player1_id;
             $wu   = $isP1 ? $match->player1 : $match->player2;
             $lu   = $isP1 ? $match->player2 : $match->player1;
+            $wp   = $isP1 ? $match->pair1 : $match->pair2;
+            $lp   = $isP1 ? $match->pair2 : $match->pair1;
 
-            $ranked[$wid] = ['user' => $wu, 'rank' => $winnerRank, 'result' => $winnerLabel];
-            $ranked[$lid] = ['user' => $lu, 'rank' => $loserRank,  'result' => $loserLabel];
+            $ranked[$wid] = ['user' => $wu, 'pair' => $wp, 'rank' => $winnerRank, 'result' => $winnerLabel];
+            $ranked[$lid] = ['user' => $lu, 'pair' => $lp, 'rank' => $loserRank,  'result' => $loserLabel];
         };
 
         if ($final = $bracketMatches->firstWhere('round', 'final')) {
@@ -307,8 +309,9 @@ new class extends Component
                 $isP1 = $match->winner_id === $match->player1_id;
                 $lid  = $isP1 ? $match->player2_id : $match->player1_id;
                 $lu   = $isP1 ? $match->player2 : $match->player1;
+                $lp   = $isP1 ? $match->pair2 : $match->pair1;
                 if (! isset($ranked[$lid])) {
-                    $ranked[$lid] = ['user' => $lu, 'rank' => $pos++, 'result' => __($label)];
+                    $ranked[$lid] = ['user' => $lu, 'pair' => $lp, 'rank' => $pos++, 'result' => __($label)];
                 }
             }
         }
@@ -320,7 +323,12 @@ new class extends Component
             foreach ($matchService->calculatePoolStandings($pool) as $standing) {
                 $pid = $standing['player']->id;
                 if (! isset($ranked[$pid])) {
-                    $ranked[$pid] = ['user' => $standing['player'], 'rank' => $nextRank++, 'result' => $pool->name];
+                    $ranked[$pid] = [
+                        'user'   => $standing['player'],
+                        'pair'   => $standing['pair'] ?? null,
+                        'rank'   => $nextRank++,
+                        'result' => $pool->name,
+                    ];
                 }
             }
         }
@@ -555,8 +563,8 @@ new class extends Component
         $totalQualifiers = $this->tournament->nb_pools * $this->tournament->nb_qualifiers_per_pool;
         $startingRound   = match (true) {
             $totalQualifiers >= 9 => 'round_16',
-            $totalQualifiers >= 5 => 'quarterfinal',
-            default               => 'semifinal',
+            $totalQualifiers >= 5 => 'round_8',
+            default               => 'round_4',
         };
 
         try {

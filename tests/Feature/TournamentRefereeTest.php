@@ -177,18 +177,88 @@ describe('assignBracketReferee', function () {
         $tournament = refereeTournament();
         $users = refereeUsers(4);
 
+        // match1 is already completed: users[0] won, users[1] lost
         $match1 = TournamentMatch::factory()->create([
             'tournament_id' => $tournament->id,
             'pool_id' => null,
             'table_id' => null,
-            'round' => 'semifinal',
-            'status' => 'in_progress',
+            'round' => 'quarterfinal',
+            'status' => 'completed',
             'match_order' => 1,
             'player1_id' => $users[0]->id,
             'player2_id' => $users[1]->id,
+            'winner_id' => $users[0]->id,
         ]);
 
         $match2 = TournamentMatch::factory()->create([
+            'tournament_id' => $tournament->id,
+            'pool_id' => null,
+            'table_id' => null,
+            'round' => 'semifinal',
+            'status' => 'scheduled',
+            'match_order' => 2,
+            'player1_id' => $users[2]->id,
+            'player2_id' => $users[3]->id,
+            'referee_id' => null,
+        ]);
+
+        app(TournamentFinalPhaseService::class)->assignBracketReferee($match1);
+
+        expect($match2->fresh()->referee_id)->toBe($users[1]->id);
+    });
+
+    it('does not assign referee if loser is already playing the next match', function () {
+        $tournament = refereeTournament();
+        $users = refereeUsers(4);
+
+        // match1 is already completed: users[0] won, users[1] lost
+        $match1 = TournamentMatch::factory()->create([
+            'tournament_id' => $tournament->id,
+            'pool_id' => null,
+            'table_id' => null,
+            'round' => 'quarterfinal',
+            'status' => 'completed',
+            'match_order' => 1,
+            'player1_id' => $users[0]->id,
+            'player2_id' => $users[1]->id,
+            'winner_id' => $users[0]->id,
+        ]);
+
+        // Next match already involves the loser (users[1])
+        $match2 = TournamentMatch::factory()->create([
+            'tournament_id' => $tournament->id,
+            'pool_id' => null,
+            'table_id' => null,
+            'round' => 'semifinal',
+            'status' => 'scheduled',
+            'match_order' => 2,
+            'player1_id' => $users[1]->id,
+            'player2_id' => $users[2]->id,
+            'referee_id' => null,
+        ]);
+
+        app(TournamentFinalPhaseService::class)->assignBracketReferee($match1);
+
+        expect($match2->fresh()->referee_id)->toBeNull();
+    });
+
+    it('never assigns a referee to the final or bronze match', function () {
+        $tournament = refereeTournament();
+        $users = refereeUsers(4);
+
+        $completed = TournamentMatch::factory()->create([
+            'tournament_id' => $tournament->id,
+            'pool_id' => null,
+            'table_id' => null,
+            'round' => 'semifinal',
+            'status' => 'completed',
+            'match_order' => 1,
+            'player1_id' => $users[0]->id,
+            'player2_id' => $users[1]->id,
+            'winner_id' => $users[0]->id,
+        ]);
+
+        $final = TournamentMatch::factory()->create([
             'tournament_id' => $tournament->id,
             'pool_id' => null,
             'table_id' => null,
@@ -200,42 +270,22 @@ describe('assignBracketReferee', function () {
             'referee_id' => null,
         ]);
 
-        app(TournamentFinalPhaseService::class)->assignBracketReferee($match1, $users[0]->id);
-
-        expect($match2->fresh()->referee_id)->toBe($users[1]->id);
-    });
-
-    it('does not assign referee if loser is already playing the next match', function () {
-        $tournament = refereeTournament();
-        $users = refereeUsers(4);
-
-        $match1 = TournamentMatch::factory()->create([
+        $bronze = TournamentMatch::factory()->create([
             'tournament_id' => $tournament->id,
             'pool_id' => null,
             'table_id' => null,
-            'round' => 'semifinal',
-            'status' => 'in_progress',
-            'match_order' => 1,
-            'player1_id' => $users[0]->id,
-            'player2_id' => $users[1]->id,
-        ]);
-
-        // Next match already involves the loser (users[1])
-        $match2 = TournamentMatch::factory()->create([
-            'tournament_id' => $tournament->id,
-            'pool_id' => null,
-            'table_id' => null,
-            'round' => 'final',
+            'round' => 'bronze',
             'status' => 'scheduled',
-            'match_order' => 2,
+            'match_order' => 3,
             'player1_id' => $users[1]->id,
-            'player2_id' => $users[2]->id,
+            'player2_id' => $users[0]->id,
             'referee_id' => null,
         ]);
 
-        app(TournamentFinalPhaseService::class)->assignBracketReferee($match1, $users[0]->id);
+        app(TournamentFinalPhaseService::class)->assignBracketReferee($completed);
 
-        expect($match2->fresh()->referee_id)->toBeNull();
+        expect($final->fresh()->referee_id)->toBeNull();
+        expect($bronze->fresh()->referee_id)->toBeNull();
     });
 
     it('completeMatch() triggers bracket referee assignment', function () {
@@ -246,7 +296,7 @@ describe('assignBracketReferee', function () {
             'tournament_id' => $tournament->id,
             'pool_id' => null,
             'table_id' => null,
-            'round' => 'semifinal',
+            'round' => 'quarterfinal',
             'status' => 'in_progress',
             'match_order' => 1,
             'player1_id' => $users[0]->id,
@@ -257,7 +307,7 @@ describe('assignBracketReferee', function () {
             'tournament_id' => $tournament->id,
             'pool_id' => null,
             'table_id' => null,
-            'round' => 'final',
+            'round' => 'semifinal',
             'status' => 'scheduled',
             'match_order' => 2,
             'player1_id' => $users[2]->id,
@@ -269,4 +319,95 @@ describe('assignBracketReferee', function () {
 
         expect($match2->fresh()->referee_id)->toBe($users[1]->id);
     });
+})->group('Tournament', 'Referee');
+
+// ── assignInitialBracketReferees ──────────────────────────────────────────────
+
+/**
+ * Build a tournament ready for bracket generation:
+ * - $nbPools pools × $poolSize players, all pool matches completed (player1 always wins)
+ * - Returns the tournament with pools loaded
+ */
+function initialRefereeTournament(int $nbPools = 2, int $poolSize = 4): Tournament
+{
+    $tournament = refereeTournament([
+        'nb_pools' => $nbPools,
+        'pool_size' => $poolSize,
+        'nb_qualifiers_per_pool' => 2,
+    ]);
+    $players = refereeUsers($nbPools * $poolSize);
+    $tournament->users()->attach($players->pluck('id'), ['registration_status' => 'confirmed']);
+
+    app(TournamentPoolService::class)->distributePlayersInPools($tournament, $nbPools);
+    $tournament->load(['pools.users', 'pools.tournament']);
+    app(TournamentMatchService::class)->generateTournamentMatches($tournament);
+
+    $tournament->matches()->whereNotNull('pool_id')->get()->each(
+        fn ($m) => $m->recordResult([
+            ['player1_score' => 11, 'player2_score' => 5],
+            ['player1_score' => 11, 'player2_score' => 7],
+            ['player1_score' => 11, 'player2_score' => 4],
+        ])
+    );
+
+    return $tournament;
+}
+
+describe('assignInitialBracketReferees', function () {
+
+    it('assigns pool non-qualifiers as referees to first-round bracket matches', function () {
+        $tournament = initialRefereeTournament(nbPools: 2, poolSize: 4);
+        $service = app(TournamentFinalPhaseService::class);
+
+        // configureKnockoutPhase calls assignInitialBracketReferees internally
+        $service->configureKnockoutPhase($tournament, 'round_4');
+
+        $qualifiedIds = TournamentMatch::where('tournament_id', $tournament->id)
+            ->whereNotNull('round')
+            ->whereNotNull('player1_id')
+            ->get()
+            ->flatMap(fn ($m) => [$m->player1_id, $m->player2_id])
+            ->filter()->unique()->values()->all();
+
+        $bracketMatches = TournamentMatch::where('tournament_id', $tournament->id)
+            ->whereNotNull('round')
+            ->whereNotIn('round', ['final', 'bronze'])
+            ->whereNotNull('player1_id')
+            ->get();
+
+        foreach ($bracketMatches as $m) {
+            expect($m->referee_id)->not->toBeNull();
+            // referee must be a non-qualifier
+            expect($qualifiedIds)->not->toContain($m->referee_id);
+        }
+    });
+
+    it('distributes assignments evenly — no non-qualifier referees more than once before others referee once', function () {
+        // 2 pools × 4 = 8 players, 4 qualify, 4 non-qualifiers → 4 quarterfinal matches
+        $tournament = initialRefereeTournament(nbPools: 4, poolSize: 4);
+        $service = app(TournamentFinalPhaseService::class);
+
+        $service->configureKnockoutPhase($tournament, 'round_8');
+
+        $bracketMatches = TournamentMatch::where('tournament_id', $tournament->id)
+            ->whereNotNull('round')
+            ->whereNotIn('round', ['final', 'bronze'])
+            ->whereNotNull('player1_id')
+            ->get();
+
+        $counts = $bracketMatches->groupBy('referee_id')->map->count();
+        expect($counts->max() - $counts->min())->toBeLessThanOrEqual(1);
+    });
+
+    it('never assigns a referee to final or bronze matches', function () {
+        $tournament = initialRefereeTournament(nbPools: 2, poolSize: 4);
+        app(TournamentFinalPhaseService::class)->configureKnockoutPhase($tournament, 'round_4');
+
+        $final = TournamentMatch::where('tournament_id', $tournament->id)->where('round', 'final')->first();
+        $bronze = TournamentMatch::where('tournament_id', $tournament->id)->where('round', 'bronze')->first();
+
+        expect($final->referee_id)->toBeNull();
+        expect($bronze->referee_id)->toBeNull();
+    });
+
 })->group('Tournament', 'Referee');

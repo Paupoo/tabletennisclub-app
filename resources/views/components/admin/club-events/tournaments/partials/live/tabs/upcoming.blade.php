@@ -94,6 +94,15 @@
                                 <x-icon name="o-eye" class="w-3 h-3 shrink-0" />
                                 <span>{{ $refereeName }}</span>
                             </div>
+                        @elseif (! $isPool && $isReady && in_array($match->round, ['final', 'bronze']))
+                            <div class="mt-1.5 flex items-center gap-1 text-xs opacity-50 italic">
+                                <x-icon name="o-eye" class="w-3 h-3 shrink-0" />
+                                <span>{{ __('Organisation') }}</span>
+                            </div>
+                        @elseif (! $isPool && $isReady)
+                            <div class="mt-1.5">
+                                <x-badge value="{{ __('Referee needed') }}" icon="o-eye" class="badge-ghost badge-xs opacity-50" />
+                            </div>
                         @endif
                     </div>
                 </div>

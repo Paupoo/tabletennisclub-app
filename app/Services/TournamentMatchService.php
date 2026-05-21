@@ -441,10 +441,9 @@ class TournamentMatchService
                 continue;
             }
 
-            shuffle($eligible);
             $minCount = min(array_map(fn ($id) => $refereeCount[$id], $eligible));
-            $candidates = array_filter($eligible, fn ($id) => $refereeCount[$id] === $minCount);
-            $refereeId = (int) array_values($candidates)[0];
+            $candidates = array_values(array_filter($eligible, fn ($id) => $refereeCount[$id] === $minCount));
+            $refereeId = (int) $candidates[random_int(0, count($candidates) - 1)];
 
             $match->update(['referee_id' => $refereeId]);
             $refereeCount[$refereeId]++;

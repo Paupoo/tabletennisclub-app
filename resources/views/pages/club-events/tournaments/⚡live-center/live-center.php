@@ -657,7 +657,7 @@ new class extends Component
                 'slug'     => Str::slug($this->newsPostTitle . '-' . now()->year),
                 'content'  => $this->newsPostContent,
                 'category' => NewsPostCategoryEnum::COMPETITION,
-                'status'   => NewsPostStatusEnum::DRAFT,
+                'status'   => NewsPostStatusEnum::PUBLISHED,
                 'is_public' => false,
                 'image'    => $imagePath,
                 'user_id'  => auth()->id(),

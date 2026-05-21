@@ -10,7 +10,6 @@ use App\Enums\Gender;
 use App\Enums\LeagueCategory;
 use App\Enums\LeagueLevel;
 use App\Enums\Ranking;
-use App\Enums\TournamentStatusEnum;
 use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Club\Table;
 use App\Models\ClubAdmin\Users\User;
@@ -18,11 +17,7 @@ use App\Models\ClubEvents\Interclub\Club;
 use App\Models\ClubEvents\Interclub\League;
 use App\Models\ClubEvents\Interclub\Season;
 use App\Models\ClubEvents\Interclub\Team;
-use App\Models\ClubEvents\Tournament\Tournament;
 use App\Services\ForceList;
-use App\Services\TournamentMatchService;
-use App\Services\TournamentPoolService;
-use App\Services\TournamentService;
 use App\Services\TournamentTableService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -30,14 +25,9 @@ use Illuminate\Support\Str;
 
 class DatabaseSeeder extends Seeder
 {
-    private Tournament $tournament;
-
     public function __construct(
         private ForceList $forceList,
-        private TournamentService $tournamentService,
         private TournamentTableService $tableService,
-        private TournamentPoolService $poolService,
-        private TournamentMatchService $matchService,
     ) {}
 
     /**
@@ -328,72 +318,12 @@ class DatabaseSeeder extends Seeder
             ->count(100)
             ->create();
 
-        // Gestion du tournoi
-        Tournament::factory(3)->create();
-
-        // Tournoi 1 : brouillon, pas d'inscrits
-        $this->tournament = Tournament::find(1);
-        $this->tournament->name = 'Tournoi des crêpes';
-        $this->tournament->status = TournamentStatusEnum::DRAFT;
-        $this->tournament->save();
-
-        // Tournoi 2 : inscriptions fermées, pools et matchs générés
-        $this->tournament = Tournament::find(2);
-        $this->tournament->name = 'Petit tournoi amical';
-        $this->tournament->max_users = 16;
-        $this->tournament->has_handicap_points = true;
-        $this->tournament->status = TournamentStatusEnum::SETUP;
-        $this->tournament->save();
-        $this->tournament->rooms()->sync([1, 2]);
-
-        $this->tableService->linkAvailableTables($this->tournament);
-
-        for ($i = 1; $i <= 16; $i++) {
-            $status = match (true) {
-                $i <= 10 => 'confirmed',
-                $i <= 14 => 'registered',
-                default => 'cancelled',
-            };
-            $this->tournament->users()->attach(User::find($i), ['registration_status' => $status]);
-        }
-
-        $this->tournamentService->countRegisteredUsers($this->tournament);
-
-        $this->poolService->distributePlayersInPools($this->tournament, 4);
-        $this->tournament->loadMissing('pools');
-        foreach ($this->tournament->pools as $pool) {
-            $this->matchService->generateMatches($pool);
-        }
-
-        // Tournoi 3 : inscriptions ouvertes (published), liste d'attente incluse
-        $this->tournament = Tournament::find(3);
-        $this->tournament->name = 'Tournoi de doubles';
-        $this->tournament->max_users = 40;
-        $this->tournament->has_handicap_points = true;
-        $this->tournament->status = TournamentStatusEnum::PUBLISHED;
-        $this->tournament->save();
-        $this->tournament->rooms()->sync([1, 2]);
-
-        $this->tableService->linkAvailableTables($this->tournament);
-
-        for ($i = 1; $i <= 49; $i++) {
-            $status = match (true) {
-                $i <= 40 => 'registered',
-                default => 'waiting',
-            };
-            $waitlistPosition = $i > 40 ? $i - 40 : null;
-            $this->tournament->users()->attach(User::find($i), [
-                'registration_status' => $status,
-                'waitlist_position' => $waitlistPosition,
-            ]);
-        }
-
-        $this->tournamentService->countRegisteredUsers($this->tournament);
-
         $this->call(SubscriptionSeeder::class);
 
         $this->call(PaymentSeeder::class);
 
         $this->call(InterclubResultsSeeder::class);
+
+        $this->call(TournamentSeeder::class);
     }
 }

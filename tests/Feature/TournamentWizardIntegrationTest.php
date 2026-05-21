@@ -6,12 +6,14 @@ use App\Enums\TournamentStatusEnum;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Tournament\TournamentPair;
+use App\Models\ClubPosts\EventPost;
 use App\Notifications\Tournament\TournamentInvitationNotification;
 use App\Services\TournamentMatchService;
 use App\Services\TournamentPoolService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Livewire\Livewire;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -26,6 +28,8 @@ function wizardTournament(array $overrides = []): Tournament
         'sets_to_win' => 3,
         'logistics_buffer_minutes' => 3,
         'match_type' => 'single',
+        'has_handicap_points' => false,
+        'deuce_enabled' => false,
     ], $overrides));
 }
 
@@ -248,3 +252,81 @@ describe('generatePools for doubles', function () {
         expect($tournament->pools()->count())->toBe(0);
     });
 })->group('Tournament', 'Wizard', 'Doubles');
+
+// ── saveEventPost validation ──────────────────────────────────────────────────
+
+describe('saveEventPost', function () {
+
+    it('rejects publish when title is missing and shows an error toast', function () {
+        $admin = User::factory()->isAdmin()->create();
+        $tournament = wizardTournament();
+
+        $component = Livewire::actingAs($admin)
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->set('eventTitle', '')
+            ->set('eventDescription', 'A proper description for the event.')
+            ->set('eventLocation', 'Club House')
+            ->call('saveEventPost', 'published');
+
+        $component->assertHasErrors(['eventTitle']);
+    });
+
+    it('rejects publish when description is missing and shows an error toast', function () {
+        $admin = User::factory()->isAdmin()->create();
+        $tournament = wizardTournament();
+
+        $component = Livewire::actingAs($admin)
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->set('eventTitle', 'Spring Open 2026')
+            ->set('eventDescription', '')
+            ->set('eventLocation', 'Club House')
+            ->call('saveEventPost', 'published');
+
+        $component->assertHasErrors(['eventDescription']);
+    });
+
+    it('publishes without location — location is managed in setup step', function () {
+        $admin = User::factory()->isAdmin()->create();
+        $tournament = wizardTournament();
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->set('eventTitle', 'Spring Open 2026')
+            ->set('eventDescription', 'A proper description for the event.')
+            ->set('eventLocation', '')
+            ->call('saveEventPost', 'published')
+            ->assertHasNoErrors(['eventLocation']);
+    });
+
+    it('saves as draft with only a title — description and location are optional', function () {
+        $admin = User::factory()->isAdmin()->create();
+        $tournament = wizardTournament();
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->set('eventTitle', 'Spring Open 2026')
+            ->set('eventDescription', '')
+            ->set('eventLocation', '')
+            ->call('saveEventPost', 'draft')
+            ->assertHasNoErrors();
+    });
+
+    it('publishes successfully when all required fields are filled', function () {
+        $admin = User::factory()->isAdmin()->create();
+        $tournament = wizardTournament();
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->set('eventTitle', 'Spring Open 2026')
+            ->set('eventDescription', 'A proper description for the event.')
+            ->set('eventLocation', 'Club House')
+            ->call('saveEventPost', 'published')
+            ->assertHasNoErrors();
+
+        expect(EventPost::where('eventable_id', $tournament->id)->first())
+            ->not->toBeNull()
+            ->and(EventPost::where('eventable_id', $tournament->id)->first()->status->value)
+            ->toBe('PUBLISHED');
+    });
+
+})->group('Tournament', 'Wizard', 'Article');

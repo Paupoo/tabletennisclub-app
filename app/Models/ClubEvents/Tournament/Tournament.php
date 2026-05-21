@@ -214,7 +214,7 @@ class Tournament extends Model
         return $this->belongsToMany(User::class)
             ->using(TournamentRegistration::class)
             ->withPivot([
-                'id', 'has_paid',
+                'id', 'has_paid', 'qr_confirmed',
                 'registration_status', 'waitlist_position',
                 'confirmation_deadline', 'payment_deadline', 'payment_id',
             ])

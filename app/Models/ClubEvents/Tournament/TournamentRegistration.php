@@ -16,6 +16,7 @@ class TournamentRegistration extends Pivot
 
     protected $casts = [
         'has_paid' => 'boolean',
+        'qr_confirmed' => 'boolean',
         'confirmation_deadline' => 'datetime',
         'payment_deadline' => 'datetime',
         'waitlist_position' => 'integer',
@@ -29,6 +30,7 @@ class TournamentRegistration extends Pivot
         'confirmation_deadline',
         'payment_deadline',
         'has_paid',
+        'qr_confirmed',
         'payment_id',
     ];
 

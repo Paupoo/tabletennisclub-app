@@ -19,9 +19,6 @@
                 :placeholder="__('e.g. Spring Open 2026')"
                 wire:model="eventTitle"
             />
-            @error('eventTitle')
-                <p class="text-xs text-error">{{ $message }}</p>
-            @enderror
 
             <x-textarea
                 :hint="__('Displayed on the public events page. Plain text, no Markdown.')"
@@ -29,13 +26,6 @@
                 :placeholder="__('A short description visible to members on the website…')"
                 rows="4"
                 wire:model="eventDescription"
-            />
-
-            <x-input
-                :hint="__('e.g. Club House, Rue des Sports 1, Ottignies')"
-                :label="__('Location')"
-                :placeholder="__('Where will the tournament take place?')"
-                wire:model="eventLocation"
             />
 
             <x-checkbox

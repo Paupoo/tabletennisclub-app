@@ -16,6 +16,7 @@ use App\Models\ClubAdmin\Club\Table;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Tournament\Pool;
 use App\Models\ClubEvents\Tournament\Tournament;
+use App\Models\ClubEvents\Tournament\TournamentRegistration;
 use App\Models\ClubPosts\EventPost;
 use App\Notifications\Tournament\TournamentCancelledNotification;
 use App\Notifications\Tournament\TournamentInvitationNotification;
@@ -564,21 +565,12 @@ new class extends Component
         }
 
         $tournament = Tournament::findOrFail($this->tournamentId);
-        $registration = DB::table('tournament_user')
-            ->where('tournament_id', $this->tournamentId)
-            ->where('user_id', $userId)
-            ->first();
-
-        $payment = $registration?->payment_id
-            ? \App\Models\ClubAdmin\Payment\Payment::find($registration->payment_id)
-            : null;
-
-        if (! $payment) {
-            $this->error(__('No payment found for this player.'));
-            return;
-        }
-
         $user = User::findOrFail($userId);
+        $registration = TournamentRegistration::where('tournament_id', $this->tournamentId)
+            ->where('user_id', $userId)
+            ->firstOrFail();
+
+        $payment = app(TournamentService::class)->ensurePaymentExists($registration, $tournament);
 
         $this->qrPaymentDetails = [
             'name'        => $user->full_name,
@@ -646,6 +638,22 @@ new class extends Component
 
         $this->reset(['showDebtModal', 'paymentActionUserId']);
         $this->warning(__('Debt recorded. A reminder will be sent tomorrow at 9h.'), icon: 'o-exclamation-triangle');
+    }
+
+    public function markQrConfirmed(int $userId): void
+    {
+        if (! $this->tournamentId) {
+            return;
+        }
+
+        DB::table('tournament_user')
+            ->where('tournament_id', $this->tournamentId)
+            ->where('user_id', $userId)
+            ->update(['qr_confirmed' => true]);
+
+        unset($this->registrations);
+        $this->reset(['showQrModal', 'paymentActionUserId']);
+        $this->success(__('QR payment confirmed on-site.'), icon: 'o-check-circle');
     }
 
     // ── Computed: matches list for verification
@@ -766,8 +774,22 @@ new class extends Component
                 $this->eventFeatured    = (bool) $ep->featured;
                 $this->eventStatus      = $ep->status->value;
             } else {
-                $this->eventTitle    = $tournament->name;
-                $this->eventLocation = $tournament->location ?? '';
+                $this->eventTitle = $tournament->name;
+            }
+        }
+
+        // Pre-fill location from the first room's address if not already set
+        if ($this->eventLocation === '') {
+            $roomId = $this->selectedRooms[0] ?? null;
+            $room   = $roomId
+                ? \App\Models\ClubAdmin\Club\Room::find($roomId)
+                : \App\Models\ClubAdmin\Club\Room::first();
+
+            if ($room) {
+                $this->eventLocation = implode(', ', array_filter([
+                    $room->street,
+                    $room->city_name,
+                ]));
             }
         }
     }
@@ -914,10 +936,18 @@ new class extends Component
 
     public function saveEventPost(string $status = 'draft'): void
     {
-        $this->validate([
+        $rules = [
             'eventTitle'       => 'required|min:3',
-            'eventDescription' => 'nullable|string',
-        ]);
+            'eventDescription' => $status === 'published' ? 'required|string|min:10' : 'nullable|string',
+            'eventLocation'    => 'nullable|string',
+        ];
+
+        try {
+            $this->validate($rules);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $this->error(__('Please correct the errors before saving.'));
+            throw $e;
+        }
 
         $enumStatus = $status === 'published'
             ? EventPostStatusEnum::PUBLISHED
@@ -1005,6 +1035,7 @@ new class extends Component
                 'ranking'          => $u->ranking ?? 'NC',
                 'status'           => $u->pivot->registration_status,
                 'has_paid'         => (bool) $u->pivot->has_paid,
+                'qr_confirmed'     => (bool) $u->pivot->qr_confirmed,
                 'payment_id'       => $u->pivot->payment_id,
                 'payment_deadline' => $u->pivot->payment_deadline,
                 'registered_at'    => $u->pivot->created_at,

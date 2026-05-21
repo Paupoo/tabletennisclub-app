@@ -84,7 +84,9 @@
             @scope('cell_has_paid', $row)
                 @if($row['has_paid'])
                     <x-badge value="{{ __('Paid') }}" class="badge-success badge-sm" icon="o-check-circle" />
-                @elseif(! $row['payment_id'])
+                @elseif($row['qr_confirmed'])
+                    <x-badge value="{{ __('QR seen') }}" class="badge-info badge-sm" icon="o-eye" />
+                @elseif(! $row['payment_id'] && ! ($this->currentTournament?->isPaid() ?? false))
                     <x-badge value="{{ __('Free') }}" class="badge-ghost badge-sm" />
                 @else
                     @if (! $this->isLaunched)
@@ -337,6 +339,15 @@
     @endif
     <x-slot:actions>
         <x-button label="{{ __('Close') }}" wire:click="$set('showQrModal', false)" class="btn-ghost" />
+        @if($paymentActionUserId)
+            <x-button
+                label="{{ __('I saw the payment succeed') }}"
+                icon="o-eye"
+                class="btn-info btn-sm"
+                tooltip="{{ __('Mark that you visually confirmed the transfer on screen. The treasurer will reconcile it later.') }}"
+                wire:click="markQrConfirmed({{ $paymentActionUserId }})"
+                spinner="markQrConfirmed" />
+        @endif
     </x-slot:actions>
 </x-modal>
 

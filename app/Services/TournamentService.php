@@ -84,6 +84,30 @@ class TournamentService
     }
 
     /**
+     * Ensures a pending Payment exists for this registration.
+     * For registrations made on tournament day, no Payment is created upfront — this creates one lazily.
+     */
+    public function ensurePaymentExists(TournamentRegistration $registration, Tournament $tournament): Payment
+    {
+        if ($registration->payment_id) {
+            return Payment::findOrFail($registration->payment_id);
+        }
+
+        $payment = $registration->payment()->create([
+            'reference' => (new GeneratePaymentReference)(),
+            'amount_due' => $tournament->price,
+            'amount_paid' => 0,
+            'status' => 'pending',
+        ]);
+
+        DB::table('tournament_user')
+            ->where('id', $registration->id)
+            ->update(['payment_id' => $payment->id]);
+
+        return $payment->fresh();
+    }
+
+    /**
      * Expire unconfirmed waitlist promotions (48h window passed) and trigger the next person.
      * Called by the hourly scheduler.
      */
@@ -192,13 +216,12 @@ class TournamentService
             ->where('user_id', $user->id)
             ->firstOrFail();
 
-        if ($registration->payment_id) {
-            Payment::where('id', $registration->payment_id)->update([
-                'status' => 'paid',
-                'payment_method' => 'cash',
-                'amount_paid' => $tournament->price,
-            ]);
-        }
+        $payment = $this->ensurePaymentExists($registration, $tournament);
+        $payment->update([
+            'status' => 'paid',
+            'payment_method' => 'cash',
+            'amount_paid' => $tournament->price,
+        ]);
 
         DB::table('tournament_user')
             ->where('tournament_id', $tournament->id)
@@ -225,10 +248,10 @@ class TournamentService
             ->where('user_id', $user->id)
             ->firstOrFail();
 
-        if ($registration->payment_id) {
-            SendDebtReminderNotification::dispatch($registration->payment_id, $user->id, $tournament->id)
-                ->delay(now()->addDay()->setTime(9, 0));
-        }
+        $payment = $this->ensurePaymentExists($registration, $tournament);
+
+        SendDebtReminderNotification::dispatch($payment->id, $user->id, $tournament->id)
+            ->delay(now()->addDay()->setTime(9, 0));
     }
 
     /**

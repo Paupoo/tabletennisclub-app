@@ -15,20 +15,20 @@ use Livewire\Livewire;
 function eventPostTournament(array $overrides = []): Tournament
 {
     return Tournament::factory()->create(array_merge([
-        'status'                    => TournamentStatusEnum::PUBLISHED,
-        'price'                     => 10,
-        'max_users'                 => 16,
-        'duration_minutes'          => 180,
-        'logistics_buffer_minutes'  => 3,
-        'sets_to_win'               => 3,
-        'nb_pools'                  => 2,
-        'pool_size'                 => 4,
-        'nb_qualifiers_per_pool'    => 2,
-        'match_type'                => 'single',
-        'has_handicap_points'       => false,
-        'deuce_enabled'             => true,
-        'start_time'                => '10:00:00',
-        'location'                  => 'Club House, Rue des Sports 1',
+        'status' => TournamentStatusEnum::PUBLISHED,
+        'price' => 10,
+        'max_users' => 16,
+        'duration_minutes' => 180,
+        'logistics_buffer_minutes' => 3,
+        'sets_to_win' => 3,
+        'nb_pools' => 2,
+        'pool_size' => 4,
+        'nb_qualifiers_per_pool' => 2,
+        'match_type' => 'single',
+        'has_handicap_points' => false,
+        'deuce_enabled' => true,
+        'start_time' => '10:00:00',
+        'location' => 'Club House, Rue des Sports 1',
     ], $overrides));
 }
 
@@ -155,6 +155,8 @@ describe('saveEventPost — update', function () {
 
         $component
             ->set('eventTitle', 'Updated Title')
+            ->set('eventDescription', 'A proper description for the event.')
+            ->set('eventLocation', 'Club House')
             ->call('saveEventPost', 'published');
 
         expect(EventPost::count())->toBe(1)
@@ -174,7 +176,10 @@ describe('saveEventPost — update', function () {
 
         expect(EventPost::first()->status)->toBe(EventPostStatusEnum::DRAFT);
 
-        $component->call('saveEventPost', 'published');
+        $component
+            ->set('eventDescription', 'A proper description for the event.')
+            ->set('eventLocation', 'Club House')
+            ->call('saveEventPost', 'published');
 
         expect(EventPost::first()->status)->toBe(EventPostStatusEnum::PUBLISHED);
     });
@@ -189,15 +194,15 @@ describe('loadTournament — pre-fills from existing EventPost', function () {
 
         EventPost::create([
             'eventable_type' => Tournament::class,
-            'eventable_id'   => $tournament->id,
-            'type'           => ClubEventTypeEnum::TOURNAMENT,
-            'title'          => 'Existing Title',
-            'description'    => 'Existing description',
-            'location'       => 'Salle A',
-            'status'         => EventPostStatusEnum::PUBLISHED->value,
-            'event_date'     => $tournament->start_date->toDateString(),
-            'start_time'     => '10:00:00',
-            'icon'           => '🏆',
+            'eventable_id' => $tournament->id,
+            'type' => ClubEventTypeEnum::TOURNAMENT,
+            'title' => 'Existing Title',
+            'description' => 'Existing description',
+            'location' => 'Salle A',
+            'status' => EventPostStatusEnum::PUBLISHED->value,
+            'event_date' => $tournament->start_date->toDateString(),
+            'start_time' => '10:00:00',
+            'icon' => '🏆',
         ]);
 
         mountWizard($admin, $tournament)
@@ -224,16 +229,16 @@ describe('public events page', function () {
 
         EventPost::create([
             'eventable_type' => Tournament::class,
-            'eventable_id'   => $tournament->id,
-            'type'           => ClubEventTypeEnum::TOURNAMENT,
-            'title'          => 'Public Open 2026',
-            'description'    => 'Open for all members.',
-            'location'       => 'Club House',
-            'status'         => EventPostStatusEnum::PUBLISHED->value,
-            'event_date'     => now()->addMonth()->toDateString(),
-            'start_time'     => '10:00:00',
-            'icon'           => '🏆',
-            'price'          => '10',
+            'eventable_id' => $tournament->id,
+            'type' => ClubEventTypeEnum::TOURNAMENT,
+            'title' => 'Public Open 2026',
+            'description' => 'Open for all members.',
+            'location' => 'Club House',
+            'status' => EventPostStatusEnum::PUBLISHED->value,
+            'event_date' => now()->addMonth()->toDateString(),
+            'start_time' => '10:00:00',
+            'icon' => '🏆',
+            'price' => '10',
         ]);
 
         $this->get(route('eventPosts'))
@@ -247,15 +252,15 @@ describe('public events page', function () {
 
         EventPost::create([
             'eventable_type' => Tournament::class,
-            'eventable_id'   => $tournament->id,
-            'type'           => ClubEventTypeEnum::TOURNAMENT,
-            'title'          => 'Hidden Draft',
-            'description'    => '',
-            'location'       => '',
-            'status'         => EventPostStatusEnum::DRAFT->value,
-            'event_date'     => now()->addMonth()->toDateString(),
-            'start_time'     => '10:00:00',
-            'icon'           => '🏆',
+            'eventable_id' => $tournament->id,
+            'type' => ClubEventTypeEnum::TOURNAMENT,
+            'title' => 'Hidden Draft',
+            'description' => '',
+            'location' => '',
+            'status' => EventPostStatusEnum::DRAFT->value,
+            'event_date' => now()->addMonth()->toDateString(),
+            'start_time' => '10:00:00',
+            'icon' => '🏆',
         ]);
 
         $this->get(route('eventPosts'))
@@ -268,16 +273,16 @@ describe('public events page', function () {
 
         EventPost::create([
             'eventable_type' => Tournament::class,
-            'eventable_id'   => $tournament->id,
-            'type'           => ClubEventTypeEnum::TOURNAMENT,
-            'title'          => 'Free Tournament',
-            'description'    => '',
-            'location'       => 'Club House',
-            'status'         => EventPostStatusEnum::PUBLISHED->value,
-            'event_date'     => now()->addMonth()->toDateString(),
-            'start_time'     => '10:00:00',
-            'icon'           => '🏆',
-            'price'          => '0',
+            'eventable_id' => $tournament->id,
+            'type' => ClubEventTypeEnum::TOURNAMENT,
+            'title' => 'Free Tournament',
+            'description' => '',
+            'location' => 'Club House',
+            'status' => EventPostStatusEnum::PUBLISHED->value,
+            'event_date' => now()->addMonth()->toDateString(),
+            'start_time' => '10:00:00',
+            'icon' => '🏆',
+            'price' => '0',
         ]);
 
         $this->get(route('eventPosts'))

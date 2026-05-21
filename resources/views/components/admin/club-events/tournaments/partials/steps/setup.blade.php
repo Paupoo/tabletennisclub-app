@@ -33,6 +33,15 @@
                     @endif
                 </div>
 
+                {{-- Location — used on the public event page --}}
+                <x-input
+                    :label="__('Location (public)')"
+                    :placeholder="__('e.g. Club House, Rue des Sports 1, Ottignies')"
+                    :hint="__('Displayed on the website event page.')"
+                    icon="o-map-pin"
+                    wire:model="eventLocation"
+                />
+
                 {{-- Date — always editable, notification if players registered --}}
                 <div class="relative">
                     <x-datepicker label="Date(*)" icon="o-calendar"

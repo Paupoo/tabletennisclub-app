@@ -12,13 +12,15 @@
                 placeholder="{{ __('Search…') }}"
                 wire:model.live.debounce.300ms="search"
             />
-            <x-button
-                class="btn-primary"
-                icon="o-plus"
-                label="{{ __('Create') }}"
-                link="{{ route('admin.tournaments.wizard') }}"
-                responsive
-            />
+            @if ($this->canManage)
+                <x-button
+                    class="btn-primary"
+                    icon="o-plus"
+                    label="{{ __('Create') }}"
+                    link="{{ route('admin.tournaments.wizard') }}"
+                    responsive
+                />
+            @endif
         </x-slot:actions>
     </x-header>
 
@@ -29,8 +31,10 @@
             'live'     => ['label' => __('Live'),     'icon' => 'o-rocket-launch'],
             'upcoming' => ['label' => __('Upcoming'), 'icon' => 'o-calendar'],
             'closed'   => ['label' => __('Closed'),   'icon' => 'o-check-circle'],
-            'draft'    => ['label' => __('Draft'),    'icon' => 'o-document'],
         ];
+        if ($this->canManage) {
+            $tabs['draft'] = ['label' => __('Draft'), 'icon' => 'o-document'];
+        }
     @endphp
 
     <div class="mb-6 flex gap-1 overflow-x-auto border-b border-base-200 pb-0">
@@ -69,7 +73,7 @@
                     {{ __('No tournaments yet') }}
                 @endif
             </p>
-            @if (! $search)
+            @if (! $search && $this->canManage)
                 <p class="mt-1 text-sm">
                     <a class="link link-primary" href="{{ route('admin.tournaments.wizard') }}">{{ __('Create your first tournament') }}</a>
                 </p>
@@ -83,9 +87,11 @@
             $groups = [
                 'live'     => ['label' => __('Live'),     'icon' => 'o-rocket-launch', 'class' => 'text-primary',          'statuses' => ['pending']],
                 'upcoming' => ['label' => __('Upcoming'), 'icon' => 'o-calendar',      'class' => 'text-info',             'statuses' => ['published', 'locked', 'setup']],
-                'draft'    => ['label' => __('Draft'),    'icon' => 'o-document',      'class' => 'text-base-content/50',  'statuses' => ['draft']],
                 'closed'   => ['label' => __('Closed'),  'icon' => 'o-check-circle',  'class' => 'text-base-content/40',  'statuses' => ['closed', 'cancelled']],
             ];
+            if ($this->canManage) {
+                $groups['draft'] = ['label' => __('Draft'), 'icon' => 'o-document', 'class' => 'text-base-content/50', 'statuses' => ['draft']];
+            }
         @endphp
 
         <div class="space-y-10">

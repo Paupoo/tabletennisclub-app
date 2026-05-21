@@ -17,6 +17,12 @@ class CommitteeMemberMiddelware
      */
     public function handle(Request $request, Closure $next): Response
     {
+        $user = $request->user();
+
+        if (! $user || (! $user->is_admin && ! $user->is_committee_member)) {
+            abort(403);
+        }
+
         return $next($request);
     }
 }

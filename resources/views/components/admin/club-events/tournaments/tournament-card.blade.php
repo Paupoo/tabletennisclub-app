@@ -120,16 +120,22 @@
         <div class="flex-1"></div>
 
         {{-- Actions --}}
+        @php
+            $canManageCard = ($u = auth()->user()) && ($u->is_admin || $u->is_committee_member);
+        @endphp
+
         <div class="flex items-center justify-end border-t border-base-200 pt-2">
             <div class="flex items-center gap-1">
 
-                <a
-                    class="btn btn-ghost btn-sm btn-square text-base-content/60 hover:text-primary"
-                    href="{{ route('admin.tournaments.wizard.edit', $tournament) }}"
-                    title="{{ __('Settings') }}"
-                >
-                    <x-heroicon-o-cog-6-tooth class="h-4 w-4" />
-                </a>
+                @if ($canManageCard)
+                    <a
+                        class="btn btn-ghost btn-sm btn-square text-base-content/60 hover:text-primary"
+                        href="{{ route('admin.tournaments.wizard.edit', $tournament) }}"
+                        title="{{ __('Settings') }}"
+                    >
+                        <x-heroicon-o-cog-6-tooth class="h-4 w-4" />
+                    </a>
+                @endif
 
                 @if ($tournament->status !== \App\Enums\TournamentStatusEnum::CLOSED)
                     <a

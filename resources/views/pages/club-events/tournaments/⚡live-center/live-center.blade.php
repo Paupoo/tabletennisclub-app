@@ -7,7 +7,7 @@
         <x-slot:actions>
             @if ($this->tournamentClosed)
                 <x-badge value="{{ __('Closed') }}" class="badge-neutral" icon="o-lock-closed" />
-            @elseif ($this->poolsPhaseComplete && ! $this->bracketExists)
+            @elseif ($this->canManageTournament && $this->poolsPhaseComplete && ! $this->bracketExists)
                 <x-button label="{{ __('Create bracket') }}" icon="o-trophy"
                     class="btn-warning btn-sm animate-pulse"
                     wire:click="generateBracket" spinner="generateBracket" />
@@ -67,6 +67,7 @@
             @include('admin.club-events.tournaments.partials.live.tabs.pools')
         </x-tab>
 
+        @if ($this->canManageTournament)
         <x-tab name="tables" icon="o-squares-2x2">
             <x-slot:label>
                 {{ __('Tables') }}
@@ -77,6 +78,7 @@
             </x-slot:label>
             @include('admin.club-events.tournaments.partials.live.tabs.tables')
         </x-tab>
+        @endif
 
         <x-tab name="upcoming" icon="o-megaphone">
             <x-slot:label>
@@ -99,6 +101,7 @@
             @include('admin.club-events.tournaments.partials.live.tabs.rankings')
         </x-tab>
 
+        @if ($this->canManageTournament)
         <x-tab name="closure" icon="o-lock-closed">
             <x-slot:label>
                 {{ __('Closure') }}
@@ -110,11 +113,14 @@
             </x-slot:label>
             @include('admin.club-events.tournaments.partials.live.tabs.closure')
         </x-tab>
+        @endif
 
     </x-tabs>
 
-    {{-- ── Drawers ──────────────────────────────────────────────────── --}}
-    @include('admin.club-events.tournaments.partials.live.drawers.score-entry')
-    @include('admin.club-events.tournaments.partials.live.drawers.launch-match')
+    {{-- ── Drawers (committee / admin only) ──────────────────────────── --}}
+    @if ($this->canManageTournament)
+        @include('admin.club-events.tournaments.partials.live.drawers.score-entry')
+        @include('admin.club-events.tournaments.partials.live.drawers.launch-match')
+    @endif
 
 </div>

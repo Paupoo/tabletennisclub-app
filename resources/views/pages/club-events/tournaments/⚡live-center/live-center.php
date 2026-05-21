@@ -86,6 +86,8 @@ new class extends Component
 
     public function fillClosureFromRankings(): void
     {
+        abort_unless($this->canManageTournament, 403);
+
         $top3 = $this->rankings->take(3);
 
         if ($top3->isEmpty()) {
@@ -140,6 +142,16 @@ new class extends Component
                 ];
             }
         }
+    }
+
+    // ── Computed: authorization
+
+    #[Computed]
+    public function canManageTournament(): bool
+    {
+        $user = auth()->user();
+
+        return $user instanceof User && ($user->is_admin || $user->is_committee_member);
     }
 
     // ── Computed: phase flags
@@ -376,6 +388,8 @@ new class extends Component
 
     public function openScoreEntry(int $matchId, ?int $tableId = null): void
     {
+        abort_unless($this->canManageTournament, 403);
+
         $this->selectedMatchId = $matchId;
         $this->selectedTableId = $tableId;
         $maxSets = ($this->tournament->sets_to_win * 2) - 1;
@@ -431,6 +445,8 @@ new class extends Component
 
     public function saveDraft(): void
     {
+        abort_unless($this->canManageTournament, 403);
+
         $match = TournamentMatch::find($this->selectedMatchId);
 
         if (! $match) {
@@ -454,6 +470,8 @@ new class extends Component
 
     public function submitScore(): void
     {
+        abort_unless($this->canManageTournament, 403);
+
         $match = TournamentMatch::with(['player1', 'player2'])->find($this->selectedMatchId);
 
         if (! $match) {
@@ -509,12 +527,16 @@ new class extends Component
 
     public function openLaunchDrawer(int $tableId): void
     {
+        abort_unless($this->canManageTournament, 403);
+
         $this->selectedTableId = $tableId;
         $this->launchDrawer    = true;
     }
 
     public function startMatch(int $matchId): void
     {
+        abort_unless($this->canManageTournament, 403);
+
         if (! $this->selectedTableId) {
             $this->error(__('No table selected.'));
 
@@ -554,6 +576,8 @@ new class extends Component
 
     public function generateBracket(): void
     {
+        abort_unless($this->canManageTournament, 403);
+
         if (! $this->poolsPhaseComplete) {
             $this->error(__('All pool matches must be completed before creating the bracket.'));
 
@@ -590,6 +614,8 @@ new class extends Component
 
     public function closeTournament(): void
     {
+        abort_unless($this->canManageTournament, 403);
+
         if (! $this->allMatchesComplete) {
             $this->error(__('All matches must be completed before closing the tournament.'));
 

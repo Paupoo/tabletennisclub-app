@@ -160,8 +160,10 @@ Route::prefix('admin/club-events/tournaments')
     ->group(function (): void {
         Route::livewire('/', 'pages::club-events.tournaments.index')->name('admin.tournaments.index');
         Route::livewire('{tournament}/live-center', 'pages::club-events.tournaments.live-center')->name('admin.tournaments.live-center');
-        Route::livewire('wizard', 'pages::club-events.tournaments.wizard')->name('admin.tournaments.wizard');
-        Route::livewire('{tournament}/wizard', 'pages::club-events.tournaments.wizard')->name('admin.tournaments.wizard.edit');
+        Route::middleware('committee')->group(function (): void {
+            Route::livewire('wizard', 'pages::club-events.tournaments.wizard')->name('admin.tournaments.wizard');
+            Route::livewire('{tournament}/wizard', 'pages::club-events.tournaments.wizard')->name('admin.tournaments.wizard.edit');
+        });
     });
 
 Route::prefix('admin/club-events/interclubs/')

@@ -10,6 +10,7 @@ use App\Models\ClubEvents\Tournament\Pool;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Tournament\TournamentMatch;
 use App\Models\ClubEvents\Tournament\TournamentPair;
+use App\Models\ClubEvents\Tournament\TournamentRegistration;
 use Illuminate\Support\Collection;
 use InvalidArgumentException;
 
@@ -526,7 +527,13 @@ class TournamentMatchService
         $players = $pool->users;
         $matches = TournamentMatch::where('pool_id', $pool->id)->with('sets')->get();
 
-        $standings = $players->map(function ($player) use ($matches) {
+        $noShowIds = TournamentRegistration::where('tournament_id', $pool->tournament_id)
+            ->whereIn('user_id', $players->pluck('id'))
+            ->where('registration_status', 'no_show')
+            ->pluck('user_id')
+            ->flip();
+
+        $standings = $players->map(function ($player) use ($matches, $noShowIds) {
             $playerMatches = $matches->filter(function ($match) use ($player) {
                 return $match->player1_id === $player->id || $match->player2_id === $player->id;
             });
@@ -537,7 +544,7 @@ class TournamentMatchService
             $totalPoints = 0;
 
             foreach ($playerMatches as $match) {
-                if ($match->isCompleted()) {
+                if ($match->isCompleted() && ! $match->is_forfeit) {
                     $setsWon += $match->getSetsWon($player->id);
                     $totalPoints += $match->getTotalPoints($player->id);
                 }
@@ -549,12 +556,15 @@ class TournamentMatchService
                 'matches_won' => $matchesWon,
                 'sets_won' => $setsWon,
                 'total_points' => $totalPoints,
+                'no_show' => isset($noShowIds[$player->id]),
             ];
         });
 
-        // Sort standings by matches won (desc), sets won (desc), and total points (desc)
+        // Sort standings: no-show players always last, then by wins/sets/points
         return $standings->sortByDesc(function ($item) {
-            return sprintf('%06d%06d%06d', $item['matches_won'], $item['sets_won'], $item['total_points']);
+            $noShowPenalty = $item['no_show'] ? -1000000 : 0;
+
+            return $noShowPenalty + (int) sprintf('%06d%06d%06d', $item['matches_won'], $item['sets_won'], $item['total_points']);
         })->values();
     }
 
@@ -651,6 +661,36 @@ class TournamentMatchService
         $names = $conflicts->map(fn ($id) => User::find($id)?->full_name ?? "#{$id}")->join(', ');
 
         return __('Conflict: :names already in an active match.', ['names' => $names]);
+    }
+
+    /**
+     * Forfeit all remaining scheduled pool matches for a player (e.g. after marking them no-show).
+     * The opponent is automatically set as winner. Returns the number of forfeited matches.
+     */
+    public function forfeitPoolMatchesForPlayer(Tournament $tournament, User $user): int
+    {
+        $matches = TournamentMatch::where('tournament_id', $tournament->id)
+            ->whereNotNull('pool_id')
+            ->where(function ($q) use ($user) {
+                $q->where('player1_id', $user->id)
+                    ->orWhere('player2_id', $user->id);
+            })
+            ->whereIn('status', ['scheduled', 'in_progress'])
+            ->get();
+
+        foreach ($matches as $match) {
+            $opponentId = $match->player1_id === $user->id
+                ? $match->player2_id
+                : $match->player1_id;
+
+            $match->update([
+                'status' => 'completed',
+                'winner_id' => $opponentId,
+                'is_forfeit' => true,
+            ]);
+        }
+
+        return $matches->count();
     }
 
     /**

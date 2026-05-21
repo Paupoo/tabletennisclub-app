@@ -87,6 +87,8 @@ class TournamentMatch extends Model
         'scheduled_time' => 'datetime',
         'player1_handicap_points' => 'integer',
         'player2_handicap_points' => 'integer',
+        'is_forfeit' => 'boolean',
+        'is_bronze_match' => 'boolean',
     ];
 
     protected $fillable = [
@@ -108,6 +110,7 @@ class TournamentMatch extends Model
         'next_match_id',
         'bronze_match_id',
         'is_bronze_match',
+        'is_forfeit',
     ];
 
     /**

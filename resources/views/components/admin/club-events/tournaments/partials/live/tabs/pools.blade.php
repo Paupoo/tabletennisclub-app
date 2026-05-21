@@ -45,8 +45,13 @@
                                 ])>
                                 <div class="flex items-center gap-2 flex-1 min-w-0">
                                     <span class="text-xs font-mono opacity-30 w-4 shrink-0">{{ $i + 1 }}</span>
-                                    <span class="truncate text-sm font-medium">{{ $displayName }}</span>
-                                    @if ($isMe)
+                                    <span @class([
+                                        'truncate text-sm font-medium',
+                                        'line-through opacity-40' => $entry['no_show'],
+                                    ])>{{ $displayName }}</span>
+                                    @if ($entry['no_show'])
+                                        <x-badge value="{{ __('Forfeit') }}" class="badge-error badge-xs shrink-0" />
+                                    @elseif ($isMe)
                                         <x-icon name="o-arrow-left" class="w-3 h-3 ml-1 shrink-0" />
                                     @endif
                                 </div>

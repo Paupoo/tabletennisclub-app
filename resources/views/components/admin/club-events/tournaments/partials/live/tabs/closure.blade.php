@@ -200,13 +200,18 @@
                             </span>
                         </div>
                         <div class="divide-y divide-base-200">
-                            @foreach ($this->unpaidParticipants as $user)
+                            @foreach ($this->unpaidParticipants as $entry)
                                 <div class="flex items-center gap-3 px-4 py-2.5">
                                     <div class="w-7 h-7 rounded-full bg-base-200 flex items-center justify-center text-[10px] font-black shrink-0">
-                                        {{ mb_strtoupper(mb_substr($user->first_name ?? '?', 0, 1)) }}{{ mb_strtoupper(mb_substr($user->last_name ?? '', 0, 1)) }}
+                                        {{ mb_strtoupper(mb_substr($entry['user']->first_name ?? '?', 0, 1)) }}{{ mb_strtoupper(mb_substr($entry['user']->last_name ?? '', 0, 1)) }}
                                     </div>
-                                    <span class="flex-1 text-sm font-medium">{{ $user->full_name }}</span>
-                                    <span class="text-xs text-base-content/40">{{ $user->email }}</span>
+                                    <span class="flex-1 text-sm font-medium">{{ $entry['user']->full_name }}</span>
+                                    @if ($entry['qr_confirmed'])
+                                        <x-badge value="{{ __('QR seen') }}" class="badge-info badge-xs" icon="o-eye"
+                                            tooltip="{{ __('QR payment visually confirmed at reception — pending bank reconciliation') }}" />
+                                    @else
+                                        <span class="text-xs text-base-content/40">{{ $entry['user']->email }}</span>
+                                    @endif
                                 </div>
                             @endforeach
                         </div>

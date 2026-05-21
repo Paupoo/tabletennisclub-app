@@ -11,6 +11,7 @@ use App\Enums\EventPostStatusEnum;
 use App\Enums\TournamentObjectiveEnum;
 use App\Enums\TournamentStatusEnum;
 use App\Models\ClubAdmin\Payment\CashRegister;
+use App\Models\ClubAdmin\Payment\Payment;
 use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Club\Table;
 use App\Models\ClubAdmin\Users\User;
@@ -143,7 +144,6 @@ new class extends Component
 
     public bool $showCashConfirmModal = false;
 
-    public bool $showDebtModal = false;
 
     public ?int $paymentActionUserId = null;
 
@@ -552,8 +552,21 @@ new class extends Component
             ->where('user_id', $userId)
             ->update(['registration_status' => 'no_show']);
 
+        $forfeited = 0;
+        if ($this->isLaunched) {
+            $tournament = Tournament::findOrFail($this->tournamentId);
+            $user = User::findOrFail($userId);
+            $forfeited = app(\App\Services\TournamentMatchService::class)
+                ->forfeitPoolMatchesForPlayer($tournament, $user);
+        }
+
         unset($this->registrations);
-        $this->warning(__('No-show recorded.'));
+
+        $msg = $forfeited > 0
+            ? __('No-show recorded. :count pool match(es) forfeited.', ['count' => $forfeited])
+            : __('No-show recorded.');
+
+        $this->warning($msg, icon: 'o-no-symbol');
     }
 
     // ── Payment actions
@@ -617,27 +630,6 @@ new class extends Component
         unset($this->registrations);
         $this->reset(['showCashConfirmModal', 'paymentActionUserId']);
         $this->success(__('Cash payment recorded.'), icon: 'o-currency-euro');
-    }
-
-    public function openDebtModal(int $userId): void
-    {
-        $this->paymentActionUserId = $userId;
-        $this->showDebtModal = true;
-    }
-
-    public function confirmDebt(): void
-    {
-        if (! $this->tournamentId || ! $this->paymentActionUserId) {
-            return;
-        }
-
-        $tournament = Tournament::findOrFail($this->tournamentId);
-        $user = User::findOrFail($this->paymentActionUserId);
-
-        app(TournamentService::class)->recordDebt($tournament, $user);
-
-        $this->reset(['showDebtModal', 'paymentActionUserId']);
-        $this->warning(__('Debt recorded. A reminder will be sent tomorrow at 9h.'), icon: 'o-exclamation-triangle');
     }
 
     public function markQrConfirmed(int $userId): void
@@ -1025,21 +1017,25 @@ new class extends Component
         $col = $this->sortBy['column'];
         $dir = $this->sortBy['direction'];
 
-        $rows = Tournament::findOrFail($this->tournamentId)
+        $users = Tournament::findOrFail($this->tournamentId)
             ->users()
             ->wherePivotIn('registration_status', ['registered', 'confirmed', 'spot_offered', 'no_show'])
-            ->get()
-            ->map(fn (User $u) => [
-                'id'               => $u->id,
-                'name'             => $u->full_name,
-                'ranking'          => $u->ranking ?? 'NC',
-                'status'           => $u->pivot->registration_status,
-                'has_paid'         => (bool) $u->pivot->has_paid,
-                'qr_confirmed'     => (bool) $u->pivot->qr_confirmed,
-                'payment_id'       => $u->pivot->payment_id,
-                'payment_deadline' => $u->pivot->payment_deadline,
-                'registered_at'    => $u->pivot->created_at,
-            ]);
+            ->get();
+
+        $paymentIds = $users->map(fn (User $u) => $u->pivot->payment_id)->filter()->unique()->values();
+        $paidPaymentIds = Payment::whereIn('id', $paymentIds)->where('status', 'paid')->pluck('id')->flip();
+
+        $rows = $users->map(fn (User $u) => [
+            'id'               => $u->id,
+            'name'             => $u->full_name,
+            'ranking'          => $u->ranking ?? 'NC',
+            'status'           => $u->pivot->registration_status,
+            'has_paid'         => (bool) $u->pivot->has_paid || isset($paidPaymentIds[$u->pivot->payment_id]),
+            'qr_confirmed'     => (bool) $u->pivot->qr_confirmed,
+            'payment_id'       => $u->pivot->payment_id,
+            'payment_deadline' => $u->pivot->payment_deadline,
+            'registered_at'    => $u->pivot->created_at,
+        ]);
 
         return $dir === 'asc'
             ? $rows->sortBy($col)->values()

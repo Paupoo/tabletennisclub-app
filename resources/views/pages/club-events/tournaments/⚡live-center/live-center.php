@@ -7,6 +7,7 @@ use App\Enums\NewsPostStatusEnum;
 use App\Enums\TournamentStatusEnum;
 use App\Mail\TournamentResultsMail;
 use App\Models\ClubAdmin\Club\Table;
+use App\Models\ClubAdmin\Payment\Payment;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Tournament\Pool;
 use App\Models\ClubEvents\Tournament\Tournament;
@@ -355,10 +356,21 @@ new class extends Component
             return collect();
         }
 
-        return $this->tournament->users()
+        $users = $this->tournament->users()
             ->wherePivotIn('registration_status', ['registered', 'confirmed', 'spot_offered'])
             ->wherePivot('has_paid', false)
             ->get();
+
+        $paymentIds = $users->map(fn ($u) => $u->pivot->payment_id)->filter()->unique()->values();
+        $paidIds = Payment::whereIn('id', $paymentIds)->where('status', 'paid')->pluck('id')->flip();
+
+        return $users
+            ->filter(fn ($u) => ! isset($paidIds[$u->pivot->payment_id]))
+            ->map(fn ($u) => [
+                'user'         => $u,
+                'qr_confirmed' => (bool) $u->pivot->qr_confirmed,
+            ])
+            ->values();
     }
 
     #[Computed]

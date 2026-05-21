@@ -50,7 +50,7 @@
     <x-table wire:model.live="selectedPeople" :headers="$headers" :rows="$this->registrations"
         :sort-by="$sortBy" selectable>
             @scope('cell_status', $row)
-                @if (! $this->isLaunched && $row['status'] !== 'no_show')
+                @if (! $this->isLaunched && in_array($row['status'], ['registered', 'spot_offered']))
                     <div class="flex items-center gap-1">
                         <x-button
                             icon="o-check"
@@ -101,11 +101,6 @@
                                 class="btn-ghost btn-xs text-success"
                                 tooltip="{{ __('Cash') }}"
                                 wire:click="openCashConfirmModal({{ $row['id'] }})" />
-                            <x-button
-                                icon="o-exclamation-triangle"
-                                class="btn-ghost btn-xs text-warning"
-                                tooltip="{{ __('Record debt') }}"
-                                wire:click="openDebtModal({{ $row['id'] }})" />
                         </div>
                     @else
                         <x-badge value="{{ __('Pending') }}" class="badge-warning badge-sm" icon="o-clock" />
@@ -367,18 +362,3 @@
     </x-slot:actions>
 </x-modal>
 
-{{-- ── Debt modal ─────────────────────────────────────────── --}}
-<x-modal wire:model="showDebtModal" title="{{ __('Record debt') }}" separator>
-    <div class="flex items-start gap-3 p-4 bg-warning/10 border border-warning/20 rounded-xl text-sm">
-        <x-icon name="o-exclamation-triangle" class="w-5 h-5 shrink-0 mt-0.5 text-warning" />
-        <div>
-            <p class="font-semibold">{{ __('Act the debt?') }}</p>
-            <p class="opacity-70 mt-1">{{ __('The payment will remain pending. The player will receive an email reminder tomorrow at 9h.') }}</p>
-        </div>
-    </div>
-    <x-slot:actions>
-        <x-button label="{{ __('Cancel') }}" wire:click="$set('showDebtModal', false)" class="btn-ghost" />
-        <x-button label="{{ __('Act the debt') }}" icon="o-exclamation-triangle" class="btn-warning"
-            wire:click="confirmDebt" spinner />
-    </x-slot:actions>
-</x-modal>

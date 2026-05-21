@@ -227,7 +227,7 @@ describe('closeTournament — thank-you email', function () {
 
 describe('closeTournament — news post creation', function () {
 
-    it('creates a draft news post when createNewsPost is true', function () {
+    it('creates a published news post when createNewsPost is true', function () {
         Storage::fake('public');
         $admin = User::factory()->isAdmin()->create();
         $tournament = closureTournament();
@@ -242,7 +242,7 @@ describe('closeTournament — news post creation', function () {
         $post = NewsPost::latest()->first();
         expect($post)->not->toBeNull()
             ->and($post->title)->toBe('Résultats — Open Printemps')
-            ->and($post->status)->toBe(NewsPostStatusEnum::DRAFT);
+            ->and($post->status)->toBe(NewsPostStatusEnum::PUBLISHED);
     })->group('closure', 'newspost');
 
     it('links the news post to the tournament', function () {
@@ -265,7 +265,7 @@ describe('closeTournament — news post creation', function () {
             ->and($post->title)->toBe('Résultats — Open Printemps');
     })->group('closure', 'newspost');
 
-    it('creates the news post as DRAFT not published', function () {
+    it('creates the news post as published', function () {
         Storage::fake('public');
         $admin = User::factory()->isAdmin()->create();
         $tournament = closureTournament();
@@ -278,7 +278,7 @@ describe('closeTournament — news post creation', function () {
             ->call('closeTournament');
 
         $post = NewsPost::latest()->first();
-        expect($post->status)->toBe(NewsPostStatusEnum::DRAFT);
+        expect($post->status)->toBe(NewsPostStatusEnum::PUBLISHED);
     })->group('closure', 'newspost');
 
     it('does not create a news post when createNewsPost is false', function () {

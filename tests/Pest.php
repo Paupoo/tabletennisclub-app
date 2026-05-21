@@ -3,9 +3,12 @@
 declare(strict_types=1);
 
 use App\Enums\TournamentStatusEnum;
+use App\Enums\TrainingLevel;
+use App\Enums\TrainingType;
+use App\Models\ClubEvents\Interclub\Season;
 use App\Models\ClubEvents\Tournament\Tournament;
+use App\Models\ClubEvents\Training\TrainingPack;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Artisan;
 use Tests\TestCase;
 
 /*
@@ -23,13 +26,6 @@ uses(
     TestCase::class,
     RefreshDatabase::class,
 )->in('Feature', 'Unit', '../resources/views');
-
-beforeAll(function (): void {
-    // Run migrations and seed once before the whole test suite to avoid
-    // re-seeding on every test. This speeds up the test run while keeping
-    // a seeded DB available for tests.
-    Artisan::call('migrate:fresh', ['--seed' => true]);
-});
 
 /*
 |--------------------------------------------------------------------------
@@ -56,6 +52,28 @@ expect()->extend('toBeOne', function () {
 | global functions to help you to reduce the number of lines of code in your test files.
 |
 */
+
+function makeActiveSeason(): Season
+{
+    return Season::factory()->create([
+        'is_active' => true,
+        'start_at' => now()->startOfYear(),
+        'end_at' => now()->endOfYear(),
+    ]);
+}
+
+function makeTrainingPack(Season $season, array $overrides = []): TrainingPack
+{
+    return TrainingPack::factory()->create(array_merge([
+        'season_id' => $season->id,
+        'level' => TrainingLevel::INTERMEDIATE->value,
+        'type' => TrainingType::DIRECTED->value,
+        'day_of_week' => 2,
+        'start_time' => '18:00:00',
+        'duration_minutes' => 90,
+        'is_active' => true,
+    ], $overrides));
+}
 
 function paymentTournament(array $overrides = []): Tournament
 {

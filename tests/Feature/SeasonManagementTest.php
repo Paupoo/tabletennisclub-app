@@ -77,6 +77,7 @@ describe('season management component', function () {
 
     it('hides older past seasons by default and shows only the most recent one', function () {
         $older = Season::factory()->create([
+            'name' => '1990-1991',
             'start_at' => now()->subYears(3),
             'end_at' => now()->subYears(2),
             'is_active' => false,

@@ -2,36 +2,10 @@
 
 declare(strict_types=1);
 
-use App\Enums\TrainingLevel;
-use App\Enums\TrainingType;
 use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Season;
 use App\Models\ClubEvents\Training\TrainingPack;
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function makeActiveSeason(): Season
-{
-    return Season::factory()->create([
-        'is_active' => true,
-        'start_at' => now()->startOfYear(),
-        'end_at' => now()->endOfYear(),
-    ]);
-}
-
-function makeTrainingPack(Season $season, array $overrides = []): TrainingPack
-{
-    return TrainingPack::factory()->create(array_merge([
-        'season_id' => $season->id,
-        'level' => TrainingLevel::INTERMEDIATE->value,
-        'type' => TrainingType::DIRECTED->value,
-        'day_of_week' => 2,
-        'start_time' => '18:00:00',
-        'duration_minutes' => 90,
-        'is_active' => true,
-    ], $overrides));
-}
 
 // ── generateSessions ──────────────────────────────────────────────────────────
 

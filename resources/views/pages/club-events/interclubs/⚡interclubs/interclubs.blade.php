@@ -1,252 +1,202 @@
 <div>
-    @if (!$selectedTeamId)
+    <x-slot:breadcrumbs>
+        <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
+    </x-slot:breadcrumbs>
 
-    {{-- ================================================================
-             VUE LISTE DES ÉQUIPES
-        ================================================================ --}}
-    <x-header title="{{ __('Interblub Results') }}" subtitle="{{ __('Manage teams and results') }}" separator>
+    <x-header progress-indicator separator title="{{ __('Interclubs Schedule') }}">
+        <x-slot:middle class="justify-end!">
+            <x-select
+                :options="$seasons"
+                option-label="name"
+                option-value="id"
+                wire:model.live="seasonId"
+                placeholder="{{ __('Select a season') }}" />
+        </x-slot:middle>
         <x-slot:actions>
-            <x-button label="{{ __('New team') }}" icon="o-plus" class="btn-primary btn-sm"
-                wire:click="createTeam" />
+            <x-select
+                :options="[['id' => null, 'name' => __('All teams')], ...$ourTeamOptions]"
+                option-label="name"
+                option-value="id"
+                wire:model.live="selectedTeamId"
+                placeholder="{{ __('Filter by team') }}"
+                class="max-w-xs border-none" />
+            <x-button class="btn-primary btn-sm" icon="o-plus" label="{{ __('New match') }}"
+                wire:click="openCreateModal" />
         </x-slot:actions>
     </x-header>
 
-    {{-- MOBILE : Cartes --}}
-    <div class="grid grid-cols-1 gap-4 md:hidden">
-        @foreach ($teams as $team)
-        <x-card class="shadow-sm border border-base-200">
-            <div class="flex justify-between items-start">
-                <div>
-                    <p class="font-bold">{{ $team['name'] }}</p>
-                    <p class="text-sm text-gray-500">{{ $team['division'] }}</p>
-                </div>
-                <x-badge :value="$team['season']" class="badge-outline text-xs" />
-            </div>
-            <x-slot:actions>
-                <x-button icon="o-list-bullet" wire:click="selectTeam({{ $team['id'] }})"
-                    class="btn-sm btn-ghost text-info" tooltip="{{ __('View matches') }}" />
-                <x-button icon="o-pencil" wire:click="editTeam({{ $team['id'] }})"
-                    class="btn-sm btn-ghost" tooltip="{{ __('Edit') }}" />
-                <x-button icon="o-trash" wire:click="deleteTeam({{ $team['id'] }})"
-                    wire:confirm="{{ __('Delete this team and all its matches?') }}"
-                    class="btn-sm btn-ghost text-error" tooltip="{{ __('Delete') }}" />
-            </x-slot:actions>
+    @if (! $seasonId)
+        <x-card class="mt-4 border-none">
+            <p class="py-12 text-center text-sm text-gray-500">{{ __('Select a season to manage the schedule.') }}</p>
         </x-card>
-        @endforeach
-    </div>
-
-    {{-- DESKTOP : Tableau --}}
-    <div class="hidden md:block">
-        <x-table :headers="$teamHeaders" :rows="$teams">
-            @scope('actions', $team)
-            <div class="flex gap-2">
-                <x-button icon="o-list-bullet" wire:click="selectTeam({{ $team['id'] }})"
-                    class="btn-sm btn-ghost text-info" tooltip="{{ __('View matches') }}" />
-                <x-button icon="o-pencil" wire:click="editTeam({{ $team['id'] }})"
-                    class="btn-sm btn-ghost" tooltip="{{ __('Edit') }}" />
-                <x-button icon="o-trash" wire:click="deleteTeam({{ $team['id'] }})"
-                    wire:confirm="{{ __('Delete this team and all its matches?') }}"
-                    class="btn-sm btn-ghost text-error" tooltip="{{ __('Delete') }}" />
+    @elseif ($grouped->isEmpty())
+        <x-card class="mt-4 border-none">
+            <div class="py-16 text-center text-gray-500">
+                {{ __('No matches scheduled for this season.') }}
+                <div class="mt-4">
+                    <x-button class="btn-primary btn-sm" icon="o-plus" label="{{ __('Add first match') }}"
+                        wire:click="openCreateModal" />
+                </div>
             </div>
-            @endscope
-        </x-table>
-    </div>
-
+        </x-card>
     @else
+        @php
+            $catMeta = [
+                'Hommes'   => ['bg' => 'bg-blue-50',  'border' => 'border-blue-200',  'text' => 'text-blue-700',  'dot' => 'bg-blue-500'],
+                'Vétérans' => ['bg' => 'bg-amber-50', 'border' => 'border-amber-200', 'text' => 'text-amber-700', 'dot' => 'bg-amber-500'],
+                'Dames'    => ['bg' => 'bg-pink-50',  'border' => 'border-pink-200',  'text' => 'text-pink-700',  'dot' => 'bg-pink-500'],
+            ];
+        @endphp
 
-    {{-- ================================================================
-             VUE MATCHS D'UNE ÉQUIPE
-        ================================================================ --}}
-    <x-header
-        title="{{ $this->selectedTeam['name'] }} — {{ $this->selectedTeam['division'] }}"
-        subtitle="{{ $this->selectedTeam['season'] }}"
-        separator>
-        <x-slot:actions>
-            <x-button label="{{ __('Back') }}" icon="o-arrow-left" wire:click="backToList"
-                class="btn-ghost btn-sm" />
-            <x-button label="{{ __('Add match') }}" icon="o-plus" wire:click="createMatch"
-                class="btn-primary btn-sm" />
-        </x-slot:actions>
-    </x-header>
+        <div class="space-y-10">
+            @foreach ($grouped as $category => $teams)
+                @php $cat = $catMeta[$category] ?? ['bg' => 'bg-gray-50', 'border' => 'border-gray-200', 'text' => 'text-gray-700', 'dot' => 'bg-gray-400']; @endphp
 
-    {{-- Stats --}}
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <x-stat title="{{ __('Played') }}" value="{{ $this->selectedTeamStats['played'] }}" icon="o-calendar" />
-        <x-stat title="{{ __('Wins') }}" value="{{ $this->selectedTeamStats['wins'] }}" icon="o-trophy" color="text-success" />
-        <x-stat title="{{ __('Losses') }}" value="{{ $this->selectedTeamStats['losses'] }}" icon="o-x-circle" color="text-error" />
-        <x-stat title="{{ __('Win rate') }}" value="{{ $this->selectedTeamStats['win_rate'] }}%" icon="o-chart-bar" color="text-primary" />
-    </div>
+                <section x-data="{ open: true }">
+                    <button
+                        type="button"
+                        class="mb-6 flex w-full items-center gap-3 text-left"
+                        @click="open = !open"
+                    >
+                        <span class="inline-flex items-center gap-2 rounded-full {{ $cat['bg'] }} {{ $cat['border'] }} border px-4 py-1.5">
+                            <span class="h-2 w-2 rounded-full {{ $cat['dot'] }}"></span>
+                            <span class="text-sm font-bold {{ $cat['text'] }} uppercase tracking-wide">{{ $category }}</span>
+                            <span class="text-xs {{ $cat['text'] }} opacity-60">
+                                {{ $teams->flatten(1)->count() }} match{{ $teams->flatten(1)->count() > 1 ? 's' : '' }}
+                            </span>
+                        </span>
+                        <div class="flex-1 border-t {{ $cat['border'] }}"></div>
+                        <x-icon name="o-chevron-down" class="h-4 w-4 opacity-40 transition-transform duration-200" ::class="open ? '' : '-rotate-90'" />
+                    </button>
 
-    {{-- Liste des matchs --}}
-    <x-card>
-        {{-- MOBILE --}}
-        <div class="space-y-3 md:hidden">
-            @forelse ($this->selectedTeamMatches as $match)
-            @php
-            $hasScore = $match['score_home'] !== null;
-            $result = $hasScore ? $this->resolveResult($match) : null;
-            $badgeClass = match($result) {
-            'win' => 'badge-success',
-            'loss' => 'badge-error',
-            'draw' => 'badge-warning',
-            default => 'badge-ghost',
-            };
-            $resultLabel = match($result) {
-            'win' => __('Win'),
-            'loss' => __('Loss'),
-            'draw' => __('Draw'),
-            default => __('Scheduled'),
-            };
-            @endphp
-            <div class="flex items-center justify-between py-2 border-b last:border-0">
-                <div>
-                    <p class="font-medium text-sm">{{ $match['opponent'] }}</p>
-                    <p class="text-xs text-gray-500">
-                        {{ \Carbon\Carbon::parse($match['date'])->format('d/m/Y') }}
-                        · {{ $match['venue'] === 'home' ? __('Home') : __('Away') }}
-                    </p>
-                </div>
-                <div class="flex items-center gap-2">
-                    @if ($hasScore)
-                    <span class="font-mono font-bold text-sm">
-                        {{ $match['score_home'] }}-{{ $match['score_away'] }}
-                    </span>
-                    <x-badge :value="$resultLabel" :class="$badgeClass" />
-                    @else
-                    <x-badge value="{{ __('Scheduled') }}" class="badge-ghost" />
-                    @endif
-                    <x-button icon="o-pencil" wire:click="editMatch({{ $match['id'] }})"
-                        class="btn-xs btn-ghost" />
-                    <x-button icon="o-trash" wire:click="deleteMatch({{ $match['id'] }})"
-                        wire:confirm="{{ __('Are you sure?') }}" class="btn-xs btn-ghost text-error" />
-                </div>
-            </div>
-            @empty
-            <div class="text-center py-10 text-gray-400">
-                <x-icon name="o-calendar" class="w-10 h-10 mx-auto mb-2" />
-                <p>{{ __('No matches yet.') }}</p>
-            </div>
-            @endforelse
+                    <div x-show="open" x-collapse>
+                        <div class="space-y-6">
+                            @foreach ($teams->sortKeys() as $teamName => $matches)
+                                <section x-data="{ open: false }">
+                                    <div
+                                        class="mb-3 flex w-full cursor-pointer items-center gap-3"
+                                        @click="open = !open"
+                                    >
+                                        <span class="bg-base-200 rounded-lg px-3 py-1.5 text-sm font-bold">{{ $teamName }}</span>
+                                        <span class="text-base-content/40 text-xs">{{ $matches->count() }} match{{ $matches->count() > 1 ? 's' : '' }}</span>
+                                        <div class="border-base-200 flex-1 border-t"></div>
+                                        <x-button
+                                            class="btn-ghost btn-sm btn-circle"
+                                            icon="o-plus"
+                                            tooltip="{{ __('Add match for this team') }}"
+                                            wire:click.stop="openCreateModal({{ $matches->first()['our_team_id'] }})" />
+                                        <x-icon name="o-chevron-down" class="h-4 w-4 opacity-40 transition-transform duration-200" ::class="open ? '' : '-rotate-90'" />
+                                    </div>
+
+                                    <div x-show="open" x-collapse>
+                                        <x-card class="overflow-hidden p-0">
+                                            <div class="divide-base-200 divide-y">
+                                                @foreach ($matches as $match)
+                                                    <div class="hover:bg-base-50 flex items-center gap-4 px-4 py-3 transition-colors">
+                                                        {{-- Week badge --}}
+                                                        <div class="bg-base-200 flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-xl">
+                                                            <div class="text-[8px] font-black uppercase opacity-40">S</div>
+                                                            <div class="text-sm font-black leading-none">{{ $match['week'] ?? '—' }}</div>
+                                                        </div>
+
+                                                        {{-- Match info --}}
+                                                        <div class="min-w-0 flex-1">
+                                                            <div class="flex flex-wrap items-center gap-2">
+                                                                @if ($match['is_home'])
+                                                                    <x-badge class="badge-neutral badge-xs font-bold" value="{{ __('Home') }}" />
+                                                                @else
+                                                                    <x-badge class="badge-ghost badge-xs border border-base-300 font-bold" value="{{ __('Away') }}" />
+                                                                @endif
+                                                                <span class="font-bold">{{ $match['opponent'] }}</span>
+                                                                @if ($match['division'])
+                                                                    <span class="text-base-content/40 text-xs">{{ $match['division'] }}</span>
+                                                                @endif
+                                                            </div>
+                                                            <div class="text-base-content/50 mt-0.5 flex items-center gap-2 text-xs">
+                                                                <x-icon name="o-calendar" class="h-3 w-3" />
+                                                                {{ $match['date'] }} {{ __('at') }} {{ $match['time'] }}
+                                                                @if ($match['address'] !== '—')
+                                                                    <span class="opacity-50">·</span>
+                                                                    <x-icon name="o-map-pin" class="h-3 w-3" />
+                                                                    <span class="truncate">{{ $match['address'] }}</span>
+                                                                @endif
+                                                            </div>
+                                                        </div>
+
+                                                        {{-- Actions --}}
+                                                        <div class="flex shrink-0 gap-1">
+                                                            <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
+                                                                tooltip="{{ __('Edit') }}"
+                                                                wire:click="openEditModal({{ $match['id'] }})" />
+                                                            <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
+                                                                tooltip="{{ __('Delete') }}"
+                                                                wire:click="confirmDelete({{ $match['id'] }})" />
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </x-card>
+                                    </div>
+                                </section>
+                            @endforeach
+                        </div>
+                    </div>
+                </section>
+            @endforeach
         </div>
-
-        {{-- DESKTOP --}}
-        <div class="hidden md:block">
-            <x-table :headers="$matchHeaders" :rows="$this->selectedTeamMatches">
-                @scope('cell_venue', $match)
-                {{ $match['venue'] === 'home' ? __('Home') : __('Away') }}
-                @endscope
-
-                @scope('cell_score', $match)
-                @if ($match['score_home'] !== null)
-                <span class="font-mono font-bold">
-                    {{ $match['score_home'] }}-{{ $match['score_away'] }}
-                </span>
-                @else
-                <span class="text-gray-400 italic text-sm">{{ __('TBD') }}</span>
-                @endif
-                @endscope
-
-                @scope('cell_result', $match)
-                @if ($match['score_home'] !== null)
-                @php
-                $result = $this->resolveResult($match);
-                $badgeClass = match($result) {
-                'win' => 'badge-success',
-                'loss' => 'badge-error',
-                'draw' => 'badge-warning',
-                };
-                $label = match($result) {
-                'win' => __('Win'),
-                'loss' => __('Loss'),
-                'draw' => __('Draw'),
-                };
-                @endphp
-                <x-badge :value="$label" :class="$badgeClass" />
-                @else
-                <x-badge value="{{ __('Scheduled') }}" class="badge-ghost" />
-                @endif
-                @endscope
-
-                @scope('actions', $match)
-                <div class="flex gap-2">
-                    <x-button icon="o-pencil" wire:click="editMatch({{ $match['id'] }})"
-                        class="btn-sm btn-ghost" tooltip="{{ __('Edit') }}" />
-                    <x-button icon="o-trash" wire:click="deleteMatch({{ $match['id'] }})"
-                        wire:confirm="{{ __('Are you sure?') }}"
-                        class="btn-sm btn-ghost text-error" tooltip="{{ __('Delete') }}" />
-                </div>
-                @endscope
-            </x-table>
-        </div>
-    </x-card>
-
     @endif
 
-    {{-- ================================================================
-         MODALE — ÉQUIPE
-    ================================================================ --}}
-    <x-modal wire:model="showTeamModal" title="{{ __('Team') }}" separator>
-        <div class="grid gap-4">
-            <x-input label="{{ __('Name') }}" placeholder="{{ __('E.g. Team A') }}"
-                wire:model="teamForm.name" />
-            <x-input label="{{ __('Division') }}" placeholder="{{ __('E.g. Division 2C') }}"
-                wire:model="teamForm.division" />
-            <x-input label="{{ __('Position') }}" placeholder="{{ __('E.g. 2nd place') }}"
-                wire:model="teamForm.position" />
-            <x-select label="{{ __('Season') }}" :options="$seasonOptions"
-                wire:model="teamForm.season" />
+    {{-- Modal create / edit --}}
+    <x-modal wire:model="editModal" :title="$editingInterclubId ? __('Edit match') : __('New match')" separator>
+        <div class="space-y-4">
+            <x-select
+                label="{{ __('Our team') }}"
+                :options="$ourTeamOptions"
+                option-label="name"
+                option-value="id"
+                wire:model="formOurTeamId"
+                placeholder="{{ __('Select a team') }}" />
+
+            <x-select
+                label="{{ __('Opponent') }}"
+                :options="$opponentTeams"
+                option-label="name"
+                option-value="id"
+                wire:model="formOpponentTeamId"
+                :placeholder="$formOurTeamId ? __('Select an opponent') : __('Select your team first')" />
+
+            <div class="grid grid-cols-2 gap-4">
+                <x-datepicker
+                    label="{{ __('Date') }}"
+                    wire:model="formDate"
+                    icon="o-calendar" />
+                <x-input
+                    label="{{ __('Time') }}"
+                    wire:model="formTime"
+                    placeholder="09:00"
+                    icon="o-clock" />
+            </div>
+
+            <x-toggle label="{{ __('Home match') }}" wire:model="formIsHome" />
+
+            <x-input
+                label="{{ __('Address') }}"
+                wire:model="formAddress"
+                placeholder="{{ __('Venue address') }}"
+                icon="o-map-pin" />
         </div>
         <x-slot:actions>
-            <x-button label="{{ __('Cancel') }}" @click="$wire.showTeamModal = false" />
-            <x-button label="{{ __('Save') }}" wire:click="saveTeam"
-                class="btn-primary" icon="o-paper-airplane" />
+            <x-button label="{{ __('Cancel') }}" wire:click="$set('editModal', false)" />
+            <x-button class="btn-primary" label="{{ __('Save') }}" wire:click="save" spinner />
         </x-slot:actions>
     </x-modal>
 
-    {{-- ================================================================
-         MODALE — MATCH
-    ================================================================ --}}
-    <x-modal wire:model="showMatchModal" title="{{ __('Match') }}" separator>
-        <div class="grid gap-4">
-            <x-input label="{{ __('Opponent') }}" placeholder="{{ __('E.g. Arc En Ciel F') }}"
-                wire:model="matchForm.opponent" />
-
-            <div class="grid grid-cols-2 gap-4">
-                <x-datepicker label="{{ __('Date') }}" wire:model="matchForm.date" icon="o-calendar" />
-                <x-select label="{{ __('Venue') }}" :options="$venueOptions" wire:model="matchForm.venue" />
-            </div>
-
-            {{-- Score : optionnel (match pas encore joué) --}}
-            <p class="text-sm font-medium text-gray-600">
-                {{ __('Score') }}
-                <span class="text-xs font-normal text-gray-400">({{ __('leave empty if not played yet') }})</span>
-            </p>
-            <div class="grid grid-cols-2 gap-4">
-                <x-input label="{{ __('Home') }}" type="number" min="0"
-                    wire:model="matchForm.score_home" placeholder="—" />
-                <x-input label="{{ __('Away') }}" type="number" min="0"
-                    wire:model="matchForm.score_away" placeholder="—" />
-            </div>
-
-            {{-- Aperçu du résultat calculé --}}
-            @if ($matchForm['score_home'] !== null && $matchForm['score_away'] !== null)
-            @php
-            $preview = $this->resolveResult($matchForm);
-            $previewLabel = match($preview) {
-            'win' => '✅ ' . __('Win'),
-            'loss' => '❌ ' . __('Loss'),
-            'draw' => '🟡 ' . __('Draw'),
-            };
-            @endphp
-            <div class="rounded-lg bg-base-200 px-4 py-2 text-sm font-medium">
-                {{ __('Calculated result') }} : {{ $previewLabel }}
-            </div>
-            @endif
-        </div>
+    {{-- Modal delete --}}
+    <x-modal subtitle="{{ __('Warning!') }}" title="{{ __('Delete match') }}" wire:model="deleteModal">
+        <p>{{ __('Are you sure you want to delete this match? This action is irreversible.') }}</p>
         <x-slot:actions>
-            <x-button label="{{ __('Cancel') }}" @click="$wire.showMatchModal = false" />
-            <x-button label="{{ __('Save') }}" wire:click="saveMatch"
-                class="btn-primary" icon="o-paper-airplane" />
+            <x-button label="{{ __('Cancel') }}" wire:click="$set('deleteModal', false)" />
+            <x-button class="btn-error" label="{{ __('Delete') }}" spinner wire:click="delete" />
         </x-slot:actions>
     </x-modal>
 </div>

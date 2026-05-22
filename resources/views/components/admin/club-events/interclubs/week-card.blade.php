@@ -1,4 +1,25 @@
-@props(['week', 'opponent', 'date', 'score' => null, 'matches' => null, 'selectionCount' => 0])
+@props(['week', 'opponent', 'date', 'status' => 'future', 'score' => null, 'matches' => null, 'selectionCount' => 0])
+@php
+    $isExpandable = fn () => $status === 'past' && $matches !== null;
+    $barColor = fn () => match ($status) {
+        'pending' => 'bg-warning',
+        'ready', 'confirmed' => 'bg-success',
+        'past' => 'bg-primary',
+        default => 'bg-base-300',
+    };
+    $barOpacity = fn () => $status === 'future' ? 'opacity-40' : '';
+    $dotStyle = fn () => match ($status) {
+        'pending' => 'bg-warning',
+        'ready', 'confirmed' => 'bg-success',
+        'past' => 'bg-primary',
+        default => 'bg-base-300',
+    };
+    $scoreHomeClass = fn () => match (true) {
+        $score !== null && $score['home'] > $score['away'] => 'bg-success/20 text-success',
+        $score !== null && $score['home'] < $score['away'] => 'bg-error/20 text-error',
+        default => 'bg-base-200',
+    };
+@endphp
 
 <div @if ($isExpandable()) x-data="{ open: false }"
         @click="open = !open" @endif

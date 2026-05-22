@@ -12,6 +12,7 @@ use App\Models\ClubEvents\Interclub\Team;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Livewire\Component;
@@ -59,6 +60,8 @@ new class extends Component
 
     public function declareTeamForfeit(): void
     {
+        $this->authorizeTeam($this->forfeitingTeamId);
+
         MatchResult::where('team_id', $this->forfeitingTeamId)
             ->where('season_id', $this->seasonId)
             ->whereNull('result')
@@ -73,7 +76,9 @@ new class extends Component
     public function delete(): void
     {
         if ($this->deletingMatchResultId) {
-            MatchResult::findOrFail($this->deletingMatchResultId)->delete();
+            $matchResult = MatchResult::findOrFail($this->deletingMatchResultId);
+            $this->authorizeTeam($matchResult->team_id);
+            $matchResult->delete();
             $this->success(__('Match deleted'));
         }
 
@@ -84,6 +89,11 @@ new class extends Component
     public function mount(): void
     {
         $this->seasonId = Season::current()?->id;
+
+        $user = Auth::user();
+        if (! $user->is_admin && ! $user->is_committee_member) {
+            abort_unless(Team::where('captain_id', $user->id)->exists(), 403);
+        }
     }
 
     public function openAddModal(int $teamId): void
@@ -147,6 +157,7 @@ new class extends Component
     public function save(): void
     {
         $this->validate();
+        $this->authorizeTeam($this->editingTeamId);
 
         $isBye = $this->matchType === 'bye';
         $result = match ($this->matchType) {
@@ -183,24 +194,31 @@ new class extends Component
 
     public function updateFinalPosition(int $teamId, ?string $position): void
     {
+        $this->authorizeTeam($teamId);
         Team::findOrFail($teamId)->update(['final_position' => $position ?: null]);
     }
 
     public function with(): array
     {
+        $user = Auth::user();
         $categoryOrder = [
             LeagueCategory::MEN->name => 0,
             LeagueCategory::WOMEN->name => 1,
             LeagueCategory::VETERANS->name => 2,
         ];
 
-        $teams = Team::with([
+        $teamsQuery = Team::with([
             'league',
             'matchResults' => fn ($q) => $q->where('season_id', $this->seasonId)->orderBy('match_date'),
         ])
             ->inClub()
-            ->where('season_id', $this->seasonId)
-            ->get()
+            ->where('season_id', $this->seasonId);
+
+        if (! $user->is_admin && ! $user->is_committee_member) {
+            $teamsQuery->where('captain_id', $user->id);
+        }
+
+        $teams = $teamsQuery->get()
             ->sortBy(fn (Team $t) => $categoryOrder[$t->league?->category] ?? 99);
 
         $stats = $teams->mapWithKeys(fn (Team $team) => [
@@ -210,7 +228,7 @@ new class extends Component
         $teamsByCategory = $teams->groupBy(fn (Team $t) => $t->league?->category ?? LeagueCategory::MEN->name);
 
         return [
-            'seasons' => Season::orderByDesc('start_at')->get(),
+            'seasons' => Season::orderBy('start_at')->get(),
             'teamsByCategory' => $teamsByCategory,
             'stats' => $stats,
             'matchTypeOptions' => [
@@ -223,6 +241,15 @@ new class extends Component
             ],
             'breadcrumbs' => Breadcrumb::make()->home()->add('Interclubs', '#')->results()->toArray(),
         ];
+    }
+
+    private function authorizeTeam(int $teamId): void
+    {
+        $user = Auth::user();
+        if ($user->is_admin || $user->is_committee_member) {
+            return;
+        }
+        abort_unless(Team::where('id', $teamId)->where('captain_id', $user->id)->exists(), 403);
     }
 
     private function computeStats(Collection $matchResults): array

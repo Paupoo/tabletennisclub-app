@@ -12,6 +12,7 @@ use App\Models\ClubEvents\Interclub\League;
 use App\Models\ClubEvents\Interclub\Team;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
@@ -31,6 +32,8 @@ new class extends Component
 
     public function mount(Team $team): void
     {
+        abort_unless(Auth::user()->is_admin || Auth::user()->is_committee_member, 403);
+
         $this->teamId    = $team->id;
         $this->name      = $team->name;
         $this->captainId = $team->captain_id;

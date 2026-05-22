@@ -29,9 +29,6 @@
         <x-menu-item icon="o-building-office-2" link="{{ route('admin.rooms.index') }}" title="{{ __('Rooms') }}" />
         <x-menu-item icon="o-squares-2x2" link="{{ route('admin.tables.index') }}" title="{{ __('Tables') }}" />
     </x-menu-sub>
-
-    <x-menu-separator />
-
                     
     <x-menu-sub icon="o-inbox-stack" title="{{ __('Members Admin') }}">
         <x-menu-item icon="o-users" link="{{ route('admin.users.index') }}" title="{{ __('Users') }}" />
@@ -60,10 +57,22 @@
 
     <x-menu-sub icon="o-calendar-days" link="#" title="{{ __('Interclubs') }}">
         <x-menu-item icon="o-identification" link="{{ route('admin.interclubs.teams') }}" title="{{ __('Teams') }}" />
+        @if($user->is_admin || $user->is_committee_member)
+        <x-menu-item icon="o-table-cells" link="{{ route('admin.interclubs.division-setup') }}" title="{{ __('Division Setup') }}" />
+        <x-menu-item icon="o-calendar-days" link="{{ route('admin.interclubs.interclubs') }}" title="{{ __('Schedule') }}" />
+        @endif
+        @if($user->is_competitor)
+        <x-menu-item icon="o-calendar" link="{{ route('admin.interclubs.my-matches') }}" title="{{ __('My Matches') }}" />
+        @endif
+        @if($user->is_admin || $user->is_committee_member || $user->captainOf)
         <x-menu-item icon="o-user-group" link="{{ route('admin.interclubs.captain-selection') }}" title="{{ __('Selections') }}" />
+        @endif
+        @if($user->is_admin || $user->is_committee_member)
         <x-menu-item icon="o-eye" link="{{ route('admin.interclubs.control-center') }}" title="{{ __('Control Center') }}" />
+        @endif
+        @if($user->is_admin || $user->is_committee_member || $user->captainOf)
         <x-menu-item icon="o-squares-2x2" link="{{ route('admin.interclubs.results') }}" title="{{ __('Results') }}" />
-        {{-- <x-menu-item title="Archives" icon="o-archive-box" link="####" /> --}}
+        @endif
     </x-menu-sub>
 
     <x-menu-sub icon="o-star" title="{{ __('Events') }}">

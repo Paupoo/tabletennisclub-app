@@ -16,6 +16,7 @@ use App\Models\ClubEvents\Interclub\Team;
 use Illuminate\Database\Eloquent\Builder;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Component;
 use Mary\Traits\Toast;
@@ -51,6 +52,8 @@ new class extends Component
 
     public function mount(): void
     {
+        abort_unless(Auth::user()->is_admin || Auth::user()->is_committee_member, 403);
+
         $this->seasonId = Season::current()?->id;
     }
 

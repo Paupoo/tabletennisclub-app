@@ -86,21 +86,6 @@ class DatabaseSeeder extends Seeder
         Season::factory(10)->create();
 
         League::create([
-            'division' => '5E',
-            'level' => LeagueLevel::PROVINCIAL_BW->name,
-            'category' => LeagueCategory::MEN->name,
-            'season_id' => 1,
-
-        ]);
-        League::create([
-            'division' => '5E',
-            'level' => LeagueLevel::PROVINCIAL_BW->name,
-            'category' => LeagueCategory::MEN->name,
-            'season_id' => 2,
-
-        ]);
-
-        League::create([
             'division' => '4B',
             'level' => LeagueLevel::PROVINCIAL_BW->name,
             'category' => LeagueCategory::MEN->name,
@@ -122,15 +107,6 @@ class DatabaseSeeder extends Seeder
             'category' => LeagueCategory::WOMEN->name,
             'season_id' => 5,
         ]);
-
-        // Create Z team team
-        $teamZ = Team::make([
-            'name' => 'Z',
-        ])
-            ->club()->associate(Club::firstWhere('licence', config('app.club_licence')))
-            ->league()->associate(League::find(1))
-            ->season()->associate(Season::find(1));
-        $teamZ->save();
 
         // Create F team team
         $teamF = Team::make([
@@ -162,7 +138,6 @@ class DatabaseSeeder extends Seeder
             'licence' => '114399',
         ])->club()->associate(Club::firstWhere('licence', config('app.club_licence')));
         $admin->save();
-        $admin->teams()->attach(Team::firstWhere('name', 'Z'));
 
         // Create test dream team
 
@@ -199,14 +174,6 @@ class DatabaseSeeder extends Seeder
                 'licence' => $player[3],
             ])->club()->associate(Club::firstWhere('licence', config('app.club_licence')));
             $player->save();
-            $player->teams()->attach(Team::firstWhere('name', 'Z'));
-
-            // Promote Oliver captain of team Z
-            if ($player->licence === '223344') {
-                $teamZ->update([
-                    'captain_id' => $player->id,
-                ]);
-            }
         }
 
         // Add some random users
@@ -323,6 +290,8 @@ class DatabaseSeeder extends Seeder
         $this->call(PaymentSeeder::class);
 
         $this->call(InterclubResultsSeeder::class);
+
+        $this->call(InterclubSeeder::class);
 
         $this->call(TournamentSeeder::class);
     }

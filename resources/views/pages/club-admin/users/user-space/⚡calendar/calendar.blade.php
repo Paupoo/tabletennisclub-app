@@ -34,20 +34,39 @@
                 <x-card :title="$month" class="mb-8" shadow>
                     @foreach ($events as $event)
                         @php
-                            $regStatus = $event['registrationStatus'] ?? null;
-                            $isActive  = in_array($regStatus, ['registered', 'confirmed', 'spot_offered']);
-                            $isWaiting = $regStatus === 'waiting';
-                            $isTraining = $event['type'] === 'training';
+                            $regStatus     = $event['registrationStatus'] ?? null;
+                            $isActive      = in_array($regStatus, ['registered', 'confirmed', 'spot_offered']);
+                            $isWaiting     = $regStatus === 'waiting';
+                            $isTraining    = $event['type'] === 'training';
+                            $isInterclub   = $event['type'] === 'interclub';
                         @endphp
                         <x-admin.shared.compact-event-preview
                             :name="$event['title']"
                             :startDateTime="$event['startDateTime']"
                             :type="$event['type']"
-                            link="#"
-                            :location="$event['room'] ?? ''"
+                            :link="$isInterclub && $event['isUserInTeam'] ? route('admin.interclubs.my-matches') : '#'"
+                            :location="$isInterclub ? $event['address'] : ($event['room'] ?? '')"
                         >
                             <x-slot:actions>
-                                @if ($isTraining)
+                                @if ($isInterclub)
+                                    @if ($event['isHome'])
+                                        <x-badge class="badge-neutral badge-xs font-bold" value="{{ __('Home') }}" />
+                                    @else
+                                        <x-badge class="badge-ghost badge-xs border border-base-300 font-bold" value="{{ __('Away') }}" />
+                                    @endif
+                                    @if ($event['division'])
+                                        <x-badge class="badge-outline badge-xs" value="{{ $event['division'] }}" />
+                                    @endif
+                                    @if ($event['isUserInTeam'])
+                                        @if ($event['isSelected'])
+                                            <x-badge class="badge-primary badge-sm font-bold" value="{{ __('Selected') }}" icon="o-check" />
+                                        @elseif ($event['availability'])
+                                            <x-badge :class="$event['availability']->color() . ' badge-sm font-bold'" :value="$event['availability']->label()" />
+                                        @else
+                                            <x-badge class="badge-ghost badge-sm" value="{{ __('No response') }}" />
+                                        @endif
+                                    @endif
+                                @elseif ($isTraining)
                                     @if (isset($event['level']))
                                         <x-badge class="badge-primary badge-soft badge-sm" value="{{ $event['level'] }}" />
                                     @endif

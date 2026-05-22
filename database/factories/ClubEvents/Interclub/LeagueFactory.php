@@ -26,9 +26,9 @@ class LeagueFactory extends Factory
 
         return [
             'division' => fake()->numberBetween(1, 5) . fake()->randomLetter(),
-            'level' => fake()->randomElement(array_column(LeagueLevel::cases(), 'value')),
-            'category' => fake()->randomElement(array_column(LeagueCategory::cases(), 'value')),
-            'season_id' => fake()->randemElement(Season::select('id')->get()),
+            'level' => fake()->randomElement(array_column(LeagueLevel::cases(), 'name')),
+            'category' => fake()->randomElement(array_column(LeagueCategory::cases(), 'name')),
+            'season_id' => Season::factory(),
         ];
     }
 }

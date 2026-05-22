@@ -7,6 +7,7 @@ namespace App\Models\ClubEvents\Interclub;
 use App\Enums\LeagueCategory;
 use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Users\User;
+use App\Traits\HasAvailability;
 use Carbon\Carbon;
 use Database\Factories\ClubEvents\Interclub\InterclubFactory;
 use Eloquent;
@@ -67,6 +68,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class Interclub extends Model
 {
+    use HasAvailability;
     use HasFactory;
 
     protected $casts = [
@@ -75,10 +77,13 @@ class Interclub extends Model
 
     protected $fillable = [
         'address',
+        'league_id',
+        'season_id',
         'start_date_time',
         'total_players',
         'visited_team_id',
         'visiting_team_id',
+        'week_number',
     ];
 
     public function league(): BelongsTo
@@ -134,7 +139,7 @@ class Interclub extends Model
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class)
-            ->withPivot('is_subscribed', 'is_selected', 'has_played')
+            ->withPivot('is_subscribed', 'is_selected', 'has_played', 'availability', 'availability_note', 'selection_confirmed_at')
             ->as('registration')
             ->withTimestamps();
     }

@@ -4,20 +4,25 @@
     </x-slot:breadcrumbs>
     <x-header progress-indicator separator title="Équipes">
         <x-slot:middle class="justify-end!">
-            @if ($season)
-                <span class="hidden text-sm text-gray-500 sm:block">Saison {{ $season->name }}</span>
-            @endif
+            <x-select
+                :options="$seasons"
+                option-label="name"
+                option-value="id"
+                wire:model.live="selectedSeasonId"
+                placeholder="{{ __('Select a season') }}" />
         </x-slot:middle>
         <x-slot:actions>
             <x-input class="max-w-xs border-none" clearable icon="o-magnifying-glass" placeholder="Rechercher..."
                 wire:model.live.debounce.300ms="search" />
-            <x-button class="btn-ghost" link="{{ route('admin.interclubs.teams.builder') }}" icon="o-squares-plus"
-                label="Composer les équipes" />
-            <x-button class="btn-primary btn-sm" icon="o-plus" label="Nouvelle équipe"
-                wire:click="$set('createModal', true)" />
-            @if ($teamsCount > 0)
-                <x-button class="btn-ghost text-error" icon="o-trash"
-                    label="Tout supprimer" wire:click="$set('deleteAllModal', true)" />
+            @if ($isAdminOrCommittee)
+                <x-button class="btn-ghost" link="{{ route('admin.interclubs.teams.builder') }}" icon="o-squares-plus"
+                    label="Composer les équipes" />
+                <x-button class="btn-primary btn-sm" icon="o-plus" label="Nouvelle équipe"
+                    wire:click="$set('createModal', true)" />
+                @if ($teamsCount > 0)
+                    <x-button class="btn-ghost text-error" icon="o-trash"
+                        label="Tout supprimer" wire:click="$set('deleteAllModal', true)" />
+                @endif
             @endif
         </x-slot:actions>
     </x-header>
@@ -50,20 +55,27 @@
             @foreach ($groupedTeams as $category => $group)
                 @php $cat = $catMeta[$category] ?? ['bg' => 'bg-gray-50', 'border' => 'border-gray-200', 'text' => 'text-gray-700', 'dot' => 'bg-gray-400']; @endphp
 
-                <section>
-                    <div class="mb-4 flex items-center gap-3">
+                <section x-data="{ open: true }">
+                    <button
+                        type="button"
+                        class="mb-4 flex w-full items-center gap-3 text-left"
+                        @click="open = !open"
+                    >
                         <span class="inline-flex items-center gap-2 rounded-full {{ $cat['bg'] }} {{ $cat['border'] }} border px-4 py-1.5">
                             <span class="h-2 w-2 rounded-full {{ $cat['dot'] }}"></span>
                             <span class="text-sm font-bold {{ $cat['text'] }} uppercase tracking-wide">{{ $category }}</span>
                             <span class="text-xs {{ $cat['text'] }} opacity-60">{{ $group->count() }} équipe{{ $group->count() > 1 ? 's' : '' }}</span>
                         </span>
                         <div class="flex-1 border-t {{ $cat['border'] }}"></div>
-                    </div>
+                        <x-icon name="o-chevron-down" class="h-4 w-4 opacity-40 transition-transform duration-200" ::class="open ? '' : '-rotate-90'" />
+                    </button>
 
-                    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                        @foreach ($group as $team)
-                            <x-admin.club-events.teams.team-card :team="$team" wire:key="team-{{ $team->id }}" />
-                        @endforeach
+                    <div x-show="open" x-collapse>
+                        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                            @foreach ($group as $team)
+                                <x-admin.club-events.teams.team-card :team="$team" wire:key="team-{{ $team->id }}" />
+                            @endforeach
+                        </div>
                     </div>
                 </section>
             @endforeach

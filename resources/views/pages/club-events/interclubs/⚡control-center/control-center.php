@@ -2,7 +2,15 @@
 
 declare(strict_types=1);
 
+namespace Resources\views\Pages\ClubEvents\Interclubs\ControlCenter;
+
+use App\Models\ClubAdmin\Users\User;
+use App\Models\ClubEvents\Interclub\Interclub;
+use App\Models\ClubEvents\Interclub\Season;
+use App\Models\ClubEvents\Interclub\Team;
+use App\Services\InterclubAvailabilityService;
 use App\Support\Breadcrumb;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
 use Livewire\Component;
 use Mary\Traits\Toast;
@@ -11,52 +19,91 @@ new class extends Component
 {
     use Toast;
 
-    public string $captainMessage = '';
-
     public bool $drawerSelection = false;
 
     public bool $filterAlerts = false;
 
     public bool $modalMessage = false;
 
-    public string $search = '';
+    public string $captainMessage = '';
 
-    // Sélection simulée (WK13)
-    public array $selectedPlayers = ['Marc D.', 'Aurelien V.'];
+    public ?int $drawerInterclubId = null;
+
+    public ?int $selectedSeasonId = null;
 
     public ?int $selectedTeam = null;
 
-    public string $selectedWeek = 'WK13';
+    public ?int $selectedWeek = null;
 
-    /**
-     * Finalise la convocation après le message du capitaine
-     */
-    public function confirmAndSend(): void
+    /** @var array<int, int> */
+    public array $selectedPlayerIds = [];
+
+    public string $search = '';
+
+    public function mount(): void
     {
+        $this->selectedSeasonId = Season::current()?->id;
+    }
+
+    public function updatedSelectedSeasonId(): void
+    {
+        $this->selectedWeek = null;
+        $this->selectedTeam = null;
+    }
+
+    public function confirmAndSend(InterclubAvailabilityService $service): void
+    {
+        if (! $this->drawerInterclubId) {
+            return;
+        }
+
+        $interclub = Interclub::findOrFail($this->drawerInterclubId);
+        $service->confirmSelection($interclub, $this->captainMessage);
+
         $this->modalMessage = false;
+        $this->captainMessage = '';
 
         $this->success(
-            'Sélection validée !',
-            'Les joueurs ont reçu leur convocation.',
+            __('Selection confirmed!'),
+            __('Players have received their invitation.'),
             icon: 'o-paper-airplane'
         );
-
-        $this->captainMessage = '';
     }
 
     public function nextWeek(): void
     {
-        $current = (int) str_replace('WK', '', $this->selectedWeek);
-        if ($current < 22) {
-            $this->selectedWeek = 'WK' . ($current + 1);
+        $weeks = $this->weekNumbersForSelectedSeason();
+        $max = $weeks->last();
+        if ($this->selectedWeek && $max && $this->selectedWeek < $max) {
+            $next = $weeks->first(fn ($w) => $w > $this->selectedWeek);
+            if ($next) {
+                $this->selectedWeek = $next;
+            }
         }
+    }
+
+    public function openSelection(int $interclubId): void
+    {
+        $this->drawerInterclubId = $interclubId;
+        $interclub = Interclub::findOrFail($interclubId);
+
+        $this->selectedPlayerIds = $interclub->users()
+            ->wherePivot('is_selected', true)
+            ->pluck('users.id')
+            ->toArray();
+
+        $this->drawerSelection = true;
     }
 
     public function prevWeek(): void
     {
-        $current = (int) str_replace('WK', '', $this->selectedWeek);
-        if ($current > 1) {
-            $this->selectedWeek = 'WK' . ($current - 1);
+        $weeks = $this->weekNumbersForSelectedSeason();
+        $min = $weeks->first();
+        if ($this->selectedWeek && $min && $this->selectedWeek > $min) {
+            $prev = $weeks->last(fn ($w) => $w < $this->selectedWeek);
+            if ($prev) {
+                $this->selectedWeek = $prev;
+            }
         }
     }
 
@@ -65,121 +112,242 @@ new class extends Component
         return $this->view();
     }
 
-    /**
-     * Déclenché lors du clic sur "Confirmer" dans le drawer
-     */
     public function saveSelection(): void
     {
+        if (! $this->drawerInterclubId) {
+            return;
+        }
+
+        $interclub = Interclub::findOrFail($this->drawerInterclubId);
+        $existingIds = $interclub->users()->pluck('users.id')->toArray();
+
+        foreach ($this->selectedPlayerIds as $userId) {
+            if (in_array($userId, $existingIds)) {
+                $interclub->users()->updateExistingPivot($userId, ['is_selected' => true]);
+            } else {
+                $interclub->users()->attach($userId, ['is_selected' => true]);
+            }
+        }
+
+        foreach (array_diff($existingIds, $this->selectedPlayerIds) as $userId) {
+            $interclub->users()->updateExistingPivot($userId, ['is_selected' => false]);
+        }
+
         $this->drawerSelection = false;
         $this->modalMessage = true;
     }
 
-    /**
-     * Gère la sélection/désélection d'un joueur
-     */
-    public function togglePlayer(string $name): void
+    public function togglePlayer(int $userId): void
     {
-        if (in_array($name, $this->selectedPlayers)) {
-            $this->selectedPlayers = array_diff($this->selectedPlayers, [$name]);
+        $interclub = $this->drawerInterclubId ? Interclub::find($this->drawerInterclubId) : null;
+        $maxPlayers = $interclub?->total_players ?? 4;
+
+        if (in_array($userId, $this->selectedPlayerIds)) {
+            $this->selectedPlayerIds = array_values(array_diff($this->selectedPlayerIds, [$userId]));
         } else {
-            if (count($this->selectedPlayers) < 4) {
-                $this->selectedPlayers[] = $name;
-            } else {
-                $this->warning('Équipe complète', 'Maximum 4 joueurs.', position: 'toast-bottom toast-end');
+            if (count($this->selectedPlayerIds) >= $maxPlayers) {
+                $this->warning(
+                    __('Team full'),
+                    __('Maximum :n players.', ['n' => $maxPlayers]),
+                    position: 'toast-bottom toast-end'
+                );
+
+                return;
             }
+            $this->selectedPlayerIds[] = $userId;
         }
     }
 
     public function with(): array
     {
-        $weekNum = (int) str_replace('WK', '', $this->selectedWeek);
+        $seasons = Season::orderBy('start_at')->get();
+        $season = $this->selectedSeasonId
+            ? $seasons->firstWhere('id', $this->selectedSeasonId)
+            : Season::current();
+
+        $allTeams = Team::with(['league', 'captain', 'users', 'club'])
+            ->inClub()
+            ->when($season, fn ($q) => $q->where('season_id', $season->id))
+            ->get();
+
+        $weekNumbers = $this->buildWeekNumbers($allTeams);
+
+        if ($this->selectedWeek === null && $weekNumbers->isNotEmpty()) {
+            $this->selectedWeek = $weekNumbers
+                ->filter(fn ($w) => $w >= now()->isoWeek)
+                ->first() ?? $weekNumbers->first();
+        }
+
+        $currentWeek = $this->selectedWeek;
+
+        $weeksMonitor = $weekNumbers->map(function (int $wk) use ($allTeams): array {
+            $status = $this->computeWeekStatus($wk, $allTeams);
+
+            return ['wk' => $wk, 'status' => $status];
+        });
 
         $headers = [
             ['key' => 'name', 'label' => __('Team'), 'class' => 'w-72'],
             ['key' => 'captain', 'label' => __('Captain')],
-            ['key' => 'players', 'label' => __('Headcount'), 'class' => 'text-center'],
+            ['key' => 'players', 'label' => __('Players'), 'class' => 'text-center'],
+            ['key' => 'status', 'label' => __('Status'), 'class' => 'text-center'],
             ['key' => 'action', 'label' => ''],
         ];
 
-        // Simulation des équipes basée sur la semaine sélectionnée
-        $raw_teams = collect([
-            ['id' => 1, 'category' => __('Men'), 'name' => 'Ottignies A', 'div' => 'Div 1', 'captain' => 'Jean D.'],
-            ['id' => 2, 'category' => __('Men'), 'name' => 'Ottignies B', 'div' => 'Div 3B', 'captain' => 'Marc D.'],
-            ['id' => 3, 'category' => __('Men'), 'name' => 'Ottignies C', 'div' => 'Div 4A', 'captain' => 'Luc L.'],
-            ['id' => 4, 'category' => __('Men'), 'name' => 'Ottignies D', 'div' => 'Div 5C', 'captain' => 'Eric P.'],
-            ['id' => 5, 'category' => __('Women'), 'name' => 'Ottignies A', 'div' => 'Div 2', 'captain' => 'Marie S.'],
-            ['id' => 6, 'category' => __('Women'), 'name' => 'Ottignies B', 'div' => 'Div 3', 'captain' => 'Julie W.'],
-        ])->map(function ($team) use ($weekNum) {
-            $max = (str_contains($team['category'], 'Women')) ? 3 : 4;
+        $rawTeams = $allTeams->map(function (Team $team) use ($currentWeek): array {
+            $interclub = $currentWeek ? $this->getTeamInterclubForWeek($team, $currentWeek) : null;
+            $maxPlayers = $team->league?->category === 'MEN' ? 4 : 3;
+            $selectedCount = $interclub
+                ? $interclub->users()->wherePivot('is_selected', true)->count()
+                : 0;
 
-            // Logique de simulation déterministe
-            $team['is_home'] = ($team['id'] + $weekNum) % 2 === 0;
-            $team['players'] = ($team['id'] * $weekNum) % ($max + 1);
-            $team['max_players'] = $max;
+            $status = match (true) {
+                $interclub === null => 'no_match',
+                $selectedCount >= $maxPlayers => 'validated',
+                $selectedCount > 0 => 'pending',
+                default => 'alert',
+            };
 
-            // Statut calculé
-            if ($team['players'] === 0) {
-                $team['status'] = 'alert';
-            } elseif ($team['players'] < $max) {
-                $team['status'] = 'pending';
-            } else {
-                $team['status'] = 'validated';
-            }
-
-            // Logistique (Clé et Argent) - Uniquement si Home
-            $team['key_holder'] = ($team['is_home'] && $team['players'] > 0) ? $team['captain'] : null;
-            $team['bar_manager'] = ($team['is_home'] && $weekNum % 2 === 0 && $team['players'] > 1) ? 'Bénévole ' . $team['id'] : null;
-
-            return $team;
+            return [
+                'id' => $interclub?->id,
+                'team_id' => $team->id,
+                'name' => $team->name,
+                'div' => $team->league?->division ?? '—',
+                'captain' => $team->captain?->last_name . ' ' . ($team->captain?->first_name ?? ''),
+                'category' => match ($team->league?->category) {
+                    'MEN' => __('Men'),
+                    'WOMEN' => __('Women'),
+                    'VETERANS' => __('Veterans'),
+                    default => __('Other'),
+                },
+                'players' => $selectedCount,
+                'max_players' => $maxPlayers,
+                'status' => $status,
+            ];
         });
 
-        $categories = $raw_teams
-            ->filter(fn ($t) => empty($this->search) || str_contains(strtolower($t['name']), strtolower($this->search)))
-            ->when($this->selectedTeam, fn ($c) => $c->where('id', $this->selectedTeam))
+        $categories = $rawTeams
+            ->when($this->selectedTeam, fn ($c) => $c->where('team_id', $this->selectedTeam))
             ->filter(fn ($t) => ! $this->filterAlerts || $t['status'] === 'alert')
+            ->filter(fn ($t) => $t['status'] !== 'no_match')
             ->groupBy('category');
 
         $searchResults = [];
-        if (strlen($this->search) >= 2) {
-            $searchResults = [
-                ['name' => 'Thomas W. (Equipe C)', 'rank' => 'C4', 'matches' => 15, 'winrate' => 70],
-                ['name' => 'Nicolas S. (Equipe A)', 'rank' => 'B2', 'matches' => 5, 'winrate' => 90],
-            ];
+        if (strlen($this->search) >= 2 && $this->drawerInterclubId) {
+            $searchResults = User::where('is_competitor', true)
+                ->where(function ($q): void {
+                    $q->where('first_name', 'like', '%' . $this->search . '%')
+                        ->orWhere('last_name', 'like', '%' . $this->search . '%');
+                })
+                ->whereNotIn('id', $this->selectedPlayerIds)
+                ->limit(8)
+                ->get()
+                ->map(fn (User $u) => [
+                    'id' => $u->id,
+                    'name' => $u->last_name . ' ' . $u->first_name,
+                    'rank' => $u->ranking ?? '—',
+                ]);
         }
 
+        $drawerInterclub = $this->drawerInterclubId ? Interclub::with(['visitedTeam.users', 'visitingTeam.users'])->find($this->drawerInterclubId) : null;
+        $drawerTeam = $drawerInterclub
+            ? ($drawerInterclub->visitedTeam?->club?->licence === config('app.club_licence')
+                ? $drawerInterclub->visitedTeam
+                : $drawerInterclub->visitingTeam)
+            : null;
+
+        $drawerRoster = $drawerTeam ? $drawerTeam->users->map(fn (User $u) => [
+            'id' => $u->id,
+            'name' => $u->last_name . ' ' . $u->first_name,
+            'rank' => $u->ranking ?? '—',
+        ]) : collect();
+
+        $totalWeeks = $weekNumbers->count();
+        $completedWeeks = $weeksMonitor->where('status', 'ok')->count();
+        $preparationScore = $totalWeeks > 0 ? round($completedWeeks / $totalWeeks * $totalWeeks) : 0;
+
         return [
-            'headers' => $headers,
-            'categories' => $categories,
-            'weeks_options' => collect(range(1, 22))->map(fn ($w) => ['id' => 'WK' . $w, 'name' => __('Week ') . $w]),
-            'weeks_monitor' => collect(range(1, 20))->map(fn ($w) => [
-                'wk' => $w,
-                'status' => ($w < $weekNum) ? 'ok' : (($w === $weekNum) ? 'warning' : 'pending'),
-            ]),
-            'teams_list' => $raw_teams->map(fn ($t) => ['id' => $t['id'], 'name' => $t['name']]),
-            'day_responsibilities' => [
-                'keys' => ($weekNum % 2 === 0) ? ['Jean D.', 'Luc L.'] : ['Marc D.'],
-                'bar' => ($weekNum % 2 === 0) ? 'Aurelien V.' : null,
-            ],
-            'day_status' => ($weekNum % 2 === 0) ? 'ok' : 'incomplete',
             'breadcrumbs' => Breadcrumb::make()
                 ->home()
                 ->current(__('Interclubs Control Center'))
                 ->toArray(),
-            'weeks' => [
-                ['wk' => 13, 'date' => '05/02', 'opp' => 'Perwez A', 'status' => 'pending', 'is_demo' => true],
-                ['wk' => 14, 'date' => '12/02', 'opp' => 'Wavre C', 'status' => 'pending', 'is_demo' => false],
-                ['wk' => 15, 'date' => '19/02', 'opp' => 'Logis J', 'status' => 'ready', 'is_demo' => false],
-                ['wk' => 16, 'date' => '26/02', 'opp' => 'Auderghem E', 'status' => 'ready', 'is_demo' => false],
-                ['wk' => 17, 'date' => '05/03', 'opp' => 'Champ d\'en Haut', 'status' => 'future', 'is_demo' => false],
-            ],
-            'roster' => [
-                ['name' => 'Marc D.', 'rank' => 'B4', 'matches' => 12, 'winrate' => 85, 'available' => 'yes'],
-                ['name' => 'Aurelien V.', 'rank' => 'B6', 'matches' => 10, 'winrate' => 60, 'available' => 'yes'],
-                ['name' => 'Jean-Paul H.', 'rank' => 'C0', 'matches' => 8, 'winrate' => 45, 'available' => 'maybe'],
-                ['name' => 'Luc L.', 'rank' => 'C2', 'matches' => 4, 'winrate' => 25, 'available' => 'no'],
-                ['name' => 'Eric P.', 'rank' => 'C2', 'matches' => 2, 'winrate' => 50, 'available' => 'yes'],
-            ],
+            'headers' => $headers,
+            'categories' => $categories,
+            'seasons_list' => $seasons->map(fn ($s) => ['id' => $s->id, 'name' => $s->name]),
+            'current_season' => $season,
+            'weeks_options' => $weekNumbers->map(fn ($w) => ['id' => $w, 'name' => __('Week :n', ['n' => $w])]),
+            'weeks_monitor' => $weeksMonitor,
+            'teams_list' => $allTeams->map(fn ($t) => ['id' => $t->id, 'name' => $t->name]),
+            'preparation_score' => $preparationScore,
+            'total_weeks' => $totalWeeks,
+            'drawerInterclub' => $drawerInterclub,
+            'drawerRoster' => $drawerRoster,
+            'drawerMaxPlayers' => $drawerTeam?->league?->category === 'MEN' ? 4 : 3,
             'searchResults' => $searchResults,
         ];
+    }
+
+    /** @param \Illuminate\Database\Eloquent\Collection<int, Team> $teams */
+    private function buildWeekNumbers(\Illuminate\Database\Eloquent\Collection $teams): Collection
+    {
+        $teamIds = $teams->pluck('id');
+
+        return Interclub::whereIn('visited_team_id', $teamIds)
+            ->orWhereIn('visiting_team_id', $teamIds)
+            ->whereNotNull('week_number')
+            ->pluck('week_number')
+            ->unique()
+            ->sort()
+            ->values();
+    }
+
+    /** @param \Illuminate\Database\Eloquent\Collection<int, Team> $teams */
+    private function computeWeekStatus(int $weekNumber, \Illuminate\Database\Eloquent\Collection $teams): string
+    {
+        $worstStatus = 'ok';
+
+        foreach ($teams as $team) {
+            $interclub = $this->getTeamInterclubForWeek($team, $weekNumber);
+
+            if (! $interclub) {
+                continue;
+            }
+
+            $maxPlayers = $team->league?->category === 'MEN' ? 4 : 3;
+            $selectedCount = $interclub->users()->wherePivot('is_selected', true)->count();
+
+            if ($selectedCount === 0) {
+                return 'nok';
+            }
+
+            if ($selectedCount < $maxPlayers) {
+                $worstStatus = 'warning';
+            }
+        }
+
+        return $worstStatus;
+    }
+
+    private function getTeamInterclubForWeek(Team $team, int $weekNumber): ?Interclub
+    {
+        return Interclub::where('week_number', $weekNumber)
+            ->where(function ($q) use ($team): void {
+                $q->where('visited_team_id', $team->id)
+                    ->orWhere('visiting_team_id', $team->id);
+            })
+            ->first();
+    }
+
+    private function weekNumbersForSelectedSeason(): Collection
+    {
+        $season = $this->selectedSeasonId
+            ? Season::find($this->selectedSeasonId)
+            : Season::current();
+
+        $teams = Team::inClub()
+            ->when($season, fn ($q) => $q->where('season_id', $season->id))
+            ->get();
+
+        return $this->buildWeekNumbers($teams);
     }
 };

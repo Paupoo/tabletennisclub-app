@@ -8,11 +8,12 @@ use App\Models\ClubEvents\Interclub\Interclub;
 use App\Models\ClubEvents\Interclub\League;
 use App\Models\ClubEvents\Interclub\Season;
 use App\Models\ClubEvents\Interclub\Team;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Trait\CreateInterclub;
 use Tests\Trait\CreateUser;
 
+uses(RefreshDatabase::class);
 uses(CreateInterclub::class);
-
 uses(CreateUser::class);
 
 beforeEach(function (): void {

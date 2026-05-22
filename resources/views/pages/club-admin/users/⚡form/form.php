@@ -140,14 +140,14 @@ new class extends Component
     public function mount(?User $user): void
     {
         if ($user && $user->exists) {
-            $this->first_name = $user->first_name;
-            $this->last_name = $user->last_name;
-            $this->gender = $user->gender;
-            $this->email = $user->email;
-            $this->street = $user->street;
-            $this->city_code = $user->city_code;
-            $this->city_name = $user->city_name;
-            $this->phone_number = $user->phone_number;
+            $this->first_name   = $user->first_name ?? '';
+            $this->last_name    = $user->last_name ?? '';
+            $this->gender       = $user->gender ?? '';
+            $this->email        = $user->email ?? '';
+            $this->street       = $user->street ?? '';
+            $this->city_code    = $user->city_code ?? '';
+            $this->city_name    = $user->city_name ?? '';
+            $this->phone_number = $user->phone_number ?? '';
             $this->birthdate = $user->birthdate?->format('Y-m-d');
             $this->parent_phone_number = $user->parent_phone_number;
             $this->iban = $user->iban;

@@ -471,7 +471,7 @@ new class extends Component
     public function trainerOptions(): array
     {
         return User::where('is_active', true)
-            ->where(fn ($q) => $q->where('is_coach', true)->orWhere('is_admin', true))
+            ->where(fn ($q) => $q->where('is_coach', true))
             ->orderBy('first_name')
             ->get()
             ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->full_name])

@@ -8,7 +8,6 @@ use App\Actions\User\RecalculateForceListAction;
 use App\Enums\Gender;
 use App\Enums\LeagueCategory;
 use App\Enums\LeagueLevel;
-use App\Enums\TeamName;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Club;
 use App\Models\ClubEvents\Interclub\League;
@@ -94,11 +93,11 @@ new class extends Component
             return;
         }
 
-        $teams        = collect(TeamName::cases())->take($totalTeams);
+        $names        = $this->teamNameSequence($totalTeams);
         $playerChunks = $competitors->chunk($this->nucleusSize);
 
-        $this->proposedTeams = $teams->values()->map(fn ($teamName, int $i) => [
-            'letter'    => $teamName->name,
+        $this->proposedTeams = collect($names)->values()->map(fn (string $name, int $i) => [
+            'letter'    => $name,
             'players'   => $playerChunks->get($i)?->pluck('id')->toArray() ?? [],
             'captainId' => null,
             'category'  => $this->teamCategory,
@@ -113,6 +112,21 @@ new class extends Component
 
         $this->showComputingModal = false;
         $this->step               = 2;
+    }
+
+    // ── Nommage des équipes ──────────────────────────────────────────────────
+
+    /**
+     * Generates team name sequence: A–Z, then 1, 2, 3 … for counts above 26.
+     *
+     * @return string[]
+     */
+    private function teamNameSequence(int $count): array
+    {
+        $letters = array_map(fn (int $i) => chr(ord('A') + $i), range(0, 25));
+        $numbers = array_map(fn (int $i) => (string) $i, range(1, max(0, $count - 26)));
+
+        return array_slice(array_merge($letters, $numbers), 0, $count);
     }
 
     // ── Tri par classement ───────────────────────────────────────────────────

@@ -26,28 +26,58 @@
     @else
         <div class="grid gap-6 lg:grid-cols-3">
 
-            {{-- Left panel: division list --}}
-            <div class="space-y-2">
-                <p class="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">{{ __('Divisions') }}</p>
-                @foreach ($leagues->sortBy(fn ($l) => match($l->category) { 'MEN' => 1, 'VETERANS' => 2, 'WOMEN' => 3, default => 99 }) as $league)
-                    @php
-                        $meta  = $categoryMeta[$league->category] ?? ['bg' => 'bg-gray-50', 'border' => 'border-gray-200', 'text' => 'text-gray-700', 'dot' => 'bg-gray-400', 'label' => $league->category];
-                        $count = $league->teams->filter(fn ($t) => $t->club?->licence !== config('app.club_licence'))->count();
-                        $active = $selectedLeagueId === $league->id;
-                    @endphp
-                    <button
-                        type="button"
-                        wire:click="selectLeague({{ $league->id }})"
-                        class="flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors
-                            {{ $active ? $meta['bg'] . ' ' . $meta['border'] : 'border-base-200 bg-base-100 hover:bg-base-200' }}"
-                    >
-                        <span class="h-2 w-2 shrink-0 rounded-full {{ $meta['dot'] }}"></span>
-                        <div class="min-w-0 flex-1">
-                            <p class="text-sm font-semibold {{ $active ? $meta['text'] : '' }}">{{ $league->division }}</p>
-                            <p class="text-xs opacity-60 {{ $active ? $meta['text'] : '' }}">{{ $meta['label'] }}</p>
+            {{-- Left panel: division list grouped by category --}}
+            <div class="space-y-4">
+                @php
+                    $categoryOrder  = ['MEN' => 1, 'VETERANS' => 2, 'WOMEN' => 3];
+                    $groupedLeagues = $leagues
+                        ->groupBy('category')
+                        ->sortBy(fn ($_, $cat) => $categoryOrder[$cat] ?? 99);
+                @endphp
+
+                @foreach ($groupedLeagues as $category => $categoryLeagues)
+                    @php $meta = $categoryMeta[$category] ?? ['bg' => 'bg-gray-50', 'border' => 'border-gray-200', 'text' => 'text-gray-700', 'dot' => 'bg-gray-400', 'label' => $category]; @endphp
+
+                    <div x-data="{ open: true }">
+
+                        {{-- Category header --}}
+                        <button
+                            type="button"
+                            @click="open = !open"
+                            class="mb-2 flex w-full items-center gap-2 text-left"
+                        >
+                            <span class="inline-flex items-center gap-1.5 rounded-full {{ $meta['bg'] }} {{ $meta['border'] }} border px-3 py-1">
+                                <span class="h-1.5 w-1.5 rounded-full {{ $meta['dot'] }}"></span>
+                                <span class="text-xs font-bold {{ $meta['text'] }} uppercase tracking-wide">{{ $meta['label'] }}</span>
+                                <span class="text-xs {{ $meta['text'] }} opacity-60">{{ $categoryLeagues->count() }}</span>
+                            </span>
+                            <div class="flex-1 border-t {{ $meta['border'] }}"></div>
+                            <x-icon name="o-chevron-down" class="h-3.5 w-3.5 opacity-40 transition-transform duration-200 {{ $meta['text'] }}" ::class="open ? '' : '-rotate-90'" />
+                        </button>
+
+                        {{-- Division list --}}
+                        <div x-show="open" x-collapse class="space-y-1.5">
+                            @foreach ($categoryLeagues->sortBy('division') as $league)
+                                @php
+                                    $count  = $league->teams->filter(fn ($t) => $t->club?->licence !== config('app.club_licence'))->count();
+                                    $active = $selectedLeagueId === $league->id;
+                                @endphp
+                                <button
+                                    type="button"
+                                    wire:click="selectLeague({{ $league->id }})"
+                                    class="flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors
+                                        {{ $active ? $meta['bg'] . ' ' . $meta['border'] : 'border-base-200 bg-base-100 hover:bg-base-200' }}"
+                                >
+                                    <span class="h-2 w-2 shrink-0 rounded-full {{ $meta['dot'] }}"></span>
+                                    <div class="min-w-0 flex-1">
+                                        <p class="text-sm font-semibold {{ $active ? $meta['text'] : '' }}">{{ $league->division }}</p>
+                                    </div>
+                                    <span class="text-xs font-medium {{ $active ? $meta['text'] : 'text-gray-400' }}">{{ $count }}</span>
+                                </button>
+                            @endforeach
                         </div>
-                        <span class="text-xs font-medium {{ $active ? $meta['text'] : 'text-gray-400' }}">{{ $count }}</span>
-                    </button>
+
+                    </div>
                 @endforeach
             </div>
 
@@ -134,7 +164,7 @@
                 wire:model="formTeamLetter"
                 placeholder="A"
                 icon="o-tag"
-                class="max-w-[100px]" />
+                class="max-w-25" />
         </div>
         <x-slot:actions>
             <x-button label="{{ __('Cancel') }}" wire:click="$set('addModal', false)" />

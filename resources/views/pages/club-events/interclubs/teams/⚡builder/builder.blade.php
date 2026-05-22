@@ -90,7 +90,7 @@
 
                 <x-slot:actions>
                     <x-button class="btn-primary w-full" icon="o-bolt" label="Calculer la distribution"
-                        wire:click="computeDistribution" wire:loading.attr="disabled" />
+                        wire:click="startComputing" spinner="startComputing" />
                 </x-slot:actions>
             </x-card>
         </div>
@@ -277,4 +277,19 @@
 
         </div>{{-- /x-data --}}
     @endif
+
+    {{-- Modal calcul de distribution --}}
+    <x-modal wire:model="showComputingModal" title="{{ __('Building teams') }}" separator persistent>
+        <div class="py-10 text-center">
+            <div class="mb-6 flex justify-center">
+                <span class="loading loading-dots loading-lg text-primary"></span>
+            </div>
+            <h3 class="animate-pulse text-xl font-black uppercase italic tracking-widest">
+                {{ __('Calculating distribution...') }}
+            </h3>
+            <p class="mx-auto mt-4 max-w-xs text-sm opacity-60">
+                {{ __('Recalculating the force list and distributing players across teams.') }}
+            </p>
+        </div>
+    </x-modal>
 </div>

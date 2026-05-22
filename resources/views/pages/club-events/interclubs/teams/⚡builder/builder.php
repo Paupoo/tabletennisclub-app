@@ -36,6 +36,8 @@ new class extends Component
     /** 'MEN' | 'WOMEN' | 'VETERANS' */
     public string $teamCategory = 'MEN';
 
+    public bool $showComputingModal = false;
+
     // ── Étape 2 : distribution proposée ─────────────────────────────────────
     /**
      * Structure : [['letter'=>'A','players'=>[userId,...], 'captainId'=>null, 'category'=>'', 'level'=>'', 'division'=>''], ...]
@@ -65,7 +67,7 @@ new class extends Component
 
     // ── Étape 1 → 2 : calcul de la distribution ──────────────────────────────
 
-    public function computeDistribution(): void
+    public function startComputing(): void
     {
         $this->validate([
             'seasonId'    => ['required', 'exists:seasons,id'],
@@ -75,6 +77,12 @@ new class extends Component
             'nucleusSize.min'   => 'Le noyau minimum est de 5 joueurs.',
         ]);
 
+        $this->showComputingModal = true;
+        $this->js('$wire.computeDistribution()');
+    }
+
+    public function computeDistribution(): void
+    {
         RecalculateForceListAction::handle();
 
         $competitors = $this->buildEligibleQuery()->get();
@@ -103,7 +111,8 @@ new class extends Component
 
         $this->sortAllTeams();
 
-        $this->step = 2;
+        $this->showComputingModal = false;
+        $this->step               = 2;
     }
 
     // ── Tri par classement ───────────────────────────────────────────────────

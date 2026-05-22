@@ -62,7 +62,9 @@ new class extends Component
 
         $interclubs = Interclub::with([
             'visitedTeam.club',
+            'visitedTeam.league',
             'visitingTeam.club',
+            'visitingTeam.league',
             'league',
         ])
             ->where(function ($q) use ($teamIds): void {
@@ -93,25 +95,39 @@ new class extends Component
                 $division = $interclub->league?->division ?? '';
                 $teamLabel = ($ourTeam?->name ?? '—') . ($division ? ' — ' . $division : '');
 
+                $categoryRaw = $ourTeam?->league?->category;
+                $categoryName = is_string($categoryRaw) ? $categoryRaw : ($categoryRaw?->value ?? 'MEN');
+                [$categoryLabel, $categorySort] = match ($categoryName) {
+                    'MEN'      => ['Hommes', 1],
+                    'VETERANS' => ['Vétérans', 2],
+                    'WOMEN'    => ['Dames', 3],
+                    default    => ['—', 99],
+                };
+
                 return [
-                    'id' => $interclub->id,
-                    'team_name' => $teamLabel,
-                    'opponent' => $opponent,
-                    'is_home' => $isHome,
-                    'division' => $division,
-                    'date' => $interclub->start_date_time->format('d/m/Y'),
-                    'time' => $interclub->start_date_time->format('H:i'),
-                    'address' => $interclub->address ?? '—',
-                    'week_number' => $interclub->week_number,
-                    'availability' => $availability,
-                    'availability_note' => $pivot?->availability_note,
-                    'is_selected' => (bool) $pivot?->is_selected,
+                    'id'                    => $interclub->id,
+                    'category_label'        => $categoryLabel,
+                    'category_sort'         => $categorySort,
+                    'team_name'             => $teamLabel,
+                    'opponent'              => $opponent,
+                    'is_home'               => $isHome,
+                    'division'              => $division,
+                    'date'                  => $interclub->start_date_time->format('d/m/Y'),
+                    'time'                  => $interclub->start_date_time->format('H:i'),
+                    'address'               => $interclub->address ?? '—',
+                    'week_number'           => $interclub->week_number,
+                    'availability'          => $availability,
+                    'availability_note'     => $pivot?->availability_note,
+                    'is_selected'           => (bool) $pivot?->is_selected,
                     'selection_confirmed_at' => $pivot?->selection_confirmed_at,
-                    'days_until' => (int) now()->diffInDays($interclub->start_date_time, false),
+                    'days_until'            => (int) now()->diffInDays($interclub->start_date_time, false),
                 ];
             });
 
-        $grouped = $interclubs->groupBy('team_name');
+        $grouped = $interclubs
+            ->sortBy([['category_sort', 'asc'], ['team_name', 'asc']])
+            ->groupBy('category_label')
+            ->map(fn ($catGroup) => $catGroup->groupBy('team_name'));
 
         return [
             'breadcrumbs' => Breadcrumb::make()

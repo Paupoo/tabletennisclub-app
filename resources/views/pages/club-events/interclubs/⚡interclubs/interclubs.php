@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Resources\views\Pages\ClubEvents\Interclubs\Interclubs;
 
+use App\Models\ClubEvents\Interclub\Club;
 use App\Models\ClubEvents\Interclub\Interclub;
 use App\Models\ClubEvents\Interclub\MatchResult;
 use App\Models\ClubEvents\Interclub\Season;
@@ -60,7 +61,7 @@ new class extends Component
         $this->formDate = null;
         $this->formTime = '09:00';
         $this->formIsHome = true;
-        $this->formAddress = null;
+        $this->formAddress = $this->ourClubAddress();
         $this->editModal = true;
     }
 
@@ -93,7 +94,7 @@ new class extends Component
 
         $ourTeam = Team::with(['league', 'club'])->findOrFail($this->formOurTeamId);
         $opponentTeam = Team::with('club')->findOrFail($this->formOpponentTeamId);
-        $startDateTime = Carbon::parse($this->formDate . ' ' . $this->formTime);
+        $startDateTime = Carbon::parse($this->formDate)->setTimeFromTimeString($this->formTime);
 
         $data = [
             'season_id' => $this->seasonId,
@@ -143,6 +144,32 @@ new class extends Component
     public function updatedFormOurTeamId(): void
     {
         $this->formOpponentTeamId = null;
+        $this->fillAddress();
+    }
+
+    public function updatedFormOpponentTeamId(): void
+    {
+        $this->fillAddress();
+    }
+
+    public function updatedFormIsHome(): void
+    {
+        $this->fillAddress();
+    }
+
+    private function fillAddress(): void
+    {
+        if ($this->formIsHome) {
+            $this->formAddress = $this->ourClubAddress();
+        } elseif ($this->formOpponentTeamId) {
+            $team = Team::with('club')->find($this->formOpponentTeamId);
+            $this->formAddress = $team?->club?->street ?? $this->formAddress;
+        }
+    }
+
+    private function ourClubAddress(): ?string
+    {
+        return Club::where('licence', config('app.club_licence'))->value('street');
     }
 
     public function with(): array
@@ -167,7 +194,7 @@ new class extends Component
         $interclubs = $query->get()->map(fn (Interclub $ic) => $this->formatInterclub($ic, $ourTeamIds));
 
         $grouped = $interclubs
-            ->sortBy([['category_sort', 'asc'], ['our_team_name', 'asc'], ['date', 'asc']])
+            ->sortBy([['category_sort', 'asc'], ['our_team_name', 'asc'], ['date_sort', 'asc']])
             ->groupBy('category_label')
             ->map(fn (Collection $catGroup) => $catGroup->groupBy('our_team_name'));
 
@@ -224,6 +251,7 @@ new class extends Component
             'category_sort'  => $categorySort,
             'week'           => $ic->week_number,
             'date'           => $ic->start_date_time->format('d/m/Y'),
+            'date_sort'      => $ic->start_date_time->format('Y-m-d H:i:s'),
             'time'           => $ic->start_date_time->format('H:i'),
             'is_home'        => $isHome,
             'opponent'       => trim(($opponentTeam?->club?->name ?? '') . ' ' . ($opponentTeam?->name ?? '')) ?: '—',

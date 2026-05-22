@@ -154,7 +154,7 @@
                 :options="$ourTeamOptions"
                 option-label="name"
                 option-value="id"
-                wire:model="formOurTeamId"
+                wire:model.live="formOurTeamId"
                 placeholder="{{ __('Select a team') }}" />
 
             <x-select
@@ -162,7 +162,7 @@
                 :options="$opponentTeams"
                 option-label="name"
                 option-value="id"
-                wire:model="formOpponentTeamId"
+                wire:model.live="formOpponentTeamId"
                 :placeholder="$formOurTeamId ? __('Select an opponent') : __('Select your team first')" />
 
             <div class="grid grid-cols-2 gap-4">
@@ -177,7 +177,7 @@
                     icon="o-clock" />
             </div>
 
-            <x-toggle label="{{ __('Home match') }}" wire:model="formIsHome" />
+            <x-toggle label="{{ __('Home match') }}" wire:model.live="formIsHome" />
 
             <x-input
                 label="{{ __('Address') }}"

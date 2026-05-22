@@ -412,6 +412,9 @@ new class extends Component
                 icon: 'o-calendar',
             );
         } else {
+            // Propagate trainer change to all linked sessions
+            $pack->trainings()->update(['trainer_id' => $pack->trainer_id]);
+
             $this->success(__('Pack updated!'), icon: 'o-check-circle');
         }
 

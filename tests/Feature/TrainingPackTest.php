@@ -5,7 +5,9 @@ declare(strict_types=1);
 use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Season;
+use App\Models\ClubEvents\Training\Training;
 use App\Models\ClubEvents\Training\TrainingPack;
+use Livewire\Livewire;
 
 // ── generateSessions ──────────────────────────────────────────────────────────
 
@@ -191,5 +193,31 @@ describe('model bug fixes', function () {
 
         expect($user->trainings()->count())->toBe(1);
         expect($user->trainings()->first()->pivot->status)->toBe('present');
+    });
+});
+
+// ── regression: trainer change cascades to sessions ───────────────────────────
+
+describe('trainer update', function () {
+    it('propagates trainer change to all linked sessions', function () {
+        $admin = User::factory()->isAdmin()->create();
+        $coachA = User::factory()->create(['is_coach' => true]);
+        $coachB = User::factory()->create(['is_coach' => true]);
+
+        $season = makeActiveSeason();
+        $pack = makeTrainingPack($season, ['trainer_id' => $coachA->id]);
+        $pack->generateSessions($season);
+
+        expect(Training::where('training_pack_id', $pack->id)->pluck('trainer_id')->unique()->sole())
+            ->toBe($coachA->id);
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-events.trainings.index')
+            ->call('openEdit', $pack->id)
+            ->set('formTrainerId', $coachB->id)
+            ->call('save');
+
+        expect(Training::where('training_pack_id', $pack->id)->pluck('trainer_id')->unique()->sole())
+            ->toBe($coachB->id);
     });
 });

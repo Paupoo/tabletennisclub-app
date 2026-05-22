@@ -179,6 +179,7 @@ Route::prefix('admin/club-events/interclubs/')
         Route::livewire('results', 'pages::club-events.interclubs.results')->name('admin.interclubs.results');
         Route::livewire('interclubs', 'pages::club-events.interclubs.interclubs')->name('admin.interclubs.interclubs');
         Route::livewire('division-setup', 'pages::club-events.interclubs.division-setup')->name('admin.interclubs.division-setup');
+        Route::livewire('clubs', 'pages::club-events.interclubs.clubs')->name('admin.interclubs.clubs');
     });
 
 /*

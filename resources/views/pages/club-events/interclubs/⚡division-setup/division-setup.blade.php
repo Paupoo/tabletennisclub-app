@@ -26,10 +26,20 @@
     @else
         <div class="grid gap-6 lg:grid-cols-3">
 
-            {{-- Left panel: division list grouped by category --}}
+            {{-- Left panel: division list grouped by category then level --}}
             <div class="space-y-4">
                 @php
                     $categoryOrder  = ['MEN' => 1, 'VETERANS' => 2, 'WOMEN' => 3];
+                    // Belgian hierarchy: National (top) → Regional → Provincial
+                    $levelOrder     = ['NATIONAL' => 1, 'REGIONAL' => 2, 'PROVINCIAL_BW' => 3];
+                    $levelLabels    = ['NATIONAL' => 'National', 'REGIONAL' => 'Régional', 'PROVINCIAL_BW' => 'Provincial BW'];
+                    $ourClubLicence = config('app.club_licence');
+                    // Within a level, sort by our team's letter (A first)
+                    $leagueSortKey  = fn ($league) => $league->teams
+                        ->filter(fn ($t) => $t->club?->licence === $ourClubLicence)
+                        ->pluck('name')
+                        ->sort()
+                        ->first() ?? 'ZZZ';
                     $groupedLeagues = $leagues
                         ->groupBy('category')
                         ->sortBy(fn ($_, $cat) => $categoryOrder[$cat] ?? 99);
@@ -55,26 +65,55 @@
                             <x-icon name="o-chevron-down" class="h-3.5 w-3.5 opacity-40 transition-transform duration-200 {{ $meta['text'] }}" ::class="open ? '' : '-rotate-90'" />
                         </button>
 
-                        {{-- Division list --}}
-                        <div x-show="open" x-collapse class="space-y-1.5">
-                            @foreach ($categoryLeagues->sortBy('division') as $league)
-                                @php
-                                    $count  = $league->teams->filter(fn ($t) => $t->club?->licence !== config('app.club_licence'))->count();
-                                    $active = $selectedLeagueId === $league->id;
-                                @endphp
-                                <button
-                                    type="button"
-                                    wire:click="selectLeague({{ $league->id }})"
-                                    class="flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors
-                                        {{ $active ? $meta['bg'] . ' ' . $meta['border'] : 'border-base-200 bg-base-100 hover:bg-base-200' }}"
-                                >
-                                    <span class="h-2 w-2 shrink-0 rounded-full {{ $meta['dot'] }}"></span>
-                                    <div class="min-w-0 flex-1">
-                                        <p class="text-sm font-semibold {{ $active ? $meta['text'] : '' }}">{{ $league->division }}</p>
+                        {{-- Division list grouped by level --}}
+                        <div x-show="open" x-collapse>
+                            @php
+                                $byLevel           = $categoryLeagues
+                                    ->groupBy('level')
+                                    ->sortBy(fn ($_, $lvl) => $levelOrder[$lvl] ?? 99);
+                                $hasMultipleLevels = $byLevel->count() > 1;
+                            @endphp
+
+                            <div class="space-y-3">
+                                @foreach ($byLevel as $level => $levelLeagues)
+                                    <div class="space-y-1.5">
+                                        @if ($hasMultipleLevels)
+                                            <p class="px-1 text-[10px] font-semibold uppercase tracking-widest {{ $meta['text'] }} opacity-40">
+                                                {{ $levelLabels[$level] ?? $level }}
+                                            </p>
+                                        @endif
+
+                                        @foreach ($levelLeagues->sortBy($leagueSortKey) as $league)
+                                            @php
+                                                $count          = $league->teams->filter(fn ($t) => $t->club?->licence !== config('app.club_licence'))->count();
+                                                $active         = $selectedLeagueId === $league->id;
+                                                $ourTeamLetters = $league->teams
+                                                    ->filter(fn ($t) => $t->club?->licence === config('app.club_licence'))
+                                                    ->pluck('name')
+                                                    ->sort()
+                                                    ->implode(', ');
+                                            @endphp
+                                            <button
+                                                type="button"
+                                                wire:click="selectLeague({{ $league->id }})"
+                                                class="flex w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors
+                                                    {{ $active ? $meta['bg'] . ' ' . $meta['border'] : 'border-base-200 bg-base-100 hover:bg-base-200' }}"
+                                            >
+                                                <span class="h-2 w-2 shrink-0 rounded-full {{ $meta['dot'] }}"></span>
+                                                <div class="min-w-0 flex-1">
+                                                    <p class="text-sm font-semibold {{ $active ? $meta['text'] : '' }}">
+                                                        <span class="mr-1 text-xs font-normal opacity-40">{{ __('Division') }}</span>{{ $league->division }}
+                                                    </p>
+                                                    @if ($ourTeamLetters)
+                                                        <p class="text-xs opacity-50">{{ __('Team') }} {{ $ourTeamLetters }}</p>
+                                                    @endif
+                                                </div>
+                                                <span class="text-xs font-medium {{ $active ? $meta['text'] : 'text-gray-400' }}">{{ $count }}</span>
+                                            </button>
+                                        @endforeach
                                     </div>
-                                    <span class="text-xs font-medium {{ $active ? $meta['text'] : 'text-gray-400' }}">{{ $count }}</span>
-                                </button>
-                            @endforeach
+                                @endforeach
+                            </div>
                         </div>
 
                     </div>

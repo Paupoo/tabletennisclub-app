@@ -35,196 +35,226 @@
             @foreach ($teamsByCategory as $catName => $categoryTeams)
                 @php $cat = $catMeta[$catName] ?? ['label' => $catName, 'bg' => 'bg-gray-50', 'border' => 'border-gray-200', 'text' => 'text-gray-700', 'dot' => 'bg-gray-400']; @endphp
 
-                {{-- ── Category header ─────────────────────────────────────── --}}
-                <div class="flex items-center gap-3">
-                    <span class="inline-flex items-center gap-2 rounded-full {{ $cat['bg'] }} {{ $cat['border'] }} border px-4 py-1.5">
-                        <span class="h-2 w-2 rounded-full {{ $cat['dot'] }}"></span>
-                        <span class="text-sm font-bold {{ $cat['text'] }} uppercase tracking-wide">{{ $cat['label'] }}</span>
-                        <span class="text-xs {{ $cat['text'] }} opacity-60">{{ $categoryTeams->count() }} équipe{{ $categoryTeams->count() > 1 ? 's' : '' }}</span>
-                    </span>
-                    <div class="flex-1 border-t {{ $cat['border'] }}"></div>
-                </div>
+                <section x-data="{ open: true }">
+                    {{-- ── Category header ──────────────────────────────────── --}}
+                    <button type="button" class="mb-6 flex w-full items-center gap-3 text-left" @click="open = !open">
+                        <span class="inline-flex items-center gap-2 rounded-full {{ $cat['bg'] }} {{ $cat['border'] }} border px-4 py-1.5">
+                            <span class="h-2 w-2 rounded-full {{ $cat['dot'] }}"></span>
+                            <span class="text-sm font-bold {{ $cat['text'] }} uppercase tracking-wide">{{ $cat['label'] }}</span>
+                            <span class="text-xs {{ $cat['text'] }} opacity-60">{{ $categoryTeams->count() }} équipe{{ $categoryTeams->count() > 1 ? 's' : '' }}</span>
+                        </span>
+                        <div class="flex-1 border-t {{ $cat['border'] }}"></div>
+                        <x-icon name="o-chevron-down" class="h-4 w-4 opacity-40 transition-transform duration-200" ::class="open ? '' : '-rotate-90'" />
+                    </button>
 
-                {{-- ── Teams in this category ───────────────────────────────── --}}
-                <div class="space-y-6">
-                    @foreach ($categoryTeams as $team)
-                        @php
-                            $teamStats = $stats[$team->id];
-                            $division  = $team->league?->division;
-                        @endphp
+                    {{-- ── Teams in this category ───────────────────────────── --}}
+                    <div x-show="open" x-collapse>
+                        <div class="space-y-4">
+                            @foreach ($categoryTeams as $team)
+                                @php
+                                    $teamStats = $stats[$team->id];
+                                    $division  = $team->league?->division;
+                                @endphp
 
-                        <x-card>
-                            {{-- En-tête équipe --}}
-                            <x-slot:title>
-                                <div class="flex flex-wrap items-center gap-2">
-                                    <span class="font-bold text-gray-900">
-                                        {{ __('Team') }} {{ $team->name }}
-                                        @if ($division)
-                                            <span class="ml-1 text-sm font-normal text-gray-500">— Div. {{ $division }}</span>
-                                        @endif
-                                    </span>
-
-                                    {{-- Stats badges --}}
-                                    @if ($teamStats['played'] > 0)
-                                        <span class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">
-                                            {{ $teamStats['wins'] }}V
-                                        </span>
-                                        <span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
-                                            {{ $teamStats['losses'] }}D
-                                        </span>
-                                        @if ($teamStats['draws'] > 0)
-                                            <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600">
-                                                {{ $teamStats['draws'] }}N
-                                            </span>
-                                        @endif
-                                        <span class="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">
-                                            {{ $teamStats['win_rate'] }}%
-                                        </span>
-                                    @endif
-                                </div>
-                            </x-slot:title>
-
-                            <x-slot:actions>
-                                <div class="flex flex-wrap items-center gap-2">
-                                    {{-- Position finale --}}
-                                    <div class="flex items-center gap-2">
-                                        <span class="hidden text-xs text-gray-500 sm:inline">{{ __('Final position') }} :</span>
-                                        <x-input
-                                            class="input-sm w-28 text-xs sm:w-36"
-                                            placeholder="ex : 1ère place"
-                                            value="{{ $team->final_position }}"
-                                            wire:change="updateFinalPosition({{ $team->id }}, $event.target.value)" />
-                                    </div>
-                                    <x-button
-                                        class="btn-sm btn-warning"
-                                        icon="o-exclamation-triangle"
-                                        label="{{ __('Forfait') }}"
-                                        tooltip="{{ __('Déclarer le forfait général') }}"
-                                        wire:click="openTeamForfeitModal({{ $team->id }})" />
-                                    <x-button
-                                        class="btn-primary btn-sm"
-                                        icon="o-plus"
-                                        label="{{ __('Ajouter') }}"
-                                        tooltip="{{ __('Ajouter une rencontre') }}"
-                                        wire:click="openAddModal({{ $team->id }})" />
-                                </div>
-                            </x-slot:actions>
-
-                            {{-- Tableau des rencontres --}}
-                            @if ($team->matchResults->isEmpty())
-                                <p class="py-4 text-center text-sm italic text-gray-400">{{ __('No matches yet. Add the first one.') }}</p>
-                            @else
-                                <div class="overflow-x-auto">
-                                    <table class="w-full text-sm">
-                                        <thead>
-                                            <tr class="border-b border-gray-100 text-left text-xs font-semibold uppercase tracking-wide text-gray-400">
-                                                <th class="hidden pb-2 pr-4 sm:table-cell">{{ __('Week') }}</th>
-                                                <th class="pb-2 pr-4">{{ __('Date') }}</th>
-                                                <th class="pb-2 pr-4">{{ __('Opponent') }}</th>
-                                                <th class="hidden pb-2 pr-4 sm:table-cell">{{ __('Venue') }}</th>
-                                                <th class="pb-2 pr-4">{{ __('Score') }}</th>
-                                                <th class="pb-2 pr-4">{{ __('Result') }}</th>
-                                                <th class="pb-2"></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody class="divide-y divide-gray-50">
-                                            @foreach ($team->matchResults as $mr)
-                                                <tr wire:key="mr-{{ $mr->id }}"
-                                                    @class(['text-gray-300' => $mr->is_bye, 'italic text-gray-400' => ! $mr->is_bye && $mr->result === null])>
-                                                    <td class="hidden py-2 pr-4 text-xs text-gray-400 sm:table-cell">
-                                                        {{ $mr->week_number ? 'S' . $mr->week_number : '—' }}
-                                                    </td>
-                                                    <td class="py-2 pr-4 text-gray-700">
-                                                        @if ($mr->is_bye)
-                                                            <span class="italic text-gray-300">Bye</span>
-                                                        @elseif ($mr->match_date)
-                                                            <span class="hidden sm:inline">{{ $mr->match_date->format('d/m/Y') }}</span>
-                                                            <span class="sm:hidden">{{ $mr->match_date->format('d/m') }}</span>
-                                                        @else
-                                                            —
+                                <div x-data="{ open: true }">
+                                    <x-card>
+                                        {{-- En-tête équipe --}}
+                                        <x-slot:title>
+                                            <div class="flex w-full items-center gap-2">
+                                                <div class="flex flex-1 flex-wrap items-center gap-2">
+                                                    <span class="font-bold text-gray-900">
+                                                        {{ __('Team') }} {{ $team->name }}
+                                                        @if ($division)
+                                                            <span class="ml-1 text-sm font-normal text-gray-500">— Div. {{ $division }}</span>
                                                         @endif
-                                                    </td>
-                                                    <td class="py-2 pr-4 font-medium text-gray-800">
-                                                        {{ $mr->opponent_name ?? '—' }}
-                                                    </td>
-                                                    <td class="hidden py-2 pr-4 sm:table-cell">
-                                                        @if (! $mr->is_bye && $mr->opponent_name)
-                                                            <span @class([
-                                                                'rounded px-1.5 py-0.5 text-[10px] font-semibold',
-                                                                'bg-blue-50 text-blue-700'  => $mr->is_home,
-                                                                'bg-gray-100 text-gray-600' => ! $mr->is_home,
-                                                            ])>
-                                                                {{ $mr->is_home ? __('Home') : __('Away') }}
-                                                            </span>
+                                                    </span>
+
+                                                    {{-- Stats badges --}}
+                                                    @if ($teamStats['played'] > 0)
+                                                        <span class="rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">{{ $teamStats['wins'] }}V</span>
+                                                        <span class="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">{{ $teamStats['losses'] }}D</span>
+                                                        @if ($teamStats['draws'] > 0)
+                                                            <span class="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600">{{ $teamStats['draws'] }}N</span>
                                                         @endif
-                                                    </td>
-                                                    <td class="py-2 pr-4 font-mono text-xs text-gray-700">
-                                                        {{ $mr->score ?? '—' }}
-                                                    </td>
-                                                    <td class="py-2 pr-4">
-                                                        @if ($mr->is_bye)
-                                                            <span class="rounded bg-gray-50 px-1.5 py-0.5 text-[10px] font-semibold text-gray-400">Bye</span>
-                                                        @elseif ($mr->result === null)
-                                                            <span class="text-xs italic text-gray-300">{{ __('Pending') }}</span>
-                                                        @elseif ($mr->result === \App\Enums\InterclubResult::WIN)
-                                                            <span class="rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-semibold text-green-700">{{ __('Win') }}</span>
-                                                        @elseif ($mr->result === \App\Enums\InterclubResult::LOSS)
-                                                            <span class="rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold text-red-700">{{ __('Loss') }}</span>
-                                                        @elseif ($mr->result === \App\Enums\InterclubResult::DRAW)
-                                                            <span class="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold text-gray-600">{{ __('Draw') }}</span>
-                                                        @elseif ($mr->result === \App\Enums\InterclubResult::FORFEIT_WIN)
-                                                            <span class="rounded bg-green-50 px-1.5 py-0.5 text-[10px] font-semibold text-green-600">{{ __('Forfait adv.') }}</span>
-                                                        @elseif ($mr->result === \App\Enums\InterclubResult::FORFEIT_LOSS)
-                                                            <span class="rounded bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold text-red-400">{{ __('Forfait') }}</span>
-                                                        @elseif ($mr->result === \App\Enums\InterclubResult::WITHDRAWAL_OPPONENT)
-                                                            <span class="rounded bg-orange-50 px-1.5 py-0.5 text-[10px] font-semibold text-orange-500">{{ __('F. Gén. Adv.') }}</span>
-                                                        @elseif ($mr->result === \App\Enums\InterclubResult::WITHDRAWAL)
-                                                            <span class="rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-semibold text-orange-600">{{ __('F. Général') }}</span>
-                                                        @endif
-                                                    </td>
-                                                    <td class="py-2 text-right">
-                                                        <div class="flex justify-end gap-1">
-                                                            <x-button class="btn-ghost btn-xs" icon="o-pencil"
-                                                                wire:click="openEditModal({{ $mr->id }})" />
-                                                            <x-button class="btn-ghost btn-xs text-error" icon="o-trash"
-                                                                wire:click="confirmDelete({{ $mr->id }})" />
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
+                                                        <span class="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">{{ $teamStats['win_rate'] }}%</span>
+                                                    @endif
+                                                </div>
+                                                <button type="button" @click="open = !open" class="rounded p-1 hover:bg-base-200 transition-colors">
+                                                    <x-icon name="o-chevron-down" class="h-4 w-4 opacity-40 transition-transform duration-200" ::class="open ? '' : '-rotate-90'" />
+                                                </button>
+                                            </div>
+                                        </x-slot:title>
+
+                                        <x-slot:actions>
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                {{-- Position finale --}}
+                                                <div class="flex items-center gap-2">
+                                                    <span class="hidden text-xs text-gray-500 sm:inline">{{ __('Final position') }} :</span>
+                                                    <x-input
+                                                        class="input-sm w-28 text-xs sm:w-36"
+                                                        placeholder="ex : 1ère place"
+                                                        value="{{ $team->final_position }}"
+                                                        wire:change="updateFinalPosition({{ $team->id }}, $event.target.value)" />
+                                                </div>
+                                                <x-button
+                                                    class="btn-sm btn-warning"
+                                                    icon="o-exclamation-triangle"
+                                                    label="{{ __('Forfait') }}"
+                                                    tooltip="{{ __('Déclarer le forfait général') }}"
+                                                    wire:click="openTeamForfeitModal({{ $team->id }})" />
+                                            </div>
+                                        </x-slot:actions>
+
+                                        {{-- Tableau des rencontres --}}
+                                        <div x-show="open" x-collapse>
+                                            @if ($team->matchResults->isEmpty())
+                                                <p class="py-4 text-center text-sm italic text-gray-400">{{ __('No matches scheduled for this team.') }}</p>
+                                            @else
+                                                <div class="overflow-x-auto">
+                                                    <table class="w-full text-sm">
+                                                        <thead>
+                                                            <tr class="border-b border-gray-100 text-left text-xs font-semibold uppercase tracking-wide text-gray-400">
+                                                                <th class="hidden pb-2 pr-4 sm:table-cell">{{ __('Week') }}</th>
+                                                                <th class="pb-2 pr-4">{{ __('Date') }}</th>
+                                                                <th class="pb-2 pr-4">{{ __('Opponent') }}</th>
+                                                                <th class="hidden pb-2 pr-4 sm:table-cell">{{ __('Venue') }}</th>
+                                                                <th class="pb-2 pr-4">{{ __('Score') }}</th>
+                                                                <th class="pb-2 pr-4">{{ __('Result') }}</th>
+                                                                <th class="pb-2"></th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody class="divide-y divide-gray-50">
+                                                            @foreach ($team->matchResults->sortBy('match_date') as $mr)
+                                                                <tr wire:key="mr-{{ $mr->id }}"
+                                                                    @class(['text-gray-300' => $mr->is_bye, 'italic text-gray-400' => ! $mr->is_bye && $mr->result === null])>
+                                                                    <td class="hidden py-2 pr-4 text-xs text-gray-400 sm:table-cell">
+                                                                        {{ $mr->week_number ? 'S' . $mr->week_number : '—' }}
+                                                                    </td>
+                                                                    <td class="py-2 pr-4 text-gray-700">
+                                                                        @if ($mr->is_bye)
+                                                                            <span class="italic text-gray-300">Bye</span>
+                                                                        @elseif ($mr->match_date)
+                                                                            <span class="hidden sm:inline">{{ $mr->match_date->format('d/m/Y') }}</span>
+                                                                            <span class="sm:hidden">{{ $mr->match_date->format('d/m') }}</span>
+                                                                        @else
+                                                                            —
+                                                                        @endif
+                                                                    </td>
+                                                                    <td class="py-2 pr-4 font-medium text-gray-800">
+                                                                        {{ $mr->opponent_name ?? '—' }}
+                                                                    </td>
+                                                                    <td class="hidden py-2 pr-4 sm:table-cell">
+                                                                        @if (! $mr->is_bye && $mr->opponent_name)
+                                                                            <span @class([
+                                                                                'rounded px-1.5 py-0.5 text-[10px] font-semibold',
+                                                                                'bg-blue-50 text-blue-700'  => $mr->is_home,
+                                                                                'bg-gray-100 text-gray-600' => ! $mr->is_home,
+                                                                            ])>
+                                                                                {{ $mr->is_home ? __('Home') : __('Away') }}
+                                                                            </span>
+                                                                        @endif
+                                                                    </td>
+                                                                    <td class="py-2 pr-4 font-mono text-xs text-gray-700">
+                                                                        {{ $mr->score ?? '—' }}
+                                                                    </td>
+                                                                    <td class="py-2 pr-4">
+                                                                        @if ($mr->is_bye)
+                                                                            <span class="rounded bg-gray-50 px-1.5 py-0.5 text-[10px] font-semibold text-gray-400">Bye</span>
+                                                                        @elseif ($mr->result === null)
+                                                                            <span class="text-xs italic text-gray-300">{{ __('Pending') }}</span>
+                                                                        @elseif ($mr->result === \App\Enums\InterclubResult::WIN)
+                                                                            <span class="rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-semibold text-green-700">{{ __('Win') }}</span>
+                                                                        @elseif ($mr->result === \App\Enums\InterclubResult::LOSS)
+                                                                            <span class="rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold text-red-700">{{ __('Loss') }}</span>
+                                                                        @elseif ($mr->result === \App\Enums\InterclubResult::DRAW)
+                                                                            <span class="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold text-gray-600">{{ __('Draw') }}</span>
+                                                                        @elseif ($mr->result === \App\Enums\InterclubResult::FORFEIT_WIN)
+                                                                            <span class="rounded bg-green-50 px-1.5 py-0.5 text-[10px] font-semibold text-green-600">{{ __('Forfait adv.') }}</span>
+                                                                        @elseif ($mr->result === \App\Enums\InterclubResult::FORFEIT_LOSS)
+                                                                            <span class="rounded bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold text-red-400">{{ __('Forfait') }}</span>
+                                                                        @elseif ($mr->result === \App\Enums\InterclubResult::WITHDRAWAL_OPPONENT)
+                                                                            <span class="rounded bg-orange-50 px-1.5 py-0.5 text-[10px] font-semibold text-orange-500">{{ __('F. Gén. Adv.') }}</span>
+                                                                        @elseif ($mr->result === \App\Enums\InterclubResult::WITHDRAWAL)
+                                                                            <span class="rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-semibold text-orange-600">{{ __('F. Général') }}</span>
+                                                                        @endif
+                                                                    </td>
+                                                                    <td class="py-2 text-right">
+                                                                        <div class="flex justify-end gap-1">
+                                                                            <x-button class="btn-ghost btn-xs" icon="o-pencil"
+                                                                                wire:click="openEditModal({{ $mr->id }})" />
+                                                                            <x-button class="btn-ghost btn-xs text-error" icon="o-trash"
+                                                                                wire:click="confirmDelete({{ $mr->id }})" />
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
+                                                            @endforeach
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </x-card>
                                 </div>
-                            @endif
-                        </x-card>
-                    @endforeach
-                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </section>
             @endforeach
         </div>
     @endif
 
-    {{-- ── Modal Add / Edit ────────────────────────────────────────────────── --}}
-    <x-modal wire:model="editModal" title="{{ $editingMatchResultId ? __('Edit match') : __('Add a match') }}">
-        <div class="space-y-4">
+    {{-- ── Modal Edit result ──────────────────────────────────────────────── --}}
+    <x-modal wire:model="editModal" title="{{ __('Edit match') }}">
+        <div class="space-y-5">
+            {{-- Context (read-only) --}}
+            <div class="flex flex-wrap items-center gap-3 rounded-lg bg-base-200 px-4 py-3 text-sm">
+                @if ($matchDate)
+                    <span class="text-base-content/60">{{ \Carbon\Carbon::parse($matchDate)->format('d/m/Y') }}</span>
+                    <span class="text-base-content/20">|</span>
+                @endif
+                @if ($opponentName)
+                    <span class="font-medium">{{ $opponentName }}</span>
+                @endif
+                <span @class([
+                    'rounded px-2 py-0.5 text-xs font-semibold',
+                    'bg-blue-100 text-blue-700' => $isHome,
+                    'bg-base-300 text-base-content/60' => ! $isHome,
+                ])>
+                    {{ $isHome ? __('Home') : __('Away') }}
+                </span>
+            </div>
+
+            {{-- Situation (first so it's always visible) --}}
             <x-select
-                label="{{ __('Match type') }}"
+                label="{{ __('Situation') }}"
                 :options="$matchTypeOptions"
                 option-label="label"
                 option-value="value"
                 wire:model.live="matchType" />
 
-            @if (! in_array($matchType, ['bye', 'forfeit_general_us']))
-                <x-input label="{{ __('Date') }}" type="date" wire:model="matchDate" />
-                <x-toggle label="{{ __('Home match') }}" wire:model="isHome" />
-                <x-input label="{{ __('Opponent') }}" placeholder="ex : Arc En Ciel F" wire:model="opponentName" />
-            @endif
-
+            {{-- Score inputs (only for normal played matches) --}}
             @if ($matchType === 'normal')
-                <x-input
-                    label="{{ __('Score') }}"
-                    placeholder="ex : 15-1"
-                    hint="{{ __('Left = home score, right = away score. Result is calculated automatically.') }}"
-                    wire:model="score" />
+                @php $maxPts = $this->maxPoints(); @endphp
+                <div class="flex flex-col gap-2">
+                    <div class="flex items-end gap-3">
+                        <x-input
+                            class="text-center"
+                            label="{{ __('Our score') }}"
+                            type="number"
+                            min="0"
+                            max="{{ $maxPts }}"
+                            wire:model="scoreUs" />
+                        <span class="mb-2 text-2xl font-light text-base-content/30">—</span>
+                        <x-input
+                            class="text-center"
+                            label="{{ __('Opponent score') }}"
+                            type="number"
+                            min="0"
+                            max="{{ $maxPts }}"
+                            wire:model="scoreThem" />
+                    </div>
+                    <p class="text-xs text-base-content/40">{{ __('Total : :max points par match', ['max' => $maxPts]) }}</p>
+                </div>
             @endif
         </div>
 

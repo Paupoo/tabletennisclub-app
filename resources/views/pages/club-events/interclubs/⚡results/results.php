@@ -46,7 +46,11 @@ new class extends Component
 
     public ?string $opponentName = null;
 
-    public ?string $score = null;
+    public ?int $scoreUs = null;
+
+    public ?int $scoreThem = null;
+
+    public ?string $editingTeamCategory = null;
 
     public ?int $seasonId = null;
 
@@ -96,19 +100,6 @@ new class extends Component
         }
     }
 
-    public function openAddModal(int $teamId): void
-    {
-        $this->resetErrorBag();
-        $this->editingMatchResultId = null;
-        $this->editingTeamId = $teamId;
-        $this->matchType = 'normal';
-        $this->matchDate = null;
-        $this->isHome = true;
-        $this->opponentName = null;
-        $this->score = null;
-        $this->editModal = true;
-    }
-
     public function openEditModal(int $matchResultId): void
     {
         $mr = MatchResult::findOrFail($matchResultId);
@@ -118,7 +109,17 @@ new class extends Component
         $this->matchDate = $mr->match_date?->format('Y-m-d');
         $this->isHome = $mr->is_home;
         $this->opponentName = $mr->opponent_name;
-        $this->score = $mr->score;
+
+        $this->editingTeamCategory = Team::with('league')->find($mr->team_id)?->league?->category;
+
+        $this->scoreUs = null;
+        $this->scoreThem = null;
+        if ($mr->score && str_contains($mr->score, '-')) {
+            [$home, $away] = array_map('intval', explode('-', $mr->score, 2));
+            $this->scoreUs   = $this->isHome ? $home : $away;
+            $this->scoreThem = $this->isHome ? $away : $home;
+        }
+
         $this->matchType = match (true) {
             $mr->is_bye => 'bye',
             $mr->result === InterclubResult::FORFEIT_WIN => 'forfeit_opponent',
@@ -141,16 +142,36 @@ new class extends Component
         return $this->view()->title(__('Results'));
     }
 
+    public function maxPoints(): int
+    {
+        return $this->editingTeamCategory === LeagueCategory::MEN->name ? 16 : 10;
+    }
+
     public function rules(): array
     {
-        $needsOpponent = ! in_array($this->matchType, ['bye', 'forfeit_general_us']);
+        $maxPoints = $this->maxPoints();
+
+        $scoreRule = $this->matchType === 'normal'
+            ? ['nullable', 'integer', 'min:0', "max:{$maxPoints}"]
+            : ['nullable'];
+
+        $scoreSumRule = $this->matchType === 'normal'
+            ? [
+                'nullable', 'integer', 'min:0', "max:{$maxPoints}",
+                function (string $attribute, mixed $value, \Closure $fail) use ($maxPoints): void {
+                    if ($this->scoreUs !== null && $this->scoreThem !== null) {
+                        if ($this->scoreUs + $this->scoreThem !== $maxPoints) {
+                            $fail(__("Le score total doit être égal à :max points.", ['max' => $maxPoints]));
+                        }
+                    }
+                },
+            ]
+            : ['nullable'];
 
         return [
             'matchType' => ['required', Rule::in(['normal', 'bye', 'forfeit_opponent', 'forfeit_general_opponent', 'forfeit_us', 'forfeit_general_us'])],
-            'matchDate' => 'nullable|date',
-            'isHome' => 'required|boolean',
-            'opponentName' => $needsOpponent ? 'required|string|max:100' : 'nullable|string|max:100',
-            'score' => $this->matchType === 'normal' ? ['nullable', 'regex:/^\d{1,2}-\d{1,2}$/'] : 'nullable|string',
+            'scoreUs'   => $scoreRule,
+            'scoreThem' => $scoreSumRule,
         ];
     }
 
@@ -160,6 +181,14 @@ new class extends Component
         $this->authorizeTeam($this->editingTeamId);
 
         $isBye = $this->matchType === 'bye';
+
+        $scoreString = null;
+        if ($this->matchType === 'normal' && $this->scoreUs !== null && $this->scoreThem !== null) {
+            $scoreString = $this->isHome
+                ? "{$this->scoreUs}-{$this->scoreThem}"
+                : "{$this->scoreThem}-{$this->scoreUs}";
+        }
+
         $result = match ($this->matchType) {
             'bye' => null,
             'forfeit_opponent' => InterclubResult::FORFEIT_WIN,
@@ -176,18 +205,13 @@ new class extends Component
             'week_number' => ($isBye || ! $this->matchDate) ? null : Carbon::parse($this->matchDate)->isoWeek(),
             'is_home' => $this->isHome,
             'opponent_name' => in_array($this->matchType, ['bye', 'forfeit_general_us']) ? null : $this->opponentName,
-            'score' => $this->matchType === 'normal' ? ($this->score ?: null) : null,
+            'score' => $scoreString,
             'result' => $result?->value,
             'is_bye' => $isBye,
         ];
 
-        if ($this->editingMatchResultId) {
-            MatchResult::findOrFail($this->editingMatchResultId)->update($data);
-            $this->success(__('Match updated'));
-        } else {
-            MatchResult::create($data);
-            $this->success(__('Match added'));
-        }
+        MatchResult::findOrFail($this->editingMatchResultId)->update($data);
+        $this->success(__('Match updated'));
 
         $this->editModal = false;
     }
@@ -232,12 +256,12 @@ new class extends Component
             'teamsByCategory' => $teamsByCategory,
             'stats' => $stats,
             'matchTypeOptions' => [
-                ['value' => 'normal',                   'label' => __('Match joué')],
-                ['value' => 'bye',                      'label' => __('Bye (semaine exempt)')],
+                ['value' => 'normal',                   'label' => __('Normal')],
                 ['value' => 'forfeit_opponent',         'label' => __('Forfait adverse')],
                 ['value' => 'forfeit_general_opponent', 'label' => __('Forfait général adverse')],
                 ['value' => 'forfeit_us',               'label' => __('Notre forfait')],
                 ['value' => 'forfeit_general_us',       'label' => __('Notre forfait général')],
+                ['value' => 'bye',                      'label' => __('Bye')],
             ],
             'breadcrumbs' => Breadcrumb::make()->home()->add('Interclubs', '#')->results()->toArray(),
         ];
@@ -271,21 +295,14 @@ new class extends Component
 
     private function resultFromScore(): ?InterclubResult
     {
-        if (! $this->score || ! str_contains($this->score, '-')) {
+        if ($this->scoreUs === null || $this->scoreThem === null) {
             return null;
         }
 
-        [$left, $right] = array_map('intval', explode('-', $this->score, 2));
-        [$ours, $theirs] = $this->isHome ? [$left, $right] : [$right, $left];
-
-        if ($ours > $theirs) {
-            return InterclubResult::WIN;
-        }
-
-        if ($ours < $theirs) {
-            return InterclubResult::LOSS;
-        }
-
-        return InterclubResult::DRAW;
+        return match (true) {
+            $this->scoreUs > $this->scoreThem => InterclubResult::WIN,
+            $this->scoreUs < $this->scoreThem => InterclubResult::LOSS,
+            default => InterclubResult::DRAW,
+        };
     }
 };

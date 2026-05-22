@@ -15,8 +15,10 @@ class ClubSeeder extends Seeder
     public function run(): void
     {
         Club::create([
+            'name' => 'C.T.T Ottignies-Blocry',
             'licence' => config('app.club_licence'),
-            'street' => 'Rue de l\'invasion 80',
+            'building_name' => 'Centre Sportif J. Demeester',
+            'street' => "Rue de l'Invasion 80",
             'city_code' => '1340',
             'city_name' => 'Ottignies',
         ]);

@@ -21,6 +21,37 @@ use Illuminate\Support\Facades\DB;
 
 class InterclubSeeder extends Seeder
 {
+    // Maps simplified seeder names to real BBW licence numbers from DatabaseSeeder
+    private const CLUB_LICENCE_MAP = [
+        'Arc En Ciel' => 'BBW134',
+        'TT Zénith Brussels' => 'BBW205',
+        "Braine-l'Alleud" => 'BBW179',
+        'Logis Auderghem' => 'BBW165',
+        'Gremlins' => 'BBW326',
+        'Tourinnes' => 'BBW350',
+        'La Hulpe-Rixensart' => 'BBW194',
+        'Set-Jet Fleur Bleue' => 'BBW034',
+        'Watermael-Boitsfort' => 'BBW299', // no direct BBW equivalent → CTT HAMME-MILLE 6V
+        'REP Nivellois' => 'BBW118',
+        'Piranha' => 'BBW319',
+        'Royal 1865 Waterloo' => 'BBW147',
+        'CTT Limal' => 'BBW123',
+        'Mont-Saint-Guibert' => 'BBW223',
+        'Beauchamp' => 'BBW345',
+        'Witterzee' => 'BBW291',
+        'Safran' => 'BBW190',
+        'CTT Alpa Schaerbeek' => 'BBW015',
+        'Royal Clabecq' => 'BBW155',
+        'CTT Le Moulin' => 'BBW315',
+        'Le Moulin' => 'BBW315',
+        'Fonteny-Genappe' => 'BBW338',
+        'Uccle Ping' => 'BBW347',
+        'Palette Bleue' => 'BBW348',
+        'Smash Evere' => 'BBW323',
+        'Eveil' => 'BBW321',
+        'TT Perwez' => 'BBW289',
+    ];
+
     private Club $club;
 
     private Season $season;
@@ -149,18 +180,17 @@ class InterclubSeeder extends Seeder
 
     private function opponentTeam(string $clubName, string $teamLetter, League $league, ?string $address = null): Team
     {
-        $opponentClub = Club::firstOrCreate(
-            ['name' => $clubName],
-            [
-                'licence' => 'OPP-' . strtoupper(substr(preg_replace('/[^a-zA-Z]/', '', $clubName), 0, 8)),
-                'city_name' => $clubName,
-                'street' => $address,
-            ]
-        );
+        $licence = self::CLUB_LICENCE_MAP[$clubName] ?? null;
 
-        if ($address && ! $opponentClub->street) {
-            $opponentClub->update(['street' => $address]);
-        }
+        $opponentClub = ($licence ? Club::firstWhere('licence', $licence) : null)
+            ?? Club::firstOrCreate(
+                ['name' => $clubName],
+                [
+                    'licence' => 'OPP-' . strtoupper(substr(preg_replace('/[^a-zA-Z]/', '', $clubName), 0, 8)),
+                    'city_name' => $clubName,
+                    'street' => $address,
+                ]
+            );
 
         return Team::firstOrCreate(
             ['name' => $teamLetter, 'season_id' => $this->season->id, 'league_id' => $league->id, 'club_id' => $opponentClub->id],

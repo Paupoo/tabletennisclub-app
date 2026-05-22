@@ -6,7 +6,7 @@
         <div class="absolute inset-0">
             <img src="{{ asset('images/background_results.webp') }}" alt="Tennis table background" class="w-full h-full object-cover">
             <!-- Overlay avec votre dégradé + opacité -->
-            <div class="absolute inset-0 bg-gradient-to-br from-club-blue/85 via-club-blue/80 to-club-blue-light/85"></div>
+            <div class="absolute inset-0 bg-linear-to-br from-club-blue/85 via-club-blue/80 to-club-blue-light/85"></div>
         </div>
         <!-- Contenu -->
         <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -16,14 +16,19 @@
     </div>
 
     <!-- Season Filter -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" x-data="{ selectedSeason: '{{ $selectedSeason ?? '2024' }}' }">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <h2 class="text-2xl font-bold">Résultats des Équipes</h2>
             <div class="flex items-center gap-2">
-                <label for="season" class="text-sm font-medium">Saison:</label>
-                <select x-model="selectedSeason" class="pr-8 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
-                    @foreach($seasons ?? ['2024', '2023', '2022'] as $season)
-                        <option value="{{ $season }}">{{ $season }}</option>
+                <label for="season" class="text-sm font-medium">Saison :</label>
+                <select
+                    id="season"
+                    onchange="window.location.href = '{{ route('results') }}?season=' + this.value"
+                    class="pr-8 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
+                    @foreach($seasons as $s)
+                        <option value="{{ $s->name }}" @selected($s->name === $effectiveSeasonName)>
+                            {{ $s->name }}
+                        </option>
                     @endforeach
                 </select>
             </div>

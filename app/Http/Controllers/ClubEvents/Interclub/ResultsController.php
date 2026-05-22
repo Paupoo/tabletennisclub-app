@@ -20,11 +20,23 @@ class ResultsController extends Controller
     {
         $selectedSeason = $request->input('season', '');
 
-        $seasons = Season::orderByDesc('start_at')->pluck('name')->toArray();
+        $currentSeason = Season::current();
+
+        $seasons = Season::orderByDesc('start_at')
+            ->when(
+                $currentSeason,
+                fn ($q) => $q->where('start_at', '<', $currentSeason->start_at),
+                fn ($q) => $q->where('start_at', '<', now())
+            )
+            ->limit(5)
+            ->get()
+            ->when($currentSeason, fn ($coll) => $coll->prepend($currentSeason));
 
         $season = $selectedSeason
-            ? Season::where('name', 'like', "%{$selectedSeason}%")->first()
-            : Season::current();
+            ? $seasons->firstWhere('name', $selectedSeason) ?? $currentSeason
+            : $currentSeason;
+
+        $effectiveSeasonName = $season?->name ?? '';
 
         $categoryOrder = [
             LeagueCategory::MEN->name => 0,
@@ -72,7 +84,7 @@ class ResultsController extends Controller
             }
         }
 
-        return View('public.results', compact('teamsByCategory', 'seasons', 'selectedSeason'));
+        return view('public.results', compact('teamsByCategory', 'seasons', 'effectiveSeasonName'));
     }
 
     /**

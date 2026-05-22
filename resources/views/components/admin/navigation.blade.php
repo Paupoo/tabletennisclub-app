@@ -56,22 +56,20 @@
     </x-menu-sub>
 
     <x-menu-sub icon="o-calendar-days" link="#" title="{{ __('Interclubs') }}">
-        <x-menu-item icon="o-identification" link="{{ route('admin.interclubs.teams') }}" title="{{ __('Teams') }}" />
-        @if($user->is_admin || $user->is_committee_member)
-        <x-menu-item icon="o-table-cells" link="{{ route('admin.interclubs.division-setup') }}" title="{{ __('Division Setup') }}" />
-        <x-menu-item icon="o-calendar-days" link="{{ route('admin.interclubs.interclubs') }}" title="{{ __('Schedule') }}" />
-        @endif
         @if($user->is_competitor)
-        <x-menu-item icon="o-calendar" link="{{ route('admin.interclubs.my-matches') }}" title="{{ __('My Matches') }}" />
+        <x-menu-item icon="o-calendar" link="{{ route('admin.interclubs.my-matches') }}" title="{{ __('Mes matchs') }}" />
         @endif
         @if($user->is_admin || $user->is_committee_member || $user->captainOf)
-        <x-menu-item icon="o-user-group" link="{{ route('admin.interclubs.captain-selection') }}" title="{{ __('Selections') }}" />
+        <x-menu-item icon="o-user-group" link="{{ route('admin.interclubs.captain-selection') }}" title="{{ __('Sélections') }}" />
+        <x-menu-item icon="o-squares-2x2" link="{{ route('admin.interclubs.results') }}" title="{{ __('Résultats') }}" />
         @endif
         @if($user->is_admin || $user->is_committee_member)
-        <x-menu-item icon="o-eye" link="{{ route('admin.interclubs.control-center') }}" title="{{ __('Control Center') }}" />
-        @endif
-        @if($user->is_admin || $user->is_committee_member || $user->captainOf)
-        <x-menu-item icon="o-squares-2x2" link="{{ route('admin.interclubs.results') }}" title="{{ __('Results') }}" />
+        <x-menu-item icon="o-calendar-days" link="{{ route('admin.interclubs.interclubs') }}" title="{{ __('Planning') }}" />
+        <x-menu-sub icon="o-cog-6-tooth" title="{{ __('Configuration saison') }}">
+            <x-menu-item icon="o-identification" link="{{ route('admin.interclubs.teams') }}" title="{{ __('Nos équipes') }}" />
+            <x-menu-item icon="o-table-cells" link="{{ route('admin.interclubs.division-setup') }}" title="{{ __('Adversaires') }}" />
+            <x-menu-item icon="o-building-office-2" link="{{ route('admin.interclubs.clubs') }}" title="{{ __('Clubs') }}" />
+        </x-menu-sub>
         @endif
     </x-menu-sub>
 

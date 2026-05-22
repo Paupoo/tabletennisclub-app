@@ -11,6 +11,7 @@ use App\Models\ClubEvents\Interclub\Season;
 use App\Models\ClubEvents\Interclub\Team;
 use App\Services\InterclubAvailabilityService;
 use App\Support\Breadcrumb;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
@@ -178,6 +179,8 @@ new class extends Component
     public function with(): array
     {
         $user = Auth::user();
+        $isAdminOrCommittee = $user->is_admin || $user->is_committee_member;
+
         $seasons = Season::orderBy('start_at')->get();
         $season = $this->selectedSeasonId
             ? $seasons->firstWhere('id', $this->selectedSeasonId)
@@ -295,10 +298,14 @@ new class extends Component
                 ]);
         }
 
+        $allTeamsForSummary = $isAdminOrCommittee
+            ? Team::with(['league'])->inClub()->when($season, fn ($q) => $q->where('season_id', $season->id))->get()
+            : collect();
+
         return [
             'breadcrumbs' => Breadcrumb::make()
                 ->home()
-                ->current(__('Captain\'s Dashboard'))
+                ->current(__('Sélections'))
                 ->toArray(),
             'seasons_list' => $seasons->map(fn ($s) => ['id' => $s->id, 'name' => $s->name]),
             'teams_list' => $teams->map(fn ($t) => [
@@ -311,6 +318,8 @@ new class extends Component
             'searchResults' => $searchResults,
             'selectedTeam' => $selectedTeam,
             'drawerInterclub' => $drawerInterclub,
+            'isAdminOrCommittee' => $isAdminOrCommittee,
+            'weekSummary' => $isAdminOrCommittee ? $this->buildWeekSummary($allTeamsForSummary) : null,
         ];
     }
 
@@ -323,9 +332,75 @@ new class extends Component
             $query->where('season_id', $season->id);
         }
 
-        $query->where('captain_id', $user->id);
+        if (! $user->is_admin && ! $user->is_committee_member) {
+            $query->where('captain_id', $user->id);
+        }
 
         return $query->get();
+    }
+
+    /** @param \Illuminate\Database\Eloquent\Collection<int, Team> $teams */
+    private function buildWeekSummary(\Illuminate\Database\Eloquent\Collection $teams): array
+    {
+        $weekNumbers = $this->weekNumbers($teams);
+
+        $weeks = $weekNumbers->map(fn (int $wk) => [
+            'wk' => $wk,
+            'status' => $this->weekStatus($wk, $teams),
+        ])->values()->all();
+
+        $total = $weekNumbers->count();
+        $ok = collect($weeks)->where('status', 'ok')->count();
+
+        return [
+            'weeks' => $weeks,
+            'preparation_score' => $total > 0 ? (int) round($ok / $total * 100) : 0,
+            'total' => $total,
+            'ok' => $ok,
+        ];
+    }
+
+    /** @param \Illuminate\Database\Eloquent\Collection<int, Team> $teams */
+    private function weekNumbers(\Illuminate\Database\Eloquent\Collection $teams): Collection
+    {
+        $teamIds = $teams->pluck('id');
+
+        return Interclub::whereIn('visited_team_id', $teamIds)
+            ->orWhereIn('visiting_team_id', $teamIds)
+            ->whereNotNull('week_number')
+            ->pluck('week_number')
+            ->unique()
+            ->sort()
+            ->values();
+    }
+
+    /** @param \Illuminate\Database\Eloquent\Collection<int, Team> $teams */
+    private function weekStatus(int $weekNumber, \Illuminate\Database\Eloquent\Collection $teams): string
+    {
+        $worstStatus = 'ok';
+
+        foreach ($teams as $team) {
+            $interclub = Interclub::where('week_number', $weekNumber)
+                ->where(fn ($q) => $q->where('visited_team_id', $team->id)->orWhere('visiting_team_id', $team->id))
+                ->first();
+
+            if (! $interclub) {
+                continue;
+            }
+
+            $maxPlayers = $team->league?->category === 'MEN' ? 4 : 3;
+            $selectedCount = $interclub->users()->wherePivot('is_selected', true)->count();
+
+            if ($selectedCount === 0) {
+                return 'nok';
+            }
+
+            if ($selectedCount < $maxPlayers) {
+                $worstStatus = 'warning';
+            }
+        }
+
+        return $worstStatus;
     }
 
     private function ourTeam(Interclub $interclub): ?Team

@@ -4,12 +4,44 @@
 
 <div>
     <x-header separator subtitle="{{ $selectedTeam?->league?->division ?? __('Select a team') }}"
-        :title="__('Captain\'s Dashboard')">
+        :title="__('Sélections')">
         <x-slot:actions>
-            <x-button class="btn-ghost btn-sm" icon="o-arrow-right" label="{{ __('My Matches') }}"
+            <x-button class="btn-ghost btn-sm" icon="o-arrow-right" label="{{ __('Mes matchs') }}"
                 :link="route('admin.interclubs.my-matches')" />
         </x-slot:actions>
     </x-header>
+
+    {{-- Bandeau résumé hebdomadaire — admin / comité uniquement --}}
+    @if ($isAdminOrCommittee && $weekSummary && $weekSummary['total'] > 0)
+        <div class="mb-6 flex flex-wrap items-center gap-6 rounded-xl border border-base-200 bg-base-50 px-5 py-4">
+            <div class="flex items-center gap-3">
+                <div class="radial-progress text-[11px] font-black text-primary"
+                    style="--value:{{ $weekSummary['preparation_score'] }}; --size:2.8rem; --thickness:3px;">
+                    {{ $weekSummary['preparation_score'] }}%
+                </div>
+                <div>
+                    <div class="text-[10px] font-black uppercase tracking-widest opacity-40">{{ __('Préparation') }}</div>
+                    <div class="text-xs font-bold">{{ $weekSummary['ok'] }}/{{ $weekSummary['total'] }} {{ __('semaines prêtes') }}</div>
+                </div>
+            </div>
+            <div class="flex flex-wrap items-end gap-1.5">
+                @foreach ($weekSummary['weeks'] as $wk)
+                    @php
+                        $dot = match ($wk['status']) {
+                            'ok' => 'bg-success',
+                            'warning' => 'bg-warning',
+                            'nok' => 'bg-error animate-pulse',
+                            default => 'bg-base-300',
+                        };
+                    @endphp
+                    <div class="flex flex-col items-center gap-0.5">
+                        <div class="{{ $dot }} h-2 w-2 rounded-full"></div>
+                        <span class="text-[8px] font-black opacity-30">{{ $wk['wk'] }}</span>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @endif
 
     @if ($teams_list->isEmpty())
         <x-empty-state icon="o-user-group" title="{{ __('No team assigned') }}"

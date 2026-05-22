@@ -22,6 +22,15 @@
                     @endif
                 </x-button>
 
+                @if(Auth::user()->is_admin || Auth::user()->is_committee_member)
+                    <x-button
+                        class="btn-ghost btn-sm"
+                        icon="o-arrow-path"
+                        tooltip="{{ __('Recalculate force list') }}"
+                        wire:click="recalculateForceList"
+                        spinner="recalculateForceList" />
+                @endif
+
                 <x-button class="btn-primary" icon="o-plus" label="{{ __('Create') }}"
                     link="{{ route('admin.users.create') }}" responsive />
             </div>

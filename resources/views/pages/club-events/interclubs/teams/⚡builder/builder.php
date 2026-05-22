@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Resources\views\Pages\ClubEvents\Interclubs\Teams\Builder;
 
+use App\Actions\User\RecalculateForceListAction;
 use App\Enums\Gender;
 use App\Enums\LeagueCategory;
 use App\Enums\LeagueLevel;
@@ -73,6 +74,8 @@ new class extends Component
             'seasonId.required' => 'Sélectionnez une saison.',
             'nucleusSize.min'   => 'Le noyau minimum est de 5 joueurs.',
         ]);
+
+        RecalculateForceListAction::handle();
 
         $competitors = $this->buildEligibleQuery()->get();
         $totalTeams  = intdiv($competitors->count(), $this->nucleusSize);

@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 use App\Actions\User\RecalculateForceListAction;
 use App\Models\ClubAdmin\Users\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
+
+uses(RefreshDatabase::class);
 
 it('assigns force_list ordered by ranking', function (): void {
     $b2 = User::factory()->create(['is_competitor' => true, 'ranking' => 'B2', 'force_list' => null]);
@@ -54,4 +58,49 @@ it('does not recalculate when an unrelated field changes', function (): void {
     $user->update(['first_name' => 'Nouveau']);
 
     expect($user->fresh()->force_list)->toBe($initialForceList);
+});
+
+it('recalculates when a competitor is deleted', function (): void {
+    $strong = User::factory()->create(['is_competitor' => true, 'ranking' => 'B2', 'force_list' => null]);
+    $weak = User::factory()->create(['is_competitor' => true, 'ranking' => 'D4', 'force_list' => null]);
+    $mid = User::factory()->create(['is_competitor' => true, 'ranking' => 'C0', 'force_list' => null]);
+
+    RecalculateForceListAction::handle();
+
+    $strong->delete();
+
+    expect(User::where('is_competitor', true)->whereNotNull('force_list')->count())
+        ->toBe(2);
+
+    expect($mid->fresh()->force_list)->toBeLessThan($weak->fresh()->force_list);
+});
+
+it('does not recalculate when a non-competitor is deleted', function (): void {
+    $comp = User::factory()->create(['is_competitor' => true, 'ranking' => 'C0', 'force_list' => 1]);
+    $nonComp = User::factory()->create(['is_competitor' => false, 'force_list' => null]);
+
+    $nonComp->delete();
+
+    expect($comp->fresh()->force_list)->toBe(1);
+});
+
+it('admin can recalculate force list via the users page', function (): void {
+    $admin = User::factory()->isAdmin()->create();
+    User::factory()->create(['is_competitor' => true, 'ranking' => 'B2', 'force_list' => null]);
+    User::factory()->create(['is_competitor' => true, 'ranking' => 'D4', 'force_list' => null]);
+
+    Livewire::actingAs($admin)
+        ->test('pages::club-admin.users.index')
+        ->call('recalculateForceList');
+
+    expect(User::where('is_competitor', true)->whereNull('force_list')->count())->toBe(0);
+});
+
+it('regular user cannot call recalculateForceList', function (): void {
+    $user = User::factory()->create();
+
+    Livewire::actingAs($user)
+        ->test('pages::club-admin.users.index')
+        ->call('recalculateForceList')
+        ->assertForbidden();
 });

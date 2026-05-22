@@ -9,6 +9,13 @@ use App\Models\ClubAdmin\Users\User;
 
 class UserObserver
 {
+    public function deleted(User $user): void
+    {
+        if ($user->is_competitor) {
+            RecalculateForceListAction::handle();
+        }
+    }
+
     public function saved(User $user): void
     {
         $competitorStatusChanged = $user->wasChanged('is_competitor');

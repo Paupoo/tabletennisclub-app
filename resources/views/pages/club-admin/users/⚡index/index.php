@@ -2,11 +2,13 @@
 
 declare(strict_types=1);
 
+use App\Actions\User\RecalculateForceListAction;
 use App\Mail\InviteNewUserMail;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Team;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 use Livewire\Attributes\Computed;
@@ -124,6 +126,15 @@ new class extends Component
     // ────────────────────────────────────────────────────────────────────────
     // Suppression simple
     // ────────────────────────────────────────────────────────────────────────
+
+    public function recalculateForceList(): void
+    {
+        abort_unless(Auth::user()->is_admin || Auth::user()->is_committee_member, 403);
+
+        RecalculateForceListAction::handle();
+
+        $this->success(__('Force list recalculated.'));
+    }
 
     public function sendInvitation(int $userId): void
     {

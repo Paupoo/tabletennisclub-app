@@ -6,6 +6,7 @@ namespace App\Notifications\Subscription;
 
 use App\Models\ClubAdmin\Subscription\Subscription;
 use Illuminate\Bus\Queueable;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -40,8 +41,10 @@ class SubscriptionCreatedNotification extends Notification
             $message->line(__('Entraînements : :packs', ['packs' => $packNames]));
         }
 
+        $estimatedTotal = $this->computeEstimate($trainingPacks);
+
         return $message
-            ->line(__('Montant estimé : :amount €', ['amount' => number_format($this->subscription->amount_due, 2, ',', ' ')]))
+            ->line(__('Montant estimé : :amount € *(avant remise éventuelle, calculé à la validation)*', ['amount' => number_format($estimatedTotal, 2, ',', ' ')]))
             ->line(__('En cas de question, n\'hésitez pas à contacter le secrétariat du club.'));
     }
 
@@ -49,5 +52,14 @@ class SubscriptionCreatedNotification extends Notification
     public function via(object $notifiable): array
     {
         return ['mail'];
+    }
+
+    private function computeEstimate(Collection $trainingPacks): float
+    {
+        $basePrice = $this->subscription->is_competitive ? 125.0 : 60.0;
+
+        $packTotal = $trainingPacks->sum(fn ($pack) => (float) $pack->price);
+
+        return $basePrice + $packTotal;
     }
 }

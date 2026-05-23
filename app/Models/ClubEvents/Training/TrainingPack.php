@@ -31,6 +31,7 @@ class TrainingPack extends Model
     protected $casts = [
         'season_id' => 'integer',
         'price' => 'integer',
+        'allow_discount' => 'boolean',
         'level' => TrainingLevel::class,
         'type' => TrainingType::class,
         'trainer_id' => 'integer',
@@ -43,12 +44,14 @@ class TrainingPack extends Model
         'duration_minutes' => 'integer',
         'max_participants' => 'integer',
         'is_active' => 'boolean',
+        'is_open_enrollment' => 'boolean',
     ];
 
     protected $fillable = [
         'season_id',
         'name',
         'price',
+        'allow_discount',
         'level',
         'type',
         'trainer_id',
@@ -63,7 +66,15 @@ class TrainingPack extends Model
         'description',
         'max_participants',
         'is_active',
+        'is_open_enrollment',
     ];
+
+    public function committedCount(): int
+    {
+        return $this->subscriptions()
+            ->wherePivotIn('status', ['enrolled', 'pending'])
+            ->count();
+    }
 
     public function effectiveMaxParticipants(): int
     {
@@ -72,7 +83,9 @@ class TrainingPack extends Model
 
     public function enrolledCount(): int
     {
-        return $this->trainees()->count();
+        return $this->subscriptions()
+            ->wherePivot('status', 'enrolled')
+            ->count();
     }
 
     /**
@@ -151,6 +164,17 @@ class TrainingPack extends Model
         }
     }
 
+    public function hasAvailableSpot(): bool
+    {
+        if ($this->is_open_enrollment) {
+            return true;
+        }
+
+        $max = $this->effectiveMaxParticipants();
+
+        return $max === 0 || $this->committedCount() < $max;
+    }
+
     public function price(): Attribute
     {
         return Attribute::make(
@@ -175,14 +199,17 @@ class TrainingPack extends Model
     }
 
     /**
-     * Users enrolled in this pack via their subscription.
+     * Users enrolled (not waitlisted) in this pack via their subscription.
      *
      * @return Builder<User>
      */
     public function trainees(): Builder
     {
         return User::query()->whereHas('subscriptions', function (Builder $q): void {
-            $q->whereHas('trainingPacks', fn (Builder $q2) => $q2->where('training_packs.id', $this->id));
+            $q->whereHas('trainingPacks', fn (Builder $q2) => $q2
+                ->where('training_packs.id', $this->id)
+                ->where('subscription_training_pack.status', 'enrolled')
+            );
         });
     }
 
@@ -194,5 +221,12 @@ class TrainingPack extends Model
     public function trainings(): HasMany
     {
         return $this->hasMany(Training::class);
+    }
+
+    public function waitlistCount(): int
+    {
+        return $this->subscriptions()
+            ->wherePivot('status', 'waiting')
+            ->count();
     }
 }

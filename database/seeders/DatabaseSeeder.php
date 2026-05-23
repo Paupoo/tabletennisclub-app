@@ -288,5 +288,7 @@ class DatabaseSeeder extends Seeder
         $this->call(InterclubSeeder::class);
 
         $this->call(TournamentSeeder::class);
+
+        $this->call(TrainingPackSeeder::class);
     }
 }

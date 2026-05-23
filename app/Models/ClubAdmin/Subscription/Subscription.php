@@ -90,11 +90,11 @@ class Subscription extends Model implements PayableInterface
      */
     public function canUserSubscribe(User $user): bool
     {
-        if (!$this->is_active) {
+        if (! $this->is_active) {
             return false;
         }
 
-        return !Subscription::where('user_id', $user->id)
+        return ! Subscription::where('user_id', $user->id)
             ->where('season_id', $this->id)
             ->whereNotIn('status', ['cancelled'])
             ->exists();
@@ -223,7 +223,9 @@ class Subscription extends Model implements PayableInterface
 
     public function trainingPacks(): BelongsToMany
     {
-        return $this->belongsToMany(TrainingPack::class);
+        return $this->belongsToMany(TrainingPack::class)
+            ->withPivot(['status', 'waitlist_position', 'confirmation_deadline', 'discount'])
+            ->withTimestamps();
     }
 
     public function unconfirm(): void

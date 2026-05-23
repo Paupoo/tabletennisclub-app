@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 namespace Database\Factories\ClubEvents\Training;
 
+use App\Enums\TrainingLevel;
+use App\Enums\TrainingType;
+use App\Models\ClubAdmin\Club\Room;
+use App\Models\ClubAdmin\Users\User;
+use App\Models\ClubEvents\Interclub\Season;
 use App\Models\ClubEvents\Training\TrainingPack;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -17,14 +22,16 @@ class TrainingPackFactory extends Factory
     public function definition(): array
     {
         return [
-            'season_id' => \App\Models\ClubEvents\Interclub\Season::factory(),
+            'season_id' => Season::factory(),
             'name' => fake()->words(3, true),
             // 'description' => fake()->sentence(),
             'price' => fake()->numberBetween(50, 200),
-            'level' => fake()->randomElement(\App\Enums\TrainingLevel::cases())->value,
-            'type' => fake()->randomElement(\App\Enums\TrainingType::cases())->value,
-            'trainer_id' => \App\Models\ClubAdmin\Users\User::factory(),
-            'room_id' => \App\Models\ClubAdmin\Club\Room::factory(),
+            'allow_discount' => true,
+            'level' => fake()->randomElement(TrainingLevel::cases())->value,
+            'type' => fake()->randomElement(TrainingType::cases())->value,
+            'trainer_id' => User::factory(),
+            'room_id' => Room::factory(),
+            'is_open_enrollment' => false,
         ];
     }
 }

@@ -347,7 +347,7 @@ Route::middleware(['auth', 'verified'])
             ->name('tournament.table.score.submit');
     });
 
-Route::prefix('admin/website')->middleware(['auth', 'verified'])->group(function (): void {
+Route::prefix('admin/website')->middleware(['auth', 'verified', 'committee'])->group(function (): void {
     Route::livewire('/articles', 'pages::website.articles.index')->name('admin.website.articles.index');
     Route::livewire('/articles/create', 'pages::website.articles.edit')->name('admin.website.articles.create');
     Route::livewire('/articles/{newsPost}/edit', 'pages::website.articles.edit')->name('admin.website.articles.edit');

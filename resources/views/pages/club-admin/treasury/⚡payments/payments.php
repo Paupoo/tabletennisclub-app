@@ -501,7 +501,7 @@ new class extends Component
             ->values();
     }
 
-    private function reconcileSubscription(Subscription $subscription, int $amount): void
+    private function reconcileSubscription(Subscription $subscription, float $amount): void
     {
         $subscription->update(['amount_paid' => $amount]);
 

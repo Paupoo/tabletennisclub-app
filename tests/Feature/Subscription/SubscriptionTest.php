@@ -20,7 +20,7 @@ describe('Subscription Business Rules', function () {
         $action = new CreateSubscriptionAction;
 
         expect(fn () => $action->execute($user, $inactiveSeason))
-            ->toThrow(\DomainException::class, 'Cannot subscribe to an inactive season');
+            ->toThrow(DomainException::class, 'Cannot subscribe to an inactive season');
     })->group('subscriptions', 'business-rules');
 
     test('user can subscribe to active season with open registrations', function () {
@@ -44,7 +44,7 @@ describe('Subscription Business Rules', function () {
         $action = new CreateSubscriptionAction;
 
         expect(fn () => $action->execute($user, $season))
-            ->toThrow(\DomainException::class, 'Registrations are currently closed');
+            ->toThrow(DomainException::class, 'Registrations are currently closed');
     })->group('subscriptions', 'business-rules');
 
     test('user can subscribe after registrations are opened', function () {
@@ -68,7 +68,7 @@ describe('Subscription Business Rules', function () {
         $action = new CreateSubscriptionAction;
 
         expect(fn () => $action->execute($user, $season->fresh()))
-            ->toThrow(\DomainException::class, 'Registrations are currently closed');
+            ->toThrow(DomainException::class, 'Registrations are currently closed');
     })->group('subscriptions', 'business-rules');
 
     // ==================== UNE SEULE SUBSCRIPTION ====================
@@ -84,7 +84,7 @@ describe('Subscription Business Rules', function () {
 
         // Deuxième subscription KO
         expect(fn () => $action->execute($user, $season))
-            ->toThrow(\DomainException::class, 'already has a subscription');
+            ->toThrow(DomainException::class, 'already has a subscription');
     })->group('subscriptions', 'business-rules');
 
     test('user can resubscribe after cancellation', function () {
@@ -136,57 +136,65 @@ describe('Subscription Business Rules', function () {
             'has_other_family_members' => false,
         ]);
 
-        $pack = TrainingPack::factory()->create();
-        $subscription->trainingPacks()->attach($pack->id);
+        $pack = TrainingPack::factory()->create(['price' => 90]);
+        $subscription->trainingPacks()->attach($pack->id, ['status' => 'enrolled']);
 
         (new CalculatePriceAction)($subscription);
 
-        // 60 + (1 * 90) = 150
+        // 60 + 90 = 150 (no discount: single pack, single member)
         expect($subscription->fresh()->amount_due)->toBe(150.0)
             ->and($subscription->fresh()->trainings_count)->toBe(1);
     })->group('subscriptions', 'pricing');
 
-    test('first training costs 90 for a solo member', function () {
+    test('no discount for single training pack with solo member', function () {
         $subscription = Subscription::factory()->create([
             'is_competitive' => false,
             'has_other_family_members' => false,
         ]);
 
-        $subscription->trainingPacks()->attach(TrainingPack::factory()->create()->id);
+        $subscription->trainingPacks()->attach(
+            TrainingPack::factory()->create(['price' => 90])->id,
+            ['status' => 'enrolled']
+        );
 
         (new CalculatePriceAction)($subscription);
 
-        // unit price should be 90 for a single session
+        // unit price = pack.price unchanged (single discountable pack, single member)
         expect($subscription->fresh()->training_unit_price)->toBe(90.0);
     })->group('subscriptions', 'pricing');
 
-    test('applies discount for multiple training packs', function () {
+    test('applies 10€ discount per pack when multiple discountable packs', function () {
         $subscription = Subscription::factory()->create([
             'is_competitive' => false,
             'has_other_family_members' => false,
         ]);
 
-        $packs = TrainingPack::factory()->count(2)->create();
-        $subscription->trainingPacks()->attach($packs->pluck('id'));
+        $packs = TrainingPack::factory()->count(2)->create(['price' => 90, 'allow_discount' => true]);
+        foreach ($packs as $pack) {
+            $subscription->trainingPacks()->attach($pack->id, ['status' => 'enrolled']);
+        }
 
         (new CalculatePriceAction)($subscription);
 
-        // 60 + (2 * 80) = 220
+        // 60 + (90-10)*2 = 60 + 160 = 220, unit = 80
         expect($subscription->fresh()->amount_due)->toBe(220.0)
             ->and($subscription->fresh()->training_unit_price)->toBe(80.0);
     })->group('subscriptions', 'pricing');
 
-    test('discounted training unit price applies from 2 sessions onwards', function () {
+    test('discount applies for 3 packs on competitive subscription', function () {
         $subscription = Subscription::factory()->create([
             'is_competitive' => true,
             'has_other_family_members' => false,
         ]);
 
-        $subscription->trainingPacks()->attach(TrainingPack::factory()->count(3)->create()->pluck('id'));
+        $packs = TrainingPack::factory()->count(3)->create(['price' => 90, 'allow_discount' => true]);
+        foreach ($packs as $pack) {
+            $subscription->trainingPacks()->attach($pack->id, ['status' => 'enrolled']);
+        }
 
         (new CalculatePriceAction)($subscription);
 
-        // 125 + (3 * 80) = 365
+        // 125 + (90-10)*3 = 125 + 240 = 365, unit = 80
         expect($subscription->fresh()->amount_due)->toBe(365.0)
             ->and($subscription->fresh()->training_unit_price)->toBe(80.0)
             ->and($subscription->fresh()->trainings_count)->toBe(3);
@@ -236,28 +244,28 @@ describe('Subscription Business Rules', function () {
         $subscription = Subscription::factory()->create(['status' => 'pending']);
 
         expect(fn () => $subscription->markAsPaid())
-            ->toThrow(\LogicException::class, 'Cannot mark as paid from pending status');
+            ->toThrow(LogicException::class, 'Cannot mark as paid from pending status');
     })->group('subscriptions', 'workflow');
 
     test('cannot confirm an already confirmed subscription', function () {
         $subscription = Subscription::factory()->create(['status' => 'confirmed']);
 
         expect(fn () => $subscription->confirm())
-            ->toThrow(\LogicException::class, 'already confirmed');
+            ->toThrow(LogicException::class, 'already confirmed');
     })->group('subscriptions', 'workflow');
 
     test('cannot cancel a paid subscription', function () {
         $subscription = Subscription::factory()->create(['status' => 'paid']);
 
         expect(fn () => $subscription->cancel())
-            ->toThrow(\LogicException::class, 'Cannot cancel a paid subscription');
+            ->toThrow(LogicException::class, 'Cannot cancel a paid subscription');
     })->group('subscriptions', 'workflow');
 
     test('cannot modify training packs after confirmation', function () {
         $subscription = Subscription::factory()->create(['status' => 'confirmed']);
 
         expect(fn () => $subscription->trainingPacks()->sync([1, 2]))
-            ->toThrow(\DomainException::class, 'cannot be modified');
+            ->toThrow(DomainException::class, 'cannot be modified');
     })->group('subscriptions', 'workflow')->skip('Needs SyncTrainingPackAction integration');
 
     // ==================== PAYMENT GENERATION ====================

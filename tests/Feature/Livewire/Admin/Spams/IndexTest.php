@@ -11,7 +11,7 @@ use Livewire\Livewire;
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
-    $this->adminUser = User::factory()->create();
+    $this->adminUser = User::factory()->create(['is_admin' => true]);
 });
 
 describe('Spams admin page', function (): void {

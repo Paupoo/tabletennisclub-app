@@ -14,7 +14,7 @@
             title="{{ __('My profile') }}" />
         <x-menu-item icon="o-users" link="{{ route('admin.user.teams', $user) }}" title="{{ __('My team(s)') }}" />
         <x-menu-item icon="o-star" link="{{ route('admin.user.event-subscription', $user) }}" title="{{ __('My registrations') }}" />
-        <x-menu-item icon="o-calendar-days" link="{{ route('admin.user.calendar', $user) }}" title="{{ __('Calendar') }}" />
+        <x-menu-item icon="o-calendar-days" link="{{ route('admin.user.calendar', $user) }}" title="{{ __('My Calendar') }}" />
         <x-menu-item icon="o-academic-cap" link="{{ route('admin.user.registration-management', $user) }}" :title="__('Affiliation & Trainings')" />
         <x-menu-item icon="o-cog-8-tooth" :link="route('admin.user.settings', $user)" title="{{ __('Settings') }}" />
         <x-menu-separator />
@@ -80,11 +80,13 @@
 
     <x-menu-separator />
 
+    @if($user->is_admin || $user->is_committee_member)
     <x-menu-sub icon="o-globe-alt" title="{{ __('Website') }}">
         <x-menu-item icon="o-newspaper" link="{{ route('admin.website.articles.index') }}" title="{{ __('Articles') }}" />
         <x-menu-item icon="o-envelope-open" link="{{ route('admin.website.contacts.index') }}" title="{{ __('Contacts') }}" />
         <x-menu-item icon="o-shield-exclamation" link="{{ route('admin.website.spams.index') }}" title="{{ __('Spam') }}" />
     </x-menu-sub>
+    @endif
 
     <x-menu-separator />
 

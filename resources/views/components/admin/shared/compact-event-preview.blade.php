@@ -1,4 +1,5 @@
 @props([
+    'endTime' => null,
     'link' => '#',
     'location',
     'organizer',
@@ -43,7 +44,8 @@
             <p class="text-sm font-semibold leading-tight">{!! $name !!}</p>
             <p class="flex items-center gap-1 text-xs opacity-60">
                 {{-- On affiche toujours l'heure --}}
-                <x-icon class="h-3 w-3" name="o-clock" /> {{ $date->format('H:i') }}
+                <x-icon class="h-3 w-3" name="o-clock" />
+                    {{ $date->format('H:i') }}{{ $endTime ? '–' . $endTime : '' }}
 
                 {{-- On ajoute le lieu s'il existe --}}
                 @isset($location)

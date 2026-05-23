@@ -79,9 +79,10 @@
 
                 @forelse ($this->upcomingTournaments as $tournament)
                     @php
-                        $reg          = $tournament->users->first()?->pivot;
-                        $regStatus    = $reg?->registration_status;
-                        $isActive     = in_array($regStatus, ['registered', 'confirmed', 'spot_offered']);
+                        $reg           = $tournament->users->first()?->pivot;
+                        $regStatus     = $reg?->registration_status;
+                        $isActive      = in_array($regStatus, ['registered', 'confirmed']);
+                        $isSpotOffered = $regStatus === 'spot_offered';
                         $isWaiting    = $regStatus === 'waiting';
                         $isFull       = $tournament->max_users > 0
                             && $tournament->active_registrations_count >= $tournament->max_users;
@@ -141,19 +142,44 @@
                                 @endif
 
                                 <x-button
-                                    class="btn-ghost btn-sm text-error"
-                                    icon="o-x-circle"
-                                    label="{{ __('Cancel') }}"
+                                    class="btn-ghost btn-xs text-error/70"
+                                    icon="o-x-mark"
+                                    tooltip="{{ __('Cancel registration') }}"
                                     spinner="cancelRegistration"
                                     wire:click="cancelRegistration({{ $tournament->id }})"
                                     wire:confirm="{{ __('Cancel your registration for this tournament?') }}"
                                 />
-                            @elseif ($isWaiting)
-                                <x-badge class="badge-warning badge-sm" value="{{ __('Waitlisted') }}" />
+                            @elseif ($isSpotOffered)
+                                @if ($reg->confirmation_deadline)
+                                    <span class="hidden text-[10px] text-base-content/40 sm:inline">
+                                        {{ $reg->confirmation_deadline->format('d/m H:i') }}
+                                    </span>
+                                @endif
+                                <span class="flex items-center gap-1.5 text-xs font-semibold text-success">
+                                    <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-success"></span>
+                                    <span class="hidden sm:inline">{{ __('Confirm attendance') }}</span>
+                                </span>
                                 <x-button
-                                    class="btn-ghost btn-sm text-error"
-                                    icon="o-x-circle"
-                                    label="{{ __('Leave waitlist') }}"
+                                    class="btn-success btn-xs"
+                                    icon="o-check"
+                                    label="{{ __('Confirm') }}"
+                                    spinner="confirmTournamentSpot"
+                                    wire:click="confirmTournamentSpot({{ $tournament->id }})"
+                                />
+                                <x-button
+                                    class="btn-ghost btn-xs text-error/70"
+                                    icon="o-x-mark"
+                                    tooltip="{{ __('Decline this spot') }}"
+                                    spinner="cancelRegistration"
+                                    wire:click="cancelRegistration({{ $tournament->id }})"
+                                    wire:confirm="{{ __('Decline this spot? You will be removed from the tournament.') }}"
+                                />
+                            @elseif ($isWaiting)
+                                <x-badge class="badge-warning badge-soft badge-sm" value="{{ __('Waitlist') }}{{ $reg->waitlist_position ? ' #' . $reg->waitlist_position : '' }}" />
+                                <x-button
+                                    class="btn-ghost btn-xs text-error/70"
+                                    icon="o-x-mark"
+                                    tooltip="{{ __('Leave waitlist') }}"
                                     spinner="cancelRegistration"
                                     wire:click="cancelRegistration({{ $tournament->id }})"
                                     wire:confirm="{{ __('Leave the waitlist for this tournament?') }}"

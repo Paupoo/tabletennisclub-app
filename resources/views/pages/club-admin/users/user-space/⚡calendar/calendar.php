@@ -19,7 +19,10 @@ new class extends Component
 {
     public User $user;
 
-    public ?string $selectedCategory = null;
+    /** @var string[] */
+    public array $selectedCategories = [];
+
+    public bool $showAllEvents = false;
 
     #[Computed]
     public function calendarData(): array
@@ -27,9 +30,18 @@ new class extends Component
         $events = collect();
 
         // Tournaments
-        if (! $this->selectedCategory || $this->selectedCategory === 'tournament') {
-            $tournaments = Tournament::where('status', TournamentStatusEnum::PUBLISHED)
-                ->where('start_date', '>=', now())
+        if (empty($this->selectedCategories) || in_array('tournament', $this->selectedCategories)) {
+            $tournamentsQuery = Tournament::where('status', TournamentStatusEnum::PUBLISHED)
+                ->where('start_date', '>=', now());
+
+            if (! $this->showAllEvents) {
+                $tournamentsQuery->whereHas('users', fn ($q) => $q
+                    ->where('tournament_user.user_id', $this->user->id)
+                    ->whereIn('tournament_user.registration_status', ['registered', 'confirmed', 'spot_offered', 'waiting'])
+                );
+            }
+
+            $tournaments = $tournamentsQuery
                 ->with(['users' => fn ($q) => $q->where('tournament_user.user_id', $this->user->id)])
                 ->orderBy('start_date')
                 ->get()
@@ -39,48 +51,114 @@ new class extends Component
                     'type'               => 'tournament',
                     'tournamentId'       => $t->id,
                     'registrationStatus' => $t->users->first()?->pivot->registration_status,
+                    'waitlistPosition'   => $t->users->first()?->pivot->waitlist_position,
+                    'confirmDeadline'    => $t->users->first()?->pivot->confirmation_deadline?->format('Y-m-d H:i:s'),
                     'monthKey'           => $t->start_date->translatedFormat('F Y'),
                 ]);
 
             $events = $events->merge($tournaments);
         }
 
-        // Training sessions for packs the user is subscribed to
-        if (! $this->selectedCategory || $this->selectedCategory === 'training') {
+        // Training sessions
+        if (empty($this->selectedCategories) || in_array('training', $this->selectedCategories)) {
             $season = Season::where('is_active', true)->first();
 
             if ($season) {
-                $packIds = $this->user->subscriptions()
-                    ->where('season_id', $season->id)
-                    ->whereNotIn('status', ['cancelled'])
-                    ->with('trainingPacks')
-                    ->get()
-                    ->flatMap(fn ($sub) => $sub->trainingPacks->pluck('id'));
-
-                if ($packIds->isNotEmpty()) {
-                    $sessions = Training::with(['trainingPack', 'room'])
-                        ->whereIn('training_pack_id', $packIds)
+                if ($this->showAllEvents) {
+                    $sessions = Training::with(['trainingPack', 'room', 'trainer'])
                         ->where('status', 'scheduled')
                         ->where('start', '>=', Carbon::now())
                         ->orderBy('start')
                         ->get()
                         ->map(fn ($s) => [
                             'startDateTime'      => $s->start->format('Y-m-d H:i:s'),
+                            'endTime'            => $s->end?->format('H:i'),
                             'title'              => $s->trainingPack?->name ?? __('Training'),
                             'type'               => 'training',
                             'room'               => $s->room?->name,
                             'level'              => $s->trainingPack?->level?->value,
+                            'coach'              => $s->trainer ? trim($s->trainer->first_name . ' ' . $s->trainer->last_name) : null,
                             'registrationStatus' => null,
                             'monthKey'           => $s->start->translatedFormat('F Y'),
                         ]);
 
                     $events = $events->merge($sessions);
+                } else {
+                    // Sessions the user is personally involved in
+                    // Build a pack → pivot status map so we can show the right badge
+                    $subs = $this->user->subscriptions()
+                        ->where('season_id', $season->id)
+                        ->whereNotIn('status', ['cancelled'])
+                        ->with('trainingPacks')
+                        ->get();
+
+                    $packStatusMap = [];
+                    foreach ($subs as $sub) {
+                        foreach ($sub->trainingPacks as $pack) {
+                            $packStatusMap[$pack->id] = [
+                                'status'            => $pack->pivot->status,
+                                'deadline'          => $pack->pivot->confirmation_deadline,
+                                'waitlist_position' => $pack->pivot->waitlist_position,
+                            ];
+                        }
+                    }
+
+                    $enrolledPackIds = collect($packStatusMap)->keys();
+
+                    $sessionIds = collect();
+
+                    if ($enrolledPackIds->isNotEmpty()) {
+                        $sessionIds = $sessionIds->merge(
+                            Training::whereIn('training_pack_id', $enrolledPackIds)
+                                ->where('status', 'scheduled')
+                                ->where('start', '>=', Carbon::now())
+                                ->pluck('id')
+                        );
+                    }
+
+                    $sessionIds = $sessionIds->merge(
+                        Training::where('trainer_id', $this->user->id)
+                            ->where('status', 'scheduled')
+                            ->where('start', '>=', Carbon::now())
+                            ->pluck('id')
+                    );
+
+                    $sessionIds = $sessionIds->merge(
+                        $this->user->trainings()
+                            ->where('trainings.status', 'scheduled')
+                            ->where('trainings.start', '>=', Carbon::now())
+                            ->pluck('trainings.id')
+                    );
+
+                    if ($sessionIds->isNotEmpty()) {
+                        $sessions = Training::with(['trainingPack', 'room', 'trainer'])
+                            ->whereIn('id', $sessionIds->unique())
+                            ->orderBy('start')
+                            ->get()
+                            ->map(fn ($s) => [
+                                'startDateTime'      => $s->start->format('Y-m-d H:i:s'),
+                                'endTime'            => $s->end?->format('H:i'),
+                                'title'              => $s->trainingPack?->name ?? __('Training'),
+                                'type'               => 'training',
+                                'room'               => $s->room?->name,
+                                'level'              => $s->trainingPack?->level?->value,
+                                'coach'              => $s->trainer ? trim($s->trainer->first_name . ' ' . $s->trainer->last_name) : null,
+                                'registrationStatus' => null,
+                                'packId'               => $s->training_pack_id,
+                                'packStatus'           => $packStatusMap[$s->training_pack_id]['status'] ?? 'enrolled',
+                                'confirmDeadline'      => $packStatusMap[$s->training_pack_id]['deadline'] ?? null,
+                                'packWaitlistPosition' => $packStatusMap[$s->training_pack_id]['waitlist_position'] ?? null,
+                                'monthKey'           => $s->start->translatedFormat('F Y'),
+                            ]);
+
+                        $events = $events->merge($sessions);
+                    }
                 }
             }
         }
 
-        // Interclub matches (all club teams, visible to all members)
-        if (! $this->selectedCategory || $this->selectedCategory === 'interclub') {
+        // Interclub matches
+        if (empty($this->selectedCategories) || in_array('interclub', $this->selectedCategories)) {
             $season = Season::where('is_active', true)->first();
 
             if ($season) {
@@ -89,20 +167,27 @@ new class extends Component
                 if ($ourTeamIds->isNotEmpty()) {
                     $userTeamIds = $this->user->teams()->pluck('teams.id')->toArray();
 
-                    $interclubs = Interclub::with([
-                        'visitedTeam.club',
-                        'visitingTeam.club',
-                        'league',
-                        'users' => fn ($q) => $q->where('users.id', $this->user->id),
-                    ])
-                        ->where('season_id', $season->id)
-                        ->where(fn ($q) => $q->whereIn('visited_team_id', $ourTeamIds)->orWhereIn('visiting_team_id', $ourTeamIds))
-                        ->where('start_date_time', '>=', Carbon::now())
-                        ->orderBy('start_date_time')
-                        ->get()
-                        ->map(fn ($ic) => $this->formatInterclub($ic, $ourTeamIds->toArray(), $userTeamIds));
+                    // In "My events" mode, only show matches for the user's own teams
+                    $filterTeamIds = $this->showAllEvents
+                        ? $ourTeamIds->toArray()
+                        : $userTeamIds;
 
-                    $events = $events->merge($interclubs);
+                    if (! empty($filterTeamIds)) {
+                        $interclubs = Interclub::with([
+                            'visitedTeam.club',
+                            'visitingTeam.club',
+                            'league',
+                            'users' => fn ($q) => $q->where('users.id', $this->user->id),
+                        ])
+                            ->where('season_id', $season->id)
+                            ->where(fn ($q) => $q->whereIn('visited_team_id', $filterTeamIds)->orWhereIn('visiting_team_id', $filterTeamIds))
+                            ->where('start_date_time', '>=', Carbon::now())
+                            ->orderBy('start_date_time')
+                            ->get()
+                            ->map(fn ($ic) => $this->formatInterclub($ic, $ourTeamIds->toArray(), $userTeamIds));
+
+                        $events = $events->merge($interclubs);
+                    }
                 }
             }
         }
@@ -127,6 +212,7 @@ new class extends Component
                 ['id' => 'training',   'name' => __('Training')],
                 ['id' => 'interclub',  'name' => __('Interclub')],
             ],
+            'selectedCategories' => $this->selectedCategories,
         ];
     }
 

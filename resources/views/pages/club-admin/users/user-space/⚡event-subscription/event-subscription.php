@@ -172,6 +172,20 @@ new class extends Component
         $this->success(__('Registration confirmed!'));
     }
 
+    public function confirmTournamentSpot(int $tournamentId): void
+    {
+        TournamentRegistration::where('user_id', $this->user->id)
+            ->where('tournament_id', $tournamentId)
+            ->where('registration_status', 'spot_offered')
+            ->update([
+                'registration_status'   => 'confirmed',
+                'confirmation_deadline' => null,
+            ]);
+
+        unset($this->upcomingTournaments);
+        $this->success(__('Spot confirmed!'));
+    }
+
     public function cancelRegistration(int $tournamentId): void
     {
         $tournament = Tournament::findOrFail($tournamentId);

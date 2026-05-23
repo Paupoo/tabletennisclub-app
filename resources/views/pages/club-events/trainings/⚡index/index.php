@@ -53,6 +53,8 @@ new class extends Component
     // Step 3 — Price (in euros)
     public float $formPrice = 90;
 
+    public bool $formAllowDiscount = true;
+
     // Step 2 — Planning
     public string $formRecurrenceType = 'weekly'; // 'weekly' | 'specific_days'
 
@@ -241,7 +243,8 @@ new class extends Component
         $this->formPackStartDate = $pack->pack_start_date?->toDateString() ?? '';
         $this->formPackEndDate = $pack->pack_end_date?->toDateString() ?? '';
         $this->formExcludedDates = $pack->excluded_dates ?? [];
-        $this->formPrice = round($pack->price / 100, 2);
+        $this->formPrice = (float) $pack->price;
+        $this->formAllowDiscount = $pack->allow_discount;
 
         $this->wizardOpen = true;
         $this->step = '1';
@@ -394,7 +397,8 @@ new class extends Component
             'pack_end_date' => $this->formPackEndDate ?: null,
             'excluded_dates' => ! empty($this->formExcludedDates) ? array_values($this->formExcludedDates) : null,
             'is_active' => true,
-            'price' => (int) ($this->formPrice * 100),
+            'price' => $this->formPrice,
+            'allow_discount' => $this->formAllowDiscount,
         ];
 
         $pack = $this->packId
@@ -554,5 +558,6 @@ new class extends Component
         $this->formPackEndDate = '';
         $this->formExcludedDates = [];
         $this->formPrice = 90;
+        $this->formAllowDiscount = true;
     }
 };

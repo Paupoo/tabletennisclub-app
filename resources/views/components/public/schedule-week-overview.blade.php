@@ -1,192 +1,85 @@
 @props(['schedules' => []])
 
 @php
-    // Jours de la semaine en français
-    $daysOfWeek = [
-        'Lundi' => 'L',
-        'Mardi' => 'M', 
-        'Mercredi' => 'M',
-        'Jeudi' => 'J',
-        'Vendredi' => 'V',
-        'Samedi' => 'S',
-        'Dimanche' => 'D'
-    ];
-    
-    // Grouper les activités par jour
     $activitiesByDay = collect($schedules)->groupBy('day');
-    
-    // Couleurs selon le type d'activité
-    $activityColors = [
-        'Entraînement Libre' => 'bg-blue-500',
-        'École de Tennis de Table' => 'bg-green-500',
-        'Championnat Interne' => 'bg-red-500',
-        'Perfectionnement Technique' => 'bg-yellow-500',
-        'Entraînement Jeunes' => 'bg-purple-500',
-        'Tournoi Mensuel' => 'bg-pink-500',
-        'default' => 'bg-club-blue'
-    ];
 @endphp
 
-<div class="bg-white rounded-2xl shadow-sm border p-6 mb-8 animate-on-scroll" x-data="{ showDetails: false }">
-    <div class="flex items-center justify-between mb-6">
-        <div class="text-center flex-1">
-            <h3 class="text-xl font-bold text-gray-900 mb-2">Aperçu de la Semaine</h3>
-            <p class="text-gray-600 text-sm">Activités programmées par jour</p>
+<div class="bg-white rounded-2xl shadow-sm border overflow-hidden" x-data="{ showDetails: false }">
+
+    {{-- Header --}}
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <div>
+            <h3 class="font-bold text-gray-900">Planning hebdomadaire</h3>
+            <p class="text-sm text-gray-400 mt-0.5">
+                @php $count = collect($schedules)->count(); $days = $activitiesByDay->count(); @endphp
+                {{ $count }} activité{{ $count > 1 ? 's' : '' }} · {{ $days }} jour{{ $days > 1 ? 's' : '' }}
+            </p>
         </div>
-        
-        <!-- Toggle Switch Élégant -->
-        <div class="flex items-center space-x-3 bg-gray-50 rounded-full p-1">
-            <span class="text-sm font-medium px-3 py-1 rounded-full transition-colors"
-                  :class="!showDetails ? 'bg-white text-club-blue shadow-sm' : 'text-gray-500'">
+
+        {{-- Segmented toggle --}}
+        <div class="inline-flex bg-gray-100 rounded-lg p-1 gap-0.5 shrink-0">
+            <button @click="showDetails = false"
+                    class="px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-150 cursor-pointer"
+                    :class="showDetails ? 'text-gray-400 hover:text-gray-600' : 'bg-white text-gray-900 shadow-sm'">
                 Aperçu
-            </span>
-            <button @click="showDetails = !showDetails" 
-                    class="relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-club-blue focus:ring-offset-2"
-                    :class="showDetails ? 'bg-club-blue' : 'bg-gray-300'">
-                <span class="inline-block h-6 w-6 transform rounded-full bg-white transition-transform shadow-sm"
-                      :class="showDetails ? 'translate-x-7' : 'translate-x-1'"></span>
             </button>
-            <span class="text-sm font-medium px-3 py-1 rounded-full transition-colors"
-                  :class="showDetails ? 'bg-white text-club-blue shadow-sm' : 'text-gray-500'">
+            <button @click="showDetails = true"
+                    class="px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-150 cursor-pointer"
+                    :class="!showDetails ? 'text-gray-400 hover:text-gray-600' : 'bg-white text-gray-900 shadow-sm'">
                 Détails
-            </span>
+            </button>
         </div>
     </div>
-    
-    <!-- Vue d'ensemble des jours -->
-    <div x-show="!showDetails" x-transition>
-        <div class="flex justify-center mb-6">
-            <div class="flex items-center space-x-2 sm:space-x-4 lg:space-x-6">
-                @foreach($daysOfWeek as $fullDay => $shortDay)
-                    @php
-                        $dayActivities = $activitiesByDay->get($fullDay, collect());
-                        $hasActivities = $dayActivities->isNotEmpty();
-                        $activityCount = $dayActivities->count();
-                    @endphp
-                    
-                    <div class="flex flex-col items-center group cursor-pointer" 
-                         x-data="{ showTooltip: false }"
-                         @mouseenter="showTooltip = true" 
-                         @mouseleave="showTooltip = false">
-                        
-                        <!-- Jour de la semaine -->
-                        <div class="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wide">
-                            <span class="hidden sm:inline">{{ $fullDay }}</span>
-                            <span class="sm:hidden">{{ $shortDay }}</span>
+
+    {{-- Aperçu : liste compacte jour par jour --}}
+    <div x-show="!showDetails" x-transition class="px-6 py-5">
+        @if($activitiesByDay->isEmpty())
+            <p class="text-sm text-gray-400 text-center py-4">Aucune activité programmée.</p>
+        @else
+            <div class="space-y-4">
+                @foreach($activitiesByDay as $day => $activities)
+                    <div>
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="text-xs font-bold uppercase tracking-widest text-gray-400">{{ $day }}</span>
+                            <div class="flex-1 h-px bg-gray-100"></div>
                         </div>
-                        
-                        <!-- Indicateur visuel -->
-                        <div class="relative">
-                            @if($hasActivities)
-                                <!-- Jour avec activités -->
-                                <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-gray-200 flex items-center justify-center relative overflow-hidden group-hover:scale-110 transition-transform duration-200">
-                                    @if($activityCount === 1)
-                                        <!-- Une seule activité -->
-                                        @php
-                                            $activity = $dayActivities->first();
-                                            $colorClass = $activityColors[$activity['activity']] ?? $activityColors['default'];
-                                        @endphp
-                                        <div class="w-full h-full {{ $colorClass }} rounded-full flex items-center justify-center">
-                                            <span class="text-white font-bold text-sm">{{ $activityCount }}</span>
-                                        </div>
-                                    @else
-                                        <!-- Plusieurs activités - effet dégradé -->
-                                        <div class="w-full h-full bg-gradient-to-br from-club-blue to-club-blue-light rounded-full flex items-center justify-center">
-                                            <span class="text-white font-bold text-sm">{{ $activityCount }}</span>
-                                        </div>
-                                    @endif
-                                    
-                                    <!-- Animation de pulsation pour le jour actuel -->
-                                    @if($fullDay === now()->locale('fr')->dayName)
-                                        <div class="absolute inset-0 rounded-full bg-club-yellow opacity-30 animate-ping"></div>
-                                    @endif
+                        <div class="space-y-1.5">
+                            @foreach($activities as $activity)
+                                @php
+                                    $dotColor = match ($activity['type'] ?? null) {
+                                        'Directed'   => 'bg-blue-500',
+                                        'Free'       => 'bg-gray-300',
+                                        'Supervised' => 'bg-amber-400',
+                                        'match'      => 'bg-red-400',
+                                        default      => 'bg-gray-300',
+                                    };
+                                @endphp
+                                <div class="flex items-center gap-2.5 pl-1">
+                                    <div class="w-2 h-2 rounded-full {{ $dotColor }} shrink-0"></div>
+                                    <span class="text-sm font-medium text-gray-800 flex-1 min-w-0">{{ $activity['activity'] }}</span>
+                                    <span class="text-xs text-gray-400 whitespace-nowrap">{{ $activity['time'] }}</span>
                                 </div>
-                            @else
-                                <!-- Jour sans activité -->
-                                <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-gray-200 bg-gray-50 flex items-center justify-center group-hover:bg-gray-100 transition-colors duration-200">
-                                    <span class="text-gray-400 text-xs">—</span>
-                                </div>
-                            @endif
-                            
-                            <!-- Tooltip -->
-                            <div x-show="showTooltip" 
-                                 x-transition:enter="transition ease-out duration-200"
-                                 x-transition:enter-start="opacity-0 transform scale-95"
-                                 x-transition:enter-end="opacity-100 transform scale-100"
-                                 x-transition:leave="transition ease-in duration-150"
-                                 x-transition:leave-start="opacity-100 transform scale-100"
-                                 x-transition:leave-end="opacity-0 transform scale-95"
-                                 class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 z-10">
-                                <div class="bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap max-w-48">
-                                    @if($hasActivities)
-                                        <div class="font-semibold mb-1">{{ $fullDay }}</div>
-                                        @foreach($dayActivities as $activity)
-                                            <div class="text-xs opacity-90">
-                                                • {{ $activity['activity'] }}
-                                                @if(isset($activity['time']))
-                                                    <span class="text-gray-300">({{ $activity['time'] }})</span>
-                                                @endif
-                                            </div>
-                                        @endforeach
-                                    @else
-                                        <div>{{ $fullDay }}</div>
-                                        <div class="text-xs opacity-75">Aucune activité</div>
-                                    @endif
-                                    
-                                    <!-- Flèche du tooltip -->
-                                    <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
-                                </div>
-                            </div>
+                            @endforeach
                         </div>
-                        
-                        <!-- Indicateur du nombre d'activités (version mobile) -->
-                        @if($hasActivities && $activityCount > 1)
-                            <div class="mt-1 text-xs text-gray-500 sm:hidden">
-                                {{ $activityCount }} activités
-                            </div>
-                        @endif
                     </div>
                 @endforeach
             </div>
+        @endif
+
+        <div class="flex items-center gap-4 mt-5 pt-4 border-t border-gray-100 text-xs text-gray-400 flex-wrap">
+            <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-blue-500"></div> Dirigé</div>
+            <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-amber-400"></div> Supervisé</div>
+            <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-gray-300"></div> Libre</div>
+            <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-red-400"></div> Interclubs</div>
         </div>
     </div>
-    
-    <!-- Vue détaillée -->
-    <div x-show="showDetails" x-transition class="space-y-4">
-        @foreach($schedules as $index => $schedule)
+
+    {{-- Détails : schedule cards --}}
+    <div x-show="showDetails" x-transition class="px-6 py-5 space-y-3">
+        @forelse($schedules as $index => $schedule)
             <x-public.schedule-card :schedule="$schedule" :index="$index" />
-        @endforeach
-    </div>
-    
-    <!-- Légende (toujours visible) -->
-    <div class="border-t pt-4 mt-6">
-        <div class="flex flex-wrap justify-center items-center gap-4 text-xs text-gray-600">
-            <div class="flex items-center space-x-2">
-                <div class="w-3 h-3 rounded-full bg-club-blue"></div>
-                <span>Activités programmées</span>
-            </div>
-            <div class="flex items-center space-x-2">
-                <div class="w-3 h-3 rounded-full border-2 border-gray-200 bg-gray-50"></div>
-                <span>Pas d'activité</span>
-            </div>
-            @if(collect($schedules)->where('day', now()->locale('fr')->dayName)->isNotEmpty())
-                <div class="flex items-center space-x-2">
-                    <div class="w-3 h-3 rounded-full bg-club-yellow animate-pulse"></div>
-                    <span>Aujourd'hui</span>
-                </div>
-            @endif
-        </div>
-        
-        <!-- Statistiques rapides -->
-        <div class="mt-4 text-center">
-            @php
-                $totalActivities = collect($schedules)->count();
-                $activeDays = $activitiesByDay->count();
-            @endphp
-            <p class="text-sm text-gray-500">
-                <span class="font-semibold text-club-blue">{{ $totalActivities }}</span> activités réparties sur 
-                <span class="font-semibold text-club-blue">{{ $activeDays }}</span> jours
-            </p>
-        </div>
+        @empty
+            <p class="text-sm text-gray-400 text-center py-4">Aucune activité programmée.</p>
+        @endforelse
     </div>
 </div>

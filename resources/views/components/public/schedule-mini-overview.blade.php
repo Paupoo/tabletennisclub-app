@@ -1,74 +1,84 @@
 @props(['schedules' => [], 'compact' => false])
 
 @php
-    // Version compacte pour sidebar ou widgets
-    $daysOfWeek = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
-    $fullDays = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
     $activitiesByDay = collect($schedules)->groupBy('day');
 @endphp
 
-<div class="@if($compact) p-4 @else p-6 @endif bg-white rounded-lg border" x-data="{ showDetails: false }">
-    <div class="flex items-center justify-between mb-4">
-        @if(!$compact)
-            <h4 class="text-lg font-semibold text-gray-900">Cette Semaine</h4>
-        @else
-            <h4 class="text-sm font-medium text-gray-700">Semaine</h4>
-        @endif
-        
-        <!-- Toggle Switch -->
-        <div class="flex items-center space-x-2">
-            <span class="text-xs text-gray-500" :class="{ 'text-gray-400': showDetails }">Aperçu</span>
-            <button @click="showDetails = !showDetails" 
-                    class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-club-blue focus:ring-offset-2"
-                    :class="showDetails ? 'bg-club-blue' : 'bg-gray-200'">
-                <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
-                      :class="showDetails ? 'translate-x-6' : 'translate-x-1'"></span>
+<div class="{{ $compact ? 'p-4' : 'p-0' }} bg-white rounded-2xl shadow-sm border overflow-hidden" x-data="{ showDetails: false }">
+
+    {{-- Header --}}
+    <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+        <div>
+            <h4 class="{{ $compact ? 'text-sm font-semibold' : 'font-bold' }} text-gray-900">
+                Planning hebdomadaire
+            </h4>
+            @if(!$compact)
+                <p class="text-xs text-gray-400 mt-0.5">
+                    @php $count = collect($schedules)->count(); @endphp
+                    {{ $count }} activité{{ $count > 1 ? 's' : '' }} cette semaine
+                </p>
+            @endif
+        </div>
+
+        {{-- Segmented toggle --}}
+        <div class="inline-flex bg-gray-100 rounded-lg p-1 gap-0.5 shrink-0">
+            <button @click="showDetails = false"
+                    class="px-3 py-1 text-xs font-medium rounded-md transition-all duration-150 cursor-pointer"
+                    :class="showDetails ? 'text-gray-400 hover:text-gray-600' : 'bg-white text-gray-900 shadow-sm'">
+                Aperçu
             </button>
-            <span class="text-xs text-gray-500" :class="{ 'text-club-blue font-medium': showDetails }">Détails</span>
+            <button @click="showDetails = true"
+                    class="px-3 py-1 text-xs font-medium rounded-md transition-all duration-150 cursor-pointer"
+                    :class="!showDetails ? 'text-gray-400 hover:text-gray-600' : 'bg-white text-gray-900 shadow-sm'">
+                Détails
+            </button>
         </div>
     </div>
-    
-    <!-- Vue d'ensemble -->
-    <div x-show="!showDetails" x-transition>
-        <div class="flex justify-center space-x-1">
-            @foreach($fullDays as $index => $fullDay)
-                @php
-                    $dayActivities = $activitiesByDay->get($fullDay, collect());
-                    $hasActivities = $dayActivities->isNotEmpty();
-                    $isToday = $fullDay === now()->locale('fr')->dayName;
-                @endphp
-                
-                <div class="flex flex-col items-center">
-                    <div class="text-xs text-gray-500 mb-1">{{ $daysOfWeek[$index] }}</div>
-                    <div class="@if($compact) w-6 h-6 @else w-8 h-8 @endif rounded-full border flex items-center justify-center
-                        @if($hasActivities) 
-                            @if($isToday) bg-club-yellow border-club-yellow @else bg-club-blue border-club-blue @endif
-                        @else 
-                            border-gray-200 bg-gray-50 
-                        @endif">
-                        @if($hasActivities)
-                            <span class="@if($isToday) text-club-blue @else text-white @endif text-xs font-bold">
-                                {{ $dayActivities->count() }}
-                            </span>
-                        @else
-                            <span class="text-gray-300 text-xs">—</span>
-                        @endif
+
+    {{-- Aperçu : liste compacte --}}
+    <div x-show="!showDetails" x-transition class="px-5 py-4">
+        @if($activitiesByDay->isEmpty())
+            <p class="text-sm text-gray-400 text-center py-2">Aucune activité programmée.</p>
+        @else
+            <div class="space-y-3.5">
+                @foreach($activitiesByDay as $day => $activities)
+                    <div>
+                        <div class="flex items-center gap-2 mb-1.5">
+                            <span class="text-xs font-bold uppercase tracking-widest text-gray-400">{{ $day }}</span>
+                            <div class="flex-1 h-px bg-gray-100"></div>
+                        </div>
+                        <div class="space-y-1.5">
+                            @foreach($activities as $activity)
+                                @php
+                                    $dotColor = match ($activity['type'] ?? null) {
+                                        'Directed'   => 'bg-blue-500',
+                                        'Free'       => 'bg-gray-300',
+                                        'Supervised' => 'bg-amber-400',
+                                        'match'      => 'bg-red-400',
+                                        default      => 'bg-gray-300',
+                                    };
+                                @endphp
+                                <div class="flex items-center gap-2 pl-1">
+                                    <div class="w-2 h-2 rounded-full {{ $dotColor }} shrink-0"></div>
+                                    <span class="text-sm text-gray-700 flex-1 min-w-0">{{ $activity['activity'] }}</span>
+                                    <span class="text-xs text-gray-400 whitespace-nowrap shrink-0">
+                                        {{ explode(' – ', $activity['time'])[0] }}
+                                    </span>
+                                </div>
+                            @endforeach
+                        </div>
                     </div>
-                </div>
-            @endforeach
-        </div>
-        
-        @if(!$compact)
-            <div class="mt-3 text-center text-xs text-gray-500">
-                {{ collect($schedules)->count() }} activités cette semaine
+                @endforeach
             </div>
         @endif
     </div>
-    
-    <!-- Vue détaillée -->
-    <div x-show="showDetails" x-transition class="space-y-3">
-        @foreach($schedules as $index => $schedule)
+
+    {{-- Détails : schedule cards --}}
+    <div x-show="showDetails" x-transition class="px-5 py-4 space-y-3">
+        @forelse($schedules as $index => $schedule)
             <x-public.schedule-card :schedule="$schedule" :index="$index" />
-        @endforeach
+        @empty
+            <p class="text-sm text-gray-400 text-center py-2">Aucune activité programmée.</p>
+        @endforelse
     </div>
 </div>

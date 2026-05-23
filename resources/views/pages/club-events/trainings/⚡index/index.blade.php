@@ -130,7 +130,7 @@
                                                     @endif
                                                 </p>
                                             </div>
-                                            <x-badge value="{{ number_format($pack->price / 100, 0) }}€"
+                                            <x-badge value="{{ number_format($pack->price, 0) }}€"
                                                 class="badge-primary badge-soft shrink-0" />
                                         </div>
                                     </div>
@@ -370,8 +370,14 @@
             <div class="space-y-4">
                 <x-input label="{{ __('Pack price (€)') }}" type="number" min="0" step="0.50"
                     wire:model="formPrice" />
+
+                <x-toggle
+                    label="{{ __('Allow family/multi-pack discount') }}"
+                    wire:model="formAllowDiscount"
+                    hint="{{ __('When enabled, a 10€ discount applies per pack for members taking multiple packs or families.') }}" />
+
                 <x-alert class="alert-info" icon="o-information-circle"
-                    title="{{ __('The pack price is added to the subscription. Default: 90€ (1st pack) or 80€ (additional packs).') }}" />
+                    title="{{ __('The pack price is added to the subscription price.') }}" />
 
                 {{-- Summary --}}
                 <div class="rounded-xl border border-base-200 bg-base-100 p-4 text-sm">
@@ -407,6 +413,12 @@
                         <div class="flex justify-between">
                             <span>{{ __('Price') }}</span>
                             <span class="font-semibold text-primary">{{ number_format($formPrice, 2) }} €</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>{{ __('Discount') }}</span>
+                            <span class="font-medium text-base-content">
+                                {{ $formAllowDiscount ? __('Enabled (−10€)') : __('Disabled') }}
+                            </span>
                         </div>
                     </div>
                 </div>

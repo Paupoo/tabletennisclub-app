@@ -266,6 +266,8 @@ new class extends Component
         $completedWeeks = $weeksMonitor->where('status', 'ok')->count();
         $preparationScore = $totalWeeks > 0 ? round($completedWeeks / $totalWeeks * $totalWeeks) : 0;
 
+        $matchDayMap = $season ? Interclub::matchDayMap($season->id) : [];
+
         return [
             'breadcrumbs' => Breadcrumb::make()
                 ->home()
@@ -275,7 +277,7 @@ new class extends Component
             'categories' => $categories,
             'seasons_list' => $seasons->map(fn ($s) => ['id' => $s->id, 'name' => $s->name]),
             'current_season' => $season,
-            'weeks_options' => $weekNumbers->map(fn ($w) => ['id' => $w, 'name' => __('Week :n', ['n' => $w])]),
+            'weeks_options' => $weekNumbers->map(fn ($w) => ['id' => $w, 'name' => 'S' . ($matchDayMap[$w] ?? $w)]),
             'weeks_monitor' => $weeksMonitor,
             'teams_list' => $allTeams->map(fn ($t) => ['id' => $t->id, 'name' => $t->name]),
             'preparation_score' => $preparationScore,
@@ -284,6 +286,7 @@ new class extends Component
             'drawerRoster' => $drawerRoster,
             'drawerMaxPlayers' => $drawerTeam?->league?->category === 'MEN' ? 4 : 3,
             'searchResults' => $searchResults,
+            'matchDayMap' => $matchDayMap,
         ];
     }
 

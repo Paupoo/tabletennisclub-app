@@ -6,6 +6,7 @@ namespace Resources\views\Pages\ClubEvents\Interclubs\MyMatches;
 
 use App\Enums\InterclubAvailability;
 use App\Models\ClubEvents\Interclub\Interclub;
+use App\Models\ClubEvents\Interclub\Season;
 use App\Models\ClubEvents\Interclub\Team;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Facades\Auth;
@@ -20,6 +21,21 @@ new class extends Component
     public ?int $editingInterclubId = null;
 
     public string $availabilityNote = '';
+
+    public function bulkMarkAvailability(string $availability): void
+    {
+        $user = Auth::user();
+        $enum = InterclubAvailability::from($availability);
+        $teamIds = $user->teams()->pluck('teams.id');
+
+        Interclub::where('start_date_time', '>=', now())
+            ->where(fn ($q) => $q->whereIn('visited_team_id', $teamIds)
+                ->orWhereIn('visiting_team_id', $teamIds))
+            ->get()
+            ->each(fn ($ic) => $ic->markAvailability($user, $enum));
+
+        $this->success(__('Availability set for all upcoming matches.'), position: 'toast-bottom toast-end');
+    }
 
     public function markAvailability(int $interclubId, string $availability): void
     {
@@ -129,6 +145,9 @@ new class extends Component
             ->groupBy('category_label')
             ->map(fn ($catGroup) => $catGroup->groupBy('team_name'));
 
+        $season = Season::current();
+        $matchDayMap = $season ? Interclub::matchDayMap($season->id) : [];
+
         return [
             'breadcrumbs' => Breadcrumb::make()
                 ->home()
@@ -137,6 +156,7 @@ new class extends Component
                 ->toArray(),
             'grouped' => $grouped,
             'availabilityOptions' => InterclubAvailability::cases(),
+            'matchDayMap' => $matchDayMap,
         ];
     }
 

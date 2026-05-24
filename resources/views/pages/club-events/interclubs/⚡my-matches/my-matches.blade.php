@@ -6,6 +6,28 @@
     <x-header title="{{ __('My Matches') }}" subtitle="{{ __('Manage your availability for upcoming interclubs') }}"
         separator />
 
+    @if (! $grouped->isEmpty())
+        <div class="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-base-200 bg-base-200/40 px-4 py-3">
+            <span class="text-xs font-semibold opacity-50">{{ __('Set for all upcoming matches:') }}</span>
+            <x-button
+                class="btn-success btn-xs btn-soft"
+                icon="o-check-circle"
+                label="{{ __('All available') }}"
+                wire:click="bulkMarkAvailability('available')" />
+            <x-button
+                class="btn-warning btn-xs btn-soft"
+                icon="o-question-mark-circle"
+                label="{{ __('All maybe') }}"
+                wire:click="bulkMarkAvailability('maybe')" />
+            <x-button
+                class="btn-error btn-xs btn-soft"
+                icon="o-x-circle"
+                label="{{ __('All unavailable') }}"
+                wire:click="bulkMarkAvailability('unavailable')"
+                wire:confirm="{{ __('Mark all upcoming matches as unavailable?') }}" />
+        </div>
+    @endif
+
     @if ($grouped->isEmpty())
         <x-empty-state icon="o-calendar" title="{{ __('No upcoming matches') }}"
             description="{{ __('You are not registered in any team for this season.') }}" />
@@ -64,8 +86,8 @@
                                     <div class="flex min-w-0 flex-1 items-center gap-4">
                                         {{-- Numéro semaine --}}
                                         <div class="bg-base-200 flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-xl">
-                                            <div class="text-[8px] font-black uppercase opacity-40">WK</div>
-                                            <div class="text-sm font-black leading-none">{{ $match['week_number'] }}</div>
+                                            <div class="text-[8px] font-black uppercase opacity-40">S</div>
+                                            <div class="text-sm font-black leading-none">{{ $matchDayMap[$match['week_number']] ?? $match['week_number'] }}</div>
                                         </div>
 
                                         <div class="min-w-0">

@@ -7,20 +7,34 @@ namespace App\Services;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Interclub;
 use App\Notifications\Interclub\InterclubAvailabilityRequestNotification;
+use App\Notifications\Interclub\InterclubLineupBroadcastNotification;
 use App\Notifications\Interclub\InterclubSelectionNotification;
 use Illuminate\Support\Facades\Notification;
 
 class InterclubAvailabilityService
 {
     /**
-     * Confirm the current selection and notify each selected player with an ICS invite.
+     * Confirm the current selection, notify selected players (with ICS) and
+     * broadcast the lineup to the rest of the team.
      */
     public function confirmSelection(Interclub $interclub, string $captainMessage = ''): void
     {
+        $interclub->loadMissing(['visitedTeam', 'visitingTeam', 'visitedTeam.club', 'visitingTeam.club']);
+
+        $ourTeam = $interclub->visitedTeam?->club?->licence === config('app.club_licence')
+            ? $interclub->visitedTeam
+            : $interclub->visitingTeam;
+
         $selectedPlayers = $interclub->getSelectedPlayers();
+        $selectedIds = $selectedPlayers->pluck('id');
 
         foreach ($selectedPlayers as $player) {
             $player->notify(new InterclubSelectionNotification($interclub, $captainMessage));
+        }
+
+        $nonSelected = $ourTeam?->users()->whereNotIn('users.id', $selectedIds)->get() ?? collect();
+        foreach ($nonSelected as $player) {
+            $player->notify(new InterclubLineupBroadcastNotification($interclub, $selectedPlayers, $captainMessage));
         }
 
         $interclub->users()

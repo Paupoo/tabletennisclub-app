@@ -29,15 +29,15 @@ class InterclubSelectionNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         $interclub = $this->interclub;
-        $interclub->loadMissing(['visitedTeam', 'visitingTeam', 'visitedTeam.club', 'visitingTeam.club']);
+        $interclub->loadMissing(['visitedTeam', 'visitingTeam', 'visitedTeam.club', 'visitingTeam.club', 'room']);
 
         $ourTeam = $interclub->visitedTeam?->club?->licence === config('app.club_licence')
             ? $interclub->visitedTeam
             : $interclub->visitingTeam;
 
-        $opponent = $interclub->visitedTeam?->id === $ourTeam?->id
-            ? ($interclub->visitingTeam?->name ?? '—')
-            : ($interclub->visitedTeam?->name ?? '—');
+        $isHome = $interclub->visitedTeam?->id === $ourTeam?->id;
+        $opponentTeam = $isHome ? $interclub->visitingTeam : $interclub->visitedTeam;
+        $opponent = trim(($opponentTeam?->club?->name ?? '') . ' ' . ($opponentTeam?->name ?? '')) ?: '—';
 
         $dateStr = $interclub->start_date_time->format('d/m/Y');
         $timeStr = $interclub->start_date_time->format('H:i');
@@ -50,7 +50,15 @@ class InterclubSelectionNotification extends Notification
             ->line('---')
             ->line(__('**Date:** :date at :time', ['date' => $dateStr, 'time' => $timeStr]))
             ->line(__('**Opponent:** :opponent', ['opponent' => $opponent]))
-            ->line(__('**Location:** :address', ['address' => $interclub->address ?? '—']));
+            ->line(__('**Location:** :address', ['address' => $interclub->room?->address ?? $interclub->address ?? '—']));
+
+        $selectedPlayers = $interclub->getSelectedPlayers();
+        $lineupNames = $selectedPlayers
+            ->map(fn ($p) => $p->full_name)
+            ->implode(', ');
+
+        $mail->line('---')
+            ->line(__('**Selected lineup:** :lineup', ['lineup' => $lineupNames ?: '—']));
 
         if (! empty($this->captainMessage)) {
             $mail->line('---')
@@ -60,7 +68,8 @@ class InterclubSelectionNotification extends Notification
 
         $mail->salutation(__('See you on the court!'));
 
-        $ics = $this->buildIcs($interclub, $opponent, $teamName);
+        $address = $interclub->room?->address ?? $interclub->address ?? '';
+        $ics = $this->buildIcs($interclub, $opponent, $teamName, $address);
         $mail->attachData($ics, 'interclub.ics', ['mime' => 'text/calendar']);
 
         return $mail;
@@ -72,14 +81,14 @@ class InterclubSelectionNotification extends Notification
         return ['mail'];
     }
 
-    private function buildIcs(Interclub $interclub, string $opponent, string $teamName): string
+    private function buildIcs(Interclub $interclub, string $opponent, string $teamName, string $address = ''): string
     {
         $tz = 'Europe/Brussels';
         $dtStart = 'DTSTART;TZID=' . $tz . ':' . $interclub->start_date_time->format('Ymd\THis');
         $dtEnd = 'DTEND;TZID=' . $tz . ':' . $interclub->start_date_time->addHours(3)->format('Ymd\THis');
         $stamp = now()->utc()->format('Ymd\THis\Z');
         $summary = $this->icalEscape($teamName . ' vs ' . $opponent);
-        $location = $this->icalEscape($interclub->address ?? '');
+        $location = $this->icalEscape($address);
 
         $properties = [
             'BEGIN:VCALENDAR',

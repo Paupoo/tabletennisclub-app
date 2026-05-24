@@ -107,3 +107,53 @@ it('admin who is also captain can access the captain selection page', function (
         ->get(route('admin.interclubs.captain-selection'))
         ->assertOk();
 });
+
+it('openSelection silently ignores past interclubs', function (): void {
+    $past = Interclub::factory()->create([
+        'season_id' => $this->season->id,
+        'league_id' => $this->league->id,
+        'visited_team_id' => $this->team->id,
+        'total_players' => 4,
+        'start_date_time' => now()->subDays(1),
+    ]);
+
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', $past->id)
+        ->assertSet('drawerSelection', false)
+        ->assertSet('selectedInterclubId', null);
+});
+
+it('has_played flag counts as a played match in matchesPlayedCount', function (): void {
+    $past = Interclub::factory()->create([
+        'season_id' => $this->season->id,
+        'league_id' => $this->league->id,
+        'visited_team_id' => $this->team->id,
+        'total_players' => 4,
+        'start_date_time' => now()->subDays(7),
+    ]);
+
+    $past->users()->attach($this->player1->id, ['is_selected' => true, 'has_played' => true]);
+
+    $anotherPast = Interclub::factory()->create([
+        'season_id' => $this->season->id,
+        'league_id' => $this->league->id,
+        'visited_team_id' => $this->team->id,
+        'total_players' => 4,
+        'start_date_time' => now()->subDays(14),
+    ]);
+
+    // is_selected but has_played = false — should NOT be counted
+    $anotherPast->users()->attach($this->player1->id, ['is_selected' => true, 'has_played' => false]);
+
+    $this->assertDatabaseHas('interclub_user', [
+        'interclub_id' => $past->id,
+        'user_id' => $this->player1->id,
+        'has_played' => true,
+    ]);
+    $this->assertDatabaseHas('interclub_user', [
+        'interclub_id' => $anotherPast->id,
+        'user_id' => $this->player1->id,
+        'has_played' => false,
+    ]);
+});

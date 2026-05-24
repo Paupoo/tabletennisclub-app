@@ -53,7 +53,7 @@
                 </div>
                 <div class="grid grid-cols-5 gap-2 justify-items-center">
                     @foreach ($weeks_monitor as $wm)
-                        <div class="tooltip" data-tip="{{ __('Week :n') . ': ' . $wm['status'] }}">
+                        <div class="tooltip" data-tip="S{{ $matchDayMap[$wm['wk']] ?? $wm['wk'] }}: {{ $wm['status'] }}">
                             <button wire:click="$set('selectedWeek', {{ $wm['wk'] }})"
                                 @class([
                                     'w-7 h-7 rounded-md flex items-center justify-center text-[9px] font-black border transition-all hover:scale-110',
@@ -63,7 +63,7 @@
                                     'bg-base-200 border-base-300 text-base-content/40' => $wm['status'] === 'pending',
                                     'ring-2 ring-primary ring-offset-2 ring-offset-base-100' => $wm['wk'] === $selectedWeek,
                                 ])>
-                                {{ $wm['wk'] }}
+                                {{ $matchDayMap[$wm['wk']] ?? $wm['wk'] }}
                             </button>
                         </div>
                     @endforeach
@@ -101,7 +101,7 @@
                 @if ($categories->isEmpty())
                     <x-empty-state icon="o-calendar"
                         title="{{ __('No matches this week') }}"
-                        description="{{ __('No interclub scheduled for week :n.', ['n' => $selectedWeek ?? '—']) }}" />
+                        description="{{ __('No interclub scheduled for day :n.', ['n' => $selectedWeek ? ('S' . ($matchDayMap[$selectedWeek] ?? $selectedWeek)) : '—']) }}" />
                 @else
                     @foreach ($categories as $name => $teams)
                         <div
@@ -185,7 +185,7 @@
 
     {{-- DRAWER SÉLECTION --}}
     <x-drawer wire:model="drawerSelection"
-        title="{{ __('Selection') }} {{ $drawerInterclub ? 'WK' . $drawerInterclub->week_number : '' }}"
+        title="{{ __('Selection') }} {{ $drawerInterclub ? 'S' . ($matchDayMap[$drawerInterclub->week_number] ?? $drawerInterclub->week_number) : '' }}"
         subtitle="{{ $drawerInterclub?->start_date_time?->format('d/m/Y') ?? '' }}"
         right separator with-close-button class="w-11/12 lg:w-1/3">
         <div class="space-y-6">

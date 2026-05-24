@@ -6,6 +6,7 @@ namespace Resources\views\Pages\ClubEvents\Interclubs;
 
 use App\Enums\InterclubResult;
 use App\Enums\LeagueCategory;
+use App\Models\ClubEvents\Interclub\Interclub;
 use App\Models\ClubEvents\Interclub\MatchResult;
 use App\Models\ClubEvents\Interclub\Season;
 use App\Models\ClubEvents\Interclub\Team;
@@ -211,6 +212,19 @@ new class extends Component
         ];
 
         MatchResult::findOrFail($this->editingMatchResultId)->update($data);
+
+        if ($this->matchType === 'normal' && $this->matchDate) {
+            $interclub = Interclub::where('season_id', $this->seasonId)
+                ->where(fn ($q) => $q->where('visited_team_id', $this->editingTeamId)
+                    ->orWhere('visiting_team_id', $this->editingTeamId))
+                ->whereDate('start_date_time', $this->matchDate)
+                ->first();
+
+            $interclub?->users()
+                ->wherePivot('is_selected', true)
+                ->each(fn ($u) => $interclub->users()->updateExistingPivot($u->id, ['has_played' => true]));
+        }
+
         $this->success(__('Match updated'));
 
         $this->editModal = false;
@@ -251,10 +265,13 @@ new class extends Component
 
         $teamsByCategory = $teams->groupBy(fn (Team $t) => $t->league?->category ?? LeagueCategory::MEN->name);
 
+        $matchDayMap = $this->seasonId ? Interclub::matchDayMap($this->seasonId) : [];
+
         return [
             'seasons' => Season::orderBy('start_at')->get(),
             'teamsByCategory' => $teamsByCategory,
             'stats' => $stats,
+            'matchDayMap' => $matchDayMap,
             'matchTypeOptions' => [
                 ['value' => 'normal',                   'label' => __('Normal')],
                 ['value' => 'forfeit_opponent',         'label' => __('Forfait adverse')],

@@ -96,7 +96,7 @@
                                                         {{-- Week badge --}}
                                                         <div class="bg-base-200 flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-xl">
                                                             <div class="text-[8px] font-black uppercase opacity-40">S</div>
-                                                            <div class="text-sm font-black leading-none">{{ $match['week'] ?? '—' }}</div>
+                                                            <div class="text-sm font-black leading-none">{{ isset($match['week']) ? ($matchDayMap[$match['week']] ?? $match['week']) : '—' }}</div>
                                                         </div>
 
                                                         {{-- Match info --}}

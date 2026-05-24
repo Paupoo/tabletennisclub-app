@@ -213,6 +213,8 @@ new class extends Component
                 'name' => trim(($t->club?->name ?? '') . ' ' . $t->name),
             ]);
 
+        $matchDayMap = $this->seasonId ? Interclub::matchDayMap($this->seasonId) : [];
+
         return [
             'breadcrumbs'    => Breadcrumb::make()->home()->add(__('Interclubs'), route('admin.interclubs.captain-selection'))->current(__('Schedule'))->toArray(),
             'seasons'        => Season::orderBy('start_at')->get(),
@@ -224,6 +226,7 @@ new class extends Component
             'opponentTeams'  => $opponentTeams->toArray(),
             'grouped'        => $grouped,
             'total'          => $interclubs->count(),
+            'matchDayMap'    => $matchDayMap,
         ];
     }
 

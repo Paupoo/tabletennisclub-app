@@ -86,6 +86,20 @@ class Interclub extends Model
         'week_number',
     ];
 
+    /** @return array<int, int> week_number => match_day (1-based) */
+    public static function matchDayMap(int $seasonId): array
+    {
+        return self::where('season_id', $seasonId)
+            ->whereNotNull('week_number')
+            ->orderBy('start_date_time')
+            ->pluck('week_number')
+            ->unique()
+            ->values()
+            ->flip()
+            ->map(fn ($i) => $i + 1)
+            ->toArray();
+    }
+
     public function league(): BelongsTo
     {
         return $this->belongsTo(League::class);

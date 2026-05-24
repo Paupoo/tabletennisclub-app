@@ -37,9 +37,9 @@
             $barOpacity(),
         ])></div>
 
-        {{-- Numéro de semaine --}}
+        {{-- Numéro de journée --}}
         <div class="min-w-[32px] text-center">
-            <div class="text-[9px] font-medium uppercase opacity-35">WK</div>
+            <div class="text-[9px] font-medium uppercase opacity-35">S</div>
             <div class="text-lg font-medium leading-none">{{ $week }}</div>
         </div>
 

@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 use App\Enums\InterclubAvailability;
 use App\Models\ClubAdmin\Users\User;
+use App\Models\ClubEvents\Interclub\Club;
 use App\Models\ClubEvents\Interclub\Interclub;
 use App\Models\ClubEvents\Interclub\League;
 use App\Models\ClubEvents\Interclub\Season;
 use App\Models\ClubEvents\Interclub\Team;
 use App\Notifications\Interclub\InterclubAvailabilityRequestNotification;
+use App\Notifications\Interclub\InterclubLineupBroadcastNotification;
 use App\Notifications\Interclub\InterclubSelectionNotification;
 use App\Services\InterclubAvailabilityService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -27,10 +29,13 @@ beforeEach(function (): void {
     $this->player2 = User::factory()->isCompetitor()->create();
     $this->player3 = User::factory()->isCompetitor()->create();
 
+    $club = Club::factory()->create(['licence' => config('app.club_licence')]);
+
     $this->team = Team::factory()->create([
         'season_id' => $this->season->id,
         'league_id' => $this->league->id,
         'captain_id' => $this->captain->id,
+        'club_id' => $club->id,
     ]);
 
     $this->team->users()->attach([$this->captain->id, $this->player1->id, $this->player2->id, $this->player3->id]);
@@ -99,4 +104,47 @@ it('sends availability request only to players who have not responded', function
     Notification::assertNotSentTo($responded, InterclubAvailabilityRequestNotification::class);
     Notification::assertSentTo($this->player1, InterclubAvailabilityRequestNotification::class);
     Notification::assertSentTo($this->player2, InterclubAvailabilityRequestNotification::class);
+});
+
+it('sends broadcast notification to non-selected team members', function (): void {
+    $this->interclub->select($this->player1);
+    $this->interclub->select($this->player2);
+
+    $this->service->confirmSelection($this->interclub, 'Rendez-vous à 18h30.');
+
+    Notification::assertSentTo($this->captain, InterclubLineupBroadcastNotification::class);
+    Notification::assertSentTo($this->player3, InterclubLineupBroadcastNotification::class);
+});
+
+it('selected players do not receive the broadcast notification', function (): void {
+    $this->interclub->select($this->player1);
+    $this->interclub->select($this->player2);
+
+    $this->service->confirmSelection($this->interclub);
+
+    Notification::assertNotSentTo($this->player1, InterclubLineupBroadcastNotification::class);
+    Notification::assertNotSentTo($this->player2, InterclubLineupBroadcastNotification::class);
+});
+
+it('non-selected players do not receive the selection notification', function (): void {
+    $this->interclub->select($this->player1);
+
+    $this->service->confirmSelection($this->interclub);
+
+    Notification::assertNotSentTo($this->player2, InterclubSelectionNotification::class);
+    Notification::assertNotSentTo($this->player3, InterclubSelectionNotification::class);
+});
+
+it('broadcast notification carries the captain message and selected lineup', function (): void {
+    $this->interclub->select($this->player1);
+    $message = 'Départ depuis le club à 18h.';
+
+    $this->service->confirmSelection($this->interclub, $message);
+
+    Notification::assertSentTo(
+        $this->player3,
+        InterclubLineupBroadcastNotification::class,
+        fn ($notification) => $notification->captainMessage === $message
+            && $notification->selectedPlayers->contains('id', $this->player1->id),
+    );
 });

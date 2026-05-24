@@ -128,7 +128,7 @@
                                                                 <tr wire:key="mr-{{ $mr->id }}"
                                                                     @class(['text-gray-300' => $mr->is_bye, 'italic text-gray-400' => ! $mr->is_bye && $mr->result === null])>
                                                                     <td class="hidden py-2 pr-4 text-xs text-gray-400 sm:table-cell">
-                                                                        {{ $mr->week_number ? 'S' . $mr->week_number : '—' }}
+                                                                        {{ $mr->week_number ? 'S' . ($matchDayMap[$mr->week_number] ?? $mr->week_number) : '—' }}
                                                                     </td>
                                                                     <td class="py-2 pr-4 text-gray-700">
                                                                         @if ($mr->is_bye)

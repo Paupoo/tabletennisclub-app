@@ -33,48 +33,31 @@ class InterclubLineupBroadcastNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         $interclub = $this->interclub;
-        $interclub->loadMissing(['visitedTeam', 'visitingTeam', 'visitedTeam.club', 'visitingTeam.club', 'room']);
+        $interclub->loadMissing(['visitedTeam.club', 'visitingTeam.club', 'room']);
 
-        $ourTeam = $interclub->visitedTeam?->club?->licence === config('app.club_licence')
-            ? $interclub->visitedTeam
-            : $interclub->visitingTeam;
+        $ourTeam = $interclub->ourTeam();
+        $ourTeamName = $ourTeam?->fullName() ?? '—';
+        $opponent = $interclub->opponentTeam()?->fullName() ?? '—';
+        $venue = $interclub->isHome() ? __('Home') : __('Away');
+        $dateStr = $interclub->start_date_time->format('d/m/Y') . ' ' . __('at') . ' ' . $interclub->start_date_time->format('H:i');
+        $address = $interclub->room?->address ?? $interclub->address ?? '—';
 
-        $isHome = $interclub->visitedTeam?->id === $ourTeam?->id;
-        $opponentTeam = $isHome ? $interclub->visitingTeam : $interclub->visitedTeam;
-        $opponent = trim(($opponentTeam?->club?->name ?? '') . ' ' . ($opponentTeam?->name ?? '')) ?: '—';
-
-        $dateStr = $interclub->start_date_time->format('d/m/Y');
-        $timeStr = $interclub->start_date_time->format('H:i');
-        $teamName = $ourTeam?->name ?? '—';
-
-        $lineupNames = $this->selectedPlayers
-            ->map(fn (User $p) => $p->full_name)
-            ->implode(', ');
-
-        $mail = (new MailMessage)
+        return (new MailMessage)
             ->subject(__('Lineup confirmed — :team vs :opponent on :date', [
-                'team' => $teamName,
+                'team' => $ourTeamName,
                 'opponent' => $opponent,
-                'date' => $dateStr,
+                'date' => $interclub->start_date_time->format('d/m/Y'),
             ]))
-            ->greeting(__('Hello :name!', ['name' => $notifiable->first_name]))
-            ->line(__('The lineup for the **:team** match has been confirmed.', ['team' => $teamName]))
-            ->line('---')
-            ->line(__('**Date:** :date at :time', ['date' => $dateStr, 'time' => $timeStr]))
-            ->line(__('**Opponent:** :opponent', ['opponent' => $opponent]))
-            ->line(__('**Location:** :address', ['address' => $interclub->room?->address ?? $interclub->address ?? '—']))
-            ->line('---')
-            ->line(__('**Selected players:** :lineup', ['lineup' => $lineupNames ?: '—']));
-
-        if (! empty($this->captainMessage)) {
-            $mail->line('---')
-                ->line(__('**Message from your captain:**'))
-                ->line($this->captainMessage);
-        }
-
-        $mail->salutation(__('See you at the match!'));
-
-        return $mail;
+            ->markdown('mail.interclub.lineup', [
+                'notifiable' => $notifiable,
+                'ourTeamName' => $ourTeamName,
+                'opponent' => $opponent,
+                'dateStr' => $dateStr,
+                'address' => $address,
+                'venue' => $venue,
+                'selectedPlayers' => $this->selectedPlayers,
+                'captainMessage' => $this->captainMessage,
+            ]);
     }
 
     /** @return array<int, string> */

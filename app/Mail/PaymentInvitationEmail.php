@@ -50,7 +50,7 @@ class PaymentInvitationEmail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'mail.payment-invitation',
+            markdown: 'mail.payment-invitation',
             with: [
                 'instructions' => __('Veuillez effectuer le versement avant le ' . today()->addDays(30)->format('d/m/Y')),
             ],

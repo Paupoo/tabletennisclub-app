@@ -28,35 +28,31 @@ class InterclubAvailabilityRequestNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         $interclub = $this->interclub;
-        $interclub->loadMissing(['visitedTeam', 'visitingTeam', 'visitedTeam.club', 'visitingTeam.club']);
+        $interclub->loadMissing(['visitedTeam.club', 'visitingTeam.club', 'room']);
 
-        $ourTeam = $interclub->visitedTeam?->club?->licence === config('app.club_licence')
-            ? $interclub->visitedTeam
-            : $interclub->visitingTeam;
-
-        $opponent = $interclub->visitedTeam?->id === $ourTeam?->id
-            ? ($interclub->visitingTeam?->name ?? '—')
-            : ($interclub->visitedTeam?->name ?? '—');
-
-        $dateStr = $interclub->start_date_time->format('d/m/Y');
-        $teamName = $ourTeam?->name ?? '—';
-
+        $ourTeam = $interclub->ourTeam();
+        $opponent = $interclub->opponentTeam()?->fullName() ?? '—';
+        $ourTeamName = $ourTeam?->fullName() ?? '—';
+        $venue = $interclub->isHome() ? __('Home') : __('Away');
+        $dateStr = $interclub->start_date_time->format('d/m/Y') . ' ' . __('at') . ' ' . $interclub->start_date_time->format('H:i');
+        $address = $interclub->room?->address ?? $interclub->address ?? '—';
         $url = route('admin.interclubs.my-matches');
 
         return (new MailMessage)
             ->subject(__('Your availability needed — :team vs :opponent on :date', [
-                'team' => $teamName,
+                'team' => $ourTeamName,
                 'opponent' => $opponent,
-                'date' => $dateStr,
+                'date' => $interclub->start_date_time->format('d/m/Y'),
             ]))
-            ->greeting(__('Hello :name!', ['name' => $notifiable->first_name]))
-            ->line(__('Your captain needs to know if you are available for the upcoming interclub match.'))
-            ->line('---')
-            ->line(__('**Date:** :date', ['date' => $dateStr]))
-            ->line(__('**Opponent:** :opponent', ['opponent' => $opponent]))
-            ->line(__('**Team:** :team', ['team' => $teamName]))
-            ->action(__('Indicate my availability'), $url)
-            ->salutation(__('Thank you!'));
+            ->markdown('mail.interclub.availability-request', [
+                'notifiable' => $notifiable,
+                'ourTeamName' => $ourTeamName,
+                'opponent' => $opponent,
+                'dateStr' => $dateStr,
+                'address' => $address,
+                'venue' => $venue,
+                'url' => $url,
+            ]);
     }
 
     /** @return array<int, string> */

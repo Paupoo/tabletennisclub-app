@@ -37,7 +37,7 @@ class TournamentPaymentRequestMail extends Mailable
 
     public function content(): Content
     {
-        return new Content(view: 'mail.tournament-payment-request');
+        return new Content(markdown: 'mail.tournament-payment-request');
     }
 
     public function envelope(): Envelope

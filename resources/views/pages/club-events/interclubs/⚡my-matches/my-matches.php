@@ -99,14 +99,9 @@ new class extends Component
                     ? InterclubAvailability::from($pivot->availability)
                     : null;
 
-                $ourClubLicence = config('app.club_licence');
-                $ourTeam = $interclub->visitedTeam?->club?->licence === $ourClubLicence
-                    ? $interclub->visitedTeam
-                    : $interclub->visitingTeam;
-
-                $isHome = $interclub->visitedTeam?->id === $ourTeam?->id;
-                $opponentTeamObj = $isHome ? $interclub->visitingTeam : $interclub->visitedTeam;
-                $opponent = trim(($opponentTeamObj?->club?->name ?? '') . ' ' . ($opponentTeamObj?->name ?? '')) ?: '—';
+                $ourTeam = $interclub->ourTeam();
+                $isHome = $interclub->isHome();
+                $opponent = $interclub->opponentTeam()?->fullName() ?? '—';
 
                 $division = $interclub->league?->division ?? '';
                 $teamLabel = ($ourTeam?->name ?? '—') . ($division ? ' — ' . $division : '');

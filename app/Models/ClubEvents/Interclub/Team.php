@@ -79,6 +79,11 @@ class Team extends Model
         return $this->belongsTo(Club::class);
     }
 
+    public function fullName(): string
+    {
+        return trim(($this->club?->name ?? '') . ' ' . $this->name) ?: $this->name;
+    }
+
     public function interclubs(): HasMany
     {
         return $this->hasMany(Interclub::class);

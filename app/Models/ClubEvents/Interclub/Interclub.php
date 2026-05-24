@@ -100,9 +100,30 @@ class Interclub extends Model
             ->toArray();
     }
 
+    public function isHome(): bool
+    {
+        $this->loadMissing('visitedTeam.club');
+
+        return $this->visitedTeam?->club?->licence === config('app.club_licence');
+    }
+
     public function league(): BelongsTo
     {
         return $this->belongsTo(League::class);
+    }
+
+    public function opponentTeam(): ?Team
+    {
+        $this->loadMissing(['visitedTeam', 'visitingTeam']);
+
+        return $this->isHome() ? $this->visitingTeam : $this->visitedTeam;
+    }
+
+    public function ourTeam(): ?Team
+    {
+        $this->loadMissing(['visitedTeam.club', 'visitingTeam.club']);
+
+        return $this->isHome() ? $this->visitedTeam : $this->visitingTeam;
     }
 
     public function room(): BelongsTo

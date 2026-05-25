@@ -48,6 +48,18 @@ use Illuminate\Support\Facades\Route;
 | content display, and general user interactions.
 |
 */
+/*
+|--------------------------------------------------------------------------
+| Setup Wizard
+|--------------------------------------------------------------------------
+|
+| Accessible to anyone on first installation. Blocked once setup is done.
+|
+*/
+Route::livewire('/setup', 'pages::setup.wizard')
+    ->middleware('setup.not_complete')
+    ->name('setup');
+
 Route::get('/', [HomeController::class, 'index'])
     ->name('home');
 Route::get('/results', [ResultsController::class, 'index'])

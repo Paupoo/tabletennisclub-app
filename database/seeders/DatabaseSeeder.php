@@ -35,6 +35,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        AppSetting::set('setup_completed', '1');
         // ── Our club ──────────────────────────────────────────────────────────
         Club::create([
             'name' => 'C.T.T Ottignies-Blocry',

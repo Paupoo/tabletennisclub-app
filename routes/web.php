@@ -209,19 +209,31 @@ Route::prefix('admin/club-events/interclubs/')
  * Dashboard with sample of most data
  */
 Route::get('/admin/dashboard', function () {
-    return view('clubAdmin.dashboard', [
-        'users' => User::latest()->take(5)->get(),
-        'users_total_active' => User::where('is_active', '=', true)->count(),
-        'users_total_inactive' => User::where('is_active', '=', false)->count(),
-        'users_total_competitors' => User::where('is_competitor', '=', true)->count(),
-        'users_total_casuals' => User::where('is_competitor', '=', false)->count(),
-        'rooms' => Room::orderby('name')->get(),
-        'trainings' => Training::latest()->take(5)->get(),
-        'teams' => Team::all()->load(['captain', 'users', 'league']),
-        'breadcrumbs' => Breadcrumb::make()->home()->toArray(),
+    return view('clubAdmin.dashboard_v4_personas', [
+        'members_total'        => 42,
+        'members_active'       => 38,
+        'members_inactive'     => 4,
+        'members_competitors'  => 24,
+        'members_unpaid'       => 3,
+        'rooms_count'          => 3,
+        'teams_count'          => 4,
+        'trainings_count'      => 6,
+        'interclubs_pending'   => 2,
+        'payments_pending'     => 18,
+        'affiliations_pending' => 5,
+        'events_count'         => 1,
+        'recent_activity'      => [
+            ['type' => 'member',    'label' => 'Jean Dupont a rejoint le club',        'time' => '1h'],
+            ['type' => 'contact',   'label' => 'Nouveau message de Pierre V.',         'time' => '3h'],
+            ['type' => 'match',     'label' => 'Match BBW114 vs BBW210 planifié',      'time' => '5h'],
+            ['type' => 'payment',   'label' => 'Cotisation payée par Marie L.',        'time' => '1j'],
+            ['type' => 'news',      'label' => 'Article "Résultats printemps" publié', 'time' => '1j'],
+            ['type' => 'selection', 'label' => 'Sélection équipe A envoyée',           'time' => '2j'],
+            ['type' => 'meeting',   'label' => 'CR réunion comité du 22 mai ajouté',  'time' => '3j'],
+            ['type' => 'member',    'label' => 'Sophie Martin inscrite',               'time' => '4j'],
+        ],
     ]);
-})->middleware(['auth', 'verified'])
-    ->name('dashboard');
+})->middleware(['auth', 'verified'])->name('dashboard');
 
 /**
  * Rooms management

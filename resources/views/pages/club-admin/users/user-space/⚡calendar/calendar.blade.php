@@ -75,17 +75,13 @@
             @if ($showAllEvents)
                 {{-- Vue condensée avec accordéon par mois --}}
                 @forelse ($calendar as $month => $events)
-                    <section class="mb-4" x-data="{ open: {{ $month === $currentMonthKey ? 'true' : 'false' }} }">
-                        <button type="button" class="mb-4 flex w-full items-center gap-3 text-left" @click="open = !open">
-                            <span class="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 py-1.5">
-                                <span class="h-2 w-2 rounded-full bg-gray-400"></span>
-                                <span class="text-sm font-bold uppercase tracking-wide text-gray-700">{{ $month }}</span>
-                                <span class="text-xs text-gray-700 opacity-60">{{ count($events) }}</span>
-                            </span>
-                            <div class="flex-1 border-t border-gray-200"></div>
-                            <x-icon name="o-chevron-down" class="h-4 w-4 opacity-40 transition-transform duration-200" ::class="open ? '' : '-rotate-90'" />
-                        </button>
-                        <div x-show="open" x-collapse>
+                    <x-section-accordion
+                        label="{{ $month }}"
+                        count="{{ count($events) }}"
+                        color="gray"
+                        :open="$month === $currentMonthKey"
+                        class="mb-4">
+                        <div>
                             <div class="divide-y divide-base-200 overflow-hidden rounded-xl border border-base-200 bg-base-100">
                                 @foreach ($events as $event)
                                     @php
@@ -116,7 +112,7 @@
                                 @endforeach
                             </div>
                         </div>
-                    </section>
+                    </x-section-accordion>
                 @empty
                     <div class="flex flex-col items-center py-16 text-base-content/40">
                         <x-icon class="mb-3 h-10 w-10" name="o-calendar" />
@@ -126,17 +122,12 @@
             @else
                 {{-- Vue personnelle : accordéon par mois avec statut et actions --}}
                 @forelse ($calendar as $month => $events)
-                    <section class="mb-4" x-data="{ open: {{ $month === $currentMonthKey ? 'true' : 'false' }} }">
-                        <button type="button" class="mb-4 flex w-full items-center gap-3 text-left" @click="open = !open">
-                            <span class="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 py-1.5">
-                                <span class="h-2 w-2 rounded-full bg-gray-400"></span>
-                                <span class="text-sm font-bold uppercase tracking-wide text-gray-700">{{ $month }}</span>
-                                <span class="text-xs text-gray-700 opacity-60">{{ count($events) }}</span>
-                            </span>
-                            <div class="flex-1 border-t border-gray-200"></div>
-                            <x-icon name="o-chevron-down" class="h-4 w-4 opacity-40 transition-transform duration-200" ::class="open ? '' : '-rotate-90'" />
-                        </button>
-                        <div x-show="open" x-collapse>
+                    <x-section-accordion
+                        label="{{ $month }}"
+                        count="{{ count($events) }}"
+                        color="gray"
+                        :open="$month === $currentMonthKey"
+                        class="mb-4">
                             @foreach ($events as $event)
                                 @php
                                     $regStatus     = $event['registrationStatus'] ?? null;
@@ -219,8 +210,7 @@
                                     </x-slot:actions>
                                 </x-admin.shared.compact-event-preview>
                             @endforeach
-                        </div>
-                    </section>
+                    </x-section-accordion>
                 @empty
                     <div class="flex flex-col items-center py-16 text-base-content/40">
                         <x-icon class="mb-3 h-10 w-10" name="o-calendar" />

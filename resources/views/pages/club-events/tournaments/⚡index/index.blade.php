@@ -85,37 +85,33 @@
         {{-- Grouped display --}}
         @php
             $groups = [
-                'live'     => ['label' => __('Live'),     'icon' => 'o-rocket-launch', 'class' => 'text-primary',          'statuses' => ['pending']],
-                'upcoming' => ['label' => __('Upcoming'), 'icon' => 'o-calendar',      'class' => 'text-info',             'statuses' => ['published', 'locked', 'setup']],
-                'closed'   => ['label' => __('Closed'),  'icon' => 'o-check-circle',  'class' => 'text-base-content/40',  'statuses' => ['closed', 'cancelled']],
+                'live'     => ['label' => __('Live'),     'color' => 'rose',  'open' => true,  'statuses' => ['pending']],
+                'upcoming' => ['label' => __('Upcoming'), 'color' => 'blue',  'open' => true,  'statuses' => ['published', 'locked', 'setup']],
+                'closed'   => ['label' => __('Closed'),   'color' => 'gray',  'open' => false, 'statuses' => ['closed', 'cancelled']],
             ];
             if ($this->canManage) {
-                $groups['draft'] = ['label' => __('Draft'), 'icon' => 'o-document', 'class' => 'text-base-content/50', 'statuses' => ['draft']];
+                $groups['draft'] = ['label' => __('Draft'), 'color' => 'gray', 'open' => false, 'statuses' => ['draft']];
             }
         @endphp
 
-        <div class="space-y-10">
+        <div class="space-y-6">
             @foreach ($groups as $group)
                 @php
                     $items = $this->tournaments->filter(fn ($t) => in_array($t->status->value, $group['statuses']));
                 @endphp
 
                 @if ($items->isNotEmpty())
-                    <section>
-                        <div class="mb-4 flex items-center gap-2">
-                            <x-icon class="h-4 w-4 {{ $group['class'] }}" name="{{ $group['icon'] }}" />
-                            <h2 class="text-xs font-bold uppercase tracking-widest {{ $group['class'] }}">
-                                {{ $group['label'] }}
-                            </h2>
-                            <span class="badge badge-ghost badge-sm">{{ $items->count() }}</span>
-                        </div>
-
-                        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <x-section-accordion
+                        label="{{ $group['label'] }}"
+                        :count="$items->count()"
+                        :color="$group['color']"
+                        :open="$group['open']">
+                        <div class="grid gap-4 pb-2 sm:grid-cols-2 lg:grid-cols-3">
                             @foreach ($items as $tournament)
                                 <x-admin.club-events.tournaments.tournament-card :tournament="$tournament" />
                             @endforeach
                         </div>
-                    </section>
+                    </x-section-accordion>
                 @endif
             @endforeach
         </div>

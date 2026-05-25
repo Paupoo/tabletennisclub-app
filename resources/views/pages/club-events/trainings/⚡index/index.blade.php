@@ -85,7 +85,17 @@
         {{-- ================================================================
              PACK LIST — grouped by level
         ================================================================ --}}
-        @php $grouped = $packs->groupBy(fn ($p) => $p->level?->value ?? 'Other'); @endphp
+        @php
+            $grouped = $packs->groupBy(fn ($p) => $p->level?->value ?? 'Other');
+            $levelColor = [
+                'Beginners'       => 'emerald',
+                'Elite'           => 'violet',
+                'Intermediate'    => 'blue',
+                'Kids'            => 'pink',
+                'Open'            => 'gray',
+                'Young potential' => 'amber',
+            ];
+        @endphp
 
         @if ($grouped->isEmpty())
             <div class="rounded-xl border border-dashed border-base-300 py-16 text-center text-base-content/40">
@@ -95,18 +105,13 @@
                     wire:click="openCreate" />
             </div>
         @else
-            <div class="space-y-8">
+            <div class="space-y-6">
                 @foreach ($grouped as $level => $items)
-                    <section>
-                        <div class="mb-3 flex items-center gap-3">
-                            <h2 class="text-sm font-bold uppercase tracking-wider text-base-content/50">
-                                {{ $level }}
-                            </h2>
-                            <span class="text-xs text-base-content/30">·
-                                {{ $items->count() }} {{ __('pack(s)') }}</span>
-                        </div>
-
-                        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                    <x-section-accordion
+                        label="{{ $level }}"
+                        :count="$items->count() . ' ' . __('pack(s)')"
+                        :color="$levelColor[$level] ?? 'gray'">
+                        <div class="grid gap-4 pb-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                             @foreach ($items as $pack)
                                 @php
                                     $enrolled = $pack->enrolledCount();
@@ -178,7 +183,7 @@
                                 </div>
                             @endforeach
                         </div>
-                    </section>
+                    </x-section-accordion>
                 @endforeach
             </div>
         @endif

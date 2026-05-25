@@ -25,31 +25,21 @@
     @else
         @php
             $catMeta = [
-                'MEN'      => ['label' => 'Hommes',   'bg' => 'bg-blue-50',  'border' => 'border-blue-200', 'text' => 'text-blue-700',  'dot' => 'bg-blue-500'],
-                'WOMEN'    => ['label' => 'Dames',    'bg' => 'bg-pink-50',  'border' => 'border-pink-200', 'text' => 'text-pink-700',  'dot' => 'bg-pink-500'],
-                'VETERANS' => ['label' => 'Vétérans', 'bg' => 'bg-amber-50', 'border' => 'border-amber-200','text' => 'text-amber-700', 'dot' => 'bg-amber-500'],
+                'MEN'      => ['label' => 'Hommes',   'color' => 'blue'],
+                'WOMEN'    => ['label' => 'Dames',    'color' => 'pink'],
+                'VETERANS' => ['label' => 'Vétérans', 'color' => 'amber'],
             ];
         @endphp
 
         <div class="space-y-10">
             @foreach ($teamsByCategory as $catName => $categoryTeams)
-                @php $cat = $catMeta[$catName] ?? ['label' => $catName, 'bg' => 'bg-gray-50', 'border' => 'border-gray-200', 'text' => 'text-gray-700', 'dot' => 'bg-gray-400']; @endphp
+                @php $cat = $catMeta[$catName] ?? ['label' => $catName, 'color' => 'gray']; @endphp
 
-                <section x-data="{ open: true }">
-                    {{-- ── Category header ──────────────────────────────────── --}}
-                    <button type="button" class="mb-6 flex w-full items-center gap-3 text-left" @click="open = !open">
-                        <span class="inline-flex items-center gap-2 rounded-full {{ $cat['bg'] }} {{ $cat['border'] }} border px-4 py-1.5">
-                            <span class="h-2 w-2 rounded-full {{ $cat['dot'] }}"></span>
-                            <span class="text-sm font-bold {{ $cat['text'] }} uppercase tracking-wide">{{ $cat['label'] }}</span>
-                            <span class="text-xs {{ $cat['text'] }} opacity-60">{{ $categoryTeams->count() }} équipe{{ $categoryTeams->count() > 1 ? 's' : '' }}</span>
-                        </span>
-                        <div class="flex-1 border-t {{ $cat['border'] }}"></div>
-                        <x-icon name="o-chevron-down" class="h-4 w-4 opacity-40 transition-transform duration-200" ::class="open ? '' : '-rotate-90'" />
-                    </button>
-
-                    {{-- ── Teams in this category ───────────────────────────── --}}
-                    <div x-show="open" x-collapse>
-                        <div class="space-y-4">
+                <x-section-accordion
+                    :label="$cat['label']"
+                    :count="$categoryTeams->count() . ' équipe' . ($categoryTeams->count() > 1 ? 's' : '')"
+                    :color="$cat['color']">
+                    <div class="space-y-4">
                             @foreach ($categoryTeams as $team)
                                 @php
                                     $teamStats = $stats[$team->id];
@@ -197,8 +187,7 @@
                                 </div>
                             @endforeach
                         </div>
-                    </div>
-                </section>
+                </x-section-accordion>
             @endforeach
         </div>
     @endif

@@ -36,29 +36,22 @@
                     </div>
 
                     {{-- Current season accordion – open by default --}}
-                    <section x-data="{ open: true }" class="mb-3">
-                        <div class="flex items-center gap-2 cursor-pointer select-none" @click="open = !open">
-                            <div class="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 py-1.5">
-                                <x-icon name="o-chevron-down" class="w-4 h-4 transition-transform duration-200" ::class="open ? '' : '-rotate-90'" />
-                                <span class="text-sm font-semibold">{{ $currentSeasonName }}</span>
-                                @if($currentEntry && $currentEntry['status'] !== 'cancelled')
-                                    @if($currentEntry['status'] === 'paid')
-                                        <x-badge value="{{ __('Paid') }}" class="badge-success badge-sm" />
-                                    @elseif($currentEntry['status'] === 'confirmed')
-                                        <x-badge value="{{ __('Confirmed') }}" class="badge-info badge-sm" />
-                                    @elseif($currentEntry['status'] === 'pending')
-                                        <x-badge value="{{ __('Pending') }}" class="badge-warning badge-sm" />
-                                    @endif
-                                @elseif($registrationsOpen)
-                                    <x-badge value="{{ __('Open') }}" class="badge-ghost badge-sm" />
-                                @else
-                                    <x-badge value="{{ __('Closed') }}" class="badge-error badge-sm" />
+                    <x-section-accordion label="{{ $currentSeasonName }}" color="gray" :uppercase="false" class="mb-3">
+                        <x-slot:suffix>
+                            @if($currentEntry && $currentEntry['status'] !== 'cancelled')
+                                @if($currentEntry['status'] === 'paid')
+                                    <x-badge value="{{ __('Paid') }}" class="badge-success badge-sm" />
+                                @elseif($currentEntry['status'] === 'confirmed')
+                                    <x-badge value="{{ __('Confirmed') }}" class="badge-info badge-sm" />
+                                @elseif($currentEntry['status'] === 'pending')
+                                    <x-badge value="{{ __('Pending') }}" class="badge-warning badge-sm" />
                                 @endif
-                            </div>
-                            <div class="flex-1 border-t border-gray-200"></div>
-                        </div>
-
-                        <div x-show="open" x-collapse class="mt-3">
+                            @elseif($registrationsOpen)
+                                <x-badge value="{{ __('Open') }}" class="badge-ghost badge-sm" />
+                            @else
+                                <x-badge value="{{ __('Closed') }}" class="badge-error badge-sm" />
+                            @endif
+                        </x-slot:suffix>
                             @if($currentEntry && $currentEntry['status'] !== 'cancelled')
                                 @if($currentEntry['status'] === 'pending')
                                     <div class="flex items-start gap-3 p-4 rounded-xl border border-warning/30 bg-warning/10">
@@ -523,31 +516,24 @@
                                     @endif
                                 </div>
                             </div>
-                        </div>
-                    </section>
+                    </x-section-accordion>
 
                     {{-- Past seasons --}}
                     @if($pastEntries->count() > 0)
                         <div class="mt-3 space-y-2">
                             @foreach($pastEntries as $past)
                                 @if($past['status'] === 'cancelled') @continue @endif
-                                <section x-data="{ open: false }">
-                                    <div class="flex items-center gap-2 cursor-pointer select-none" @click="open = !open">
-                                        <div class="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 py-1.5">
-                                            <x-icon name="o-chevron-down" class="w-4 h-4 transition-transform duration-200" ::class="open ? '' : '-rotate-90'" />
-                                            <span class="text-sm font-semibold">{{ $past['season_name'] }}</span>
-                                            @if($past['status'] === 'paid')
-                                                <x-badge value="{{ __('Paid') }}" class="badge-primary badge-sm" />
-                                            @elseif($past['status'] === 'confirmed')
-                                                <x-badge value="{{ __('Confirmed') }}" class="badge-success badge-sm" />
-                                            @else
-                                                <x-badge value="{{ __($past['status']) }}" class="badge-ghost badge-sm" />
-                                            @endif
-                                        </div>
-                                        <div class="flex-1 border-t border-gray-200"></div>
-                                    </div>
-
-                                    <div x-show="open" x-collapse class="mt-2 pl-4 space-y-2">
+                                <x-section-accordion label="{{ $past['season_name'] }}" :open="false" color="gray" :uppercase="false">
+                                    <x-slot:suffix>
+                                        @if($past['status'] === 'paid')
+                                            <x-badge value="{{ __('Paid') }}" class="badge-primary badge-sm" />
+                                        @elseif($past['status'] === 'confirmed')
+                                            <x-badge value="{{ __('Confirmed') }}" class="badge-success badge-sm" />
+                                        @else
+                                            <x-badge value="{{ __($past['status']) }}" class="badge-ghost badge-sm" />
+                                        @endif
+                                    </x-slot:suffix>
+                                    <div class="pl-4 space-y-2">
                                         <div class="flex items-center gap-3 text-sm">
                                             @if($past['is_competitive'])
                                                 <x-icon name="o-trophy" class="w-4 h-4 text-primary" />
@@ -565,7 +551,7 @@
                                             </div>
                                         @endforeach
                                     </div>
-                                </section>
+                                </x-section-accordion>
                             @endforeach
                         </div>
                     @endif

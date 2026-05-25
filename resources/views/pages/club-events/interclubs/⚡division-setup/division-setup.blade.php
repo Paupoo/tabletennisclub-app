@@ -45,28 +45,17 @@
                         ->sortBy(fn ($_, $cat) => $categoryOrder[$cat] ?? 99);
                 @endphp
 
+                @php
+                    $catColor = ['MEN' => 'blue', 'VETERANS' => 'amber', 'WOMEN' => 'pink'];
+                @endphp
                 @foreach ($groupedLeagues as $category => $categoryLeagues)
                     @php $meta = $categoryMeta[$category] ?? ['bg' => 'bg-gray-50', 'border' => 'border-gray-200', 'text' => 'text-gray-700', 'dot' => 'bg-gray-400', 'label' => $category]; @endphp
 
-                    <div x-data="{ open: true }">
-
-                        {{-- Category header --}}
-                        <button
-                            type="button"
-                            @click="open = !open"
-                            class="mb-2 flex w-full items-center gap-2 text-left"
-                        >
-                            <span class="inline-flex items-center gap-1.5 rounded-full {{ $meta['bg'] }} {{ $meta['border'] }} border px-3 py-1">
-                                <span class="h-1.5 w-1.5 rounded-full {{ $meta['dot'] }}"></span>
-                                <span class="text-xs font-bold {{ $meta['text'] }} uppercase tracking-wide">{{ $meta['label'] }}</span>
-                                <span class="text-xs {{ $meta['text'] }} opacity-60">{{ $categoryLeagues->count() }}</span>
-                            </span>
-                            <div class="flex-1 border-t {{ $meta['border'] }}"></div>
-                            <x-icon name="o-chevron-down" class="h-3.5 w-3.5 opacity-40 transition-transform duration-200 {{ $meta['text'] }}" ::class="open ? '' : '-rotate-90'" />
-                        </button>
-
+                    <x-section-accordion
+                        :label="$meta['label']"
+                        :count="(string) $categoryLeagues->count()"
+                        :color="$catColor[$category] ?? 'gray'">
                         {{-- Division list grouped by level --}}
-                        <div x-show="open" x-collapse>
                             @php
                                 $byLevel           = $categoryLeagues
                                     ->groupBy('level')
@@ -114,9 +103,7 @@
                                     </div>
                                 @endforeach
                             </div>
-                        </div>
-
-                    </div>
+                    </x-section-accordion>
                 @endforeach
             </div>
 

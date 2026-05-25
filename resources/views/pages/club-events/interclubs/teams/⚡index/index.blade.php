@@ -44,40 +44,23 @@
     @else
         @php
             $groupedTeams = $teams->groupBy('category');
-            $catMeta = [
-                'Hommes'   => ['bg' => 'bg-blue-50',  'border' => 'border-blue-200',  'text' => 'text-blue-700',  'dot' => 'bg-blue-500'],
-                'Vétérans' => ['bg' => 'bg-amber-50', 'border' => 'border-amber-200', 'text' => 'text-amber-700', 'dot' => 'bg-amber-500'],
-                'Dames'    => ['bg' => 'bg-pink-50',  'border' => 'border-pink-200',  'text' => 'text-pink-700',  'dot' => 'bg-pink-500'],
-            ];
         @endphp
 
+        @php
+            $catColor = ['Hommes' => 'blue', 'Vétérans' => 'amber', 'Dames' => 'pink'];
+        @endphp
         <div class="space-y-10">
             @foreach ($groupedTeams as $category => $group)
-                @php $cat = $catMeta[$category] ?? ['bg' => 'bg-gray-50', 'border' => 'border-gray-200', 'text' => 'text-gray-700', 'dot' => 'bg-gray-400']; @endphp
-
-                <section x-data="{ open: true }">
-                    <button
-                        type="button"
-                        class="mb-4 flex w-full items-center gap-3 text-left"
-                        @click="open = !open"
-                    >
-                        <span class="inline-flex items-center gap-2 rounded-full {{ $cat['bg'] }} {{ $cat['border'] }} border px-4 py-1.5">
-                            <span class="h-2 w-2 rounded-full {{ $cat['dot'] }}"></span>
-                            <span class="text-sm font-bold {{ $cat['text'] }} uppercase tracking-wide">{{ $category }}</span>
-                            <span class="text-xs {{ $cat['text'] }} opacity-60">{{ $group->count() }} équipe{{ $group->count() > 1 ? 's' : '' }}</span>
-                        </span>
-                        <div class="flex-1 border-t {{ $cat['border'] }}"></div>
-                        <x-icon name="o-chevron-down" class="h-4 w-4 opacity-40 transition-transform duration-200" ::class="open ? '' : '-rotate-90'" />
-                    </button>
-
-                    <div x-show="open" x-collapse>
-                        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                            @foreach ($group as $team)
-                                <x-admin.club-events.teams.team-card :team="$team" wire:key="team-{{ $team->id }}" />
-                            @endforeach
-                        </div>
+                <x-section-accordion
+                    :label="$category"
+                    :count="$group->count() . ' équipe' . ($group->count() > 1 ? 's' : '')"
+                    :color="$catColor[$category] ?? 'gray'">
+                    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 pb-2">
+                        @foreach ($group as $team)
+                            <x-admin.club-events.teams.team-card :team="$team" wire:key="team-{{ $team->id }}" />
+                        @endforeach
                     </div>
-                </section>
+                </x-section-accordion>
             @endforeach
         </div>
     @endif

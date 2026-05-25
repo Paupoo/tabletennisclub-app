@@ -2,9 +2,18 @@
 
 declare(strict_types=1);
 
+use App\Enums\TournamentStatusEnum;
+use App\Models\ClubAdmin\Payment\Payment;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Tournament\Tournament;
+use App\Models\ClubEvents\Tournament\TournamentRegistration;
+use App\Notifications\Tournament\TournamentConfirmationExpiredNotification;
+use App\Notifications\Tournament\TournamentRegistrationCancelledNotification;
+use App\Notifications\Tournament\TournamentRegistrationConfirmedNotification;
+use App\Notifications\Tournament\TournamentWaitlistSpotOpenedNotification;
 use App\Services\TournamentService;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Notification;
 
 it('counts registered users and returns correct user count', function (): void {
     $tournament = Tournament::factory()->create();
@@ -52,4 +61,329 @@ it('checks if a tournament is full using real DB count', function (): void {
     $unlimited = Tournament::factory()->create(['max_users' => 0]);
     $unlimited->users()->attach($users->pluck('id'), ['registration_status' => 'registered']);
     expect($service->isFull($unlimited))->toBeFalse();
+});
+
+// ── registerUser ──────────────────────────────────────────────────────────────
+
+describe('registerUser', function (): void {
+    it('registers a user to a free tournament with no payment', function (): void {
+        Notification::fake();
+        $tournament = paymentTournament(['price' => 0, 'max_users' => 10]);
+        Event::fake();
+
+        $user = User::factory()->create();
+        (new TournamentService)->registerUser($tournament, $user);
+
+        expect(
+            TournamentRegistration::where('tournament_id', $tournament->id)
+                ->where('user_id', $user->id)
+                ->value('registration_status')
+        )->toBe('registered');
+
+        Notification::assertSentTo($user, TournamentRegistrationConfirmedNotification::class);
+        expect(Payment::count())->toBe(0);
+    });
+
+    it('creates a pending payment for a paid tournament', function (): void {
+        Notification::fake();
+        $tournament = paymentTournament(['price' => 10, 'max_users' => 10]);
+        Event::fake();
+
+        $user = User::factory()->create();
+        (new TournamentService)->registerUser($tournament, $user);
+
+        expect(Payment::count())->toBe(1);
+        expect(Payment::first()->status)->toBe('pending');
+    });
+
+    it('throws LogicException when user is already registered', function (): void {
+        Notification::fake();
+        $tournament = paymentTournament(['price' => 0, 'max_users' => 10]);
+        Event::fake();
+
+        $user = User::factory()->create();
+        (new TournamentService)->registerUser($tournament, $user);
+
+        expect(fn () => (new TournamentService)->registerUser($tournament, $user))
+            ->toThrow(LogicException::class);
+    });
+
+    it('throws LogicException when tournament is not PUBLISHED', function (): void {
+        Notification::fake();
+        $tournament = paymentTournament(['status' => TournamentStatusEnum::DRAFT, 'price' => 0]);
+        Event::fake();
+
+        $user = User::factory()->create();
+
+        expect(fn () => (new TournamentService)->registerUser($tournament, $user))
+            ->toThrow(LogicException::class);
+    });
+
+    it('adds user to waitlist when tournament is full', function (): void {
+        Notification::fake();
+        $tournament = paymentTournament(['price' => 0, 'max_users' => 1]);
+        Event::fake();
+
+        $firstUser = User::factory()->create();
+        (new TournamentService)->registerUser($tournament, $firstUser);
+
+        $waitingUser = User::factory()->create();
+        (new TournamentService)->registerUser($tournament, $waitingUser);
+
+        expect(
+            TournamentRegistration::where('tournament_id', $tournament->id)
+                ->where('user_id', $waitingUser->id)
+                ->value('registration_status')
+        )->toBe('waiting');
+    });
+
+    it('increments total_users on the tournament', function (): void {
+        Notification::fake();
+        $tournament = paymentTournament(['price' => 0, 'max_users' => 10, 'total_users' => 0]);
+        Event::fake();
+
+        $user = User::factory()->create();
+        (new TournamentService)->registerUser($tournament, $user);
+
+        expect($tournament->fresh()->total_users)->toBe(1);
+    });
+});
+
+// ── cancelRegistration ────────────────────────────────────────────────────────
+
+describe('cancelRegistration', function (): void {
+    it('cancels a registered user and sends notification', function (): void {
+        Notification::fake();
+        $tournament = paymentTournament(['price' => 0, 'max_users' => 10]);
+        $user = User::factory()->create();
+        $tournament->users()->attach($user->id, ['registration_status' => 'registered']);
+        Event::fake();
+
+        (new TournamentService)->cancelRegistration($tournament, $user);
+
+        expect(
+            TournamentRegistration::where('tournament_id', $tournament->id)
+                ->where('user_id', $user->id)
+                ->value('registration_status')
+        )->toBe('cancelled');
+
+        Notification::assertSentTo($user, TournamentRegistrationCancelledNotification::class);
+    });
+
+    it('marks a pending payment as cancelled', function (): void {
+        Notification::fake();
+        $tournament = paymentTournament(['price' => 10, 'max_users' => 10]);
+        $user = User::factory()->create();
+        $tournament->users()->attach($user->id, ['registration_status' => 'registered']);
+
+        $registration = TournamentRegistration::where('tournament_id', $tournament->id)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        $payment = $registration->payment()->create([
+            'reference' => 'TEST/001',
+            'amount_due' => 1000,
+            'amount_paid' => 0,
+            'status' => 'pending',
+        ]);
+        $registration->update(['payment_id' => $payment->id]);
+
+        Event::fake();
+        (new TournamentService)->cancelRegistration($tournament, $user);
+
+        expect($payment->fresh()->status)->toBe('cancelled');
+    });
+
+    it('marks a paid payment as to_refund', function (): void {
+        Notification::fake();
+        $tournament = paymentTournament(['price' => 10, 'max_users' => 10]);
+        $user = User::factory()->create();
+        $tournament->users()->attach($user->id, ['registration_status' => 'registered']);
+
+        $registration = TournamentRegistration::where('tournament_id', $tournament->id)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        $payment = $registration->payment()->create([
+            'reference' => 'TEST/002',
+            'amount_due' => 1000,
+            'amount_paid' => 1000,
+            'status' => 'paid',
+        ]);
+        $registration->update(['payment_id' => $payment->id]);
+
+        Event::fake();
+        (new TournamentService)->cancelRegistration($tournament, $user);
+
+        expect($payment->fresh()->status)->toBe('to_refund');
+    });
+});
+
+// ── openSpot ──────────────────────────────────────────────────────────────────
+
+describe('openSpot', function (): void {
+    it('promotes the first waiting user to spot_offered', function (): void {
+        Notification::fake();
+        $tournament = paymentTournament(['price' => 0, 'max_users' => 1]);
+
+        $waitingUser = User::factory()->create();
+        $tournament->users()->attach($waitingUser->id, [
+            'registration_status' => 'waiting',
+            'waitlist_position' => 1,
+        ]);
+
+        Event::fake();
+        (new TournamentService)->openSpot($tournament);
+
+        expect(
+            TournamentRegistration::where('tournament_id', $tournament->id)
+                ->where('user_id', $waitingUser->id)
+                ->value('registration_status')
+        )->toBe('spot_offered');
+
+        Notification::assertSentTo($waitingUser, TournamentWaitlistSpotOpenedNotification::class);
+    });
+
+    it('does nothing when no one is waiting', function (): void {
+        Notification::fake();
+        $tournament = paymentTournament(['price' => 0]);
+
+        Event::fake();
+        (new TournamentService)->openSpot($tournament);
+
+        Notification::assertNothingSent();
+    });
+
+    it('promotes the user with the lowest waitlist_position', function (): void {
+        Notification::fake();
+        $tournament = paymentTournament(['price' => 0]);
+
+        $first = User::factory()->create();
+        $second = User::factory()->create();
+        $tournament->users()->attach($first->id, ['registration_status' => 'waiting', 'waitlist_position' => 1]);
+        $tournament->users()->attach($second->id, ['registration_status' => 'waiting', 'waitlist_position' => 2]);
+
+        Event::fake();
+        (new TournamentService)->openSpot($tournament);
+
+        expect(
+            TournamentRegistration::where('tournament_id', $tournament->id)
+                ->where('user_id', $first->id)
+                ->value('registration_status')
+        )->toBe('spot_offered');
+
+        expect(
+            TournamentRegistration::where('tournament_id', $tournament->id)
+                ->where('user_id', $second->id)
+                ->value('registration_status')
+        )->toBe('waiting');
+    });
+});
+
+// ── expireConfirmationDeadlines ───────────────────────────────────────────────
+
+describe('expireConfirmationDeadlines', function (): void {
+    it('cancels spot_offered registrations past their deadline', function (): void {
+        Notification::fake();
+        $tournament = paymentTournament(['price' => 0]);
+        $user = User::factory()->create();
+        $tournament->users()->attach($user->id, [
+            'registration_status' => 'spot_offered',
+            'confirmation_deadline' => now()->subHour(),
+        ]);
+
+        Event::fake();
+        (new TournamentService)->expireConfirmationDeadlines();
+
+        expect(
+            TournamentRegistration::where('tournament_id', $tournament->id)
+                ->where('user_id', $user->id)
+                ->value('registration_status')
+        )->toBe('cancelled');
+
+        Notification::assertSentTo($user, TournamentConfirmationExpiredNotification::class);
+    });
+
+    it('does not cancel spot_offered registrations with future deadlines', function (): void {
+        Notification::fake();
+        $tournament = paymentTournament(['price' => 0]);
+        $user = User::factory()->create();
+        $tournament->users()->attach($user->id, [
+            'registration_status' => 'spot_offered',
+            'confirmation_deadline' => now()->addHour(),
+        ]);
+
+        Event::fake();
+        (new TournamentService)->expireConfirmationDeadlines();
+
+        expect(
+            TournamentRegistration::where('tournament_id', $tournament->id)
+                ->where('user_id', $user->id)
+                ->value('registration_status')
+        )->toBe('spot_offered');
+    });
+});
+
+// ── expirePaymentDeadlines ────────────────────────────────────────────────────
+
+describe('expirePaymentDeadlines', function (): void {
+    it('cancels registered + unpaid registrations past their payment deadline', function (): void {
+        Notification::fake();
+        $tournament = paymentTournament(['price' => 10]);
+        $user = User::factory()->create();
+        $tournament->users()->attach($user->id, [
+            'registration_status' => 'registered',
+            'has_paid' => false,
+            'payment_deadline' => now()->subHour(),
+        ]);
+
+        Event::fake();
+        (new TournamentService)->expirePaymentDeadlines();
+
+        expect(
+            TournamentRegistration::where('tournament_id', $tournament->id)
+                ->where('user_id', $user->id)
+                ->value('registration_status')
+        )->toBe('cancelled');
+    });
+
+    it('does not cancel registrations with future payment deadlines', function (): void {
+        Notification::fake();
+        $tournament = paymentTournament(['price' => 10]);
+        $user = User::factory()->create();
+        $tournament->users()->attach($user->id, [
+            'registration_status' => 'registered',
+            'has_paid' => false,
+            'payment_deadline' => now()->addDay(),
+        ]);
+
+        Event::fake();
+        (new TournamentService)->expirePaymentDeadlines();
+
+        expect(
+            TournamentRegistration::where('tournament_id', $tournament->id)
+                ->where('user_id', $user->id)
+                ->value('registration_status')
+        )->toBe('registered');
+    });
+
+    it('does not cancel registrations with no payment_deadline', function (): void {
+        Notification::fake();
+        $tournament = paymentTournament(['price' => 10]);
+        $user = User::factory()->create();
+        $tournament->users()->attach($user->id, [
+            'registration_status' => 'registered',
+            'has_paid' => false,
+            'payment_deadline' => null,
+        ]);
+
+        Event::fake();
+        (new TournamentService)->expirePaymentDeadlines();
+
+        expect(
+            TournamentRegistration::where('tournament_id', $tournament->id)
+                ->where('user_id', $user->id)
+                ->value('registration_status')
+        )->toBe('registered');
+    });
 });

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\User\RecalculateForceListAction;
 use App\Models\ClubAdmin\Users\User;
 use Tests\Trait\CreateUser;
 
@@ -90,28 +91,33 @@ test('force list delete method removes all force lists from db', function (): vo
     $this->assertDatabaseCount('users', $totalNoForceListAfterlete);
 })->skip('Requires 11 seeded users with force_list values — depends on DatabaseSeeder data not present in test environment');
 test('set force list are correctly calculated', function (): void {
-    /**
-     * 1 D4 => 1
-     * 1 D6 => 2    (+1)
-     * 1 E0 => 3    (+1)
-     * 3 E2 => 6    (+3)
-     * 1 E4 => 7    (+1)
-     * 2 E6 => 11   (+4)
-     * 2 NC => 11   (included with E6)
-     */
-    $checkReferences = [
-        'D4' => 1,
-        'D6' => 2,
-        'E0' => 3,
-        'E2' => 6,
-        'E4' => 7,
-        'E6' => 11,
-        'NC' => 11,
-    ];
+    // Algorithm: sequential 1-based index ordered by ranking (alpha) → last_name → first_name.
+    // Non-competitors are skipped and keep force_list = null.
+    // Create without events to prevent the observer from recalculating mid-setup.
+    $d4 = User::withoutEvents(fn () => User::factory()->create([
+        'is_competitor' => true, 'ranking' => 'D4',
+        'last_name' => 'AAA', 'first_name' => 'AAA',
+    ]));
+    $e2a = User::withoutEvents(fn () => User::factory()->create([
+        'is_competitor' => true, 'ranking' => 'E2',
+        'last_name' => 'AAA', 'first_name' => 'AAA',
+    ]));
+    $e2b = User::withoutEvents(fn () => User::factory()->create([
+        'is_competitor' => true, 'ranking' => 'E2',
+        'last_name' => 'BBB', 'first_name' => 'AAA',
+    ]));
+    $nc = User::withoutEvents(fn () => User::factory()->create([
+        'is_competitor' => true, 'ranking' => 'NC',
+        'last_name' => 'AAA', 'first_name' => 'AAA',
+    ]));
+    $nonCompetitor = User::withoutEvents(fn () => User::factory()->create(['is_competitor' => false]));
 
-    foreach ($checkReferences as $ranking => $force_list) {
-        foreach (User::select('force_list')->where('is_competitor', true)->where('ranking', $ranking)->get() as $user) {
-            expect($user->force_list)->toEqual($force_list);
-        }
-    }
+    RecalculateForceListAction::handle();
+
+    // D4 comes first alphabetically, then E2 × 2 (ordered by last_name), then NC
+    expect($d4->fresh()->force_list)->toBe(1);
+    expect($e2a->fresh()->force_list)->toBe(2);
+    expect($e2b->fresh()->force_list)->toBe(3);
+    expect($nc->fresh()->force_list)->toBe(4);
+    expect($nonCompetitor->fresh()->force_list)->toBeNull();
 });

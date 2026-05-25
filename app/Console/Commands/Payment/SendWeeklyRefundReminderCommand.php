@@ -18,7 +18,7 @@ class SendWeeklyRefundReminderCommand extends Command
 {
     public function handle(): int
     {
-        $payments = Payment::with(['payable.user', 'payable.tournament'])
+        $payments = Payment::with(['payable.user'])
             ->where('status', 'to_refund')
             ->get();
 

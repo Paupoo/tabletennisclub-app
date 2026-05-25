@@ -10,6 +10,7 @@ use App\Enums\Gender;
 use App\Enums\LeagueCategory;
 use App\Enums\LeagueLevel;
 use App\Enums\Ranking;
+use App\Models\AppSetting;
 use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Club\Table;
 use App\Models\ClubAdmin\Users\User;
@@ -36,6 +37,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         AppSetting::set('setup_completed', '1');
+
         // ── Our club ──────────────────────────────────────────────────────────
         Club::create([
             'name' => 'C.T.T Ottignies-Blocry',

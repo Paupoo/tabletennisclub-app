@@ -62,7 +62,7 @@ test('admin or committee member can store interclub', function (): void {
         ->from(route('interclubs.create'))
         ->post(route('interclubs.store'), $this->getValidInterclub())
         ->assertRedirect(route('interclubs.index'))
-        ->assertSessionHas('success', 'The match has been added.');
+        ->assertSessionHas('success', __('The match has been added.'));
 
     expect($totalInterclubs + 1 === Interclub::count())->toBeTrue();
 
@@ -72,7 +72,7 @@ test('admin or committee member can store interclub', function (): void {
         ->from(route('interclubs.create'))
         ->post(route('interclubs.store'), $this->getValidInterclub())
         ->assertRedirect(route('interclubs.index'))
-        ->assertSessionHas('success', 'The match has been added.');
+        ->assertSessionHas('success', __('The match has been added.'));
 });
 test('captains are able to create an interclub', function (): void {
     // to do

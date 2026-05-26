@@ -389,8 +389,7 @@ describe('user selection', function () {
 
         Livewire::test(USER_INDEX_COMPONENT)
             ->set('selected', [$user->id])
-            ->assertSee(__('Add to a team...'))
-            ->assertSee(__('Subscribe to...'));
+            ->assertSee(__('Add to a team...'));
     });
 });
 

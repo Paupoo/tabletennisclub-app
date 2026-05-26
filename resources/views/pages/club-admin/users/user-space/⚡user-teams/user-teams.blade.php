@@ -3,7 +3,7 @@
 </x-slot:breadcrumbs>
 <div>
 
-    <x-header separator subtitle="{{ __('Seniors - Division 3B') }}" title="Ottignies B">
+    <x-header separator :subtitle="__('Seniors - Division 3B')" title="Ottignies B">
         <x-slot:actions>
             {{-- BOUTON CHAT (ouvre le thread de la semaine courante) --}}
             <x-button class="btn-circle btn-ghost relative" icon="o-chat-bubble-left-right"
@@ -16,7 +16,7 @@
     {{-- MOT DU CAPITAINE --}}
     <x-admin.shared.info-bar :title="__('Captain\'s Note (WK13)')" :description="__('N\'oubliez pas le covoiturage pour Perwez, départ 18h45 du club ! Marc.')">
         <x-slot:action>
-            <x-button class="btn-sm btn-ghost" icon="o-chat-bubble-left" label="{{ __('Reply') }}"
+            <x-button class="btn-sm btn-ghost" icon="o-chat-bubble-left" :label="__('Reply')"
                 wire:click="openChatDrawer(13)" />
         </x-slot:action>
     </x-admin.shared.info-bar>
@@ -27,12 +27,12 @@
         <div class="space-y-6">
 
             {{-- Sélecteur d'équipe --}}
-            <x-admin.shared.side-card shadow title="{{ __('Select a team') }}">
-                <x-choices :options="$teams" placeholder="{{ __('Select a team') }}" single wire:model="selectedTeam" />
+            <x-admin.shared.side-card shadow :title="__('Select a team')">
+                <x-choices :options="$teams" :placeholder="__('Select a team')" single wire:model="selectedTeam" />
             </x-admin.shared.side-card>
 
             {{-- Classement --}}
-            <x-admin.shared.side-card icon="o-list-bullet" separator shadow title="{{ __('Division Standing') }}">
+            <x-admin.shared.side-card icon="o-list-bullet" separator shadow :title="__('Division Standing')">
                 <div
                     class="bg-primary/10 border-primary/10 mb-4 flex items-center justify-between rounded-xl border p-4">
                     <div>
@@ -69,7 +69,7 @@
             </x-admin.shared.side-card>
 
             {{-- Roster --}}
-            <x-admin.shared.side-card icon="o-users" separator shadow title="{{ __('Roster') }}">
+            <x-admin.shared.side-card icon="o-users" separator shadow :title="__('Roster')">
                 <div class="space-y-1">
                     @php
                         $players = [
@@ -118,7 +118,7 @@
         <div class="space-y-6 lg:col-span-3">
 
             {{-- PLANNING --}}
-            <x-card icon="o-calendar" separator shadow title="{{ __('Upcoming Schedule') }}">
+            <x-card icon="o-calendar" separator shadow :title="__('Upcoming Schedule')">
                 <x-slot:menu>
                     {{-- <div
                         class="hidden items-center gap-3 px-2 text-[9px] font-black uppercase tracking-tighter opacity-40 md:flex">
@@ -221,13 +221,13 @@
 
                     <div class="flex justify-center pt-4">
                         <x-button class="btn-ghost btn-sm text-xs opacity-40 hover:opacity-100"
-                            icon-right="o-plus-small" label="{{ __('See more matches') }}" />
+                            icon-right="o-plus-small" :label="__('See more matches')" />
                     </div>
                 </div>
             </x-card>
 
             {{-- RÉSULTATS --}}
-            <x-card icon="o-bolt" separator shadow title="{{ __('Latest Results') }}">
+            <x-card icon="o-bolt" separator shadow :title="__('Latest Results')">
                 @php
                     $results = [
                         [
@@ -304,7 +304,7 @@
                             <x-slot:content>
                                 <div class="bg-base-100 border-base-200 border-t p-4">
                                     <x-tabs selected="me-tab-{{ $res['week'] }}">
-                                        <x-tab icon="o-user" label="{{ __('My Matches') }}"
+                                        <x-tab icon="o-user" :label="__('My Matches')"
                                             name="me-tab-{{ $res['week'] }}">
                                             <div class="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
                                                 @foreach ($res['matches'] as $match)
@@ -337,7 +337,7 @@
                                             </div>
                                         </x-tab>
 
-                                        <x-tab icon="o-users" label="{{ __('Teammates') }}"
+                                        <x-tab icon="o-users" :label="__('Teammates')"
                                             name="team-tab-{{ $res['week'] }}">
                                             <div class="mt-4 space-y-4">
                                                 @php
@@ -406,8 +406,8 @@
     {{-- =====================================================
          CHAT DRAWER — threads par semaine
          ===================================================== --}}
-    <x-drawer class="w-11/12 lg:w-1/3" right separator subtitle="{{ __('Organisation and Logistics') }}"
-        title="{{ __('Team Chat') }}" wire:model="chatDrawer" with-close-button>
+    <x-drawer class="w-11/12 lg:w-1/3" right separator :subtitle="__('Organisation and Logistics')"
+        :title="__('Team Chat')" wire:model="chatDrawer" with-close-button>
 
         <div class="flex h-[calc(100vh-200px)] flex-col">
 
@@ -541,7 +541,7 @@
                 <div class="flex items-end gap-2">
                     <x-textarea
                         class="input-sm bg-base-200/50 focus:ring-primary h-auto min-h-[40px] rounded-xl border-none"
-                        placeholder="{{ __('Your message for WK:week…', ['week' => $activeWeek]) }}"
+                        :placeholder="__('Your message for WK:week…')"
                         rows="1" />
                     <x-button class="btn-primary btn-square shadow-primary/20 rounded-xl shadow-lg"
                         icon="o-paper-airplane" />

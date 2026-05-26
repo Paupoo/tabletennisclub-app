@@ -4,7 +4,7 @@
 
 <div class="page-header">
   <h1>🍺 Gestion des produits</h1>
-  <p class="muted">Créer un produit, modifier le prix et fixer le stock total.</p>
+  <p class="muted">{{ __('Create a product, modify the price and set the total stock.') }}</p>
 </div>
 
 @if ($errors->any())
@@ -47,7 +47,7 @@
                               </option>
                               @endforeach
                             </select>
-                        <a href="{{ route('bar.categories.index') }}" class="btn-plus" id="add-cat-link" aria-label="Ajouter une catégorie">+</a>
+                        <a href="{{ route('bar.categories.index') }}" class="btn-plus" id="add-cat-link" aria-label="{{ __('Add a category') }}">+</a>
                         </div>
                     </div>
                     <div class="product-compact-row">
@@ -67,7 +67,7 @@
                     </div>
                 
 
-                <button class="btn-save" type="submit">💾 Créer</button>
+                <button class="btn-save" type="submit">{{ __('💾 Create') }}</button>
                 </div>
             </form>
         </div>
@@ -83,7 +83,7 @@
       @endphp
 
       @if ($list->isEmpty())
-        <p class="muted">Aucun produit dans cette catégorie.</p>
+        <p class="muted">{{ __('No products in this category.') }}</p>
       @else
       @foreach ($list as $p)
         @php

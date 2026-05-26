@@ -11,8 +11,8 @@
             $statCards = [
                 ['label' => 'Nouveaux',  'key' => 'totalNew',       'bg' => 'bg-blue-100',   'icon_color' => 'text-blue-600',   'val_color' => 'text-blue-700'],
                 ['label' => 'En cours',  'key' => 'totalPending',   'bg' => 'bg-yellow-100', 'icon_color' => 'text-yellow-600', 'val_color' => 'text-yellow-700'],
-                ['label' => 'Traités',   'key' => 'totalProcessed', 'bg' => 'bg-green-100',  'icon_color' => 'text-green-600',  'val_color' => 'text-green-700'],
-                ['label' => 'Rejetés',   'key' => 'totalRejected',  'bg' => 'bg-red-100',    'icon_color' => 'text-red-500',    'val_color' => 'text-red-700'],
+                ['label' => __('Processed'),   'key' => 'totalProcessed', 'bg' => 'bg-green-100',  'icon_color' => 'text-green-600',  'val_color' => 'text-green-700'],
+                ['label' => __('Rejected'),   'key' => 'totalRejected',  'bg' => 'bg-red-100',    'icon_color' => 'text-red-500',    'val_color' => 'text-red-700'],
             ];
         @endphp
         @foreach ($statCards as $card)
@@ -35,7 +35,7 @@
         <x-input class="flex-1" clearable icon="o-magnifying-glass"
             placeholder="Rechercher par nom, email…"
             wire:model.live.debounce.250ms="search" />
-        <x-select :options="$interestOptions" placeholder="Tous intérêts"
+        <x-select :options="$interestOptions" :placeholder="__('All interests')"
             wire:model.live="interest" class="w-48" />
         <x-select :options="$statusOptions" placeholder="Tous statuts"
             wire:model.live="status" class="w-36" />
@@ -44,7 +44,7 @@
     {{-- ── Tableau ────────────────────────────────────────────────────── --}}
     <x-card class="border-gray-200 shadow-sm">
         @if ($contacts->isEmpty())
-            <p class="py-10 text-center text-sm text-gray-400 italic">Aucun contact trouvé.</p>
+            <p class="py-10 text-center text-sm text-gray-400 italic">{{ __('No contacts found.') }}</p>
         @else
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
@@ -52,7 +52,7 @@
                         <tr class="border-b border-gray-100 text-left text-xs uppercase tracking-wide text-gray-400">
                             <th class="pb-2 pr-4">Nom</th>
                             <th class="pb-2 pr-4 hidden sm:table-cell">Email</th>
-                            <th class="pb-2 pr-4 hidden md:table-cell">Intérêt</th>
+                            <th class="pb-2 pr-4 hidden md:table-cell">{{ __('Interest') }}</th>
                             <th class="pb-2 pr-4">Statut</th>
                             <th class="pb-2 pr-4 hidden lg:table-cell">Date</th>
                             <th class="pb-2"></th>
@@ -71,8 +71,8 @@
                                 $statusLabel = match ($contact->status) {
                                     'new'       => 'Nouveau',
                                     'pending'   => 'En cours',
-                                    'processed' => 'Traité',
-                                    'rejected'  => 'Rejeté',
+                                    'processed' => __('Processed'),
+                                    'rejected'  => __('Rejected'),
                                     default     => $contact->status,
                                 };
                             @endphp
@@ -117,7 +117,7 @@
     </x-card>
 
     {{-- ── Drawer détail contact ─────────────────────────────────────── --}}
-    <x-drawer wire:model="detailOpen" title="Détail du contact" right class="w-full max-w-md">
+    <x-drawer wire:model="detailOpen" :title="__('Contact detail')" right class="w-full max-w-md">
         @if ($selectedContact)
             <div class="space-y-5 p-1">
 
@@ -148,7 +148,7 @@
                 {{-- Adhésion --}}
                 @if ($selectedContact->membership_total_cost)
                     <div class="rounded-lg border border-blue-100 bg-blue-50 p-3 space-y-1">
-                        <p class="text-xs font-semibold uppercase tracking-wide text-blue-600">Demande d'adhésion</p>
+                        <p class="text-xs font-semibold uppercase tracking-wide text-blue-600">{{ __('Membership request') }}</p>
                         <p class="text-sm text-gray-700">Membres famille : {{ $selectedContact->membership_family_members ?? '—' }}</p>
                         <p class="text-sm text-gray-700">Compétiteurs : {{ $selectedContact->membership_competitors ?? '—' }}</p>
                         <p class="text-sm text-gray-700">Entraînements/sem. : {{ $selectedContact->membership_training_sessions ?? '—' }}</p>
@@ -174,7 +174,7 @@
                     <div class="flex flex-wrap gap-2">
                         <x-button class="btn-sm btn-outline" label="Bienvenue"
                             wire:click="sendTemplateEmail('welcome')" />
-                        <x-button class="btn-sm btn-outline" label="Info adhésion"
+                        <x-button class="btn-sm btn-outline" :label="__('Membership info')"
                             wire:click="sendTemplateEmail('membership_info')" />
                         <x-button class="btn-sm btn-outline" label="Demande d'info"
                             wire:click="sendTemplateEmail('request_info')" />
@@ -182,7 +182,7 @@
                             wire:click="sendTemplateEmail('polite_decline')" />
                     </div>
                     <x-button class="btn-sm btn-ghost mt-2 w-full" icon="o-pencil-square"
-                        label="Email personnalisé…"
+                        :label="__('Custom email…')"
                         wire:click="$set('emailModal', true)" />
                 </div>
 
@@ -197,7 +197,7 @@
     </x-drawer>
 
     {{-- ── Modal email personnalisé ──────────────────────────────────── --}}
-    <x-modal wire:model="emailModal" title="Email personnalisé" class="backdrop-blur">
+    <x-modal wire:model="emailModal" :title="__('Custom email')" class="backdrop-blur">
         <div class="space-y-4">
             <x-input label="Sujet" wire:model="emailSubject" />
             <x-textarea label="Message" wire:model="emailBody" rows="6" />

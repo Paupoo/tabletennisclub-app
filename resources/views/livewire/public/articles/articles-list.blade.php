@@ -6,10 +6,10 @@
                 <!-- Filtres par date -->
                 <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
                     <div class="flex items-center space-x-2">
-                        <label for="year" class="text-sm font-medium text-gray-700">Année:</label>
+                        <label for="year" class="text-sm font-medium text-gray-700">{{ __('Year:') }}</label>
                         <select wire:model.live="year" id="year"
                                 class="px-3 text-xs pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
-                            <option value="">Toutes les années</option>
+                            <option value="">{{ __('All years') }}</option>
                             @foreach($years as $yearOption)
                                 <option value="{{ $yearOption }}">{{ $yearOption }}</option>
                             @endforeach
@@ -28,7 +28,7 @@
                     </div>
     
                     <div class="flex items-center space-x-2">
-                        <label for="category" class="text-sm font-medium text-gray-700">Catégorie:</label>
+                        <label for="category" class="text-sm font-medium text-gray-700">{{ __('Category:') }}</label>
                         <select wire:model.live="category" id="category"
                                 class="text-xs px-3 py-2 pr-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
                             <option value="">Toutes les catégories</option>
@@ -46,7 +46,7 @@
                     </span>
                     <select wire:model.live="sort"
                             class="text-xs px-3 py-2 pr-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent text-sm">
-                        <option value="desc">Plus récent</option>
+                        <option value="desc">{{ __('Most recent') }}</option>
                         <option value="asc">Plus ancien</option>
                     </select>
                 </div>
@@ -114,8 +114,8 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9.5a2.5 2.5 0 00-2.5-2.5H15"></path>
                     </svg>
                 </div>
-                <h3 class="text-xl font-semibold text-gray-900 mb-2">Aucun article trouvé</h3>
-                <p class="text-gray-600 mb-6">Essayez de modifier vos critères de recherche ou consultez toutes les actualités.</p>
+                <h3 class="text-xl font-semibold text-gray-900 mb-2">{{ __('No articles found') }}</h3>
+                <p class="text-gray-600 mb-6">{{ __('Try adjusting your search criteria or browse all news.') }}</p>
                 <button wire:click="clearAllFilters" class="bg-club-blue text-white px-6 py-3 rounded-lg hover:bg-club-blue-light transition-colors">
                     Voir toutes les actualités
                 </button>

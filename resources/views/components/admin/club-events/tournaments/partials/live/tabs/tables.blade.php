@@ -88,7 +88,7 @@
                                     @endif
 
                                     <div class="flex gap-2 pt-1">
-                                        <x-button label="{{ __('Score') }}" icon="o-pencil"
+                                        <x-button :label="__('Score')" icon="o-pencil"
                                             class="btn-ghost btn-xs flex-1 bg-base-200"
                                             wire:click="openScoreEntry({{ $match->id }}, {{ $table['id'] }})" />
                                     </div>
@@ -106,7 +106,7 @@
                                 @else
                                     <div class="py-4 flex flex-col items-center justify-center border-2 border-dashed border-base-300 rounded-lg gap-3">
                                         <x-button
-                                            label="{{ __('Launch') }}"
+                                            :label="__('Launch')"
                                             icon="o-play"
                                             class="btn-outline btn-sm text-success"
                                             wire:click="openLaunchDrawer({{ $table['id'] }})" />
@@ -116,7 +116,7 @@
                                 {{-- QR code — direct link to mobile score page --}}
                                 {{-- <a href="{{ $tableUrl }}" target="_blank"
                                     class="w-full flex justify-center pt-1 opacity-40 hover:opacity-90 transition-opacity"
-                                    title="{{ __('Open mobile score page') }}">
+                                    :title="__('Open mobile score page')">
                                     {!! $svgSmall !!}
                                 </a> --}}
                             </div>

@@ -35,7 +35,7 @@
             <input type="number"
                 name="price"
                 id="price"
-                placeholder="{{ __('Price') }}"
+                :placeholder="__('Price')"
                 step="0.01"
                 value="{{ old('price', $tournament->price)}}"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-blue-500 focus:border-blue-500">

@@ -1,4 +1,4 @@
-<x-tab name="4" label="{{ __('Start') }}" icon="o-rocket-launch">
+<x-tab name="4" :label="__('Start')" icon="o-rocket-launch">
 
     {{-- Stale config warning --}}
     @if ($this->poolsStale)
@@ -15,10 +15,10 @@
     <div class="mt-8 grid grid-cols-2 md:grid-cols-4 gap-3">
         @php
             $checks = [
-                ['label' => 'Tournoi sauvegardé', 'ok' => (bool) $tournamentId],
-                ['label' => 'Inscriptions fermées', 'ok' => $this->registrationClosed],
-                ['label' => 'Poules générées', 'ok' => $this->poolsGenerated],
-                ['label' => 'Matchs générés', 'ok' => $this->matchesGenerated],
+                ['label' => __('Tournament saved'), 'ok' => (bool) $tournamentId],
+                ['label' => __('Registrations closed'), 'ok' => $this->registrationClosed],
+                ['label' => __('Pools generated'), 'ok' => $this->poolsGenerated],
+                ['label' => __('Matches generated'), 'ok' => $this->matchesGenerated],
             ];
         @endphp
         @foreach ($checks as $check)
@@ -31,7 +31,7 @@
     </div>
 
     {{-- Generate Pools --}}
-    <x-header title="{{ __('Pools') }}" subtitle="Distribute players automatically, then adjust if needed" class="mt-8" size="md">
+    <x-header :title="__('Pools')" subtitle="Distribute players automatically, then adjust if needed" class="mt-8" size="md">
         <x-slot:actions>
             <x-button label="{{ $this->poolsGenerated ? __('Regenerate Pools') : __('Generate Pools') }}"
                 icon="o-user-group"
@@ -132,7 +132,7 @@
             Configuration is complete. Click below to generate the tournament brackets and notify all participants.
         </p>
 
-        <x-button label="{{ __('Launch Tournament') }}" icon="o-play"
+        <x-button :label="__('Launch Tournament')" icon="o-play"
             class="btn-primary btn-lg mt-10 shadow-xl shadow-primary/20" wire:click="launch" spinner="launch"
             :disabled="!$this->matchesGenerated || $this->poolsStale" />
     </div>

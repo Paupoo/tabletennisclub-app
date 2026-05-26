@@ -4,13 +4,13 @@
 
 <div>
     {{-- ── Header ──────────────────────────────────────────────────────────── --}}
-    <x-header progress-indicator separator subtitle="{{ __('Past, current and upcoming seasons') }}"
-        title="{{ __('Seasons') }}">
+    <x-header progress-indicator separator :subtitle="__('Past, current and upcoming seasons')"
+        :title="__('Seasons')">
         <x-slot:actions>
-            <x-button class="btn-ghost btn-sm" icon="o-sparkles" label="{{ __('Auto-provision') }}"
-                tooltip="{{ __('Ensure the next 2 seasons exist') }}" wire:click="openProvision" />
+            <x-button class="btn-ghost btn-sm" icon="o-sparkles" :label="__('Auto-provision')"
+                :tooltip="__('Ensure the next 2 seasons exist')" wire:click="openProvision" />
             @can('create', \App\Models\ClubEvents\Interclub\Season::class)
-                <x-button class="btn-primary btn-sm" icon="o-plus" label="{{ __('New season') }}"
+                <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('New season')"
                     wire:click="openCreate" />
             @endcan
         </x-slot:actions>
@@ -70,7 +70,7 @@
                     @if (! $isCurrent)
                         <x-button class="btn-ghost btn-sm"
                             icon="{{ $isPast ? 'o-arrow-uturn-left' : 'o-bolt' }}"
-                            label="{{ __('Set active') }}"
+                            :label="__('Set active')"
                             tooltip="{{ $isPast ? __('Re-activate this past season') : __('Activate this upcoming season') }}"
                             wire:click="openActivate({{ $season->id }})" />
                     @endif
@@ -84,7 +84,7 @@
             <div class="rounded-xl border border-dashed border-base-300 py-16 text-center text-base-content/40">
                 <x-icon class="mx-auto mb-2 h-10 w-10" name="o-calendar" />
                 <p>{{ __('No seasons yet.') }}</p>
-                <x-button class="btn-primary mt-4" label="{{ __('Create first season') }}"
+                <x-button class="btn-primary mt-4" :label="__('Create first season')"
                     wire:click="openCreate" />
             </div>
         @endforelse
@@ -110,15 +110,15 @@
     {{-- ================================================================
          PROVISION MODAL
     ================================================================ --}}
-    <x-modal title="{{ __('Auto-provision seasons') }}" wire:model="provisionModal" separator>
+    <x-modal :title="__('Auto-provision seasons')" wire:model="provisionModal" separator>
         <div class="space-y-3 text-sm text-base-content/70">
             <p>{{ __('This will create the next two seasons after the current active season, if they do not already exist.') }}</p>
             <p>{{ __('Each season runs from September 1st to June 30th. Already-existing seasons and overlapping date ranges are automatically skipped.') }}</p>
         </div>
 
         <x-slot:actions>
-            <x-button label="{{ __('Cancel') }}" wire:click="$set('provisionModal', false)" />
-            <x-button class="btn-primary" icon="o-sparkles" label="{{ __('Provision') }}"
+            <x-button :label="__('Cancel')" wire:click="$set('provisionModal', false)" />
+            <x-button class="btn-primary" icon="o-sparkles" :label="__('Provision')"
                 wire:click="confirmProvision" />
         </x-slot:actions>
     </x-modal>
@@ -126,7 +126,7 @@
     {{-- ================================================================
          ACTIVATE MODAL
     ================================================================ --}}
-    <x-modal title="{{ __('Activate season') }}" wire:model="activateModal" separator>
+    <x-modal :title="__('Activate season')" wire:model="activateModal" separator>
         <div class="space-y-4">
             <p class="text-base-content/70">
                 {{ __('You are about to make') }}
@@ -134,12 +134,12 @@
                 {{ __('the active season.') }}
             </p>
             <x-alert class="alert-warning" icon="o-exclamation-triangle"
-                title="{{ __('The current active season will be deactivated. This affects all season-scoped data (registrations, training packs, etc.).') }}" />
+                :title="__('The current active season will be deactivated. This affects all season-scoped data (registrations, training packs, etc.).')" />
         </div>
 
         <x-slot:actions>
-            <x-button label="{{ __('Cancel') }}" wire:click="$set('activateModal', false)" />
-            <x-button class="btn-warning" icon="o-bolt" label="{{ __('Activate') }}"
+            <x-button :label="__('Cancel')" wire:click="$set('activateModal', false)" />
+            <x-button class="btn-warning" icon="o-bolt" :label="__('Activate')"
                 wire:click="confirmActivate" />
         </x-slot:actions>
     </x-modal>
@@ -147,19 +147,19 @@
     {{-- ================================================================
          EDIT MODAL
     ================================================================ --}}
-    <x-modal title="{{ __('Edit season') }}" wire:model="editModal" separator>
+    <x-modal :title="__('Edit season')" wire:model="editModal" separator>
         <div class="space-y-4">
-            <x-input label="{{ __('Name') }}" placeholder="{{ __('E.g. 2026-2027') }}"
+            <x-input :label="__('Name')" :placeholder="__('E.g. 2026-2027')"
                 wire:model="editName" />
             <div class="grid grid-cols-2 gap-4">
-                <x-input label="{{ __('Start date') }}" type="date" wire:model="editStartAt" />
-                <x-input label="{{ __('End date') }}" type="date" wire:model="editEndAt" />
+                <x-input :label="__('Start date')" type="date" wire:model="editStartAt" />
+                <x-input :label="__('End date')" type="date" wire:model="editEndAt" />
             </div>
         </div>
 
         <x-slot:actions>
-            <x-button label="{{ __('Cancel') }}" wire:click="$set('editModal', false)" />
-            <x-button class="btn-primary" icon="o-check" label="{{ __('Save') }}"
+            <x-button :label="__('Cancel')" wire:click="$set('editModal', false)" />
+            <x-button class="btn-primary" icon="o-check" :label="__('Save')"
                 wire:click="updateSeason" />
         </x-slot:actions>
     </x-modal>
@@ -167,19 +167,19 @@
     {{-- ================================================================
          CREATE MODAL
     ================================================================ --}}
-    <x-modal title="{{ __('New season') }}" wire:model="createModal" separator>
+    <x-modal :title="__('New season')" wire:model="createModal" separator>
         <div class="space-y-4">
-            <x-input label="{{ __('Name') }}" placeholder="{{ __('E.g. 2026-2027') }}"
+            <x-input :label="__('Name')" :placeholder="__('E.g. 2026-2027')"
                 wire:model="createName" />
             <div class="grid grid-cols-2 gap-4">
-                <x-input label="{{ __('Start date') }}" type="date" wire:model="createStartAt" />
-                <x-input label="{{ __('End date') }}" type="date" wire:model="createEndAt" />
+                <x-input :label="__('Start date')" type="date" wire:model="createStartAt" />
+                <x-input :label="__('End date')" type="date" wire:model="createEndAt" />
             </div>
         </div>
 
         <x-slot:actions>
-            <x-button label="{{ __('Cancel') }}" wire:click="$set('createModal', false)" />
-            <x-button class="btn-primary" icon="o-calendar" label="{{ __('Create') }}"
+            <x-button :label="__('Cancel')" wire:click="$set('createModal', false)" />
+            <x-button class="btn-primary" icon="o-calendar" :label="__('Create')"
                 wire:click="createSeason" />
         </x-slot:actions>
     </x-modal>

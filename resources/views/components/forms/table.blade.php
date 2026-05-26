@@ -6,7 +6,7 @@
     <div>
         <x-input-label for="name" :value="__('Name')" />
         <x-text-input id="name" name="name" type="text" class="block w-full mt-1"
-            :value="old('name', $table->name)" placeholder="{{ __('Table name or number') }}" required autofocus autocomplete="name"></x-text-input>
+            :value="old('name', $table->name)" :placeholder="__('Table name or number')" required autofocus autocomplete="name"></x-text-input>
         <x-input-error class="mt-2" :messages="$errors->get('name')" />
     </div>
 

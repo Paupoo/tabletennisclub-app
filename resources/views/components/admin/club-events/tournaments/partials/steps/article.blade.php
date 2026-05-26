@@ -1,6 +1,6 @@
 <div class="mt-8 space-y-6 animate-in fade-in duration-500">
 
-    <x-card class="shadow-sm" separator title="{{ __('Website event') }}">
+    <x-card class="shadow-sm" separator :title="__('Website event')">
         <x-slot:menu>
             @if ($eventPostId)
                 @if ($eventStatus === 'PUBLISHED')
@@ -46,7 +46,7 @@
         <x-button
             class="btn-ghost btn-sm"
             icon="o-forward"
-            label="{{ __('Skip') }}"
+            :label="__('Skip')"
             wire:click="$set('step', '3')"
         />
 
@@ -54,14 +54,14 @@
             <x-button
                 class="btn-ghost btn-sm"
                 icon="o-document-text"
-                label="{{ __('Save as draft') }}"
+                :label="__('Save as draft')"
                 spinner="saveEventPost"
                 wire:click="saveEventPost('draft')"
             />
             <x-button
                 class="btn-primary btn-sm"
                 icon="o-globe-alt"
-                label="{{ __('Publish on website') }}"
+                :label="__('Publish on website')"
                 spinner="saveEventPost"
                 wire:click="saveEventPost('published')"
             />

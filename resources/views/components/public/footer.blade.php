@@ -15,9 +15,9 @@
                     <li><a href="{{ route('home') }}" class="text-gray-400 hover:text-white transition-colors">Accueil</a>
                     </li>
                     <li><a href="{{ route('results') }}"
-                            class="text-gray-400 hover:text-white transition-colors">Résultats</a></li>
+                            class="text-gray-400 hover:text-white transition-colors">{{ __('Results') }}</a></li>
                     <li><a href="{{ route('eventPosts') }}"
-                            class="text-gray-400 hover:text-white transition-colors">Événements</a></li>
+                            class="text-gray-400 hover:text-white transition-colors">{{ __('Events') }}</a></li>
                     <li><a href="#contact" class="text-gray-400 hover:text-white transition-colors">Contact</a></li>
                 </ul>
             </div>
@@ -106,7 +106,7 @@
         >
             <p class="text-sm text-gray-800 md:w-3/4">
                 Ce site utilise des cookies uniquement pour la gestion de la connexion. En continuant à utiliser ce site, vous acceptez cette utilisation. Pour plus d'informations, consultez notre
-                <button class="underline text-blue-600 font-semibold" @click="showPrivacyPolicy()">politique de confidentialité</button>.
+                <button class="underline text-blue-600 font-semibold" @click="showPrivacyPolicy()">{{ __('privacy policy') }}</button>.
             </p>
             <div class="mt-4 md:mt-0 md:w-1/4 md:text-right">
                 <button
@@ -170,7 +170,7 @@
             <div class="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
                 <div class="p-6">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-xl font-bold text-gray-900">Politique de Confidentialité</h3>
+                        <h3 class="text-xl font-bold text-gray-900">{{ __('Privacy Policy') }}</h3>
                         <button onclick="hidePrivacyPolicy()" class="text-gray-400 hover:text-gray-600">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -186,8 +186,8 @@
                                 Ils nous permettent de :
                             </p>
                             <ul class="list-disc list-inside space-y-1 ml-4">
-                                <li>mémoriser votre choix concernant le consentement aux cookies (sic)</li>
-                                <li>vous connecter à votre espace membre et utiliser toutes les fonctionnalités du site</li>
+                                <li>{{ __('remember your cookie consent choice') }}</li>
+                                <li>{{ __('log in to your member space and use all site features') }}</li>
                             </ul>
                             <p>
                                 Nous n'utilisons pas de cookies publicitaires ni de traçage externe.

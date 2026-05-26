@@ -20,7 +20,7 @@
             <a class="nav-link" href="{{ route('bar.orders.index') }}">📋 Commandes</a>
             <a class="nav-link" href="#">📜 Historique</a>
             <a class="nav-link" href="{{ route('bar.products.index') }}">🍺 Produits</a>
-            <a class="nav-link" href="{{ route('bar.categories.index') }}">🏷️ Catégories</a>
+            <a class="nav-link" href="{{ route('bar.categories.index') }}">{{ __('🏷️ Categories') }}</a>
             <a class="nav-link" href="#">💵 Feuille de caisse</a>
             <a class="nav-link" href="#">👤 Utilisateurs</a>
         </nav>
@@ -38,7 +38,7 @@
     <a class="nav-mobile-link" href="{{ route('bar.orders.index') }}">📋 Commandes</a>
     <a class="nav-mobile-link" href="#">📜 Historique</a>
     <a class="nav-mobile-link" href="{{ route('bar.products.index') }}">🍺 Produits</a>
-    <a class="nav-mobile-link" href="{{ route('bar.categories.index') }}">🏷️ Catégories</a>
+    <a class="nav-mobile-link" href="{{ route('bar.categories.index') }}">{{ __('🏷️ Categories') }}</a>
     <a class="nav-mobile-link" href="#">💵 Feuille de caisse</a>
     <a class="nav-mobile-link" href="#">👤 Utilisateurs</a>
     <a class="nav-mobile-link" href="#">🚪 Quitter</a>

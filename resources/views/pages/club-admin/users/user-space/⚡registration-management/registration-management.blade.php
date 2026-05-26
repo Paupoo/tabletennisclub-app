@@ -3,9 +3,9 @@
 </x-slot:breadcrumbs>
 
 <div>
-    <x-header title="{{ __('Affiliation and Training') }}" subtitle="{{ __('Manage your club membership and training enrollments') }}" separator>
+    <x-header :title="__('Affiliation and Training')" :subtitle="__('Manage your club membership and training enrollments')" separator>
         <x-slot:actions>
-            <x-button label="{{ __('Add a family member') }}" icon="o-plus" class="btn-outline btn-sm" wire:click="$set('addMemberModal', true)" />
+            <x-button :label="__('Add a family member')" icon="o-plus" class="btn-outline btn-sm" wire:click="$set('addMemberModal', true)" />
         </x-slot:actions>
     </x-header>
 
@@ -71,7 +71,7 @@
                                             @endif
                                         </div>
                                         <x-button
-                                            label="{{ __('Cancel') }}"
+                                            :label="__('Cancel')"
                                             icon="o-x-mark"
                                             class="btn-ghost btn-sm text-error shrink-0"
                                             wire:click="confirmCancelAffiliation({{ $userId }})"
@@ -96,7 +96,7 @@
                                                             <div class="font-black text-base text-info">{{ number_format($payment['amount_due'], 2) }} €</div>
                                                         </div>
                                                         <x-button
-                                                            label="{{ __('Pay') }}"
+                                                            :label="__('Pay')"
                                                             icon="o-qr-code"
                                                             class="btn-info btn-sm shrink-0"
                                                             wire:click="openPaymentModal({{ $userId }}, {{ $payment['id'] }})"
@@ -147,7 +147,7 @@
                                                             <div class="font-black text-base text-warning">{{ number_format($payment['amount_due'], 2) }} €</div>
                                                         </div>
                                                         <x-button
-                                                            label="{{ __('Pay') }}"
+                                                            :label="__('Pay')"
                                                             icon="o-qr-code"
                                                             class="btn-warning btn-sm shrink-0"
                                                             wire:click="openPaymentModal({{ $userId }}, {{ $payment['id'] }})"
@@ -260,7 +260,7 @@
                                         </div>
 
                                         <x-button
-                                            label="{{ __('Submit my registration') }}"
+                                            :label="__('Submit my registration')"
                                             icon="o-paper-airplane"
                                             class="btn-primary"
                                             wire:click="confirmAffiliation({{ $userId }})"
@@ -372,7 +372,7 @@
                                                             @elseif($enrollStatus === 'pending')
                                                                 <x-badge value="{{ __('Awaiting validation') }}" class="badge-warning" />
                                                                 <x-button
-                                                                    label="{{ __('Cancel') }}"
+                                                                    :label="__('Cancel')"
                                                                     icon="o-x-mark"
                                                                     class="btn-ghost btn-sm"
                                                                     wire:click="confirmLeaveTrainingPack({{ $pack['id'] }}, {{ $userId }}, 'cancel')"
@@ -380,7 +380,7 @@
                                                             @elseif($enrollStatus === 'waiting')
                                                                 <x-badge value="{{ __('Position #:n', ['n' => $enrollment['position']]) }}" class="badge-warning" />
                                                                 <x-button
-                                                                    label="{{ __('Leave') }}"
+                                                                    :label="__('Leave')"
                                                                     icon="o-x-mark"
                                                                     class="btn-ghost btn-sm"
                                                                     wire:click="leaveTrainingPack({{ $pack['id'] }}, {{ $userId }})"
@@ -393,13 +393,13 @@
                                                                     @endif
                                                                 </div>
                                                                 <x-button
-                                                                    label="{{ __('Confirm') }}"
+                                                                    :label="__('Confirm')"
                                                                     icon="o-check"
                                                                     class="btn-success btn-sm"
                                                                     wire:click="confirmWaitlistOffer({{ $pack['id'] }}, {{ $userId }})"
                                                                     spinner />
                                                                 <x-button
-                                                                    label="{{ __('Decline') }}"
+                                                                    :label="__('Decline')"
                                                                     icon="o-x-mark"
                                                                     class="btn-ghost btn-sm"
                                                                     wire:click="confirmLeaveTrainingPack({{ $pack['id'] }}, {{ $userId }}, 'decline')"
@@ -407,14 +407,14 @@
                                                             @else
                                                                 @if($pack['is_full'])
                                                                     <x-button
-                                                                        label="{{ __('Join waitlist') }}"
+                                                                        :label="__('Join waitlist')"
                                                                         icon="o-queue-list"
                                                                         class="btn-outline btn-sm"
                                                                         wire:click="enrollInPack({{ $pack['id'] }}, {{ $userId }})"
                                                                         spinner />
                                                                 @else
                                                                     <x-button
-                                                                        label="{{ __('Request') }}"
+                                                                        :label="__('Request')"
                                                                         icon="o-plus"
                                                                         class="btn-primary btn-sm"
                                                                         wire:click="enrollInPack({{ $pack['id'] }}, {{ $userId }})"
@@ -469,7 +469,7 @@
                                                 {{ empty($reg['medical_certificate_path']) ? __('Upload') : __('Replace') }}
                                             </label>
                                             @if($medicalCertificate)
-                                                <x-button label="{{ __('Save') }}" icon="o-check" class="btn-success btn-xs" wire:click="uploadMedicalCertificate({{ $userId }})" spinner />
+                                                <x-button :label="__('Save')" icon="o-check" class="btn-success btn-xs" wire:click="uploadMedicalCertificate({{ $userId }})" spinner />
                                             @endif
                                         </div>
                                         @error('medicalCertificate')
@@ -506,7 +506,7 @@
                                                     {{ empty($reg['parental_consent_path']) ? __('Upload') : __('Replace') }}
                                                 </label>
                                                 @if($parentalConsent)
-                                                    <x-button label="{{ __('Save') }}" icon="o-check" class="btn-success btn-xs" wire:click="uploadParentalConsent({{ $userId }})" spinner />
+                                                    <x-button :label="__('Save')" icon="o-check" class="btn-success btn-xs" wire:click="uploadParentalConsent({{ $userId }})" spinner />
                                                 @endif
                                             </div>
                                             @error('parentalConsent')
@@ -563,7 +563,7 @@
     </x-tabs>
 
     {{-- Modal: Payment details --}}
-    <x-modal wire:model="paymentModal" title="{{ __('Payment Details') }}" box-class="max-w-md">
+    <x-modal wire:model="paymentModal" :title="__('Payment Details')" box-class="max-w-md">
         @if(!empty($paymentDetails))
         <div class="space-y-6">
             <div class="flex flex-col items-center gap-3">
@@ -604,12 +604,12 @@
         @endif
 
         <x-slot:actions>
-            <x-button label="{{ __('Close') }}" @click="$wire.paymentModal = false" class="btn-ghost" />
+            <x-button :label="__('Close')" @click="$wire.paymentModal = false" class="btn-ghost" />
         </x-slot:actions>
     </x-modal>
 
     {{-- Modal: Add a family member --}}
-    <x-modal wire:model="addMemberModal" title="{{ __('Add a family member') }}" box-class="max-w-md">
+    <x-modal wire:model="addMemberModal" :title="__('Add a family member')" box-class="max-w-md">
         <div class="flex rounded-xl bg-base-200 p-1 gap-1 mb-5">
             <button wire:click="$set('memberModalMode', 'search')"
                 @class(['flex-1 rounded-lg py-1.5 text-sm font-semibold transition-all',
@@ -630,7 +630,7 @@
         @if($memberModalMode === 'search')
             <div class="space-y-3">
                 <x-input
-                    placeholder="{{ __('Search by name or email…') }}"
+                    :placeholder="__('Search by name or email…')"
                     wire:model.live.debounce.250ms="memberSearchQuery"
                     icon="o-magnifying-glass"
                     autofocus />
@@ -654,7 +654,7 @@
                             <p class="text-sm italic">{{ __('No member found.') }}</p>
                         </div>
                         <div class="text-center">
-                            <x-button label="{{ __('Create a new profile instead') }}" icon="o-plus" class="btn-ghost btn-sm" wire:click="$set('memberModalMode', 'create')" />
+                            <x-button :label="__('Create a new profile instead')" icon="o-plus" class="btn-ghost btn-sm" wire:click="$set('memberModalMode', 'create')" />
                         </div>
                     @endforelse
                 @else
@@ -665,35 +665,35 @@
 
         @if($memberModalMode === 'create')
             <div class="space-y-4">
-                <x-input label="{{ __('First Name') }}" wire:model="new_first_name" />
-                <x-input label="{{ __('Last Name') }}" wire:model="new_last_name" />
-                <x-datetime label="{{ __('Birthdate') }}" wire:model="new_birthdate" />
-                <x-group label="{{ __('Gender') }}" wire:model="new_gender" :options="$genders" inline class="btn-soft" />
-                <x-input label="{{ __('Email') }}" wire:model="new_email" />
-                <x-input label="{{ __('Phone Number') }}" wire:model="new_phone_number" />
+                <x-input :label="__('First Name')" wire:model="new_first_name" />
+                <x-input :label="__('Last Name')" wire:model="new_last_name" />
+                <x-datetime :label="__('Birthdate')" wire:model="new_birthdate" />
+                <x-group :label="__('Gender')" wire:model="new_gender" :options="$genders" inline class="btn-soft" />
+                <x-input :label="__('Email')" wire:model="new_email" />
+                <x-input :label="__('Phone Number')" wire:model="new_phone_number" />
             </div>
         @endif
 
         <x-slot:actions>
-            <x-button label="{{ __('Cancel') }}" @click="$wire.addMemberModal = false; $wire.memberModalMode = 'search'; $wire.memberSearchQuery = ''" class="btn-ghost" />
+            <x-button :label="__('Cancel')" @click="$wire.addMemberModal = false; $wire.memberModalMode = 'search'; $wire.memberSearchQuery = ''" class="btn-ghost" />
             @if($memberModalMode === 'create')
-                <x-button label="{{ __('Create and add') }}" wire:click="createFamilyMember" class="btn-primary" spinner />
+                <x-button :label="__('Create and add')" wire:click="createFamilyMember" class="btn-primary" spinner />
             @endif
         </x-slot:actions>
     </x-modal>
 
     {{-- Confirmation : annuler une demande d'affiliation --}}
-    <x-modal subtitle="{{ __('Warning!') }}" title="{{ __('Cancel registration') }}" wire:model="cancelAffiliationModal">
+    <x-modal :subtitle="__('Warning!')" :title="__('Cancel registration')" wire:model="cancelAffiliationModal">
         <p>{{ __('Are you sure you want to cancel your registration request? This action cannot be undone.') }}</p>
 
         <x-slot:actions>
-            <x-button label="{{ __('Keep my request') }}" wire:click="$set('cancelAffiliationModal', false)" />
-            <x-button class="btn-error" label="{{ __('Yes, cancel it') }}" spinner wire:click="cancelAffiliation" />
+            <x-button :label="__('Keep my request')" wire:click="$set('cancelAffiliationModal', false)" />
+            <x-button class="btn-error" :label="__('Yes, cancel it')" spinner wire:click="cancelAffiliation" />
         </x-slot:actions>
     </x-modal>
 
     {{-- Confirmation : quitter / annuler / refuser un pack entraînement --}}
-    <x-modal subtitle="{{ __('Warning!') }}" title="{{ __('Confirm action') }}" wire:model="leavePackModal">
+    <x-modal :subtitle="__('Warning!')" :title="__('Confirm action')" wire:model="leavePackModal">
         @if($leavePackContext === 'leave')
             <p>{{ __('Are you sure you want to leave this training pack? Your spot will be offered to the next person on the waitlist.') }}</p>
         @elseif($leavePackContext === 'cancel')
@@ -703,8 +703,8 @@
         @endif
 
         <x-slot:actions>
-            <x-button label="{{ __('Cancel') }}" wire:click="$set('leavePackModal', false)" />
-            <x-button class="btn-error" label="{{ __('Confirm') }}" spinner wire:click="leaveTrainingPackConfirmed" />
+            <x-button :label="__('Cancel')" wire:click="$set('leavePackModal', false)" />
+            <x-button class="btn-error" :label="__('Confirm')" spinner wire:click="leaveTrainingPackConfirmed" />
         </x-slot:actions>
     </x-modal>
 

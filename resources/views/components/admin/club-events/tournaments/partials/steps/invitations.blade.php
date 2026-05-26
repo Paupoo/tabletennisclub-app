@@ -16,13 +16,13 @@
         </div>
     @else
         <x-alert
-            title="{{ __('Registration deadline not set') }}"
-            description="{{ __('Please set a registration deadline in step 1 before sending invitations.') }}"
+            :title="__('Registration deadline not set')"
+            :description="__('Please set a registration deadline in step 1 before sending invitations.')"
             icon="o-exclamation-triangle"
             class="alert-warning alert-soft mb-6" />
     @endif
 
-    <x-card title="{{ __('Members list') }}" size="md">
+    <x-card :title="__('Members list')" size="md">
         <x-slot:menu>
             @if (! $this->isLaunched)
                 <div class="flex gap-2">
@@ -60,7 +60,7 @@
     </x-card>
 
     {{-- Invitation history --}}
-    <x-card title="{{ __('Sent invitations') }}" icon="o-history" separator class="mt-8 shadow-sm"
+    <x-card :title="__('Sent invitations')" icon="o-history" separator class="mt-8 shadow-sm"
         x-data="{ open: false }">
         <x-slot:menu>
             <x-button :label="__('View history')" icon="o-eye" class="btn-sm btn-ghost" @click="open = !open" />
@@ -89,7 +89,7 @@
             @empty
                 <div class="text-center py-6 opacity-40">
                     <x-icon name="o-envelope" class="w-8 h-8 mx-auto mb-2" />
-                    <p class="text-sm">Aucune invitation envoyée pour le moment.</p>
+                    <p class="text-sm">{{ __('No invitations sent yet.') }}</p>
                 </div>
             @endforelse
         </div>

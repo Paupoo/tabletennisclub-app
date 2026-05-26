@@ -3,11 +3,11 @@
 </x-slot:breadcrumbs>
 
 <div>
-    <x-header title="{{ __('Club Overview') }}"
+    <x-header :title="__('Club Overview')"
         subtitle="{{ __('Season') }} {{ $current_season?->name ?? '—' }}"
         separator>
         <x-slot:actions>
-            <x-button label="{{ __('Captain Dashboard') }}" icon="o-user" class="btn-sm btn-ghost"
+            <x-button :label="__('Captain Dashboard')" icon="o-user" class="btn-sm btn-ghost"
                 :link="route('admin.interclubs.captain-selection')" />
         </x-slot:actions>
     </x-header>
@@ -16,10 +16,10 @@
 
         {{-- COLONNE GAUCHE : NAVIGATION & SANTÉ --}}
         <div class="space-y-4">
-            <x-admin.shared.side-card title="{{ __('Navigation') }}" shadow class="mt-16">
+            <x-admin.shared.side-card :title="__('Navigation')" shadow class="mt-16">
                 <div class="space-y-4">
                     <x-select
-                        label="{{ __('Season') }}"
+                        :label="__('Season')"
                         wire:model.live="selectedSeasonId"
                         :options="$seasons_list"
                         class="select-sm border-none bg-base-200/50 font-bold" />
@@ -37,11 +37,11 @@
                         </div>
                     </div>
 
-                    <x-choices label="{{ __('Focus on a team') }}" wire:model.live="selectedTeam" :options="$teams_list"
+                    <x-choices :label="__('Focus on a team')" wire:model.live="selectedTeam" :options="$teams_list"
                         single searchable class="choices-sm" />
 
                     <div class="space-y-2 border-t border-base-100 pt-2">
-                        <x-checkbox label="{{ __('Show issues only') }}" wire:model.live="filterAlerts" tight />
+                        <x-checkbox :label="__('Show issues only')" wire:model.live="filterAlerts" tight />
                     </div>
                 </div>
             </x-admin.shared.side-card>
@@ -100,8 +100,8 @@
 
                 @if ($categories->isEmpty())
                     <x-empty-state icon="o-calendar"
-                        title="{{ __('No matches this week') }}"
-                        description="{{ __('No interclub scheduled for day :n.', ['n' => $selectedWeek ? ('S' . ($matchDayMap[$selectedWeek] ?? $selectedWeek)) : '—']) }}" />
+                        :title="__('No matches this week')"
+                        :description="__('No interclub scheduled for day :n.', ['n' => $selectedWeek ? ('S' . ($matchDayMap[$selectedWeek] ?? $selectedWeek)) : '—'])" />
                 @else
                     @foreach ($categories as $name => $teams)
                         <div
@@ -243,7 +243,7 @@
                 <div class="mb-3 text-[10px] font-black uppercase tracking-widest opacity-40">
                     {{ __('Search a substitute') }}
                 </div>
-                <x-input placeholder="{{ __('Player name...') }}" icon="o-magnifying-glass"
+                <x-input :placeholder="__('Player name...')" icon="o-magnifying-glass"
                     wire:model.live.debounce.300ms="search"
                     class="input-sm rounded-lg border-none bg-base-200/50" />
                 @if (strlen($search) >= 2)
@@ -274,14 +274,14 @@
             </div>
         </div>
         <x-slot:actions>
-            <x-button label="{{ __('Cancel') }}" @click="$wire.drawerSelection = false" class="btn-ghost" />
-            <x-button label="{{ __('Confirm') }}" wire:click="saveSelection" class="btn-primary" icon="o-check"
+            <x-button :label="__('Cancel')" @click="$wire.drawerSelection = false" class="btn-ghost" />
+            <x-button :label="__('Confirm')" wire:click="saveSelection" class="btn-primary" icon="o-check"
                 :disabled="count($selectedPlayerIds) === 0" />
         </x-slot:actions>
     </x-drawer>
 
     {{-- MODAL MESSAGE --}}
-    <x-modal wire:model="modalMessage" title="{{ __('Last step') }}" separator>
+    <x-modal wire:model="modalMessage" :title="__('Last step')" separator>
         <div class="space-y-4">
             <div class="flex items-center gap-3 rounded-xl border border-primary/10 bg-primary/5 p-3">
                 <x-icon name="o-information-circle" class="h-5 w-5 text-primary" />
@@ -289,14 +289,14 @@
                     {{ __('Your selection is ready. Add a message for your players.') }}</p>
             </div>
 
-            <x-textarea label="{{ __('Message to players') }}" wire:model="captainMessage"
-                placeholder="{{ __('E.g. Departure at 18:45 from the club...') }}" rows="4"
+            <x-textarea :label="__('Message to players')" wire:model="captainMessage"
+                :placeholder="__('E.g. Departure at 18:45 from the club...')" rows="4"
                 class="border-none bg-base-200/50 focus:ring-primary" />
         </div>
 
         <x-slot:actions>
-            <x-button label="{{ __('Skip') }}" wire:click="confirmAndSend" class="btn-ghost" />
-            <x-button label="{{ __('Send') }}" wire:click="confirmAndSend" class="btn-primary"
+            <x-button :label="__('Skip')" wire:click="confirmAndSend" class="btn-ghost" />
+            <x-button :label="__('Send')" wire:click="confirmAndSend" class="btn-primary"
                 icon="o-paper-airplane" />
         </x-slot:actions>
     </x-modal>

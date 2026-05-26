@@ -10,15 +10,15 @@
         </div>
         <!-- Contenu -->
         <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-            <h1 class="text-4xl md:text-5xl font-bold mb-4 drop-shadow-lg">Résultats des compétitions</h1>
-            <p class="text-xl opacity-90 drop-shadow-md">Suivez les performances de nos équipes dans toutes les compétitions</p>
+            <h1 class="text-4xl md:text-5xl font-bold mb-4 drop-shadow-lg">{{ __('Competition Results') }}</h1>
+            <p class="text-xl opacity-90 drop-shadow-md">{{ __('Follow our teams\' performances across all competitions') }}</p>
         </div>
     </div>
 
     <!-- Season Filter -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <h2 class="text-2xl font-bold">Résultats des Équipes</h2>
+            <h2 class="text-2xl font-bold">{{ __('Team Results') }}</h2>
             <div class="flex items-center gap-2">
                 <label for="season" class="text-sm font-medium">Saison :</label>
                 <select
@@ -61,8 +61,8 @@
             @endforeach
         @empty
             <div class="text-center py-12 bg-gray-50 rounded-lg">
-                <h3 class="text-lg font-medium text-gray-900 mb-2">Aucun résultat disponible</h3>
-                <p class="text-gray-600">Les résultats seront publiés après les premières compétitions.</p>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">{{ __('No results available') }}</h3>
+                <p class="text-gray-600">{{ __('Results will be published after the first competitions.') }}</p>
             </div>
         @endforelse
     </div>

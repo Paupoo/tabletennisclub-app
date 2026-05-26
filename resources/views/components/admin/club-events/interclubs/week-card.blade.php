@@ -75,7 +75,7 @@
         {{-- Dots sélection (planning) --}}
         @if (in_array($status, ['pending', 'ready', 'future']))
             <div class="flex flex-col items-end gap-1">
-                <div class="text-[9px] font-medium uppercase tracking-wide opacity-40">Sélection</div>
+                <div class="text-[9px] font-medium uppercase tracking-wide opacity-40">{{ __('Selection') }}</div>
                 <div class="flex gap-1">
                     @for ($i = 1; $i <= 4; $i++)
                         <div @class([

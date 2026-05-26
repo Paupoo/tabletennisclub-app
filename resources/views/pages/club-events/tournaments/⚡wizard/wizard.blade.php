@@ -3,13 +3,13 @@
         <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
     </x-slot:breadcrumbs>
 
-    <x-header title="{{ __('Tournament Setup Assistant') }}"
-        subtitle="{{ __('Configure and manage your tournament') }}">
+    <x-header :title="__('Tournament Setup Assistant')"
+        :subtitle="__('Configure and manage your tournament')">
         <x-slot:actions>
             {{-- Cancel button — always accessible when tournament exists and not already cancelled --}}
             @if ($tournamentId && !in_array($this->currentTournament?->status?->value, ['cancelled', null]))
                 <x-button
-                    label="{{ __('Cancel tournament') }}"
+                    :label="__('Cancel tournament')"
                     icon="o-x-circle"
                     class="btn-error btn-outline btn-sm"
                     wire:click="$set('showCancelModal', true)" />
@@ -99,11 +99,11 @@
     @include('admin.club-events.tournaments.partials.modals.launch')
 
     {{-- Cancel confirmation modal --}}
-    <x-modal wire:model="showCancelModal" title="{{ __('Cancel tournament') }}" class="backdrop-blur">
+    <x-modal wire:model="showCancelModal" :title="__('Cancel tournament')" class="backdrop-blur">
         <div class="space-y-4">
             <x-alert
-                title="{{ __('This action cannot be undone') }}"
-                description="{{ __('All registered and waitlisted players will receive a cancellation notification.') }}"
+                :title="__('This action cannot be undone')"
+                :description="__('All registered and waitlisted players will receive a cancellation notification.')"
                 icon="o-exclamation-triangle"
                 class="alert-error alert-soft" />
             <p class="text-sm text-base-content/70">
@@ -111,8 +111,8 @@
             </p>
         </div>
         <x-slot:actions>
-            <x-button label="{{ __('Keep tournament') }}" wire:click="$set('showCancelModal', false)" />
-            <x-button label="{{ __('Yes, cancel it') }}" icon="o-x-circle" class="btn-error"
+            <x-button :label="__('Keep tournament')" wire:click="$set('showCancelModal', false)" />
+            <x-button :label="__('Yes, cancel it')" icon="o-x-circle" class="btn-error"
                 wire:click="cancelTournament" spinner="cancelTournament" />
         </x-slot:actions>
     </x-modal>

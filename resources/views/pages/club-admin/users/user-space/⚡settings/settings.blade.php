@@ -3,8 +3,8 @@
         <x-breadcrumbs :items="$breadcrumbs" />
     </x-slot:breadcrumbs>
     
-    <x-header separator subtitle="{{ __('Manage your account and privacy preferences') }}"
-            title="{{ __('Settings') }}" />
+    <x-header separator :subtitle="__('Manage your account and privacy preferences')"
+            :title="__('Settings')" />
 
         <x-form wire:submit="save">
 
@@ -59,14 +59,14 @@
             <!-- Section Notifications -->
             <x-admin.shared.form-section :separator="true" :subtitle="__('Set up your reminders and notifications preferences')" :title="__('Notifications')">
                 <div class="col-span-6 md:col-span-4">
-                    <x-checkbox label="{{ __('Match reminders (24h before)') }}" wire:model="notification_match" disabled />
-                    <x-checkbox label="{{ __('Results of my team (Ottignies B)') }}"
+                    <x-checkbox :label="__('Match reminders (24h before)')" wire:model="notification_match" disabled />
+                    <x-checkbox :label="__('Results of my team (Ottignies B)')"
                         wire:model="notification_team_result" disabled />
-                    <x-checkbox label="{{ __('New training spots available') }}"
+                    <x-checkbox :label="__('New training spots available')"
                         wire:model="notification_new_training" disabled />
-                    <x-checkbox label="{{ __('Waitlist availability alerts') }}"
+                    <x-checkbox :label="__('Waitlist availability alerts')"
                         wire:model="notification_waiting_list" disabled />
-                    <x-checkbox label="{{ __('Club news and events') }}" wire:model="notification_news_events" disabled />
+                    <x-checkbox :label="__('Club news and events')" wire:model="notification_news_events" disabled />
                 </div>
             </x-admin.shared.form-section>
 
@@ -74,7 +74,7 @@
             <x-admin.shared.form-section :separator="false" :subtitle="__('Secure your account')" :title="__('Security')">
                 <div class="col-span-6 md:col-span-4">
                     <x-password
-                        hint="{{ __('Minimum 8 charachters, with at least 1 letter, 1 number and 1 special character') }}"
+                        :hint="__('Minimum 8 charachters, with at least 1 letter, 1 number and 1 special character')"
                         label="Password" wire:model="password" />
                     <x-password label="Password Confirmation" wire:model="password_confirmation" />
                 </div>
@@ -82,8 +82,8 @@
 
             {{-- Pas de x-slot:actions, on met les boutons dans le slot principal --}}
             <div class="col-span-6 mt-6 flex justify-end gap-3">
-                <x-button label="{{ __('Reset') }}" />
-                <x-button class="btn-primary" label="{{ __('Update') }}" spinner="save" type="submit" />
+                <x-button :label="__('Reset')" />
+                <x-button class="btn-primary" :label="__('Update')" spinner="save" type="submit" />
             </div>
         </x-form>
 </div>

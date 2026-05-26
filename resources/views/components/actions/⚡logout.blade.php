@@ -24,5 +24,5 @@ new class extends Component
         class="text-error" 
         icon="o-power" 
         wire:click="logout"
-        title="{{ __('Logout') }}" />
+        :title="__('Logout')" />
 </div>

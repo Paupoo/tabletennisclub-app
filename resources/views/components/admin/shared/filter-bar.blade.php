@@ -10,9 +10,9 @@
         {{ $filters }}
 
         <div class="border-base-200 col-span-full flex justify-end border-t pt-3">
-            <x-button class="btn-ghost btn-sm" icon="o-eye-slash" label="{{ __('Hide filters') }}"
+            <x-button class="btn-ghost btn-sm" icon="o-eye-slash" :label="__('Hide filters')"
                 wire:click="$toggle('showFilters')" />
-            <x-button class="btn-ghost btn-sm" icon="o-x-mark" label="{{ __('Clear filters') }}"
+            <x-button class="btn-ghost btn-sm" icon="o-x-mark" :label="__('Clear filters')"
                 wire:click="resetFilters" />
         </div>
     </div>

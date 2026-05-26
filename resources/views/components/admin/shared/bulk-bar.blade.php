@@ -10,7 +10,7 @@
 
         {{ $actions }}
 
-        <x-button class="btn-ghost btn-sm btn-square ml-auto" icon="o-x-mark" tooltip="{{ __('Clear selection') }}"
+        <x-button class="btn-ghost btn-sm btn-square ml-auto" icon="o-x-mark" :tooltip="__('Clear selection')"
             wire:click="$set('selected', [])" />
     </div>
 @endif

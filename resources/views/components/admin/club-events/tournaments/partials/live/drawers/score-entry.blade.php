@@ -1,4 +1,4 @@
-<x-drawer wire:model="scoreDrawer" title="{{ __('Enter score') }}" right separator with-close-button class="w-11/12 md:w-[450px]"
+<x-drawer wire:model="scoreDrawer" :title="__('Enter score')" right separator with-close-button class="w-11/12 md:w-[450px]"
     x-data="{ confirmOpen: false }">
 
     @if ($this->selectedMatch)
@@ -180,12 +180,12 @@
         </div>
 
         <x-slot:actions>
-            <x-button label="{{ __('Cancel') }}" @click="$wire.scoreDrawer = false" />
+            <x-button :label="__('Cancel')" @click="$wire.scoreDrawer = false" />
             @if ($matchFinished)
-                <x-button label="{{ __('Submit score') }}" icon="o-trophy"
+                <x-button :label="__('Submit score')" icon="o-trophy"
                     class="btn-success" @click="confirmOpen = true" />
             @elseif ($hasSets)
-                <x-button label="{{ __('Save sets') }}" icon="o-arrow-down-tray"
+                <x-button :label="__('Save sets')" icon="o-arrow-down-tray"
                     class="btn-outline" wire:click="saveDraft" spinner="saveDraft"
                     @click="$wire.scoreDrawer = false" />
             @endif

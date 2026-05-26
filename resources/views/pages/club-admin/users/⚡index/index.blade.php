@@ -2,11 +2,11 @@
     <x-slot:breadcrumbs>
         <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
     </x-slot:breadcrumbs>
-    <x-header progress-indicator separator title="{{ __('Users') }}">
+    <x-header progress-indicator separator :title="__('Users')">
         <x-slot:actions>
             {{-- Recherche pleine largeur --}}
             <div class="mb-6 flex items-center justify-end gap-2">
-                <x-input class="w-full lg:w-72" clearable icon="o-magnifying-glass" placeholder="{{ __('Search...') }}"
+                <x-input class="w-full lg:w-72" clearable icon="o-magnifying-glass" :placeholder="__('Search...')"
                     wire:model.live.debounce="search" />
 
                 {{-- Boutons sur la 2e ligne --}}
@@ -26,12 +26,12 @@
                     <x-button
                         class="btn-ghost btn-sm"
                         icon="o-arrow-path"
-                        tooltip="{{ __('Recalculate force list') }}"
+                        :tooltip="__('Recalculate force list')"
                         wire:click="recalculateForceList"
                         spinner="recalculateForceList" />
                 @endif
 
-                <x-button class="btn-primary" icon="o-plus" label="{{ __('Create') }}"
+                <x-button class="btn-primary" icon="o-plus" :label="__('Create')"
                     link="{{ route('admin.users.create') }}" responsive />
             </div>
         </x-slot:actions>
@@ -62,13 +62,13 @@
                 <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
                     {{ __('Status') }}
                 </p>
-                <x-toggle label="{{ __('Show inactive users') }}" wire:model.live="showInactiveUsers" />
+                <x-toggle :label="__('Show inactive users')" wire:model.live="showInactiveUsers" />
             </div>
             <div>
                 <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
                     {{ __('Teams') }}
                 </p>
-                <x-choices :options="$teams" class="w-full" clearable placeholder="{{ __('Select a team...') }}"
+                <x-choices :options="$teams" class="w-full" clearable :placeholder="__('Select a team...')"
                     wire:model.live="team_ids" />
             </div>
         </x-slot:filters>
@@ -81,28 +81,28 @@
                 <div class="border-base-200 flex items-center gap-2 border-r pr-3">
                     <div class="min-w-44 shrink-0">
                         <x-choices :options="$teams" class="w-full" clearable
-                            placeholder="{{ __('Add to a team...') }}" single wire:model.live="team_id" />
+                            :placeholder="__('Add to a team...')" single wire:model.live="team_id" />
                     </div>
-                    <x-button :disabled="$team_id === null" class="btn-ghost btn-sm" label="{{ __('Add') }}"
+                    <x-button :disabled="$team_id === null" class="btn-ghost btn-sm" :label="__('Add')"
                         wire:click="bulkAddToTeam" />
                 </div>
 
                 <div class="border-base-200 flex items-center gap-2 border-r pr-3">
                     <div class="min-w-44 shrink-0">
-                        <x-choices :options="$subscriptions" class="w-full" clearable placeholder="{{ __('Subscribe to...') }}"
+                        <x-choices :options="$subscriptions" class="w-full" clearable :placeholder="__('Subscribe to...')"
                             single wire:model.live="subscription_id" />
                     </div>
-                    <x-button :disabled="$subscription_id === null" class="btn-ghost btn-sm" label="{{ __('Subscribe') }}"
+                    <x-button :disabled="$subscription_id === null" class="btn-ghost btn-sm" :label="__('Subscribe')"
                         wire:click="bulkSubscribe" />
                 </div>
 
                 <div class="flex items-center gap-1">
-                    <x-button class="btn-ghost btn-sm" label="{{ __('Activate') }}" wire:click="bulkActivate" />
+                    <x-button class="btn-ghost btn-sm" :label="__('Activate')" wire:click="bulkActivate" />
                     <span class="text-base-content/20 text-sm">/</span>
-                    <x-button class="btn-ghost btn-sm" label="{{ __('Deactivate') }}" wire:click="bulkDeactivate" />
+                    <x-button class="btn-ghost btn-sm" :label="__('Deactivate')" wire:click="bulkDeactivate" />
                 </div>
 
-                <x-button class="btn-ghost btn-sm text-error" icon="o-trash" label="{{ __('Delete') }}"
+                <x-button class="btn-ghost btn-sm text-error" icon="o-trash" :label="__('Delete')"
                     wire:click="confirmBulkDelete" />
             </x-slot:actions>
         </x-admin.shared.bulk-bar>
@@ -133,12 +133,12 @@
                 <x-slot:actions>
                     <div class="flex items-center gap-1">
                         <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
-                            tooltip="{{ __('Edit') }}" link="{{ route('admin.users.edit', $user) }}" />
+                            :tooltip="__('Edit')" link="{{ route('admin.users.edit', $user) }}" />
                         <x-button class="btn-ghost btn-sm btn-circle" icon="o-envelope"
-                            tooltip="{{ __('Send invitation') }}"
+                            :tooltip="__('Send invitation')"
                             wire:click="sendInvitation({{ $user->id }})" spinner />
                         <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
-                            tooltip="{{ __('Delete') }}" wire:click="confirmDelete({{ $user->id }})" />
+                            :tooltip="__('Delete')" wire:click="confirmDelete({{ $user->id }})" />
                     </div>
                 </x-slot:actions>
             </x-list-item>
@@ -170,12 +170,12 @@
                 @scope('actions', $user)
                     <x-admin.shared.row-actions>
                         <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
-                            tooltip="{{ __('Edit') }}" link="{{ route('admin.users.edit', $user->id) }}" />
+                            :tooltip="__('Edit')" link="{{ route('admin.users.edit', $user->id) }}" />
                         <x-button class="btn-ghost btn-sm btn-circle" icon="o-envelope"
-                            tooltip="{{ __('Send invitation') }}"
+                            :tooltip="__('Send invitation')"
                             wire:click="sendInvitation({{ $user->id }})" spinner />
                         <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
-                            tooltip="{{ __('Delete') }}" wire:click="confirmDelete({{ $user->id }})" />
+                            :tooltip="__('Delete')" wire:click="confirmDelete({{ $user->id }})" />
                     </x-admin.shared.row-actions>
                 @endscope
             </x-table>
@@ -186,22 +186,22 @@
     </div>
 
     {{-- MODALES --}}
-    <x-modal subtitle="{{ __('Warning!') }}" title="{{ __('Confirm deletion') }}" wire:model="deleteModal">
+    <x-modal :subtitle="__('Warning!')" :title="__('Confirm deletion')" wire:model="deleteModal">
         <p>{{ __('Are you sure you want to delete this user? This action is irreversible.') }}</p>
 
         <x-slot:actions>
-            <x-button label="{{ __('Cancel') }}" wire:click="$set('deleteModal', false)" />
-            <x-button class="btn-error" label="{{ __('Delete') }}" spinner wire:click="delete" />
+            <x-button :label="__('Cancel')" wire:click="$set('deleteModal', false)" />
+            <x-button class="btn-error" :label="__('Delete')" spinner wire:click="delete" />
         </x-slot:actions>
     </x-modal>
 
-    <x-modal subtitle="{{ __('Warning!') }}" title="{{ __('Confirm bulk deletion') }}"
+    <x-modal :subtitle="__('Warning!')" :title="__('Confirm bulk deletion')"
         wire:model="deleteSelectedModal">
         <p>{{ __('Are you sure you want to delete the selected users? This action is irreversible.') }}</p>
 
         <x-slot:actions>
-            <x-button label="{{ __('Cancel') }}" wire:click="$set('deleteSelectedModal', false)" />
-            <x-button class="btn-error" label="{{ __('Delete') }}" spinner wire:click="deleteSelected" />
+            <x-button :label="__('Cancel')" wire:click="$set('deleteSelectedModal', false)" />
+            <x-button class="btn-error" :label="__('Delete')" spinner wire:click="deleteSelected" />
         </x-slot:actions>
     </x-modal>
 </div>

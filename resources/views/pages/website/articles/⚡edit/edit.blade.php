@@ -16,13 +16,13 @@
         {{-- ── Colonne gauche : métadonnées ──────────────────────────── --}}
         <div class="space-y-5 lg:col-span-1">
 
-            <x-card class="border-gray-200 shadow-sm" title="Identité">
+            <x-card class="border-gray-200 shadow-sm" :title="__('Identity')">
                 <div class="space-y-4">
                     <x-input label="Titre" wire:model.live.debounce.300ms="title"
                         placeholder="Titre de l'article" />
                     <x-input label="Slug" wire:model="slug"
                         placeholder="mon-article" />
-                    <x-select label="Catégorie" :options="$categoryOptions"
+                    <x-select :label="__('Category')" :options="$categoryOptions"
                         wire:model="category" placeholder="Choisir…" />
                     <x-select label="Statut" :options="$statusOptions"
                         wire:model="status" />
@@ -34,7 +34,7 @@
             </x-card>
 
             {{-- Image --}}
-            <x-card class="border-gray-200 shadow-sm" title="Image à la une">
+            <x-card class="border-gray-200 shadow-sm" :title="__('Featured image')">
                 @if ($existingImage)
                     <div class="mb-3">
                         <img src="{{ Storage::url($existingImage) }}"
@@ -56,7 +56,7 @@
         {{-- ── Colonne droite : éditeur Markdown split ───────────────── --}}
         <x-card class="border-gray-200 shadow-sm lg:col-span-2" title="Contenu">
             <x-slot:subtitle>
-                <span class="text-xs text-gray-400">Markdown — prévisualisation en direct</span>
+                <span class="text-xs text-gray-400">{{ __('Markdown — live preview') }}</span>
             </x-slot:subtitle>
 
             {{-- Guide syntaxe --}}
@@ -75,19 +75,19 @@
                         <div><span class="text-blue-700">*italique*</span> → <em>italique</em></div>
                         <div><span class="text-blue-700">### Titre 3</span></div>
                         <div><span class="text-blue-700">[lien](https://…)</span></div>
-                        <div><span class="text-blue-700">- item</span> → liste à puces</div>
-                        <div><span class="text-blue-700">1. item</span> → liste numérotée</div>
+                        <div><span class="text-blue-700">- item</span>{{ __('→ bullet list') }}</div>
+                        <div><span class="text-blue-700">1. item</span>{{ __('→ numbered list') }}</div>
                         <div><span class="text-blue-700">> citation</span> → blockquote</div>
                         <div><span class="text-blue-700">`code`</span> → <code>code</code></div>
                     </div>
-                    <p class="mt-2 text-[11px] text-blue-600">⚠️ Les titres nécessitent un espace après les # : <code class="bg-blue-100 px-1">## Mon titre</code> et non <code class="bg-red-100 px-1">##Mon titre</code></p>
+                    <p class="mt-2 text-[11px] text-blue-600">{{ __('⚠️ Headings require a space after the # :') }}<code class="bg-blue-100 px-1">## Mon titre</code> et non <code class="bg-red-100 px-1">##Mon titre</code></p>
                 </div>
             </div>
 
             <div class="grid gap-4 lg:grid-cols-2" style="min-height:420px">
                 {{-- Éditeur --}}
                 <div class="flex flex-col">
-                    <label class="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">Édition</label>
+                    <label class="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">{{ __('Edit') }}</label>
                     <textarea
                         wire:model.live.debounce.400ms="content"
                         class="flex-1 resize-none rounded-lg border border-gray-200 bg-gray-50 p-3 font-mono text-sm text-gray-800 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
@@ -100,7 +100,7 @@
 
                 {{-- Prévisualisation --}}
                 <div class="flex flex-col">
-                    <label class="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">Aperçu</label>
+                    <label class="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">{{ __('Preview') }}</label>
                     <div class="prose prose-sm flex-1 overflow-y-auto rounded-lg border border-gray-200 bg-white p-4 text-gray-800"
                         style="min-height:380px; max-height:580px">
                         {!! $markdownPreview !!}

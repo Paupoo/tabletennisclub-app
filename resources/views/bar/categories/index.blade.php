@@ -3,8 +3,8 @@
 @section('content')
 
 <div class="page-header">
-    <h1 >🏷️ Catégories</h1>
-    <p class="muted">Créer, renommer ou supprimer une catégorie.</p>
+    <h1 >{{ __('🏷️ Categories') }}</h1>
+    <p class="muted">{{ __('Create, rename or delete a category.') }}</p>
 </div>
 
 {{-- =========================
@@ -13,7 +13,7 @@
 <section class="panel" style="margin:14px;">
     <details class="collapsible" id="create-product-collapsible">
         <summary class="collapsible-summary">
-            <span>➕ Ajouter une catégorie</span>
+            <span>{{ __('➕ Add a category') }}</span>
             <span class="collapsible-meta muted">Appuie pour ouvrir/fermer</span>
         </summary>
         <div class="collapsible-body">
@@ -23,7 +23,7 @@
                     <label class="field-label">Nom</label>
                     <input class="product-input" name="category_name" required placeholder="ex: Softs">
                 </div>
-                <button class="btn-save" type="submit">💾 Créer</button>
+                <button class="btn-save" type="submit">{{ __('💾 Create') }}</button>
             </form>
         </div>
     </details>
@@ -35,7 +35,7 @@
 <section class="panel" style="margin:14px;">
     <h2 class="h2" style="margin-top:0;">📋 Liste</h2>
     @if($categories->isEmpty())
-    <div class="muted">Aucune catégorie.</div>
+    <div class="muted">{{ __('No categories.') }}</div>
     @else
     <div class="products-grid">
         @foreach($categories as $category)

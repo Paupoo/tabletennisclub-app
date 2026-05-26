@@ -6,17 +6,17 @@
             :subtitle="$selectedPack?->level?->value . ' · ' . $selectedPack?->type?->value"
             :title="$selectedPack?->name ?? __('Sessions')">
             <x-slot:actions>
-                <x-button class="btn-ghost" icon="o-arrow-left" label="{{ __('Back') }}" wire:click="backToList" />
+                <x-button class="btn-ghost" icon="o-arrow-left" :label="__('Back')" wire:click="backToList" />
             </x-slot:actions>
         </x-header>
     @else
         {{-- PACK LIST HEADER --}}
         <x-header separator :subtitle="$viewSeason?->name ?? __('Select a season')"
-            title="{{ __('Trainings') }}">
+            :title="__('Trainings')">
             <x-slot:actions>
                 <x-select class="select-sm w-44" :options="$seasonOptions" wire:model.live="viewSeasonId"
-                    placeholder="{{ __('Season…') }}" />
-                <x-button class="btn-primary" icon="o-plus" label="{{ __('New pack') }}" wire:click="openCreate" />
+                    :placeholder="__('Season…')" />
+                <x-button class="btn-primary" icon="o-plus" :label="__('New pack')" wire:click="openCreate" />
             </x-slot:actions>
         </x-header>
     @endif
@@ -25,10 +25,10 @@
     @if (! $viewSeason && ! $selectedPackId)
         @if (empty($seasonOptions))
             <x-alert class="alert-warning" icon="o-exclamation-triangle"
-                title="{{ __('No seasons found. Create a season first.') }}" />
+                :title="__('No seasons found. Create a season first.')" />
         @else
             <x-alert class="alert-info" icon="o-information-circle"
-                title="{{ __('Select a season above to view training packs.') }}" />
+                :title="__('Select a season above to view training packs.')" />
         @endif
     @elseif ($selectedPackId)
         {{-- ================================================================
@@ -70,7 +70,7 @@
                         @else
                             <x-badge value="{{ __('Scheduled') }}" class="badge-success badge-soft" />
                             <x-button class="btn-ghost btn-sm text-error" icon="o-x-circle"
-                                label="{{ __('Cancel') }}" wire:click="openCancel({{ $session->id }})" />
+                                :label="__('Cancel')" wire:click="openCancel({{ $session->id }})" />
                         @endif
                     </div>
                 </div>
@@ -101,7 +101,7 @@
             <div class="rounded-xl border border-dashed border-base-300 py-16 text-center text-base-content/40">
                 <x-icon class="mx-auto mb-2 h-10 w-10" name="o-academic-cap" />
                 <p>{{ __('No training packs for this season yet.') }}</p>
-                <x-button class="btn-primary mt-4" label="{{ __('Create first pack') }}"
+                <x-button class="btn-primary mt-4" :label="__('Create first pack')"
                     wire:click="openCreate" />
             </div>
         @else
@@ -171,13 +171,13 @@
                                         {{-- Actions --}}
                                         <div class="mt-auto flex gap-2 border-t border-base-200 pt-2">
                                             <x-button class="btn-ghost btn-sm flex-1 text-xs"
-                                                icon="o-calendar-days" label="{{ __('Sessions') }}"
+                                                icon="o-calendar-days" :label="__('Sessions')"
                                                 wire:click="viewSessions({{ $pack->id }})" />
                                             <x-button class="btn-ghost btn-sm text-xs" icon="o-pencil"
                                                 wire:click="openEdit({{ $pack->id }})" />
                                             <x-button class="btn-ghost btn-sm text-error text-xs" icon="o-trash"
                                                 wire:click="deactivatePack({{ $pack->id }})"
-                                                wire:confirm="{{ __('Deactivate this pack?') }}" />
+                                                wire::confirm="__('Deactivate this pack?')" />
                                         </div>
                                     </div>
                                 </div>
@@ -214,23 +214,23 @@
         @if ($step === '1')
             <div class="space-y-4">
                 {{-- Season selector --}}
-                <x-select :options="$seasonOptions" label="{{ __('Season') }}" wire:model.live="formSeasonId"
-                    placeholder="{{ __('Select a season…') }}" />
+                <x-select :options="$seasonOptions" :label="__('Season')" wire:model.live="formSeasonId"
+                    :placeholder="__('Select a season…')" />
 
-                <x-input label="{{ __('Pack name') }}" placeholder="{{ __('E.g. Tuesday Elite') }}"
+                <x-input :label="__('Pack name')" :placeholder="__('E.g. Tuesday Elite')"
                     wire:model="formName" />
 
                 <div class="grid grid-cols-2 gap-4">
-                    <x-select :options="$levelOptions" label="{{ __('Level') }}" wire:model="formLevel"
-                        placeholder="{{ __('Select…') }}" />
-                    <x-select :options="$typeOptions" label="{{ __('Type') }}" wire:model.live="formType"
-                        placeholder="{{ __('Select…') }}" />
+                    <x-select :options="$levelOptions" :label="__('Level')" wire:model="formLevel"
+                        :placeholder="__('Select…')" />
+                    <x-select :options="$typeOptions" :label="__('Type')" wire:model.live="formType"
+                        :placeholder="__('Select…')" />
                 </div>
 
                 {{-- Coach — required for non-free types --}}
                 <div>
-                    <x-select :options="$trainerOptions" label="{{ __('Coach') }}" wire:model="formTrainerId"
-                        placeholder="{{ __('No coach') }}" />
+                    <x-select :options="$trainerOptions" :label="__('Coach')" wire:model="formTrainerId"
+                        :placeholder="__('No coach')" />
                     @if ($formType && $formType !== \App\Enums\TrainingType::FREE->value && ! $formTrainerId)
                         <p class="mt-1 text-xs text-warning">
                             <x-icon class="inline h-3 w-3" name="o-exclamation-triangle" />
@@ -243,10 +243,10 @@
                     @endif
                 </div>
 
-                <x-select :options="$roomOptions" label="{{ __('Room') }}" wire:model="formRoomId"
-                    placeholder="{{ __('Select…') }}" />
+                <x-select :options="$roomOptions" :label="__('Room')" wire:model="formRoomId"
+                    :placeholder="__('Select…')" />
 
-                <x-textarea label="{{ __('Description') }}" placeholder="{{ __('Optional…') }}"
+                <x-textarea :label="__('Description')" :placeholder="__('Optional…')"
                     wire:model="formDescription" rows="3" />
             </div>
         @endif
@@ -281,8 +281,8 @@
 
                 {{-- Day selection depending on recurrence type --}}
                 @if ($formRecurrenceType === 'weekly')
-                    <x-select :options="$dayOptions" label="{{ __('Day of week') }}"
-                        wire:model.live="formDayOfWeek" placeholder="{{ __('Select…') }}" />
+                    <x-select :options="$dayOptions" :label="__('Day of week')"
+                        wire:model.live="formDayOfWeek" :placeholder="__('Select…')" />
                 @else
                     <div>
                         <p class="mb-2 text-sm font-medium">{{ __('Days of the week') }}</p>
@@ -303,8 +303,8 @@
                 @endif
 
                 <div class="grid grid-cols-2 gap-4">
-                    <x-input label="{{ __('Start time') }}" type="time" wire:model.live="formStartTime" />
-                    <x-input label="{{ __('Duration (min)') }}" type="number" min="15" max="480"
+                    <x-input :label="__('Start time')" type="time" wire:model.live="formStartTime" />
+                    <x-input :label="__('Duration (min)')" type="number" min="15" max="480"
                         wire:model.live="formDurationMinutes" />
                 </div>
 
@@ -314,8 +314,8 @@
                         {{ __('Custom date range (optional — overrides season dates)') }}
                     </p>
                     <div class="grid grid-cols-2 gap-4">
-                        <x-input label="{{ __('From') }}" type="date" wire:model.live="formPackStartDate" />
-                        <x-input label="{{ __('To') }}" type="date" wire:model.live="formPackEndDate" />
+                        <x-input :label="__('From')" type="date" wire:model.live="formPackStartDate" />
+                        <x-input :label="__('To')" type="date" wire:model.live="formPackEndDate" />
                     </div>
                 </div>
 
@@ -331,7 +331,7 @@
                                     {{ $d->translatedFormat('D d M') }}
                                     <button
                                         class="ml-0.5 rounded-full opacity-50 transition hover:opacity-100 hover:text-error"
-                                        title="{{ __('Exclude this date') }}"
+                                        :title="__('Exclude this date')"
                                         wire:click="toggleExcludeDate('{{ $d->toDateString() }}')"
                                         wire:key="include-{{ $d->toDateString() }}"
                                         type="button">
@@ -352,7 +352,7 @@
                                 @foreach ($formExcludedDates as $excluded)
                                     <button
                                         class="inline-flex items-center gap-1 rounded-md border border-dashed border-base-300 px-2 py-0.5 text-[11px] text-base-content/40 line-through transition hover:border-primary hover:text-primary hover:no-underline"
-                                        title="{{ __('Re-include this date') }}"
+                                        :title="__('Re-include this date')"
                                         wire:click="toggleExcludeDate('{{ $excluded }}')"
                                         wire:key="exclude-{{ $excluded }}"
                                         type="button">
@@ -365,7 +365,7 @@
                     @endif
                 @elseif ($formDayOfWeek || count($formSpecificDays) > 0)
                     <x-alert class="alert-warning" icon="o-exclamation-triangle"
-                        title="{{ __('No dates can be generated for this period.') }}" />
+                        :title="__('No dates can be generated for this period.')" />
                 @endif
             </div>
         @endif
@@ -373,16 +373,16 @@
         {{-- Step 3 — Price --}}
         @if ($step === '3')
             <div class="space-y-4">
-                <x-input label="{{ __('Pack price (€)') }}" type="number" min="0" step="0.50"
+                <x-input :label="__('Pack price (€)')" type="number" min="0" step="0.50"
                     wire:model="formPrice" />
 
                 <x-toggle
-                    label="{{ __('Allow family/multi-pack discount') }}"
+                    :label="__('Allow family/multi-pack discount')"
                     wire:model="formAllowDiscount"
-                    hint="{{ __('When enabled, a 10€ discount applies per pack for members taking multiple packs or families.') }}" />
+                    :hint="__('When enabled, a 10€ discount applies per pack for members taking multiple packs or families.')" />
 
                 <x-alert class="alert-info" icon="o-information-circle"
-                    title="{{ __('The pack price is added to the subscription price.') }}" />
+                    :title="__('The pack price is added to the subscription price.')" />
 
                 {{-- Summary --}}
                 <div class="rounded-xl border border-base-200 bg-base-100 p-4 text-sm">
@@ -432,13 +432,13 @@
 
         <x-slot:actions>
             @if ($step === '1')
-                <x-button label="{{ __('Cancel') }}" wire:click="closeWizard" />
-                <x-button class="btn-primary" label="{{ __('Next →') }}" wire:click="nextStep" />
+                <x-button :label="__('Cancel')" wire:click="closeWizard" />
+                <x-button class="btn-primary" :label="__('Next →')" wire:click="nextStep" />
             @elseif ($step === '2')
-                <x-button label="{{ __('← Back') }}" wire:click="prevStep" />
-                <x-button class="btn-primary" label="{{ __('Next →') }}" wire:click="nextStep" />
+                <x-button :label="__('← Back')" wire:click="prevStep" />
+                <x-button class="btn-primary" :label="__('Next →')" wire:click="nextStep" />
             @else
-                <x-button label="{{ __('← Back') }}" wire:click="prevStep" />
+                <x-button :label="__('← Back')" wire:click="prevStep" />
                 <x-button class="btn-primary" icon="o-check"
                     label="{{ $packId ? __('Update') : __('Create pack') }}" wire:click="save" />
             @endif
@@ -448,7 +448,7 @@
     {{-- ================================================================
          CANCELLATION MODAL
     ================================================================ --}}
-    <x-modal title="{{ __('Cancel this session') }}" wire:model="cancelModal" separator>
+    <x-modal :title="__('Cancel this session')" wire:model="cancelModal" separator>
         <div class="space-y-4">
             <div class="grid grid-cols-2 gap-3">
                 <div @class([
@@ -471,13 +471,13 @@
                 </div>
             </div>
 
-            <x-textarea label="{{ __('Note (optional)') }}"
-                placeholder="{{ __('E.g. Bank holiday, maintenance…') }}" wire:model="cancelNote" rows="2" />
+            <x-textarea :label="__('Note (optional)')"
+                :placeholder="__('E.g. Bank holiday, maintenance…')" wire:model="cancelNote" rows="2" />
         </div>
 
         <x-slot:actions>
-            <x-button label="{{ __('Abandon') }}" wire:click="$set('cancelModal', false)" />
-            <x-button class="btn-error" icon="o-x-circle" label="{{ __('Confirm cancellation') }}"
+            <x-button :label="__('Abandon')" wire:click="$set('cancelModal', false)" />
+            <x-button class="btn-error" icon="o-x-circle" :label="__('Confirm cancellation')"
                 wire:click="confirmCancel" />
         </x-slot:actions>
     </x-modal>

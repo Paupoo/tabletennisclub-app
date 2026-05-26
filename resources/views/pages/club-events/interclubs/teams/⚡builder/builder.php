@@ -72,7 +72,7 @@ new class extends Component
             'seasonId'    => ['required', 'exists:seasons,id'],
             'nucleusSize' => ['required', 'integer', 'min:5', 'max:20'],
         ], [
-            'seasonId.required' => 'Sélectionnez une saison.',
+            'seasonId.required' => __('Please select a season.'),
             'nucleusSize.min'   => 'Le noyau minimum est de 5 joueurs.',
         ]);
 
@@ -224,9 +224,9 @@ new class extends Component
             'proposedTeams.*.level'         => ['required', 'string'],
             'proposedTeams.*.division'      => ['required', 'string'],
         ], [
-            'proposedTeams.*.category.required' => 'Définissez la catégorie de chaque équipe.',
-            'proposedTeams.*.level.required'    => 'Définissez le niveau de chaque équipe.',
-            'proposedTeams.*.division.required' => 'Définissez la division de chaque équipe.',
+            'proposedTeams.*.category.required' => __('Set the category for each team.'),
+            'proposedTeams.*.level.required'    => __('Set the level for each team.'),
+            'proposedTeams.*.division.required' => __('Set the division for each team.'),
         ]);
 
         $ourClub = Club::where('licence', config('app.club_licence'))->first();

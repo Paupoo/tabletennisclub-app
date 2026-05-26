@@ -131,8 +131,8 @@ new class extends Component
         $statusOptions = [
             ['id' => 'new', 'name' => 'Nouveau'],
             ['id' => 'pending', 'name' => 'En cours'],
-            ['id' => 'processed', 'name' => 'Traité'],
-            ['id' => 'rejected', 'name' => 'Rejeté'],
+            ['id' => 'processed', 'name' => __('Processed')],
+            ['id' => 'rejected', 'name' => __('Rejected')],
         ];
 
         $interestOptions = collect(ContactReasonEnum::cases())

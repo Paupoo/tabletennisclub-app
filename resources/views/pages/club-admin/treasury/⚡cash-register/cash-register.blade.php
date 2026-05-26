@@ -3,17 +3,17 @@
 </x-slot:breadcrumbs>
 
 <div>
-    <x-header title="{{ __('Cash Register') }}" subtitle="{{ __('In-person cash management') }}" separator progress-indicator>
+    <x-header :title="__('Cash Register')" :subtitle="__('In-person cash management')" separator progress-indicator>
         <x-slot:actions>
             @if($this->register)
             <x-button
-                label="{{ __('Add entry') }}"
+                :label="__('Add entry')"
                 icon="o-plus"
                 class="btn-primary btn-sm"
                 wire:click="openManualEntry" />
             @endif
             <x-button
-                label="{{ __('New register') }}"
+                :label="__('New register')"
                 icon="o-building-library"
                 class="btn-outline btn-sm"
                 wire:click="$set('createRegisterModal', true)" />
@@ -147,39 +147,39 @@
     @endif
 
     {{-- Modal: Create register --}}
-    <x-modal wire:model="createRegisterModal" title="{{ __('Create Cash Register') }}" separator>
-        <x-input label="{{ __('Register name') }}" wire:model="newRegisterName" autofocus />
+    <x-modal wire:model="createRegisterModal" :title="__('Create Cash Register')" separator>
+        <x-input :label="__('Register name')" wire:model="newRegisterName" autofocus />
         <x-slot:actions>
-            <x-button label="{{ __('Cancel') }}" @click="$wire.createRegisterModal = false" class="btn-ghost" />
-            <x-button label="{{ __('Create') }}" icon="o-check" class="btn-primary" wire:click="createRegister" spinner />
+            <x-button :label="__('Cancel')" @click="$wire.createRegisterModal = false" class="btn-ghost" />
+            <x-button :label="__('Create')" icon="o-check" class="btn-primary" wire:click="createRegister" spinner />
         </x-slot:actions>
     </x-modal>
 
     {{-- Modal: Manual entry --}}
-    <x-modal wire:model="manualEntryModal" title="{{ __('Add Entry') }}" separator>
+    <x-modal wire:model="manualEntryModal" :title="__('Add Entry')" separator>
         <div class="space-y-4">
             <p class="text-sm opacity-60">
                 {{ __('Use a positive amount for cash in, negative for cash out.') }}
             </p>
             <x-input
-                label="{{ __('Amount (€)') }}"
+                :label="__('Amount (€)')"
                 wire:model="entryAmount"
                 type="number"
-                hint="{{ __('Positive = cash in, negative = cash out') }}" />
+                :hint="__('Positive = cash in, negative = cash out')" />
             <x-select
-                label="{{ __('Reason') }}"
+                :label="__('Reason')"
                 :options="$reasonOptions"
                 option-label="name"
                 wire:model="entryReason" />
             <x-textarea
-                label="{{ __('Notes') }}"
+                :label="__('Notes')"
                 wire:model="entryNotes"
                 rows="2"
-                placeholder="{{ __('Optional notes...') }}" />
+                :placeholder="__('Optional notes...')" />
         </div>
         <x-slot:actions>
-            <x-button label="{{ __('Cancel') }}" @click="$wire.manualEntryModal = false" class="btn-ghost" />
-            <x-button label="{{ __('Save') }}" icon="o-check" class="btn-primary" wire:click="saveManualEntry" spinner />
+            <x-button :label="__('Cancel')" @click="$wire.manualEntryModal = false" class="btn-ghost" />
+            <x-button :label="__('Save')" icon="o-check" class="btn-primary" wire:click="saveManualEntry" spinner />
         </x-slot:actions>
     </x-modal>
 </div>

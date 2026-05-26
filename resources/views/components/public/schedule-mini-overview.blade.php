@@ -38,7 +38,7 @@
     {{-- Aperçu : liste compacte --}}
     <div x-show="!showDetails" x-transition class="px-5 py-4">
         @if($activitiesByDay->isEmpty())
-            <p class="text-sm text-gray-400 text-center py-2">Aucune activité programmée.</p>
+            <p class="text-sm text-gray-400 text-center py-2">{{ __('No scheduled activity.') }}</p>
         @else
             <div class="space-y-3.5">
                 @foreach($activitiesByDay as $day => $activities)
@@ -78,7 +78,7 @@
         @forelse($schedules as $index => $schedule)
             <x-public.schedule-card :schedule="$schedule" :index="$index" />
         @empty
-            <p class="text-sm text-gray-400 text-center py-2">Aucune activité programmée.</p>
+            <p class="text-sm text-gray-400 text-center py-2">{{ __('No scheduled activity.') }}</p>
         @endforelse
     </div>
 </div>

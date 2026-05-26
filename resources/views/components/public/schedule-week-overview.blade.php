@@ -34,7 +34,7 @@
     {{-- Aperçu : liste compacte jour par jour --}}
     <div x-show="!showDetails" x-transition class="px-6 py-5">
         @if($activitiesByDay->isEmpty())
-            <p class="text-sm text-gray-400 text-center py-4">Aucune activité programmée.</p>
+            <p class="text-sm text-gray-400 text-center py-4">{{ __('No scheduled activity.') }}</p>
         @else
             <div class="space-y-4">
                 @foreach($activitiesByDay as $day => $activities)
@@ -67,8 +67,8 @@
         @endif
 
         <div class="flex items-center gap-4 mt-5 pt-4 border-t border-gray-100 text-xs text-gray-400 flex-wrap">
-            <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-blue-500"></div> Dirigé</div>
-            <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-amber-400"></div> Supervisé</div>
+            <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-blue-500"></div>{{ __('Directed') }}</div>
+            <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-amber-400"></div>{{ __('Supervised') }}</div>
             <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-gray-300"></div> Libre</div>
             <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-red-400"></div> Interclubs</div>
         </div>
@@ -79,7 +79,7 @@
         @forelse($schedules as $index => $schedule)
             <x-public.schedule-card :schedule="$schedule" :index="$index" />
         @empty
-            <p class="text-sm text-gray-400 text-center py-4">Aucune activité programmée.</p>
+            <p class="text-sm text-gray-400 text-center py-4">{{ __('No scheduled activity.') }}</p>
         @endforelse
     </div>
 </div>

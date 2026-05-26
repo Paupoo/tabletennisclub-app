@@ -3,14 +3,14 @@
         <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
     </x-slot:breadcrumbs>
 
-    <x-header progress-indicator separator title="{{ __('Results') }}">
+    <x-header progress-indicator separator :title="__('Results')">
         <x-slot:middle class="justify-end!">
             <x-select
                 :options="$seasons"
                 option-label="name"
                 option-value="id"
                 wire:model.live="seasonId"
-                placeholder="{{ __('Select a season') }}" />
+                :placeholder="__('Select a season')" />
         </x-slot:middle>
     </x-header>
 
@@ -82,15 +82,15 @@
                                                     <span class="hidden text-xs text-gray-500 sm:inline">{{ __('Final position') }} :</span>
                                                     <x-input
                                                         class="input-sm w-28 text-xs sm:w-36"
-                                                        placeholder="ex : 1ère place"
+                                                        :placeholder="__('e.g. 1st place')"
                                                         value="{{ $team->final_position }}"
                                                         wire:change="updateFinalPosition({{ $team->id }}, $event.target.value)" />
                                                 </div>
                                                 <x-button
                                                     class="btn-sm btn-warning"
                                                     icon="o-exclamation-triangle"
-                                                    label="{{ __('Forfait') }}"
-                                                    tooltip="{{ __('Déclarer le forfait général') }}"
+                                                    :label="__('Forfait')"
+                                                    :tooltip="__('Déclarer le forfait général')"
                                                     wire:click="openTeamForfeitModal({{ $team->id }})" />
                                             </div>
                                         </x-slot:actions>
@@ -193,7 +193,7 @@
     @endif
 
     {{-- ── Modal Edit result ──────────────────────────────────────────────── --}}
-    <x-modal wire:model="editModal" title="{{ __('Edit match') }}">
+    <x-modal wire:model="editModal" :title="__('Edit match')">
         <div class="space-y-5">
             {{-- Context (read-only) --}}
             <div class="flex flex-wrap items-center gap-3 rounded-lg bg-base-200 px-4 py-3 text-sm">
@@ -215,7 +215,7 @@
 
             {{-- Situation (first so it's always visible) --}}
             <x-select
-                label="{{ __('Situation') }}"
+                :label="__('Situation')"
                 :options="$matchTypeOptions"
                 option-label="label"
                 option-value="value"
@@ -228,7 +228,7 @@
                     <div class="flex items-end gap-3">
                         <x-input
                             class="text-center"
-                            label="{{ __('Our score') }}"
+                            :label="__('Our score')"
                             type="number"
                             min="0"
                             max="{{ $maxPts }}"
@@ -236,7 +236,7 @@
                         <span class="mb-2 text-2xl font-light text-base-content/30">—</span>
                         <x-input
                             class="text-center"
-                            label="{{ __('Opponent score') }}"
+                            :label="__('Opponent score')"
                             type="number"
                             min="0"
                             max="{{ $maxPts }}"
@@ -248,30 +248,30 @@
         </div>
 
         <x-slot:actions>
-            <x-button label="{{ __('Cancel') }}" wire:click="$set('editModal', false)" />
-            <x-button class="btn-primary" label="{{ __('Save') }}" wire:click="save" wire:loading.attr="disabled" />
+            <x-button :label="__('Cancel')" wire:click="$set('editModal', false)" />
+            <x-button class="btn-primary" :label="__('Save')" wire:click="save" wire:loading.attr="disabled" />
         </x-slot:actions>
     </x-modal>
 
     {{-- ── Modal Delete confirmation ───────────────────────────────────────── --}}
-    <x-modal wire:model="deleteModal" title="{{ __('Delete match') }}">
+    <x-modal wire:model="deleteModal" :title="__('Delete match')">
         <p class="text-sm text-gray-600">{{ __('Are you sure you want to delete this match? This action cannot be undone.') }}</p>
 
         <x-slot:actions>
-            <x-button label="{{ __('Cancel') }}" wire:click="$set('deleteModal', false)" />
-            <x-button class="btn-error" label="{{ __('Delete') }}" wire:click="delete" wire:loading.attr="disabled" />
+            <x-button :label="__('Cancel')" wire:click="$set('deleteModal', false)" />
+            <x-button class="btn-error" :label="__('Delete')" wire:click="delete" wire:loading.attr="disabled" />
         </x-slot:actions>
     </x-modal>
 
     {{-- ── Modal Forfait Général équipe ───────────────────────────────────── --}}
-    <x-modal wire:model="teamForfeitModal" title="{{ __('Declare general forfeit') }}">
+    <x-modal wire:model="teamForfeitModal" :title="__('Declare general forfeit')">
         <p class="text-sm text-gray-600">
             {{ __('All unplayed matches for this team will be marked as general forfeit (Withdrawal). This action cannot be easily undone.') }}
         </p>
 
         <x-slot:actions>
-            <x-button label="{{ __('Cancel') }}" wire:click="$set('teamForfeitModal', false)" />
-            <x-button class="btn-warning" label="{{ __('Confirm') }}" wire:click="declareTeamForfeit" wire:loading.attr="disabled" />
+            <x-button :label="__('Cancel')" wire:click="$set('teamForfeitModal', false)" />
+            <x-button class="btn-warning" :label="__('Confirm')" wire:click="declareTeamForfeit" wire:loading.attr="disabled" />
         </x-slot:actions>
     </x-modal>
 </div>

@@ -2,22 +2,22 @@
     <x-slot:breadcrumbs>
         <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
     </x-slot:breadcrumbs>
-    <x-header progress-indicator separator title="Équipes">
+    <x-header progress-indicator separator :title="__('Teams')">
         <x-slot:middle class="justify-end!">
             <x-select
                 :options="$seasons"
                 option-label="name"
                 option-value="id"
                 wire:model.live="selectedSeasonId"
-                placeholder="{{ __('Select a season') }}" />
+                :placeholder="__('Select a season')" />
         </x-slot:middle>
         <x-slot:actions>
             <x-input class="max-w-xs border-none" clearable icon="o-magnifying-glass" placeholder="Rechercher..."
                 wire:model.live.debounce.300ms="search" />
             @if ($isAdminOrCommittee)
                 <x-button class="btn-ghost" link="{{ route('admin.interclubs.teams.builder') }}" icon="o-squares-plus"
-                    label="Composer les équipes" />
-                <x-button class="btn-primary btn-sm" icon="o-plus" label="Nouvelle équipe"
+                    :label="__('Build teams')" />
+                <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('New team')"
                     wire:click="$set('createModal', true)" />
                 @if ($teamsCount > 0)
                     <x-button class="btn-ghost text-error" icon="o-trash"
@@ -34,7 +34,7 @@
                     Aucune équipe pour la saison {{ $season->name }}.
                     <div class="mt-4">
                         <x-button class="btn-primary" link="{{ route('admin.interclubs.teams.builder') }}"
-                            icon="o-squares-plus" label="Composer les équipes" />
+                            icon="o-squares-plus" :label="__('Build teams')" />
                     </div>
                 @else
                     Aucune saison active. Activez une saison pour gérer les équipes.
@@ -66,11 +66,11 @@
     @endif
 
     {{-- Modal création libre --}}
-    <x-modal title="Nouvelle équipe" wire:model="createModal">
+    <x-modal :title="__('New team')" wire:model="createModal">
         <div class="space-y-4">
             <x-select label="Lettre" :options="$teamNameOptions" wire:model="newTeamName"
                 placeholder="Choisir A – Z" />
-            <x-select label="Catégorie" :options="$categoryOptions" wire:model="newCategory"
+            <x-select :label="__('Category')" :options="$categoryOptions" wire:model="newCategory"
                 placeholder="Sélectionner..." />
             <x-select label="Niveau" :options="$levelOptions" wire:model="newLevel"
                 placeholder="Sélectionner..." />
@@ -78,13 +78,13 @@
         </div>
         <x-slot:actions>
             <x-button label="Annuler" wire:click="$set('createModal', false)" />
-            <x-button class="btn-primary" label="Créer" wire:click="createTeam" spinner />
+            <x-button class="btn-primary" :label="__('Create')" wire:click="createTeam" spinner />
         </x-slot:actions>
     </x-modal>
 
     {{-- Modal suppression unitaire --}}
-    <x-modal subtitle="{{ __('Warning!') }}" title="Confirmer la suppression" wire:model="deleteModal">
-        <p>Êtes-vous sûr de vouloir supprimer cette équipe ? Cette action est irréversible.</p>
+    <x-modal :subtitle="__('Warning!')" title="Confirmer la suppression" wire:model="deleteModal">
+        <p>{{ __('Are you sure you want to delete this team? This action is irreversible.') }}</p>
 
         <x-slot:actions>
             <x-button label="Annuler" wire:click="$set('deleteModal', false)" />
@@ -93,9 +93,9 @@
     </x-modal>
 
     {{-- Modal suppression totale --}}
-    <x-modal subtitle="{{ __('Warning!') }}" title="Supprimer toutes les équipes" wire:model="deleteAllModal">
+    <x-modal :subtitle="__('Warning!')" :title="__('Delete all teams')" wire:model="deleteAllModal">
         <p>
-            Êtes-vous sûr de vouloir supprimer <strong>toutes les équipes</strong> de la saison en cours ?
+            Êtes-vous sûr de vouloir supprimer <strong>{{ __('all teams') }}</strong> de la saison en cours ?
             Cette action est irréversible et retirera également tous les joueurs de leurs équipes.
         </p>
 

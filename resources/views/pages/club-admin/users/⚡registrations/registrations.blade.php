@@ -1,8 +1,8 @@
 <div>
-    <x-header title="{{ __('Registrations') }}" subtitle="{{ __('All affiliations by season') }}" separator progress-indicator>
+    <x-header :title="__('Registrations')" :subtitle="__('All affiliations by season')" separator progress-indicator>
         <x-slot:middle class="!justify-end">
             <x-input
-                placeholder="{{ __('Search a member...') }}"
+                :placeholder="__('Search a member...')"
                 wire:model.live.debounce.300ms="search"
                 icon="o-magnifying-glass"
                 class="border-none bg-base-200" />
@@ -10,7 +10,7 @@
         <x-slot:actions>
             @if(!$this->registrationClosed)
             <x-button
-                label="{{ __('Register a member') }}"
+                :label="__('Register a member')"
                 icon="o-user-plus"
                 class="btn-primary btn-sm"
                 @click="$wire.memberDrawer = true" />
@@ -27,7 +27,7 @@
         <x-select
             wire:model.live="selectedSeasonId"
             :options="$this->seasonOptions"
-            placeholder="{{ __('All seasons') }}"
+            :placeholder="__('All seasons')"
             class="select-sm border-base-300 min-w-44"
             icon="o-calendar" />
 
@@ -74,7 +74,7 @@
                         <div class="text-xs opacity-50 mt-0.5">{{ __('New affiliation request') }}</div>
                     </div>
                     <x-button
-                        label="{{ __('Review') }}"
+                        :label="__('Review')"
                         icon="o-check-circle"
                         class="btn-sm btn-warning"
                         wire:click="review({{ $sub->id }})" />
@@ -91,7 +91,7 @@
                         </div>
                     </div>
                     <x-button
-                        label="{{ __('Review') }}"
+                        :label="__('Review')"
                         icon="o-academic-cap"
                         class="btn-sm btn-warning"
                         wire:click="reviewTrainingRequest({{ $sub->id }})" />
@@ -153,7 +153,7 @@
             @endscope
 
             @scope('actions', $req)
-            <x-button label="{{ __('Details') }}" wire:click="review({{ $req->id }})" class="btn-xs btn-ghost" />
+            <x-button :label="__('Details')" wire:click="review({{ $req->id }})" class="btn-xs btn-ghost" />
             @endscope
 
         </x-table>
@@ -196,7 +196,7 @@
                         @if(in_array($currentRequest->status, ['confirmed', 'paid']))
                             <x-button
                                 icon="o-arrow-uturn-left"
-                                tooltip="{{ __('Remove & refund') }}"
+                                :tooltip="__('Remove & refund')"
                                 class="btn-ghost btn-xs text-error"
                                 wire:click="openRefundModal({{ $currentRequest->id }}, {{ $pack->id }})"
                                 spinner />
@@ -377,7 +377,7 @@
                 </div>
                 <textarea
                     wire:model="rejectionMessage"
-                    placeholder="{{ __('Optional personal note to the member...') }}"
+                    :placeholder="__('Optional personal note to the member...')"
                     class="textarea textarea-sm textarea-bordered w-full text-sm"
                     rows="2"></textarea>
             </div>
@@ -386,19 +386,19 @@
 
         <x-slot:actions>
             @if(!$paymentGenerated && $currentRequest && $currentRequest->status === 'pending')
-            <x-button label="{{ __('Reject') }}" wire:click="reject" class="btn-ghost text-error" spinner />
-            <x-button label="{{ __('Approve and Invoice') }}" wire:click="approve" class="btn-primary shadow-lg" spinner />
+            <x-button :label="__('Reject')" wire:click="reject" class="btn-ghost text-error" spinner />
+            <x-button :label="__('Approve and Invoice')" wire:click="approve" class="btn-primary shadow-lg" spinner />
             @elseif($paymentGenerated)
-            <x-button label="{{ __('Close') }}" @click="$wire.reviewModal = false" class="btn-ghost" />
-            <x-button label="{{ __('Send by email') }}" icon="o-paper-airplane" class="btn-primary" wire:click="sendPaymentEmail" spinner />
+            <x-button :label="__('Close')" @click="$wire.reviewModal = false" class="btn-ghost" />
+            <x-button :label="__('Send by email')" icon="o-paper-airplane" class="btn-primary" wire:click="sendPaymentEmail" spinner />
             @else
-            <x-button label="{{ __('Close') }}" @click="$wire.reviewModal = false" class="btn-ghost" />
+            <x-button :label="__('Close')" @click="$wire.reviewModal = false" class="btn-ghost" />
             @endif
         </x-slot:actions>
     </x-modal>
 
     {{-- ── Training request modal (Flux B) ────────────────────────────────── --}}
-    <x-modal wire:model="trainingRequestModal" title="{{ __('Training Request') }}" separator class="backdrop-blur-sm">
+    <x-modal wire:model="trainingRequestModal" :title="__('Training Request')" separator class="backdrop-blur-sm">
 
         @if(!$paymentGenerated && $currentTrainingRequest)
         <div class="space-y-6">
@@ -523,7 +523,7 @@
                 </div>
                 <textarea
                     wire:model="rejectionMessage"
-                    placeholder="{{ __('Optional personal note to the member...') }}"
+                    :placeholder="__('Optional personal note to the member...')"
                     class="textarea textarea-sm textarea-bordered w-full text-sm"
                     rows="2"></textarea>
             </div>
@@ -532,26 +532,26 @@
 
         <x-slot:actions>
             @if(!$paymentGenerated)
-            <x-button label="{{ __('Cancel') }}" @click="$wire.trainingRequestModal = false" class="btn-ghost" />
-            <x-button label="{{ __('Reject all') }}" wire:click="rejectTrainingRequest" class="btn-ghost text-error" spinner />
-            <x-button label="{{ __('Approve') }}" icon="o-check" wire:click="approveTrainingRequest" class="btn-warning shadow-lg" spinner />
+            <x-button :label="__('Cancel')" @click="$wire.trainingRequestModal = false" class="btn-ghost" />
+            <x-button :label="__('Reject all')" wire:click="rejectTrainingRequest" class="btn-ghost text-error" spinner />
+            <x-button :label="__('Approve')" icon="o-check" wire:click="approveTrainingRequest" class="btn-warning shadow-lg" spinner />
             @else
-            <x-button label="{{ __('Close') }}" @click="$wire.trainingRequestModal = false; $wire.paymentGenerated = false" class="btn-ghost" />
-            <x-button label="{{ __('Send by email') }}" icon="o-paper-airplane" class="btn-primary" wire:click="sendPaymentEmail" spinner />
+            <x-button :label="__('Close')" @click="$wire.trainingRequestModal = false; $wire.paymentGenerated = false" class="btn-ghost" />
+            <x-button :label="__('Send by email')" icon="o-paper-airplane" class="btn-primary" wire:click="sendPaymentEmail" spinner />
             @endif
         </x-slot:actions>
     </x-modal>
 
     {{-- ── Drawer pour l'inscription/renouvellement ────────────────────────── --}}
-    <x-drawer wire:model="memberDrawer" title="{{ __('Family Registration') }}" right separator with-close-button class="w-11/12 md:w-5/12">
+    <x-drawer wire:model="memberDrawer" :title="__('Family Registration')" right separator with-close-button class="w-11/12 md:w-5/12">
 
         <div class="space-y-6">
             <div class="bg-base-200 p-4 rounded-xl">
                 <x-input
-                    placeholder="{{ __('Search for a member to add to the group...') }}"
+                    :placeholder="__('Search for a member to add to the group...')"
                     wire:model.live.debounce.300ms="searchMember"
                     icon="o-magnifying-glass"
-                    hint="{{ __('Add all family members here') }}" />
+                    :hint="__('Add all family members here')" />
 
                 @if(strlen($searchMember) > 2)
                 <div class="mt-2 shadow-lg bg-base-100 rounded-lg border border-base-300">
@@ -580,13 +580,13 @@
 
                     <div class="grid grid-cols-1 gap-4">
                         <x-radio
-                            label="{{ __('Licence type') }}"
+                            :label="__('Licence type')"
                             wire:model="familyBasket.{{ $userId }}.licence_type"
                             :options="[['id' => 'competitive', 'name' => __('Competitive')], ['id' => 'recreative', 'name' => __('Recreational')]]"
                             class="radio-sm" />
 
                         <x-choices
-                            label="{{ __('Trainings') }}"
+                            :label="__('Trainings')"
                             wire:model="familyBasket.{{ $userId }}.trainings"
                             :options="$this->trainingOptions()"
                             compact
@@ -602,10 +602,10 @@
         </div>
 
         <x-slot:actions>
-            <x-button label="{{ __('Cancel') }}" @click="$wire.memberDrawer = false" />
+            <x-button :label="__('Cancel')" @click="$wire.memberDrawer = false" />
             @if(count($familyBasket) > 0)
             <x-button
-                label="{{ __('Validate group registration') }} ({{ count($familyBasket) }})"
+                :label="__('Validate group registration') . ' (' . count($familyBasket) . ')'"
                 icon="o-check"
                 class="btn-primary"
                 wire:click="saveFamilyRegistration" />
@@ -618,7 +618,7 @@
         $refundSub  = $refundSubscriptionId ? $this->registrations()->firstWhere('id', $refundSubscriptionId) : null;
         $refundPack = $refundPackId ? $refundSub?->enrolled_packs->firstWhere('id', $refundPackId) : null;
     @endphp
-    <x-modal wire:model="refundModal" title="{{ __('Remove & Refund') }}" separator class="backdrop-blur-sm">
+    <x-modal wire:model="refundModal" :title="__('Remove & Refund')" separator class="backdrop-blur-sm">
         @if($refundPack)
         <div class="space-y-4">
             <p class="text-sm">
@@ -647,8 +647,8 @@
         </div>
         @endif
         <x-slot:actions>
-            <x-button label="{{ __('Cancel') }}" @click="$wire.refundModal = false" class="btn-ghost" />
-            <x-button label="{{ __('Confirm refund') }}" icon="o-arrow-uturn-left" class="btn-error" wire:click="confirmRefund" spinner />
+            <x-button :label="__('Cancel')" @click="$wire.refundModal = false" class="btn-ghost" />
+            <x-button :label="__('Confirm refund')" icon="o-arrow-uturn-left" class="btn-error" wire:click="confirmRefund" spinner />
         </x-slot:actions>
     </x-modal>
 </div>

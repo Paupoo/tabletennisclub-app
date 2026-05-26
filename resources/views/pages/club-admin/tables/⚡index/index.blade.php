@@ -9,8 +9,8 @@
         </x-slot:middle>
         <x-slot:actions>
             @can('create', \App\Models\ClubAdmin\Club\Table::class)
-            <x-button label="{{ __('Create') }}" icon="o-plus" class="btn-primary btn-sm" link="{{ route('admin.tables.create') }}" />
-            <x-button x-on:click="$wire.$refresh()" label="{{ __('Refresh') }}" class="btn-outline btn-sm"/>
+            <x-button :label="__('Create')" icon="o-plus" class="btn-primary btn-sm" link="{{ route('admin.tables.create') }}" />
+            <x-button x-on:click="$wire.$refresh()" :label="__('Refresh')" class="btn-outline btn-sm"/>
             @endcan
         </x-slot:actions>
     </x-header>
@@ -82,15 +82,15 @@
                                 <x-admin.shared.row-actions>
                                     @can('edit', $table)
                                         <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
-                                            tooltip="{{ __('Edit') }}" link="{{ route('admin.tables.edit', $table) }}" />
+                                            :tooltip="__('Edit')" link="{{ route('admin.tables.edit', $table) }}" />
                                         @if ($table->room)
                                             <x-button class="btn-ghost btn-sm btn-circle" icon="o-lock-open"
-                                                tooltip="{{ __('Unlink') }}" wire:click="confirmUnlink({{ $table }})" spinner />
+                                                :tooltip="__('Unlink')" wire:click="confirmUnlink({{ $table }})" spinner />
                                         @endif
                                     @endcan
                                     @can('delete', $table)
                                         <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
-                                            tooltip="{{ __('Delete') }}" wire:click="confirmDelete({{ $table }})" />
+                                            :tooltip="__('Delete')" wire:click="confirmDelete({{ $table }})" />
                                     @endcan
                                 </x-admin.shared.row-actions>
                                 @endcanany
@@ -137,21 +137,21 @@
     </div>
 
     {{-- Modals --}}
-    <x-modal subtitle="{{ __('Warning!') }}" title="{{ __('Confirm unlink') }}" wire:model="unlinkModal">
+    <x-modal :subtitle="__('Warning!')" :title="__('Confirm unlink')" wire:model="unlinkModal">
         <p>{{ __('Are you sure you want to unlink the table from its room?') }}</p>
 
         <x-slot:actions>
-            <x-button label="{{ __('Cancel') }}" wire:click="$set('unlinkModal', false)" />
-            <x-button class="btn-error" label="{{ __('Delete') }}" spinner wire:click="unlink" />
+            <x-button :label="__('Cancel')" wire:click="$set('unlinkModal', false)" />
+            <x-button class="btn-error" :label="__('Delete')" spinner wire:click="unlink" />
         </x-slot:actions>
     </x-modal>
 
-    <x-modal subtitle="{{ __('Warning!') }}" title="{{ __('Confirm deletion') }}" wire:model="deleteModal">
+    <x-modal :subtitle="__('Warning!')" :title="__('Confirm deletion')" wire:model="deleteModal">
         <p>{{ __('Are you sure you want to delete this table? This action is irreversible.') }}</p>
 
         <x-slot:actions>
-            <x-button label="{{ __('Cancel') }}" wire:click="$set('deleteModal', false)" />
-            <x-button class="btn-error" label="{{ __('Delete') }}" spinner wire:click="delete" />
+            <x-button :label="__('Cancel')" wire:click="$set('deleteModal', false)" />
+            <x-button class="btn-error" :label="__('Delete')" spinner wire:click="delete" />
         </x-slot:actions>
     </x-modal>
 

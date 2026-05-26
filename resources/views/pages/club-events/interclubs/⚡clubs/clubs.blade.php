@@ -3,11 +3,11 @@
         <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
     </x-slot:breadcrumbs>
 
-    <x-header progress-indicator separator title="{{ __('Opponent Clubs') }}">
+    <x-header progress-indicator separator :title="__('Opponent Clubs')">
         <x-slot:subtitle>{{ __('Manage opponent clubs once, reuse them across seasons when setting up divisions.') }}</x-slot:subtitle>
         <x-slot:middle class="!justify-end">
             <x-input
-                placeholder="{{ __('Search…') }}"
+                :placeholder="__('Search…')"
                 wire:model.live.debounce="search"
                 icon="o-magnifying-glass"
                 clearable />
@@ -16,7 +16,7 @@
             <x-button
                 class="btn-primary btn-sm"
                 icon="o-plus"
-                label="{{ __('New club') }}"
+                :label="__('New club')"
                 wire:click="openCreateModal" />
         </x-slot:actions>
     </x-header>
@@ -28,7 +28,7 @@
                     <p class="text-sm">{{ __('No clubs match your search.') }}</p>
                 @else
                     <p class="text-sm">{{ __('No opponent clubs yet.') }}</p>
-                    <x-button class="btn-primary btn-sm mt-4" icon="o-plus" label="{{ __('Add first club') }}" wire:click="openCreateModal" />
+                    <x-button class="btn-primary btn-sm mt-4" icon="o-plus" :label="__('Add first club')" wire:click="openCreateModal" />
                 @endif
             </div>
         </x-card>
@@ -72,12 +72,12 @@
                             <x-button
                                 class="btn-ghost btn-sm btn-circle"
                                 icon="o-pencil"
-                                tooltip="{{ __('Edit') }}"
+                                :tooltip="__('Edit')"
                                 wire:click="openEditModal({{ $club->id }})" />
                             <x-button
                                 class="btn-ghost btn-sm btn-circle text-error"
                                 icon="o-trash"
-                                tooltip="{{ __('Delete') }}"
+                                :tooltip="__('Delete')"
                                 wire:click="confirmDelete({{ $club->id }})" />
                         </div>
                     </div>
@@ -90,47 +90,47 @@
     <x-modal wire:model="editModal" :title="$editingClubId ? __('Edit club') : __('New club')" separator>
         <div class="space-y-4">
             <x-input
-                label="{{ __('Club name') }}"
+                :label="__('Club name')"
                 wire:model="formName"
                 placeholder="ex: TT Wavre"
                 icon="o-building-office"
                 required />
             <x-input
-                label="{{ __('Licence') }}"
+                :label="__('Licence')"
                 wire:model="formLicence"
-                placeholder="{{ __('Auto-generated if empty') }}"
+                :placeholder="__('Auto-generated if empty')"
                 icon="o-identification"
-                hint="{{ __('Official federation licence number. Leave empty to auto-generate.') }}" />
+                :hint="__('Official federation licence number. Leave empty to auto-generate.')" />
             <x-input
-                label="{{ __('Street address') }}"
+                :label="__('Street address')"
                 wire:model="formStreet"
                 placeholder="ex: Rue de la Gare 10"
                 icon="o-map-pin" />
             <div class="grid grid-cols-3 gap-3">
                 <x-input
-                    label="{{ __('Postal code') }}"
+                    :label="__('Postal code')"
                     wire:model="formCityCode"
                     placeholder="1300"
                     class="col-span-1" />
                 <x-input
-                    label="{{ __('City') }}"
+                    :label="__('City')"
                     wire:model="formCityName"
                     placeholder="ex: Wavre"
                     class="col-span-2" />
             </div>
         </div>
         <x-slot:actions>
-            <x-button label="{{ __('Cancel') }}" wire:click="$set('editModal', false)" />
-            <x-button class="btn-primary" label="{{ __('Save') }}" wire:click="save" spinner />
+            <x-button :label="__('Cancel')" wire:click="$set('editModal', false)" />
+            <x-button class="btn-primary" :label="__('Save')" wire:click="save" spinner />
         </x-slot:actions>
     </x-modal>
 
     {{-- Modal delete --}}
-    <x-modal subtitle="{{ __('Warning!') }}" title="{{ __('Delete club') }}" wire:model="deleteModal">
+    <x-modal :subtitle="__('Warning!')" :title="__('Delete club')" wire:model="deleteModal">
         <p>{{ __('Are you sure you want to delete this club? This action cannot be undone.') }}</p>
         <x-slot:actions>
-            <x-button label="{{ __('Cancel') }}" wire:click="$set('deleteModal', false)" />
-            <x-button class="btn-error" label="{{ __('Delete') }}" spinner wire:click="delete" />
+            <x-button :label="__('Cancel')" wire:click="$set('deleteModal', false)" />
+            <x-button class="btn-error" :label="__('Delete')" spinner wire:click="delete" />
         </x-slot:actions>
     </x-modal>
 </div>

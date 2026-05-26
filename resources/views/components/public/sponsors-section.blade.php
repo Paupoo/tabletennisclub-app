@@ -47,8 +47,8 @@
         </div>
         
         <div class="text-center mt-8 animate-on-scroll">
-            <p class="text-gray-600 mb-4">Intéressé par le parrainage de notre club ?</p>
-            <a href="#contact" target="_self" class="text-club-blue hover:text-club-blue-light font-semibold">Contactez-nous pour les opportunités de partenariat</a>
+            <p class="text-gray-600 mb-4">{{ __('Interested in sponsoring our club?') }}</p>
+            <a href="#contact" target="_self" class="text-club-blue hover:text-club-blue-light font-semibold">{{ __('Contact us for partnership opportunities') }}</a>
         </div>
     </div>
 </section>

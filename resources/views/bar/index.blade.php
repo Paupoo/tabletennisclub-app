@@ -4,7 +4,7 @@
 
 <div class="page-header">
     <h1>🍹 Bar - Commande</h1>
-    <p class="muted">Sélectionnez les produits à ajouter à la commande.</p>
+    <p class="muted">{{ __('Select the products to add to the order.') }}</p>
 </div>
 @if($cartCount > 0)
     <div class="cart-bar" style="margin:14px">
@@ -97,7 +97,7 @@
                 </div>
 
             @empty
-                <p class="muted">Aucun produit dans cette catégorie.</p>
+                <p class="muted">{{ __('No products in this category.') }}</p>
             @endforelse
 
         </div>

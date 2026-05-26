@@ -21,36 +21,36 @@
 
             <!-- Section Personal -->
             <div class="col-span-6 md:col-span-2">
-                <x-header subtitle="{{ __('Personal information') }}" title="{{ __('Personal') }}" />
+                <x-header :subtitle="__('Personal information')" :title="__('Personal')" />
             </div>
 
             <div class="col-span-6 grid gap-2 md:col-span-4">
                 <div class="grid gap-6 lg:grid-cols-2">
-                    <x-input label="{{ __('First Name') }}" wire:model="first_name" />
-                    <x-input label="{{ __('Last Name') }}" wire:model="last_name" />
-                    <x-input label="{{ __('Email') }}" wire:model="email" />
-                    <x-group :options="$genders" class="btn-soft" inline label="{{ __('Gender') }}"
+                    <x-input :label="__('First Name')" wire:model="first_name" />
+                    <x-input :label="__('Last Name')" wire:model="last_name" />
+                    <x-input :label="__('Email')" wire:model="email" />
+                    <x-group :options="$genders" class="btn-soft" inline :label="__('Gender')"
                         wire:model="gender" />
-                    <x-input label="{{ __('Street') }}" wire:model="street" />
-                    <x-input autocomplete="city_code" inputmode="numeric" label="{{ __('Postal Code') }}" max="9999"
+                    <x-input :label="__('Street')" wire:model="street" />
+                    <x-input autocomplete="city_code" inputmode="numeric" :label="__('Postal Code')" max="9999"
                         min="1000" pattern="[0-9]*" type="number" wire:model.live.debounce.500ms="city_code" />
-                    <x-input label="{{ __('City') }}" wire:model="city_name" />
-                    <x-input label="{{ __('Phone Number') }}" wire:model="phone_number" />
-                    <x-input label="{{ __('Birthdate') }}" type="date" wire:model="birthdate" />
-                    <x-input label="{{ __('Parent or tutor phone number') }}" wire:model="parent_phone_number" />
-                    <x-input label="{{ __('IBAN') }}" wire:model="iban"
+                    <x-input :label="__('City')" wire:model="city_name" />
+                    <x-input :label="__('Phone Number')" wire:model="phone_number" />
+                    <x-input :label="__('Birthdate')" type="date" wire:model="birthdate" />
+                    <x-input :label="__('Parent or tutor phone number')" wire:model="parent_phone_number" />
+                    <x-input :label="__('IBAN')" wire:model="iban"
                         placeholder="BE00 0000 0000 0000"
-                        hint="{{ __('Used for refunds. Leave empty if unknown.') }}" />
+                        :hint="__('Used for refunds. Leave empty if unknown.')" />
                     <div>
                         <div wire:key="photo-container-{{ $imageKey }}">
                             <x-file accept="image/png, image/jpeg, image/webp" crop-after-change
-                                label="{{ __('Photo') }}" wire:model="photo">
+                                :label="__('Photo')" wire:model="photo">
                                 <img alt="{{ __('Avatar') }}" class="h-36 rounded-lg object-cover"
                                     src="{{ $photo ? $photo->temporaryUrl() : ($currentPhoto ? asset($currentPhoto) : asset('images/empty-user.jpg')) }}">
                             </x-file>
                         </div>
                         @if ($currentPhoto)
-                            <x-button class="btn-soft btn-ghost m-2 w-36 text-xs" label="{{ __('Delete photo') }}"
+                            <x-button class="btn-soft btn-ghost m-2 w-36 text-xs" :label="__('Delete photo')"
                                 wire:click="$set('deleteModal', true)" />
                         @endif
                     </div>
@@ -64,11 +64,11 @@
 
             <!-- Section Security -->
             <div class="col-span-6 md:col-span-2">
-                <x-header subtitle="{{ __('Secure your account') }}" title="{{ __('Security') }}" />
+                <x-header :subtitle="__('Secure your account')" :title="__('Security')" />
             </div>
             <div class="col-span-6 md:col-span-4">
                 <x-password
-                    hint="{{ __('Minimum 8 charachters, with at least 1 letter, 1 number and 1 special character') }}"
+                    :hint="__('Minimum 8 charachters, with at least 1 letter, 1 number and 1 special character')"
                     label="Password" wire:model.live.debounce="password" />
                 <x-password label="Password Confirmation" wire:model.live.debounce="password_confirmation" />
             </div>
@@ -78,19 +78,19 @@
 
             <!-- Section Registration -->
             <div class="col-span-6 md:col-span-2">
-                <x-header subtitle="{{ __('Registration info') }}" title="{{ __(key: 'Registration') }}" />
+                <x-header :subtitle="__('Registration info')" :title="__(key: 'Registration')" />
             </div>
 
             <div class="col-span-6 md:col-span-4">
-                <x-group :options="$licence_types" class="btn-soft" inline label="{{ __('Licence Type') }}"
+                <x-group :options="$licence_types" class="btn-soft" inline :label="__('Licence Type')"
                     wire:model.live="licence_type" />
                 @if ($licence_type == 'competitive')
-                    <x-input label="{{ __('Licence *') }}" mandatory numeric wire:model.live.debounce="licence" />
-                    <x-select :options="$rankings" icon="o-scale" label="{{ __('Ranking') }}" wire:model.live="ranking" />
+                    <x-input :label="__('Licence *')" mandatory numeric wire:model.live.debounce="licence" />
+                    <x-select :options="$rankings" icon="o-scale" :label="__('Ranking')" wire:model.live="ranking" />
                 @endif
                 <x-choices :options="$trainings"
-                    hint="{{ __('Select the trainings you wish to attend to (available sessions only)') }}"
-                    icon="o-calendar" label="{{ __('Trainings') }}" wire:model="trainings_ids">
+                    :hint="__('Select the trainings you wish to attend to (available sessions only)')"
+                    icon="o-calendar" :label="__('Trainings')" wire:model="trainings_ids">
                     @scope('item', $training)
                         <x-list-item :item="$training" sub-value="group" value="day">
                             <x-slot:actions>
@@ -116,26 +116,26 @@
 
             <!-- Section Permissions -->
             <div class="col-span-6 md:col-span-2">
-                <x-header subtitle="{{ __('Define the roles and permissions here') }}"
-                    title="{{ __('Permissions') }}" />
+                <x-header :subtitle="__('Define the roles and permissions here')"
+                    :title="__('Permissions')" />
             </div>
             <div class="col-span-6 md:col-span-4">
                 <x-checkbox
-                    hint="{{ __('An active member is up to date with his or her membership fees and is authorized to participate in all club activities') }}"
-                    label="{{ __('Is Active') }}" wire:model="is_active" />
+                    :hint="__('An active member is up to date with his or her membership fees and is authorized to participate in all club activities')"
+                    :label="__('Is Active')" wire:model="is_active" />
                 <x-checkbox
-                    hint="{{ __('Committee Members are granted most accesses like creating, updating and deleting objects (Users, teams, tournaments...)') }}"
-                    label="{{ __('Is a committee member') }}" wire:model.live="is_committee_member" />
+                    :hint="__('Committee Members are granted most accesses like creating, updating and deleting objects (Users, teams, tournaments...)')"
+                    :label="__('Is a committee member')" wire:model.live="is_committee_member" />
                 @if ($is_committee_member)
                     <div class="w-64 mb-4 ml-10">
-                        <x-select label="{{ __('Committee Role') }}" icon="o-briefcase"
-                            placeholder="{{ __('Select a role') }}" :options="$this->CommitteeRoleOptions" wire:model="committee_role" />
+                        <x-select :label="__('Committee Role')" icon="o-briefcase"
+                            :placeholder="__('Select a role')" :options="$this->CommitteeRoleOptions" wire:model="committee_role" />
                     </div>
                 @endif
-                <x-checkbox hint="{{ __('Can access the coach view and be assigned to training packs') }}"
-                    label="{{ __('Is a coach') }}" wire:model="is_coach" />
-                <x-checkbox hint="{{ __('With great power comes great responsibility...') }}"
-                    label="{{ __('Is an administrator') }}" wire:model="is_admin" />
+                <x-checkbox :hint="__('Can access the coach view and be assigned to training packs')"
+                    :label="__('Is a coach')" wire:model="is_coach" />
+                <x-checkbox :hint="__('With great power comes great responsibility...')"
+                    :label="__('Is an administrator')" wire:model="is_admin" />
             </div>
 
             @if ($user && ($user->medical_certificate_path || $user->parental_consent_path))
@@ -145,7 +145,7 @@
 
                 <!-- Section Documents -->
                 <div class="col-span-6 md:col-span-2">
-                    <x-header subtitle="{{ __('Uploaded by the member') }}" title="{{ __('Documents') }}" />
+                    <x-header :subtitle="__('Uploaded by the member')" :title="__('Documents')" />
                 </div>
                 <div class="col-span-6 md:col-span-4 space-y-3">
                     @if ($user->medical_certificate_path)
@@ -182,21 +182,21 @@
 
                 <!-- Section Danger/Delete -->
                 <div class="col-span-6 md:col-span-2">
-                    <x-header class="text-danger" subtitle="{{ __('Watch out! Be careful and act wisely...') }}"
-                        title="{{ __('Danger zone') }}" />
+                    <x-header class="text-danger" :subtitle="__('Watch out! Be careful and act wisely...')"
+                        :title="__('Danger zone')" />
                 </div>
                 <div class="col-span-6 md:col-span-4">
                     <x-input
-                        hint="{{ __('Type DELETE before pressing the red button. This will permanently delete your data and club history.') }}"
-                        label="{{ __('Delete Confirmation') }}" placeholder="{{ __('Confirm here') }}" />
-                    <x-button class="btn-error btn-md mt-6" label="{{ __('Request Deletion') }}" />
+                        :hint="__('Type DELETE before pressing the red button. This will permanently delete your data and club history.')"
+                        :label="__('Delete Confirmation')" :placeholder="__('Confirm here')" />
+                    <x-button class="btn-error btn-md mt-6" :label="__('Request Deletion')" />
                 </div>
             @endif
 
         </div>
         <x-slot:actions>
             <x-button label=" {{ __('Reset') }}" />
-            <x-button class="btn-primary" label="{{ $user ? __('Update') : __('Create') }}" spinner="save"
+            <x-button class="btn-primary" :label="$user ? __('Update') : __('Create')" spinner="save"
                 type="submit" />
         </x-slot:actions>
     </x-form>

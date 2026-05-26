@@ -7,9 +7,9 @@
 </x-slot:breadcrumbs>
 
 <div>
-    <x-header title="{{ __('My Profile') }}" subtitle="{{ __('Member since Sept 2024') }}" separator progress-indicator>
+    <x-header :title="__('My Profile')" :subtitle="__('Member since Sept 2024')" separator progress-indicator>
         <x-slot:actions>
-            <x-button label="{{ __('Edit Profile') }}" icon="o-pencil" class="btn-outline btn-sm"
+            <x-button :label="__('Edit Profile')" icon="o-pencil" class="btn-outline btn-sm"
                 @click="$wire.drawer = true" responsive />
         </x-slot:actions>
     </x-header>
@@ -41,7 +41,7 @@
                         <x-badge value="{{ __('Inactive') }}" class="badge-neutral badge-sm" />
                     @endif
                 </div>
-                <x-button label="{{ __('Edit') }}" icon="o-pencil" class="btn-outline btn-sm w-fit"
+                <x-button :label="__('Edit')" icon="o-pencil" class="btn-outline btn-sm w-fit"
                     @click="$wire.drawer = true" />
             </div>
             </x-admin.shared.side-card>
@@ -149,11 +149,11 @@
         <div class="flex-1 min-w-0 space-y-8">
 
             {{-- Équipes --}}
-            <x-card title="{{ __('My Teams') }}" icon="o-user-group" shadow separator>
+            <x-card :title="__('My Teams')" icon="o-user-group" shadow separator>
                 @if($user->teams->isEmpty())
                     <div class="flex flex-col items-center gap-3 py-10 text-center">
                         <x-icon name="o-user-group" class="h-10 w-10 opacity-20" />
-                        <p class="text-sm text-gray-400">Vous ne faites partie d'aucune équipe cette saison.</p>
+                        <p class="text-sm text-gray-400">{{ __('You are not part of any team this season.') }}</p>
                     </div>
                 @else
                     @php
@@ -219,7 +219,7 @@
                                 </div>
 
                                 <div class="mt-4 flex justify-end">
-                                    <x-button label="{{ __('Team page') }}" icon="o-arrow-right"
+                                    <x-button :label="__('Team page')" icon="o-arrow-right"
                                         class="btn-ghost btn-sm text-xs opacity-50"
                                         link="{{ route('admin.interclubs.teams.show', $team->id) }}" />
                                 </div>
@@ -231,7 +231,7 @@
             </x-card>
 
             {{-- Historique --}}
-            <x-card title="{{ __('Individual History') }}" icon="o-presentation-chart-line" shadow separator>
+            <x-card :title="__('Individual History')" icon="o-presentation-chart-line" shadow separator>
                 <div class="space-y-6">
                     @php
                         $history = [
@@ -288,7 +288,7 @@
                                 </div>
                                 <x-button icon="o-arrow-right"
                                     class="btn-ghost btn-xs opacity-30 hover:opacity-100"
-                                    tooltip="{{ __('Match details') }}" />
+                                    :tooltip="__('Match details')" />
                             </div>
 
                             <div class="grid grid-cols-2 gap-1.5">
@@ -320,7 +320,7 @@
                 </div>
 
                 <x-slot:actions>
-                    <x-button label="{{ __('See all results') }}" class="btn-ghost btn-sm text-xs opacity-50" />
+                    <x-button :label="__('See all results')" class="btn-ghost btn-sm text-xs opacity-50" />
                 </x-slot:actions>
             </x-card>
 
@@ -330,36 +330,36 @@
     {{-- ════════════════════════════════
          DRAWER — Edit profile
     ════════════════════════════════ --}}
-    <x-drawer wire:model="drawer" title="{{ __('Update info') }}" right separator with-close-button
+    <x-drawer wire:model="drawer" :title="__('Update info')" right separator with-close-button
         class="w-full lg:w-1/2 2xl:w-1/2">
         <x-form wire:submit="save">
             <div class="grid grid-cols-6 gap-4 md:gap-6">
                 <div class="col-span-6 md:col-span-2">
-                    <x-header title="{{ __('Personal') }}" subtitle="{{ __('Personal information') }}" />
+                    <x-header :title="__('Personal')" :subtitle="__('Personal information')" />
                 </div>
                 <div class="col-span-6 md:col-span-4 grid gap-2">
                     <div class="grid lg:grid-cols-2 gap-6">
-                        <x-input label="{{ __('Email') }}" wire:model="email" />
-                        <x-input label="{{ __('Street') }}" wire:model="street" />
-                        <x-input label="{{ __('Postal Code') }}" wire:model.live.debounce.500ms="city_code"
+                        <x-input :label="__('Email')" wire:model="email" />
+                        <x-input :label="__('Street')" wire:model="street" />
+                        <x-input :label="__('Postal Code')" wire:model.live.debounce.500ms="city_code"
                             type="number" inputmode="numeric" pattern="[0-9]*"
                             autocomplete="city-code" min="1000" max="9999" />
-                        <x-input label="{{ __('City') }}" wire:model="city_name" />
-                        <x-input label="{{ __('Phone Number') }}" wire:model="phone_number" />
-                        <x-input label="{{ __('Parent or tutor phone number') }}" wire:model="guardian_phone_number" />
-                        <x-input label="{{ __('IBAN') }}" wire:model="iban"
+                        <x-input :label="__('City')" wire:model="city_name" />
+                        <x-input :label="__('Phone Number')" wire:model="phone_number" />
+                        <x-input :label="__('Parent or tutor phone number')" wire:model="guardian_phone_number" />
+                        <x-input :label="__('IBAN')" wire:model="iban"
                             placeholder="BE00 0000 0000 0000"
-                            hint="{{ __('Used for refunds. Format: BE23 7323 3320 8791') }}" />
+                            :hint="__('Used for refunds. Format: BE23 7323 3320 8791')" />
                         <div>
                             <div wire:key="photo-container-{{ $imageKey }}">
-                                <x-file label="{{ __('Photo') }}" wire:model="photo"
+                                <x-file :label="__('Photo')" wire:model="photo"
                                     accept="image/png, image/jpeg, image/webp" crop-after-change>
                                     <img src="{{ $photo ? $photo->temporaryUrl() : ($currentPhoto ? asset($currentPhoto) : asset('images/empty-user.jpg')) }}"
                                         alt="{{ __('Avatar') }}" class="h-36 rounded-lg object-cover">
                                 </x-file>
                             </div>
                             @if ($currentPhoto)
-                                <x-button label="{{ __('Delete photo') }}"
+                                <x-button :label="__('Delete photo')"
                                     class="m-2 text-xs btn-soft btn-ghost w-36"
                                     wire:click="$set('deleteModal', true)" />
                             @endif
@@ -368,7 +368,7 @@
                 </div>
             </div>
             <x-slot:actions>
-                <x-button label="{{ __('Reset') }}" />
+                <x-button :label="__('Reset')" />
                 <x-button label="{{ $user ? __('Update') : __('Create') }}" class="btn-primary"
                     type="submit" spinner="save" />
             </x-slot:actions>
@@ -378,13 +378,13 @@
     {{-- ════════════════════════════════
          MODAL — Delete photo
     ════════════════════════════════ --}}
-    <x-modal wire:model="deleteModal" title="{{ __('Confirmation of deletion') }}" subtitle="{{ __('Warning!') }}">
+    <x-modal wire:model="deleteModal" :title="__('Confirmation of deletion')" :subtitle="__('Warning!')">
         <x-slot>
             {{ __('Are you sure you want to delete this picture? This action is irreversible.') }}
         </x-slot>
         <x-slot:actions>
-            <x-button label="{{ __('Cancel') }}" @click="$wire.deleteModal = false" />
-            <x-button label="{{ __('Delete') }}" class="btn-error" wire:click="deletePhoto" spinner />
+            <x-button :label="__('Cancel')" @click="$wire.deleteModal = false" />
+            <x-button :label="__('Delete')" class="btn-error" wire:click="deletePhoto" spinner />
         </x-slot:actions>
     </x-modal>
 

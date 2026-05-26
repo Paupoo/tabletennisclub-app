@@ -4,11 +4,11 @@
 
 <div>
     <!-- HEADER -->
-    <x-header title="{{ __('Rooms') }}" separator progress-indicator>
+    <x-header :title="__('Rooms')" separator progress-indicator>
 
         <x-slot:actions>
             @can('create', \App\Models\ClubAdmin\Club\Room::class)
-                <x-button label="{{ __('Create') }}" class="btn-primary btn-sm" responsive link="{{ route('admin.rooms.create') }}" />
+                <x-button :label="__('Create')" class="btn-primary btn-sm" responsive link="{{ route('admin.rooms.create') }}" />
             @endcan
         </x-slot:actions>
     </x-header>
@@ -57,13 +57,13 @@
                 </div>
                 <x-slot:actions>
                     @can('update', $room)
-                        <x-button class="btn-primary btn-outline btn-sm" label="{{ __('Modify') }}"
+                        <x-button class="btn-primary btn-outline btn-sm" :label="__('Modify')"
                             link="{{ route('admin.rooms.edit', $room) }}" />
                     @endcan
 
                     @can('delete', $room)
-                        <x-button class="btn-error btn-outline btn-sm" label="{{ __('Delete') }}"
-                            wire:click="delete({{ $room->id }})" wire:confirm="{{ __('Are you sure?') }}" />
+                        <x-button class="btn-error btn-outline btn-sm" :label="__('Delete')"
+                            wire:click="delete({{ $room->id }})" wire::confirm="__('Are you sure?')" />
                     @endcan
                 </x-slot:actions>
             </x-card>

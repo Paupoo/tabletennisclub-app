@@ -1,6 +1,6 @@
-<x-tab name="2" label="{{ __('Invitations') }}" icon="o-envelope">
+<x-tab name="2" :label="__('Invitations')" icon="o-envelope">
     <div class="mt-8 animate-in fade-in duration-500">
-        <x-card title="{{ __('Members list') }}" size="md">
+        <x-card :title="__('Members list')" size="md">
             <x-slot:menu>
                 <div class="flex gap-2">
                     <x-button label="Tous" icon="o-check" class="btn-sm btn-ghost" wire:click="selectAllMembers" />
@@ -36,7 +36,7 @@
         </x-card>
 
         {{-- Historique des envois --}}
-        <x-card title="{{ __('Sent invitations') }}" icon="o-history" separator class="mt-8 shadow-sm"
+        <x-card :title="__('Sent invitations')" icon="o-history" separator class="mt-8 shadow-sm"
             x-data="{ open: false }">
             <x-slot:menu>
                 <x-button :label="__('View history')" icon="o-eye" class="btn-sm btn-ghost" @click="open = !open" />
@@ -65,14 +65,14 @@
                 @empty
                     <div class="text-center py-6 opacity-40">
                         <x-icon name="o-envelope" class="w-8 h-8 mx-auto mb-2" />
-                        <p class="text-sm">Aucune invitation envoyée pour le moment.</p>
+                        <p class="text-sm">{{ __('No invitations sent yet.') }}</p>
                     </div>
                 @endforelse
             </div>
         </x-card>
 
         {{-- Événement web --}}
-        <x-card class="mt-8 shadow-sm" separator title="{{ __('Website event') }}">
+        <x-card class="mt-8 shadow-sm" separator :title="__('Website event')">
             <x-slot:menu>
                 @if ($eventPostId)
                     @if ($eventStatus === 'PUBLISHED')
@@ -84,7 +84,7 @@
                 <x-button
                     class="btn-ghost btn-sm"
                     icon="o-arrow-top-right-on-square"
-                    label="{{ __('Edit in step 2') }}"
+                    :label="__('Edit in step 2')"
                     wire:click="$set('step', '2')"
                 />
             </x-slot:menu>

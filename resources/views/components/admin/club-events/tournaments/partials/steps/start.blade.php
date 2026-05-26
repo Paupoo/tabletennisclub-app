@@ -13,10 +13,10 @@
 <div class="mt-8 grid grid-cols-2 md:grid-cols-4 gap-3">
     @php
         $checks = [
-            ['label' => 'Tournoi sauvegardé', 'ok' => (bool) $tournamentId],
-            ['label' => 'Inscriptions fermées', 'ok' => $this->registrationClosed],
-            ['label' => 'Poules générées', 'ok' => $this->poolsGenerated],
-            ['label' => 'Matchs générés', 'ok' => $this->matchesGenerated],
+            ['label' => __('Tournament saved'), 'ok' => (bool) $tournamentId],
+            ['label' => __('Registrations closed'), 'ok' => $this->registrationClosed],
+            ['label' => __('Pools generated'), 'ok' => $this->poolsGenerated],
+            ['label' => __('Matches generated'), 'ok' => $this->matchesGenerated],
         ];
     @endphp
     @foreach ($checks as $check)
@@ -29,7 +29,7 @@
 </div>
 
 {{-- Generate Pools --}}
-<x-header title="{{ __('Pools') }}" subtitle="Distribute players automatically, then adjust if needed" class="mt-8" size="md">
+<x-header :title="__('Pools')" subtitle="Distribute players automatically, then adjust if needed" class="mt-8" size="md">
     <x-slot:actions>
         <x-button label="{{ $this->poolsGenerated ? __('Regenerate Pools') : __('Generate Pools') }}"
             icon="o-user-group"
@@ -130,7 +130,7 @@
         <p class="max-w-md text-base-content/60 mt-4">
             {{ __('The tournament is underway. No further modifications are allowed.') }}
         </p>
-        <x-button label="{{ __('Go to Live Center') }}" icon="o-arrow-right"
+        <x-button :label="__('Go to Live Center')" icon="o-arrow-right"
             class="btn-success btn-lg mt-10 shadow-xl shadow-success/20"
             :link="route('admin.tournaments.live-center', $tournamentId)" />
     @else
@@ -142,14 +142,14 @@
             Configuration is complete. Click below to generate the tournament brackets and notify all participants.
         </p>
 
-        <x-button label="{{ __('Launch Tournament') }}" icon="o-play"
+        <x-button :label="__('Launch Tournament')" icon="o-play"
             class="btn-primary btn-lg mt-10 shadow-xl shadow-primary/20" wire:click="launch" spinner="launch"
             :disabled="!$this->matchesGenerated || $this->poolsStale" />
     @endif
 </div>
 
 {{-- Require close registrations modal --}}
-<x-modal wire:model="showRequireCloseRegistrationsModal" title="{{ __('Registrations are still open') }}" class="backdrop-blur">
+<x-modal wire:model="showRequireCloseRegistrationsModal" :title="__('Registrations are still open')" class="backdrop-blur">
     <div class="space-y-4">
         <div class="flex items-start gap-3 p-4 bg-warning/10 border border-warning/20 rounded-xl text-sm">
             <x-icon name="o-exclamation-triangle" class="w-5 h-5 shrink-0 mt-0.5 text-warning" />
@@ -166,8 +166,8 @@
         @endif
     </div>
     <x-slot:actions>
-        <x-button label="{{ __('Cancel') }}" wire:click="$set('showRequireCloseRegistrationsModal', false)" />
-        <x-button label="{{ __('Close registrations & launch') }}" icon="o-rocket-launch" class="btn-warning"
+        <x-button :label="__('Cancel')" wire:click="$set('showRequireCloseRegistrationsModal', false)" />
+        <x-button :label="__('Close registrations & launch')" icon="o-rocket-launch" class="btn-warning"
             wire:click="confirmCloseAndLaunch" spinner="confirmCloseAndLaunch" />
     </x-slot:actions>
 </x-modal>

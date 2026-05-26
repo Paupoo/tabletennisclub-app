@@ -58,8 +58,8 @@ new class extends Component
             'newDivision' => ['required', 'string'],
         ], [
             'newTeamName.required' => 'Choisissez une lettre pour l\'équipe.',
-            'newCategory.required' => 'Sélectionnez une catégorie.',
-            'newLevel.required'    => 'Sélectionnez un niveau.',
+            'newCategory.required' => __('Please select a category.'),
+            'newLevel.required'    => __('Please select a level.'),
             'newDivision.required' => 'Indiquez la division.',
         ]);
 

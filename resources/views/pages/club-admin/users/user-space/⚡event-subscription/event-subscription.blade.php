@@ -3,18 +3,18 @@
 </x-slot:breadcrumbs>
 
 <div>
-    <x-header separator subtitle="{{ __('Tournaments, dinners, and club meetings') }}"
-        title="{{ __('Events and Activities') }}" />
+    <x-header separator :subtitle="__('Tournaments, dinners, and club meetings')"
+        :title="__('Events and Activities')" />
 
     <div class="grid grid-cols-1 gap-8 lg:grid-cols-4">
 
         {{-- ── Sidebar filtres ──────────────────────────────────────────────── --}}
         <div class="space-y-4">
 
-            <x-card class="border border-primary/10 bg-primary/5" shadow title="{{ __('Filters') }}">
+            <x-card class="border border-primary/10 bg-primary/5" shadow :title="__('Filters')">
                 <x-checkbox
                     class="mt-2"
-                    label="{{ __('Only upcoming') }}"
+                    :label="__('Only upcoming')"
                     tight
                     wire:model.live="onlyUpcoming"
                 />
@@ -34,7 +34,7 @@
                     @if (! $reg || ! in_array($reg->registration_status, ['registered', 'confirmed', 'spot_offered', 'waiting']))
                         <x-button
                             class="btn-primary btn-xs mt-3"
-                            label="{{ __('Quick register') }}"
+                            :label="__('Quick register')"
                             spinner="register"
                             wire:click="register({{ $nextTournament->id }})"
                         />
@@ -75,7 +75,7 @@
         <div class="space-y-6 lg:col-span-3">
 
             {{-- Section : À venir --}}
-            <x-card icon="o-calendar-days" separator shadow title="{{ __('Upcoming Tournaments') }}">
+            <x-card icon="o-calendar-days" separator shadow :title="__('Upcoming Tournaments')">
 
                 @forelse ($this->upcomingTournaments as $tournament)
                     @php
@@ -121,22 +121,22 @@
                                         <x-badge class="badge-info badge-sm" icon="o-user-group"
                                             value="{{ $myPair->player1_id === $this->user->id ? $myPair->player2?->full_name : $myPair->player1?->full_name }}" />
                                         <x-button class="btn-ghost btn-xs text-error" icon="o-x-mark"
-                                            tooltip="{{ __('Remove pair') }}"
+                                            :tooltip="__('Remove pair')"
                                             wire:click="removeFromPair({{ $tournament->id }})" />
                                     @elseif ($partnerTournamentId === $tournament->id)
                                         <x-select wire:model.live="selectedPartnerId"
                                             :options="$this->availablePartners"
-                                            placeholder="{{ __('Choose partner…') }}"
+                                            :placeholder="__('Choose partner…')"
                                             class="select-xs max-w-40" />
                                         <x-button class="btn-primary btn-xs" icon="o-user-group"
-                                            label="{{ __('Confirm') }}"
+                                            :label="__('Confirm')"
                                             wire:click="registerAsPair({{ $tournament->id }})"
                                             :disabled="! $selectedPartnerId" />
                                         <x-button class="btn-ghost btn-xs" icon="o-x-mark"
                                             wire:click="$set('partnerTournamentId', 0)" />
                                     @else
                                         <x-button class="btn-outline btn-xs" icon="o-user-group"
-                                            label="{{ __('Choose partner') }}"
+                                            :label="__('Choose partner')"
                                             wire:click="openPartnerSelect({{ $tournament->id }})" />
                                     @endif
                                 @endif
@@ -144,10 +144,10 @@
                                 <x-button
                                     class="btn-ghost btn-xs text-error/70"
                                     icon="o-x-mark"
-                                    tooltip="{{ __('Cancel registration') }}"
+                                    :tooltip="__('Cancel registration')"
                                     spinner="cancelRegistration"
                                     wire:click="cancelRegistration({{ $tournament->id }})"
-                                    wire:confirm="{{ __('Cancel your registration for this tournament?') }}"
+                                    wire::confirm="__('Cancel your registration for this tournament?')"
                                 />
                             @elseif ($isSpotOffered)
                                 @if ($reg->confirmation_deadline)
@@ -162,33 +162,33 @@
                                 <x-button
                                     class="btn-success btn-xs"
                                     icon="o-check"
-                                    label="{{ __('Confirm') }}"
+                                    :label="__('Confirm')"
                                     spinner="confirmTournamentSpot"
                                     wire:click="confirmTournamentSpot({{ $tournament->id }})"
                                 />
                                 <x-button
                                     class="btn-ghost btn-xs text-error/70"
                                     icon="o-x-mark"
-                                    tooltip="{{ __('Decline this spot') }}"
+                                    :tooltip="__('Decline this spot')"
                                     spinner="cancelRegistration"
                                     wire:click="cancelRegistration({{ $tournament->id }})"
-                                    wire:confirm="{{ __('Decline this spot? You will be removed from the tournament.') }}"
+                                    wire::confirm="__('Decline this spot? You will be removed from the tournament.')"
                                 />
                             @elseif ($isWaiting)
                                 <x-badge class="badge-warning badge-soft badge-sm" value="{{ __('Waitlist') }}{{ $reg->waitlist_position ? ' #' . $reg->waitlist_position : '' }}" />
                                 <x-button
                                     class="btn-ghost btn-xs text-error/70"
                                     icon="o-x-mark"
-                                    tooltip="{{ __('Leave waitlist') }}"
+                                    :tooltip="__('Leave waitlist')"
                                     spinner="cancelRegistration"
                                     wire:click="cancelRegistration({{ $tournament->id }})"
-                                    wire:confirm="{{ __('Leave the waitlist for this tournament?') }}"
+                                    wire::confirm="__('Leave the waitlist for this tournament?')"
                                 />
                             @elseif ($isFull)
                                 <x-badge class="badge-ghost badge-sm" value="{{ __('Full') }}" />
                                 <x-button
                                     class="btn-outline btn-sm btn-warning px-4"
-                                    label="{{ __('Join waitlist') }}"
+                                    :label="__('Join waitlist')"
                                     spinner="register"
                                     wire:click="register({{ $tournament->id }})"
                                 />
@@ -200,7 +200,7 @@
                                 @endif
                                 <x-button
                                     class="btn-primary btn-outline btn-sm px-6"
-                                    label="{{ __('Register') }}"
+                                    :label="__('Register')"
                                     spinner="register"
                                     wire:click="register({{ $tournament->id }})"
                                 />
@@ -220,7 +220,7 @@
 
             {{-- Section : Mes entraînements ────────────────────────────────── --}}
             @if ($this->upcomingTrainingSessions->isNotEmpty())
-                <x-card icon="o-academic-cap" separator shadow title="{{ __('My upcoming sessions') }}">
+                <x-card icon="o-academic-cap" separator shadow :title="__('My upcoming sessions')">
                     <div class="space-y-2">
                         @foreach ($this->upcomingTrainingSessions as $session)
                             <div class="flex items-center justify-between rounded-lg border border-base-200 px-3 py-2">

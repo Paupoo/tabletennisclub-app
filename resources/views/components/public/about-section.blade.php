@@ -12,15 +12,15 @@
                 <div class="w-16 h-16 bg-club-blue rounded-full flex items-center justify-center mx-auto mb-4">
                     <span class="text-2xl">🏆</span>
                 </div>
-                <h3 class="text-xl font-semibold mb-2">Excellence Compétitive</h3>
-                <p class="text-gray-600">Participez aux tournois locaux et régionaux avec nos équipes compétitives.</p>
+                <h3 class="text-xl font-semibold mb-2">{{ __('Competitive Excellence') }}</h3>
+                <p class="text-gray-600">{{ __('Participate in local and regional tournaments with our competitive teams.') }}</p>
             </div>
             
             <div class="text-center p-6 animate-on-scroll" style="transition-delay: 0.2s;">
                 <div class="w-16 h-16 bg-club-yellow rounded-full flex items-center justify-center mx-auto mb-4">
                     <span class="text-2xl">👥</span>
                 </div>
-                <h3 class="text-xl font-semibold mb-2">Communauté Accueillante</h3>
+                <h3 class="text-xl font-semibold mb-2">{{ __('Welcoming Community') }}</h3>
                 <p class="text-gray-600">Rejoignez des joueurs de tous niveaux dans un environnement amical et solidaire.</p>
             </div>
             
@@ -29,7 +29,7 @@
                     <span class="text-2xl">🎯</span>
                 </div>
                 <h3 class="text-xl font-semibold mb-2">Coaching Professionnel</h3>
-                <p class="text-gray-600">Apprenez avec des entraîneurs expérimentés et améliorez votre jeu avec un entraînement structuré.</p>
+                <p class="text-gray-600">{{ __('Learn with experienced coaches and improve your game with structured training.') }}</p>
             </div>
         </div>
     </div>

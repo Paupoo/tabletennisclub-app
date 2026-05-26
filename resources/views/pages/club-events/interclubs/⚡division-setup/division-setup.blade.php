@@ -3,7 +3,7 @@
         <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
     </x-slot:breadcrumbs>
 
-    <x-header progress-indicator separator title="{{ __('Division Setup') }}">
+    <x-header progress-indicator separator :title="__('Division Setup')">
         <x-slot:subtitle>{{ __('Define the opponent teams for each division, once per season.') }}</x-slot:subtitle>
         <x-slot:middle class="justify-end!">
             <x-select
@@ -11,7 +11,7 @@
                 option-label="name"
                 option-value="id"
                 wire:model.live="seasonId"
-                placeholder="{{ __('Select a season') }}" />
+                :placeholder="__('Select a season')" />
         </x-slot:middle>
     </x-header>
 
@@ -32,7 +32,7 @@
                     $categoryOrder  = ['MEN' => 1, 'VETERANS' => 2, 'WOMEN' => 3];
                     // Belgian hierarchy: National (top) → Regional → Provincial
                     $levelOrder     = ['NATIONAL' => 1, 'REGIONAL' => 2, 'PROVINCIAL_BW' => 3];
-                    $levelLabels    = ['NATIONAL' => 'National', 'REGIONAL' => 'Régional', 'PROVINCIAL_BW' => 'Provincial BW'];
+                    $levelLabels    = ['NATIONAL' => 'National', 'REGIONAL' => __('Regional'), 'PROVINCIAL_BW' => 'Provincial BW'];
                     $ourClubLicence = config('app.club_licence');
                     // Within a level, sort by our team's letter (A first)
                     $leagueSortKey  = fn ($league) => $league->teams
@@ -132,7 +132,7 @@
                         <x-button
                             class="btn-primary btn-sm"
                             icon="o-plus"
-                            label="{{ __('Add opponent') }}"
+                            :label="__('Add opponent')"
                             wire:click="openAddModal" />
                     </div>
 
@@ -140,7 +140,7 @@
                         <div class="flex h-40 items-center justify-center rounded-xl border border-dashed border-base-300">
                             <div class="text-center">
                                 <p class="text-sm text-gray-400">{{ __('No opponents yet for this division.') }}</p>
-                                <x-button class="btn-primary btn-sm mt-3" icon="o-plus" label="{{ __('Add first opponent') }}" wire:click="openAddModal" />
+                                <x-button class="btn-primary btn-sm mt-3" icon="o-plus" :label="__('Add first opponent')" wire:click="openAddModal" />
                             </div>
                         </div>
                     @else
@@ -160,7 +160,7 @@
                                         <x-button
                                             class="btn-ghost btn-sm btn-circle text-error"
                                             icon="o-trash"
-                                            tooltip="{{ __('Remove') }}"
+                                            :tooltip="__('Remove')"
                                             wire:click="confirmDelete({{ $team->id }})" />
                                     </div>
                                 @endforeach
@@ -173,37 +173,37 @@
     @endif
 
     {{-- Modal add participant --}}
-    <x-modal wire:model="addModal" title="{{ __('Add opponent') }}" separator>
+    <x-modal wire:model="addModal" :title="__('Add opponent')" separator>
         <div class="space-y-4">
             <x-input
-                label="{{ __('Club name') }}"
+                :label="__('Club name')"
                 wire:model="formClubName"
                 placeholder="ex: TT Wavre"
                 icon="o-building-office" />
             <x-input
-                label="{{ __('Address (optional)') }}"
+                :label="__('Address (optional)')"
                 wire:model="formClubStreet"
                 placeholder="ex: Rue de la Gare 10, 1300 Wavre"
                 icon="o-map-pin" />
             <x-input
-                label="{{ __('Team letter') }}"
+                :label="__('Team letter')"
                 wire:model="formTeamLetter"
                 placeholder="A"
                 icon="o-tag"
                 class="max-w-25" />
         </div>
         <x-slot:actions>
-            <x-button label="{{ __('Cancel') }}" wire:click="$set('addModal', false)" />
-            <x-button class="btn-primary" label="{{ __('Add') }}" wire:click="addParticipant" spinner />
+            <x-button :label="__('Cancel')" wire:click="$set('addModal', false)" />
+            <x-button class="btn-primary" :label="__('Add')" wire:click="addParticipant" spinner />
         </x-slot:actions>
     </x-modal>
 
     {{-- Modal delete --}}
-    <x-modal subtitle="{{ __('Warning!') }}" title="{{ __('Remove participant') }}" wire:model="deleteModal">
+    <x-modal :subtitle="__('Warning!')" :title="__('Remove participant')" wire:model="deleteModal">
         <p>{{ __('Are you sure you want to remove this opponent from the division?') }}</p>
         <x-slot:actions>
-            <x-button label="{{ __('Cancel') }}" wire:click="$set('deleteModal', false)" />
-            <x-button class="btn-error" label="{{ __('Remove') }}" spinner wire:click="deleteParticipant" />
+            <x-button :label="__('Cancel')" wire:click="$set('deleteModal', false)" />
+            <x-button class="btn-error" :label="__('Remove')" spinner wire:click="deleteParticipant" />
         </x-slot:actions>
     </x-modal>
 </div>

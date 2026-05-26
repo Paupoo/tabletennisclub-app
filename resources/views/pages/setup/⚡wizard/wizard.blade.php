@@ -95,19 +95,19 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <x-input
-                    label="{{ __('First name') }}"
+                    :label="__('First name')"
                     wire:model="firstName"
                     placeholder="Jean"
                     required
                 />
                 <x-input
-                    label="{{ __('Last name') }}"
+                    :label="__('Last name')"
                     wire:model="lastName"
                     placeholder="Dupont"
                     required
                 />
                 <x-input
-                    label="{{ __('Email address') }}"
+                    :label="__('Email address')"
                     wire:model="email"
                     type="email"
                     placeholder="admin@myclub.be"
@@ -115,13 +115,13 @@
                     required
                 />
                 <x-input
-                    label="{{ __('Password') }}"
+                    :label="__('Password')"
                     wire:model="password"
                     type="password"
                     required
                 />
                 <x-input
-                    label="{{ __('Confirm password') }}"
+                    :label="__('Confirm password')"
                     wire:model="passwordConfirmation"
                     type="password"
                     required
@@ -131,7 +131,7 @@
             @if ($submittedStep < 2)
             <div class="flex justify-end mt-6">
                 <x-button
-                    label="{{ __('Next') }}"
+                    :label="__('Next')"
                     icon-right="o-arrow-right"
                     class="btn-primary"
                     wire:click="completeStep2"
@@ -154,17 +154,17 @@
 
             <div class="max-w-xs">
                 <x-input
-                    label="{{ __('Licence') }}"
+                    :label="__('Licence')"
                     wire:model="licence"
                     pattern="[A-Z]{3}[0-9]{3}"
                     placeholder="BBW214"
-                    hint="{{ __('E.g. BBW214, HEW058...') }}"
+                    :hint="__('E.g. BBW214, HEW058...')"
                     required
                 />
             </div>
 
             <x-alert
-                title="{{ __('Information') }}"
+                :title="__('Information')"
                 :description="__('This value will be saved to your system configuration. It can only be changed by accessing the .env file directly.')"
                 icon="o-information-circle"
                 class="alert-info alert-soft mt-4"
@@ -173,7 +173,7 @@
             @if ($submittedStep < 3)
             <div class="flex justify-end mt-6">
                 <x-button
-                    label="{{ __('Next') }}"
+                    :label="__('Next')"
                     icon-right="o-arrow-right"
                     class="btn-primary"
                     wire:click="completeStep3"
@@ -200,14 +200,14 @@
                     <p class="text-xs font-semibold text-base-content/50 uppercase tracking-wider mb-3">{{ __('Identity') }}</p>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <x-input
-                            label="{{ __('Club name') }}"
+                            :label="__('Club name')"
                             wire:model="clubName"
                             placeholder="CTT Ottignies-Blocry"
                             class="sm:col-span-2"
                             required
                         />
                         <x-input
-                            label="{{ __('IBAN account number') }}"
+                            :label="__('IBAN account number')"
                             wire:model="clubBankAccount"
                             placeholder="BE00 0000 0000 0000"
                         />
@@ -224,26 +224,26 @@
                     <p class="text-xs font-semibold text-base-content/50 uppercase tracking-wider mb-3">{{ __('Address') }}</p>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <x-input
-                            label="{{ __('Building name') }}"
+                            :label="__('Building name')"
                             wire:model="clubBuildingName"
                             placeholder="Sports Centre"
                             class="sm:col-span-2"
                         />
                         <x-input
-                            label="{{ __('Street') }}"
+                            :label="__('Street')"
                             wire:model="clubStreet"
                             placeholder="Rue de la Station 1"
                             class="sm:col-span-2"
                             required
                         />
                         <x-input
-                            label="{{ __('Postal code') }}"
+                            :label="__('Postal code')"
                             wire:model="clubCityCode"
                             placeholder="1340"
                             required
                         />
                         <x-input
-                            label="{{ __('City') }}"
+                            :label="__('City')"
                             wire:model="clubCityName"
                             placeholder="Ottignies"
                             required
@@ -256,18 +256,18 @@
                     <p class="text-xs font-semibold text-base-content/50 uppercase tracking-wider mb-3">{{ __('Contact') }}</p>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <x-input
-                            label="{{ __('Contact email') }}"
+                            :label="__('Contact email')"
                             wire:model="clubEmailContact"
                             type="email"
                             placeholder="contact@myclub.be"
                         />
                         <x-input
-                            label="{{ __('Phone') }}"
+                            :label="__('Phone')"
                             wire:model="clubPhoneContact"
                             placeholder="+32 10 00 00 00"
                         />
                         <x-input
-                            label="{{ __('Website') }}"
+                            :label="__('Website')"
                             wire:model="clubWebsiteUrl"
                             placeholder="https://www.myclub.be"
                             class="sm:col-span-2"
@@ -279,7 +279,7 @@
             @if ($submittedStep < 4)
             <div class="flex justify-end mt-6">
                 <x-button
-                    label="{{ __('Next') }}"
+                    :label="__('Next')"
                     icon-right="o-arrow-right"
                     class="btn-primary"
                     wire:click="completeStep4"
@@ -302,20 +302,20 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-lg">
                 <x-input
-                    label="{{ __('Season name') }}"
+                    :label="__('Season name')"
                     wire:model="seasonName"
                     placeholder="2025-2026"
                     class="sm:col-span-3"
                     required
                 />
                 <x-input
-                    label="{{ __('Start') }}"
+                    :label="__('Start')"
                     wire:model="seasonStartAt"
                     type="date"
                     required
                 />
                 <x-input
-                    label="{{ __('End') }}"
+                    :label="__('End')"
                     wire:model="seasonEndAt"
                     type="date"
                     required
@@ -325,7 +325,7 @@
             @if ($submittedStep < 5)
             <div class="flex justify-end mt-6">
                 <x-button
-                    label="{{ __('Create season') }}"
+                    :label="__('Create season')"
                     icon-right="o-arrow-right"
                     class="btn-primary"
                     wire:click="completeStep5"
@@ -381,64 +381,64 @@
                     <p class="text-sm font-semibold text-base-content mb-4">{{ __('New room') }}</p>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <x-input
-                            label="{{ __('Room name') }}"
+                            :label="__('Room name')"
                             wire:model="roomName"
                             placeholder="Main hall"
                             class="sm:col-span-2"
                             required
                         />
                         <x-input
-                            label="{{ __('Building') }}"
+                            :label="__('Building')"
                             wire:model="roomBuildingName"
                             placeholder="Sports Centre"
                             class="sm:col-span-2"
                         />
                         <x-input
-                            label="{{ __('Street') }}"
+                            :label="__('Street')"
                             wire:model="roomStreet"
                             placeholder="Rue de la Station 1"
                             class="sm:col-span-2"
                             required
                         />
                         <x-input
-                            label="{{ __('Postal code') }}"
+                            :label="__('Postal code')"
                             wire:model="roomCityCode"
                             type="number"
                             placeholder="1340"
                             required
                         />
                         <x-input
-                            label="{{ __('City') }}"
+                            :label="__('City')"
                             wire:model="roomCityName"
                             placeholder="Ottignies"
                             required
                         />
                         <x-input
-                            label="{{ __('Training capacity') }}"
+                            :label="__('Training capacity')"
                             wire:model="roomCapacityTraining"
                             type="number"
-                            hint="{{ __('Maximum number of players') }}"
+                            :hint="__('Maximum number of players')"
                         />
                         <x-input
-                            label="{{ __('Interclub capacity') }}"
+                            :label="__('Interclub capacity')"
                             wire:model="roomCapacityInterclub"
                             type="number"
-                            hint="{{ __('Number of tables for matches') }}"
+                            :hint="__('Number of tables for matches')"
                         />
                         <x-input
-                            label="{{ __('Total number of tables') }}"
+                            :label="__('Total number of tables')"
                             wire:model="roomTotalTables"
                             type="number"
                         />
                     </div>
                     <div class="flex justify-end gap-2 mt-4">
                         <x-button
-                            label="{{ __('Cancel') }}"
+                            :label="__('Cancel')"
                             class="btn-ghost btn-sm"
                             wire:click="$set('showRoomForm', false)"
                         />
                         <x-button
-                            label="{{ __('Add') }}"
+                            :label="__('Add')"
                             icon="o-plus"
                             class="btn-primary btn-sm"
                             wire:click="addRoom"
@@ -448,7 +448,7 @@
                 </div>
             @elseif ($submittedStep < 6)
                 <x-button
-                    label="{{ __('+ Add a room') }}"
+                    :label="__('+ Add a room')"
                     class="btn-ghost btn-sm border border-dashed border-base-300 w-full mt-2"
                     wire:click="$set('showRoomForm', true)"
                 />
@@ -457,12 +457,12 @@
             @if ($submittedStep < 6)
             <div class="flex items-center justify-between mt-6">
                 <x-button
-                    label="{{ __('Skip this step') }}"
+                    :label="__('Skip this step')"
                     class="btn-ghost btn-sm"
                     wire:click="skipStep6"
                 />
                 <x-button
-                    label="{{ __('Next') }}"
+                    :label="__('Next')"
                     icon-right="o-arrow-right"
                     class="btn-primary"
                     wire:click="completeStep6"
@@ -523,30 +523,30 @@
                                 <div class="border border-base-300 rounded-lg p-3 mt-2">
                                     <div class="grid grid-cols-2 gap-3">
                                         <x-input
-                                            label="{{ __('Name / number') }}"
+                                            :label="__('Name / number')"
                                             wire:model="tableName"
                                             placeholder="Table 1"
                                             required
                                         />
                                         <x-input
-                                            label="{{ __('Brand') }}"
+                                            :label="__('Brand')"
                                             wire:model="tableBrand"
                                             placeholder="Butterfly"
                                         />
                                     </div>
                                     <x-toggle
-                                        label="{{ __('Available') }}"
+                                        :label="__('Available')"
                                         wire:model="tableIsAvailable"
                                         class="mt-3"
                                     />
                                     <div class="flex justify-end gap-2 mt-3">
                                         <x-button
-                                            label="{{ __('Cancel') }}"
+                                            :label="__('Cancel')"
                                             class="btn-ghost btn-xs"
                                             wire:click="$set('showTableForm', false)"
                                         />
                                         <x-button
-                                            label="{{ __('Add') }}"
+                                            :label="__('Add')"
                                             icon="o-plus"
                                             class="btn-primary btn-xs"
                                             wire:click="addTable"
@@ -570,12 +570,12 @@
             @if ($submittedStep < 7)
             <div class="flex items-center justify-between mt-6">
                 <x-button
-                    label="{{ __('Skip this step') }}"
+                    :label="__('Skip this step')"
                     class="btn-ghost btn-sm"
                     wire:click="skipStep7"
                 />
                 <x-button
-                    label="{{ __('Next') }}"
+                    :label="__('Next')"
                     icon-right="o-arrow-right"
                     class="btn-primary"
                     wire:click="completeStep7"
@@ -635,14 +635,14 @@
             </div>
 
             <x-alert
-                title="{{ __('Email configuration (SMTP)') }}"
-                description="{{ __('Email server configuration is not covered by this wizard. Modify the MAIL_* variables in your .env file.') }}"
+                :title="__('Email configuration (SMTP)')"
+                :description="__('Email server configuration is not covered by this wizard. Modify the MAIL_* variables in your .env file.')"
                 icon="o-envelope"
                 class="alert-warning alert-soft text-left mb-6"
             />
 
             <x-button
-                label="{{ __('Go to dashboard') }}"
+                :label="__('Go to dashboard')"
                 icon-right="o-arrow-right"
                 class="btn-primary btn-lg"
                 wire:click="completeSetup"

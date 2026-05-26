@@ -17,10 +17,10 @@
         <div class="space-y-5 lg:col-span-1">
 
             {{-- Lettre de l'équipe --}}
-            <x-card class="border-gray-200 shadow-sm" title="Identité">
+            <x-card class="border-gray-200 shadow-sm" :title="__('Identity')">
                 <div class="space-y-4">
                     <x-select
-                        label="Lettre de l'équipe"
+                        :label="__('Team letter')"
                         :options="$teamNameOptions"
                         wire:model="name"
                         placeholder="A – Z" />
@@ -58,7 +58,7 @@
                             icon="o-x-mark" wire:click="removeCaptain" />
                     </div>
                 @else
-                    <p class="mb-4 text-sm text-gray-400 italic">Aucun capitaine désigné.</p>
+                    <p class="mb-4 text-sm text-gray-400 italic">{{ __('No captain designated.') }}</p>
                 @endif
 
                 <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
@@ -98,7 +98,7 @@
                 class="mb-4"
                 clearable
                 icon="o-magnifying-glass"
-                placeholder="Rechercher un compétiteur…"
+                :placeholder="__('Search for a competitor…')"
                 wire:model.live.debounce.250ms="memberSearch" />
 
             <div class="divide-y divide-gray-100">
@@ -135,7 +135,7 @@
                         </div>
                     </div>
                 @empty
-                    <p class="py-6 text-center text-sm text-gray-400 italic">Aucun résultat.</p>
+                    <p class="py-6 text-center text-sm text-gray-400 italic">{{ __('No results.') }}</p>
                 @endforelse
             </div>
         </x-card>

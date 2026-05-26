@@ -3,14 +3,14 @@
         <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
     </x-slot:breadcrumbs>
 
-    <x-header progress-indicator separator title="{{ __('Interclubs Schedule') }}">
+    <x-header progress-indicator separator :title="__('Interclubs Schedule')">
         <x-slot:middle class="justify-end!">
             <x-select
                 :options="$seasons"
                 option-label="name"
                 option-value="id"
                 wire:model.live="seasonId"
-                placeholder="{{ __('Select a season') }}" />
+                :placeholder="__('Select a season')" />
         </x-slot:middle>
         <x-slot:actions>
             <x-select
@@ -18,9 +18,9 @@
                 option-label="name"
                 option-value="id"
                 wire:model.live="selectedTeamId"
-                placeholder="{{ __('Filter by team') }}"
+                :placeholder="__('Filter by team')"
                 class="max-w-xs border-none" />
-            <x-button class="btn-primary btn-sm" icon="o-plus" label="{{ __('New match') }}"
+            <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('New match')"
                 wire:click="openCreateModal" />
         </x-slot:actions>
     </x-header>
@@ -34,7 +34,7 @@
             <div class="py-16 text-center text-gray-500">
                 {{ __('No matches scheduled for this season.') }}
                 <div class="mt-4">
-                    <x-button class="btn-primary btn-sm" icon="o-plus" label="{{ __('Add first match') }}"
+                    <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('Add first match')"
                         wire:click="openCreateModal" />
                 </div>
             </div>
@@ -67,7 +67,7 @@
                                         <x-button
                                             class="btn-ghost btn-sm btn-circle"
                                             icon="o-plus"
-                                            tooltip="{{ __('Add match for this team') }}"
+                                            :tooltip="__('Add match for this team')"
                                             wire:click.stop="openCreateModal({{ $matches->first()['our_team_id'] }})" />
                                         <x-icon name="o-chevron-down" class="h-4 w-4 opacity-40 transition-transform duration-200" ::class="open ? '' : '-rotate-90'" />
                                     </div>
@@ -110,10 +110,10 @@
                                                         {{-- Actions --}}
                                                         <div class="flex shrink-0 gap-1">
                                                             <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
-                                                                tooltip="{{ __('Edit') }}"
+                                                                :tooltip="__('Edit')"
                                                                 wire:click="openEditModal({{ $match['id'] }})" />
                                                             <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
-                                                                tooltip="{{ __('Delete') }}"
+                                                                :tooltip="__('Delete')"
                                                                 wire:click="confirmDelete({{ $match['id'] }})" />
                                                         </div>
                                                     </div>
@@ -133,15 +133,15 @@
     <x-modal wire:model="editModal" :title="$editingInterclubId ? __('Edit match') : __('New match')" separator>
         <div class="space-y-4">
             <x-select
-                label="{{ __('Our team') }}"
+                :label="__('Our team')"
                 :options="$ourTeamOptions"
                 option-label="name"
                 option-value="id"
                 wire:model.live="formOurTeamId"
-                placeholder="{{ __('Select a team') }}" />
+                :placeholder="__('Select a team')" />
 
             <x-select
-                label="{{ __('Opponent') }}"
+                :label="__('Opponent')"
                 :options="$opponentTeams"
                 option-label="name"
                 option-value="id"
@@ -150,36 +150,36 @@
 
             <div class="grid grid-cols-2 gap-4">
                 <x-datepicker
-                    label="{{ __('Date') }}"
+                    :label="__('Date')"
                     wire:model="formDate"
                     icon="o-calendar" />
                 <x-input
-                    label="{{ __('Time') }}"
+                    :label="__('Time')"
                     wire:model="formTime"
                     placeholder="09:00"
                     icon="o-clock" />
             </div>
 
-            <x-toggle label="{{ __('Home match') }}" wire:model.live="formIsHome" />
+            <x-toggle :label="__('Home match')" wire:model.live="formIsHome" />
 
             <x-input
-                label="{{ __('Address') }}"
+                :label="__('Address')"
                 wire:model="formAddress"
-                placeholder="{{ __('Venue address') }}"
+                :placeholder="__('Venue address')"
                 icon="o-map-pin" />
         </div>
         <x-slot:actions>
-            <x-button label="{{ __('Cancel') }}" wire:click="$set('editModal', false)" />
-            <x-button class="btn-primary" label="{{ __('Save') }}" wire:click="save" spinner />
+            <x-button :label="__('Cancel')" wire:click="$set('editModal', false)" />
+            <x-button class="btn-primary" :label="__('Save')" wire:click="save" spinner />
         </x-slot:actions>
     </x-modal>
 
     {{-- Modal delete --}}
-    <x-modal subtitle="{{ __('Warning!') }}" title="{{ __('Delete match') }}" wire:model="deleteModal">
+    <x-modal :subtitle="__('Warning!')" :title="__('Delete match')" wire:model="deleteModal">
         <p>{{ __('Are you sure you want to delete this match? This action is irreversible.') }}</p>
         <x-slot:actions>
-            <x-button label="{{ __('Cancel') }}" wire:click="$set('deleteModal', false)" />
-            <x-button class="btn-error" label="{{ __('Delete') }}" spinner wire:click="delete" />
+            <x-button :label="__('Cancel')" wire:click="$set('deleteModal', false)" />
+            <x-button class="btn-error" :label="__('Delete')" spinner wire:click="delete" />
         </x-slot:actions>
     </x-modal>
 </div>

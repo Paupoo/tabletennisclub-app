@@ -47,7 +47,7 @@
         <x-input class="flex-1" clearable icon="o-magnifying-glass"
             placeholder="Rechercher par IP ou user agent…"
             wire:model.live.debounce.250ms="search" />
-        <x-select :options="$periodOptions" placeholder="Toutes périodes"
+        <x-select :options="$periodOptions" :placeholder="__('All periods')"
             wire:model.live="period" class="w-40" />
         <x-select :options="$userAgentOptions" placeholder="Tous types"
             wire:model.live="userAgentType" class="w-36" />
@@ -60,7 +60,7 @@
                 {{ count($selectedItems) }} sélectionné(s)
             </span>
             <x-button class="btn-error btn-sm" icon="o-trash"
-                label="Supprimer la sélection"
+                :label="__('Delete selection')"
                 wire:click="$set('bulkDeleteModal', true)" />
         </div>
     @endif
@@ -68,7 +68,7 @@
     {{-- ── Tableau ────────────────────────────────────────────────────── --}}
     <x-card class="border-gray-200 shadow-sm">
         @if ($spams->isEmpty())
-            <p class="py-10 text-center text-sm text-gray-400 italic">Aucun spam enregistré.</p>
+            <p class="py-10 text-center text-sm text-gray-400 italic">{{ __('No spam recorded.') }}</p>
         @else
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
@@ -80,7 +80,7 @@
                             <th class="pb-2 pr-4 hidden sm:table-cell">Date</th>
                             <th class="pb-2 pr-4">IP</th>
                             <th class="pb-2 pr-4 hidden md:table-cell">User Agent</th>
-                            <th class="pb-2 pr-4 hidden lg:table-cell">Données</th>
+                            <th class="pb-2 pr-4 hidden lg:table-cell">{{ __('Data') }}</th>
                             <th class="pb-2"></th>
                         </tr>
                     </thead>
@@ -132,7 +132,7 @@
     </x-card>
 
     {{-- ── Modal détail spam ─────────────────────────────────────────── --}}
-    <x-modal wire:model="detailModal" title="Détail du spam" class="backdrop-blur">
+    <x-modal wire:model="detailModal" :title="__('Spam detail')" class="backdrop-blur">
         @if ($detailSpam)
             <div class="space-y-3">
                 <div class="grid grid-cols-2 gap-3 text-sm">
@@ -150,7 +150,7 @@
                     <p class="text-xs text-gray-600 break-all">{{ $detailSpam->user_agent }}</p>
                 </div>
                 <div>
-                    <p class="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">Données soumises</p>
+                    <p class="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">{{ __('Submitted data') }}</p>
                     <pre class="overflow-auto rounded-lg bg-gray-50 p-3 text-xs text-gray-700" style="max-height:200px">{{ json_encode($detailSpam->inputs, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre>
                 </div>
             </div>
@@ -170,7 +170,7 @@
     </x-modal>
 
     {{-- ── Modal bulk delete ─────────────────────────────────────────── --}}
-    <x-modal wire:model="bulkDeleteModal" title="Supprimer la sélection ?" class="backdrop-blur">
+    <x-modal wire:model="bulkDeleteModal" :title="__('Delete selection?')" class="backdrop-blur">
         <p class="text-sm text-gray-600">
             {{ count($selectedItems) }} enregistrement(s) seront supprimés. Cette action est irréversible.
         </p>

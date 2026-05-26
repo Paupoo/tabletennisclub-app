@@ -4,7 +4,7 @@
 
 <div class="page-header">
     <h1>📋 Commandes</h1>
-    <p class="muted">Liste des commandes en cours et passées.</p>
+    <p class="muted">{{ __('List of current and past orders.') }}</p>
 </div>
         {{-- No orders --}}
         @if($orders->isEmpty())
@@ -33,13 +33,13 @@
                         </div>
                          <div class="order-card-badges">
                             @if($order->is_paid)
-                                <span class="chip chip-ok">✅ Payé</span>
+                                <span class="chip chip-ok">{{ __('✅ Paid') }}</span>
                             @else
-                                <span class="chip chip-warn">❌ Non payé</span>
+                                <span class="chip chip-warn">{{ __('❌ Unpaid') }}</span>
                             @endif
 
                             <!-- @if($order->is_closed)
-                                <span class="chip chip-closed">🔒 Fermé</span>
+                                <span class="chip chip-closed">{{ __('🔒 Closed') }}</span>
                             @else
                                 <span class="chip chip-open">🔓 Ouvert</span>
                             @endif -->

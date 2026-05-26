@@ -10,7 +10,7 @@
         <div class="mb-6">
             <x-input-label for="name" :value="__('Name')" />
             <x-text-input id="name" name="name" type="text" class="block w-full mt-1"
-                :value="old('name', $room->name)" placeholder="{{ __('Demeester -1') }}" required autofocus autocomplete="name"></x-text-input>
+                :value="old('name', $room->name)" :placeholder="__('Demeester -1')" required autofocus autocomplete="name"></x-text-input>
             <x-input-error class="mt-2" :messages="$errors->get('name')" />
         </div>
     </div>
@@ -23,7 +23,7 @@
         <div class="mb-6">
             <x-input-label for="street" :value="__('Street')" />
             <x-text-input id="street" name="street" type="text" class="block w-full mt-1"
-                :value="old('street', $room->street)" placeholder="{{ __('Rue de l\'invasion, 80') }}" required autofocus autocomplete="street"></x-text-input>
+                :value="old('street', $room->street)" :placeholder="__('Rue de l\'invasion, 80')" required autofocus autocomplete="street"></x-text-input>
             <x-input-error class="mt-2" :messages="$errors->get('street')" />
         </div>
 
@@ -32,7 +32,7 @@
             <div>
                 <x-input-label for="city_code" :value="__('City Code')" />
                 <x-text-input id="city_code" name="city_code" type="number" min="1000" max="9999" class="block w-full mt-1"
-                    :value="old('city_code', $room->city_code)" placeholder="{{ __('1340')}}" required autofocus autocomplete="city_code"></x-text-input>
+                    :value="old('city_code', $room->city_code)" :placeholder="__('1340')" required autofocus autocomplete="city_code"></x-text-input>
                 <x-input-error class="mt-2" :messages="$errors->get('city_code')" />
             </div>
 
@@ -48,7 +48,7 @@
         <div class="mb-6">
             <x-input-label for="building_name" :value="__('Building/Site name')" />
             <x-text-input id="building_name" name="building_name" type="text"
-                class="block w-full mt-1" :value="old('building_name', $room->building_name)" placeholder="{{ __('Centre sportif Jean Demeeter') }}" required autofocus
+                class="block w-full mt-1" :value="old('building_name', $room->building_name)" :placeholder="__('Centre sportif Jean Demeeter')" required autofocus
                 autocomplete="building_name"></x-text-input>
             <x-input-error class="mt-2" :messages="$errors->get('building_name')" />
         </div>
@@ -57,7 +57,7 @@
         <div>
             <x-input-label for="access_description" :value="__('Access description')" />
             <x-textarea-input id="access_description" name="access_description" type="text"
-                class="block w-full mt-1 min-h-[100px] sm:min-h-[120px]" placeholder="{{ __('To access the room, just follow the main path at the end of the parking...') }}"
+                class="block w-full mt-1 min-h-[100px] sm:min-h-[120px]" :placeholder="__('To access the room, just follow the main path at the end of the parking...')"
                 autofocus>{{ old('access_description', $room->access_description) }}</x-textarea-input>
             <x-input-error class="mt-2" :messages="$errors->get('access_description')" />
         </div>

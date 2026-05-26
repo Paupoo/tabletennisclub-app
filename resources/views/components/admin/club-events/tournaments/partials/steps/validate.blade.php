@@ -13,7 +13,7 @@
 
         <div class="flex justify-center">
             <x-button
-                label="{{ __('Go to Invitations') }}"
+                :label="__('Go to Invitations')"
                 icon="o-arrow-right"
                 class="btn-primary"
                 wire:click="$set('step', '4')" />
@@ -22,7 +22,7 @@
     @else
 
         {{-- Tournament summary recap --}}
-        <x-card title="{{ __('Tournament summary') }}" icon="o-clipboard-document-list" shadow>
+        <x-card :title="__('Tournament summary')" icon="o-clipboard-document-list" shadow>
 
             @php
                 $t = $this->currentTournament;
@@ -84,8 +84,8 @@
         </x-card>
 
         <x-alert
-            title="{{ __('After validation: name and price cannot be changed') }}"
-            description="{{ __('To modify these fields, you would need to cancel the tournament. Dates, times, and rooms can still be updated (participants will be notified).') }}"
+            :title="__('After validation: name and price cannot be changed')"
+            :description="__('To modify these fields, you would need to cancel the tournament. Dates, times, and rooms can still be updated (participants will be notified).')"
             icon="o-lock-closed"
             class="alert-warning alert-soft" />
 
@@ -95,13 +95,13 @@
 
         <div class="flex items-center justify-between">
             <x-button
-                label="{{ __('Back') }}"
+                :label="__('Back')"
                 icon="o-arrow-left"
                 class="btn-ghost btn-sm"
                 wire:click="$set('step', '2')" />
 
             <x-button
-                label="{{ __('Validate') }}"
+                :label="__('Validate')"
                 icon="o-lock-closed"
                 class="btn-primary"
                 wire:click="validateAndLock"

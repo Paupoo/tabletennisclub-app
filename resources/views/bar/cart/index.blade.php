@@ -4,7 +4,7 @@
 
 <div class="page-header">
     <h1>🛒 Ma commande</h1>
-    <p class="muted">Vérifiez les articles dans votre panier avant de valider votre commande.</p>
+    <p class="muted">{{ __('Check the items in your cart before validating your order.') }}</p>
 </div>
 <!-- <a class="pos-link" href="{{ route('bar.index') }}" style="white-space:nowrap;">← Retour au menu</a> -->
 <div class="wrap">

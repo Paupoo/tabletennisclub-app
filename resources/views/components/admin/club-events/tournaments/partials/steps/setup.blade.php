@@ -64,9 +64,9 @@
                 </div>
 
                 {{-- Registration deadline --}}
-                <x-datepicker label="{{ __('Registration deadline(*)') }}" icon="o-calendar-days"
+                <x-datepicker :label="__('Registration deadline(*)')" icon="o-calendar-days"
                     wire:model="registration_deadline" type="date"
-                    hint="{{ __('Required before sending invitations') }}" />
+                    :hint="__('Required before sending invitations')" />
 
                 {{-- Price — locked after validation --}}
                 <x-input label="Registration fee" suffix="€" type="number" icon="o-banknotes"
@@ -75,8 +75,8 @@
                     :hint="$this->isContractLocked ? __('🔒 Locked — tournament validated') : null" />
 
                 <div class="col-span-2">
-                    <x-toggle label="{{ __('Open registrations') }}" icon="o-eye"
-                        hint="{{ __('If chosen, this tournament will be open for external registration on our website.') }}"
+                    <x-toggle :label="__('Open registrations')" icon="o-eye"
+                        :hint="__('If chosen, this tournament will be open for external registration on our website.')"
                         wire:model.live="publicRegistration" />
                 </div>
             </div>
@@ -113,7 +113,7 @@
     <x-admin.shared.form-section title="Rules and format"
         subtitle="Sport parameters directly impact the number and duration of matches.">
 
-        <x-select label="{{ __('Match type(*)') }}" icon="o-user" wire:model.live="matchType"
+        <x-select :label="__('Match type(*)')" icon="o-user" wire:model.live="matchType"
             :options="[['id' => 'single', 'name' => 'Singles'], ['id' => 'double', 'name' => 'Doubles']]" />
 
         @if ($matchType === 'double')
@@ -140,10 +140,10 @@
         @endif
 
         <x-select wire:model.live.debounce.500ms="totalSets" :options="$this->setOptions"
-            label="{{ __('Winning sets(*)') }}" icon="o-star"
+            :label="__('Winning sets(*)')" icon="o-star"
             hint="Best of {{ ($this->totalSets * 2) - 1 }}" />
         <div class="flex flex-col gap-1">
-            <x-toggle wire:model.live="deuceEnabled" label="{{ __('Deuce rule') }}" right />
+            <x-toggle wire:model.live="deuceEnabled" :label="__('Deuce rule')" right />
             <p class="text-[11px] text-base-content/50 leading-tight">
                 @if ($deuceEnabled)
                     {{ __('Standard: win at 11 with a 2-point lead. At 10-10, play continues until +2 (e.g. 12-10).') }}
@@ -158,7 +158,7 @@
             @endif
         </div>
         <div class="flex flex-col gap-1">
-            <x-toggle wire:model.live="hasHandicapPoints" label="{{ __('Handicap points (AFTT)') }}" right />
+            <x-toggle wire:model.live="hasHandicapPoints" :label="__('Handicap points (AFTT)')" right />
             <p class="text-[11px] text-base-content/50 leading-tight">
                 {{ __('Each set starts with a score advantage based on player rankings. Ideal for friendly or mixed-level tournaments.') }}
             </p>
@@ -168,11 +168,11 @@
                 </p>
             @endif
         </div>
-        <x-input wire:model.live.debounce.500ms="nb_poules" label="{{ __('Number of pools(*)') }}"
+        <x-input wire:model.live.debounce.500ms="nb_poules" :label="__('Number of pools(*)')"
             icon="o-calculator" type="number" min="1" />
-        <x-select wire:model.live.debounce.500ms="pool_size" label="{{ __('Players per pool(*)') }}"
+        <x-select wire:model.live.debounce.500ms="pool_size" :label="__('Players per pool(*)')"
             icon="o-user-group" :options="$poolSizeOptions" hint="Strong impact on match count" />
-        <x-input wire:model.live.debounce.500ms="nb_qualifies" label="{{ __('Qualified per pool(*)') }}"
+        <x-input wire:model.live.debounce.500ms="nb_qualifies" :label="__('Qualified per pool(*)')"
             icon="o-trophy" type="number" hint="Players advancing to the bracket" min="1"
             numeric />
 
@@ -189,7 +189,7 @@
         subtitle="Let the assistant suggest the best configuration for your constraints.">
 
         <div class="lg:col-span-2 space-y-4">
-            <x-select label="{{ __('Tournament objective') }}" icon="o-light-bulb"
+            <x-select :label="__('Tournament objective')" icon="o-light-bulb"
                 wire:model.live="selectedObjective"
                 :options="$objectiveOptions"
                 placeholder="Choose an objective..." />
@@ -206,7 +206,7 @@
             @endif
 
             <x-button
-                label="{{ __('Suggest configuration') }}"
+                :label="__('Suggest configuration')"
                 icon="o-sparkles"
                 class="btn-primary btn-outline btn-sm"
                 wire:click="applyObjectiveSuggestion"
@@ -394,7 +394,7 @@
     {{-- ── Save button ─────────────────────────────────────────────────────── --}}
     <div class="col-span-6 flex justify-end pt-2">
         <x-button
-            label="{{ $tournamentId ? __('Update tournament') : __('Create tournament') }}"
+            :label="$tournamentId ? __('Update tournament') : __('Create tournament')"
             icon="{{ $tournamentId ? 'o-arrow-path' : 'o-plus-circle' }}"
             class="btn-primary"
             wire:click="save"

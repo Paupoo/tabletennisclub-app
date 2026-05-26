@@ -3,20 +3,20 @@
         <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
     </x-slot:breadcrumbs>
 
-    <x-header progress-indicator separator title="{{ __('Tournaments') }}">
+    <x-header progress-indicator separator :title="__('Tournaments')">
         <x-slot:actions>
             <x-input
                 clearable
                 class="input-sm w-48"
                 icon="o-magnifying-glass"
-                placeholder="{{ __('Search…') }}"
+                :placeholder="__('Search…')"
                 wire:model.live.debounce.300ms="search"
             />
             @if ($this->canManage)
                 <x-button
                     class="btn-primary"
                     icon="o-plus"
-                    label="{{ __('Create') }}"
+                    :label="__('Create')"
                     link="{{ route('admin.tournaments.wizard') }}"
                     responsive
                 />

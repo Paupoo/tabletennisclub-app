@@ -12,8 +12,8 @@
     
     <!-- Contenu -->
     <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <h1 class="text-4xl md:text-5xl font-bold mb-4 drop-shadow-lg">Actualités du Club</h1>
-        <p class="text-xl opacity-90 drop-shadow-md">Toutes les dernières nouvelles et infos</p>
+        <h1 class="text-4xl md:text-5xl font-bold mb-4 drop-shadow-lg">{{ __('Club News') }}</h1>
+        <p class="text-xl opacity-90 drop-shadow-md">{{ __('All the latest news and info') }}</p>
     </div>
 </div>
 
@@ -22,7 +22,7 @@
         <!-- Newsletter Signup -->
         <div class="bg-gray-50 py-16">
             <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                <h2 class="text-3xl font-bold text-gray-900 mb-4">Restez Informé</h2>
+                <h2 class="text-3xl font-bold text-gray-900 mb-4">{{ __('Stay Informed') }}</h2>
                 <p class="text-xl text-gray-600 mb-8">
                     Recevez les dernières actualités du club directement dans votre boîte mail
                 </p>

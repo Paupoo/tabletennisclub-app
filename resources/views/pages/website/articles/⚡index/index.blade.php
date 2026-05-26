@@ -30,7 +30,7 @@
                 </div>
                 <div>
                     <p class="text-2xl font-bold text-green-700">{{ $stats->published ?? 0 }}</p>
-                    <p class="text-xs text-gray-400">Publiés</p>
+                    <p class="text-xs text-gray-400">{{ __('Published') }}</p>
                 </div>
             </div>
         </x-card>
@@ -52,7 +52,7 @@
                 </div>
                 <div>
                     <p class="text-2xl font-bold text-gray-600">{{ $stats->archived ?? 0 }}</p>
-                    <p class="text-xs text-gray-400">Archivés</p>
+                    <p class="text-xs text-gray-400">{{ __('Archived') }}</p>
                 </div>
             </div>
         </x-card>
@@ -63,7 +63,7 @@
         <x-input class="flex-1" clearable icon="o-magnifying-glass"
             placeholder="Rechercher un article…"
             wire:model.live.debounce.250ms="search" />
-        <x-select :options="$categoryOptions" placeholder="Toutes catégories"
+        <x-select :options="$categoryOptions" :placeholder="__('All categories')"
             wire:model.live="category" class="w-44" />
         <x-select :options="$statusOptions" placeholder="Tous statuts"
             wire:model.live="status" class="w-36" />
@@ -72,14 +72,14 @@
     {{-- ── Tableau ────────────────────────────────────────────────────── --}}
     <x-card class="border-gray-200 shadow-sm">
         @if ($articles->isEmpty())
-            <p class="py-10 text-center text-sm text-gray-400 italic">Aucun article trouvé.</p>
+            <p class="py-10 text-center text-sm text-gray-400 italic">{{ __('No articles found.') }}</p>
         @else
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
                     <thead>
                         <tr class="border-b border-gray-100 text-left text-xs uppercase tracking-wide text-gray-400">
                             <th class="pb-2 pr-4">Titre</th>
-                            <th class="pb-2 pr-4 hidden md:table-cell">Catégorie</th>
+                            <th class="pb-2 pr-4 hidden md:table-cell">{{ __('Category') }}</th>
                             <th class="pb-2 pr-4 hidden lg:table-cell">Auteur</th>
                             <th class="pb-2 pr-4">Statut</th>
                             <th class="pb-2 pr-4 hidden sm:table-cell">Date</th>

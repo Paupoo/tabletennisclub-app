@@ -102,9 +102,9 @@ new class extends Component
         }
 
         $label = match ($this->status) {
-            'published' => 'Article publié.',
-            'archived'  => 'Article archivé.',
-            default     => 'Brouillon enregistré.',
+            'published' => __('Article published.'),
+            'archived'  => __('Article archived.'),
+            default     => __('Draft saved.'),
         };
 
         $this->success($label, redirectTo: route('admin.website.articles.index'));

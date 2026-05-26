@@ -51,7 +51,7 @@ new class extends Component
             'name'      => ['required', 'string', 'size:1'],
             'memberIds' => ['array', 'min:1'],
         ], [
-            'name.size'       => 'Le nom doit être une seule lettre (A–Z).',
+            'name.size'       => __('The name must be a single letter (A–Z).'),
             'memberIds.min'   => 'L\'équipe doit avoir au moins un joueur.',
         ]);
 

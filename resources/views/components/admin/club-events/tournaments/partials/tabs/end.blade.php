@@ -1,4 +1,4 @@
-<x-tab name="5" label="{{ __('Recap') }}" icon="o-flag">
+<x-tab name="5" :label="__('Recap')" icon="o-flag">
 
     <div class="max-w-5xl mx-auto mt-10 space-y-10 animate-in fade-in">
 
@@ -23,10 +23,10 @@
         {{-- Stats --}}
         <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
 
-            <x-stat title="{{ __('Invitation Response Rate') }}" value="45%" icon="o-users"
+            <x-stat :title="__('Invitation Response Rate')" value="45%" icon="o-users"
                 color="text-primary" class="" />
 
-            <x-stat title="{{ __('Registrations') }}" value="32" icon="o-pencil-square"
+            <x-stat :title="__('Registrations')" value="32" icon="o-pencil-square"
                 color="text-primary">
 
                 <x-slot:description>
@@ -69,13 +69,13 @@
 
             <div class="flex flex-col md:flex-row justify-center gap-4">
 
-                <x-button label="{{ __('Send email to participants') }}" icon="o-envelope-open"
+                <x-button :label="__('Send email to participants')" icon="o-envelope-open"
                     class="btn-primary" />
 
-                <x-button label="{{ __('Write an article') }}" icon="o-pencil-square"
+                <x-button :label="__('Write an article')" icon="o-pencil-square"
                     class="btn-outline" />
 
-                <x-button label="{{ __('Print report (PDF)') }}" icon="o-document-chart-bar"
+                <x-button :label="__('Print report (PDF)')" icon="o-document-chart-bar"
                     class="btn-ghost" />
             </div>
 

@@ -50,7 +50,7 @@
                                 </svg>
                             </div>
                             <div class="ml-4">
-                                <h3 class="text-lg font-semibold text-gray-900">Téléphone</h3>
+                                <h3 class="text-lg font-semibold text-gray-900">{{ __('Phone') }}</h3>
                                 <p inert class="text-gray-600">{{ $club->phone_contact ?? __('Not documented') }}</p>
                                 <p class="text-sm text-gray-500">Lun-Ven: 16h-20h</p>
                             </div>
@@ -70,7 +70,7 @@
                             <div class="ml-4">
                                 <h3 class="text-lg font-semibold text-gray-900">Email</h3>
                                 <p inertclass="text-gray-600">{{ $club->email_contact }}</p>
-                                <p class="text-sm text-gray-500">Réponse en général dans les 48h</p>
+                                <p class="text-sm text-gray-500">{{ __('Usually responds within 48 hours') }}</p>
                             </div>
                         </div>
                     @endif

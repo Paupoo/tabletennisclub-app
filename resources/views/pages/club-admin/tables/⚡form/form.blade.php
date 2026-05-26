@@ -24,13 +24,13 @@
 
             {{-- Colonne Principale --}}
             <div class="lg:col-span-2 space-y-6">
-                <x-card title="Détails techniques" shadow>
+                <x-card :title="__('Technical details')" shadow>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {{-- On peut garder .live si on veut valider ou réagir en temps réel --}}
                         <x-input label="Nom / Identifiant" placeholder="Ex: Table 01" wire:model="name" />
 
                         <x-select
-                            label="Assigner à une salle"
+                            :label="__('Assign to a room')"
                             icon="o-home"
                             placeholder="Choisir une salle..."
                             wire:model="room_id"
@@ -48,16 +48,16 @@
                     </div>
                 </x-card>
 
-                <x-card title="État et Maintenance" shadow>
+                <x-card :title="__('State and Maintenance')" shadow>
                     <x-choices
-                        label="État actuel"
+                        :label="__('Current state')"
                         wire:model="state"
                         :options="$states"
                         single />
                         
                     <x-textarea 
-                        label="Notes sur l'état" 
-                        placeholder="Signalement de filets usés, rayures..." 
+                        :label="__('Status notes')" 
+                        :placeholder="__('Report worn nets, scratches...')" 
                         wire:model="state_description" 
                         class="mt-4" />
                 </x-card>

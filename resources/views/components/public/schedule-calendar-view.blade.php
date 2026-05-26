@@ -83,8 +83,8 @@
         </div>
 
         <div class="px-6 py-3 flex items-center gap-4 text-xs text-gray-400 flex-wrap">
-            <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-blue-500"></div> Dirigé</div>
-            <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-amber-400"></div> Supervisé</div>
+            <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-blue-500"></div>{{ __('Directed') }}</div>
+            <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-amber-400"></div>{{ __('Supervised') }}</div>
             <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-gray-300"></div> Libre</div>
             <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-red-400"></div> Interclubs</div>
         </div>

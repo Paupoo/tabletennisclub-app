@@ -59,7 +59,7 @@
                 </div>
                 <div class="min-w-0">
                     <p class="text-lg font-black text-base-content leading-none">{{ $teams_count }}</p>
-                    <p class="text-xs text-base-content/50 truncate">Équipes</p>
+                    <p class="text-xs text-base-content/50 truncate">{{ __('Teams') }}</p>
                 </div>
             </a>
 
@@ -99,7 +99,7 @@
                 </div>
                 <div class="min-w-0">
                     <p class="text-lg font-black text-base-content leading-none">{{ $trainings_count }}</p>
-                    <p class="text-xs text-base-content/50 truncate">Entraîn.</p>
+                    <p class="text-xs text-base-content/50 truncate">{{ __('Training') }}</p>
                 </div>
             </a>
 
@@ -114,59 +114,59 @@
                 @php
                     $personaGroups = [
                         [
-                            'label'  => 'Secrétaire',
+                            'label'  => __('Secretary'),
                             'count'  => 8,
                             'color'  => 'blue',
                             'tiles'  => [
                                 ['icon' => 'o-users',         'label' => 'Membres',      'sub' => $members_total . ' au total',          'color' => 'blue'],
                                 ['icon' => 'o-user-plus',     'label' => 'Inscriptions', 'sub' => 'Nouvelles demandes',                  'color' => 'cyan'],
                                 ['icon' => 'o-document-text', 'label' => 'Affiliations', 'sub' => $affiliations_pending . ' en attente', 'color' => 'indigo', 'badge' => $affiliations_pending],
-                                ['icon' => 'o-newspaper',     'label' => 'Actualités',   'sub' => 'Articles & news',                     'color' => 'slate'],
-                                ['icon' => 'o-envelope',      'label' => 'Contacts',     'sub' => 'Messages reçus',                      'color' => 'teal'],
-                                ['icon' => 'o-calendar-days', 'label' => 'Réunions',     'sub' => 'Comptes rendus',                      'color' => 'purple'],
-                                ['icon' => 'o-calendar',      'label' => 'Événements',   'sub' => $events_count . ' en cours',           'color' => 'pink'],
-                                ['icon' => 'o-cog-6-tooth',   'label' => 'Paramètres',   'sub' => 'Club & saisons',                      'color' => 'gray'],
+                                ['icon' => 'o-newspaper',     'label' => __('News'),   'sub' => 'Articles & news',                     'color' => 'slate'],
+                                ['icon' => 'o-envelope',      'label' => 'Contacts',     'sub' => __('Received messages'),                      'color' => 'teal'],
+                                ['icon' => 'o-calendar-days', 'label' => __('Meetings'),     'sub' => 'Comptes rendus',                      'color' => 'purple'],
+                                ['icon' => 'o-calendar',      'label' => __('Events'),   'sub' => $events_count . ' en cours',           'color' => 'pink'],
+                                ['icon' => 'o-cog-6-tooth',   'label' => __('Settings'),   'sub' => 'Club & saisons',                      'color' => 'gray'],
                             ],
                         ],
                         [
-                            'label'  => 'Trésorier',
+                            'label'  => __('Treasurer'),
                             'count'  => 6,
                             'color'  => 'amber',
                             'tiles'  => [
                                 ['icon' => 'o-banknotes',               'label' => 'Paiements',      'sub' => $payments_pending . ' en attente', 'color' => 'yellow', 'badge' => $payments_pending],
-                                ['icon' => 'o-credit-card',             'label' => 'Transactions',   'sub' => 'Relevés bancaires',               'color' => 'teal'],
+                                ['icon' => 'o-credit-card',             'label' => 'Transactions',   'sub' => __('Bank statements'),               'color' => 'teal'],
                                 ['icon' => 'o-receipt-percent',         'label' => 'Cotisations',    'sub' => $members_unpaid . ' impayées',     'color' => 'amber',  'badge' => $members_unpaid],
                                 ['icon' => 'o-clipboard-document-list', 'label' => 'Abonnements',   'sub' => 'Saisons en cours',                'color' => 'indigo'],
-                                ['icon' => 'o-document-chart-bar',      'label' => 'Rapport',        'sub' => 'Aperçu financier',                'color' => 'slate'],
-                                ['icon' => 'o-scale',                   'label' => 'Réconciliation', 'sub' => 'Soldes & vérifications',          'color' => 'gray'],
+                                ['icon' => 'o-document-chart-bar',      'label' => 'Rapport',        'sub' => __('Financial overview'),                'color' => 'slate'],
+                                ['icon' => 'o-scale',                   'label' => __('Reconciliation'), 'sub' => __('Balances & verifications'),          'color' => 'gray'],
                             ],
                         ],
                         [
-                            'label'  => 'Capitaine / Sélectionneur',
+                            'label'  => __('Captain / Selector'),
                             'count'  => 6,
                             'color'  => 'rose',
                             'tiles'  => [
-                                ['icon' => 'o-trophy',                       'label' => 'Équipes',     'sub' => $teams_count . ' équipes',              'color' => 'violet'],
+                                ['icon' => 'o-trophy',                       'label' => __('Teams'),     'sub' => $teams_count . ' équipes',              'color' => 'violet'],
                                 ['icon' => 'o-globe-alt',                    'label' => 'Interclubs',  'sub' => $interclubs_pending . ' en attente',    'color' => 'rose', 'badge' => $interclubs_pending],
-                                ['icon' => 'o-clipboard-document-check',     'label' => 'Sélections',  'sub' => 'Compositions',                         'color' => 'orange'],
-                                ['icon' => 'o-chart-bar',                    'label' => 'Résultats',   'sub' => 'Scores & classements',                 'color' => 'blue'],
+                                ['icon' => 'o-clipboard-document-check',     'label' => __('Selections'),  'sub' => 'Compositions',                         'color' => 'orange'],
+                                ['icon' => 'o-chart-bar',                    'label' => __('Results'),   'sub' => 'Scores & classements',                 'color' => 'blue'],
                                 ['icon' => 'o-calendar-days',                'label' => 'Planning',    'sub' => 'Calendrier matchs',                    'color' => 'emerald'],
                                 ['icon' => 'o-user-group',                   'label' => 'Joueurs',     'sub' => $members_competitors . ' compétiteurs', 'color' => 'purple'],
                             ],
                         ],
                         [
-                            'label'  => 'Comité',
+                            'label'  => __('Committee'),
                             'count'  => 8,
                             'color'  => 'violet',
                             'tiles'  => [
                                 ['icon' => 'o-users',             'label' => 'Membres',        'sub' => $members_total . ' inscrits',    'color' => 'blue'],
                                 ['icon' => 'o-building-office-2', 'label' => 'Salles',         'sub' => $rooms_count . ' installations', 'color' => 'amber'],
-                                ['icon' => 'o-clock',             'label' => 'Entraînements',  'sub' => $trainings_count . ' séances',   'color' => 'emerald'],
-                                ['icon' => 'o-calendar-days',     'label' => 'Saisons',        'sub' => 'Gestion des périodes',          'color' => 'indigo'],
-                                ['icon' => 'o-newspaper',         'label' => 'Actualités',     'sub' => 'Site public',                   'color' => 'slate'],
-                                ['icon' => 'o-megaphone',         'label' => 'Événements',     'sub' => $events_count . ' planifié(s)', 'color' => 'pink'],
-                                ['icon' => 'o-calendar',          'label' => 'Réunions',       'sub' => 'Comptes rendus',                'color' => 'purple'],
-                                ['icon' => 'o-cog-6-tooth',       'label' => 'Configuration',  'sub' => 'Paramètres club',               'color' => 'gray'],
+                                ['icon' => 'o-clock',             'label' => __('Training sessions'),  'sub' => $trainings_count . ' séances',   'color' => 'emerald'],
+                                ['icon' => 'o-calendar-days',     'label' => 'Saisons',        'sub' => __('Period management'),          'color' => 'indigo'],
+                                ['icon' => 'o-newspaper',         'label' => __('News'),     'sub' => 'Site public',                   'color' => 'slate'],
+                                ['icon' => 'o-megaphone',         'label' => __('Events'),     'sub' => $events_count . ' planifié(s)', 'color' => 'pink'],
+                                ['icon' => 'o-calendar',          'label' => __('Meetings'),       'sub' => 'Comptes rendus',                'color' => 'purple'],
+                                ['icon' => 'o-cog-6-tooth',       'label' => 'Configuration',  'sub' => __('Club settings'),               'color' => 'gray'],
                             ],
                         ],
                     ];
@@ -191,7 +191,7 @@
             <div class="lg:col-span-1 space-y-3">
 
                 <div class="flex items-center justify-between">
-                    <p class="text-xs font-semibold text-base-content/40 uppercase tracking-wider">Activité récente</p>
+                    <p class="text-xs font-semibold text-base-content/40 uppercase tracking-wider">{{ __('Recent activity') }}</p>
                 </div>
 
                 {{-- Feed filter --}}
@@ -203,7 +203,7 @@
                         ['key' => 'match',     'label' => 'Matchs'],
                         ['key' => 'contact',   'label' => 'Contacts'],
                         ['key' => 'news',      'label' => 'News'],
-                        ['key' => 'meeting',   'label' => 'Réunions'],
+                        ['key' => 'meeting',   'label' => __('Meetings')],
                     ] as $f)
                     <button
                         @click="feedFilter = '{{ $f['key'] }}'"

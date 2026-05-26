@@ -3,16 +3,16 @@
 </x-slot:breadcrumbs>
 
 <div>
-    <x-header separator subtitle="{{ __('Upcoming club activities') }}" title="{{ __('Calendar') }}">
+    <x-header separator :subtitle="__('Upcoming club activities')" :title="__('Calendar')">
         <x-slot:actions>
-            <x-button class="btn-outline btn-sm" icon="o-arrow-path" label="{{ __('Sync to Google/iCal') }}" />
+            <x-button class="btn-outline btn-sm" icon="o-arrow-path" :label="__('Sync to Google/iCal')" />
         </x-slot:actions>
     </x-header>
 
     <div class="grid grid-cols-1 gap-8 lg:grid-cols-4">
 
         <div class="space-y-4">
-            <x-card class="border border-primary/20 bg-primary/5" shadow title="{{ __('Filters') }}">
+            <x-card class="border border-primary/20 bg-primary/5" shadow :title="__('Filters')">
                 <div class="space-y-4">
 
                     {{-- Toggle vue personnelle / tous les événements du club --}}
@@ -44,7 +44,7 @@
                         </label>
                         <x-choices
                             :options="collect($categories)"
-                            placeholder="{{ __('All categories') }}"
+                            :placeholder="__('All categories')"
                             wire:model.live="selectedCategories"
                         />
                     </div>

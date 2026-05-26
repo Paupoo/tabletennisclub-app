@@ -3,7 +3,7 @@
 </x-slot:breadcrumbs>
 
 <div>
-    <x-header title="{{ __('My Matches') }}" subtitle="{{ __('Manage your availability for upcoming interclubs') }}"
+    <x-header :title="__('My Matches')" :subtitle="__('Manage your availability for upcoming interclubs')"
         separator />
 
     @if (! $grouped->isEmpty())
@@ -12,25 +12,25 @@
             <x-button
                 class="btn-success btn-xs btn-soft"
                 icon="o-check-circle"
-                label="{{ __('All available') }}"
+                :label="__('All available')"
                 wire:click="bulkMarkAvailability('available')" />
             <x-button
                 class="btn-warning btn-xs btn-soft"
                 icon="o-question-mark-circle"
-                label="{{ __('All maybe') }}"
+                :label="__('All maybe')"
                 wire:click="bulkMarkAvailability('maybe')" />
             <x-button
                 class="btn-error btn-xs btn-soft"
                 icon="o-x-circle"
-                label="{{ __('All unavailable') }}"
+                :label="__('All unavailable')"
                 wire:click="bulkMarkAvailability('unavailable')"
-                wire:confirm="{{ __('Mark all upcoming matches as unavailable?') }}" />
+                wire::confirm="__('Mark all upcoming matches as unavailable?')" />
         </div>
     @endif
 
     @if ($grouped->isEmpty())
-        <x-empty-state icon="o-calendar" title="{{ __('No upcoming matches') }}"
-            description="{{ __('You are not registered in any team for this season.') }}" />
+        <x-empty-state icon="o-calendar" :title="__('No upcoming matches')"
+            :description="__('You are not registered in any team for this season.')" />
     @else
         @php
             $catMeta = [
@@ -150,19 +150,19 @@
 
                                             <x-menu-item
                                                 wire:click="markAvailability({{ $match['id'] }}, '{{ \App\Enums\InterclubAvailability::AVAILABLE->value }}')"
-                                                title="{{ __('Available') }}"
+                                                :title="__('Available')"
                                                 icon="o-check-circle"
                                                 class="text-success" />
 
                                             <x-menu-item
                                                 wire:click="markAvailability({{ $match['id'] }}, '{{ \App\Enums\InterclubAvailability::MAYBE->value }}')"
-                                                title="{{ __('Maybe') }}"
+                                                :title="__('Maybe')"
                                                 icon="o-question-mark-circle"
                                                 class="text-warning" />
 
                                             <x-menu-item
                                                 wire:click="markAvailability({{ $match['id'] }}, '{{ \App\Enums\InterclubAvailability::UNAVAILABLE->value }}')"
-                                                title="{{ __('Unavailable') }}"
+                                                :title="__('Unavailable')"
                                                 icon="o-x-circle"
                                                 class="text-error" />
 
@@ -170,7 +170,7 @@
 
                                             <x-menu-item
                                                 wire:click="openNote({{ $match['id'] }})"
-                                                title="{{ __('Add a note') }}"
+                                                :title="__('Add a note')"
                                                 icon="o-pencil-square" />
                                         </x-dropdown>
                                     </div>
@@ -180,11 +180,11 @@
                                 @if ($editingInterclubId === $match['id'])
                                     <div class="border-base-200 mt-3 flex items-center gap-2 border-t pt-3">
                                         <x-input class="input-sm flex-1 bg-base-200/50 border-none rounded-lg"
-                                            placeholder="{{ __('Optional note for your captain...') }}"
+                                            :placeholder="__('Optional note for your captain...')"
                                             wire:model="availabilityNote" />
                                         <x-button class="btn-primary btn-sm"
                                             icon="o-check"
-                                            label="{{ __('Save') }}"
+                                            :label="__('Save')"
                                             wire:click="markAvailability({{ $match['id'] }}, '{{ $avail?->value ?? \App\Enums\InterclubAvailability::AVAILABLE->value }}')" />
                                         <x-button class="btn-ghost btn-sm"
                                             icon="o-x-mark"

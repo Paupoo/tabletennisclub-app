@@ -39,7 +39,7 @@
             @if ($hasCapitain)
                 <span class="truncate text-sm font-medium text-base-content">{{ $team->captain_name }}</span>
             @else
-                <span class="text-xs italic text-base-content/25">Non défini</span>
+                <span class="text-xs italic text-base-content/25">{{ __('Not defined') }}</span>
             @endif
         </div>
 
@@ -70,7 +70,7 @@
     {{-- Actions --}}
     <div class="flex items-center justify-between border-t border-base-200 bg-base-200/40 px-3 py-2">
         <div class="flex gap-0.5">
-            <x-button class="btn-ghost btn-xs text-base-content/50 hover:text-base-content" icon="o-eye" label="Détails"
+            <x-button class="btn-ghost btn-xs text-base-content/50 hover:text-base-content" icon="o-eye" :label="__('Details')"
                 link="{{ $showRoute }}" />
             @if (auth()->user()->is_admin || auth()->user()->is_committee_member)
                 <x-button class="btn-ghost btn-xs text-base-content/50 hover:text-base-content" icon="o-pencil" label="Modifier"

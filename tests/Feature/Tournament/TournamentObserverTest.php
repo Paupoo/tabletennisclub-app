@@ -14,9 +14,6 @@ uses(RefreshDatabase::class);
 // The TournamentObserver implements ShouldHandleEventsAfterCommit which prevents
 // it from firing inside the test transaction. We call the observer method directly
 // to test its business logic without relying on the Eloquent lifecycle.
-//
-// Tournament::$dispatchesEvents maps 'created' => NewTournamentPublished, so we
-// call Event::fake() AFTER factory creation to avoid capturing that spurious event.
 
 it('dispatches NewTournamentPublished when transitioning from DRAFT to PUBLISHED', function (): void {
     $tournament = Tournament::factory()->create(['status' => TournamentStatusEnum::DRAFT]);

@@ -7,25 +7,26 @@ namespace Tests\Feature\ClubEvents\Tournaments;
 use App\Enums\TournamentStatusEnum;
 use App\Events\Tournament\NewTournamentPublished;
 use App\Models\ClubEvents\Tournament\Tournament;
+use App\Observers\TournamentObserver;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 
 uses(RefreshDatabase::class);
 
+// TournamentObserver implements ShouldHandleEventsAfterCommit which prevents it
+// from firing inside a test transaction. We call the observer method directly.
+
 describe('Test Tournament Observer', function () {
     it('dispatches event when tournament is published', function () {
+        $tournament = Tournament::factory()->create(['status' => TournamentStatusEnum::DRAFT]);
+
         Event::fake();
 
-        $tournament = Tournament::factory()->create([
-            'status' => TournamentStatusEnum::DRAFT,
-        ]);
+        $model = $tournament->fresh();
+        $model->status = TournamentStatusEnum::PUBLISHED;
 
-        $tournament->update([
-            'status' => TournamentStatusEnum::PUBLISHED,
-        ]);
+        (new TournamentObserver)->updated($model);
 
-        Event::assertDispatched(NewTournamentPublished::class, function ($event) use ($tournament) {
-            return $event->tournament->id === $tournament->id;
-        });
+        Event::assertDispatched(NewTournamentPublished::class, fn ($event): bool => $event->tournament->id === $tournament->id);
     });
 })->group('Tournaments', 'Events', 'Observers');

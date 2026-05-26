@@ -7,7 +7,6 @@ namespace App\Models\ClubEvents\Tournament;
 use App\Casts\MoneyCast;
 use App\Enums\TournamentObjectiveEnum;
 use App\Enums\TournamentStatusEnum;
-use App\Events\Tournament\NewTournamentPublished;
 use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Club\Table;
 use App\Models\ClubAdmin\Users\User;
@@ -102,10 +101,6 @@ class Tournament extends Model
         'sets_to_win' => 'integer',
         'deuce_enabled' => 'boolean',
         'logistics_buffer_minutes' => 'integer',
-    ];
-
-    protected $dispatchesEvents = [
-        'created' => NewTournamentPublished::class,
     ];
 
     protected $fillable = [

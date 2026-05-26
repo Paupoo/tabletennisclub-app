@@ -64,7 +64,7 @@ class PaymentInvitationEmail extends Mailable
     {
         return new Envelope(
             from: new Address('test@example.com', 'CTT Ottignies-Blocry'),
-            subject: 'Payment Invitation for the seasons',
+            subject: __('Payment Invitation for the seasons'),
         );
     }
 }

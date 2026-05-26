@@ -8,6 +8,6 @@ enum PaymentMethod: string
 {
     case CASH = 'Cash';
     case WIRE = 'Wire';
-    case QRCODE = 'QRCode'
+    case QRCODE = 'QRCode';
     case OFFERED = 'Offered';
 }

@@ -8,7 +8,7 @@
     ],
     "license": "MIT",
     "require": {
-        "php": "^8.2",
+        "php": "^8.5",
         "codeat3/blade-eos-icons": "^1.15",
         "doctrine/dbal": "^3.5.1",
         "endroid/qr-code": "^6.0",

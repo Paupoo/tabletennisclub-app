@@ -20,7 +20,7 @@ class TournamentFactory extends Factory
      */
     public function definition(): array
     {
-        $date = fake()->dateTimeBetween(now(), '+ 15 days');
+        $date = fake()->dateTimeBetween('+1 day', '+15 days');
         $start_date = Carbon::parse($date)->roundMinute(1);
         $end_date = Carbon::parse($start_date)->addHour(8);
 

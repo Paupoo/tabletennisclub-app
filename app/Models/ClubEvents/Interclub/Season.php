@@ -52,6 +52,14 @@ class Season extends Model
 {
     use HasFactory;
 
+    protected $casts = [
+        'name' => 'string',
+        'start_at' => 'datetime',
+        'end_at' => 'datetime',
+        'is_active' => 'boolean',
+        'registrations_open' => 'boolean',
+    ];
+
     protected $fillable = [
         'name',
         'start_at',
@@ -59,30 +67,6 @@ class Season extends Model
         'is_active',
         'registrations_open',
     ];
-
-    protected $casts = [
-        'name'               => 'string',
-        'start_at'           => 'datetime',
-        'end_at'             => 'datetime',
-        'is_active'          => 'boolean',
-        'registrations_open' => 'boolean',
-    ];
-
-    public function scopeActive(Builder $query): Builder
-    {
-        return $query->where('is_active', true);
-    }
-
-    public function activate():void
-    {
-        DB::transaction(function() {
-            // Deactivate all other seasons
-            self::query()->where('is_active', true)->update(['is_active' => false]);
-            // Activate the current season
-            $this->is_active = true;
-            $this->save();
-        });
-    }
 
     public static function current(): ?self
     {
@@ -93,52 +77,19 @@ class Season extends Model
         );
     }
 
-    public function openRegistrations(): void
+    public function activate(): void
     {
-        $this->update(['registrations_open' => true]);
-        Cache::forget('season.current');
+        DB::transaction(function () {
+            self::query()->where('id', '!=', $this->id)->update(['is_active' => false]);
+            self::query()->whereKey($this->id)->update(['is_active' => true]);
+            $this->is_active = true;
+        });
     }
 
     public function closeRegistrations(): void
     {
         $this->update(['registrations_open' => false]);
         Cache::forget('season.current');
-    }
-
-    protected static function booted()
-    {
-        static::saving(function ($season) {
-            if ($season->start_at >= $season->end_at) {
-                throw new \DomainException('start_at must be before end_at');
-            }
-
-            // Reject any season whose date range overlaps an existing one.
-            // Standard overlap condition: A.start < B.end AND A.end > B.start
-            $overlaps = static::query()
-                ->when($season->exists, fn ($q) => $q->where('id', '!=', $season->id))
-                ->where('start_at', '<', $season->end_at)
-                ->where('end_at', '>', $season->start_at)
-                ->exists();
-
-            if ($overlaps) {
-                throw new \DomainException('Season dates overlap with an existing season.');
-            }
-        });
-    }
-
-    public function isCurrent(): bool
-    {
-        return $this->is_active;
-    }
-
-    public function isPast(): bool
-    {
-        return $this->end_at < now() && !$this->is_active;
-    }
-
-    public function isFuture(): bool
-    {
-        return $this->start_at > now() && !$this->is_active;
     }
 
     // Relationships
@@ -148,9 +99,35 @@ class Season extends Model
         return $this->hasMany(Interclub::class);
     }
 
+    public function isCurrent(): bool
+    {
+        return $this->is_active;
+    }
+
+    public function isFuture(): bool
+    {
+        return $this->start_at > now() && ! $this->is_active;
+    }
+
+    public function isPast(): bool
+    {
+        return $this->end_at < now() && ! $this->is_active;
+    }
+
     public function leagues(): HasMany
     {
         return $this->hasMany(League::class);
+    }
+
+    public function openRegistrations(): void
+    {
+        $this->update(['registrations_open' => true]);
+        Cache::forget('season.current');
+    }
+
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('is_active', true);
     }
 
     public function subscriptions(): HasMany
@@ -179,6 +156,27 @@ class Season extends Model
         return $this->belongsToMany(User::class, 'subscriptions')
             ->withPivot('amount_due', 'is_competitive')
             ->withTimestamps();
+    }
+
+    protected static function booted()
+    {
+        static::saving(function ($season) {
+            if ($season->start_at >= $season->end_at) {
+                throw new \DomainException('start_at must be before end_at');
+            }
+
+            // Reject any season whose date range overlaps an existing one.
+            // Standard overlap condition: A.start < B.end AND A.end > B.start
+            $overlaps = static::query()
+                ->when($season->exists, fn ($q) => $q->where('id', '!=', $season->id))
+                ->where('start_at', '<', $season->end_at)
+                ->where('end_at', '>', $season->start_at)
+                ->exists();
+
+            if ($overlaps) {
+                throw new \DomainException('Season dates overlap with an existing season.');
+            }
+        });
     }
 
     protected function casts(): array

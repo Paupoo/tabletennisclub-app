@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace App\Models\Bar;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class BarProduct extends Model
 {
     protected $table = 'bar_products';
 
-    // Only fields that can be mass-assigned
     protected $fillable = [
         'name',
         'sale_price',
@@ -24,7 +25,6 @@ class BarProduct extends Model
         static::creating(function ($model) {
             $userId = auth()->id();
             $model->created_by = $userId;
-            $model->modified_by = $userId;
         });
 
         static::updating(function ($model) {
@@ -45,5 +45,27 @@ class BarProduct extends Model
     public function modifiedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'modified_by');
+    }
+
+    public function stockMovements(): HasMany
+    {
+        return $this->hasMany(BarStockMovement::class, 'product_id');
+    }
+
+    /**
+     * Computed stock (FIFO-ready): SUM(IN) - SUM(OUT).
+     * Falls back to a physical `stock` column if present and no movements exist.
+     */
+    public function getStockAttribute(): int
+    {
+        $in  = (int) $this->stockMovements()->where('movement_type', 'in')->sum('quantity');
+        $out = (int) $this->stockMovements()->where('movement_type', 'out')->sum('quantity');
+
+        // Backward compatibility: if there are no movements, use physical column if it exists.
+        if ($in === 0 && $out === 0 && array_key_exists('stock', $this->attributes)) {
+            return (int) ($this->attributes['stock'] ?? 0);
+        }
+
+        return max(0, $in - $out);
     }
 }

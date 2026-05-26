@@ -18,9 +18,7 @@ class BarCategory extends Model
     protected static function booted(): void
     {
         static::creating(function ($model) {
-            $userId = auth()->id();
-            $model->created_by = $userId;
-            $model->modified_by = $userId;
+            $model->created_by = auth()->id();
         });
 
         static::updating(function ($model) {

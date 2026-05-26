@@ -63,7 +63,14 @@ describe('SendPublishedTournamentNotification listener', function (): void {
         $listener->handle($event);
 
         foreach ($users as $user) {
-            Notification::assertSentTo($user, NewTournamentPublishedNotification::class);
+            Notification::assertSentTo($user, NewTournamentPublishedNotification::class, function (NewTournamentPublishedNotification $notification) use ($user, $tournament): bool {
+                $mail = $notification->toMail($user);
+                $actionUrl = $mail->actionUrl;
+
+                return str_contains($actionUrl, "/tournament/{$tournament->id}/join/{$user->id}")
+                    && str_contains($actionUrl, 'signature=')
+                    && ! str_contains($actionUrl, 'clubAdmin');
+            });
         }
     });
 });

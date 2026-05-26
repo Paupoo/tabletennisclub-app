@@ -12,7 +12,6 @@
         @else
 
             @foreach($orders as $order)
-
                 <div class="orders-cards">
                     <article class="order-card">
                         <div class="order-card-bar"></div>
@@ -45,8 +44,16 @@
                             @endif -->
                             <span class="chip chip--muted">💳 Total: {{ euros($order->total_price) }}</span>
                          </div>
-                         <div class="order-card-actions">
-                            <a href="{{ route('bar.payment.show', $order) }}" class="btn btn-pay btn-block"">💰 Payer</a>
+                         <div class="order-card-actions" style ="display: flex; gap: 10px;">
+                            <a href="{{ route('bar.payment.show', $order) }}" class="btn btn-pay">💰 Payer</a>
+                            <a href="{{ route('bar.orders.modify', $order) }}" class="btn btn-modify">🔄 Modifier</a>
+                            @if(!$order->is_paid)
+                            <form method="POST" action="{{ route('bar.orders.destroy', $order) }}">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-clear">🗑 Supprimer</button>
+                            </form>
+                            @endif
                          </div>
                     </article>
                 </div>

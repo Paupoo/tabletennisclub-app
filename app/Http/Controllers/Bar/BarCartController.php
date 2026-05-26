@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Bar\BarProduct;
 use App\Models\Bar\BarStockMovement;
 use App\Models\Bar\BarOrder;
+use App\Models\Bar\BarOrderItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -76,7 +77,7 @@ class BarCartController extends Controller
         $cartCount = array_sum($cart);
         $totalPrice = (int) $items->sum('total_price');
 
-        return view('bar.cart.index', [
+        return view('bar.carts.index', [
             'items' => $items,
             'totalPrice' => $totalPrice,
             'cartCount' => $cartCount,
@@ -91,33 +92,72 @@ class BarCartController extends Controller
     }
 
     public function validateOrder(Request $request)
-    {
-        $cart = session()->get('cart', []);
+{
+    $cart = session()->get('cart', []);
 
-        if (empty($cart)) {
-            return redirect()->route('bar.cart.show')
-                ->with('error', 'Le panier est vide.');
-        }
+    if (empty($cart)) {
+        return redirect()->route('bar.carts.show')
+            ->with('error', 'Le panier est vide.');
+    }
 
-        $action = $request->input('action', 'validate');
-        $userId = auth()->id();
+    $action = $request->input('action', 'validate');
+    $userId = auth()->id();
 
-        $products = BarProduct::whereIn('id', array_keys($cart))->get();
+    $products = BarProduct::whereIn('id', array_keys($cart))->get();
 
-        $totalPrice = $products->sum(function ($product) use ($cart) {
-            return $product->sale_price * ($cart[$product->id] ?? 0);
-        });
+    $totalPrice = $products->sum(function ($product) use ($cart) {
+        return $product->sale_price * ($cart[$product->id] ?? 0);
+    });
 
-        $order = null;
+    $order = null;
 
+    try {
         DB::transaction(function () use ($cart, $userId, $totalPrice, &$order) {
+            $orderId = session()->get('editing_order_id');
 
-            $order = \App\Models\Bar\BarOrder::create([
-                'created_by'  => $userId,
-                'total_price' => $totalPrice,
-                'is_paid'     => 0,
-            ]);
+            if ($orderId) {
+                // Editing an existing order
+                $order = BarOrder::with('items')->lockForUpdate()->find($orderId);
 
+                if (! $order) {
+                    throw new \RuntimeException('La commande à modifier est introuvable.');
+                }
+
+                if ($order->is_paid) {
+                    throw new \RuntimeException('Impossible de modifier une commande déjà payée.');
+                }
+
+                // Revert previous stock impact
+                foreach ($order->items as $item) {
+                    BarStockMovement::create([
+                        'product_id'    => $item->product_id,
+                        'quantity'      => $item->quantity,
+                        'movement_type' => 'IN',
+                        'reason'        => "Order #{$order->id} - modification (revert)",
+                        'created_by'    => null,
+                        'modified_by'   => $userId,
+                    ]);
+                }
+
+                // Delete previous lines
+                $order->items()->delete();
+
+                // Update order header
+                $order->update([
+                    'total_price' => $totalPrice,
+                    'modified_by' => $userId,
+                ]);
+
+            } else {
+                // Create new order
+                $order = BarOrder::create([
+                    'total_price' => $totalPrice,
+                    'created_by'  => $userId,
+                    'is_paid'     => 0,
+                ]);
+            }
+
+            // Lock current products for stock verification
             $products = BarProduct::whereIn('id', array_keys($cart))
                 ->lockForUpdate()
                 ->get()
@@ -128,24 +168,17 @@ class BarCartController extends Controller
                 $product = $products->get((int) $productId);
 
                 if (! $product) {
-                    throw new \RuntimeException("Produit introuvable");
+                    throw new \RuntimeException("Produit introuvable (ID {$productId}).");
                 }
 
                 $availableStock = (int) $product->stock;
 
                 if ($qty > $availableStock) {
-                    throw new \RuntimeException("Stock insuffisant pour {$product->name}");
+                    throw new \RuntimeException("Stock insuffisant pour {$product->name}.");
                 }
 
-                \App\Models\Bar\BarStockMovement::create([
-                    'product_id'    => $product->id,
-                    'quantity'      => $qty,
-                    'movement_type' => 'OUT',
-                    'reason'        => "Order #{$order->id} - validation",
-                    'created_by'    => $userId,
-                ]);
-
-                \App\Models\Bar\BarOrderItem::create([
+                // Recreate order lines
+                BarOrderItem::create([
                     'order_id'    => $order->id,
                     'product_id'  => $product->id,
                     'quantity'    => $qty,
@@ -154,15 +187,21 @@ class BarCartController extends Controller
                 ]);
             }
         });
-
-        session()->forget('cart');
-
-        if ($action === 'pay_now') {
-            return redirect()->route('bar.payment.show', $order)
-                ->with('success', 'Commande créée. Procédez au paiement.');
-        }
-
-        return redirect()->route('bar.orders.index')
-            ->with('success', 'Commande validée');
+    } catch (\RuntimeException $e) {
+        return redirect()->route('bar.index')
+            ->with('error', $e->getMessage());
     }
+
+    // Clean session state after success
+    session()->forget('cart');
+    session()->forget('editing_order_id');
+
+    if ($action === 'pay_now') {
+        return redirect()->route('bar.payment.show', $order)
+            ->with('success', 'Commande créée. Procédez au paiement.');
+    }
+
+    return redirect()->route('bar.orders.index')
+        ->with('success', 'Commande validée');
+}
 }

@@ -58,8 +58,8 @@ class BarProduct extends Model
      */
     public function getStockAttribute(): int
     {
-        $in  = (int) $this->stockMovements()->where('movement_type', 'in')->sum('quantity');
-        $out = (int) $this->stockMovements()->where('movement_type', 'out')->sum('quantity');
+        $in  = (int) $this->stockMovements()->where('movement_type', 'IN')->sum('quantity');
+        $out = (int) $this->stockMovements()->where('movement_type', 'OUT')->sum('quantity');
 
         // Backward compatibility: if there are no movements, use physical column if it exists.
         if ($in === 0 && $out === 0 && array_key_exists('stock', $this->attributes)) {

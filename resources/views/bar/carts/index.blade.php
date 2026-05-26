@@ -21,7 +21,7 @@
                 @php
                     $product = $item['product'];
                     $qty = $item['quantity'];
-                    $totalPrice = $item['total_price'];
+                    $LineTotal = $item['total_price'];
                     $unitPrice = $product->sale_price;
                     $stock = (int) $product->stock;
                     $realStock = (int) $product->stock;
@@ -68,7 +68,7 @@
 
                     {{-- TOTAL LINE --}}
                     <div class="line-total">
-                        {{ euros($totalPrice) }}
+                        {{ euros($LineTotal) }}
                     </div>
 
                 </div>

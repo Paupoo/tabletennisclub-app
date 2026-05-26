@@ -11,7 +11,7 @@
      ADD CATEGORY
 ========================= --}}
 <section class="panel" style="margin:14px;">
-    <details class="collapsible" id="create-product-collapsible">
+    <details class="collapsible" id="create-product-collapsible" open>
         <summary class="collapsible-summary">
             <span>➕ Ajouter une catégorie</span>
             <span class="collapsible-meta muted">Appuie pour ouvrir/fermer</span>

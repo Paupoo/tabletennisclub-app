@@ -18,7 +18,7 @@ return new class extends Migration
                   ->onDelete('cascade');
             $table->integer('batch_id')->nullable();
             $table->integer('quantity');
-            $table->enum('movement_type', ['in', 'out']);
+            $table->enum('movement_type', ['IN', 'OUT']);
             $table->string('reason')->nullable();
             // Audit fields
             $table->foreignId('created_by')

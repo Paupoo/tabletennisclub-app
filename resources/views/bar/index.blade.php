@@ -6,32 +6,80 @@
     <h1>🍹 Bar - Commande</h1>
     <p class="muted">Sélectionnez les produits à ajouter à la commande.</p>
 </div>
-@if($cartCount > 0)
-    <div class="cart-bar" style="margin:14px">
+<div class="cart-bar" style="margin:14px; display:flex; align-items:center; justify-content:space-between;">
+
+    {{-- LEFT PART --}}
+    @if($cartCount > 0)
         <span>
-          <strong>{{ $cartCount }}</strong> article(s)
+            <strong>{{ $cartCount }}</strong> article(s)
         </span>
-        <a href="{{ route('bar.cart.show') }}" class="btn-cart">🛒 Voir la commande</a>
-      </div>
+    @else
+        <span class="muted">
+            Panier vide
+        </span>
+    @endif
 
-<!-- <div class="cart-summary-bar">
+    {{-- RIGHT PART --}}
+    <div style="display:flex; gap:10px; align-items:center;">
 
-    <div class="cart-summary-left">
-        🛒 <strong>{{ $cartCount }}</strong> article(s)
+        {{-- ✅ CANCEL must ONLY depend on editing state --}}
+        @if(session('editing_order_id'))
+             <form method="POST" action="{{ route('bar.orders.cancelEdit')}}">
+                @csrf
+                <button type="submit" class="btn btn-clear">
+                    <span class="icon-cross" style="font-size: 24px;">❌</span> Annuler modification
+                </button>
+            </form>
+        @endif
+
+        {{-- ✅ Cart button only if cart has content --}}
+        @if($cartCount > 0)
+            <a href="{{ route('bar.cart.show') }}" class="btn-cart">
+                🛒 Voir la commande
+            </a>
+        @endif
+
     </div>
 
-    <div class="cart-summary-middle">
-        💰 {{ euros($totalPrice) }}
-    </div>
+</div>
 
-    <div class="cart-summary-right">
-         <a href="{{ route('bar.cart.show') }}" class="btn-cart">🛒 Voir la commande</a>
-    </div>
-
-</div> -->
-
+{{-- FAVORITES SECTION --}}
+@if(isset($favorites) && $favorites->isNotEmpty())
+<section class="panel" style="margin:14px">
+    <details class="collapsible" data-category-id="favorites">
+        <summary class="collapsible-summary">
+            <span class="accordion-title">⭐ Favoris</span>
+        </summary>
+        <div class="accordion-body">
+            <div class="products-grid">
+                @foreach($favorites as $product)
+                @php
+                $stock = (int) $product->stock;
+                $qtyInCart = $cart[$product->id] ?? 0;
+                $stockDisplay = max(0, $stock - $qtyInCart);
+                $disablePlus = !$product->is_available || ($stockDisplay === 0);
+                @endphp
+                
+                <div class="product-card">
+                    <div class="product-card-top">
+                        <div>
+                            <p class="product-card-name">{{ $product->name }}</p>
+                        </div>
+                        <span class="stock-label">{{ $stockDisplay }} en stock</span>
+                    </div>
+                    
+                    <form method="POST" action="{{ route('bar.cart.add') }}">
+                        @csrf
+                        <input type="hidden" name="product_id" value="{{ $product->id }}">
+                        <button class="btn btn-pay btn-block" {{ $disablePlus ? 'disabled' : '' }}>➕ Ajouter</button>
+                    </form>
+                </div>
+                @endforeach
+            </div>
+        </div>
+    </details>
+</section>
 @endif
-
 @foreach ($categories as $category)
 
 <section class="panel" style="margin: 14px;">

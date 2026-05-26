@@ -18,29 +18,27 @@
         <nav class="header-nav" aria-label="Navigation principale">
             <a class="nav-link" href="{{ route('bar.index') }}">🏠 Accueil</a>
             <a class="nav-link" href="{{ route('bar.orders.index') }}">📋 Commandes</a>
-            <a class="nav-link" href="#">📜 Historique</a>
+            <a class="nav-link" href="{{ route('bar.orders.history') }}">📜 Historique</a>
             <a class="nav-link" href="{{ route('bar.products.index') }}">🍺 Produits</a>
             <a class="nav-link" href="{{ route('bar.categories.index') }}">🏷️ Catégories</a>
-            <a class="nav-link" href="#">💵 Feuille de caisse</a>
-            <a class="nav-link" href="#">👤 Utilisateurs</a>
+            <a class="nav-link" href="{{ route('bar.cashSheet.index') }}">💵 Feuille de caisse</a>
         </nav>
         <div class="header-right">
             @auth
             <div class="header-badge">👋 {{ auth()->user()->first_name }}</div>
             @endauth
             
-            <button class="hamburger" type="button" aria-label="Menu" onclick="toggleMobileNav()">☰</button>
+            <button id="menuToggle" class="menu-toggle">☰</button>
         </div>
 </header>
 
 <div id="navMobile" class="nav-mobile" aria-label="Menu mobile">
     <a class="nav-mobile-link" href="{{ route('bar.index') }}">🏠 Accueil</a>
     <a class="nav-mobile-link" href="{{ route('bar.orders.index') }}">📋 Commandes</a>
-    <a class="nav-mobile-link" href="#">📜 Historique</a>
+    <a class="nav-mobile-link" href="{{ route('bar.orders.history') }}">📜 Historique</a>
     <a class="nav-mobile-link" href="{{ route('bar.products.index') }}">🍺 Produits</a>
     <a class="nav-mobile-link" href="{{ route('bar.categories.index') }}">🏷️ Catégories</a>
-    <a class="nav-mobile-link" href="#">💵 Feuille de caisse</a>
-    <a class="nav-mobile-link" href="#">👤 Utilisateurs</a>
+    <a class="nav-mobile-link" href="{{ route('bar.cashSheet.index') }}">💵 Feuille de caisse</a>
     <a class="nav-mobile-link" href="#">🚪 Quitter</a>
     <a class="nav-mobile-link" href="#">🔒 Connexion</a>
 </div>
@@ -51,3 +49,55 @@
     </main>
 </body>
 </html>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    const button = document.getElementById('menuToggle');
+    const nav = document.getElementById('navMobile');
+
+    if (!button || !nav) return;
+
+    button.addEventListener('click', (e) => {
+        e.stopPropagation();
+
+        const rect = button.getBoundingClientRect();
+
+        // ✅ Position menu relative to button
+        nav.style.top = rect.bottom + "px";
+        nav.style.right = (window.innerWidth - rect.right) + "px";
+        nav.style.left = "auto"; // ✅ important (reset)
+
+        // Optional: align right instead
+        // nav.style.right = (window.innerWidth - rect.right) + "px";
+
+        nav.classList.toggle('open');
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!nav.contains(e.target) && !button.contains(e.target)) {
+            nav.classList.remove('open');
+        }
+    });
+
+});
+
+// document.addEventListener('DOMContentLoaded', () => {
+
+//     const button = document.getElementById('menuToggle');
+//     const nav = document.getElementById('navMobile');
+
+//     if (!button || !nav) return;
+
+//     button.addEventListener('click', () => {
+//         nav.classList.toggle('open');
+
+//         // Optional: lock/unlock background scroll
+//         if (nav.classList.contains('open')) {
+//             document.body.style.overflow = 'hidden';
+//         } else {
+//             document.body.style.overflow = '';
+//         }
+//     });
+
+// });
+</script>

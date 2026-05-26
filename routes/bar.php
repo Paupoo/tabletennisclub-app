@@ -8,6 +8,7 @@ use App\Http\Controllers\Bar\BarOrderController;
 use App\Http\Controllers\Bar\BarCategoryController;
 use App\Http\Controllers\Bar\BarProductController;
 use App\Http\Controllers\Bar\BarPaymentController;
+use App\Http\Controllers\Bar\BarCashSheetController;
 
 
 /*
@@ -35,7 +36,6 @@ Route::post('/cart/validate', [BarCartController::class, 'validateOrder'])
     ->name('cart.validate');
 Route::post('/cart/pay', [BarCartController::class, 'pay'])
     ->name('cart.pay');
-
 /*
 |--------------------------------------------------------------------------
 | Payments
@@ -53,7 +53,14 @@ Route::get('/orders', [BarOrderController::class, 'index'])
     ->name('orders.index');
 Route::post('/orders/{order}/pay', [BarOrderController::class, 'pay'])
     ->name('orders.pay');
-
+Route::get('/orders/history', [BarOrderController::class, 'history'])
+    ->name('orders.history');
+Route::get('/orders/{order}/modify', [BarOrderController::class, 'modify'])
+    ->name('orders.modify');
+Route::post('/orders/cancel-edit', [BarOrderController::class, 'cancelEdit'])
+    ->name('orders.cancelEdit');
+Route::delete('/orders/{order}', [BarOrderController::class, 'destroy'])
+    ->name('orders.destroy');
 /*
 |--------------------------------------------------------------------------
 | Categories
@@ -86,4 +93,16 @@ Route::prefix('products')->name('products.')->group(function () {
         ->name('destroy');
     Route::post('/products/state', [BarProductController::class, 'storeState'])
         ->name('storeState');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Cash sheet
+|--------------------------------------------------------------------------
+*/
+Route::prefix('cashsheet')->name('cashSheet.')->group(function () {
+    Route::get('/', [BarCashSheetController::class, 'index'])
+        ->name('index');
+    Route::post('/send', [BarCashSheetController::class, 'sendToTreasurer'])
+        ->name('send');
 });

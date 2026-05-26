@@ -54,7 +54,7 @@
 
             <div style="display:flex; gap:10px; flex-wrap:wrap;">
                 {{-- Offered --}}
-                <form method="POST" action="{{ route('orders.pay', $order) }}">
+                <form method="POST" action="{{ route('bar.orders.pay', $order) }}">
                     @csrf
                     <input type="hidden" name="method" value="offered">
                     <button class="btn btn-clear btn-block">
@@ -62,7 +62,7 @@
                     </button>
                 </form>
                 {{-- Cash --}}
-                <form method="POST" action="{{ route('orders.pay', $order) }}">
+                <form method="POST" action="{{ route('bar.orders.pay', $order) }}">
                     @csrf
                     <input type="hidden" name="method" value="cash">
                     <button class="btn btn-pay btn-block">
@@ -70,7 +70,7 @@
                     </button>
                 </form>
                 {{-- QR --}}
-                <form method="POST" action="{{ route('orders.pay', $order) }}">
+                <form method="POST" action="{{ route('bar.orders.pay', $order) }}">
                     @csrf
                     <input type="hidden" name="method" value="qr">
                     <button class="btn btn-pay btn-block">

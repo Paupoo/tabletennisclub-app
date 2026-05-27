@@ -374,11 +374,11 @@
         @if ($step === '3')
             <div class="space-y-4">
                 <x-input :label="__('Pack price (€)')" type="number" min="0" step="0.50"
-                    wire:model="formPrice" />
+                    wire:model.live="formPrice" />
 
                 <x-toggle
                     :label="__('Allow family/multi-pack discount')"
-                    wire:model="formAllowDiscount"
+                    wire:model.live="formAllowDiscount"
                     :hint="__('When enabled, a 10€ discount applies per pack for members taking multiple packs or families.')" />
 
                 <x-alert class="alert-info" icon="o-information-circle"

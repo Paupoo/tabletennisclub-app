@@ -135,8 +135,17 @@
                                                     @endif
                                                 </p>
                                             </div>
-                                            <x-badge value="{{ number_format($pack->price, 0) }}€"
-                                                class="badge-primary badge-soft shrink-0" />
+                                            <div class="flex shrink-0 flex-col items-end gap-1">
+                                                <x-badge value="{{ number_format($pack->price, 0) }}€"
+                                                    class="badge-primary badge-soft" />
+                                                @if ($pack->eventPost?->status->value === 'PUBLISHED')
+                                                    <x-badge value="{{ __('On website') }}"
+                                                        class="badge-success badge-soft badge-xs" icon="o-globe-alt" />
+                                                @elseif ($pack->eventPost)
+                                                    <x-badge value="{{ __('Draft') }}"
+                                                        class="badge-warning badge-soft badge-xs" icon="o-document-text" />
+                                                @endif
+                                            </div>
                                         </div>
                                     </div>
 
@@ -175,6 +184,15 @@
                                                 wire:click="viewSessions({{ $pack->id }})" />
                                             <x-button class="btn-ghost btn-sm text-xs" icon="o-pencil"
                                                 wire:click="openEdit({{ $pack->id }})" />
+                                            <x-button
+                                                @class([
+                                                    'btn-ghost btn-sm text-xs',
+                                                    'text-success' => $pack->eventPost?->status->value === 'PUBLISHED',
+                                                    'text-warning' => $pack->eventPost && $pack->eventPost->status->value !== 'PUBLISHED',
+                                                ])
+                                                icon="o-globe-alt"
+                                                :tooltip="__('Publish on website')"
+                                                wire:click="openEventPost({{ $pack->id }})" />
                                             <x-button class="btn-ghost btn-sm text-error text-xs" icon="o-trash"
                                                 wire:click="deactivatePack({{ $pack->id }})"
                                                 wire::confirm="__('Deactivate this pack?')" />
@@ -443,6 +461,43 @@
                     label="{{ $packId ? __('Update') : __('Create pack') }}" wire:click="save" />
             @endif
         </x-slot:actions>
+    </x-modal>
+
+    {{-- ================================================================
+         EVENT POST MODAL
+    ================================================================ --}}
+    <x-modal :title="__('Publish on website')" wire:model="showEventPostModal" separator>
+
+        @if (!$eventPostPackHasDate)
+            <x-alert class="alert-warning mb-4" icon="o-exclamation-triangle"
+                :title="__('No fixed date configured for this pack.')"
+                :description="__('Set a custom date range in the pack settings to publish it as a web event. Today\'s date will be used as a fallback.')" />
+        @endif
+
+        <x-admin.shared.event-post-form
+            :event-post-id="$eventPostId"
+            :event-status="$eventStatus"
+            :sync-note="__('Date, time, price and capacity are synced automatically from the pack settings.')"
+        />
+
+        <x-slot:actions>
+            <x-button :label="__('Cancel')" wire:click="$toggle('showEventPostModal')" />
+            <x-button
+                class="btn-ghost"
+                icon="o-document-text"
+                :label="__('Save as draft')"
+                spinner="saveEventPost"
+                wire:click="saveEventPost('draft')"
+            />
+            <x-button
+                class="btn-primary"
+                icon="o-globe-alt"
+                :label="__('Publish')"
+                spinner="saveEventPost"
+                wire:click="saveEventPost('published')"
+            />
+        </x-slot:actions>
+
     </x-modal>
 
     {{-- ================================================================

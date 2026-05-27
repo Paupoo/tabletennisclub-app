@@ -11,6 +11,7 @@ use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Subscription\Subscription;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Season;
+use App\Models\ClubPosts\EventPost;
 use App\Services\TrainingBuilder;
 use App\Services\TrainingDateGenerator;
 use Carbon\Carbon;
@@ -22,6 +23,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 class TrainingPack extends Model
 {
@@ -86,6 +88,11 @@ class TrainingPack extends Model
         return $this->subscriptions()
             ->wherePivot('status', 'enrolled')
             ->count();
+    }
+
+    public function eventPost(): MorphOne
+    {
+        return $this->morphOne(EventPost::class, 'eventable');
     }
 
     /**

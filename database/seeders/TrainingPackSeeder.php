@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Enums\ClubEventTypeEnum;
+use App\Enums\EventPostStatusEnum;
 use App\Enums\Gender;
 use App\Enums\Ranking;
 use App\Enums\TrainingLevel;
@@ -14,6 +16,7 @@ use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Club;
 use App\Models\ClubEvents\Interclub\Season;
 use App\Models\ClubEvents\Training\TrainingPack;
+use App\Services\EventPostService;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -267,6 +270,30 @@ class TrainingPackSeeder extends Seeder
             ]));
 
             $pack->generateSessions($season);
+
+            // Publish the Stage d'été as a web event
+            if ($data['name'] === "Stage d'été" && $pack->pack_start_date) {
+                $stageStartTime = Carbon::parse($pack->start_time ?? '09:00:00');
+                $stageEndTime = $stageStartTime->copy()->addMinutes($pack->duration_minutes ?? 420);
+
+                app(EventPostService::class)->upsert(
+                    model: $pack,
+                    type: ClubEventTypeEnum::TRAINING,
+                    title: "Stage d'été " . $julyYear,
+                    description: 'Stage intensif de ping-pong sur deux semaines. Ouvert à tous les niveaux, du lundi au vendredi. Encadré par nos entraîneurs diplômés.',
+                    location: $blocry ? implode(', ', array_filter([$blocry->street, $blocry->city_name])) : 'Blocry',
+                    featured: true,
+                    status: EventPostStatusEnum::PUBLISHED,
+                    syncData: [
+                        'event_date' => $pack->pack_start_date->toDateString(),
+                        'start_time' => $stageStartTime->format('H:i:s'),
+                        'end_time' => $stageEndTime->format('H:i:s'),
+                        'price' => (string) $pack->price,
+                        'max_participants' => $pack->max_participants,
+                        'icon' => '🎯',
+                    ],
+                );
+            }
         }
     }
 }

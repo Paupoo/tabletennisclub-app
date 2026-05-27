@@ -4,21 +4,20 @@ declare(strict_types=1);
 
 use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
 use App\Data\Tournament\SimulationResult;
-use App\Models\ClubEvents\Tournament\TournamentPair;
 use App\Data\Tournament\TournamentConfig;
 use App\Enums\ClubEventTypeEnum;
-use App\Enums\EventPostStatusEnum;
 use App\Enums\TournamentObjectiveEnum;
 use App\Enums\TournamentStatusEnum;
-use App\Models\ClubAdmin\Payment\CashRegister;
-use App\Models\ClubAdmin\Payment\Payment;
+use App\Livewire\Concerns\HasEventPostForm;
 use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Club\Table;
+use App\Models\ClubAdmin\Payment\CashRegister;
+use App\Models\ClubAdmin\Payment\Payment;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Tournament\Pool;
 use App\Models\ClubEvents\Tournament\Tournament;
+use App\Models\ClubEvents\Tournament\TournamentPair;
 use App\Models\ClubEvents\Tournament\TournamentRegistration;
-use App\Models\ClubPosts\EventPost;
 use App\Notifications\Tournament\TournamentCancelledNotification;
 use App\Notifications\Tournament\TournamentInvitationNotification;
 use App\Notifications\Tournament\TournamentUpdatedNotification;
@@ -28,10 +27,10 @@ use App\Services\TournamentPoolService;
 use App\Services\TournamentService;
 use App\Services\TournamentSimulator;
 use App\Support\Breadcrumb;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -39,21 +38,9 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast, WithFileUploads;
+    use HasEventPostForm, Toast, WithFileUploads;
 
     public bool $bulkDrawer = false;
-
-    public string $eventDescription = '';
-
-    public bool $eventFeatured = false;
-
-    public string $eventLocation = '';
-
-    public ?int $eventPostId = null;
-
-    public string $eventStatus = 'DRAFT';
-
-    public string $eventTitle = '';
 
     public bool $inviteIncludeArticle = false;
 
@@ -757,17 +744,7 @@ new class extends Component
                 default                         => '1',
             };
 
-            $ep = $tournament->eventPost;
-            if ($ep) {
-                $this->eventPostId      = $ep->id;
-                $this->eventTitle       = $ep->title;
-                $this->eventDescription = $ep->description ?? '';
-                $this->eventLocation    = $ep->location ?? '';
-                $this->eventFeatured    = (bool) $ep->featured;
-                $this->eventStatus      = $ep->status->value;
-            } else {
-                $this->eventTitle = $tournament->name;
-            }
+            $this->initEventPost($tournament->eventPost, $tournament->name);
         }
 
         // Pre-fill location from the first room's address if not already set
@@ -926,67 +903,28 @@ new class extends Component
         $this->success($user->full_name . ' ' . __('has been moved to the registered list.'));
     }
 
-    public function saveEventPost(string $status = 'draft'): void
+    protected function resolveEventPostData(): array
     {
-        $rules = [
-            'eventTitle'       => 'required|min:3',
-            'eventDescription' => $status === 'published' ? 'required|string|min:10' : 'nullable|string',
-            'eventLocation'    => 'nullable|string',
-        ];
-
-        try {
-            $this->validate($rules);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            $this->error(__('Please correct the errors before saving.'));
-            throw $e;
-        }
-
-        $enumStatus = $status === 'published'
-            ? EventPostStatusEnum::PUBLISHED
-            : EventPostStatusEnum::DRAFT;
-
         $tournament = Tournament::findOrFail($this->tournamentId);
 
         $startTime = $tournament->start_time
-            ? \Carbon\Carbon::parse($tournament->start_time)
+            ? Carbon::parse($tournament->start_time)
             : null;
 
         $endTime = $startTime && $tournament->duration_minutes > 0
             ? $startTime->copy()->addMinutes($tournament->duration_minutes)
             : null;
 
-        $data = [
-            'eventable_type'   => Tournament::class,
-            'eventable_id'     => $tournament->id,
+        return [
+            'model'            => $tournament,
             'type'             => ClubEventTypeEnum::TOURNAMENT,
-            'title'            => $this->eventTitle,
-            'description'      => $this->eventDescription,
-            'status'           => $enumStatus->value,
-            'location'         => $this->eventLocation,
+            'icon'             => '🏆',
             'event_date'       => $tournament->start_date->toDateString(),
             'start_time'       => $startTime?->format('H:i:s') ?? '00:00:00',
             'end_time'         => $endTime?->format('H:i:s'),
             'price'            => (string) $tournament->price,
             'max_participants' => $tournament->max_users ?: null,
-            'featured'         => $this->eventFeatured,
-            'icon'             => '🏆',
         ];
-
-        if ($this->eventPostId) {
-            EventPost::findOrFail($this->eventPostId)->update($data);
-        } else {
-            $ep = EventPost::create($data);
-            $this->eventPostId = $ep->id;
-        }
-
-        $this->eventStatus = $enumStatus->value;
-
-        $this->success(
-            title: $enumStatus === EventPostStatusEnum::PUBLISHED
-                ? __('Event published on the website!')
-                : __('Event saved as draft.'),
-            icon: 'o-globe-alt',
-        );
     }
 
     // ── Computed: registration status

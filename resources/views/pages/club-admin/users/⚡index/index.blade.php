@@ -186,22 +186,13 @@
     </div>
 
     {{-- MODALES --}}
-    <x-modal :subtitle="__('Warning!')" :title="__('Confirm deletion')" wire:model="deleteModal">
+    <x-confirm-modal model="deleteModal" :title="__('Confirm deletion')" :subtitle="__('Warning!')"
+        :confirmLabel="__('Delete')" confirmAction="delete">
         <p>{{ __('Are you sure you want to delete this user? This action is irreversible.') }}</p>
+    </x-confirm-modal>
 
-        <x-slot:actions>
-            <x-button :label="__('Cancel')" wire:click="$set('deleteModal', false)" />
-            <x-button class="btn-error" :label="__('Delete')" spinner wire:click="delete" />
-        </x-slot:actions>
-    </x-modal>
-
-    <x-modal :subtitle="__('Warning!')" :title="__('Confirm bulk deletion')"
-        wire:model="deleteSelectedModal">
+    <x-confirm-modal model="deleteSelectedModal" :title="__('Confirm bulk deletion')" :subtitle="__('Warning!')"
+        :confirmLabel="__('Delete')" confirmAction="deleteSelected">
         <p>{{ __('Are you sure you want to delete the selected users? This action is irreversible.') }}</p>
-
-        <x-slot:actions>
-            <x-button :label="__('Cancel')" wire:click="$set('deleteSelectedModal', false)" />
-            <x-button class="btn-error" :label="__('Delete')" spinner wire:click="deleteSelected" />
-        </x-slot:actions>
-    </x-modal>
+    </x-confirm-modal>
 </div>

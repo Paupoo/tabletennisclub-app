@@ -110,17 +110,10 @@
     </div>
 
     <div class=" pt-2 mt-6 flex justify-start">
-        <x-primary-button type="submit"
-        class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-xs text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-            @if($tournament->id === null)
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20"
-                fill="currentColor">
-                <path fill-rule="evenodd"
-                    d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-                    clip-rule="evenodd" />
-            </svg>
-            @endif
-            {{ $tournament->id === null ? __('Create tournament') : __('Update Parameters') }}
-        </x-primary-button>
+        @if($tournament->id === null)
+            <x-button type="submit" icon="o-plus" :label="__('Create tournament')" class="btn-primary" />
+        @else
+            <x-button type="submit" :label="__('Update Parameters')" class="btn-primary" />
+        @endif
     </div>
 </form>

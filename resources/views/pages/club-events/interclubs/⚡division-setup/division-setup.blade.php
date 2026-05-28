@@ -199,11 +199,8 @@
     </x-modal>
 
     {{-- Modal delete --}}
-    <x-modal :subtitle="__('Warning!')" :title="__('Remove participant')" wire:model="deleteModal">
+    <x-confirm-modal model="deleteModal" :title="__('Remove participant')" :subtitle="__('Warning!')"
+        :confirmLabel="__('Remove')" confirmAction="deleteParticipant">
         <p>{{ __('Are you sure you want to remove this opponent from the division?') }}</p>
-        <x-slot:actions>
-            <x-button :label="__('Cancel')" wire:click="$set('deleteModal', false)" />
-            <x-button class="btn-error" :label="__('Remove')" spinner wire:click="deleteParticipant" />
-        </x-slot:actions>
-    </x-modal>
+    </x-confirm-modal>
 </div>

@@ -7,20 +7,18 @@
 
         <!-- Email Address -->
         <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full h-10 p-2 border border-base-300 dark:border-base-700" type="email" name="email" :value="old('email')" required
-                autofocus autocomplete="username" />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
+            <x-form.field name="email" :label="__('Email')">
+                <x-text-input id="email" class="block mt-1 w-full h-10 p-2 border border-base-300 dark:border-base-700" type="email" name="email" :value="old('email')" required
+                    autofocus autocomplete="username" />
+            </x-form.field>
         </div>
 
         <!-- Password -->
         <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
-
-            <x-text-input id="password" class="block mt-1 w-full h-10 p-2 border border-base-300 dark:border-base-700" type="password" name="password" required
-                autocomplete="current-password" />
-
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
+            <x-form.field name="password" :label="__('Password')">
+                <x-text-input id="password" class="block mt-1 w-full h-10 p-2 border border-base-300 dark:border-base-700" type="password" name="password" required
+                    autocomplete="current-password" />
+            </x-form.field>
         </div>
 
         <!-- Remember Me -->
@@ -41,9 +39,7 @@
                 </a>
             @endif
 
-            <x-primary-button class="ms-3">
-                {{ __('Log in') }}
-            </x-primary-button>
+            <x-button type="submit" :label="__('Log in')" class="btn-primary ms-3" />
         </div>
     </form>
 </x-login-layout>

@@ -378,14 +378,9 @@
     {{-- ════════════════════════════════
          MODAL — Delete photo
     ════════════════════════════════ --}}
-    <x-modal wire:model="deleteModal" :title="__('Confirmation of deletion')" :subtitle="__('Warning!')">
-        <x-slot>
-            {{ __('Are you sure you want to delete this picture? This action is irreversible.') }}
-        </x-slot>
-        <x-slot:actions>
-            <x-button :label="__('Cancel')" @click="$wire.deleteModal = false" />
-            <x-button :label="__('Delete')" class="btn-error" wire:click="deletePhoto" spinner />
-        </x-slot:actions>
-    </x-modal>
+    <x-confirm-modal model="deleteModal" :title="__('Confirmation of deletion')" :subtitle="__('Warning!')"
+        :confirmLabel="__('Delete')" confirmAction="deletePhoto">
+        {{ __('Are you sure you want to delete this picture? This action is irreversible.') }}
+    </x-confirm-modal>
 
 </div>

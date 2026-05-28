@@ -13,32 +13,22 @@
 
         <!-- Password -->
         <div class="mt-4">
-            <x-input-label for="password" :value="__('Mot de passe')" />
-
-            <x-text-input id="password" class="block mt-1 w-full"
-                          type="password"
-                          name="password"
-                          required autocomplete="new-password" />
-
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
+            <x-form.field name="password" :label="__('Mot de passe')">
+                <x-text-input id="password" class="block mt-1 w-full"
+                    type="password" name="password" required autocomplete="new-password" />
+            </x-form.field>
         </div>
 
         <!-- Confirm Password -->
         <div class="mt-4">
-            <x-input-label for="password_confirmation" :value="__('Confirmer le mot de passe')" />
-
-            <x-text-input id="password_confirmation" class="block mt-1 w-full"
-                          type="password"
-                          name="password_confirmation"
-                          required autocomplete="new-password" />
-
-            <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
+            <x-form.field name="password_confirmation" :label="__('Confirmer le mot de passe')">
+                <x-text-input id="password_confirmation" class="block mt-1 w-full"
+                    type="password" name="password_confirmation" required autocomplete="new-password" />
+            </x-form.field>
         </div>
 
         <div class="flex items-center justify-end mt-4">
-            <x-primary-button class="ms-3">
-                {{ __('Finaliser mon inscription') }}
-            </x-primary-button>
+            <x-button type="submit" :label="__('Finaliser mon inscription')" class="btn-primary ms-3" />
         </div>
     </form>
 </x-login-layout>

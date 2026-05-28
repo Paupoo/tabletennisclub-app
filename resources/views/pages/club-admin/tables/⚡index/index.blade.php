@@ -137,22 +137,14 @@
     </div>
 
     {{-- Modals --}}
-    <x-modal :subtitle="__('Warning!')" :title="__('Confirm unlink')" wire:model="unlinkModal">
+    <x-confirm-modal model="unlinkModal" :title="__('Confirm unlink')" :subtitle="__('Warning!')"
+        :confirmLabel="__('Delete')" confirmAction="unlink">
         <p>{{ __('Are you sure you want to unlink the table from its room?') }}</p>
+    </x-confirm-modal>
 
-        <x-slot:actions>
-            <x-button :label="__('Cancel')" wire:click="$set('unlinkModal', false)" />
-            <x-button class="btn-error" :label="__('Delete')" spinner wire:click="unlink" />
-        </x-slot:actions>
-    </x-modal>
-
-    <x-modal :subtitle="__('Warning!')" :title="__('Confirm deletion')" wire:model="deleteModal">
+    <x-confirm-modal model="deleteModal" :title="__('Confirm deletion')" :subtitle="__('Warning!')"
+        :confirmLabel="__('Delete')" confirmAction="delete">
         <p>{{ __('Are you sure you want to delete this table? This action is irreversible.') }}</p>
-
-        <x-slot:actions>
-            <x-button :label="__('Cancel')" wire:click="$set('deleteModal', false)" />
-            <x-button class="btn-error" :label="__('Delete')" spinner wire:click="delete" />
-        </x-slot:actions>
-    </x-modal>
+    </x-confirm-modal>
 
 </div>

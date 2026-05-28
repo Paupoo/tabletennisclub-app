@@ -253,25 +253,13 @@
         </x-slot:actions>
     </x-modal>
 
-    {{-- ── Modal Delete confirmation ───────────────────────────────────────── --}}
-    <x-modal wire:model="deleteModal" :title="__('Delete match')">
-        <p class="text-sm text-gray-600">{{ __('Are you sure you want to delete this match? This action cannot be undone.') }}</p>
+    <x-confirm-modal model="deleteModal" :title="__('Delete match?')" :subtitle="__('Warning!')"
+        :confirmLabel="__('Delete')" confirmAction="delete">
+        <p>{{ __('Are you sure you want to delete this match? This action cannot be undone.') }}</p>
+    </x-confirm-modal>
 
-        <x-slot:actions>
-            <x-button :label="__('Cancel')" wire:click="$set('deleteModal', false)" />
-            <x-button class="btn-error" :label="__('Delete')" wire:click="delete" wire:loading.attr="disabled" />
-        </x-slot:actions>
-    </x-modal>
-
-    {{-- ── Modal Forfait Général équipe ───────────────────────────────────── --}}
-    <x-modal wire:model="teamForfeitModal" :title="__('Declare general forfeit')">
-        <p class="text-sm text-gray-600">
-            {{ __('All unplayed matches for this team will be marked as general forfeit (Withdrawal). This action cannot be easily undone.') }}
-        </p>
-
-        <x-slot:actions>
-            <x-button :label="__('Cancel')" wire:click="$set('teamForfeitModal', false)" />
-            <x-button class="btn-warning" :label="__('Confirm')" wire:click="declareTeamForfeit" wire:loading.attr="disabled" />
-        </x-slot:actions>
-    </x-modal>
+    <x-confirm-modal model="teamForfeitModal" :title="__('Declare general forfeit?')"
+        :confirmLabel="__('Confirm')" confirmClass="btn-warning" confirmAction="declareTeamForfeit">
+        <p>{{ __('All unplayed matches for this team will be marked as general forfeit (Withdrawal). This action cannot be easily undone.') }}</p>
+    </x-confirm-modal>
 </div>

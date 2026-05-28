@@ -18,6 +18,10 @@ new class extends Component
 {
     use Toast;
 
+    public bool $deleteRoomModal = false;
+
+    public ?int $deletingRoomId = null;
+
     // ── Computed ──────────────────────────────────────────────────────────────
 
     /** @return Collection<int, Room> */
@@ -50,6 +54,21 @@ new class extends Component
     }
 
     // ── Actions ───────────────────────────────────────────────────────────────
+
+    public function confirmDeleteRoom(int $id): void
+    {
+        $this->deletingRoomId  = $id;
+        $this->deleteRoomModal = true;
+    }
+
+    public function deleteRoom(): void
+    {
+        if ($this->deletingRoomId) {
+            $this->delete(Room::findOrFail($this->deletingRoomId));
+        }
+        $this->deleteRoomModal = false;
+        $this->deletingRoomId  = null;
+    }
 
     public function delete(Room $room): void
     {

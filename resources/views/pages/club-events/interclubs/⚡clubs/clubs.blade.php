@@ -125,12 +125,8 @@
         </x-slot:actions>
     </x-modal>
 
-    {{-- Modal delete --}}
-    <x-modal :subtitle="__('Warning!')" :title="__('Delete club')" wire:model="deleteModal">
+    <x-confirm-modal model="deleteModal" :title="__('Delete club?')" :subtitle="__('Warning!')"
+        :confirmLabel="__('Delete')" confirmAction="delete">
         <p>{{ __('Are you sure you want to delete this club? This action cannot be undone.') }}</p>
-        <x-slot:actions>
-            <x-button :label="__('Cancel')" wire:click="$set('deleteModal', false)" />
-            <x-button class="btn-error" :label="__('Delete')" spinner wire:click="delete" />
-        </x-slot:actions>
-    </x-modal>
+    </x-confirm-modal>
 </div>

@@ -25,12 +25,15 @@
             :label="__('Cancel registrations')"
             icon="o-trash"
             class="btn-outline btn-error justify-start"
-            wire::confirm="__('Êtes-vous sûr de vouloir supprimer ces inscriptions ?')"
-            wire:click="confirmBulkCancel"
-            spinner />
+            wire:click="$set('bulkCancelModal', true)" />
     </div>
 
     <x-slot:actions>
         <x-button :label="__('Annuler')" @click="$wire.bulkDrawer = false" />
     </x-slot:actions>
 </x-drawer>
+
+<x-confirm-modal model="bulkCancelModal" :title="__('Cancel registrations?')"
+    :confirmLabel="__('Cancel registrations')" confirmClass="btn-error" confirmAction="confirmBulkCancel">
+    <p>{{ __('This will cancel the registration for all selected players. This action is irreversible.') }}</p>
+</x-confirm-modal>

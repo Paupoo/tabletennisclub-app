@@ -42,6 +42,8 @@ new class extends Component
 
     public bool $bulkDrawer = false;
 
+    public bool $bulkCancelModal = false;
+
     public bool $inviteIncludeArticle = false;
 
     public string $inviteMessage = '';

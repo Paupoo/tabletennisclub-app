@@ -31,6 +31,10 @@ new class extends Component
 
     public ?int $selectedPaymentId = null;
 
+    public bool $cancelConfirmModal = false;
+
+    public ?int $cancelConfirmId = null;
+
     public ?string $paymentQr = null;
 
     // ── Doubles self-pairing
@@ -186,12 +190,27 @@ new class extends Component
         $this->success(__('Spot confirmed!'));
     }
 
+    public function openCancelConfirm(int $tournamentId): void
+    {
+        $this->cancelConfirmId    = $tournamentId;
+        $this->cancelConfirmModal = true;
+    }
+
     public function cancelRegistration(int $tournamentId): void
     {
         $tournament = Tournament::findOrFail($tournamentId);
         app(TournamentService::class)->cancelRegistration($tournament, $this->user);
         unset($this->upcomingTournaments);
+        $this->cancelConfirmModal = false;
+        $this->cancelConfirmId    = null;
         $this->warning(__('Registration cancelled.'));
+    }
+
+    public function confirmCancel(): void
+    {
+        if ($this->cancelConfirmId) {
+            $this->cancelRegistration($this->cancelConfirmId);
+        }
     }
 
     /** @return Collection<int, Training> */

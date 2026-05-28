@@ -62,7 +62,7 @@
 
                     @can('delete', $room)
                         <x-button class="btn-error btn-outline btn-sm" :label="__('Delete')"
-                            wire:click="delete({{ $room->id }})" wire:confirm="__('Are you sure you want to delete this room?')" />
+                            wire:click="confirmDeleteRoom({{ $room->id }})" />
                     @endcan
                 </x-slot:actions>
             </x-card>
@@ -77,4 +77,11 @@
             </div>
         @endforelse
     </div>
+
+    @can('create', \App\Models\ClubAdmin\Club\Room::class)
+        <x-confirm-modal model="deleteRoomModal" :title="__('Delete this room?')" :subtitle="__('Warning!')"
+            :confirmLabel="__('Delete')" confirmAction="deleteRoom">
+            <p>{{ __('Are you sure you want to delete this room? This action is irreversible.') }}</p>
+        </x-confirm-modal>
+    @endcan
 </div>

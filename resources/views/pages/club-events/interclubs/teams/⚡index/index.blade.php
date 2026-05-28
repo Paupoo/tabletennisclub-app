@@ -82,26 +82,16 @@
         </x-slot:actions>
     </x-modal>
 
-    {{-- Modal suppression unitaire --}}
-    <x-modal :subtitle="__('Warning!')" title="Confirmer la suppression" wire:model="deleteModal">
+    <x-confirm-modal model="deleteModal" :title="__('Delete this team?')" :subtitle="__('Warning!')"
+        :confirmLabel="__('Delete')" confirmAction="delete">
         <p>{{ __('Are you sure you want to delete this team? This action is irreversible.') }}</p>
+    </x-confirm-modal>
 
-        <x-slot:actions>
-            <x-button label="Annuler" wire:click="$set('deleteModal', false)" />
-            <x-button class="btn-error" label="Supprimer" spinner wire:click="delete" />
-        </x-slot:actions>
-    </x-modal>
-
-    {{-- Modal suppression totale --}}
-    <x-modal :subtitle="__('Warning!')" :title="__('Delete all teams')" wire:model="deleteAllModal">
+    <x-confirm-modal model="deleteAllModal" :title="__('Delete all teams?')" :subtitle="__('Warning!')"
+        :confirmLabel="__('Delete all')" confirmAction="deleteAll">
         <p>
-            Êtes-vous sûr de vouloir supprimer <strong>{{ __('all teams') }}</strong> de la saison en cours ?
-            Cette action est irréversible et retirera également tous les joueurs de leurs équipes.
+            {{ __('Are you sure you want to delete') }} <strong>{{ __('all teams') }}</strong>
+            {{ __('for the current season? This action is irreversible and will also remove all players from their teams.') }}
         </p>
-
-        <x-slot:actions>
-            <x-button label="Annuler" wire:click="$set('deleteAllModal', false)" />
-            <x-button class="btn-error" label="Tout supprimer" spinner wire:click="deleteAll" />
-        </x-slot:actions>
-    </x-modal>
+    </x-confirm-modal>
 </div>

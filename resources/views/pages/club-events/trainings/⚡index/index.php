@@ -29,6 +29,10 @@ new class extends Component
     // ── Cancellation modal ────────────────────────────────────────────────────
     public bool $cancelModal = false;
 
+    public bool $deactivatePackModal = false;
+
+    public ?int $deactivatingPackId = null;
+
     public string $cancelNote = '';
 
     public ?int $cancelTrainingId = null;
@@ -150,11 +154,26 @@ new class extends Component
         ];
     }
 
+    public function openDeactivatePack(int $packId): void
+    {
+        $this->deactivatingPackId    = $packId;
+        $this->deactivatePackModal   = true;
+    }
+
     public function deactivatePack(int $packId): void
     {
         TrainingPack::findOrFail($packId)->update(['is_active' => false]);
         unset($this->packs);
+        $this->deactivatePackModal = false;
+        $this->deactivatingPackId  = null;
         $this->warning(__('Pack deactivated.'));
+    }
+
+    public function confirmDeactivatePack(): void
+    {
+        if ($this->deactivatingPackId) {
+            $this->deactivatePack($this->deactivatingPackId);
+        }
     }
 
     #[Computed]

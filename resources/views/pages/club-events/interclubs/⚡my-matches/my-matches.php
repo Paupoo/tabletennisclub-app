@@ -22,6 +22,14 @@ new class extends Component
 
     public string $availabilityNote = '';
 
+    public bool $bulkUnavailableModal = false;
+
+    public function bulkMarkUnavailable(): void
+    {
+        $this->bulkUnavailableModal = false;
+        $this->bulkMarkAvailability('unavailable');
+    }
+
     public function bulkMarkAvailability(string $availability): void
     {
         $user = Auth::user();

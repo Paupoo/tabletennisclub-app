@@ -23,8 +23,7 @@
                 class="btn-error btn-xs btn-soft"
                 icon="o-x-circle"
                 :label="__('All unavailable')"
-                wire:click="bulkMarkAvailability('unavailable')"
-                wire::confirm="__('Mark all upcoming matches as unavailable?')" />
+                wire:click="$set('bulkUnavailableModal', true)" />
         </div>
     @endif
 
@@ -202,4 +201,9 @@
             @endforeach
         </div>
     @endif
+
+    <x-confirm-modal model="bulkUnavailableModal" :title="__('Mark all as unavailable?')"
+        :confirmLabel="__('Confirm')" confirmClass="btn-error" confirmAction="bulkMarkUnavailable">
+        <p>{{ __('This will mark all your upcoming matches as unavailable. This action can be undone match by match.') }}</p>
+    </x-confirm-modal>
 </div>

@@ -682,15 +682,10 @@
         </x-slot:actions>
     </x-modal>
 
-    {{-- Confirmation : annuler une demande d'affiliation --}}
-    <x-modal :subtitle="__('Warning!')" :title="__('Cancel registration')" wire:model="cancelAffiliationModal">
+    <x-confirm-modal model="cancelAffiliationModal" :title="__('Cancel registration?')" :subtitle="__('Warning!')"
+        :confirmLabel="__('Yes, cancel it')" confirmAction="cancelAffiliation">
         <p>{{ __('Are you sure you want to cancel your registration request? This action cannot be undone.') }}</p>
-
-        <x-slot:actions>
-            <x-button :label="__('Keep my request')" wire:click="$set('cancelAffiliationModal', false)" />
-            <x-button class="btn-error" :label="__('Yes, cancel it')" spinner wire:click="cancelAffiliation" />
-        </x-slot:actions>
-    </x-modal>
+    </x-confirm-modal>
 
     {{-- Confirmation : quitter / annuler / refuser un pack entraînement --}}
     <x-modal :subtitle="__('Warning!')" :title="__('Confirm action')" wire:model="leavePackModal">

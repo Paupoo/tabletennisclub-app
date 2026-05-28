@@ -146,8 +146,7 @@
                                     icon="o-x-mark"
                                     :tooltip="__('Cancel registration')"
                                     spinner="cancelRegistration"
-                                    wire:click="cancelRegistration({{ $tournament->id }})"
-                                    wire::confirm="__('Cancel your registration for this tournament?')"
+                                    wire:click="openCancelConfirm({{ $tournament->id }})"
                                 />
                             @elseif ($isSpotOffered)
                                 @if ($reg->confirmation_deadline)
@@ -171,8 +170,7 @@
                                     icon="o-x-mark"
                                     :tooltip="__('Decline this spot')"
                                     spinner="cancelRegistration"
-                                    wire:click="cancelRegistration({{ $tournament->id }})"
-                                    wire::confirm="__('Decline this spot? You will be removed from the tournament.')"
+                                    wire:click="openCancelConfirm({{ $tournament->id }})"
                                 />
                             @elseif ($isWaiting)
                                 <x-badge class="badge-warning badge-soft badge-sm" value="{{ __('Waitlist') }}{{ $reg->waitlist_position ? ' #' . $reg->waitlist_position : '' }}" />
@@ -181,8 +179,7 @@
                                     icon="o-x-mark"
                                     :tooltip="__('Leave waitlist')"
                                     spinner="cancelRegistration"
-                                    wire:click="cancelRegistration({{ $tournament->id }})"
-                                    wire::confirm="__('Leave the waitlist for this tournament?')"
+                                    wire:click="openCancelConfirm({{ $tournament->id }})"
                                 />
                             @elseif ($isFull)
                                 <x-badge class="badge-ghost badge-sm" value="{{ __('Full') }}" />
@@ -319,4 +316,9 @@
         <x-button :label="__('Close')" wire:click="$set('paymentModal', false)" />
     </x-slot:actions>
     </x-modal>
+
+    <x-confirm-modal model="cancelConfirmModal" :title="__('Cancel registration?')"
+        :confirmLabel="__('Confirm')" confirmClass="btn-error" confirmAction="confirmCancel">
+        <p>{{ __('This will remove you from the tournament. This action is irreversible.') }}</p>
+    </x-confirm-modal>
 </div>

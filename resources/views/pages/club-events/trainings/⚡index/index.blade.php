@@ -194,8 +194,7 @@
                                                 :tooltip="__('Publish on website')"
                                                 wire:click="openEventPost({{ $pack->id }})" />
                                             <x-button class="btn-ghost btn-sm text-error text-xs" icon="o-trash"
-                                                wire:click="deactivatePack({{ $pack->id }})"
-                                                wire::confirm="__('Deactivate this pack?')" />
+                                                wire:click="openDeactivatePack({{ $pack->id }})" />
                                         </div>
                                     </div>
                                 </div>
@@ -536,4 +535,9 @@
                 wire:click="confirmCancel" />
         </x-slot:actions>
     </x-modal>
+
+    <x-confirm-modal model="deactivatePackModal" :title="__('Deactivate this pack?')"
+        :confirmLabel="__('Deactivate')" confirmClass="btn-error" confirmAction="confirmDeactivatePack">
+        <p>{{ __('Players will no longer be able to register to this training pack.') }}</p>
+    </x-confirm-modal>
 </div>

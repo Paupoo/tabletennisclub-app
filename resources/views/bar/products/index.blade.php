@@ -129,13 +129,27 @@
             </form>
         
         {{-- DELETE FORM (separate form, side by side) --}}
-        <form method="POST" action="{{ route('bar.products.destroy', $p) }}" style="flex:1; margin:0;">
-            @csrf
-            @method('DELETE')
-            <button class="btn btn-clear btn-block" type="submit" {{ $stock > 0 ? 'disabled' : '' }}
-            title="{{ $stock > 0 ? 'Stock non nul : suppression impossible' : '' }}"
-            onclick="return {{ $stock === 0 ? 'confirm(\'Supprimer ce produit : ' . $p->name . ' ?\')' : 'false' }}">🗑 Supprimer</button>
-        </form>
+        <div style="flex:1;" x-data="{ confirming: false }">
+            @if ($stock > 0)
+                <button class="btn btn-clear btn-block" type="button" disabled
+                    title="{{ __('Stock non nul : suppression impossible') }}">🗑 Supprimer</button>
+            @else
+                <button x-show="!confirming" class="btn btn-clear btn-block" type="button"
+                    @click="confirming = true">🗑 Supprimer</button>
+                <div x-show="confirming" x-cloak style="display:flex; flex-direction:column; gap:6px;">
+                    <span style="font-size:12px; color:#b91c1c;">{{ __('Supprimer') }} « {{ $p->name }} » ?</span>
+                    <div style="display:flex; gap:6px;">
+                        <form method="POST" action="{{ route('bar.products.destroy', $p) }}" style="flex:1;">
+                            @csrf
+                            @method('DELETE')
+                            <button class="btn btn-clear btn-block" type="submit">✓ Oui</button>
+                        </form>
+                        <button class="btn btn-block" type="button" style="flex:1;"
+                            @click="confirming = false">✕ Non</button>
+                    </div>
+                </div>
+            @endif
+        </div>
     </div>
     </form>
         @endforeach

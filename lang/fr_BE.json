@@ -2305,5 +2305,7 @@
     "selectedCount": ":count élément sélectionné|:count éléments sélectionnés",
     "Delete this room?": "Supprimer cette salle ?",
     "Are you sure you want to delete this room? This action is irreversible.": "Êtes-vous sûr de vouloir supprimer cette salle ? Cette action est irréversible.",
-    "Players will no longer be able to register to this training pack.": "Les joueurs ne pourront plus s'inscrire à ce pack d'entraînement."
+    "Players will no longer be able to register to this training pack.": "Les joueurs ne pourront plus s'inscrire à ce pack d'entraînement.",
+    "Composition of the core": "Composition du noyau",
+    "My matches": "Mes matchs"
 }

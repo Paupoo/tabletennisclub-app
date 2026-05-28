@@ -39,7 +39,7 @@
             </x-card>
 
             {{-- Capitaine --}}
-            <x-card class="border-gray-200 shadow-sm" title="Capitaine">
+            <x-card class="border-gray-200 shadow-sm" :title="__('Captain')">
                 @if ($captainId)
                     @php $captain = $competitors->find($captainId) ?? $team->captain; @endphp
                     <div class="mb-4 flex items-center gap-3 rounded-lg bg-yellow-50 p-3">
@@ -87,7 +87,7 @@
         </div>
 
         {{-- ── Colonne droite : composition du noyau ──────────────────── --}}
-        <x-card class="border-gray-200 shadow-sm lg:col-span-2" title="Composition du noyau">
+        <x-card class="border-gray-200 shadow-sm lg:col-span-2" :title="__('Composition of the core')">
             <x-slot:subtitle>
                 <span class="text-sm text-gray-500">
                     {{ count($memberIds) }} joueur{{ count($memberIds) > 1 ? 's' : '' }} sélectionné{{ count($memberIds) > 1 ? 's' : '' }}

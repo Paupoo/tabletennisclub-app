@@ -225,6 +225,7 @@ new class extends Component
                 ->current(__('List'))
                 ->toArray(),
             'activeFiltersCount' => $this->activeFiltersCount,
+            'stats'              => $this->stats,
         ]);
     }
 
@@ -286,6 +287,17 @@ new class extends Component
     public function updatedSelectedLicenceType(): void
     {
         $this->resetPage();
+    }
+
+    #[Computed]
+    public function stats(): array
+    {
+        return [
+            'total'       => User::count(),
+            'active'      => User::where('is_active', true)->count(),
+            'competitive' => User::where('is_competitor', true)->count(),
+            'inactive'    => User::where('is_active', false)->count(),
+        ];
     }
 
     /**

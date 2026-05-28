@@ -36,6 +36,7 @@ new class extends Component
     public string $searchMember = '';
     public string $statusFilter = '';
     public ?int $selectedSeasonId = null;
+    public bool $showFilters = false;
     public ?int $currentRequestId = null;
     public ?int $currentTrainingRequestId = null;
 
@@ -52,6 +53,17 @@ new class extends Component
     public function mount(): void
     {
         $this->selectedSeasonId = Season::current()?->id;
+    }
+
+    #[Computed]
+    public function activeFiltersCount(): int
+    {
+        return filled($this->statusFilter) ? 1 : 0;
+    }
+
+    public function resetFilters(): void
+    {
+        $this->reset(['statusFilter']);
     }
 
     #[Computed]
@@ -561,9 +573,23 @@ new class extends Component
 
     public function render(): View
     {
+        $statsBase = Subscription::when($this->selectedSeasonId, fn ($q) => $q->where('season_id', $this->selectedSeasonId));
+
         return $this->view([
             'headers'       => $this->headers(),
             'registrations' => $this->registrations(),
+            'stats'         => [
+                'total'     => (clone $statsBase)->count(),
+                'pending'   => (clone $statsBase)->where('status', 'pending')->count(),
+                'confirmed' => (clone $statsBase)->where('status', 'confirmed')->count(),
+                'paid'      => (clone $statsBase)->where('status', 'paid')->count(),
+            ],
+            'statusOptions' => [
+                ['id' => 'pending',   'name' => __('To process')],
+                ['id' => 'confirmed', 'name' => __('Confirmed')],
+                ['id' => 'paid',      'name' => __('Paid')],
+                ['id' => 'cancelled', 'name' => __('Cancelled')],
+            ],
         ]);
     }
 

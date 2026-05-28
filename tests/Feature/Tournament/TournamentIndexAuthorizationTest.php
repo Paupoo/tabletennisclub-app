@@ -24,52 +24,47 @@ describe('draft tournament visibility', function () {
         $draft = Tournament::factory()->create(['status' => TournamentStatusEnum::DRAFT]);
         $published = Tournament::factory()->create(['status' => TournamentStatusEnum::PUBLISHED]);
 
-        $component = indexAs($member);
-
-        expect($component->get('tournaments')->pluck('id'))
-            ->not->toContain($draft->id)
-            ->toContain($published->id);
+        indexAs($member)
+            ->assertDontSee($draft->name)
+            ->assertSee($published->name);
     });
 
     it('shows draft tournaments to admins', function () {
         $admin = User::factory()->isAdmin()->create();
         $draft = Tournament::factory()->create(['status' => TournamentStatusEnum::DRAFT]);
 
-        expect(indexAs($admin)->get('tournaments')->pluck('id'))
-            ->toContain($draft->id);
+        indexAs($admin)->assertSee($draft->name);
     });
 
     it('shows draft tournaments to committee members', function () {
         $committee = User::factory()->isCommitteeMember()->create();
         $draft = Tournament::factory()->create(['status' => TournamentStatusEnum::DRAFT]);
 
-        expect(indexAs($committee)->get('tournaments')->pluck('id'))
-            ->toContain($draft->id);
+        indexAs($committee)->assertSee($draft->name);
     });
 
 })->group('Tournament', 'Authorization');
 
-// ── Draft count in tabs ───────────────────────────────────────────────────────
+// ── Draft filter isolation ────────────────────────────────────────────────────
 
-describe('draft tab count', function () {
+describe('draft status filter isolation', function () {
 
-    it('does not expose draft count to regular members', function () {
+    it('hides draft tournaments from regular members even when filtering by draft status', function () {
         $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
-        Tournament::factory()->create(['status' => TournamentStatusEnum::DRAFT]);
+        $draft = Tournament::factory()->create(['status' => TournamentStatusEnum::DRAFT]);
 
-        $counts = indexAs($member)->get('counts');
-
-        expect($counts)->not->toHaveKey('draft');
+        indexAs($member)
+            ->set('status', TournamentStatusEnum::DRAFT->value)
+            ->assertDontSee($draft->name);
     });
 
-    it('exposes draft count to admins', function () {
+    it('shows draft tournaments to admins when filtering by draft status', function () {
         $admin = User::factory()->isAdmin()->create();
-        Tournament::factory()->create(['status' => TournamentStatusEnum::DRAFT]);
+        $draft = Tournament::factory()->create(['status' => TournamentStatusEnum::DRAFT]);
 
-        $counts = indexAs($admin)->get('counts');
-
-        expect($counts)->toHaveKey('draft')
-            ->and($counts['draft'])->toBeGreaterThanOrEqual(1);
+        indexAs($admin)
+            ->set('status', TournamentStatusEnum::DRAFT->value)
+            ->assertSee($draft->name);
     });
 
 })->group('Tournament', 'Authorization');

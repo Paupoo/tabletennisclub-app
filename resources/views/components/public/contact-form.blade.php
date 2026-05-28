@@ -8,7 +8,7 @@
             <label for="first_name" class="block text-sm font-medium text-gray-700 mb-2">{{ __('First name *') }}</label>
             <input type="text" id="first_name" name="first_name" required value="{{ old('first_name') }}"
                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent transition-colors"
-                :placeholder="__('Your full name')">
+                placeholder="{{ __('Your full name') }}">
             @error('first_name')
                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
             @enderror
@@ -150,7 +150,7 @@
         <label for="message" class="block text-sm font-medium text-gray-700 mb-2">Message *</label>
         <textarea id="message" name="message" rows="4" required
             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent transition-colors resize-none"
-            :placeholder="__('Tell us about your table tennis experience or any questions you have...')">{{ old('message') }}</textarea>
+            placeholder="{{ __('Tell us about your table tennis experience or any questions you have...') }}">{{ old('message') }}</textarea>
         @error('message')
             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
         @enderror
@@ -160,7 +160,7 @@
         <label for="captcha" class="block text-sm font-medium text-gray-700 mb-2">Combien font {{ session('captcha.a') }} {{ session('captcha.operation') }} {{ session('captcha.b') }} ? *</label>
         <input type="number" id="captcha" name="captcha" required
             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent transition-colors"
-            :placeholder="__('Enter the result')">
+            placeholder="{{ __('Enter the result') }}">
         @error('captcha')
             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
         @enderror

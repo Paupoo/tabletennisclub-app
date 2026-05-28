@@ -118,21 +118,28 @@
                                     </div>
                                 </div>
 
-                                <div class="flex flex-col gap-2">
-                                    <x-button icon="o-pencil" link="{{ route('admin.tables.edit', $table) }}"
-                                        class="btn-sm btn-circle btn-ghost border border-base-300" />
-                                    <x-button icon="o-trash"
-                                        class="btn-sm btn-circle btn-ghost text-error border border-base-300" />
-                                </div>
+                                <x-admin.shared.row-actions>
+                                    @can('edit', $table)
+                                        <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
+                                            :tooltip="__('Edit')" link="{{ route('admin.tables.edit', $table) }}" />
+                                    @endcan
+                                    @can('delete', $table)
+                                        <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
+                                            :tooltip="__('Delete')" wire:click="confirmDelete({{ $table->id }})" />
+                                    @endcan
+                                </x-admin.shared.row-actions>
                             </div>
                         @endforeach
                     </div>
                 </x-slot:content>
             </x-collapse>
         @empty
-            <div class="text-center py-10 opacity-50">
-                {{ __('Aucune table trouvée.') }}
-            </div>
+            <x-empty-state
+                icon="o-table-cells"
+                :heading="__('No tables found')"
+                :message="__('Try adjusting your search or create the first table.')"
+                :buttonText="__('Create table')"
+                href="{{ route('admin.tables.create') }}" />
         @endforelse
     </div>
 

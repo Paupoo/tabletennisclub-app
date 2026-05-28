@@ -54,9 +54,22 @@ new class extends Component
     public function delete(Room $room): void
     {
         $this->authorize('delete', $room);
+
+        $hasRelatedRecords = $room->tables()->exists()
+            || $room->trainings()->exists()
+            || $room->trainingPacks()->exists()
+            || $room->interclubs()->exists()
+            || $room->tournaments()->exists();
+
+        if ($hasRelatedRecords) {
+            $this->error(__('This room cannot be deleted because it has linked tables, trainings, or events.'));
+
+            return;
+        }
+
         $room->delete();
         unset($this->rooms);
-        $this->success(__('The room ' . $room->name . ' has been deleted.'));
+        $this->success(__('The room :name has been deleted.', ['name' => $room->name]));
     }
 
     public function register(int $tournamentId): void

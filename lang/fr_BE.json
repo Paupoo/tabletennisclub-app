@@ -212,6 +212,8 @@
     "Delete contact": "Supprimer le contact",
     "Delete permanently": "Supprimer définitivement",
     "Delete room": "Supprimer la salle",
+    "This room cannot be deleted because it has linked tables, trainings, or events.": "Cette salle ne peut pas être supprimée car elle contient des tables, des entraînements ou des événements liés.",
+    "The room :name has been deleted.": "La salle :name a été supprimée.",
     "Delete user": "Supprimer l’utilisateur",
     "Demeester -1": "Demeester -1",
     "Dernière mise à jour: ": "Dernière mise à jour : ",
@@ -2299,5 +2301,6 @@
     "List of current and past orders.": "Liste des commandes en cours et passées.",
     "✅ Paid": "✅ Payé",
     "❌ Unpaid": "❌ Non payé",
-    "🔒 Closed": "🔒 Fermé"
+    "🔒 Closed": "🔒 Fermé",
+    "selectedCount": ":count élément sélectionné|:count éléments sélectionnés"
 }

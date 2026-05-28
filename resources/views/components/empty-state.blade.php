@@ -1,18 +1,27 @@
-{{-- format-ignore-start --}}
 @props([
-    'image' => asset('images/empty-state.svg'),
-    'size' => '40',
+    'icon' => 'o-inbox',
     'heading' => null,
     'message' => null,
     'buttonText' => null,
     'href' => null,
 ])
 
-<div class="flex flex-col items-center justify-center text-center p-6 bg-white dark:bg-dark-800 rounded-xl shadow-lg max-w-md mx-auto my-8">
-        <img src="{{ $image }}" class="object-contains mx-auto mb-3"/>
-        <div class="text-slate-700 dark:text-dark-400 text-xl pt-4 pb-2 px-4 font-light">{{ $heading }}</div>
-        <div class="text-slate-600/70 dark:text-dark-500 px-6">{{ $message }}</div>
-        
-        <x-button>{{ $buttonText }}</x-button>
-   
+<div class="flex flex-col items-center justify-center px-6 py-16 text-center">
+    <div class="mb-4 rounded-full bg-base-200 p-4">
+        <x-icon :name="$icon" class="h-10 w-10 text-base-content/40" />
+    </div>
+
+    @if ($heading)
+        <p class="mb-1 text-base font-semibold text-base-content/70">{{ $heading }}</p>
+    @endif
+
+    @if ($message)
+        <p class="max-w-sm text-sm text-base-content/40">{{ $message }}</p>
+    @endif
+
+    @if ($slot->isNotEmpty())
+        <div class="mt-4">{{ $slot }}</div>
+    @elseif ($buttonText && $href)
+        <x-button :label="$buttonText" :link="$href" class="btn-primary btn-sm mt-4" />
+    @endif
 </div>

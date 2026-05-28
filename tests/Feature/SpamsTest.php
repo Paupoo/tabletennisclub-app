@@ -69,7 +69,7 @@ describe('Spams index', function (): void {
 
         Livewire::actingAs($this->admin)
             ->test('pages::website.spams.index')
-            ->set('selectedItems', $ids)
+            ->set('selected', $ids)
             ->set('bulkDeleteModal', true)
             ->call('bulkDelete');
 

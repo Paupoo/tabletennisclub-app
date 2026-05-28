@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\ClubAdmin\Club\Room;
+use App\Models\ClubAdmin\Club\Table;
 use App\Models\ClubAdmin\Users\User;
 use Livewire\Livewire;
 
@@ -61,7 +62,21 @@ describe('Room index tests', function () {
         expect(Room::where('id', $room->id)->exists())->toBeFalse();
     });
 
-    // 4. Tester la sécurité : un user lambda ne peut pas appeler 'delete'
+    // 4. Tester que la suppression est bloquée si la salle a des tables liées
+    it('cannot delete a room that has linked tables', function () {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $room = Room::factory()->create();
+        Table::factory()->create(['room_id' => $room->id]);
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-admin.rooms.index')
+            ->call('delete', $room->id)
+            ->assertHasNoErrors();
+
+        expect(Room::where('id', $room->id)->exists())->toBeTrue();
+    });
+
+    // 5. Tester la sécurité : un user lambda ne peut pas appeler 'delete'
     it('prevents unauthorized users from deleting a room', function () {
         $room = Room::factory()->create();
 

@@ -5,16 +5,15 @@
 <div>
     <!-- HEADER -->
     <x-header :title="__('Rooms')" separator progress-indicator>
-
         <x-slot:actions>
             @can('create', \App\Models\ClubAdmin\Club\Room::class)
-                <x-button :label="__('Create')" class="btn-primary btn-sm" responsive link="{{ route('admin.rooms.create') }}" />
+                <x-button :label="__('Create')" icon="o-plus" class="btn-primary" link="{{ route('admin.rooms.create') }}" />
             @endcan
         </x-slot:actions>
     </x-header>
 
-    <div class="mt-6 grid lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        @foreach ($rooms as $room)
+    <div class="mt-6 grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+        @forelse ($rooms as $room)
             <x-card title="{{ $room->name }}" shadow class="relative">
 
                 <x-slot:figure class="hidden lg:block">
@@ -63,10 +62,19 @@
 
                     @can('delete', $room)
                         <x-button class="btn-error btn-outline btn-sm" :label="__('Delete')"
-                            wire:click="delete({{ $room->id }})" wire::confirm="__('Are you sure?')" />
+                            wire:click="delete({{ $room->id }})" wire:confirm="__('Are you sure you want to delete this room?')" />
                     @endcan
                 </x-slot:actions>
             </x-card>
-        @endforeach
+        @empty
+            <div class="col-span-full">
+                <x-empty-state
+                    icon="o-home"
+                    :heading="__('No rooms yet')"
+                    :message="__('Create the first room to start organizing your equipment.')"
+                    :buttonText="__('Create room')"
+                    href="{{ route('admin.rooms.create') }}" />
+            </div>
+        @endforelse
     </div>
 </div>

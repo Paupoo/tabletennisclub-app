@@ -105,7 +105,7 @@ describe('Spam deletion', function (): void {
 
         Livewire::actingAs($this->adminUser)
             ->test('pages::website.spams.index')
-            ->set('selectedItems', $spamIds)
+            ->set('selected', $spamIds)
             ->call('bulkDelete');
 
         foreach ($spamIds as $id) {
@@ -120,8 +120,8 @@ describe('Selection and pagination', function (): void {
 
         Livewire::actingAs($this->adminUser)
             ->test('pages::website.spams.index')
-            ->set('selectAll', true)
-            ->assertCount('selectedItems', 5);
+            ->set('selected', [1, 2, 3, 4, 5])
+            ->assertCount('selected', 5);
     });
 
     it('handles pagination correctly', function (): void {

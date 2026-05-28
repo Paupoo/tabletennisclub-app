@@ -10,16 +10,15 @@ uses(CreateUser::class);
 
 test('force list are calculated only for competitors', function (): void {
     $admin = $this->createFakeAdmin();
+
+    $competitor = User::withoutEvents(fn () => User::factory()->create(['is_competitor' => true]));
+    $nonCompetitor = User::withoutEvents(fn () => User::factory()->create(['is_competitor' => false]));
+
     $response = $this->actingAs($admin)
         ->get(route('setForceList'));
 
-    foreach (User::where('is_competitor', true)->get() as $competitor) {
-        expect($competitor->force_list)->toBeInt();
-    }
-
-    foreach (User::where('is_competitor', false)->get() as $competitor) {
-        expect($competitor->force_list)->toBeNull();
-    }
+    expect($competitor->fresh()->force_list)->toBeInt();
+    expect($nonCompetitor->fresh()->force_list)->toBeNull();
 
     $response->assertRedirect(route('users.index'));
 });

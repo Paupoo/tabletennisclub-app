@@ -9,26 +9,8 @@ use App\Actions\ClubAdmin\Subscriptions\MarkPaidSubscriptionAction;
 use App\Actions\ClubAdmin\Subscriptions\MarkRefundSubscriptionAction;
 use App\Actions\ClubAdmin\Subscriptions\SubscribeToSeasonAction;
 use App\Actions\ClubAdmin\Subscriptions\UnconfirmSubscriptionAction;
-use App\Actions\User\InviteExistingUserAction;
-use App\Http\Controllers\ClubAdmin\Club\RoomController;
-use App\Http\Controllers\ClubAdmin\Club\TableController;
-use App\Http\Controllers\ClubAdmin\Contact\ContactController;
-use App\Http\Controllers\ClubAdmin\Contact\InvitationController;
-use App\Http\Controllers\ClubAdmin\Payment\PaymentController;
-use App\Http\Controllers\ClubAdmin\Payment\TransactionController;
-use App\Http\Controllers\ClubAdmin\Subscription\RegistrationController;
-use App\Http\Controllers\ClubAdmin\Subscription\SubscriptionController;
-use App\Http\Controllers\ClubAdmin\Users\ProfileController;
-use App\Http\Controllers\ClubAdmin\Users\UserController;
-use App\Http\Controllers\ClubEvents\Interclub\InterclubController;
-use App\Http\Controllers\ClubEvents\Interclub\ResultsController;
-use App\Http\Controllers\ClubEvents\Interclub\SeasonController;
-use App\Http\Controllers\ClubEvents\Interclub\TeamController;
-use App\Http\Controllers\ClubEvents\Meeting\MeetingPollController;
-use App\Http\Controllers\ClubEvents\Meeting\MeetingRsvpController;
 use App\Http\Controllers\ClubEvents\Tournament\TableScoreController;
 use App\Http\Controllers\ClubEvents\Tournament\TournamentController;
-use App\Http\Controllers\ClubPosts\AdminEventPostController;
 use App\Http\Controllers\ClubPosts\PublicEventPostController;
 use App\Http\Controllers\ClubPosts\PublicNewsPostController;
 use App\Http\Controllers\HomeController;
@@ -282,152 +264,7 @@ Route::get('/admin/dashboard', function () {
 
 
 
-/**
- * Rooms management 
- * => obsolete, to clean and remove related code
- */
-Route::resource('/clubAdmin/club/rooms', RoomController::class)->middleware(['auth', 'verified']);
 
-/**
- * This route is used to manage clubPosts in the clubAdmin panel.
- * It allows authenticated and verified users to perform CRUD operations on clubPosts.
- * The clubPosts  are stored in the database and can be created, read, updated, and deleted through this interface.
- * This route is protected by authentication and verification middleware. 
- * => obsolete, to clean and remove related code
- */
-Route::prefix('clubPosts')->middleware('auth')->group(function (): void {
-    Route::resource('eventPosts', AdminEventPostController::class)->names('clubPosts.eventPosts');
-    Route::patch('eventPosts/{event}/publish', [AdminEventPostController::class, 'publish'])->name('clubPosts.eventPosts.publish');
-    Route::patch('eventPosts/{event}/archive', [AdminEventPostController::class, 'archive'])->name('clubPosts.eventPosts.archive');
-    Route::post('eventPosts/{event}/duplicate', [AdminEventPostController::class, 'duplicate'])->name('clubPosts.eventPosts.duplicate');
-});
-
-
-/**
- * Profile management
- * => obsolete, to clean and remove related code
- */
-Route::middleware(['auth', 'verified'])->group(function (): void {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-});
-
-
-
-/**
- * Tables management
- * => obsolete, to clean and remove related code
- */
-Route::resource('/clubAdmin/club/tables', TableController::class)->middleware(['auth', 'verified']);
-
-/**
- * Teams management
- * => obsolete, to clean and remove related code
- */
-Route::get('/clubEvents/interclubs/teams/team-builder', [
-    TeamController::class,
-    'initiateTeamsBuilder',
-])->middleware(['auth', 'verified'])->name('teamBuilder.prepare');
-
-/**
- * => obsolete, to clean and remove related code
- */
-Route::post('/clubEvents/interclubs/teams/team-builder', [
-    TeamController::class,
-    'validateTeamsBuilder',
-])->middleware(['auth', 'verified'])->name('teamBuilder.create');
-
-/**
- * => obsolete, to clean and remove related code
- */
-Route::post('clubEvents/interclubs/teams/saveTeams', [
-    TeamController::class,
-    'saveTeams',
-])->middleware(['auth', 'verified'])->name('saveTeams');
-
-/**
- * => obsolete, to clean and remove related code
- */
-Route::resource('clubEvents/interclubs/teams', TeamController::class)->middleware(['auth', 'verified']);
-
-/**
- * Interclub management
- * => obsolete, to clean and remove related code
- */
-Route::post('clubEvents/interclubs/subscribe', [
-    InterclubController::class,
-    'subscribe',
-])
-    ->middleware(['auth', 'verified'])
-    ->name('interclubs.subscription');
-
-/**
- * => obsolete, to clean and remove related code
- */
-Route::resource('clubEvents/interclubs', InterclubController::class)->middleware(['auth', 'verified']);
-
-/**
- * => obsolete, to clean and remove related code
- */
-Route::post('/clubEvents/interclub/add/{interclub}/{user}', [
-    InterclubController::class,
-    'addToSelection',
-])->middleware(['auth', 'verified'])
-    ->name('interclubs.addToSelection');
-
-/**
- * => obsolete, to clean and remove related code
- */
-Route::post('/clubEvents/interclub/toggle/{interclub}/{user}', [
-    InterclubController::class,
-    'toggleSelection',
-])->middleware(['auth', 'verified'])
-    ->name('interclubs.toggleSelection');
-
-/**
- * => obsolete, to clean and remove related code
- */
-Route::get('/clubEvents/interclub/selections', [
-    InterclubController::class,
-    'showSelections',
-])->name('interclubs.selections');
-
-/**
- * Users
- * => obsolete, to clean and remove related code
- */
-Route::get('/clubAdmin/users/setForceList', [
-    UserController::class,
-    'setForceList',
-])->middleware(['auth', 'verified'])->name('setForceList');
-
-
-/**
- * => obsolete, to clean and remove related code
- */
-Route::get('/clubAdmin/users/deleteForceList', [
-    UserController::class,
-    'deleteForceList',
-])->middleware(['auth', 'verified'])->name('deleteForceList');
-
-
-/**
- * => obsolete, to clean and remove related code
- */
-Route::get('/clubAdmin/{user}/subscription', [UserController::class, 'toggleHasPaid'])->name('users.toggleHasPaid');
-
-
-/**
- * => obsolete, to clean and remove related code
- */
-Route::resource('clubAdmin/users', UserController::class)->middleware(['auth', 'verified']);
-
-
-/**
- * => obsolete ? I don't know I think it's recently coded
- */
-Route::post('clubAdmin/users/{user}/invite', [InviteExistingUserAction::class, 'handle'])->name('clubAdmin.users.invite-existing-user');
 
 // Tournament email registration / waitlist actions (signed URLs, no auth required)
 Route::get('/tournament/{tournament}/join/{user}', [TournamentController::class, 'registerViaEmail'])
@@ -468,19 +305,6 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     // (eventPosts admin routes moved earlier to match newsPosts routing structure)
 });
 
-/**
- * => obsolete, to clean and remove related code
- */
-Route::get('/test', function () {
-    return view('test', ['breadcrumbs' => []]);
-});
-
-/**
- * => obsolete, to clean and remove related code
- */
-Route::get('/test2', function () {
-    return view('wizzard', ['breadcrumbs' => []]);
-})->middleware(['auth', 'verified']);
 
 /**
  * => obsolete, to clean and remove related code

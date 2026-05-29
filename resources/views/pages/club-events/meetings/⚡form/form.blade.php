@@ -18,17 +18,10 @@
 
         {{-- ── Step navigator dynamique ────────────────────────────── --}}
         @php
-            $visibleSteps = $datePollMode
-                ? [
+            $visibleSteps = [
                     1 => ['label' => __('Info'),    'icon' => 'o-information-circle'],
                     2 => ['label' => __('Agenda'),  'icon' => 'o-list-bullet'],
-                    3 => ['label' => __('Poll'),    'icon' => 'o-calendar'],
-                    4 => ['label' => __('Review'),  'icon' => 'o-check-circle'],
-                ]
-                : [
-                    1 => ['label' => __('Info'),    'icon' => 'o-information-circle'],
-                    2 => ['label' => __('Agenda'),  'icon' => 'o-list-bullet'],
-                    4 => ['label' => __('Review'),  'icon' => 'o-check-circle'],
+                    3 => ['label' => __('Review'),  'icon' => 'o-check-circle'],
                 ];
             $stepKeys = array_keys($visibleSteps);
         @endphp
@@ -63,32 +56,6 @@
         @if ($step == '1')
         <x-card>
             <div class="space-y-5">
-                {{-- ── Mode toggle ────────────────────────────────── --}}
-                <div class="rounded-xl border border-base-200 bg-base-50 p-1">
-                    <div class="grid grid-cols-2 gap-1">
-                        <button type="button"
-                            wire:click="$set('datePollMode', false)"
-                            @class([
-                                'flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all',
-                                'bg-base-100 shadow text-base-content' => ! $datePollMode,
-                                'text-base-content/50 hover:text-base-content' => $datePollMode,
-                            ])>
-                            <x-icon name="o-calendar-days" class="h-4 w-4" />
-                            {{ __('Fixed date') }}
-                        </button>
-                        <button type="button"
-                            wire:click="$set('datePollMode', true)"
-                            @class([
-                                'flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all',
-                                'bg-base-100 shadow text-base-content' => $datePollMode,
-                                'text-base-content/50 hover:text-base-content' => ! $datePollMode,
-                            ])>
-                            <x-icon name="o-chart-bar" class="h-4 w-4" />
-                            {{ __('Poll availability') }}
-                        </button>
-                    </div>
-                </div>
-
                 <x-input :label="__('Title')" wire:model="title"
                     :placeholder="__('e.g. Committee meeting - October 2026')"
                     required />
@@ -113,6 +80,8 @@
                 <x-textarea :label="__('Description')" wire:model="description"
                     :placeholder="__('Optional context for attendees')" rows="3" />
 
+                <x-toggle :label="__('Date to be determined by poll')"
+                    wire:model.live="datePollMode" />
                 {{-- Date/heure : uniquement en mode date fixe --}}
                 @if (! $datePollMode)
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -122,9 +91,34 @@
                     <x-datepicker :label="__('RSVP deadline')" wire:model="rsvpDeadline"
                         :placeholder="__('Optional')" />
                 @else
-                    <x-alert icon="o-calendar" class="alert-info alert-soft"
-                        :title="__('Date to be determined by poll')"
-                        :description="__('You will propose date options in step 3. The committee will vote on their availability.')" />
+                    <x-alert icon="o-information-circle"
+                :title="__('Date poll')"
+                :description="__('Propose multiple dates. The committee will vote on their availability and you\'ll pick the best one.')"
+                class="alert-info alert-soft mb-4" />
+
+            @php
+                $sortedProposalIndices = collect($dateProposals)
+                    ->sortBy(fn ($p) => filled($p['proposed_at']) ? $p['proposed_at'] : '9999')
+                    ->keys();
+            @endphp
+            <div class="space-y-3">
+                @forelse ($sortedProposalIndices as $i)
+                    <div class="flex items-center gap-3" wire:key="proposal-{{ $i }}">
+                        <x-datetime type="datetime-local" wire:model="dateProposals.{{ $i }}.proposed_at"
+                            class="flex-1" />
+                        <button type="button" wire:click="removeDateProposal({{ $i }})"
+                            class="btn btn-ghost btn-sm btn-circle text-error">
+                            <x-icon name="o-trash" class="h-4 w-4" />
+                        </button>
+                    </div>
+                @empty
+                    <x-empty-state icon="o-calendar"
+                        :heading="__('No date proposals yet')"
+                        :message="__('Add at least one date option.')" />
+                @endforelse
+                <x-button icon="o-plus" :label="__('Add date option')"
+                    class="btn-ghost btn-sm" wire:click="addDateProposal" />
+            </div>
                 @endif
 
                 {{-- Quorum — AG only --}}
@@ -188,41 +182,8 @@
             </div>
         </x-card>
 
-        {{-- ── Step 3 — Date poll (mode poll uniquement) ───────────── --}}
-        @elseif ($step == '3' && $datePollMode)
-        <x-card>
-            <x-alert icon="o-information-circle"
-                :title="__('Date poll')"
-                :description="__('Propose multiple dates. The committee will vote on their availability and you\'ll pick the best one.')"
-                class="alert-info alert-soft mb-4" />
-
-            @php
-                $sortedProposalIndices = collect($dateProposals)
-                    ->sortBy(fn ($p) => filled($p['proposed_at']) ? $p['proposed_at'] : '9999')
-                    ->keys();
-            @endphp
-            <div class="space-y-3">
-                @forelse ($sortedProposalIndices as $i)
-                    <div class="flex items-center gap-3" wire:key="proposal-{{ $i }}">
-                        <x-datetime type="datetime-local" wire:model="dateProposals.{{ $i }}.proposed_at"
-                            class="flex-1" />
-                        <button type="button" wire:click="removeDateProposal({{ $i }})"
-                            class="btn btn-ghost btn-sm btn-circle text-error">
-                            <x-icon name="o-trash" class="h-4 w-4" />
-                        </button>
-                    </div>
-                @empty
-                    <x-empty-state icon="o-calendar"
-                        :heading="__('No date proposals yet')"
-                        :message="__('Add at least one date option.')" />
-                @endforelse
-                <x-button icon="o-plus" :label="__('Add date option')"
-                    class="btn-ghost btn-sm" wire:click="addDateProposal" />
-            </div>
-        </x-card>
-
-        {{-- ── Step 4 — Review & save ───────────────────────────────── --}}
-        @elseif ($step == '4')
+        {{-- ── Step 3 — Review & save ───────────────────────────────── --}}
+        @elseif ($step == '3')
         <x-card>
             <div class="space-y-4 text-sm">
 

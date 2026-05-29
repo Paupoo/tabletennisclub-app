@@ -1,4 +1,7 @@
 <div>
+     <x-slot:breadcrumbs>
+        <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
+    </x-slot:breadcrumbs>
     <x-header :title="__('Registrations')" :subtitle="__('All affiliations by season')" separator progress-indicator>
         <x-slot:middle>
             <x-select

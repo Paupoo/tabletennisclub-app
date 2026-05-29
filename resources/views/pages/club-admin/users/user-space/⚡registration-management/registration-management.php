@@ -14,6 +14,7 @@ use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Season;
 use App\Models\ClubEvents\Training\TrainingPack;
 use App\Notifications\Subscription\SubscriptionCreatedNotification;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -26,7 +27,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast, WithFileUploads;
+    use Toast, WithFileUploads, HasBreadcrumbs;
 
     // --- Modal "Ajouter un membre" ---
     public bool $addMemberModal = false;
@@ -96,6 +97,13 @@ new class extends Component
     // ──────────────────────────────────────────────────────────────────────────
     // Lifecycle
     // ──────────────────────────────────────────────────────────────────────────
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__('Registration management'));
+    }
 
     public function mount(): void
     {
@@ -594,10 +602,7 @@ new class extends Component
                 ->limit(6)
                 ->get()
                 : collect(),
-            'breadcrumbs'          => Breadcrumb::make()
-                ->home()
-                ->current(__('Registration management'))
-                ->toArray(),
+            'breadcrumbs' => $this->getBreadcrumbs(),
             'genders'              => Gender::options(),
         ];
     }

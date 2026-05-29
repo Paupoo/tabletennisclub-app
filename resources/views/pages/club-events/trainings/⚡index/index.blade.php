@@ -1,3 +1,7 @@
+<x-slot:breadcrumbs>
+    <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
+</x-slot:breadcrumbs>
+
 <div>
     {{-- ── Header ──────────────────────────────────────────────────────────── --}}
     @if ($selectedPackId)

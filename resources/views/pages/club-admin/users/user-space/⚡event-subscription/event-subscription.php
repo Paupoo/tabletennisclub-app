@@ -15,6 +15,7 @@ use App\Models\ClubEvents\Tournament\TournamentPair;
 use App\Models\ClubEvents\Tournament\TournamentRegistration;
 use App\Models\ClubEvents\Training\Training;
 use App\Services\TournamentService;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
@@ -24,7 +25,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast;
+    use Toast, HasBreadcrumbs;
 
     public User $user;
 
@@ -256,13 +257,17 @@ new class extends Component
             ->get();
     }
 
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__('Events & Activities'));
+    }
+
     public function with(): array
     {
         return [
-            'breadcrumbs' => Breadcrumb::make()
-                ->home()
-                ->current(__('Events & Activities'))
-                ->toArray(),
+            'breadcrumbs' => $this->getBreadcrumbs(),
         ];
     }
 };

@@ -10,6 +10,7 @@ use App\Enums\TeamName;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\League;
 use App\Models\ClubEvents\Interclub\Team;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -20,7 +21,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast;
+    use Toast, HasBreadcrumbs;
 
     #[Locked]
     public int $teamId;
@@ -40,7 +41,15 @@ new class extends Component
         $this->memberIds = $team->users->pluck('id')->toArray();
     }
 
-    public function render(): View
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__("Edit Team"));
+    }
+
+        public function render(): View
     {
         return $this->view();
     }

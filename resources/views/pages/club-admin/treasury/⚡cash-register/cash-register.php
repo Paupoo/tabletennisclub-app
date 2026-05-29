@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Models\ClubAdmin\Payment\CashRegister;
 use App\Models\ClubAdmin\Payment\CashRegisterEntry;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -14,7 +15,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast;
+    use Toast, HasBreadcrumbs;
 
     public bool $manualEntryModal = false;
     public bool $createRegisterModal = false;
@@ -115,13 +116,18 @@ new class extends Component
         ];
     }
 
-    public function render(): View
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__("Treasury — Cash Register"));
+    }
+
+        public function render(): View
     {
         return $this->view([
-            'breadcrumbs'   => Breadcrumb::make()
-                ->home()
-                ->current(__('Treasury — Cash Register'))
-                ->toArray(),
+            'breadcrumbs' => $this->getBreadcrumbs(),
             'reasonOptions' => $this->reasonOptions(),
         ]);
     }

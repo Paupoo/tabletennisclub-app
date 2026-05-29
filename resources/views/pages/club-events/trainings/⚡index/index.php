@@ -15,6 +15,7 @@ use App\Models\ClubEvents\Training\Training;
 use App\Models\ClubEvents\Training\TrainingPack;
 use App\Notifications\Training\TrainingSessionCancelledNotification;
 use App\Services\TrainingDateGenerator;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
@@ -23,7 +24,8 @@ use Livewire\Component;
 use Mary\Traits\Toast;
 
 new class extends Component
-{
+    {
+    use HasBreadcrumbs;
     use HasEventPostForm, Toast;
 
     // ── Cancellation modal ────────────────────────────────────────────────────
@@ -185,6 +187,13 @@ new class extends Component
     }
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__('Trainings'));
+    }
 
     public function mount(): void
     {
@@ -552,11 +561,7 @@ new class extends Component
             'trainerOptions' => $this->trainerOptions,
             'roomOptions' => $this->roomOptions,
             'dayOptions' => $this->dayOptions,
-            'breadcrumbs' => Breadcrumb::make()
-                ->home()
-                ->trainings()
-                ->current(__('Trainings'))
-                ->toArray(),
+            'breadcrumbs' => $this->getBreadcrumbs(),
         ];
     }
 

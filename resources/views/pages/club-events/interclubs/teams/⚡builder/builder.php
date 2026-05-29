@@ -14,6 +14,7 @@ use App\Models\ClubEvents\Interclub\League;
 use App\Models\ClubEvents\Interclub\Season;
 use App\Models\ClubEvents\Interclub\Team;
 use Illuminate\Database\Eloquent\Builder;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -23,7 +24,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast;
+    use Toast, HasBreadcrumbs;
 
     // ── Étape 1 : paramètres ─────────────────────────────────────────────────
     public int $step = 1;
@@ -59,7 +60,15 @@ new class extends Component
         $this->seasonId = Season::current()?->id;
     }
 
-    public function render(): View
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__("Teams Builder"));
+    }
+
+        public function render(): View
     {
         return $this->view();
     }

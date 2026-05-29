@@ -12,6 +12,7 @@ use App\Models\ClubEvents\Interclub\Interclub;
 use App\Models\ClubEvents\Interclub\League;
 use App\Models\ClubEvents\Interclub\Season;
 use App\Models\ClubEvents\Interclub\Team;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -21,7 +22,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast;
+    use Toast, HasBreadcrumbs;
 
     public string $search = '';
 
@@ -42,7 +43,15 @@ new class extends Component
         $this->selectedSeasonId = Season::current()?->id;
     }
 
-    public function render(): View
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__("Teams"));
+    }
+
+        public function render(): View
     {
         return $this->view();
     }

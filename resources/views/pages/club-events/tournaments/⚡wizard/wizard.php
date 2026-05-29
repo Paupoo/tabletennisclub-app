@@ -26,6 +26,7 @@ use App\Services\TournamentMatchService;
 use App\Services\TournamentPoolService;
 use App\Services\TournamentService;
 use App\Services\TournamentSimulator;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -37,7 +38,8 @@ use Livewire\WithFileUploads;
 use Mary\Traits\Toast;
 
 new class extends Component
-{
+    {
+    use HasBreadcrumbs;
     use HasEventPostForm, Toast, WithFileUploads;
 
     public bool $bulkDrawer = false;
@@ -1107,6 +1109,13 @@ new class extends Component
 
     // ── Render
 
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__('Tournaments Wizard'));
+    }
+
     public function render(): mixed
     {
         $search = strtolower($this->memberSearch);
@@ -1487,11 +1496,7 @@ new class extends Component
     public function with(): array
     {
         return [
-            'breadcrumbs' => Breadcrumb::make()
-                ->home()
-                ->tournaments()
-                ->current(__('Setup Wizard'))
-                ->toArray(),
+            'breadcrumbs' => $this->getBreadcrumbs(),
             'objectiveOptions' => TournamentObjectiveEnum::toOptions(),
             'maxUsers' => $this->maxUsers,
         ];

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\ClubAdmin\Users\User;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Validation\Rules\Password;
 use Livewire\Attributes\Title;
@@ -11,7 +12,7 @@ use Mary\Traits\Toast;
 
 new #[Title('My settings')] class extends Component
 {
-    use Toast;
+    use Toast, HasBreadcrumbs;
 
     public bool $notification_match = true;
 
@@ -69,13 +70,17 @@ new #[Title('My settings')] class extends Component
         $this->success(__('Your settings have been updated.'));
     }
 
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__('Personnal Settings'));
+    }
+
     public function with(): array
     {
         return [
-            'breadcrumbs' => Breadcrumb::make()
-                ->home()
-                ->current(__('Personnal Settings'))
-                ->toArray(),
+            'breadcrumbs' => $this->getBreadcrumbs(),
         ];
     }
 };

@@ -10,6 +10,7 @@ use App\Models\ClubEvents\Interclub\Interclub;
 use App\Models\ClubEvents\Interclub\Season;
 use App\Models\ClubEvents\Interclub\Team;
 use App\Services\InterclubAvailabilityService;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -20,7 +21,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast;
+    use Toast, HasBreadcrumbs;
 
     public string $captainMeetupInfo = '';
 
@@ -122,7 +123,15 @@ new class extends Component
         $this->drawerSelection = true;
     }
 
-    public function render(): View
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__("Captain Selection"));
+    }
+
+        public function render(): View
     {
         return $this->view();
     }
@@ -269,10 +278,7 @@ new class extends Component
         $matchDayMap = $season ? Interclub::matchDayMap($season->id) : [];
 
         return [
-            'breadcrumbs' => Breadcrumb::make()
-                ->home()
-                ->current(__('Sélections'))
-                ->toArray(),
+            'breadcrumbs' => $this->getBreadcrumbs(),
             'seasons_list' => $seasons->map(fn ($s) => ['id' => $s->id, 'name' => $s->name]),
             'teams_list' => $teams->map(fn ($t) => ['id' => $t->id, 'name' => ($t->club?->name ?? '?') . ' ' . $t->name]),
             'teamsData' => $teamsData,

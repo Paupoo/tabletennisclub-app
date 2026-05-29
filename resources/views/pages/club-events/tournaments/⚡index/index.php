@@ -6,6 +6,7 @@ use App\Enums\EventPostStatusEnum;
 use App\Enums\TournamentStatusEnum;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Tournament\Tournament;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
@@ -16,7 +17,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast, WithPagination;
+    use Toast, WithPagination, HasBreadcrumbs;
 
     #[Url]
     public string $search = '';
@@ -84,7 +85,15 @@ new class extends Component
         return $user instanceof User && ($user->is_admin || $user->is_committee_member);
     }
 
-    public function render(): View
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__("Tournaments"));
+    }
+
+        public function render(): View
     {
         return $this->view();
     }
@@ -138,7 +147,7 @@ new class extends Component
         }
 
         return [
-            'breadcrumbs'     => Breadcrumb::make()->home()->tournaments()->toArray(),
+            'breadcrumbs' => $this->getBreadcrumbs(),
             'tournaments'     => $tournaments,
             'stats'           => $stats,
             'statusOptions'   => $statusOptions,

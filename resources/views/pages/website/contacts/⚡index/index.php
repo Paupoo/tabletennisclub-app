@@ -7,6 +7,7 @@ namespace Resources\views\Pages\Website\Contacts\Index;
 use App\Enums\ContactReasonEnum;
 use App\Models\ClubAdmin\Contact\Contact;
 use App\Services\ClubAdmin\Contact\ContactEmailService;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -18,7 +19,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast, WithPagination;
+    use Toast, WithPagination, HasBreadcrumbs;
 
     #[Url]
     public string $search = '';
@@ -136,7 +137,15 @@ new class extends Component
         $this->error(__('Contact deleted.'));
     }
 
-    public function render(): View
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__("Contacts"));
+    }
+
+        public function render(): View
     {
         return $this->view();
     }

@@ -7,6 +7,7 @@ use App\Actions\ClubAdmin\Payments\GeneratePaymentReference;
 use App\Actions\ClubAdmin\Subscriptions\ApproveTrainingPacksAction;
 use App\Actions\ClubAdmin\Subscriptions\CalculatePriceAction;
 use App\Actions\ClubAdmin\Subscriptions\CreateSubscriptionAction;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Mail\PaymentInvitationEmail;
 use App\Models\ClubAdmin\Payment\Payment;
 use App\Models\ClubAdmin\Subscription\Subscription;
@@ -15,6 +16,7 @@ use App\Models\ClubEvents\Interclub\Season;
 use App\Models\ClubEvents\Training\TrainingPack;
 use App\Notifications\Subscription\SubscriptionRejectedNotification;
 use App\Notifications\Subscription\TrainingPackRejectedNotification;
+use App\Support\Breadcrumb;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\View\View;
@@ -24,7 +26,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast;
+    use Toast, HasBreadcrumbs;
 
     public array $familyBasket = [];
     public bool $memberDrawer = false;
@@ -571,7 +573,15 @@ new class extends Component
         unset($this->familyBasket[$userId]);
     }
 
-    public function render(): View
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__("Registrations"));
+    }
+
+        public function render(): View
     {
         $statsBase = Subscription::when($this->selectedSeasonId, fn ($q) => $q->where('season_id', $this->selectedSeasonId));
 
@@ -690,6 +700,7 @@ new class extends Component
     public function with(): array
     {
         return [
+            'breadcrumbs' => $this->getBreadcrumbs(),
             'currentRequest' => $this->currentRequestId
                 ? $this->registrations()->firstWhere('id', $this->currentRequestId)
                 : null,

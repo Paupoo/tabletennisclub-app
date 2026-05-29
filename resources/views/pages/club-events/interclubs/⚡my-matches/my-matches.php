@@ -8,6 +8,7 @@ use App\Enums\InterclubAvailability;
 use App\Models\ClubEvents\Interclub\Interclub;
 use App\Models\ClubEvents\Interclub\Season;
 use App\Models\ClubEvents\Interclub\Team;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -16,7 +17,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast;
+    use Toast, HasBreadcrumbs;
 
     public ?int $editingInterclubId = null;
 
@@ -73,7 +74,15 @@ new class extends Component
         $this->availabilityNote = '';
     }
 
-    public function render(): View
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__("My Matches"));
+    }
+
+        public function render(): View
     {
         return $this->view();
     }

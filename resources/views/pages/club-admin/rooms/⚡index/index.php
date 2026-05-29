@@ -7,6 +7,7 @@ use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Services\TournamentService;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\View\View;
@@ -16,7 +17,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast;
+    use Toast, HasBreadcrumbs;
 
     public bool $deleteRoomModal = false;
 
@@ -123,7 +124,15 @@ new class extends Component
 
     // ── Render ────────────────────────────────────────────────────────────────
 
-    public function render(): View
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__("Rooms"));
+    }
+
+        public function render(): View
     {
         return $this->view();
     }
@@ -132,10 +141,7 @@ new class extends Component
     {
         return [
             'rooms' => $this->rooms,
-            'breadcrumbs' => Breadcrumb::make()
-                ->home()
-                ->current(__('Rooms'))
-                ->toArray(),
+            'breadcrumbs' => $this->getBreadcrumbs(),
         ];
     }
 };

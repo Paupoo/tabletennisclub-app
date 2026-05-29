@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Enums\ClubEventTypeEnum;
 use App\Enums\EventPostStatusEnum;
 use App\Models\ClubPosts\EventPost;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
@@ -15,7 +16,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast, WithPagination;
+    use Toast, WithPagination, HasBreadcrumbs;
 
     // ── Filtres URL ──────────────────────────────────────────────────────────
 
@@ -206,7 +207,15 @@ new class extends Component
 
     // ── Render ───────────────────────────────────────────────────────────────
 
-    public function render(): View
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__("Events"));
+    }
+
+        public function render(): View
     {
         return $this->view();
     }

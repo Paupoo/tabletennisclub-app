@@ -13,6 +13,7 @@ use App\Models\ClubEvents\Interclub\Team;
 use App\Models\ClubEvents\Meeting\Meeting;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Training\Training;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
 use Livewire\Attributes\Computed;
@@ -20,6 +21,8 @@ use Livewire\Component;
 
 new class extends Component
 {
+    use HasBreadcrumbs;
+    
     public User $user;
 
     /** @var string[] */
@@ -230,13 +233,17 @@ new class extends Component
             ->all();
     }
 
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__('Calendar'));
+    }
+
     public function with(): array
     {
         return [
-            'breadcrumbs' => Breadcrumb::make()
-                ->home()
-                ->current(__('Calendar'))
-                ->toArray(),
+            'breadcrumbs' => $this->getBreadcrumbs(),
             'calendar'   => $this->calendarData,
             'categories' => [
                 ['id' => 'tournament', 'name' => __('Tournament')],

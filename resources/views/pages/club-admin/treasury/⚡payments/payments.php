@@ -7,6 +7,7 @@ use App\Models\ClubAdmin\Payment\Payment;
 use App\Models\ClubAdmin\Payment\Transaction;
 use App\Models\ClubAdmin\Subscription\Subscription;
 use App\Models\ClubEvents\Tournament\TournamentRegistration;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -25,7 +26,7 @@ use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 
 new class extends Component
 {
-    use Toast, WithFileUploads, WithPagination;
+    use Toast, WithFileUploads, WithPagination, HasBreadcrumbs;
 
     public $importFile;
     public bool $importModal             = false;
@@ -518,7 +519,15 @@ new class extends Component
         $subscription->markAsPaid();
     }
 
-    public function render(): View
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__("Treasury — Payments"));
+    }
+
+        public function render(): View
     {
         return $this->view([
             'headers'              => $this->headers(),
@@ -537,10 +546,7 @@ new class extends Component
                     Subscription::class           => ['user'],
                 ])])->find($this->refundPaymentId)
                 : null,
-            'breadcrumbs'          => Breadcrumb::make()
-                ->home()
-                ->current(__('Treasury — Payments'))
-                ->toArray(),
+            'breadcrumbs' => $this->getBreadcrumbs(),
         ]);
     }
 

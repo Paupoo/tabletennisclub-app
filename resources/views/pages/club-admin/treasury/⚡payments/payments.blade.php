@@ -1,3 +1,7 @@
+<x-slot:breadcrumbs>
+    <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
+</x-slot:breadcrumbs>
+
 <div>
     <x-header :title="__('Treasury')" :subtitle="__('Payment tracking')" separator progress-indicator>
         <x-slot:middle class="!justify-end">

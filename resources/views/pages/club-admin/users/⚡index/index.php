@@ -6,6 +6,7 @@ use App\Actions\User\RecalculateForceListAction;
 use App\Mail\InviteNewUserMail;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Team;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -18,7 +19,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast;
+    use Toast, HasBreadcrumbs;
     use WithPagination;
 
     public array $categories = [];     // ex: ['men', 'women', 'youth']
@@ -212,6 +213,14 @@ new class extends Component
     // Render
     // ────────────────────────────────────────────────────────────────────────
 
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->users()
+            ->current(__('List'));
+    }
+
     public function render()
     {
         return $this->view([
@@ -219,11 +228,7 @@ new class extends Component
             'headers' => $this->headers,
             'teams' => $this->teams,
             'subscriptions' => $this->subscriptions,
-            'breadcrumbs' => Breadcrumb::make()
-                ->home()
-                ->users()
-                ->current(__('List'))
-                ->toArray(),
+            'breadcrumbs' => $this->getBreadcrumbs(),
             'activeFiltersCount' => $this->activeFiltersCount,
             'stats'              => $this->stats,
         ]);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Enums\CommitteeRolesEnum;
 use App\Enums\Gender;
 use App\Models\ClubAdmin\Users\User;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -24,7 +25,7 @@ use PHPUnit\Event\Code\Throwable;
 
 new class extends Component
 {
-    use Toast, WithFileUploads;
+    use Toast, WithFileUploads, HasBreadcrumbs;
 
     #[Rule('nullable|date')]
     public ?string $birthdate = null;
@@ -164,7 +165,16 @@ new class extends Component
         }
     }
 
-    public function render(): View
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->users()
+            ->current($this->user?->exists ? __("Edit") : __("Create"));
+    }
+
+        public function render(): View
     {
         return $this->view()
             ->title($this->user?->exists
@@ -417,11 +427,7 @@ new class extends Component
                     'author' => 'Bernard Laporte',
                 ],
             ],
-            'breadcrumbs' => Breadcrumb::make()
-                ->home()
-                ->users()
-                ->current($this->user?->exists ? __('Edit') : __('Create'))
-                ->toArray(),
+            'breadcrumbs' => $this->getBreadcrumbs(),
         ];
     }
 

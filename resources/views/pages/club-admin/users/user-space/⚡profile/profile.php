@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\ClubAdmin\Users\User;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -12,7 +13,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast, WithFileUploads;
+    use Toast, WithFileUploads, HasBreadcrumbs;
 
     public User $user;
 
@@ -137,7 +138,15 @@ new class extends Component
         ];
     }
 
-    public function render(): View
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->add(__("My profile"), null, null);
+    }
+
+        public function render(): View
     {
         return view('pages.club-admin.users.user-space.⚡profile.profile', $this->user);
     }

@@ -7,6 +7,7 @@ namespace Resources\views\Pages\Website\Articles\Edit;
 use App\Enums\NewsPostCategoryEnum;
 use App\Enums\NewsPostStatusEnum;
 use App\Models\ClubPosts\NewsPost;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -20,7 +21,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast, WithFileUploads;
+    use Toast, WithFileUploads, HasBreadcrumbs;
 
     #[Locked]
     public ?int $newsPostId = null;
@@ -110,7 +111,15 @@ new class extends Component
         $this->success($label, redirectTo: route('admin.website.articles.index'));
     }
 
-    public function render(): View
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current($this->article?->exists ? __("Edit") : __("Create"));
+    }
+
+        public function render(): View
     {
         return $this->view();
     }

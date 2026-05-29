@@ -13,6 +13,7 @@ use App\Models\ClubEvents\Interclub\Club;
 use App\Models\ClubEvents\Interclub\Interclub;
 use App\Models\ClubEvents\Interclub\Season;
 use App\Models\ClubEvents\Interclub\Team;
+use App\Models\ClubEvents\Meeting\Meeting;
 use App\Models\ClubEvents\Tournament\Pool;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Training\Training;
@@ -258,6 +259,13 @@ class User extends Authenticatable implements MustVerifyEmail
             ->where('season_id', $season->id)
             ->whereIn('status', ['pending', 'confirmed', 'paid'])
             ->exists();
+    }
+
+    public function meetings(): BelongsToMany
+    {
+        return $this->belongsToMany(Meeting::class)
+            ->withPivot(['status', 'invitation_sent_at', 'response_at'])
+            ->withTimestamps();
     }
 
     public function pools(): BelongsToMany

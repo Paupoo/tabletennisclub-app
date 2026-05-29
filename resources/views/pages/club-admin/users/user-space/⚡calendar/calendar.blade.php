@@ -58,16 +58,19 @@
                     'training'   => 'bg-accent',
                     'tournament' => 'bg-secondary',
                     'interclub'  => 'bg-primary',
+                    'meeting'    => 'bg-warning',
                 ];
                 $typeBadgeClasses = [
                     'training'   => 'badge-accent badge-soft',
                     'tournament' => 'badge-secondary badge-soft',
                     'interclub'  => 'badge-primary badge-soft',
+                    'meeting'    => 'badge-warning badge-soft',
                 ];
                 $typeLabels = [
                     'training'   => __('Training'),
                     'tournament' => __('Tournament'),
                     'interclub'  => __('Interclub'),
+                    'meeting'    => __('Meeting'),
                 ];
                 $currentMonthKey = now()->translatedFormat('F Y');
             @endphp

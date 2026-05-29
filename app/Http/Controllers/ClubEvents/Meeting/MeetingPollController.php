@@ -1,0 +1,45 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Controllers\ClubEvents\Meeting;
+
+use App\Enums\MeetingDateVoteEnum;
+use App\Http\Controllers\Controller;
+use App\Models\ClubAdmin\Users\User;
+use App\Models\ClubEvents\Meeting\Meeting;
+use App\Models\ClubEvents\Meeting\MeetingDateVote;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\View\View;
+
+class MeetingPollController extends Controller
+{
+    public function show(Request $request, Meeting $meeting, User $user): View|RedirectResponse
+    {
+        abort_unless($request->hasValidSignature(), 403);
+
+        $meeting->loadMissing(['dateProposals.votes' => fn ($q) => $q->where('user_id', $user->id)]);
+
+        return view('meetings.poll', compact('meeting', 'user'));
+    }
+
+    public function vote(Request $request, Meeting $meeting, User $user): RedirectResponse
+    {
+        abort_unless($request->hasValidSignature(), 403);
+
+        $validated = $request->validate([
+            'votes' => ['required', 'array'],
+            'votes.*' => ['required', 'string', 'in:' . implode(',', array_column(MeetingDateVoteEnum::cases(), 'value'))],
+        ]);
+
+        foreach ($validated['votes'] as $proposalId => $vote) {
+            MeetingDateVote::updateOrCreate(
+                ['meeting_date_proposal_id' => (int) $proposalId, 'user_id' => $user->id],
+                ['vote' => $vote]
+            );
+        }
+
+        return redirect()->back()->with('status', __('Your votes have been saved. Thank you!'));
+    }
+}

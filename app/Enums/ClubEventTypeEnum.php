@@ -8,7 +8,7 @@ enum ClubEventTypeEnum: string
 {
     // case COMMUNITY_EVENT = 'COMMUNITY_EVENT';
     case INTERCLUB = 'INTERCLUB';
-    // case MEETING = 'MEETING';
+    case MEETING = 'MEETING';
     case TOURNAMENT = 'TOURNAMENT';
     case TRAINING = 'TRAINING';
 
@@ -25,6 +25,7 @@ enum ClubEventTypeEnum: string
         return match ($this) {
             // self::COMMUNITY_EVENT => '🎉',
             self::INTERCLUB => '🏓',
+            self::MEETING => '📋',
             self::TOURNAMENT => '🏆',
             self::TRAINING => '🎯',
         };
@@ -38,7 +39,7 @@ enum ClubEventTypeEnum: string
         return match ($this) {
             // self::COMMUNITY_EVENT => __('Community event'),
             self::INTERCLUB => __('Interclub'),
-            // self::MEETING => __('Meeting'),
+            self::MEETING => __('Meeting'),
             self::TOURNAMENT => __('Tournament'),
             self::TRAINING => __('Training'),
         };

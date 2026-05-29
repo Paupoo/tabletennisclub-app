@@ -75,8 +75,8 @@
 
     @if($user->is_committee_member || $user->is_admin)
     <x-menu-sub icon="o-star" :title="__('Events')">
-        <x-menu-item icon="o-trophy" link="{{ route('admin.tournaments.index') }}" :title="__('Tournaments')">
-        </x-menu-item>
+        <x-menu-item icon="o-calendar-days" link="{{ route('admin.meetings.index') }}" :title="__('Meetings')" />
+        <x-menu-item icon="o-trophy" link="{{ route('admin.tournaments.index') }}" :title="__('Tournaments')" />
     </x-menu-sub>
     
     <x-menu-separator />

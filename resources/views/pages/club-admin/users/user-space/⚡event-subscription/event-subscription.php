@@ -3,10 +3,13 @@
 declare(strict_types=1);
 
 use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
+use App\Enums\MeetingStatusEnum;
+use App\Enums\MeetingUserStatusEnum;
 use App\Enums\TournamentStatusEnum;
 use App\Models\ClubAdmin\Payment\Payment;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Season;
+use App\Models\ClubEvents\Meeting\Meeting;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Tournament\TournamentPair;
 use App\Models\ClubEvents\Tournament\TournamentRegistration;
@@ -240,6 +243,16 @@ new class extends Component
             ->where('start', '>=', Carbon::now())
             ->orderBy('start')
             ->limit(5)
+            ->get();
+    }
+
+    #[Computed]
+    public function upcomingMeetings(): \Illuminate\Database\Eloquent\Collection
+    {
+        return $this->user->meetings()
+            ->where('status', MeetingStatusEnum::CONFIRMED->value)
+            ->where('scheduled_at', '>=', now())
+            ->orderBy('scheduled_at')
             ->get();
     }
 

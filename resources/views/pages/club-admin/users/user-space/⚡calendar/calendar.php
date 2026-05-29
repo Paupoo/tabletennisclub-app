@@ -3,11 +3,14 @@
 declare(strict_types=1);
 
 use App\Enums\InterclubAvailability;
+use App\Enums\MeetingStatusEnum;
+use App\Enums\MeetingUserStatusEnum;
 use App\Enums\TournamentStatusEnum;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Interclub;
 use App\Models\ClubEvents\Interclub\Season;
 use App\Models\ClubEvents\Interclub\Team;
+use App\Models\ClubEvents\Meeting\Meeting;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Training\Training;
 use App\Support\Breadcrumb;
@@ -157,6 +160,34 @@ new class extends Component
             }
         }
 
+        // Meetings (committee + GA)
+        if (empty($this->selectedCategories) || in_array('meeting', $this->selectedCategories)) {
+            $meetingsQuery = Meeting::whereIn('status', [MeetingStatusEnum::CONFIRMED->value])
+                ->where('scheduled_at', '>=', now());
+
+            if (! $this->showAllEvents) {
+                $meetingsQuery->whereHas('users', fn ($q) => $q->where('meeting_user.user_id', $this->user->id));
+            }
+
+            $meetings = $meetingsQuery
+                ->with(['users' => fn ($q) => $q->where('users.id', $this->user->id)])
+                ->orderBy('scheduled_at')
+                ->get()
+                ->map(fn ($m) => [
+                    'startDateTime'      => $m->scheduled_at->format('Y-m-d H:i:s'),
+                    'title'              => $m->title,
+                    'type'               => 'meeting',
+                    'meetingId'          => $m->id,
+                    'format'             => $m->format->value,
+                    'location'           => $m->location,
+                    'meetingLink'        => $m->meeting_link,
+                    'registrationStatus' => $m->users->first()?->registration?->status?->value,
+                    'monthKey'           => $m->scheduled_at->translatedFormat('F Y'),
+                ]);
+
+            $events = $events->merge($meetings);
+        }
+
         // Interclub matches
         if (empty($this->selectedCategories) || in_array('interclub', $this->selectedCategories)) {
             $season = Season::where('is_active', true)->first();
@@ -211,6 +242,7 @@ new class extends Component
                 ['id' => 'tournament', 'name' => __('Tournament')],
                 ['id' => 'training',   'name' => __('Training')],
                 ['id' => 'interclub',  'name' => __('Interclub')],
+                ['id' => 'meeting',    'name' => __('Meeting')],
             ],
             'selectedCategories' => $this->selectedCategories,
         ];

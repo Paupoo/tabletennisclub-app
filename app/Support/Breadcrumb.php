@@ -52,6 +52,11 @@ class Breadcrumb
         return $this->add('Matches', $url ?: route('interclubs.index'), 's-home');
     }
 
+    public function meetings(?string $url = null): Breadcrumb
+    {
+        return $this->add(__('Meetings'), $url ?: route('admin.meetings.index'), 'o-calendar-days');
+    }
+
     public function profile(?string $url = null): Breadcrumb
     {
         return $this->add('Profile', $url ?: route('profile.edit'));

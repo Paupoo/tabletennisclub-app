@@ -24,6 +24,8 @@ use App\Http\Controllers\ClubEvents\Interclub\InterclubController;
 use App\Http\Controllers\ClubEvents\Interclub\ResultsController;
 use App\Http\Controllers\ClubEvents\Interclub\SeasonController;
 use App\Http\Controllers\ClubEvents\Interclub\TeamController;
+use App\Http\Controllers\ClubEvents\Meeting\MeetingPollController;
+use App\Http\Controllers\ClubEvents\Meeting\MeetingRsvpController;
 use App\Http\Controllers\ClubEvents\Tournament\TableScoreController;
 use App\Http\Controllers\ClubEvents\Tournament\TournamentController;
 use App\Http\Controllers\ClubPosts\AdminEventPostController;
@@ -162,6 +164,26 @@ Route::prefix('coach')
     ->group(function (): void {
         Route::livewire('trainings', 'pages::club-events.trainings.coach')->name('coach.trainings');
     });
+
+Route::prefix('admin/club-events/meetings')
+    ->middleware(['auth', 'verified', 'committee'])
+    ->group(function (): void {
+        Route::livewire('/', 'pages::club-events.meetings.index')->name('admin.meetings.index');
+        Route::livewire('/create', 'pages::club-events.meetings.form')->name('admin.meetings.create');
+        Route::livewire('/{meeting}', 'pages::club-events.meetings.show')->name('admin.meetings.show');
+        Route::livewire('/{meeting}/edit', 'pages::club-events.meetings.form')->name('admin.meetings.edit');
+    });
+
+// Meeting signed-URL actions (no auth required)
+Route::get('/meetings/{meeting}/poll/{user}', [MeetingPollController::class, 'show'])
+    ->name('meetings.poll.vote')
+    ->middleware('signed');
+Route::post('/meetings/{meeting}/poll/{user}', [MeetingPollController::class, 'vote'])
+    ->name('meetings.poll.vote.submit')
+    ->middleware('signed');
+Route::get('/meetings/{meeting}/rsvp/{user}/{response}', [MeetingRsvpController::class, 'handle'])
+    ->name('meetings.rsvp')
+    ->middleware('signed');
 
 Route::prefix('admin/club-events/tournaments')
     ->middleware(['auth', 'verified'])

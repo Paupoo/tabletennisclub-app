@@ -7,6 +7,7 @@ use App\Enums\MeetingStatusEnum;
 use App\Enums\MeetingTypeEnum;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Meeting\Meeting;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
@@ -17,7 +18,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast, WithPagination;
+    use Toast, WithPagination, HasBreadcrumbs;
 
     #[Url]
     public string $search = '';
@@ -61,7 +62,15 @@ new class extends Component
             ->count();
     }
 
-    public function render(): View
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__("Meetings"));
+    }
+
+        public function render(): View
     {
         return $this->view();
     }
@@ -87,7 +96,7 @@ new class extends Component
         ];
 
         return [
-            'breadcrumbs'   => Breadcrumb::make()->home()->meetings()->toArray(),
+            'breadcrumbs' => $this->getBreadcrumbs(),
             'meetings'      => $meetings,
             'stats'         => $stats,
             'typeOptions'   => MeetingTypeEnum::getOptions(),

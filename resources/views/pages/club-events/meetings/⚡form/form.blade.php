@@ -294,14 +294,14 @@
             <div class="flex gap-2">
                 <x-button :label="__('Cancel')" class="btn-ghost"
                     link="{{ route('admin.meetings.index') }}" />
-                @if ((int) $step < 4)
+                @if ((int) $step < 3)
                     <x-button :label="__('Next')" icon-right="o-arrow-right"
                         class="btn-primary"
                         wire:click="nextStep" />
                 @else
                     <x-button :label="$meetingId ? __('Save changes') : __('Create meeting')"
                         icon="o-check" class="btn-primary"
-                        wire:click="save" spinner="save" />
+                        wire:click="save" />
                 @endif
             </div>
         </div>

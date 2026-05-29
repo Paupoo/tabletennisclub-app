@@ -16,6 +16,7 @@ use App\Notifications\Meeting\MeetingCancelledNotification;
 use App\Notifications\Meeting\MeetingDatePollNotification;
 use App\Notifications\Meeting\MeetingMinutesNotification;
 use App\Notifications\Meeting\MeetingPostponedNotification;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\View\View;
@@ -26,7 +27,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast;
+    use Toast, HasBreadcrumbs;
 
     #[Locked]
     public int $meetingId;
@@ -376,7 +377,15 @@ new class extends Component
         $this->loadActionItems();
     }
 
-    public function render(): View
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__("Meeting Details"));
+    }
+
+        public function render(): View
     {
         return $this->view();
     }
@@ -384,7 +393,7 @@ new class extends Component
     public function with(): array
     {
         return [
-            'breadcrumbs' => Breadcrumb::make()->home()->meetings()->current($this->meeting->title)->toArray(),
+            'breadcrumbs' => $this->getBreadcrumbs(),
         ];
     }
 };

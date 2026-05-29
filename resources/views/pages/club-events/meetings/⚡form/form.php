@@ -11,6 +11,7 @@ use App\Models\ClubEvents\Meeting\Meeting;
 use App\Models\ClubEvents\Meeting\MeetingAgendaItem;
 use App\Models\ClubEvents\Meeting\MeetingDateProposal;
 use App\Notifications\Meeting\MeetingDatePollNotification;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\View\View;
@@ -21,7 +22,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast;
+    use Toast, HasBreadcrumbs;
 
     #[Locked]
     public ?int $meetingId = null;
@@ -33,18 +34,43 @@ new class extends Component
     public bool $datePollMode = false;
 
     // Step 1 — Basic info
+    #[Validate('required|string|max:255')]
     public string $title           = '';
+
+    #[Validate('required|string')]
     public string $type            = 'committee';
+
+    #[Validate('required|string')]
     public string $format          = 'physical';
+
+    #[Validate('nullable|string')]
     public string $description     = '';
+
+    #[Validate('nullable|string|max:500')]
     public string $location        = '';
+
+    #[Validate('nullable|url|max:500')]
     public string $meetingLink     = '';
+
+    #[Validate('nullable|date')]
     public ?string $scheduledAt    = null;
+
+    #[Validate('nullable|date')]
     public ?string $endsAt         = null;
+
+    #[Validate('nullable|date')]
     public ?string $rsvpDeadline   = null;
+
+    #[Validate('boolean')]
     public bool   $hasMeal         = false;
+
+    #[Validate('nullable|string|max:255')]
     public string $mealDescription = '';
+
+    #[Validate('nullable|numeric|min:0')]
     public string $mealPrice       = '';
+
+    #[Validate('nullable|integer|min:1')]
     public ?int   $quorum          = null;
 
     // Step 2 — Agenda items
@@ -143,19 +169,88 @@ new class extends Component
     {
         $current = (int) $this->step;
 
-        if ($current === 2 && ! $this->datePollMode) {
-            // Sauter l'étape sondage en mode date fixe
-            $this->step = '4';
-        } else {
-            $this->step = (string) min($current + 1, 4);
+        // Validate current step before advancing
+        match ($current) {
+            1 => $this->validateStep1(),
+            2 => $this->validateStep2(),
+            default => null,
+        };
+
+        // Stop if validation failed
+        if ($this->getErrorBag()->isNotEmpty()) {
+            return;
         }
+
+        if ($current === 2 && ! $this->datePollMode) {
+            $this->step = '3';
+        } else {
+            $this->step = (string) min($current + 1, 3);
+        }
+    }
+
+    private function validateStep1(): void
+    {
+        $this->validate([
+            'title'       => 'required|string|max:255',
+            'type'        => 'required|string',
+            'format'      => 'required|string',
+            'location'    => $this->format === 'physical' ? 'required|string|max:500' : 'nullable|string|max:500',
+            'meetingLink' => $this->format === 'virtual' ? 'required|url|max:500' : 'nullable|url|max:500',
+        ]);
+
+        // Validate date fields if not in poll mode
+        if (! $this->datePollMode) {
+            $this->validate([
+                'scheduledAt'  => 'required|date',
+                'endsAt'       => 'required|date|after_or_equal:scheduledAt',
+                'rsvpDeadline' => 'nullable|date',
+            ]);
+        }
+
+        // Validate meal fields if enabled
+        if ($this->hasMeal) {
+            $this->validate([
+                'mealDescription' => 'required|string|max:255',
+                'mealPrice'       => 'required|numeric|min:0',
+            ]);
+        }
+
+        // Validate quorum if general assembly
+        if ($this->type === 'general_assembly') {
+            $this->validate([
+                'quorum' => 'required|integer|min:1',
+            ]);
+        }
+    }
+
+    private function validateStep2(): void
+    {
+        // At least one agenda item with title required
+        $hasValidItem = false;
+        foreach ($this->agendaItems as $item) {
+            if (filled($item['title'])) {
+                $hasValidItem = true;
+                break;
+            }
+        }
+
+        if (! $hasValidItem) {
+            $this->addError('agendaItems', __('At least one agenda item with a title is required.'));
+            return;
+        }
+
+        // Validate each item
+        $this->validate([
+            'agendaItems.*.title'       => 'required|string|max:255',
+            'agendaItems.*.description' => 'nullable|string',
+        ]);
     }
 
     public function prevStep(): void
     {
         $current = (int) $this->step;
 
-        if ($current === 4 && ! $this->datePollMode) {
+        if ($current === 3 && ! $this->datePollMode) {
             $this->step = '2';
         } else {
             $this->step = (string) max($current - 1, 1);
@@ -205,7 +300,17 @@ new class extends Component
     // ── Save ──────────────────────────────────────────────────────────
     public function save(): void
     {
-        $this->validate();
+        // Final validation before save
+        if ($this->datePollMode) {
+            $hasValidProposal = collect($this->dateProposals)->some(fn ($p) => filled($p['proposed_at']));
+            if (! $hasValidProposal) {
+                $this->addError('dateProposals', __('At least one date proposal is required.'));
+                return;
+            }
+            $this->validate([
+                'dateProposals.*.proposed_at' => 'required_with:dateProposals|date',
+            ]);
+        }
 
         $isNew = ($this->meetingId === null);
 
@@ -253,15 +358,27 @@ new class extends Component
             }
         }
 
-        // ── Envoi automatique à la création ──────────────────────────
+        // ── Auto-confirm date if not poll mode + date is set ──────────
+        if (! $this->datePollMode && filled($this->scheduledAt)) {
+            $meeting->update([
+                'scheduled_at' => $this->scheduledAt,
+                'ends_at'      => $this->endsAt,
+                'status'       => MeetingStatusEnum::CONFIRMED,
+            ]);
+        }
+
+        // ── Send notifications ────────────────────────────────────────
         if ($isNew) {
             if ($this->datePollMode && $meeting->dateProposals()->exists()) {
                 $committee = User::where(fn ($q) => $q->where('is_admin', true)
                     ->orWhere('is_committee_member', true))->get();
                 Notification::send($committee, new MeetingDatePollNotification($meeting));
-            } elseif (! $this->datePollMode && filled($this->scheduledAt)) {
-                dispatch(new SendMeetingInvitationsJob($meeting->id));
             }
+        }
+
+        // Send invitations if date is confirmed (creation or update)
+        if (! $this->datePollMode && filled($this->scheduledAt) && $meeting->status === MeetingStatusEnum::CONFIRMED) {
+            dispatch(new SendMeetingInvitationsJob($meeting->id));
         }
 
         $this->meetingId = $meeting->id;
@@ -297,7 +414,7 @@ new class extends Component
     #[Computed]
     public function maxReachableStep(): int
     {
-        return $this->meetingId ? 4 : 1;
+        return $this->meetingId ? 3 : 1;
     }
 
     #[Computed]
@@ -328,7 +445,15 @@ new class extends Component
             : __('Committee members');
     }
 
-    public function render(): View
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current($this->meetingId ? __("Edit") : __("Create"));
+    }
+
+        public function render(): View
     {
         return $this->view();
     }
@@ -336,9 +461,7 @@ new class extends Component
     public function with(): array
     {
         return [
-            'breadcrumbs' => Breadcrumb::make()->home()->meetings()->current(
-                $this->meetingId ? __('Edit meeting') : __('New meeting')
-            )->toArray(),
+            'breadcrumbs' => $this->getBreadcrumbs(),
         ];
     }
 };

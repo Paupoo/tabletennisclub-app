@@ -127,6 +127,11 @@ class Breadcrumb
         return $this->add(__('Contacts'), $url ?: route('admin.website.contacts.index'));
     }
 
+    public function websiteEvents(?string $url = null): Breadcrumb
+    {
+        return $this->add(__('Events'), $url ?: route('admin.website.events.index'));
+    }
+
     public function websiteSpams(?string $url = null): Breadcrumb
     {
         return $this->add(__('Spam'), $url ?: route('admin.website.spams.index'));

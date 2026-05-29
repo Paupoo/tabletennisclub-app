@@ -37,6 +37,7 @@ class EventPostService
         EventPostStatusEnum $status,
         array $syncData,
         ?int $existingPostId = null,
+        ?string $featuredUntil = null,
     ): EventPost {
         $data = [
             'eventable_type' => $model::class,
@@ -47,6 +48,7 @@ class EventPostService
             'status' => $status->value,
             'location' => $location ?? '',
             'featured' => $featured,
+            'featured_until' => $featuredUntil,
             'event_date' => $syncData['event_date'],
             'start_time' => $syncData['start_time'],
             'end_time' => $syncData['end_time'] ?? null,

@@ -292,6 +292,7 @@ class TrainingPackSeeder extends Seeder
                         'max_participants' => $pack->max_participants,
                         'icon' => '🎯',
                     ],
+                    featuredUntil: $stageEnd->toDateString(),
                 );
             }
         }

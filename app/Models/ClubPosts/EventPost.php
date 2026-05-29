@@ -44,6 +44,7 @@ class EventPost extends Model
         'start_time' => 'datetime',
         'end_time' => 'datetime',
         'featured' => 'boolean',
+        'featured_until' => 'date',
     ];
 
     protected $fillable = [
@@ -62,6 +63,7 @@ class EventPost extends Model
         'max_participants',
         'notes',
         'featured',
+        'featured_until',
     ];
 
     // Méthodes utilitaires
@@ -201,7 +203,11 @@ class EventPost extends Model
 
     public function scopeFeatured(Builder $query): Builder
     {
-        return $query->where('featured', true);
+        return $query->where('featured', true)
+            ->where(fn ($q) => $q
+                ->whereNull('featured_until')
+                ->orWhereDate('featured_until', '>=', today())
+            );
     }
 
     public function scopePast(Builder $query): Builder

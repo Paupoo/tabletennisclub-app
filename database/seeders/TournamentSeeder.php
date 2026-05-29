@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Enums\ClubEventTypeEnum;
+use App\Enums\EventPostStatusEnum;
 use App\Enums\Ranking;
 use App\Enums\TournamentObjectiveEnum;
 use App\Enums\TournamentStatusEnum;
@@ -11,6 +13,7 @@ use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Tournament\TournamentMatch;
 use App\Models\ClubEvents\Tournament\TournamentPair;
+use App\Services\EventPostService;
 use App\Services\TournamentFinalPhaseService;
 use App\Services\TournamentMatchService;
 use App\Services\TournamentPoolService;
@@ -28,6 +31,7 @@ class TournamentSeeder extends Seeder
         private readonly TournamentMatchService $matchService,
         private readonly TournamentFinalPhaseService $finalPhaseService,
         private readonly TournamentService $tournamentService,
+        private readonly EventPostService $eventPostService,
     ) {}
 
     public function run(): void
@@ -242,6 +246,25 @@ class TournamentSeeder extends Seeder
             ]);
         }
         $this->tournamentService->countRegisteredUsers($t);
+
+        $this->eventPostService->upsert(
+            model: $t,
+            type: ClubEventTypeEnum::TOURNAMENT,
+            title: 'Tournoi du club — inscriptions ouvertes',
+            description: 'Rejoignez notre tournoi interne ! Tous niveaux bienvenus. Inscriptions en ligne, places limitées.',
+            location: 'Centre Sportif Jean Demeester, Ottignies',
+            featured: true,
+            status: EventPostStatusEnum::PUBLISHED,
+            syncData: [
+                'event_date' => $t->start_date->toDateString(),
+                'start_time' => $t->start_date->format('H:i:s'),
+                'end_time' => $t->end_date?->format('H:i:s'),
+                'price' => '10 €',
+                'max_participants' => $t->max_users,
+                'icon' => '🏆',
+            ],
+            featuredUntil: $t->start_date->toDateString(),
+        );
     }
 
     private function seedSetupDoubles(Collection $players): void

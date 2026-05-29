@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Models\ClubEvents\Interclub\Club;
 use App\Models\ClubEvents\Interclub\Season;
 use App\Models\ClubEvents\Training\TrainingPack;
+use App\Models\ClubPosts\EventPost;
 use App\Models\ClubPosts\NewsPost;
 use App\Support\Captcha;
 use Carbon\Carbon;
@@ -111,6 +112,11 @@ class HomeController extends Controller
 
         $club = Club::ourClub()->first();
 
-        return view('public.home', compact('sponsors', 'articles', 'schedules', 'club'));
+        $featuredEvents = EventPost::published()
+            ->featured()
+            ->orderBy('event_date')
+            ->get();
+
+        return view('public.home', compact('sponsors', 'articles', 'schedules', 'club', 'featuredEvents'));
     }
 }

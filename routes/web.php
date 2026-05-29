@@ -31,11 +31,7 @@ use App\Http\Controllers\ClubPosts\PublicEventPostController;
 use App\Http\Controllers\ClubPosts\PublicNewsPostController;
 use App\Http\Controllers\HomeController;
 use App\Http\Middleware\ProtectAgainstSpam;
-use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Interclub\Team;
-use App\Models\ClubEvents\Training\Training;
-use App\Support\Breadcrumb;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -210,19 +206,19 @@ Route::prefix('admin/club-events/interclubs/')
  */
 Route::get('/admin/dashboard', function () {
     return view('clubAdmin.dashboard_v4_personas', [
-        'members_total'        => 42,
-        'members_active'       => 38,
-        'members_inactive'     => 4,
-        'members_competitors'  => 24,
-        'members_unpaid'       => 3,
-        'rooms_count'          => 3,
-        'teams_count'          => 4,
-        'trainings_count'      => 6,
-        'interclubs_pending'   => 2,
-        'payments_pending'     => 18,
+        'members_total' => 42,
+        'members_active' => 38,
+        'members_inactive' => 4,
+        'members_competitors' => 24,
+        'members_unpaid' => 3,
+        'rooms_count' => 3,
+        'teams_count' => 4,
+        'trainings_count' => 6,
+        'interclubs_pending' => 2,
+        'payments_pending' => 18,
         'affiliations_pending' => 5,
-        'events_count'         => 1,
-        'recent_activity'      => [
+        'events_count' => 1,
+        'recent_activity' => [
             ['type' => 'member',    'label' => 'Jean Dupont a rejoint le club',        'time' => '1h'],
             ['type' => 'contact',   'label' => 'Nouveau message de Pierre V.',         'time' => '3h'],
             ['type' => 'match',     'label' => 'Match BBW114 vs BBW210 planifié',      'time' => '5h'],
@@ -377,6 +373,7 @@ Route::prefix('admin/website')->middleware(['auth', 'verified', 'committee'])->g
     Route::livewire('/articles/{newsPost}/edit', 'pages::website.articles.edit')->name('admin.website.articles.edit');
     Route::livewire('/contacts', 'pages::website.contacts.index')->name('admin.website.contacts.index');
     Route::livewire('/spams', 'pages::website.spams.index')->name('admin.website.spams.index');
+    Route::livewire('/events', 'pages::website.events.index')->name('admin.website.events.index');
 });
 
 Route::middleware(['auth', 'verified'])->group(function (): void {

@@ -15,6 +15,12 @@
         <x-public.news-section :articles="$articles ?? []" />
     </section>
 
+    @if (($featuredEvents ?? collect())->isNotEmpty())
+        <section id="events">
+            <x-public.featured-events-section :events="$featuredEvents" />
+        </section>
+    @endif
+
     <section id="schedules">
         <x-public.schedule-section :schedules="$schedules ?? []"/>
     </section>

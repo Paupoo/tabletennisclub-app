@@ -39,6 +39,8 @@ trait HasEventPostForm
 
     public bool $eventFeatured = false;
 
+    public string $eventFeaturedUntil = '';
+
     public string $eventLocation = '';
 
     public ?int $eventPostId = null;
@@ -60,6 +62,7 @@ trait HasEventPostForm
             $this->eventDescription = $ep->description ?? '';
             $this->eventLocation = $ep->location ?? '';
             $this->eventFeatured = (bool) $ep->featured;
+            $this->eventFeaturedUntil = $ep->featured_until?->format('Y-m-d') ?? '';
             $this->eventStatus = $ep->status->value;
         } else {
             $this->eventPostId = null;
@@ -67,6 +70,7 @@ trait HasEventPostForm
             $this->eventDescription = '';
             $this->eventLocation = '';
             $this->eventFeatured = false;
+            $this->eventFeaturedUntil = '';
             $this->eventStatus = 'DRAFT';
         }
     }
@@ -116,6 +120,7 @@ trait HasEventPostForm
                 'icon' => $resolved['icon'],
             ],
             existingPostId: $this->eventPostId,
+            featuredUntil: $this->eventFeaturedUntil ?: null,
         );
 
         $this->eventPostId = $ep->id;

@@ -2307,5 +2307,30 @@
     "Are you sure you want to delete this room? This action is irreversible.": "Êtes-vous sûr de vouloir supprimer cette salle ? Cette action est irréversible.",
     "Players will no longer be able to register to this training pack.": "Les joueurs ne pourront plus s'inscrire à ce pack d'entraînement.",
     "Composition of the core": "Composition du noyau",
-    "My matches": "Mes matchs"
+    "My matches": "Mes matchs",
+
+    "Event updated.": "Événement mis à jour.",
+    "Event published.": "Événement publié.",
+    "Event archived.": "Événement archivé.",
+    "Event deleted.": "Événement supprimé.",
+    "Only draft or archived events can be deleted.": "Seuls les événements en brouillon ou archivés peuvent être supprimés.",
+
+    "Featured on website": "Mis en avant sur le site",
+    "Featured until": "Mis en avant jusqu'au",
+    "Leave empty to feature indefinitely": "Laisser vide pour mettre en avant indéfiniment",
+    "Expired": "Expiré",
+    "until": "jusqu'au",
+
+    "Upcoming Events": "Événements à venir",
+    "Events not to be missed": "Événements à ne pas manquer",
+    "Mark your calendars — these club events are worth the trip": "Notez la date — ces événements valent le déplacement",
+    "Max :n participants": "Max :n participants",
+    "Don't miss these events at the club": "Ne manquez pas ces événements au club",
+
+    "Published on site": "Publié sur le site",
+    "Not published": "Non publié",
+    "Available spots": "Places disponibles",
+    "Linked to": "Lié à",
+    "Edit event": "Modifier l'événement",
+    "Delete this event?": "Supprimer cet événement ?"
 }

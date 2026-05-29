@@ -51,10 +51,22 @@
                 wire:model="eventLocation"
             />
 
-            <x-checkbox
-                :label="__('Feature this event on the website homepage')"
-                wire:model="eventFeatured"
-            />
+            <div x-data="{ featured: $wire.entangle('eventFeatured') }">
+                <x-checkbox
+                    :label="__('Feature this event on the website homepage')"
+                    wire:model.live="eventFeatured"
+                    x-model="featured"
+                />
+                <div x-show="featured" x-transition x-cloak class="mt-3">
+                    <x-input
+                        :label="__('Featured until')"
+                        :hint="__('Leave empty to feature indefinitely')"
+                        min="{{ now()->format('Y-m-d') }}"
+                        type="date"
+                        wire:model="eventFeaturedUntil"
+                    />
+                </div>
+            </div>
 
         </div>
     </x-card>

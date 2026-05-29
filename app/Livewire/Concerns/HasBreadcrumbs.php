@@ -23,7 +23,7 @@ use App\Support\Breadcrumb;
  */
 trait HasBreadcrumbs
 {
-    protected function getBreadcrumbs(): array
+    public function getBreadcrumbs(): array
     {
         return $this->breadcrumbChain()->toArray();
     }

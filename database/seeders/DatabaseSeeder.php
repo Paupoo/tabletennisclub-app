@@ -6,6 +6,7 @@ namespace Database\Seeders;
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
+use App\Enums\CommitteeRolesEnum;
 use App\Enums\Gender;
 use App\Enums\LeagueCategory;
 use App\Enums\LeagueLevel;
@@ -133,6 +134,8 @@ class DatabaseSeeder extends Seeder
             'city_name' => 'Ottignies',
             'ranking' => Ranking::E4->name,
             'licence' => '114399',
+            'is_committee_member' => true,
+            'committee_role' => CommitteeRolesEnum::ADMINISTRATOR,
         ])->club()->associate(Club::firstWhere('licence', config('app.club_licence')));
         $admin->save();
 
@@ -193,6 +196,7 @@ class DatabaseSeeder extends Seeder
             'city_name' => fake()->city(),
             'ranking' => Ranking::D6->name,
             'licence' => '154856',
+            'committee_role' => CommitteeRolesEnum::ADMINISTRATOR,
         ])->club()->associate(Club::firstWhere('licence', config('app.club_licence')))->save();
 
         User::make([
@@ -213,6 +217,49 @@ class DatabaseSeeder extends Seeder
             'city_name' => fake()->city(),
             'ranking' => Ranking::D4->name,
             'licence' => '852364',
+            'committee_role' => CommitteeRolesEnum::SECRETARY,
+        ])->club()->associate(Club::first())->save();
+
+        User::make([
+            'is_active' => true,
+            'is_admin' => false,
+            'is_committee_member' => true,
+            'is_competitor' => true,
+            'email' => 'olivier.pauwels@test.com',
+            'email_verified_at' => now(),
+            'password' => $password,
+            'first_name' => 'Olivier',
+            'last_name' => 'Pauwels',
+            'gender' => Gender::MEN->name,
+            'phone_number' => '047' . fake()->randomNumber(7, true),
+            'birthdate' => fake()->dateTimeBetween('-59 years', '-25 years'),
+            'street' => fake()->streetAddress(),
+            'city_code' => fake()->postcode(),
+            'city_name' => fake()->city(),
+            'ranking' => Ranking::B6->name,
+            'licence' => '852398',
+            'committee_role' => CommitteeRolesEnum::PRESIDENT,
+        ])->club()->associate(Club::first())->save();
+
+        User::make([
+            'is_active' => true,
+            'is_admin' => false,
+            'is_committee_member' => true,
+            'is_competitor' => true,
+            'email' => 'gilles.herpigny@test.com',
+            'email_verified_at' => now(),
+            'password' => $password,
+            'first_name' => 'Gilles',
+            'last_name' => 'Herpigny',
+            'gender' => Gender::MEN->name,
+            'phone_number' => '047' . fake()->randomNumber(7, true),
+            'birthdate' => fake()->dateTimeBetween('-59 years', '-25 years'),
+            'street' => fake()->streetAddress(),
+            'city_code' => fake()->postcode(),
+            'city_name' => fake()->city(),
+            'ranking' => Ranking::D2->name,
+            'licence' => '768398',
+            'committee_role' => CommitteeRolesEnum::TREASURER,
         ])->club()->associate(Club::first())->save();
 
         User::factory()->isNotCompetitor()->count(5)->create();

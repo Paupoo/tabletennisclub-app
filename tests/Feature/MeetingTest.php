@@ -162,7 +162,9 @@ describe('Meeting form — fixed date mode', function () {
             ->set('location', 'Salle du club')
             ->set('datePollMode', false)
             ->set('scheduledAt', now()->addWeek()->format('Y-m-d\TH:i'))
-            ->set('step', '4')
+            ->set('endsAt', now()->addWeek()->addHour()->format('Y-m-d\TH:i'))
+            ->set('agendaItems', [['title' => 'Point 1', 'description' => '']])
+            ->set('step', '3')
             ->call('save');
 
         $meeting = Meeting::where('title', 'Réunion test')->first();
@@ -183,7 +185,9 @@ describe('Meeting form — fixed date mode', function () {
             ->set('location', 'Salle du club')
             ->set('datePollMode', false)
             ->set('scheduledAt', now()->addWeek()->format('Y-m-d\TH:i'))
-            ->set('step', '4')
+            ->set('endsAt', now()->addWeek()->addHour()->format('Y-m-d\TH:i'))
+            ->set('agendaItems', [['title' => 'Point 1', 'description' => '']])
+            ->set('step', '3')
             ->call('save');
 
         Bus::assertDispatched(SendMeetingInvitationsJob::class);
@@ -198,33 +202,49 @@ describe('Meeting form — fixed date mode', function () {
         Livewire::actingAs($admin)
             ->test('pages::club-events.meetings.form', ['meeting' => $meeting])
             ->set('title', 'Titre modifié')
-            ->set('step', '4')
+            ->set('step', '3')
             ->call('save');
 
         Bus::assertNotDispatched(SendMeetingInvitationsJob::class);
         expect($meeting->fresh()->title)->toBe('Titre modifié');
     });
 
-    test('nextStep skips poll step in fixed date mode', function () {
+    test('nextStep advances to review step', function () {
         $admin = meetingAdmin();
 
         Livewire::actingAs($admin)
             ->test('pages::club-events.meetings.form')
+            ->set('title', 'Test meeting')
+            ->set('type', MeetingTypeEnum::COMMITTEE->value)
+            ->set('format', MeetingFormatEnum::PHYSICAL->value)
+            ->set('location', 'Salle du club')
             ->set('datePollMode', false)
-            ->set('step', '2')
+            ->set('scheduledAt', now()->addWeek()->format('Y-m-d\TH:i'))
+            ->set('endsAt', now()->addWeek()->addHour()->format('Y-m-d\TH:i'))
+            ->set('step', '1')
             ->call('nextStep')
-            ->assertSet('step', '4'); // jumps from 2 to 4
+            ->assertSet('step', '2')
+            ->set('agendaItems', [['title' => 'Point 1', 'description' => '']])
+            ->call('nextStep')
+            ->assertSet('step', '3');
     });
 
-    test('prevStep skips poll step in fixed date mode', function () {
+    test('prevStep goes back from review step', function () {
         $admin = meetingAdmin();
 
         Livewire::actingAs($admin)
             ->test('pages::club-events.meetings.form')
+            ->set('title', 'Test meeting')
+            ->set('type', MeetingTypeEnum::COMMITTEE->value)
+            ->set('format', MeetingFormatEnum::PHYSICAL->value)
+            ->set('location', 'Salle du club')
             ->set('datePollMode', false)
-            ->set('step', '4')
+            ->set('scheduledAt', now()->addWeek()->format('Y-m-d\TH:i'))
+            ->set('endsAt', now()->addWeek()->addHour()->format('Y-m-d\TH:i'))
+            ->set('agendaItems', [['title' => 'Point 1', 'description' => '']])
+            ->set('step', '3')
             ->call('prevStep')
-            ->assertSet('step', '2'); // jumps from 4 to 2
+            ->assertSet('step', '2');
     });
 
     test('switching to poll mode clears scheduled date', function () {
@@ -254,11 +274,12 @@ describe('Meeting form — poll mode', function () {
             ->set('format', MeetingFormatEnum::VIRTUAL->value)
             ->set('meetingLink', 'https://meet.example.com')
             ->set('datePollMode', true)
+            ->set('agendaItems', [['title' => 'Point 1', 'description' => '']])
             ->set('dateProposals', [
                 ['proposed_at' => now()->addWeeks(1)->format('Y-m-d\TH:i')],
                 ['proposed_at' => now()->addWeeks(2)->format('Y-m-d\TH:i')],
             ])
-            ->set('step', '4')
+            ->set('step', '3')
             ->call('save');
 
         Notification::assertSentTo($member, MeetingDatePollNotification::class);
@@ -278,22 +299,30 @@ describe('Meeting form — poll mode', function () {
             ->set('format', MeetingFormatEnum::VIRTUAL->value)
             ->set('meetingLink', 'https://meet.example.com')
             ->set('datePollMode', true)
+            ->set('agendaItems', [['title' => 'Point 1', 'description' => '']])
             ->set('dateProposals', [['proposed_at' => now()->addWeek()->format('Y-m-d\TH:i')]])
-            ->set('step', '4')
+            ->set('step', '3')
             ->call('save');
 
         Bus::assertNotDispatched(SendMeetingInvitationsJob::class);
     });
 
-    test('nextStep goes to poll step 3 in poll mode', function () {
+    test('nextStep goes to review step in poll mode', function () {
         $admin = meetingAdmin();
 
         Livewire::actingAs($admin)
             ->test('pages::club-events.meetings.form')
+            ->set('title', 'Test meeting')
+            ->set('type', MeetingTypeEnum::COMMITTEE->value)
+            ->set('format', MeetingFormatEnum::VIRTUAL->value)
+            ->set('meetingLink', 'https://meet.example.com')
             ->set('datePollMode', true)
-            ->set('step', '2')
+            ->set('step', '1')
             ->call('nextStep')
-            ->assertSet('step', '3'); // goes to poll step
+            ->assertSet('step', '2')
+            ->set('agendaItems', [['title' => 'Point 1', 'description' => '']])
+            ->call('nextStep')
+            ->assertSet('step', '3');
     });
 
     test('switching to fixed date mode clears date proposals', function () {
@@ -320,11 +349,12 @@ describe('Meeting form — poll mode', function () {
             ->set('format', MeetingFormatEnum::VIRTUAL->value)
             ->set('meetingLink', 'https://meet.example.com')
             ->set('datePollMode', true)
+            ->set('agendaItems', [['title' => 'Point 1', 'description' => '']])
             ->set('dateProposals', [
                 ['proposed_at' => now()->addWeeks(1)->format('Y-m-d\TH:i')],
                 ['proposed_at' => now()->addWeeks(2)->format('Y-m-d\TH:i')],
             ])
-            ->set('step', '4')
+            ->set('step', '3')
             ->call('save');
 
         $meeting = Meeting::where('title', 'Réunion avec proposals')->first();
@@ -338,7 +368,7 @@ describe('Meeting form — misc', function () {
     test('meeting title is required', function () {
         Livewire::actingAs(meetingAdmin())
             ->test('pages::club-events.meetings.form')
-            ->set('step', '4')
+            ->set('step', '3')
             ->call('save')
             ->assertHasErrors(['title' => 'required']);
     });
@@ -356,11 +386,12 @@ describe('Meeting form — misc', function () {
             ->set('meetingLink', 'https://meet.example.com/test')
             ->set('datePollMode', false)
             ->set('scheduledAt', now()->addWeek()->format('Y-m-d\TH:i'))
+            ->set('endsAt', now()->addWeek()->addHour()->format('Y-m-d\TH:i'))
             ->set('agendaItems', [
                 ['title' => 'Point 1', 'description' => ''],
                 ['title' => 'Point 2', 'description' => 'Détails'],
             ])
-            ->set('step', '4')
+            ->set('step', '3')
             ->call('save');
 
         $meeting = Meeting::where('title', 'Réunion avec agenda')->first();

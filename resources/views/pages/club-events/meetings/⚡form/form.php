@@ -300,7 +300,16 @@ new class extends Component
     // ── Save ──────────────────────────────────────────────────────────
     public function save(): void
     {
-        // Final validation before save
+        // Validate core fields first before any action
+        $this->validate([
+            'title'       => 'required|string|max:255',
+            'type'        => 'required|string',
+            'format'      => 'required|string',
+            'location'    => $this->format === 'physical' ? 'required|string|max:500' : 'nullable|string|max:500',
+            'meetingLink' => $this->format === 'virtual' ? 'required|url|max:500' : 'nullable|url|max:500',
+        ]);
+
+        // Validate date-related fields based on mode
         if ($this->datePollMode) {
             $hasValidProposal = collect($this->dateProposals)->some(fn ($p) => filled($p['proposed_at']));
             if (! $hasValidProposal) {
@@ -310,9 +319,33 @@ new class extends Component
             $this->validate([
                 'dateProposals.*.proposed_at' => 'required_with:dateProposals|date',
             ]);
+        } else {
+            $this->validate([
+                'scheduledAt'  => 'required|date',
+                'endsAt'       => 'required|date|after_or_equal:scheduledAt',
+            ]);
         }
 
         $isNew = ($this->meetingId === null);
+
+        // Validate agenda items only on creation
+        if ($isNew) {
+            $hasValidItem = false;
+            foreach ($this->agendaItems as $item) {
+                if (filled($item['title'])) {
+                    $hasValidItem = true;
+                    break;
+                }
+            }
+            if (! $hasValidItem) {
+                $this->addError('agendaItems', __('At least one agenda item with a title is required.'));
+                return;
+            }
+            $this->validate([
+                'agendaItems.*.title'       => 'required|string|max:255',
+                'agendaItems.*.description' => 'nullable|string',
+            ]);
+        }
 
         $data = [
             'title'            => $this->title,
@@ -376,8 +409,8 @@ new class extends Component
             }
         }
 
-        // Send invitations if date is confirmed (creation or update)
-        if (! $this->datePollMode && filled($this->scheduledAt) && $meeting->status === MeetingStatusEnum::CONFIRMED) {
+        // Send invitations only on creation if date is confirmed
+        if ($isNew && ! $this->datePollMode && filled($this->scheduledAt) && $meeting->status === MeetingStatusEnum::CONFIRMED) {
             dispatch(new SendMeetingInvitationsJob($meeting->id));
         }
 

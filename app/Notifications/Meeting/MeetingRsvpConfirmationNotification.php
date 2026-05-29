@@ -27,9 +27,11 @@ class MeetingRsvpConfirmationNotification extends Notification implements Should
     public function toArray(object $notifiable): array
     {
         return [
-            'meeting_id' => $this->meeting->id,
-            'type' => 'meeting_rsvp_confirmation',
-            'title' => $this->meeting->title,
+            'title' => __('Présence confirmée: :title', ['title' => $this->meeting->title]),
+            'body' => __('Votre présence à la réunion du :date est confirmée', ['date' => $this->meeting->scheduled_at?->translatedFormat('d M Y') ?? __('TBD')]),
+            'url' => route('admin.meetings.show', $this->meeting),
+            'category' => 'meeting',
+            'icon' => 'o-calendar-days',
         ];
     }
 
@@ -80,6 +82,6 @@ class MeetingRsvpConfirmationNotification extends Notification implements Should
     /** @return array<int, string> */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 }

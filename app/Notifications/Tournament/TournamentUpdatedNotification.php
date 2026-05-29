@@ -24,8 +24,11 @@ class TournamentUpdatedNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'tournament_id' => $this->tournament->id,
-            'changes' => $this->changes,
+            'title' => __('Tournoi mis à jour : :name', ['name' => $this->tournament->name]),
+            'body' => __('Un tournoi a été mis à jour'),
+            'url' => route('admin.tournaments.index'),
+            'category' => 'tournament',
+            'icon' => 'o-trophy',
         ];
     }
 
@@ -66,6 +69,6 @@ class TournamentUpdatedNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 }

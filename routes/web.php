@@ -286,6 +286,13 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+/**
+ * Notifications
+ */
+Route::middleware(['auth', 'verified'])->group(function (): void {
+    Route::livewire('/notifications', 'admin.notifications.index')->name('notifications.index');
+});
+
 Route::get('/invitation/accept/{user}', [InvitationController::class, 'showForm'])
     ->name('invitation.accept')
     ->middleware('signed');

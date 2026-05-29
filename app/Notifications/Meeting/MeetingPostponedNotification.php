@@ -25,9 +25,11 @@ class MeetingPostponedNotification extends Notification implements ShouldQueue
     public function toArray(object $notifiable): array
     {
         return [
-            'meeting_id' => $this->meeting->id,
-            'type' => 'meeting_postponed',
-            'title' => $this->meeting->title,
+            'title' => __('Réunion reportée: :title', ['title' => $this->meeting->title]),
+            'body' => __('La réunion a été reportée au :date', ['date' => $this->meeting->postponed_to?->translatedFormat('d M Y') ?? __('TBD')]),
+            'url' => route('admin.meetings.show', $this->meeting),
+            'category' => 'meeting',
+            'icon' => 'o-calendar-days',
         ];
     }
 

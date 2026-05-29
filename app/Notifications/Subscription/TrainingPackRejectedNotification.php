@@ -21,6 +21,18 @@ class TrainingPackRejectedNotification extends Notification
         public readonly string $template = '',
     ) {}
 
+    /** @return array<string, mixed> */
+    public function toArray(object $notifiable): array
+    {
+        return [
+            'title' => __('Pack d\'entraînement rejeté'),
+            'body' => __('Votre demande d\'inscription a été refusée'),
+            'url' => '#',
+            'category' => 'subscription',
+            'icon' => 'o-identification',
+        ];
+    }
+
     public function toMail(object $notifiable): MailMessage
     {
         $season = $this->subscription->season;
@@ -53,6 +65,6 @@ class TrainingPackRejectedNotification extends Notification
     /** @return array<int, string> */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 }

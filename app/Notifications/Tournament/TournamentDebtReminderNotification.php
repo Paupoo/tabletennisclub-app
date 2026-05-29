@@ -22,7 +22,13 @@ class TournamentDebtReminderNotification extends Notification
     /** @return array<string, mixed> */
     public function toArray(object $notifiable): array
     {
-        return [];
+        return [
+            'title' => __('Rappel de dette : :name', ['name' => $this->tournament->name]),
+            'body' => __('Consultez les détails du tournoi'),
+            'url' => route('admin.tournaments.index'),
+            'category' => 'tournament',
+            'icon' => 'o-trophy',
+        ];
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -46,6 +52,6 @@ class TournamentDebtReminderNotification extends Notification
     /** @return array<int, string> */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 }

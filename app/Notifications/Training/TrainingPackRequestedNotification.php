@@ -19,6 +19,18 @@ class TrainingPackRequestedNotification extends Notification
         public readonly Subscription $subscription,
     ) {}
 
+    /** @return array<string, mixed> */
+    public function toArray(object $notifiable): array
+    {
+        return [
+            'title' => __('Demande de pack d\'entraînement'),
+            'body' => __('Votre demande d\'inscription a bien été enregistrée'),
+            'url' => route('admin.trainings.index'),
+            'category' => 'training',
+            'icon' => 'o-academic-cap',
+        ];
+    }
+
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
@@ -35,6 +47,6 @@ class TrainingPackRequestedNotification extends Notification
     /** @return array<int, string> */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 }

@@ -21,9 +21,11 @@ class MeetingMinutesNotification extends Notification implements ShouldQueue
     public function toArray(object $notifiable): array
     {
         return [
-            'meeting_id' => $this->meeting->id,
-            'type' => 'meeting_minutes',
-            'title' => $this->meeting->title,
+            'title' => __('Compte-rendu: :title', ['title' => $this->meeting->title]),
+            'body' => __('Les minutes de la réunion du :date sont disponibles', ['date' => $this->meeting->scheduled_at?->translatedFormat('d M Y') ?? __('TBD')]),
+            'url' => route('admin.meetings.show', $this->meeting),
+            'category' => 'meeting',
+            'icon' => 'o-calendar-days',
         ];
     }
 

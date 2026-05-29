@@ -31,7 +31,11 @@ class NewTournamentPublishedNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            //
+            'title' => __('Nouveau tournoi : :name', ['name' => $this->tournament->name]),
+            'body' => __('Un nouveau tournoi a été publié'),
+            'url' => route('admin.tournaments.index'),
+            'category' => 'tournament',
+            'icon' => 'o-trophy',
         ];
     }
 
@@ -60,6 +64,6 @@ class NewTournamentPublishedNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 }

@@ -31,7 +31,11 @@ class UserRegisteredToTournament extends Notification implements ShouldQueue
     public function toArray(object $notifiable): array
     {
         return [
-            //
+            'title' => __('Inscription au tournoi : :name', ['name' => $this->tournament->name]),
+            'body' => __('Vous êtes inscrit au tournoi'),
+            'url' => route('admin.tournaments.index'),
+            'category' => 'tournament',
+            'icon' => 'o-trophy',
         ];
     }
 
@@ -54,6 +58,6 @@ class UserRegisteredToTournament extends Notification implements ShouldQueue
      */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 }

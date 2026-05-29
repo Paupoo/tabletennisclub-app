@@ -19,6 +19,18 @@ class SubscriptionRejectedNotification extends Notification
         public readonly string $template = '',
     ) {}
 
+    /** @return array<string, mixed> */
+    public function toArray(object $notifiable): array
+    {
+        return [
+            'title' => __('Affiliation refusée'),
+            'body' => __('Votre demande d\'affiliation a été refusée'),
+            'url' => '#',
+            'category' => 'subscription',
+            'icon' => 'o-identification',
+        ];
+    }
+
     public function toMail(object $notifiable): MailMessage
     {
         $season = $this->subscription->season;
@@ -48,6 +60,6 @@ class SubscriptionRejectedNotification extends Notification
     /** @return array<int, string> */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 }

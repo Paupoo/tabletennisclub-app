@@ -1,3 +1,5 @@
+@php $unreadNotificationsCount = auth()->user()->unreadNotifications()->count(); @endphp
+
 <x-menu activate-by-route class="mt-10">
     <x-menu-sub icon="o-user" title="{{ $user->first_name }}">
         {{-- L'avatar et l'email s'affichent mieux ici dans un menu-item spécial ou le titre du sub-menu --}}
@@ -20,6 +22,16 @@
         <x-menu-separator />
         <livewire:actions.logout />
     </x-menu-sub>
+
+    <x-menu-separator />
+
+    <x-menu-item
+        icon="o-bell"
+        link="{{ route('notifications.index') }}"
+        :title="__('Notifications')"
+        :badge="$unreadNotificationsCount > 0 ? (string) $unreadNotificationsCount : null"
+        badge-classes="badge-error"
+    />
 
     <x-menu-separator />
     @if(Auth()->user()->is_admin || Auth()->user()->is_committee_member )

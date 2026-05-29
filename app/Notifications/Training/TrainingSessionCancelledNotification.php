@@ -24,11 +24,11 @@ class TrainingSessionCancelledNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'training_id' => $this->training->id,
-            'pack_name' => $this->training->trainingPack?->name,
-            'cancelled_at' => $this->training->cancelled_at,
-            'cancellation_type' => $this->cancellationType->value,
-            'note' => $this->note,
+            'title' => __("Session d'entraînement annulée"),
+            'body' => __('Consultez les détails de l\'entraînement'),
+            'url' => route('admin.trainings.index'),
+            'category' => 'training',
+            'icon' => 'o-academic-cap',
         ];
     }
 

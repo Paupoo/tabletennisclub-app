@@ -22,8 +22,11 @@ class TrainingWaitlistJoinedNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'training_pack_id' => $this->pack->id,
-            'waitlist_position' => $this->position,
+            'title' => __("Rejoint la liste d'attente"),
+            'body' => __('Consultez les détails de l\'entraînement'),
+            'url' => route('admin.trainings.index'),
+            'category' => 'training',
+            'icon' => 'o-academic-cap',
         ];
     }
 
@@ -43,6 +46,6 @@ class TrainingWaitlistJoinedNotification extends Notification
     /** @return array<int, string> */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 }

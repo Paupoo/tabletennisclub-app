@@ -18,6 +18,18 @@ class SubscriptionCreatedNotification extends Notification
         public readonly Subscription $subscription,
     ) {}
 
+    /** @return array<string, mixed> */
+    public function toArray(object $notifiable): array
+    {
+        return [
+            'title' => __('Affiliation enregistrée'),
+            'body' => __('Votre demande d\'affiliation a bien été reçue'),
+            'url' => '#',
+            'category' => 'subscription',
+            'icon' => 'o-identification',
+        ];
+    }
+
     public function toMail(object $notifiable): MailMessage
     {
         $season = $this->subscription->season;
@@ -51,7 +63,7 @@ class SubscriptionCreatedNotification extends Notification
     /** @return array<int, string> */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 
     private function computeEstimate(Collection $trainingPacks): float

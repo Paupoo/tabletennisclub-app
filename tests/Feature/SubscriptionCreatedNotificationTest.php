@@ -37,7 +37,7 @@ describe('SubscriptionCreatedNotification', function () {
 
         $notification = new SubscriptionCreatedNotification($subscription);
 
-        expect($notification->via($user))->toBe(['mail']);
+        expect($notification->via($user))->toBe(['mail', 'database']);
     });
 
     it('includes season name in the mail subject', function () {

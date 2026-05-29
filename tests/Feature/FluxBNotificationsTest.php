@@ -17,14 +17,14 @@ use Illuminate\Support\Facades\Notification;
 
 describe('TrainingPackRequestedNotification', function () {
 
-    test('notification is sent via mail channel only', function () {
+    test('notification is sent via mail and database channels', function () {
         $subscription = Subscription::factory()->create(['status' => 'paid']);
         $pack = TrainingPack::factory()->create(['name' => 'Pack Lundi']);
         $subscription->load('season');
 
         $notification = new TrainingPackRequestedNotification($pack, $subscription);
 
-        expect($notification->via($subscription->user))->toBe(['mail']);
+        expect($notification->via($subscription->user))->toBe(['mail', 'database']);
     })->group('notifications', 'flux-b');
 
     test('mail subject contains the pack name', function () {
@@ -108,14 +108,14 @@ describe('TrainingPackRequestedNotification', function () {
 
 describe('TrainingPackCancelledNotification', function () {
 
-    test('notification is sent via mail channel only', function () {
+    test('notification is sent via mail and database channels', function () {
         $subscription = Subscription::factory()->create(['status' => 'paid']);
         $pack = TrainingPack::factory()->create(['name' => 'Pack Lundi']);
         $subscription->load('season');
 
         $notification = new TrainingPackCancelledNotification($pack, $subscription);
 
-        expect($notification->via($subscription->user))->toBe(['mail']);
+        expect($notification->via($subscription->user))->toBe(['mail', 'database']);
     })->group('notifications', 'flux-b');
 
     test('mail subject contains the pack name', function () {

@@ -21,7 +21,11 @@ class InterclubAvailabilityRequestNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'interclub_id' => $this->interclub->id,
+            'title' => __('Demande de disponibilité'),
+            'body' => __('Consultez les détails du match'),
+            'url' => route('admin.interclubs.my-matches'),
+            'category' => 'interclub',
+            'icon' => 'o-user-group',
         ];
     }
 
@@ -58,6 +62,6 @@ class InterclubAvailabilityRequestNotification extends Notification
     /** @return array<int, string> */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 }

@@ -23,8 +23,11 @@ class TrainingWaitlistSpotOfferedNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'training_pack_id' => $this->pack->id,
-            'confirmation_deadline' => $this->deadline->toISOString(),
+            'title' => __('Place disponible en entraînement'),
+            'body' => __('Consultez les détails de l\'entraînement'),
+            'url' => route('admin.trainings.index'),
+            'category' => 'training',
+            'icon' => 'o-academic-cap',
         ];
     }
 
@@ -44,6 +47,6 @@ class TrainingWaitlistSpotOfferedNotification extends Notification
     /** @return array<int, string> */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 }

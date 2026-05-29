@@ -26,7 +26,11 @@ class InterclubLineupBroadcastNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'interclub_id' => $this->interclub->id,
+            'title' => __('Équipe publiée'),
+            'body' => __('Consultez les détails du match'),
+            'url' => route('admin.interclubs.my-matches'),
+            'category' => 'interclub',
+            'icon' => 'o-user-group',
         ];
     }
 
@@ -63,6 +67,6 @@ class InterclubLineupBroadcastNotification extends Notification
     /** @return array<int, string> */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 }

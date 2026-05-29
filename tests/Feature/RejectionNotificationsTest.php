@@ -22,7 +22,7 @@ describe('SubscriptionRejectedNotification', function () {
 
         $notification = new SubscriptionRejectedNotification($subscription);
 
-        expect($notification->via($user))->toBe(['mail']);
+        expect($notification->via($user))->toBe(['mail', 'database']);
     })->group('notifications', 'rejection');
 
     test('mail subject contains the season name', function () {
@@ -139,7 +139,7 @@ describe('TrainingPackRejectedNotification', function () {
 
         $notification = new TrainingPackRejectedNotification($subscription, $pack);
 
-        expect($notification->via($user))->toBe(['mail']);
+        expect($notification->via($user))->toBe(['mail', 'database']);
     })->group('notifications', 'rejection');
 
     test('mail subject contains the season name', function () {

@@ -20,7 +20,13 @@ class WeeklyRefundReminderNotification extends Notification
     /** @return array<string, mixed> */
     public function toArray(object $notifiable): array
     {
-        return [];
+        return [
+            'title' => __('Rappel de remboursement'),
+            'body' => __('Consultez vos paiements en attente'),
+            'url' => '#',
+            'category' => 'payment',
+            'icon' => 'o-credit-card',
+        ];
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -62,6 +68,6 @@ class WeeklyRefundReminderNotification extends Notification
     /** @return array<int, string> */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 }

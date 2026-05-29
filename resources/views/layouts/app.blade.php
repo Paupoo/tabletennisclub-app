@@ -45,6 +45,9 @@
             <x-app-brand />
         </x-slot:brand>
         <x-slot:actions>
+            @auth
+                <livewire:admin.notification-bell />
+            @endauth
             <label class="me-3 lg:hidden" for="main-drawer">
                 <x-icon class="cursor-pointer" name="o-bars-3" />
             </label>

@@ -30,7 +30,11 @@ class UserUnregisteredFromTournament extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            //
+            'title' => __('Inscription annulée : :name', ['name' => $this->tournament->name]),
+            'body' => __('Votre inscription a été annulée'),
+            'url' => route('admin.tournaments.index'),
+            'category' => 'tournament',
+            'icon' => 'o-trophy',
         ];
     }
 
@@ -53,6 +57,6 @@ class UserUnregisteredFromTournament extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 }

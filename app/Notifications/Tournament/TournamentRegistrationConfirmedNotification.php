@@ -23,8 +23,11 @@ class TournamentRegistrationConfirmedNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'tournament_id' => $this->tournament->id,
-            'waitlisted' => $this->isWaitlisted,
+            'title' => __($this->isWaitlisted ? "Liste d'attente confirmée : :name" : 'Inscription confirmée : :name', ['name' => $this->tournament->name]),
+            'body' => __($this->isWaitlisted ? "Position en liste d'attente : #:pos" : 'Votre inscription au tournoi est confirmée', ['pos' => $this->waitlistPosition]),
+            'url' => route('admin.tournaments.index'),
+            'category' => 'tournament',
+            'icon' => 'o-trophy',
         ];
     }
 
@@ -89,7 +92,7 @@ class TournamentRegistrationConfirmedNotification extends Notification
     /** @return array<int, string> */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database'];
     }
 
     private function buildIcs(Tournament $tournament, string $location): string

@@ -86,7 +86,7 @@ new class extends Component
     #[Rule('nullable|string')]
     public ?string $parent_phone_number = null;
 
-    #[Rule(['nullable', new \App\Rules\ValidIban])]
+    #[Rule(['nullable', new \App\Domains\Shared\Rules\ValidIban])]
     public ?string $iban = null;
 
     // Security

@@ -43,7 +43,7 @@ new class extends Component
     #[Rule('string|nullable')]
     public ?string $guardian_phone_number = null;
 
-    #[Rule(['nullable', new \App\Rules\ValidIban])]
+    #[Rule(['nullable', new \App\Domains\Shared\Rules\ValidIban])]
     public ?string $iban = null;
 
     public $photo = null;          // upload Livewire uniquement

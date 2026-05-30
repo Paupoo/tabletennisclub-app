@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Traits;
+namespace App\Domains\Shared\Traits;
 
 use App\Domains\Shared\Enums\InterclubAvailability;
 use App\Models\ClubAdmin\Users\User;

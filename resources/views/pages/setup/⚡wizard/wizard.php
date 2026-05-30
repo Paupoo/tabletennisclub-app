@@ -8,7 +8,7 @@ use App\Models\ClubAdmin\Club\Table;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Club;
 use App\Models\ClubEvents\Interclub\Season;
-use App\Rules\ValidIban;
+use App\Domains\Shared\Rules\ValidIban;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;

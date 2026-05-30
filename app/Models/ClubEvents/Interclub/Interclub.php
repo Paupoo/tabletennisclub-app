@@ -7,7 +7,7 @@ namespace App\Models\ClubEvents\Interclub;
 use App\Domains\Shared\Enums\LeagueCategory;
 use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Users\User;
-use App\Traits\HasAvailability;
+use App\Domains\Shared\Traits\HasAvailability;
 use Carbon\Carbon;
 use Database\Factories\ClubEvents\Interclub\InterclubFactory;
 use Eloquent;

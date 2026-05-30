@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Rules\ValidIban;
+use App\Domains\Shared\Rules\ValidIban;
 
 it('validates a correct Belgian IBAN', function (): void {
     expect(ValidIban::check('BE68539007547034'))->toBeTrue();

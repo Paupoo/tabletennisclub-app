@@ -6,8 +6,8 @@ namespace App\Http\Controllers\Bar;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Bar\BarPayment;
-use App\Models\Bar\BarOrder;
+use App\Domains\Bar\Models\BarPayment;
+use App\Domains\Bar\Models\BarOrder;
 
 class BarPaymentController extends Controller
 {

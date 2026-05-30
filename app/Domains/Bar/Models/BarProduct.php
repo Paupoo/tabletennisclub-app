@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Models\Bar;
+namespace App\Domains\Bar\Models;
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;

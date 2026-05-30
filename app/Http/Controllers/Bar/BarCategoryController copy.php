@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Bar;
 
 use App\Http\Controllers\Controller;
-use App\Models\Bar\BarCategory;
+use App\Domains\Bar\Models\BarCategory;
 use Illuminate\Http\Request;
 
 class BarCategoryController extends Controller

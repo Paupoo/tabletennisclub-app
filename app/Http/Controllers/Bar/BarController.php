@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Bar;
 
 use App\Http\Controllers\Controller;
-use App\Models\Bar\BarCategory;
-use App\Models\Bar\BarProduct;
+use App\Domains\Bar\Models\BarCategory;
+use App\Domains\Bar\Models\BarProduct;
 
 class BarController extends Controller
 {

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Models\ClubPosts\EventPost;
+use App\Domains\ClubPosts\Models\EventPost;
 use App\Models\ClubAdmin\Interclub\Interclub;
 use App\Models\ClubAdmin\Tournament\Tournament;
 use App\Models\ClubAdmin\Training\Training;

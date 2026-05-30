@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Database\Factories\ClubPosts;
+namespace Database\Factories\Domains\ClubPosts\Models;
 
-use App\Models\ClubPosts\EventPost;
+use App\Domains\ClubPosts\Models\EventPost;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

@@ -6,7 +6,7 @@ namespace App\Services;
 
 use App\Domains\Shared\Enums\ClubEventTypeEnum;
 use App\Domains\Shared\Enums\EventPostStatusEnum;
-use App\Models\ClubPosts\EventPost;
+use App\Domains\ClubPosts\Models\EventPost;
 use Illuminate\Database\Eloquent\Model;
 
 class EventPostService

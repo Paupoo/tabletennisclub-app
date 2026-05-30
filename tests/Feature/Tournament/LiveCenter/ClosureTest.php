@@ -8,7 +8,7 @@ use App\Mail\TournamentResultsMail;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Tournament\TournamentMatch;
-use App\Models\ClubPosts\NewsPost;
+use App\Domains\ClubPosts\Models\NewsPost;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;

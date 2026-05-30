@@ -6,7 +6,7 @@ use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Tournament\TournamentPair;
-use App\Models\ClubPosts\EventPost;
+use App\Domains\ClubPosts\Models\EventPost;
 use App\Notifications\Tournament\TournamentInvitationNotification;
 use App\Services\TournamentMatchService;
 use App\Services\TournamentPoolService;

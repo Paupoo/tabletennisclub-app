@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Notifications\Tournament;
 
 use App\Models\ClubEvents\Tournament\Tournament;
-use App\Models\ClubPosts\NewsPost;
+use App\Domains\ClubPosts\Models\NewsPost;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;

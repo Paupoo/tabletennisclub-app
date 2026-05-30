@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Models\ClubPosts;
+namespace App\Domains\ClubPosts\Models;
 
 use App\Domains\Shared\Enums\NewsPostCategoryEnum;
 use App\Domains\Shared\Enums\NewsPostStatusEnum;

@@ -11,7 +11,7 @@ use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Subscription\Subscription;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Season;
-use App\Models\ClubPosts\EventPost;
+use App\Domains\ClubPosts\Models\EventPost;
 use App\Domains\Trainings\Services\TrainingBuilder;
 use App\Domains\Trainings\Services\TrainingDateGenerator;
 use Carbon\Carbon;

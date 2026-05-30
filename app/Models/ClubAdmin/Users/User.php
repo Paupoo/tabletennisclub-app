@@ -17,7 +17,7 @@ use App\Models\ClubEvents\Meeting\Meeting;
 use App\Models\ClubEvents\Tournament\Pool;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Domains\Trainings\Models\Training;
-use App\Models\ClubPosts\NewsPost;
+use App\Domains\ClubPosts\Models\NewsPost;
 use App\Observers\UserObserver;
 use Carbon\Carbon;
 use Database\Factories\ClubAdmin\Users\UserFactory;

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Admin\NewsPosts;
 
 use App\Livewire\Concerns\HasBreadcrumbs;
-use App\Models\ClubPosts\NewsPost;
+use App\Domains\ClubPosts\Models\NewsPost;
 use App\Support\Breadcrumb;
 use Illuminate\Contracts\Database\Query\Builder;
 use Livewire\Component;

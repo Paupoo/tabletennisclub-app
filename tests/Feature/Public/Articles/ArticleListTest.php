@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Domains\Shared\Enums\NewsPostCategoryEnum;
 use App\Domains\Shared\Enums\NewsPostStatusEnum;
 use App\Livewire\Public\Articles\ArticleList;
-use App\Models\ClubPosts\NewsPost;
+use App\Domains\ClubPosts\Models\NewsPost;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;

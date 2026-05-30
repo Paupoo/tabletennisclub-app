@@ -6,7 +6,7 @@ namespace Resources\views\Pages\Website\Articles\Index;
 
 use App\Domains\Shared\Enums\NewsPostCategoryEnum;
 use App\Domains\Shared\Enums\NewsPostStatusEnum;
-use App\Models\ClubPosts\NewsPost;
+use App\Domains\ClubPosts\Models\NewsPost;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\View\View;

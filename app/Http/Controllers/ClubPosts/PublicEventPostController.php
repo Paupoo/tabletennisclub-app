@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\ClubPosts;
 
 use App\Http\Controllers\Controller;
-use App\Models\ClubPosts\EventPost;
+use App\Domains\ClubPosts\Models\EventPost;
 use Illuminate\Contracts\View\View;
 
 class PublicEventPostController extends Controller

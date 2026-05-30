@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Database\Factories\ClubAdmin\Contact;
+namespace Database\Factories\Domains\ClubAdmin\Contact\Models;
 
-use App\Models\ClubAdmin\Contact\Spam;
+use App\Domains\ClubAdmin\Contact\Models\Spam;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class SpamFactory extends Factory

@@ -9,7 +9,7 @@ use App\Mail\MembershipInfoDetailEmail;
 use App\Mail\PoliteDeclineEmail;
 use App\Mail\RequestInfoEmail;
 use App\Mail\WelcomeEmail;
-use App\Models\ClubAdmin\Contact\Contact;
+use App\Domains\ClubAdmin\Contact\Models\Contact;
 use App\Models\ClubAdmin\Users\User;
 use Illuminate\Contracts\Mail\Mailable;
 use Illuminate\Support\Facades\Log;

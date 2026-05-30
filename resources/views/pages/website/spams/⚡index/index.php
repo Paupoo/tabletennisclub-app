@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Resources\views\Pages\Website\Spams\Index;
 
-use App\Models\ClubAdmin\Contact\Spam;
+use App\Domains\ClubAdmin\Contact\Models\Spam;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\View\View;

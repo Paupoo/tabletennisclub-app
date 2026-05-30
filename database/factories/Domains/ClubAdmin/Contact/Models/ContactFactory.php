@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Database\Factories\ClubAdmin\Contact;
+namespace Database\Factories\Domains\ClubAdmin\Contact\Models;
 
 use App\Domains\Shared\Enums\ContactReasonEnum;
-use App\Models\ClubAdmin\Contact\Contact;
+use App\Domains\ClubAdmin\Contact\Models\Contact;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class ContactFactory extends Factory
 {
+    protected $model = Contact::class;
+
     /**
      * Define the model's default state.
      *

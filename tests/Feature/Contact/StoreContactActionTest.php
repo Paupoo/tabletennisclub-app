@@ -6,7 +6,7 @@ use App\Actions\ClubAdmin\Contact\StoreContactAction;
 use App\Domains\Shared\Enums\ContactReasonEnum;
 use App\Mail\ContactFormConfirmationEmail;
 use App\Mail\ContactFormNotificationEmail;
-use App\Models\ClubAdmin\Contact\Contact;
+use App\Domains\ClubAdmin\Contact\Models\Contact;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 

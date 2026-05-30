@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Models\ClubAdmin\Contact\Spam;
+use App\Domains\ClubAdmin\Contact\Models\Spam;
 use App\Models\ClubAdmin\Users\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Pagination\LengthAwarePaginator;

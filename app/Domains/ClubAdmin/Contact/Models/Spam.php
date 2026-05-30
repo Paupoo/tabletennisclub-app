@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Models\ClubAdmin\Contact;
+namespace App\Domains\ClubAdmin\Contact\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

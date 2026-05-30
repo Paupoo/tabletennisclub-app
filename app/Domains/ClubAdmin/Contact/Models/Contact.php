@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Models\ClubAdmin\Contact;
+namespace App\Domains\ClubAdmin\Contact\Models;
 
 use App\Domains\Shared\Enums\ContactReasonEnum;
 use Illuminate\Database\Eloquent\Builder;

@@ -7,9 +7,9 @@ use App\Actions\ClubAdmin\Subscriptions\EnrollInTrainingPackAction;
 use App\Actions\ClubAdmin\Subscriptions\LeaveTrainingPackAction;
 use App\Actions\ClubAdmin\Subscriptions\PromoteFromTrainingWaitlistAction;
 use App\Models\ClubAdmin\Subscription\Subscription;
-use App\Models\ClubEvents\Training\TrainingPack;
-use App\Notifications\Training\TrainingWaitlistJoinedNotification;
-use App\Notifications\Training\TrainingWaitlistSpotOfferedNotification;
+use App\Domains\Trainings\Models\TrainingPack;
+use App\Domains\Trainings\Notifications\TrainingWaitlistJoinedNotification;
+use App\Domains\Trainings\Notifications\TrainingWaitlistSpotOfferedNotification;
 use Illuminate\Support\Facades\Notification;
 
 describe('Training Enrollment', function () {

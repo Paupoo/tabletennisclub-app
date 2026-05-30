@@ -10,7 +10,7 @@ use App\Domains\Shared\Enums\Recurrence;
 use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Shared\Enums\TrainingType;
 use App\Models\ClubAdmin\Club\Room;
-use App\Models\ClubEvents\Training\Training;
+use App\Domains\Trainings\Models\Training;
 use Tests\Trait\CreateUser;
 
 uses(CreateUser::class);

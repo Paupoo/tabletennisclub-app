@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services;
+namespace App\Domains\Trainings\Services;
 
 use App\Domains\Shared\Enums\Recurrence;
 use Carbon\Carbon;

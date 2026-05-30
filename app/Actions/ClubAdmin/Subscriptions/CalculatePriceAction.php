@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\ClubAdmin\Subscriptions;
 
 use App\Models\ClubAdmin\Subscription\Subscription;
-use App\Models\ClubEvents\Training\TrainingPack;
+use App\Domains\Trainings\Models\TrainingPack;
 
 final class CalculatePriceAction
 {

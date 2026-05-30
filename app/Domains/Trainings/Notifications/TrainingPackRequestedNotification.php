@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Notifications\Training;
+namespace App\Domains\Trainings\Notifications;
 
 use App\Models\ClubAdmin\Subscription\Subscription;
-use App\Models\ClubEvents\Training\TrainingPack;
+use App\Domains\Trainings\Models\TrainingPack;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;

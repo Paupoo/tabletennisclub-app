@@ -2,28 +2,27 @@
 
 declare(strict_types=1);
 
-namespace App\Notifications\Training;
+namespace App\Domains\Trainings\Notifications;
 
-use App\Models\ClubEvents\Training\TrainingPack;
-use Carbon\Carbon;
+use App\Domains\Trainings\Models\TrainingPack;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class TrainingWaitlistSpotOfferedNotification extends Notification
+class TrainingWaitlistJoinedNotification extends Notification
 {
     use Queueable;
 
     public function __construct(
         public TrainingPack $pack,
-        public Carbon $deadline,
+        public int $position,
     ) {}
 
     /** @return array<string, mixed> */
     public function toArray(object $notifiable): array
     {
         return [
-            'title' => __('Place disponible en entraînement'),
+            'title' => __("Rejoint la liste d'attente"),
             'body' => __('Consultez les détails de l\'entraînement'),
             'url' => route('admin.trainings.index'),
             'category' => 'training',
@@ -34,13 +33,13 @@ class TrainingWaitlistSpotOfferedNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject(__('A spot is available — :pack', ['pack' => $this->pack->name]))
+            ->subject(__('Training waitlist — :pack', ['pack' => $this->pack->name]))
             ->greeting(__('Hello :name!', ['name' => $notifiable->first_name]))
-            ->line(__('A spot has opened up for **:pack**!', ['pack' => $this->pack->name]))
-            ->line(__('You have until **:deadline** to confirm your spot. After that, it will be offered to the next person on the waiting list.', [
-                'deadline' => $this->deadline->format('d/m/Y H:i'),
+            ->line(__('The training **:pack** is currently full. You have been added to the waiting list at position **#:position**.', [
+                'pack' => $this->pack->name,
+                'position' => $this->position,
             ]))
-            ->action(__('Confirm my spot'), url('/'))
+            ->line(__('We will notify you as soon as a spot becomes available.'))
             ->salutation(__('The club team'));
     }
 

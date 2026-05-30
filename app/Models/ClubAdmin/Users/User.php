@@ -16,7 +16,7 @@ use App\Models\ClubEvents\Interclub\Team;
 use App\Models\ClubEvents\Meeting\Meeting;
 use App\Models\ClubEvents\Tournament\Pool;
 use App\Models\ClubEvents\Tournament\Tournament;
-use App\Models\ClubEvents\Training\Training;
+use App\Domains\Trainings\Models\Training;
 use App\Models\ClubPosts\NewsPost;
 use App\Observers\UserObserver;
 use Carbon\Carbon;

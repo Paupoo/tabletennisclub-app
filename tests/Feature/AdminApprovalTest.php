@@ -8,7 +8,7 @@ use App\Actions\ClubAdmin\Subscriptions\CalculatePriceAction;
 use App\Actions\ClubAdmin\Subscriptions\EnrollInTrainingPackAction;
 use App\Models\ClubAdmin\Subscription\Subscription;
 use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Training\TrainingPack;
+use App\Domains\Trainings\Models\TrainingPack;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 

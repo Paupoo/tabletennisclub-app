@@ -15,7 +15,7 @@ use App\Models\ClubAdmin\Subscription\Subscription;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Club;
 use App\Models\ClubEvents\Interclub\Season;
-use App\Models\ClubEvents\Training\TrainingPack;
+use App\Domains\Trainings\Models\TrainingPack;
 use App\Services\EventPostService;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;

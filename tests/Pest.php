@@ -7,7 +7,7 @@ use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Shared\Enums\TrainingType;
 use App\Models\ClubEvents\Interclub\Season;
 use App\Models\ClubEvents\Tournament\Tournament;
-use App\Models\ClubEvents\Training\TrainingPack;
+use App\Domains\Trainings\Models\TrainingPack;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

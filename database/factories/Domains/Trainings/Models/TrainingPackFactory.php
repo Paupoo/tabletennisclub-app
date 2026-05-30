@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Database\Factories\ClubEvents\Training;
+namespace Database\Factories\Domains\Trainings\Models;
 
 use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Shared\Enums\TrainingType;
 use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Season;
-use App\Models\ClubEvents\Training\TrainingPack;
+use App\Domains\Trainings\Models\TrainingPack;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

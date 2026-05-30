@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Notifications\Training;
+namespace App\Domains\Trainings\Notifications;
 
 use App\Domains\Shared\Enums\TrainingCancellationType;
-use App\Models\ClubEvents\Training\Training;
+use App\Domains\Trainings\Models\Training;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;

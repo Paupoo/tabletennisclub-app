@@ -5,8 +5,8 @@ declare(strict_types=1);
 use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Season;
-use App\Models\ClubEvents\Training\Training;
-use App\Models\ClubEvents\Training\TrainingPack;
+use App\Domains\Trainings\Models\Training;
+use App\Domains\Trainings\Models\TrainingPack;
 use Livewire\Livewire;
 
 // ── generateSessions ──────────────────────────────────────────────────────────

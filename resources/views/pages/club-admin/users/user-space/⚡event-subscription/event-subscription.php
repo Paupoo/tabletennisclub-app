@@ -13,7 +13,7 @@ use App\Models\ClubEvents\Meeting\Meeting;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Tournament\TournamentPair;
 use App\Models\ClubEvents\Tournament\TournamentRegistration;
-use App\Models\ClubEvents\Training\Training;
+use App\Domains\Trainings\Models\Training;
 use App\Services\TournamentService;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;

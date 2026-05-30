@@ -7,10 +7,10 @@ use App\Actions\ClubAdmin\Subscriptions\LeaveTrainingPackAction;
 use App\Models\ClubAdmin\Subscription\Subscription;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Season;
-use App\Models\ClubEvents\Training\TrainingPack;
-use App\Notifications\Training\TrainingPackCancelledNotification;
-use App\Notifications\Training\TrainingPackRequestedNotification;
-use App\Notifications\Training\TrainingWaitlistJoinedNotification;
+use App\Domains\Trainings\Models\TrainingPack;
+use App\Domains\Trainings\Notifications\TrainingPackCancelledNotification;
+use App\Domains\Trainings\Notifications\TrainingPackRequestedNotification;
+use App\Domains\Trainings\Notifications\TrainingWaitlistJoinedNotification;
 use Illuminate\Support\Facades\Notification;
 
 // ─── TrainingPackRequestedNotification (Flux B) ────────────────────────────────

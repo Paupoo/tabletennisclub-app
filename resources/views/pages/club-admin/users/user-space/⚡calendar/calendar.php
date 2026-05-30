@@ -12,7 +12,7 @@ use App\Models\ClubEvents\Interclub\Season;
 use App\Models\ClubEvents\Interclub\Team;
 use App\Models\ClubEvents\Meeting\Meeting;
 use App\Models\ClubEvents\Tournament\Tournament;
-use App\Models\ClubEvents\Training\Training;
+use App\Domains\Trainings\Models\Training;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;

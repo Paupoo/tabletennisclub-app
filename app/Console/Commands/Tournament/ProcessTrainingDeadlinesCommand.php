@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Console\Commands\Tournament;
 
 use App\Actions\ClubAdmin\Subscriptions\PromoteFromTrainingWaitlistAction;
-use App\Models\ClubEvents\Training\TrainingPack;
+use App\Domains\Trainings\Models\TrainingPack;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;

@@ -9,7 +9,7 @@ use App\Contracts\SubscriptionState;
 use App\Models\ClubAdmin\Payment\Payment;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Season;
-use App\Models\ClubEvents\Training\TrainingPack;
+use App\Domains\Trainings\Models\TrainingPack;
 use App\States\Payments\CancelledState;
 use App\States\Payments\PaidState;
 use App\States\Payments\PendingState;

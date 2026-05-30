@@ -14,7 +14,7 @@ use App\Actions\ClubAdmin\Subscriptions\UnsubscribeFromSeasonAction;
 use App\Models\ClubAdmin\Subscription\Subscription;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Season;
-use App\Models\ClubEvents\Training\TrainingPack;
+use App\Domains\Trainings\Models\TrainingPack;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 

@@ -12,7 +12,7 @@ use App\Domains\Shared\Enums\TrainingLevel;
 use App\Models\ClubAdmin\Subscription\Subscription;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Season;
-use App\Models\ClubEvents\Training\TrainingPack;
+use App\Domains\Trainings\Models\TrainingPack;
 use App\Notifications\Subscription\SubscriptionCreatedNotification;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;

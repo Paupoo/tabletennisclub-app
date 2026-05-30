@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 use App\Domains\Shared\Enums\Recurrence;
-use App\Services\TrainingDateGenerator;
+use App\Domains\Trainings\Services\TrainingDateGenerator;
 use Carbon\Carbon;
 
 test('biweekly currence is returning expected items', function (): void {

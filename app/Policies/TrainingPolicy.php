@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Policies;
 
 use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Training\Training;
+use App\Domains\Trainings\Models\Training;
 
 class TrainingPolicy
 {

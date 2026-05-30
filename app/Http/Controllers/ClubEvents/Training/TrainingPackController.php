@@ -7,7 +7,7 @@ namespace App\Http\Controllers\ClubEvents\Training;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreTrainingPackRequest;
 use App\Http\Requests\UpdateTrainingPackRequest;
-use App\Models\ClubEvents\Training\TrainingPack;
+use App\Domains\Trainings\Models\TrainingPack;
 use App\Support\Breadcrumb;
 use Illuminate\View\View;
 

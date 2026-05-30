@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Actions\ClubAdmin\Subscriptions\ApproveTrainingPacksAction;
 use App\Actions\ClubAdmin\Subscriptions\CalculatePriceAction;
 use App\Models\ClubAdmin\Subscription\Subscription;
-use App\Models\ClubEvents\Training\TrainingPack;
+use App\Domains\Trainings\Models\TrainingPack;
 
 // ─── Flux A — pending review price summary (pendingReviewEstimatedTotal) ──────
 // The computed property replicates CalculatePriceAction logic on the approved

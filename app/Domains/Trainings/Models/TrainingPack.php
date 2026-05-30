@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Models\ClubEvents\Training;
+namespace App\Domains\Trainings\Models;
 
 use App\Domains\Shared\Enums\Recurrence;
 use App\Domains\Shared\Enums\TrainingLevel;
@@ -12,8 +12,8 @@ use App\Models\ClubAdmin\Subscription\Subscription;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Season;
 use App\Models\ClubPosts\EventPost;
-use App\Services\TrainingBuilder;
-use App\Services\TrainingDateGenerator;
+use App\Domains\Trainings\Services\TrainingBuilder;
+use App\Domains\Trainings\Services\TrainingDateGenerator;
 use Carbon\Carbon;
 use Database\Factories\TrainingPackFactory;
 use Illuminate\Database\Eloquent\Builder;

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Actions\ClubAdmin\Subscriptions;
 
 use App\Models\ClubAdmin\Subscription\Subscription;
-use App\Models\ClubEvents\Training\TrainingPack;
-use App\Notifications\Training\TrainingWaitlistSpotOfferedNotification;
+use App\Domains\Trainings\Models\TrainingPack;
+use App\Domains\Trainings\Notifications\TrainingWaitlistSpotOfferedNotification;
 use Illuminate\Support\Facades\DB;
 
 class PromoteFromTrainingWaitlistAction

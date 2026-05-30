@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Services;
+namespace App\Domains\Trainings\Services;
 
 use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Season;
-use App\Models\ClubEvents\Training\Training;
-use App\Models\ClubEvents\Training\TrainingPack;
+use App\Domains\Trainings\Models\Training;
+use App\Domains\Trainings\Models\TrainingPack;
 use Carbon\Carbon;
 
 class TrainingBuilder

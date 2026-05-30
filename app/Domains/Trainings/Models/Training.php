@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Models\ClubEvents\Training;
+namespace App\Domains\Trainings\Models;
 
 use App\Domains\Shared\Enums\TrainingCancellationType;
 use App\Models\ClubAdmin\Club\Room;

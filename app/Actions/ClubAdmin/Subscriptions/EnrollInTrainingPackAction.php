@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Actions\ClubAdmin\Subscriptions;
 
 use App\Models\ClubAdmin\Subscription\Subscription;
-use App\Models\ClubEvents\Training\TrainingPack;
-use App\Notifications\Training\TrainingPackRequestedNotification;
-use App\Notifications\Training\TrainingWaitlistJoinedNotification;
+use App\Domains\Trainings\Models\TrainingPack;
+use App\Domains\Trainings\Notifications\TrainingPackRequestedNotification;
+use App\Domains\Trainings\Notifications\TrainingWaitlistJoinedNotification;
 
 class EnrollInTrainingPackAction
 {

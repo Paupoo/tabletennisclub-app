@@ -2,7 +2,9 @@
 
 @section('content')
 
-<h2>🧾 Feuille de caisse</h2>
+<div class="page-header">
+    <h1>🧾 Feuille de caisse</h1>
+</div>
 
 <div class="panel" style="margin:14px;">
 

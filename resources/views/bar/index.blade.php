@@ -20,9 +20,9 @@
     @endif
 
     {{-- RIGHT PART --}}
-    <div style="display:flex; gap:10px; align-items:center;">
+    <div class="cart-bar__actions" style="display:flex; gap:10px; align-items:center;">
 
-        {{-- ✅ CANCEL must ONLY depend on editing state --}}
+        {{-- CANCEL must ONLY depend on editing state --}}
         @if(session('editing_order_id'))
              <form method="POST" action="{{ route('bar.orders.cancelEdit')}}">
                 @csrf
@@ -32,15 +32,13 @@
             </form>
         @endif
 
-        {{-- ✅ Cart button only if cart has content --}}
+        {{-- Cart button only if cart has content --}}
         @if($cartCount > 0)
             <a href="{{ route('bar.cart.show') }}" class="btn-cart">
                 🛒 Voir la commande
             </a>
         @endif
-
     </div>
-
 </div>
 
 {{-- FAVORITES SECTION --}}
@@ -54,19 +52,45 @@
             <div class="products-grid">
                 @foreach($favorites as $product)
                 @php
-                $stock = (int) $product->stock;
-                $qtyInCart = $cart[$product->id] ?? 0;
-                $stockDisplay = max(0, $stock - $qtyInCart);
-                $disablePlus = !$product->is_available || ($stockDisplay === 0);
+                    $qty = $cart[$product->id] ?? 0;
+                    $realStock = (int) $product->stock;
+                    $theoreticalStock = max(0, $realStock - $qty);
+                    $maxQty = 20;
+                    $isUnavailable = !$product->is_available;
+                    $isStockLimit = $qty >= $realStock;
+                    $isMaxLimit = $qty >= $maxQty;
+                    $disablePlus = $isUnavailable || $isStockLimit || $isMaxLimit;
+
+                    $labelClass = 'stock-label--ok';
+                    $labelText = $realStock . ' en stock';
+                    
+                    if ($isUnavailable) {
+                        $labelClass = 'stock-label--unavailable';
+                        $labelText = 'Indisponible';
+                    } elseif ($realStock === 0) {
+                        $labelClass = 'stock-label--empty';
+                        $labelText = 'Rupture de stock';
+                    } elseif ($isStockLimit) {
+                        $labelClass = 'stock-label--empty';
+                        $labelText = 'Stock maximum atteint';
+                    } elseif ($isMaxLimit) {
+                        $labelClass = 'stock-label--low';
+                        $labelText = 'Quantité max atteinte';
+                    } elseif ($realStock <= 3) {
+                        $labelClass = 'stock-label--low';
+                        $labelText = 'Plus que ' . $realStock;
+                    }
                 @endphp
                 
                 <div class="product-card">
                     <div class="product-card-top">
                         <div>
                             <p class="product-card-name">{{ $product->name }}</p>
+                            <span class="stock-label {{ $labelClass }}">{{ $labelText }}</span>
+                            @if ($qty > 0 && !$isUnavailable && !$isStockLimit)
+                                <div class="muted small">{{ $theoreticalStock }} restant (Stock réel : {{ $realStock }})</div>
+                            @endif
                         </div>
-                        <span class="stock-label">{{ $stockDisplay }} en stock</span>
-                    </div>
                     
                     <form method="POST" action="{{ route('bar.cart.add') }}">
                         @csrf
@@ -80,10 +104,11 @@
     </details>
 </section>
 @endif
+
+{{-- CATÉGORIES --}}
 @foreach ($categories as $category)
 
 <section class="panel" style="margin: 14px;">
-
     <details class="collapsible" data-category-id="{{ $category->id }}">
         <summary class="collapsible-summary">
             <span class="accordion-title">{{ $category->name }}</span>
@@ -92,31 +117,44 @@
         <div class="accordion-body">
 
             @forelse ($category->products as $product)
+            @php
+                $qty = $cart[$product->id] ?? 0;
+                $realStock = (int) $product->stock;
+                $theoreticalStock = max(0, $realStock - $qty);
+                $maxQty = 20;
+                $isUnavailable = !$product->is_available;
+                $isStockLimit = $qty >= $realStock;
+                $isMaxLimit = $qty >= $maxQty;
+                $disablePlus = $isUnavailable || $isStockLimit || $isMaxLimit;
 
-                @php
-                    $stock = (int) $product->stock;
-                    $qtyInCart = $cart[$product->id] ?? 0;
-                    $stockDisplay = max(0, $stock - $qtyInCart);
-
-                    $isUnavailable = !$product->is_available;
-                    $rowUnavailable = $isUnavailable || ($stockDisplay === 0 && $qtyInCart === 0);
-                    $disablePlus = $isUnavailable || ($stockDisplay === 0);
-                @endphp
-
-                <div class="product-row {{ $rowUnavailable ? 'product-row--unavailable' : '' }}">
+                $labelClass = 'stock-label--ok';
+                $labelText = $realStock . ' en stock';
+                
+                if ($isUnavailable) {
+                    $labelClass = 'stock-label--unavailable';
+                    $labelText = 'Indisponible';
+                } elseif ($realStock === 0) {
+                    $labelClass = 'stock-label--empty';
+                    $labelText = 'Rupture de stock';
+                } elseif ($isStockLimit) {
+                    $labelClass = 'stock-label--empty';
+                    $labelText = 'Stock maximum atteint';
+                } elseif ($isMaxLimit) {
+                    $labelClass = 'stock-label--low';
+                    $labelText = 'Quantité max atteinte';
+                } elseif ($realStock <= 3) {
+                    $labelClass = 'stock-label--low';
+                    $labelText = 'Plus que ' . $realStock;
+                }
+            @endphp
+                <div class="product-row {{ $isUnavailable ? 'product-row--unavailable' : '' }}">
 
                     <div class="product-info">
                         <span class="product-name">{{ $product->name }}</span>
                         <span class="product-price">{{ euros($product->sale_price) }}</span>
-
-                        @if($isUnavailable)
-                            <span class="stock-label stock-label--unavailable">Indisponible</span>
-                        @elseif($stockDisplay === 0)
-                            <span class="stock-label stock-label--empty">Rupture de stock</span>
-                        @elseif($stockDisplay <= 3)
-                            <span class="stock-label stock-label--low">Plus que {{ $stockDisplay }}</span>
-                        @else
-                            <span class="stock-label stock-label--ok">{{ $stockDisplay }} en stock</span>
+                        <span class="stock-label {{ $labelClass }}">{{ $labelText }}</span>
+                        @if ($qty > 0 && !$isUnavailable && !$isStockLimit)
+                            <div class="muted small">{{ $theoreticalStock }} restant (Stock réel : {{ $realStock }})</div>
                         @endif
                     </div>
 
@@ -125,12 +163,13 @@
                         <form method="POST" action="{{ route('bar.cart.remove') }}">
                             @csrf
                             <input type="hidden" name="product_id" value="{{ $product->id }}">
-                            <button type="submit" class="btn-qty {{ $qtyInCart === 0 ? 'btn-qty--disabled' : '' }}" {{ $qtyInCart === 0 ? 'disabled' : '' }}>
-                                −
-                            </button>
+                            <button type="submit" class="btn-qty {{ $qty === 0 ? 'btn-qty--disabled' : '' }}" {{ $qty === 0 ? 'disabled' : '' }}>
+                            −
+                        </button>
+
                         </form>
 
-                        <span class="qty-val">{{ $qtyInCart }}</span>
+                        <span class="qty-val">{{ $qty }}</span>
 
                         <form method="POST" action="{{ route('bar.cart.add') }}">
                             @csrf

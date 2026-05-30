@@ -21,11 +21,14 @@
                 @php
                     $product = $item['product'];
                     $qty = $item['quantity'];
-                    $LineTotal = $item['total_price'];
+                    $lineTotal = $item['total_price'];
                     $unitPrice = $product->sale_price;
-                    $stock = (int) $product->stock;
                     $realStock = (int) $product->stock;
-                    $availableStock = max(0, $realStock - $qty);
+                    $availableStock = max(0, $realStock);
+                    $maxQty = 20;
+                    $isStockLimit = $qty >= $realStock;
+                    $isMaxLimit = $qty >= $maxQty;
+                    $disablePlus = $isStockLimit || $isMaxLimit;
                 @endphp
 
                 <div class="order-line">
@@ -34,9 +37,15 @@
                     <div>
                         <div class="order-item-name">{{ $product->name }}</div>
 
+                        /* Stock disponible mais temps réel pas garanti */
                         <div class="muted" style="margin-top:4px; font-weight:900;">
                             {{ euros($unitPrice) }} / unité • Stock dispo : {{ $availableStock }}
                         </div>
+                        @if ($isStockLimit)
+                            <div class="text-warning small" style="display: flex;">Stock maximum atteint pour ce produit.</div>
+                        @elseif ($isMaxLimit)
+                            <div class="text-warning small" style="display: flex;">Quantité maximale autorisée atteinte.</div>
+                        @endif
                     </div>
 
                     {{-- RIGHT --}}
@@ -57,8 +66,12 @@
                             {{-- PLUS --}}
                             <form method="POST" action="{{ route('bar.cart.add') }}" style="margin:0;">
                                 @csrf
+                                @php
+                                    $disablePlus = $qty >= $realStock || $qty >= 20;
+                                @endphp
+
                                 <input type="hidden" name="product_id" value="{{ $product->id }}">
-                                <button class="btn-qty" type="submit" {{ $qty >= $realStock ? 'disabled' : '' }}>
+                                <button class="btn-qty" type="submit" {{ $disablePlus ? 'disabled' : '' }}>
                                     +
                                 </button>
                             </form>
@@ -68,7 +81,7 @@
 
                     {{-- TOTAL LINE --}}
                     <div class="line-total">
-                        {{ euros($LineTotal) }}
+                        {{ euros($lineTotal) }}
                     </div>
 
                 </div>

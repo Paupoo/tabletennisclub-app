@@ -6,11 +6,19 @@ namespace App\Http\Controllers\Bar;
 
 use App\Http\Controllers\Controller;
 use App\Models\Bar\BarOrder;
-use App\Models\Bar\BarStockMovement;
+use App\Services\Bar\StockService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class BarOrderController extends Controller
 {
+    private StockService $stockService;
+
+    public function __construct(StockService $stockService)
+    {
+        $this->middleware('auth');
+        $this->stockService = $stockService;
+    }
     /**
      * List open (unpaid) orders.
      */
@@ -29,11 +37,25 @@ class BarOrderController extends Controller
      */
     public function pay(Request $request, BarOrder $order)
     {
-        $order->update([
-            'is_paid' => 1,
-            'paid_at' => now(),
-            'payment_method' => $request->input('method'),
+        if ((int) $order->created_by !== (int) auth()->id()) {
+            return back()->with('error', "Vous n'êtes pas autorisé à faire payer cette commande.");
+        }
+
+        if ($order->is_paid) {
+            return back()->with('error', 'Commande déjà payée.');
+        }
+
+        $request->validate([
+            'method' => 'required|string|in:offered,cash,qr'
         ]);
+
+        DB::transaction(function () use ($order, $request) {
+            $order->update([
+                'is_paid' => 1,
+                'paid_at' => now(),
+                'payment_method' => $request->input('method'),
+            ]);
+        });
 
         return redirect()->route('bar.orders.index')
             ->with('success', 'Commande payée avec succès.');
@@ -47,16 +69,19 @@ class BarOrderController extends Controller
      */
     public function modify(BarOrder $order)
     {
+        if ((int) $order->created_by !== (int) auth()->id()) {
+            return back()->with('error', "Vous n'êtes pas autorisé à modifier cette commande.");
+        }
+
         if ($order->is_paid) {
             return back()->with('error', 'Commande déjà payée.');
         }
 
         $order->load('items');
-
-        $cart = [];
-        foreach ($order->items as $item) {
-            $cart[$item->product_id] = (int) $item->quantity;
-        }
+        
+        $cart = $order->items
+        ->mapWithKeys(fn($item) => [$item->product_id => (int) $item->quantity])
+        ->toArray();
 
         session()->put('cart', $cart);
         session()->put('editing_order_id', $order->id);
@@ -76,25 +101,25 @@ class BarOrderController extends Controller
 
     public function destroy(BarOrder $order)
     {
+        if ((int) $order->created_by !== (int) auth()->id()) {
+            return back()->with('error', "Vous n'êtes pas autorisé à modifier cette commande.");
+        }
+
         if ($order->is_paid) {
             return back()->with('error', 'Impossible de supprimer une commande payée.');
         }
 
-        $order->load('items');
-
-        foreach ($order->items as $item) {
-            BarStockMovement::create([
-                'product_id'    => $item->product_id,
-                'quantity'      => $item->quantity,
-                'movement_type' => 'IN', // ✅ RESTORE stock
-                'reason'        => "Order #{$order->id} supprimée",
-                'created_by'    => null,
-                'modified_by'   => auth()->id(),
-            ]);
-        }
-
-        $order->items()->delete();
-        $order->delete();
+        DB::transaction(function() use ($order) {
+            $order->load('items');
+            foreach ($order->items as $item) {
+                $this->stockService->restoreFromOrderItem(
+                    (int) $item->id,
+                    auth()->id()
+                );
+            }
+            $order->items()->delete();
+            $order->delete();
+        });
 
         return redirect()->route('bar.orders.index')
             ->with('success', 'Commande supprimée.');
@@ -108,7 +133,7 @@ class BarOrderController extends Controller
         $period = $request->input('period', 'today');
         $status = $request->input('status', 'all');
 
-        $query = BarOrder::with(['items.product']);
+        $query = BarOrder::query()->with(['items.product']);
 
         switch ($period) {
             case 'today':

@@ -6,20 +6,22 @@ namespace App\Http\Controllers\Bar;
 
 use App\Http\Controllers\Controller;
 use App\Models\Bar\BarProduct;
-use App\Models\Bar\BarStockMovement;
 use App\Models\Bar\BarOrder;
 use App\Models\Bar\BarOrderItem;
+use App\Services\Bar\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class BarCartController extends Controller
 {
+    private StockService $stockService;
     /**
      * Middleware d'authentification appliqué à toutes les actions du panier.
      */
-    public function __construct()
+    public function __construct(StockService $stockService)
     {
         $this->middleware('auth');
+        $this->stockService = $stockService;
     }
 
     /**
@@ -32,7 +34,7 @@ class BarCartController extends Controller
     {
         // Validation des données entrantes.
         $validated = $request->validate([
-            'product_id' => 'required|integer|min:1',
+            'product_id' => 'required|integer|exists:bar_products,id',
         ]);
 
         $productId = $validated['product_id'];
@@ -60,7 +62,7 @@ class BarCartController extends Controller
     {
         // Validation des données entrantes.
         $validated = $request->validate([
-            'product_id' => 'required|integer|min:1',
+            'product_id' => 'required|integer|exists:bar_products,id',
         ]);
 
         $productId = $validated['product_id'];
@@ -122,6 +124,10 @@ class BarCartController extends Controller
 
     public function validateOrder(Request $request)
     {
+        $request->validate([
+            'action' => 'required|in:validate,pay_now',
+            ]);
+            
         // On assainit le contenu de la session avant tout traitement.
         $cart = array_filter(
             array_map('intval', session()->get('cart', [])),
@@ -138,14 +144,14 @@ class BarCartController extends Controller
 
         $products = BarProduct::whereIn('id', array_keys($cart))->get();
 
-        $totalPrice = $products->sum(function ($product) use ($cart) {
-            return $product->sale_price * ($cart[$product->id] ?? 0);
-        });
+        // $totalPrice = $products->sum(function ($product) use ($cart) {
+        //     return $product->sale_price * ($cart[$product->id] ?? 0);
+        // });
 
         $order = null;
 
         try {
-            DB::transaction(function () use ($cart, $userId, $totalPrice, &$order) {
+            DB::transaction(function () use ($cart, $userId, &$order) {
                 $orderId = session()->get('editing_order_id');
 
                 if ($orderId) {
@@ -167,26 +173,16 @@ class BarCartController extends Controller
                     }
 
                     foreach ($order->items as $item) {
-                        BarStockMovement::create([
-                            'product_id'    => $item->product_id,
-                            'quantity'      => $item->quantity,
-                            'movement_type' => 'IN',
-                            'reason'        => "Order #{$order->id} - modification (revert)",
-                            'created_by'    => null,
-                            'modified_by'   => $userId,
-                        ]);
+                        $this->stockService->restoreFromOrderItem(
+                            (int) $item->id,
+                            (int) $userId
+                        );
                     }
 
                     $order->items()->delete();
-
-                    $order->update([
-                        'total_price' => $totalPrice,
-                        'modified_by' => $userId,
-                    ]);
-
                 } else {
                     $order = BarOrder::create([
-                        'total_price' => $totalPrice,
+                        'total_price' => 0, // sera mis à jour après calcul
                         'created_by'  => $userId,
                         'is_paid'     => 0,
                     ]);
@@ -199,6 +195,8 @@ class BarCartController extends Controller
                     ->lockForUpdate()
                     ->get()
                     ->keyBy('id');
+                
+                $totalPrice = 0;
 
                 foreach ($cart as $productId => $qty) {
                     $qty     = (int) $qty;
@@ -207,6 +205,10 @@ class BarCartController extends Controller
                     if (! $product) {
                         throw new \RuntimeException("Produit introuvable (ID {$productId}).");
                     }
+                    
+                    if (! (bool) $product->is_available) {
+                        throw new \RuntimeException("Le produit {$product->name} n'est plus disponible.");
+                    }
 
                     $availableStock = (int) $product->stock;
 
@@ -214,22 +216,41 @@ class BarCartController extends Controller
                         throw new \RuntimeException("Stock insuffisant pour {$product->name}.");
                     }
 
-                    BarOrderItem::create([
-                        'order_id'    => $order->id,
-                        'product_id'  => $product->id,
-                        'quantity'    => $qty,
-                        'unit_price'  => $product->sale_price,
-                        'total_price' => $product->sale_price * $qty,
+                    $unitPrice = (int) $product->sale_price;
+                    $lineTotal  = $unitPrice * $qty;
+                    $totalPrice += $lineTotal;
+
+                    $orderItem = BarOrderItem::create([
+                        'order_id' => $order->id,
+                        'product_id' => $product->id,
+                        'quantity' => $qty,
+                        'unit_price' => $unitPrice,
+                        'total_price' => $lineTotal,
+                        ]);
+                    
+                    $this->stockService->consumeFIFO(
+                        (int) $product->id,
+                        (int) $qty,
+                        "Order #{$order->id}",
+                        (int) $userId,
+                        (int) $userId,
+                        (int) $order->id,
+                        (int) $orderItem->id
+                    );
+
+                    $order->update([
+                        'total_price' => $totalPrice,
+                        'modified_by' => $userId,
                     ]);
                 }
             });
-        } catch (\RuntimeException $e) {
-            return redirect()->route('bar.index')
+            } catch (\RuntimeException $e) {
+                return redirect()->route('bar.index')
                 ->with('error', $e->getMessage());
-        }
-
-        session()->forget('cart');
-        session()->forget('editing_order_id');
+                }
+                
+                session()->forget('cart');
+                session()->forget('editing_order_id');
 
         if ($action === 'pay_now') {
             return redirect()->route('bar.payment.show', $order)

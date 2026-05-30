@@ -7,11 +7,19 @@ namespace App\Http\Controllers\Bar;
 use App\Http\Controllers\Controller;
 use App\Models\Bar\BarCategory;
 use App\Models\Bar\BarProduct;
-use App\Models\Bar\BarStockMovement;
+use App\Services\Bar\StockService;
 use Illuminate\Http\Request;
 
 class BarProductController extends Controller
 {
+    private StockService $stockService;
+
+    public function __construct(StockService $stockService)
+    {
+        $this->middleware('auth');
+        $this->stockService = $stockService;
+    }
+
     public function index()
     {
         $categories = BarCategory::with(['products' => function ($q) {
@@ -48,14 +56,13 @@ class BarProductController extends Controller
         $product = BarProduct::create($validated);
 
         if ($initialStock > 0) {
-            BarStockMovement::create([
-                'product_id'    => $product->id,
-                'quantity'      => $initialStock,
-                'movement_type' => 'IN',
-                'reason'        => 'Initial stock',
-                'created_by'    => auth()->id(),
-                'modified_by'   => null,
-            ]);
+            $this->stockService->addIncomingStock(
+                (int) $product->id,
+                (int) $initialStock,
+                'Initial stock',
+                auth()->id(),
+                auth()->id()
+            );
         }
 
         session()->forget('product_form');
@@ -85,23 +92,21 @@ class BarProductController extends Controller
             $delta = $newStock - $currentStock;
 
             if ($delta > 0) {
-                BarStockMovement::create([
-                    'product_id'    => $product->id,
-                    'quantity'      => $delta,
-                    'movement_type' => 'IN',
-                    'reason'        => 'Stock adjustment',
-                    'created_by'    => null,
-                    'modified_by'   => auth()->id(),
-                ]);
+                $this->stockService->addIncomingStock(
+                    (int) $product->id,
+                    (int) $delta,
+                    'Stock adjustment',
+                    auth()->id(),
+                    auth()->id()
+                    );
             } elseif ($delta < 0) {
-                BarStockMovement::create([
-                    'product_id'    => $product->id,
-                    'quantity'      => abs($delta),
-                    'movement_type' => 'OUT',
-                    'reason'        => 'Stock adjustment',
-                    'created_by'    => null,
-                    'modified_by'   => auth()->id(),
-                ]);
+                $this->stockService->consumeFIFO(
+                    (int) $product->id,
+                    abs((int) $delta),
+                    'Stock adjustment',
+                    auth()->id(),
+                    auth()->id()
+                );
             }
         }
 

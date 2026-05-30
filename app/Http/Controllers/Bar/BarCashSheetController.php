@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Bar;
 
 use App\Http\Controllers\Controller;
 use App\Models\Bar\BarOrder;
+use App\Models\Bar\BarOrderItem;
 use Illuminate\Http\Request;
 
 class BarCashSheetController extends Controller
@@ -13,49 +14,58 @@ class BarCashSheetController extends Controller
     public function index(Request $request)
     {
         // 1. Get selected date (default = today)
-        $date = $request->input('date', now()->toDateString());
+        $validated = $request->validate([
+            'date' => 'nullable|date'
+        ]);
+        $date = $validated['date'] ?? now()->toDateString();
 
         // 2. Load orders for that day
-        $orders = BarOrder::with('items')
-            ->whereDate('created_at', $date)
-            ->get();
+        $ordersQuery = BarOrder::query()
+            ->whereDate('created_at', $date);
 
         // 3. Counts
-        $paidOrders = $orders->where('is_paid', 1);
-        $unpaidOrders = $orders->where('is_paid', 0);
-
-        $paidCount = $paidOrders->count();
-        $unpaidCount = $unpaidOrders->count();
+        $paidCount = (clone $ordersQuery)
+            -> where('is_paid', 1)
+            ->count();
+        $unpaidCount = (clone $ordersQuery)
+            -> where('is_paid', 0)
+            ->count();
 
         // 4. Quantities sold
-        $itemsSold = $orders->sum(function ($order) {
-            return $order->items->sum('quantity');
-        });
+        $itemsSold = BarOrderItem::query()
+        ->whereHas('order', function ($q) use ($date) {
+            $q->whereDate('created_at', $date);
+            })
+            ->sum('quantity');
 
         // 5. Totals
-        $totalSold = $orders->sum('total_price');
-        $totalPaid = $paidOrders->sum('total_price');
-        $totalUnpaid = $unpaidOrders->sum('total_price');
+        $totalSold = (clone $ordersQuery)->sum('total_price');
+
+        $totalPaid = (clone $ordersQuery)
+            ->where('is_paid', 1)
+            ->sum('total_price');
+
+        $totalUnpaid = (clone $ordersQuery)
+            ->where('is_paid', 0)
+            ->sum('total_price');
+
 
         // 6. Payment breakdown
-        $totalCash = $paidOrders
-            ->where('payment_method', 'cash')
-            ->sum('total_price');
+        $paymentTotals = (clone $ordersQuery)
+        ->where('is_paid', 1)
+        ->selectRaw('payment_method, SUM(total_price) as total')
+        ->groupBy('payment_method')
+        ->pluck('total', 'payment_method');
 
-        $totalQr = $paidOrders
-            ->where('payment_method', 'qr')
-            ->sum('total_price');
+        $totalCash = $paymentTotals['cash'] ?? 0;
+        $totalQr = $paymentTotals['qr'] ?? 0;
+        $totalOther = $paymentTotals['other'] ?? 0;
+        $totalFree = $paymentTotals['free'] ?? 0;
 
-        $totalOther = $paidOrders
-            ->where('payment_method', 'other')
-            ->sum('total_price');
-
-        $totalFree = $paidOrders
-            ->where('payment_method', 'free')
-            ->sum('total_price');
 
         // 7. Return view
-        return view('bar.cashSheet.index', [
+        
+return view('bar.cashSheet.index', [
             'date' => $date,
             'paidCount' => $paidCount,
             'unpaidCount' => $unpaidCount,
@@ -68,5 +78,6 @@ class BarCashSheetController extends Controller
             'totalFree' => $totalFree,
             'totalUnpaid' => $totalUnpaid,
         ]);
+
     }
 }

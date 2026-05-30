@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Casts\MoneyCast;
+use App\Domains\Shared\Casts\MoneyCast;
 use App\Models\ClubAdmin\Subscription\Subscription;
 
 it('converts integer cents to float euros when getting', function (): void {

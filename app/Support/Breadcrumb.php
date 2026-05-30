@@ -39,7 +39,7 @@ class Breadcrumb
 
     public function events(?string $url = null): Breadcrumb
     {
-        return $this->add('Events', $url ?: route('clubPosts.eventPosts.index'), 's-home');
+        return $this->add('Events', $url ?: route('eventPosts'), 's-home');
     }
 
     public function home(?string $url = null): Breadcrumb
@@ -49,7 +49,7 @@ class Breadcrumb
 
     public function matches(?string $url = null): Breadcrumb
     {
-        return $this->add('Matches', $url ?: route('interclubs.index'), 's-home');
+        return $this->add('Matches', $url ?: route('admin.interclubs.interclubs'), 's-home');
     }
 
     public function meetings(?string $url = null): Breadcrumb
@@ -89,7 +89,7 @@ class Breadcrumb
 
     public function teams(?string $url = null): Breadcrumb
     {
-        return $this->add('Teams', $url ?: route('teams.index'));
+        return $this->add('Teams', $url ?: route('admin.interclubs.teams'));
     }
 
     public function toArray(): array

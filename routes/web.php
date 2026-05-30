@@ -9,6 +9,16 @@ use App\Actions\ClubAdmin\Subscriptions\MarkPaidSubscriptionAction;
 use App\Actions\ClubAdmin\Subscriptions\MarkRefundSubscriptionAction;
 use App\Actions\ClubAdmin\Subscriptions\SubscribeToSeasonAction;
 use App\Actions\ClubAdmin\Subscriptions\UnconfirmSubscriptionAction;
+use App\Http\Controllers\ClubAdmin\Contact\ContactController;
+use App\Http\Controllers\ClubAdmin\Contact\InvitationController;
+use App\Http\Controllers\ClubAdmin\Payment\PaymentController;
+use App\Http\Controllers\ClubAdmin\Payment\TransactionController;
+use App\Http\Controllers\ClubAdmin\Subscription\RegistrationController;
+use App\Http\Controllers\ClubAdmin\Subscription\SubscriptionController;
+use App\Http\Controllers\ClubEvents\Interclub\ResultsController;
+use App\Http\Controllers\ClubEvents\Interclub\SeasonController;
+use App\Http\Controllers\ClubEvents\Meeting\MeetingPollController;
+use App\Http\Controllers\ClubEvents\Meeting\MeetingRsvpController;
 use App\Http\Controllers\ClubEvents\Tournament\TableScoreController;
 use App\Http\Controllers\ClubEvents\Tournament\TournamentController;
 use App\Http\Controllers\ClubPosts\PublicEventPostController;
@@ -17,8 +27,6 @@ use App\Http\Controllers\HomeController;
 use App\Http\Middleware\ProtectAgainstSpam;
 use App\Models\ClubAdmin\Users\User;
 use Illuminate\Support\Facades\Route;
-
-
 
 /*
 |--------------------------------------------------------------------------
@@ -31,7 +39,6 @@ use Illuminate\Support\Facades\Route;
 Route::livewire('/setup', 'pages::setup.wizard')
     ->middleware('setup.not_complete')
     ->name('setup');
-
 
 /*
 |--------------------------------------------------------------------------
@@ -201,7 +208,6 @@ Route::prefix('admin/club-events/interclubs/')
         Route::livewire('clubs', 'pages::club-events.interclubs.clubs')->name('admin.interclubs.clubs');
     });
 
-
 /**
  * Notifications
  */
@@ -209,7 +215,7 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::livewire('admin/notifications', 'admin.notifications.index')->name('notifications.index');
 });
 
-/** 
+/**
  * Invitations
  */
 Route::get('/invitation/accept/{user}', [InvitationController::class, 'showForm'])
@@ -228,9 +234,6 @@ Route::post('/invitation/accept/{user}', [InvitationController::class, 'store'])
 | the routing file clean, consistent, and maintainable.
 |
 */
-
-
-
 
 /**
  * Dashboard with sample of most data (to implement, it's a mock (active) for now)
@@ -261,10 +264,6 @@ Route::get('/admin/dashboard', function () {
         ],
     ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
-
-
-
-
 
 // Tournament email registration / waitlist actions (signed URLs, no auth required)
 Route::get('/tournament/{tournament}/join/{user}', [TournamentController::class, 'registerViaEmail'])
@@ -304,7 +303,6 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
 
     // (eventPosts admin routes moved earlier to match newsPosts routing structure)
 });
-
 
 /**
  * => obsolete, to clean and remove related code

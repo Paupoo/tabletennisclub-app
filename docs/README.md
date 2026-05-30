@@ -201,7 +201,7 @@ Exemple: `TeamCreated`, `PaymentProcessed`.
 
 <body>
 
-Co-Authored-By: Claude Haiku 4.5 <noreply@anthropic.com>
+Contributor: Aurélien Paulus <aurelien.paulus@gmail.com>
 ```
 
 Types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`

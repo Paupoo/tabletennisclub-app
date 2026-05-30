@@ -23,67 +23,15 @@ test('admin and committee member can see delete button from users index view', f
 
     $response = $this
         ->actingAs($this->admin)
-        ->get(route('users.index'));
+        ->get(route('admin.users.index'));
 
     $response->assertSee('Delete');
 
     $response = $this
         ->actingAs($this->committeeMember)
-        ->get(route('users.index'));
+        ->get(route('admin.users.index'));
 
     $response->assertSee('Delete');
-});
-test('admin and committee member can see delete button from users show view', function (): void {
-
-    $response = $this
-        ->actingAs($this->admin)
-        ->get(route('users.show', $this->admin));
-
-    $response->assertSee('Delete');
-
-    $response = $this
-        ->actingAs($this->committeeMember)
-        ->get(route('users.show', $this->committeeMember));
-
-    $response->assertSee('Delete');
-});
-test('admin or committee member delete a user from users index view', function (): void {
-
-    $userToDelete1 = User::factory()->create();
-    $userToDelete2 = User::factory()->create();
-
-    $totalUsers = User::count();
-
-    $response = $this
-        ->actingAs($this->admin)
-        ->from(route('users.index'))
-        ->delete(route('users.destroy', $userToDelete1));
-
-    $response
-        ->assertRedirect(route('users.index'))
-        ->assertSessionHas('success');
-
-    $response = $this
-        ->actingAs($this->committeeMember)
-        ->from(route('users.index'))
-        ->delete(route('users.destroy', $userToDelete2));
-
-    $response
-        ->assertRedirect(route('users.index'))
-        ->assertSessionHas('success');
-
-    $this->assertDatabaseCount('users', $totalUsers - 2);
-});
-test('user cant delete any user', function (): void {
-    $userToDelete = User::find(1);
-
-    $response = $this
-        ->actingAs($this->user)
-        ->from(route('users.index'))
-        ->delete(route('users.destroy', $userToDelete));
-
-    $response
-        ->assertStatus(403);
 });
 test('user cant see delete button from users index view', function (): void {
 

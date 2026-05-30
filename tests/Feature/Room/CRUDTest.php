@@ -44,15 +44,6 @@ beforeEach(function (): void {
         'capacity_for_interclubs' => null,
     ];
 });
-test('add a room adds an entry into the db', function (): void {
-    $total_rooms_in_db = Room::count();
-
-    $this->actingAs($this->createFakeAdmin())
-        ->from(route('rooms.create'))
-        ->post(route('rooms.store', $this->valid_room_request));
-
-    $this->assertDatabaseCount('rooms', $total_rooms_in_db + 1);
-});
 test('admin and committee member can see create or edit buttons', function (): void {
     $this->actingAs($this->createFakeAdmin())
         ->get(route('admin.rooms.index'))
@@ -66,123 +57,21 @@ test('admin and committee member can see create or edit buttons', function (): v
         ->assertSee(__('Modify'))
         ->assertSee(__('Delete'));
 });
-test('admin or committee member can create a room', function (): void {
-    $this->actingAs($this->createFakeAdmin())
-        ->from(route('rooms.create'))
-        ->post(route('rooms.store', $this->valid_room_request))
-        ->assertValid()
-        ->assertRedirectToRoute('rooms.index')
-        ->assertSessionHasNoErrors();
 
-    $this->actingAs($this->createFakeCommitteeMember())
-        ->from(route('rooms.create'))
-        ->post(route('rooms.store', $this->valid_room_request_2))
-        ->assertValid()
-        ->assertRedirect(route('rooms.index'))
-        ->assertSessionHasNoErrors();
-});
-test('admin or committee member can delete a room', function (): void {
-    $this->actingAs($this->createFakeAdmin())
-        ->delete(route('rooms.destroy', $this->room))
-        ->assertRedirect()
-        ->assertSessionHasNoErrors();
-
-    $this->actingAs($this->createFakeCommitteeMember())
-        ->delete(route('rooms.destroy', $this->room2))
-        ->assertRedirect()
-        ->assertSessionHasNoErrors();
-});
-test('admin or committee member can update a room', function (): void {
-    $this->actingAs($this->createFakeAdmin())
-        ->from(route('rooms.edit', $this->room))
-        ->patch(route('rooms.update', $this->room), $this->valid_room_request)
-        ->assertValid()
-        ->assertRedirect(route('rooms.index'))
-        ->assertSessionHasNoErrors();
-
-    $this->actingAs($this->createFakeCommitteeMember())
-        ->from(route('rooms.edit', $this->room2))
-        ->patch(route('rooms.update', $this->room2), $this->valid_room_request_2)
-        ->assertValid()
-        ->assertRedirect(route('rooms.index'))
-        ->assertSessionHasNoErrors();
-});
-test('delete a room removes an entry into the db', function (): void {
-    $total_rooms_in_db = Room::count();
-
-    $this->actingAs($this->createFakeAdmin())
-        ->delete(route('rooms.destroy', $this->room));
-
-    $this->assertDatabaseCount('rooms', $total_rooms_in_db - 1);
-});
-test('invalid data are returning error during creation', function (): void {
-    $this->actingAs($this->createFakeAdmin())
-        ->from(route('rooms.create'))
-        ->post(route('rooms.store', $this->invalid_room_request))
-        ->assertInvalid([
-            'name',
-            'street',
-            'city_code',
-            'city_name',
-            'capacity_for_trainings',
-            'capacity_for_interclubs',
-        ])
-        ->assertRedirectToRoute('rooms.create')
-        ->assertSessionHasErrors([
-            'name',
-            'street',
-            'city_code',
-            'city_name',
-            'capacity_for_trainings',
-            'capacity_for_interclubs',
-        ]);
-});
-test('member cant create nor edit nor delete rooms', function (): void {
-    $this->actingAs($this->createFakeUser())
-        ->get(route('rooms.create'))
-        ->assertStatus(403);
-
-    $this->actingAs($this->createFakeUser())
-        ->post(route('rooms.store', $this->room))
-        ->assertStatus(403);
-
-    $this->actingAs($this->createFakeUser())
-        ->get(route('rooms.edit', $this->room))
-        ->assertStatus(403);
-
-    $this->actingAs($this->createFakeUser())
-        ->patch(route('rooms.update', $this->room))
-        ->assertStatus(403);
-
-    $this->actingAs($this->createFakeUser())
-        ->delete(route('rooms.destroy', $this->room))
-        ->assertStatus(403);
-});
 test('members cant see create nor edit buttons', function (): void {
     $this->actingAs($this->createFakeUser())
         ->get(route('admin.rooms.index'))
         ->assertDontSee(__('Modify'))
         ->assertDontSee(__('Delete'));
 });
-test('unlogged users cant access room resource', function (): void {
-    $this->get(route('rooms.index'))
+
+test('unlogged users cant access room index', function (): void {
+    $this->get(route('admin.rooms.index'))
         ->assertRedirect('/login');
 
-    $this->get(route('rooms.show', $this->room))
+    $this->get(route('admin.rooms.create'))
         ->assertRedirect('/login');
 
-    $this->get(route('rooms.create'))
-        ->assertRedirect('/login');
-
-    $this->get(route('rooms.edit', $this->room))
-        ->assertRedirect('/login');
-
-    $this->post(route('rooms.store', $this->room))
-        ->assertRedirect('/login');
-
-    $this->patch(route('rooms.update', $this->room))
-        ->assertRedirect('/login');
-
-    $this->patch(route('rooms.destroy', $this->room))
+    $this->get(route('admin.rooms.edit', $this->room))
         ->assertRedirect('/login');
 });

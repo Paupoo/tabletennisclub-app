@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\ClubEvents\Meeting;
 
-use App\Enums\MeetingUserStatusEnum;
+use App\Domains\Shared\Enums\MeetingUserStatusEnum;
 use App\Models\ClubAdmin\Payment\Payment;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\Relations\Pivot;

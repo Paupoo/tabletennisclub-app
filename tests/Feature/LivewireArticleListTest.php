@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Enums\NewsPostCategoryEnum;
-use App\Enums\NewsPostStatusEnum;
+use App\Domains\Shared\Enums\NewsPostCategoryEnum;
+use App\Domains\Shared\Enums\NewsPostStatusEnum;
 use App\Livewire\Public\Articles\ArticleList;
 use App\Models\ClubPosts\NewsPost;
 use Illuminate\Foundation\Testing\RefreshDatabase;

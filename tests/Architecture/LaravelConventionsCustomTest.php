@@ -13,7 +13,7 @@ arch()
 arch()
     ->expect('App')
     ->not->toBeEnums()
-    ->ignoring('App\Enums');
+    ->ignoring(['App\Enums', 'App\Domains\Shared\Enums']);
 
 arch()
     ->expect('App\Models')

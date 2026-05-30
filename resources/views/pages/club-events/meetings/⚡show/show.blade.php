@@ -18,7 +18,7 @@
         </x-slot:subtitle>
         <x-slot:actions>
             @if ($this->canManage)
-                @if ($meeting->status === \App\Enums\MeetingStatusEnum::CONFIRMED && $meeting->scheduled_at?->isPast())
+                @if ($meeting->status === \App\Domains\Shared\Enums\MeetingStatusEnum::CONFIRMED && $meeting->scheduled_at?->isPast())
                     <x-button :label="__('Mark completed')" icon="o-check-circle"
                         class="btn-success btn-sm"
                         wire:click="markCompleted" spinner="markCompleted" />
@@ -79,12 +79,12 @@
                         </div>
                     @endif
 
-                    @if ($meeting->format === \App\Enums\MeetingFormatEnum::PHYSICAL && $meeting->location)
+                    @if ($meeting->format === \App\Domains\Shared\Enums\MeetingFormatEnum::PHYSICAL && $meeting->location)
                         <div class="flex items-start gap-3">
                             <x-icon name="o-map-pin" class="h-4 w-4 mt-0.5 text-base-content/40 shrink-0" />
                             <span>{{ $meeting->location }}</span>
                         </div>
-                    @elseif ($meeting->format === \App\Enums\MeetingFormatEnum::VIRTUAL && $meeting->meeting_link)
+                    @elseif ($meeting->format === \App\Domains\Shared\Enums\MeetingFormatEnum::VIRTUAL && $meeting->meeting_link)
                         <div class="flex items-start gap-3">
                             <x-icon name="o-video-camera" class="h-4 w-4 mt-0.5 text-base-content/40 shrink-0" />
                             <a href="{{ $meeting->meeting_link }}" target="_blank"
@@ -139,11 +139,11 @@
             @endif
 
             {{-- Postponed / cancelled notice --}}
-            @if ($meeting->status === \App\Enums\MeetingStatusEnum::CANCELLED && $meeting->cancellation_note)
+            @if ($meeting->status === \App\Domains\Shared\Enums\MeetingStatusEnum::CANCELLED && $meeting->cancellation_note)
                 <x-alert icon="o-x-circle" class="alert-error alert-soft"
                     :title="__('Cancelled')" :description="$meeting->cancellation_note" />
             @endif
-            @if ($meeting->status === \App\Enums\MeetingStatusEnum::POSTPONED)
+            @if ($meeting->status === \App\Domains\Shared\Enums\MeetingStatusEnum::POSTPONED)
                 <x-alert icon="o-arrow-path" class="alert-warning alert-soft"
                     :title="__('Postponed')"
                     :description="$meeting->postponed_note ?? __('No reason provided.')" />
@@ -161,7 +161,7 @@
                             class="btn-block btn-outline btn-sm"
                             wire:click="sendDatePoll" spinner="sendDatePoll" />
                     @endif
-                    @if ($meeting->status === \App\Enums\MeetingStatusEnum::CONFIRMED)
+                    @if ($meeting->status === \App\Domains\Shared\Enums\MeetingStatusEnum::CONFIRMED)
                         <x-button icon="o-envelope" :label="__('Send invitations')"
                             class="btn-block btn-primary btn-sm"
                             wire:click="sendInvitations" spinner="sendInvitations" />
@@ -218,10 +218,10 @@
                         @if ($grp->isNotEmpty())
                             <div class="flex justify-between text-sm">
                                 <span class="text-base-content/60">
-                                    {{ \App\Enums\MeetingUserStatusEnum::from($statusVal)->getLabel() }}
+                                    {{ \App\Domains\Shared\Enums\MeetingUserStatusEnum::from($statusVal)->getLabel() }}
                                 </span>
                                 <x-badge :value="$grp->count()"
-                                    class="{{ \App\Enums\MeetingUserStatusEnum::from($statusVal)->getBadgeClass() }} badge-sm" />
+                                    class="{{ \App\Domains\Shared\Enums\MeetingUserStatusEnum::from($statusVal)->getBadgeClass() }} badge-sm" />
                             </div>
                         @endif
                     @endforeach
@@ -276,7 +276,7 @@
                         </div>
                     @endif
                 </div>
-                @if ($this->canManage && ! $proposal->is_selected && $meeting->status !== \App\Enums\MeetingStatusEnum::CANCELLED)
+                @if ($this->canManage && ! $proposal->is_selected && $meeting->status !== \App\Domains\Shared\Enums\MeetingStatusEnum::CANCELLED)
                     <x-button icon="o-check" :label="__('Select this date')"
                         class="btn-success btn-sm"
                         wire:click="selectDateProposal({{ $proposal->id }})"
@@ -289,7 +289,7 @@
             <div class="mt-4 border-t border-base-200 pt-3">
                 <div class="flex flex-wrap gap-2">
                     @foreach ($proposal->votes as $vote)
-                        @php $voteEnum = \App\Enums\MeetingDateVoteEnum::from($vote->vote->value); @endphp
+                        @php $voteEnum = \App\Domains\Shared\Enums\MeetingDateVoteEnum::from($vote->vote->value); @endphp
                         <div class="flex items-center gap-1.5 rounded-full border border-base-200 px-2 py-0.5 text-xs">
                             <x-icon name="{{ $voteEnum->getIcon() }}" class="h-3 w-3 {{ $voteEnum->getColor() }}" />
                             {{ $vote->user?->full_name ?? __('Unknown') }}
@@ -342,13 +342,13 @@
             </div>
             <div class="flex items-center gap-2">
                 <x-badge :value="$reg->status->getLabel()" class="{{ $reg->status->getBadgeClass() }} badge-sm" />
-                @if ($this->canManage && $meeting->status === \App\Enums\MeetingStatusEnum::CONFIRMED && $meeting->scheduled_at?->isPast())
-                    @if ($reg->status !== \App\Enums\MeetingUserStatusEnum::ATTENDED)
+                @if ($this->canManage && $meeting->status === \App\Domains\Shared\Enums\MeetingStatusEnum::CONFIRMED && $meeting->scheduled_at?->isPast())
+                    @if ($reg->status !== \App\Domains\Shared\Enums\MeetingUserStatusEnum::ATTENDED)
                         <x-button icon="o-check" class="btn-ghost btn-xs btn-circle text-success"
                             :tooltip="__('Mark attended')"
                             wire:click="markAttended({{ $user->id }})" />
                     @endif
-                    @if ($reg->status !== \App\Enums\MeetingUserStatusEnum::ABSENT)
+                    @if ($reg->status !== \App\Domains\Shared\Enums\MeetingUserStatusEnum::ABSENT)
                         <x-button icon="o-x-mark" class="btn-ghost btn-xs btn-circle text-error"
                             :tooltip="__('Mark absent')"
                             wire:click="markAbsent({{ $user->id }})" />
@@ -430,7 +430,7 @@
                     class="btn-outline btn-sm"
                     wire:click="sendMinutes(false)" spinner="sendMinutes(false)"
                     :disabled="(bool) $minutes?->sent_to_committee_at" />
-                @if ($meeting->type === \App\Enums\MeetingTypeEnum::GENERAL_ASSEMBLY)
+                @if ($meeting->type === \App\Domains\Shared\Enums\MeetingTypeEnum::GENERAL_ASSEMBLY)
                     <x-button icon="o-paper-airplane"
                         :label="__('Send to all members')"
                         class="btn-outline btn-sm"

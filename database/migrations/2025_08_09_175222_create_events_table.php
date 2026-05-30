@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Enums\ClubEventTypeEnum;
-use App\Enums\EventPostStatusEnum;
+use App\Domains\Shared\Enums\ClubEventTypeEnum;
+use App\Domains\Shared\Enums\EventPostStatusEnum;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;

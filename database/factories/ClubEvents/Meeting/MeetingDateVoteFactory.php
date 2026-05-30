@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories\ClubEvents\Meeting;
 
-use App\Enums\MeetingDateVoteEnum;
+use App\Domains\Shared\Enums\MeetingDateVoteEnum;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Meeting\MeetingDateProposal;
 use App\Models\ClubEvents\Meeting\MeetingDateVote;

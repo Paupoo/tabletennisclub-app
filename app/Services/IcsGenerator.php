@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Enums\MeetingFormatEnum;
+use App\Domains\Shared\Enums\MeetingFormatEnum;
 use App\Models\ClubEvents\Meeting\Meeting;
 use Illuminate\Support\Carbon;
 

@@ -13,7 +13,7 @@
 
                 {{-- ── Header / état ─────────────────────────────────── --}}
                 @php
-                    $isConfirmed = $response === \App\Enums\MeetingUserStatusEnum::CONFIRMED;
+                    $isConfirmed = $response === \App\Domains\Shared\Enums\MeetingUserStatusEnum::CONFIRMED;
                 @endphp
 
                 <div class="mb-4 text-center">
@@ -55,12 +55,12 @@
                         </div>
                     @endif
 
-                    @if ($meeting->format === \App\Enums\MeetingFormatEnum::PHYSICAL && $meeting->location)
+                    @if ($meeting->format === \App\Domains\Shared\Enums\MeetingFormatEnum::PHYSICAL && $meeting->location)
                         <div class="flex items-start gap-2 text-base-content/70">
                             <x-icon name="o-map-pin" class="h-4 w-4 shrink-0 mt-0.5" />
                             <span>{{ $meeting->location }}</span>
                         </div>
-                    @elseif ($meeting->format === \App\Enums\MeetingFormatEnum::VIRTUAL && $meeting->meeting_link)
+                    @elseif ($meeting->format === \App\Domains\Shared\Enums\MeetingFormatEnum::VIRTUAL && $meeting->meeting_link)
                         <div class="flex items-start gap-2 text-base-content/70">
                             <x-icon name="o-video-camera" class="h-4 w-4 shrink-0 mt-0.5" />
                             <a href="{{ $meeting->meeting_link }}" target="_blank"

@@ -269,7 +269,7 @@
                         @php
                             $isSelected = in_array($player['id'], $selectedPlayerIds);
                             $avail      = $player['availability'];
-                            $isUnavail  = $avail === \App\Enums\InterclubAvailability::UNAVAILABLE;
+                            $isUnavail  = $avail === \App\Domains\Shared\Enums\InterclubAvailability::UNAVAILABLE;
                         @endphp
                         <div
                             wire:click="togglePlayer({{ $player['id'] }})"

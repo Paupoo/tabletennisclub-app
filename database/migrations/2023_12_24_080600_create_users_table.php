@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Enums\Gender;
-use App\Enums\Ranking;
+use App\Domains\Shared\Enums\Gender;
+use App\Domains\Shared\Enums\Ranking;
 use App\Models\ClubEvents\Interclub\Club;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;

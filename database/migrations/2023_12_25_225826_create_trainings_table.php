@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Enums\TrainingLevel;
-use App\Enums\TrainingType;
+use App\Domains\Shared\Enums\TrainingLevel;
+use App\Domains\Shared\Enums\TrainingType;
 use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubEvents\Interclub\Season;
 use Illuminate\Database\Migrations\Migration;

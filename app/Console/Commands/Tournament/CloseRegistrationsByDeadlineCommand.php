@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands\Tournament;
 
-use App\Enums\TournamentStatusEnum;
+use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Models\ClubEvents\Tournament\Tournament;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;

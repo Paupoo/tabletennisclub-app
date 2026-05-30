@@ -37,7 +37,7 @@
                                 $currentVote = $proposal->votes->first()?->vote?->value ?? '';
                             @endphp
                             <div class="flex gap-2 flex-wrap">
-                                @foreach (\App\Enums\MeetingDateVoteEnum::cases() as $voteOption)
+                                @foreach (\App\Domains\Shared\Enums\MeetingDateVoteEnum::cases() as $voteOption)
                                     <label class="flex items-center gap-2 cursor-pointer">
                                         <input type="radio"
                                             name="votes[{{ $proposal->id }}]"

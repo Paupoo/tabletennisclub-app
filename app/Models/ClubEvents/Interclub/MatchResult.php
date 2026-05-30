@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\ClubEvents\Interclub;
 
-use App\Enums\InterclubResult;
+use App\Domains\Shared\Enums\InterclubResult;
 use Database\Factories\ClubEvents\Interclub\MatchResultFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

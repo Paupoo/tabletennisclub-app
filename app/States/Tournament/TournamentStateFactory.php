@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\States\Tournament;
 
-use App\Enums\TournamentStatusEnum;
+use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\States\Tournament\Contracts\TournamentStateInterface;
 use App\States\Tournament\States\ClosedState;
 use App\States\Tournament\States\DraftState;

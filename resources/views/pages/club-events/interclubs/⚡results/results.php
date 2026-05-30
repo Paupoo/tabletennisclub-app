@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Resources\views\Pages\ClubEvents\Interclubs;
 
-use App\Enums\InterclubResult;
-use App\Enums\LeagueCategory;
+use App\Domains\Shared\Enums\InterclubResult;
+use App\Domains\Shared\Enums\LeagueCategory;
 use App\Models\ClubEvents\Interclub\Interclub;
 use App\Models\ClubEvents\Interclub\MatchResult;
 use App\Models\ClubEvents\Interclub\Season;

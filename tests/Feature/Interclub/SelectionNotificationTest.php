@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Enums\InterclubAvailability;
+use App\Domains\Shared\Enums\InterclubAvailability;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Club;
 use App\Models\ClubEvents\Interclub\Interclub;

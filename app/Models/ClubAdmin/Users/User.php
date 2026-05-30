@@ -6,8 +6,8 @@ namespace App\Models\ClubAdmin\Users;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
-use App\Enums\CommitteeRolesEnum;
-use App\Enums\Gender;
+use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\Gender;
 use App\Models\ClubAdmin\Subscription\Subscription;
 use App\Models\ClubEvents\Interclub\Club;
 use App\Models\ClubEvents\Interclub\Interclub;

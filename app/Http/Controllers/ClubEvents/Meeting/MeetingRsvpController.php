@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\ClubEvents\Meeting;
 
 use App\Actions\ClubAdmin\Payments\GeneratePaymentReference;
-use App\Enums\MeetingUserStatusEnum;
+use App\Domains\Shared\Enums\MeetingUserStatusEnum;
 use App\Http\Controllers\Controller;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Meeting\Meeting;

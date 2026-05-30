@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Enums\NewsPostCategoryEnum;
-use App\Enums\NewsPostStatusEnum;
-use App\Enums\TournamentStatusEnum;
+use App\Domains\Shared\Enums\NewsPostCategoryEnum;
+use App\Domains\Shared\Enums\NewsPostStatusEnum;
+use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Mail\TournamentResultsMail;
 use App\Models\ClubAdmin\Club\Table;
 use App\Models\ClubAdmin\Payment\Payment;

@@ -137,30 +137,30 @@
                                                     @class([
                                                         'btn-sm btn-ghost border-base-300 border',
                                                         'border-success/40 bg-success/5' =>
-                                                            $avail === \App\Enums\InterclubAvailability::AVAILABLE,
+                                                            $avail === \App\Domains\Shared\Enums\InterclubAvailability::AVAILABLE,
                                                         'border-warning/40 bg-warning/5' =>
-                                                            $avail === \App\Enums\InterclubAvailability::MAYBE,
+                                                            $avail === \App\Domains\Shared\Enums\InterclubAvailability::MAYBE,
                                                         'border-error/40 bg-error/5' =>
-                                                            $avail === \App\Enums\InterclubAvailability::UNAVAILABLE,
+                                                            $avail === \App\Domains\Shared\Enums\InterclubAvailability::UNAVAILABLE,
                                                     ])
                                                     icon="o-chevron-down"
                                                     :label="$avail ? $avail->label() : __('Set availability')" />
                                             </x-slot:trigger>
 
                                             <x-menu-item
-                                                wire:click="markAvailability({{ $match['id'] }}, '{{ \App\Enums\InterclubAvailability::AVAILABLE->value }}')"
+                                                wire:click="markAvailability({{ $match['id'] }}, '{{ \App\Domains\Shared\Enums\InterclubAvailability::AVAILABLE->value }}')"
                                                 :title="__('Available')"
                                                 icon="o-check-circle"
                                                 class="text-success" />
 
                                             <x-menu-item
-                                                wire:click="markAvailability({{ $match['id'] }}, '{{ \App\Enums\InterclubAvailability::MAYBE->value }}')"
+                                                wire:click="markAvailability({{ $match['id'] }}, '{{ \App\Domains\Shared\Enums\InterclubAvailability::MAYBE->value }}')"
                                                 :title="__('Maybe')"
                                                 icon="o-question-mark-circle"
                                                 class="text-warning" />
 
                                             <x-menu-item
-                                                wire:click="markAvailability({{ $match['id'] }}, '{{ \App\Enums\InterclubAvailability::UNAVAILABLE->value }}')"
+                                                wire:click="markAvailability({{ $match['id'] }}, '{{ \App\Domains\Shared\Enums\InterclubAvailability::UNAVAILABLE->value }}')"
                                                 :title="__('Unavailable')"
                                                 icon="o-x-circle"
                                                 class="text-error" />
@@ -184,7 +184,7 @@
                                         <x-button class="btn-primary btn-sm"
                                             icon="o-check"
                                             :label="__('Save')"
-                                            wire:click="markAvailability({{ $match['id'] }}, '{{ $avail?->value ?? \App\Enums\InterclubAvailability::AVAILABLE->value }}')" />
+                                            wire:click="markAvailability({{ $match['id'] }}, '{{ $avail?->value ?? \App\Domains\Shared\Enums\InterclubAvailability::AVAILABLE->value }}')" />
                                         <x-button class="btn-ghost btn-sm"
                                             icon="o-x-mark"
                                             wire:click="$set('editingInterclubId', null)" />

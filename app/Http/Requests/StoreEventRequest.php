@@ -6,8 +6,8 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
-use App\Enums\ClubEventTypeEnum;
-use App\Enums\EventPostStatusEnum;
+use App\Domains\Shared\Enums\ClubEventTypeEnum;
+use App\Domains\Shared\Enums\EventPostStatusEnum;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 

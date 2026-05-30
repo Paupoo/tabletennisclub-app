@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Enums\TrainingCancellationType;
+use App\Domains\Shared\Enums\TrainingCancellationType;
 use App\Models\ClubEvents\Training\Training;
 
 // ── cancel ────────────────────────────────────────────────────────────────────

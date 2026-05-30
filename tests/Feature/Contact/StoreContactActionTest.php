@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\ClubAdmin\Contact\StoreContactAction;
-use App\Enums\ContactReasonEnum;
+use App\Domains\Shared\Enums\ContactReasonEnum;
 use App\Mail\ContactFormConfirmationEmail;
 use App\Mail\ContactFormNotificationEmail;
 use App\Models\ClubAdmin\Contact\Contact;

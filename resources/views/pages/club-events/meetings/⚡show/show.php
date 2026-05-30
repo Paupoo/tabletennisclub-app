@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use App\Enums\MeetingDateVoteEnum;
-use App\Enums\MeetingStatusEnum;
-use App\Enums\MeetingTypeEnum;
-use App\Enums\MeetingUserStatusEnum;
+use App\Domains\Shared\Enums\MeetingDateVoteEnum;
+use App\Domains\Shared\Enums\MeetingStatusEnum;
+use App\Domains\Shared\Enums\MeetingTypeEnum;
+use App\Domains\Shared\Enums\MeetingUserStatusEnum;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Meeting\Meeting;
 use App\Models\ClubEvents\Meeting\MeetingDateProposal;

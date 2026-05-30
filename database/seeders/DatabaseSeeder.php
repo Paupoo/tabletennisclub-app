@@ -6,11 +6,11 @@ namespace Database\Seeders;
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
-use App\Enums\CommitteeRolesEnum;
-use App\Enums\Gender;
-use App\Enums\LeagueCategory;
-use App\Enums\LeagueLevel;
-use App\Enums\Ranking;
+use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\Gender;
+use App\Domains\Shared\Enums\LeagueCategory;
+use App\Domains\Shared\Enums\LeagueLevel;
+use App\Domains\Shared\Enums\Ranking;
 use App\Models\AppSetting;
 use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Club\Table;

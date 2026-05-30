@@ -43,7 +43,7 @@
                     {{ __('Gender') }}
                 </p>
                 <div class="space-y-1">
-                    @foreach (\App\Enums\Gender::options() as $gender)
+                    @foreach (\App\Domains\Shared\Enums\Gender::options() as $gender)
                         <x-checkbox :label="$gender['name']" :value="$gender['id']" wire:model.live="categories" />
                     @endforeach
                 </div>

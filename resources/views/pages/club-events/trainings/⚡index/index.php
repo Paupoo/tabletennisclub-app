@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-use App\Enums\ClubEventTypeEnum;
-use App\Enums\Recurrence;
-use App\Enums\TrainingCancellationType;
-use App\Enums\TrainingLevel;
-use App\Enums\TrainingType;
+use App\Domains\Shared\Enums\ClubEventTypeEnum;
+use App\Domains\Shared\Enums\Recurrence;
+use App\Domains\Shared\Enums\TrainingCancellationType;
+use App\Domains\Shared\Enums\TrainingLevel;
+use App\Domains\Shared\Enums\TrainingType;
 use App\Livewire\Concerns\HasEventPostForm;
 use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Users\User;

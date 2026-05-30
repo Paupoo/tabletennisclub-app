@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\ClubEvents\Training;
 
-use App\Enums\Recurrence;
-use App\Enums\TrainingLevel;
-use App\Enums\TrainingType;
+use App\Domains\Shared\Enums\Recurrence;
+use App\Domains\Shared\Enums\TrainingLevel;
+use App\Domains\Shared\Enums\TrainingType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreTrainingRequest;
 use App\Http\Requests\UpdateTrainingRequest;

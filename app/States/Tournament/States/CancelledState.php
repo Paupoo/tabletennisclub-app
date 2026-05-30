@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\States\Tournament\States;
 
-use App\Enums\TournamentStatusEnum;
+use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\States\Tournament\AbstractTournamentState;
 
 final class CancelledState extends AbstractTournamentState

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\States\Tournament\States;
 
-use App\Enums\TournamentStatusEnum;
+use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Services\TournamentService;
 use App\States\Tournament\AbstractTournamentState;

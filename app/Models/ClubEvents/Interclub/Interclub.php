@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\ClubEvents\Interclub;
 
-use App\Enums\LeagueCategory;
+use App\Domains\Shared\Enums\LeagueCategory;
 use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Users\User;
 use App\Traits\HasAvailability;

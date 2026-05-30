@@ -252,12 +252,12 @@
                 <div>
                     <x-select :options="$trainerOptions" :label="__('Coach')" wire:model="formTrainerId"
                         :placeholder="__('No coach')" />
-                    @if ($formType && $formType !== \App\Enums\TrainingType::FREE->value && ! $formTrainerId)
+                    @if ($formType && $formType !== \App\Domains\Shared\Enums\TrainingType::FREE->value && ! $formTrainerId)
                         <p class="mt-1 text-xs text-warning">
                             <x-icon class="inline h-3 w-3" name="o-exclamation-triangle" />
                             {{ __('A coach is required for this training type.') }}
                         </p>
-                    @elseif ($formType === \App\Enums\TrainingType::FREE->value)
+                    @elseif ($formType === \App\Domains\Shared\Enums\TrainingType::FREE->value)
                         <p class="mt-1 text-xs text-base-content/40">
                             {{ __('Free practice — no coach needed.') }}
                         </p>

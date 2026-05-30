@@ -102,9 +102,9 @@
                     <div class="flex items-center gap-2 mt-0.5">
                         @php
                             $badgeClass = match ($article->status) {
-                                \App\Enums\NewsPostStatusEnum::PUBLISHED => 'badge-success badge-soft',
-                                \App\Enums\NewsPostStatusEnum::DRAFT     => 'badge-warning badge-soft',
-                                \App\Enums\NewsPostStatusEnum::ARCHIVED  => 'badge-ghost',
+                                \App\Domains\Shared\Enums\NewsPostStatusEnum::PUBLISHED => 'badge-success badge-soft',
+                                \App\Domains\Shared\Enums\NewsPostStatusEnum::DRAFT     => 'badge-warning badge-soft',
+                                \App\Domains\Shared\Enums\NewsPostStatusEnum::ARCHIVED  => 'badge-ghost',
                             };
                         @endphp
                         <x-badge :value="$article->status->getLabel()" class="{{ $badgeClass }} badge-sm" />
@@ -118,12 +118,12 @@
                         <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
                             :tooltip="__('Edit')"
                             link="{{ route('admin.website.articles.edit', $article->slug) }}" />
-                        @if ($article->status !== \App\Enums\NewsPostStatusEnum::PUBLISHED)
+                        @if ($article->status !== \App\Domains\Shared\Enums\NewsPostStatusEnum::PUBLISHED)
                             <x-button class="btn-ghost btn-sm btn-circle text-success" icon="o-check-circle"
                                 :tooltip="__('Publish')"
                                 wire:click="publish({{ $article->id }})" />
                         @endif
-                        @if ($article->status !== \App\Enums\NewsPostStatusEnum::ARCHIVED)
+                        @if ($article->status !== \App\Domains\Shared\Enums\NewsPostStatusEnum::ARCHIVED)
                             <x-button class="btn-ghost btn-sm btn-circle text-base-content/40" icon="o-archive-box"
                                 :tooltip="__('Archive')"
                                 wire:click="archive({{ $article->id }})" />
@@ -173,9 +173,9 @@
                     @scope('cell_status', $article)
                         @php
                             $badgeClass = match ($article->status) {
-                                \App\Enums\NewsPostStatusEnum::PUBLISHED => 'badge-success badge-soft',
-                                \App\Enums\NewsPostStatusEnum::DRAFT     => 'badge-warning badge-soft',
-                                \App\Enums\NewsPostStatusEnum::ARCHIVED  => 'badge-ghost',
+                                \App\Domains\Shared\Enums\NewsPostStatusEnum::PUBLISHED => 'badge-success badge-soft',
+                                \App\Domains\Shared\Enums\NewsPostStatusEnum::DRAFT     => 'badge-warning badge-soft',
+                                \App\Domains\Shared\Enums\NewsPostStatusEnum::ARCHIVED  => 'badge-ghost',
                             };
                         @endphp
                         <x-badge :value="$article->status->getLabel()" class="{{ $badgeClass }}" />
@@ -190,12 +190,12 @@
                             <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
                                 :tooltip="__('Edit')"
                                 link="{{ route('admin.website.articles.edit', $article->slug) }}" />
-                            @if ($article->status !== \App\Enums\NewsPostStatusEnum::PUBLISHED)
+                            @if ($article->status !== \App\Domains\Shared\Enums\NewsPostStatusEnum::PUBLISHED)
                                 <x-button class="btn-ghost btn-sm btn-circle text-success" icon="o-check-circle"
                                     :tooltip="__('Publish')"
                                     wire:click="publish({{ $article->id }})" />
                             @endif
-                            @if ($article->status !== \App\Enums\NewsPostStatusEnum::ARCHIVED)
+                            @if ($article->status !== \App\Domains\Shared\Enums\NewsPostStatusEnum::ARCHIVED)
                                 <x-button class="btn-ghost btn-sm btn-circle text-base-content/40" icon="o-archive-box"
                                     :tooltip="__('Archive')"
                                     wire:click="archive({{ $article->id }})" />

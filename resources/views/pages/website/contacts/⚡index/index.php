@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Resources\views\Pages\Website\Contacts\Index;
 
-use App\Enums\ContactReasonEnum;
+use App\Domains\Shared\Enums\ContactReasonEnum;
 use App\Models\ClubAdmin\Contact\Contact;
 use App\Services\ClubAdmin\Contact\ContactEmailService;
 use App\Livewire\Concerns\HasBreadcrumbs;

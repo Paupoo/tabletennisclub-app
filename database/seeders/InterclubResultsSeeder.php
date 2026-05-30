@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Enums\InterclubResult;
-use App\Enums\LeagueCategory;
-use App\Enums\LeagueLevel;
+use App\Domains\Shared\Enums\InterclubResult;
+use App\Domains\Shared\Enums\LeagueCategory;
+use App\Domains\Shared\Enums\LeagueLevel;
 use App\Models\ClubEvents\Interclub\Club;
 use App\Models\ClubEvents\Interclub\League;
 use App\Models\ClubEvents\Interclub\MatchResult;

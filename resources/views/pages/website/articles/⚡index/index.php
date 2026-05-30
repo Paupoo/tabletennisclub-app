@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Resources\views\Pages\Website\Articles\Index;
 
-use App\Enums\NewsPostCategoryEnum;
-use App\Enums\NewsPostStatusEnum;
+use App\Domains\Shared\Enums\NewsPostCategoryEnum;
+use App\Domains\Shared\Enums\NewsPostStatusEnum;
 use App\Models\ClubPosts\NewsPost;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;

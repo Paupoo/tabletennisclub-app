@@ -125,7 +125,7 @@
 
                 @if ($selectedObjective)
                     @php
-                        $obj = \App\Enums\TournamentObjectiveEnum::tryFrom($selectedObjective);
+                        $obj = \App\Domains\Shared\Enums\TournamentObjectiveEnum::tryFrom($selectedObjective);
                     @endphp
                     @if ($obj)
                         <div class="p-3 rounded-xl bg-primary/5 border border-primary/20 text-sm text-base-content/70">

@@ -121,7 +121,7 @@
                                 :tooltip="__('Settings')"
                                 link="{{ route('admin.tournaments.wizard.edit', $tournament) }}" />
                         @endif
-                        @if ($tournament->status !== \App\Enums\TournamentStatusEnum::CLOSED)
+                        @if ($tournament->status !== \App\Domains\Shared\Enums\TournamentStatusEnum::CLOSED)
                             <x-button class="btn-ghost btn-sm btn-circle" icon="o-rocket-launch"
                                 :tooltip="__('Live Center')"
                                 link="{{ route('admin.tournaments.live-center', $tournament->id) }}" />
@@ -204,7 +204,7 @@
                     @endscope
 
                     @scope('cell_event', $tournament)
-                        @if ($tournament->eventPost?->status === \App\Enums\EventPostStatusEnum::PUBLISHED)
+                        @if ($tournament->eventPost?->status === \App\Domains\Shared\Enums\EventPostStatusEnum::PUBLISHED)
                             <x-icon name="o-check-circle" class="h-4 w-4 text-success" />
                         @else
                             <span class="text-base-content/30">—</span>
@@ -218,7 +218,7 @@
                                     :tooltip="__('Settings')"
                                     link="{{ route('admin.tournaments.wizard.edit', $tournament) }}" />
                             @endif
-                            @if ($tournament->status !== \App\Enums\TournamentStatusEnum::CLOSED)
+                            @if ($tournament->status !== \App\Domains\Shared\Enums\TournamentStatusEnum::CLOSED)
                                 <x-button class="btn-ghost btn-sm btn-circle" icon="o-rocket-launch"
                                     :tooltip="__('Live Center')"
                                     link="{{ route('admin.tournaments.live-center', $tournament->id) }}" />

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Enums\TournamentStatusEnum;
+use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Jobs\SendDebtReminderNotification;
 use App\Models\ClubAdmin\Payment\CashRegister;
 use App\Models\ClubAdmin\Payment\CashRegisterEntry;

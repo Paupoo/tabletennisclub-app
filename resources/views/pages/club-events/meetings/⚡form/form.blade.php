@@ -6,7 +6,7 @@
     <x-header :title="$meetingId ? __('Edit meeting') : __('New meeting')"
         :subtitle="__('Configure your meeting step by step')">
         <x-slot:actions>
-            @if ($meetingId && $this->currentMeeting?->status !== \App\Enums\MeetingStatusEnum::CANCELLED)
+            @if ($meetingId && $this->currentMeeting?->status !== \App\Domains\Shared\Enums\MeetingStatusEnum::CANCELLED)
                 <x-button :label="__('Cancel meeting')" icon="o-x-circle"
                     class="btn-error btn-outline btn-sm"
                     wire:click="$set('showCancelModal', true)" />
@@ -193,10 +193,10 @@
                     <span class="font-medium">{{ $title ?: '—' }}</span>
 
                     <span class="text-base-content/50">{{ __('Type') }}</span>
-                    <span>{{ \App\Enums\MeetingTypeEnum::tryFrom($type)?->getLabel() ?? '—' }}</span>
+                    <span>{{ \App\Domains\Shared\Enums\MeetingTypeEnum::tryFrom($type)?->getLabel() ?? '—' }}</span>
 
                     <span class="text-base-content/50">{{ __('Format') }}</span>
-                    <span>{{ \App\Enums\MeetingFormatEnum::tryFrom($format)?->getLabel() ?? '—' }}</span>
+                    <span>{{ \App\Domains\Shared\Enums\MeetingFormatEnum::tryFrom($format)?->getLabel() ?? '—' }}</span>
 
                     @if (! $datePollMode && $scheduledAt)
                         <span class="text-base-content/50">{{ __('Date') }}</span>

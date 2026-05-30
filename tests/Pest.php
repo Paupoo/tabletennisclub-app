@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Enums\TournamentStatusEnum;
-use App\Enums\TrainingLevel;
-use App\Enums\TrainingType;
+use App\Domains\Shared\Enums\TournamentStatusEnum;
+use App\Domains\Shared\Enums\TrainingLevel;
+use App\Domains\Shared\Enums\TrainingType;
 use App\Models\ClubEvents\Interclub\Season;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Training\TrainingPack;

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Models\ClubEvents\Tournament;
 
 use App\Casts\MoneyCast;
-use App\Enums\TournamentObjectiveEnum;
-use App\Enums\TournamentStatusEnum;
+use App\Domains\Shared\Enums\TournamentObjectiveEnum;
+use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Club\Table;
 use App\Models\ClubAdmin\Users\User;

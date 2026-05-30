@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\ClubEvents\Meeting;
 
-use App\Enums\MeetingDateVoteEnum;
+use App\Domains\Shared\Enums\MeetingDateVoteEnum;
 use App\Models\ClubAdmin\Users\User;
 use Database\Factories\ClubEvents\Meeting\MeetingDateProposalFactory;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;

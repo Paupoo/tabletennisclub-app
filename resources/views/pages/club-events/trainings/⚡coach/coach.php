@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Enums\TrainingCancellationType;
+use App\Domains\Shared\Enums\TrainingCancellationType;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Season;
 use App\Models\ClubEvents\Training\Training;

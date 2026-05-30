@@ -47,7 +47,7 @@
         <select id="interest" name="interest" required @change="onRequestTypeChange" x-model="selectedInterest"
             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent transition-colors">
             <option value="">{{ __('Select an option') }}</option>
-            @foreach (\App\Enums\ContactReasonEnum::cases() as $contactReason)
+            @foreach (\App\Domains\Shared\Enums\ContactReasonEnum::cases() as $contactReason)
             <option value="{{ $contactReason->name }}" {{ old('interest') == $contactReason->name ? 'selected' : '' }}>{{ $contactReason->getLabel() }}</option>    
             @endforeach
         </select>

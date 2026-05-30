@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Enums\ClubEventTypeEnum;
-use App\Enums\EventPostStatusEnum;
+use App\Domains\Shared\Enums\ClubEventTypeEnum;
+use App\Domains\Shared\Enums\EventPostStatusEnum;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Training\TrainingPack;
 use App\Models\ClubPosts\EventPost;

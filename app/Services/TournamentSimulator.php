@@ -6,7 +6,7 @@ namespace App\Services;
 
 use App\Data\Tournament\SimulationResult;
 use App\Data\Tournament\TournamentConfig;
-use App\Enums\TournamentObjectiveEnum;
+use App\Domains\Shared\Enums\TournamentObjectiveEnum;
 
 class TournamentSimulator
 {

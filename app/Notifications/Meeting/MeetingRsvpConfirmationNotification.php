@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Notifications\Meeting;
 
-use App\Enums\MeetingFormatEnum;
+use App\Domains\Shared\Enums\MeetingFormatEnum;
 use App\Models\ClubAdmin\Payment\Payment;
 use App\Models\ClubEvents\Meeting\Meeting;
 use App\Services\IcsGenerator;

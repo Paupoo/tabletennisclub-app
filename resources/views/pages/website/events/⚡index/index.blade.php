@@ -71,9 +71,9 @@
         @forelse ($events as $event)
             @php
                 $statusBadge = match ($event->status) {
-                    \App\Enums\EventPostStatusEnum::PUBLISHED => ['class' => 'badge-success badge-soft', 'label' => __('Published')],
-                    \App\Enums\EventPostStatusEnum::DRAFT     => ['class' => 'badge-warning badge-soft', 'label' => __('Draft')],
-                    \App\Enums\EventPostStatusEnum::ARCHIVED  => ['class' => 'badge-ghost',              'label' => __('Archived')],
+                    \App\Domains\Shared\Enums\EventPostStatusEnum::PUBLISHED => ['class' => 'badge-success badge-soft', 'label' => __('Published')],
+                    \App\Domains\Shared\Enums\EventPostStatusEnum::DRAFT     => ['class' => 'badge-warning badge-soft', 'label' => __('Draft')],
+                    \App\Domains\Shared\Enums\EventPostStatusEnum::ARCHIVED  => ['class' => 'badge-ghost',              'label' => __('Archived')],
                 };
             @endphp
             <x-list-item :item="$event" class="bg-base-100 rounded-lg border"
@@ -94,11 +94,11 @@
                 </x-slot:sub-value>
                 <x-slot:actions>
                     <x-admin.shared.row-actions>
-                        @if ($event->status === \App\Enums\EventPostStatusEnum::DRAFT)
+                        @if ($event->status === \App\Domains\Shared\Enums\EventPostStatusEnum::DRAFT)
                             <x-button class="btn-ghost btn-sm btn-circle text-success" icon="o-check-circle"
                                 :tooltip="__('Publish')"
                                 wire:click="publish({{ $event->id }})" spinner />
-                        @elseif ($event->status === \App\Enums\EventPostStatusEnum::PUBLISHED)
+                        @elseif ($event->status === \App\Domains\Shared\Enums\EventPostStatusEnum::PUBLISHED)
                             <x-button class="btn-ghost btn-sm btn-circle text-base-content/40" icon="o-archive-box"
                                 :tooltip="__('Archive')"
                                 wire:click="archive({{ $event->id }})" spinner />
@@ -164,9 +164,9 @@
                     @scope('cell_status', $event)
                         @php
                             $s = match ($event->status) {
-                                \App\Enums\EventPostStatusEnum::PUBLISHED => ['class' => 'badge-success badge-soft', 'label' => __('Published')],
-                                \App\Enums\EventPostStatusEnum::DRAFT     => ['class' => 'badge-warning badge-soft', 'label' => __('Draft')],
-                                \App\Enums\EventPostStatusEnum::ARCHIVED  => ['class' => 'badge-ghost',              'label' => __('Archived')],
+                                \App\Domains\Shared\Enums\EventPostStatusEnum::PUBLISHED => ['class' => 'badge-success badge-soft', 'label' => __('Published')],
+                                \App\Domains\Shared\Enums\EventPostStatusEnum::DRAFT     => ['class' => 'badge-warning badge-soft', 'label' => __('Draft')],
+                                \App\Domains\Shared\Enums\EventPostStatusEnum::ARCHIVED  => ['class' => 'badge-ghost',              'label' => __('Archived')],
                             };
                         @endphp
                         <x-badge :value="$s['label']" class="{{ $s['class'] }}" />
@@ -191,11 +191,11 @@
 
                     @scope('actions', $event)
                         <x-admin.shared.row-actions>
-                            @if ($event->status === \App\Enums\EventPostStatusEnum::DRAFT)
+                            @if ($event->status === \App\Domains\Shared\Enums\EventPostStatusEnum::DRAFT)
                                 <x-button class="btn-ghost btn-sm btn-circle text-success" icon="o-check-circle"
                                     :tooltip="__('Publish')"
                                     wire:click="publish({{ $event->id }})" spinner />
-                            @elseif ($event->status === \App\Enums\EventPostStatusEnum::PUBLISHED)
+                            @elseif ($event->status === \App\Domains\Shared\Enums\EventPostStatusEnum::PUBLISHED)
                                 <x-button class="btn-ghost btn-sm btn-circle text-base-content/40" icon="o-archive-box"
                                     :tooltip="__('Archive')"
                                     wire:click="archive({{ $event->id }})" spinner />

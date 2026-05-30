@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories\ClubAdmin\Contact;
 
-use App\Enums\ContactReasonEnum;
+use App\Domains\Shared\Enums\ContactReasonEnum;
 use App\Models\ClubAdmin\Contact\Contact;
 use Illuminate\Database\Eloquent\Factories\Factory;
 

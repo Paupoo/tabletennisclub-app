@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Enums\LeagueCategory;
+use App\Domains\Shared\Enums\LeagueCategory;
 use App\Models\ClubEvents\Interclub\Interclub;
 
 test('method set total players per team positive tests', function (): void {

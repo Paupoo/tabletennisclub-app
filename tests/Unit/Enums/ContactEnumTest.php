@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Enums;
 
-use App\Enums\ContactReasonEnum;
+use App\Domains\Shared\Enums\ContactReasonEnum;
 
 describe('ContactReasonEnum', function () {
 

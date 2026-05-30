@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Enums\TournamentStatusEnum;
+use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Events\Tournament\NewTournamentPublished;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Observers\TournamentObserver;

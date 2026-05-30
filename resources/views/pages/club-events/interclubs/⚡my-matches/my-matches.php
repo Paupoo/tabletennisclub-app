@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Resources\views\Pages\ClubEvents\Interclubs\MyMatches;
 
-use App\Enums\InterclubAvailability;
+use App\Domains\Shared\Enums\InterclubAvailability;
 use App\Models\ClubEvents\Interclub\Interclub;
 use App\Models\ClubEvents\Interclub\Season;
 use App\Models\ClubEvents\Interclub\Team;

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Database\Factories\ClubEvents\Meeting;
 
-use App\Enums\MeetingFormatEnum;
-use App\Enums\MeetingStatusEnum;
-use App\Enums\MeetingTypeEnum;
+use App\Domains\Shared\Enums\MeetingFormatEnum;
+use App\Domains\Shared\Enums\MeetingStatusEnum;
+use App\Domains\Shared\Enums\MeetingTypeEnum;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Meeting\Meeting;
 use Illuminate\Database\Eloquent\Factories\Factory;

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\ClubAdmin\ClubSettings;
 
-use App\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Models\ClubAdmin\Users\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Livewire\Livewire;

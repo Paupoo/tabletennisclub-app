@@ -23,40 +23,40 @@
                 <x-input-label :value="__('Choose the recurrence')" class="mb-3" />
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <label for="none" class="relative flex items-center gap-2 px-4 py-3 border rounded-lg cursor-pointer transition-colors"
-                        :class="recurrence === '{{ \App\Enums\Recurrence::NONE->name }}' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'">
+                        :class="recurrence === '{{ \App\Domains\Shared\Enums\Recurrence::NONE->name }}' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'">
                         <x-radio-input id="none" name="recurrence"
-                            value="{{ \App\Enums\Recurrence::NONE->name }}"
-                            :checked="old('recurrence') === \App\Enums\Recurrence::NONE->name"
+                            value="{{ \App\Domains\Shared\Enums\Recurrence::NONE->name }}"
+                            :checked="old('recurrence') === \App\Domains\Shared\Enums\Recurrence::NONE->name"
                             x-model="recurrence"
                             class="shrink-0" />
                         <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ __('None') }}</span>
                     </label>
 
                     <label for="daily" class="relative flex items-center gap-2 px-4 py-3 border rounded-lg cursor-pointer transition-colors"
-                        :class="recurrence === '{{ \App\Enums\Recurrence::DAILY->name }}' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'">
+                        :class="recurrence === '{{ \App\Domains\Shared\Enums\Recurrence::DAILY->name }}' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'">
                         <x-radio-input id="daily" name="recurrence"
-                            value="{{ \App\Enums\Recurrence::DAILY->name }}"
-                            :checked="old('recurrence') === \App\Enums\Recurrence::DAILY->name"
+                            value="{{ \App\Domains\Shared\Enums\Recurrence::DAILY->name }}"
+                            :checked="old('recurrence') === \App\Domains\Shared\Enums\Recurrence::DAILY->name"
                             x-model="recurrence"
                             class="shrink-0" />
                         <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ __('Daily') }}</span>
                     </label>
 
                     <label for="weekly" class="relative flex items-center gap-2 px-4 py-3 border rounded-lg cursor-pointer transition-colors"
-                        :class="recurrence === '{{ \App\Enums\Recurrence::WEEKLY->name }}' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'">
+                        :class="recurrence === '{{ \App\Domains\Shared\Enums\Recurrence::WEEKLY->name }}' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'">
                         <x-radio-input id="weekly" name="recurrence"
-                            value="{{ \App\Enums\Recurrence::WEEKLY->name }}"
-                            :checked="old('recurrence') === \App\Enums\Recurrence::WEEKLY->name"
+                            value="{{ \App\Domains\Shared\Enums\Recurrence::WEEKLY->name }}"
+                            :checked="old('recurrence') === \App\Domains\Shared\Enums\Recurrence::WEEKLY->name"
                             x-model="recurrence"
                             class="shrink-0" />
                         <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ __('Weekly') }}</span>
                     </label>
 
                     <label for="biweekly" class="relative flex items-center gap-2 px-4 py-3 border rounded-lg cursor-pointer transition-colors"
-                        :class="recurrence === '{{ \App\Enums\Recurrence::BIWEEKLY->name }}' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'">
+                        :class="recurrence === '{{ \App\Domains\Shared\Enums\Recurrence::BIWEEKLY->name }}' ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'">
                         <x-radio-input id="biweekly" name="recurrence"
-                            value="{{ \App\Enums\Recurrence::BIWEEKLY->name }}"
-                            :checked="old('recurrence') === \App\Enums\Recurrence::BIWEEKLY->name"
+                            value="{{ \App\Domains\Shared\Enums\Recurrence::BIWEEKLY->name }}"
+                            :checked="old('recurrence') === \App\Domains\Shared\Enums\Recurrence::BIWEEKLY->name"
                             x-model="recurrence"
                             class="shrink-0" />
                         <span class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ __('Biweekly') }}</span>
@@ -68,7 +68,7 @@
             {{-- Options conditionnelles selon la récurrence --}}
             <div class="p-5 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-200 dark:border-gray-700">
                 {{-- Si aucune récurrence : lien vers un pack existant --}}
-                <div x-show="recurrence === '{{ \App\Enums\Recurrence::NONE->name }}'" x-cloak>
+                <div x-show="recurrence === '{{ \App\Domains\Shared\Enums\Recurrence::NONE->name }}'" x-cloak>
                     <x-form.field name="training_pack_id" :label="__('Add to an existing training pack ?')">
                         <x-select-input id="training_pack_id" name="training_pack_id" class="block w-full mt-1">
                             <option value="">{{ __('None') }}</option>
@@ -82,7 +82,7 @@
                 </div>
 
                 {{-- Si récurrence : création d'un nouveau pack --}}
-                <div x-show="recurrence !== '{{ \App\Enums\Recurrence::NONE->name }}'" x-cloak>
+                <div x-show="recurrence !== '{{ \App\Domains\Shared\Enums\Recurrence::NONE->name }}'" x-cloak>
                     <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                         {{ __('Training Pack Details') }}
                     </p>
@@ -120,7 +120,7 @@
     </div>
 
     {{-- End date --}}
-    <div x-show="recurrence !== '{{ \App\Enums\Recurrence::NONE->name }}'" x-cloak>
+    <div x-show="recurrence !== '{{ \App\Domains\Shared\Enums\Recurrence::NONE->name }}'" x-cloak>
         <x-form.field name="end_date" :label="__('End Date')">
             <x-text-input id="end_date" name="end_date" type="date" class="block w-full mt-1"
                 value="{{ old('end_date', $training->end?->format('Y-m-d')) }}" autofocus autocomplete="end_date" />

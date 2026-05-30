@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Resources\views\Pages\ClubEvents\Interclubs\Teams\Edit;
 
-use App\Enums\Gender;
-use App\Enums\LeagueLevel;
-use App\Enums\TeamName;
+use App\Domains\Shared\Enums\Gender;
+use App\Domains\Shared\Enums\LeagueLevel;
+use App\Domains\Shared\Enums\TeamName;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\League;
 use App\Models\ClubEvents\Interclub\Team;

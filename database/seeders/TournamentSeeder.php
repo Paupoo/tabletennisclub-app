@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Enums\ClubEventTypeEnum;
-use App\Enums\EventPostStatusEnum;
-use App\Enums\Ranking;
-use App\Enums\TournamentObjectiveEnum;
-use App\Enums\TournamentStatusEnum;
+use App\Domains\Shared\Enums\ClubEventTypeEnum;
+use App\Domains\Shared\Enums\EventPostStatusEnum;
+use App\Domains\Shared\Enums\Ranking;
+use App\Domains\Shared\Enums\TournamentObjectiveEnum;
+use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Tournament\TournamentMatch;

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories\ClubPosts;
 
-use App\Enums\NewsPostStatusEnum;
+use App\Domains\Shared\Enums\NewsPostStatusEnum;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubPosts\NewsPost;
 use Illuminate\Database\Eloquent\Factories\Factory;

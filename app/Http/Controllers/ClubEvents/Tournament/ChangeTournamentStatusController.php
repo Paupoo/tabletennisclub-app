@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\ClubEvents\Tournament;
 
-use App\Enums\TournamentStatusEnum;
+use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Http\Controllers\Controller;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\States\Tournament\TournamentStateMachine;

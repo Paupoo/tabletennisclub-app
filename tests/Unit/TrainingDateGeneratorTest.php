@@ -1,7 +1,7 @@
 <?php
 
 declare(strict_types=1);
-use App\Enums\Recurrence;
+use App\Domains\Shared\Enums\Recurrence;
 use App\Services\TrainingDateGenerator;
 use Carbon\Carbon;
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Enums\TournamentStatusEnum;
+use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Services\TournamentStatusManager;
 use Illuminate\Foundation\Testing\RefreshDatabase;

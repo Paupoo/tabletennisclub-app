@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Actions\ClubAdmin\Payments\GeneratePaymentReference;
-use App\Enums\CommitteeRolesEnum;
-use App\Enums\TournamentStatusEnum;
+use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Events\Tournament\UserRegisteredToTournament;
 use App\Jobs\SendDebtReminderNotification;
 use App\Models\ClubAdmin\Payment\CashRegister;

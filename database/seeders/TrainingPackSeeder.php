@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Enums\ClubEventTypeEnum;
-use App\Enums\EventPostStatusEnum;
-use App\Enums\Gender;
-use App\Enums\Ranking;
-use App\Enums\TrainingLevel;
-use App\Enums\TrainingType;
+use App\Domains\Shared\Enums\ClubEventTypeEnum;
+use App\Domains\Shared\Enums\EventPostStatusEnum;
+use App\Domains\Shared\Enums\Gender;
+use App\Domains\Shared\Enums\Ranking;
+use App\Domains\Shared\Enums\TrainingLevel;
+use App\Domains\Shared\Enums\TrainingType;
 use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Subscription\Subscription;
 use App\Models\ClubAdmin\Users\User;

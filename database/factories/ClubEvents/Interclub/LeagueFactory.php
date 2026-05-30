@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Database\Factories\ClubEvents\Interclub;
 
-use App\Enums\LeagueCategory;
-use App\Enums\LeagueLevel;
+use App\Domains\Shared\Enums\LeagueCategory;
+use App\Domains\Shared\Enums\LeagueLevel;
 use App\Models\ClubEvents\Interclub\League;
 use App\Models\ClubEvents\Interclub\Season;
 use Illuminate\Database\Eloquent\Factories\Factory;

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Enums\Recurrence;
+use App\Domains\Shared\Enums\Recurrence;
 use Carbon\Carbon;
 use Exception;
 use InvalidArgumentException;

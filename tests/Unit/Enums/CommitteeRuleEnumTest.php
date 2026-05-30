@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Enums;
 
-use App\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\CommitteeRolesEnum;
 
 use function PHPUnit\Framework\assertNull;
 

@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Data\Tournament\TournamentConfig;
-use App\Enums\TournamentObjectiveEnum;
+use App\Domains\Shared\Enums\TournamentObjectiveEnum;
 use App\Services\TournamentSimulator;
 
 beforeEach(function () {

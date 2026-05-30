@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Models\ClubEvents\Meeting;
 
-use App\Enums\MeetingFormatEnum;
-use App\Enums\MeetingStatusEnum;
-use App\Enums\MeetingTypeEnum;
-use App\Enums\MeetingUserStatusEnum;
+use App\Domains\Shared\Enums\MeetingFormatEnum;
+use App\Domains\Shared\Enums\MeetingStatusEnum;
+use App\Domains\Shared\Enums\MeetingTypeEnum;
+use App\Domains\Shared\Enums\MeetingUserStatusEnum;
 use App\Models\ClubAdmin\Users\User;
 use Database\Factories\ClubEvents\Meeting\MeetingFactory;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;

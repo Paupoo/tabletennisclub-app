@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Enums\MeetingUserStatusEnum;
+use App\Domains\Shared\Enums\MeetingUserStatusEnum;
 use App\Models\ClubAdmin\Payment\Payment;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Meeting\Meeting;

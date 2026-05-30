@@ -6,7 +6,7 @@ namespace App\Livewire\Tournament;
 
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Tournament\Tournament;
-use App\Services\TournamentService;
+use App\Domains\Competitions\Tournament\Services\TournamentService;
 use Livewire\Component;
 
 class PlayerRegistration extends Component

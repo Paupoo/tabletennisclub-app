@@ -16,7 +16,7 @@ use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Club;
 use App\Models\ClubEvents\Interclub\Season;
 use App\Domains\Trainings\Models\TrainingPack;
-use App\Services\EventPostService;
+use App\Domains\ClubPosts\Services\EventPostService;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;

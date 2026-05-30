@@ -6,7 +6,7 @@ namespace App\Livewire\Concerns;
 
 use App\Domains\Shared\Enums\EventPostStatusEnum;
 use App\Domains\ClubPosts\Models\EventPost;
-use App\Services\EventPostService;
+use App\Domains\ClubPosts\Services\EventPostService;
 use Illuminate\Validation\ValidationException;
 
 /**

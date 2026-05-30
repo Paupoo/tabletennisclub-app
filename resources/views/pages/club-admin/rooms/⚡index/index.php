@@ -6,7 +6,7 @@ use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Tournament\Tournament;
-use App\Services\TournamentService;
+use App\Domains\Competitions\Tournament\Services\TournamentService;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Database\Eloquent\Collection;

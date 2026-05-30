@@ -13,7 +13,7 @@ use App\Models\ClubAdmin\Subscription\Subscription;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Season;
 use App\Domains\Trainings\Models\TrainingPack;
-use App\Notifications\Subscription\SubscriptionCreatedNotification;
+use App\Domains\Subscriptions\Notifications\SubscriptionCreatedNotification;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Facades\Auth;

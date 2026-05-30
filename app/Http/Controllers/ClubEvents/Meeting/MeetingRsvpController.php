@@ -9,7 +9,7 @@ use App\Domains\Shared\Enums\MeetingUserStatusEnum;
 use App\Http\Controllers\Controller;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Meeting\Meeting;
-use App\Notifications\Meeting\MeetingRsvpConfirmationNotification;
+use App\Domains\Meetings\Notifications\MeetingRsvpConfirmationNotification;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 

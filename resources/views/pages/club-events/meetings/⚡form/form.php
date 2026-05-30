@@ -10,7 +10,7 @@ use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Meeting\Meeting;
 use App\Models\ClubEvents\Meeting\MeetingAgendaItem;
 use App\Models\ClubEvents\Meeting\MeetingDateProposal;
-use App\Notifications\Meeting\MeetingDatePollNotification;
+use App\Domains\Meetings\Notifications\MeetingDatePollNotification;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Facades\Notification;

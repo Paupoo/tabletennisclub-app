@@ -10,9 +10,9 @@ use App\Listeners\Tournament\UserRegisteredToTournamentToTournament;
 use App\Listeners\Tournament\UserUnregisteredToTournamentToTournament;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Tournament\Tournament;
-use App\Notifications\Tournament\NewTournamentPublishedNotification;
-use App\Notifications\Tournament\UserRegisteredToTournament as UserRegisteredToTournamentNotification;
-use App\Notifications\Tournament\UserUnregisteredFromTournament as UserUnregisteredFromTournamentNotification;
+use App\Domains\Competitions\Tournament\Notifications\NewTournamentPublishedNotification;
+use App\Domains\Competitions\Tournament\Notifications\UserRegisteredToTournament as UserRegisteredToTournamentNotification;
+use App\Domains\Competitions\Tournament\Notifications\UserUnregisteredFromTournament as UserUnregisteredFromTournamentNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 

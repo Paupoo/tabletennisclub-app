@@ -6,7 +6,7 @@ namespace App\States\Tournament\States;
 
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Models\ClubEvents\Tournament\Tournament;
-use App\Services\TournamentService;
+use App\Domains\Competitions\Tournament\Services\TournamentService;
 use App\States\Tournament\AbstractTournamentState;
 use InvalidArgumentException;
 

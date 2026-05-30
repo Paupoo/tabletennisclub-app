@@ -10,7 +10,7 @@ use App\Models\ClubAdmin\Payment\Payment;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Tournament\TournamentRegistration;
-use App\Services\TournamentService;
+use App\Domains\Competitions\Tournament\Services\TournamentService;
 use Illuminate\Support\Facades\Bus;
 use Livewire\Livewire;
 

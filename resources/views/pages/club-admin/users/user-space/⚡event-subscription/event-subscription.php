@@ -14,7 +14,7 @@ use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Tournament\TournamentPair;
 use App\Models\ClubEvents\Tournament\TournamentRegistration;
 use App\Domains\Trainings\Models\Training;
-use App\Services\TournamentService;
+use App\Domains\Competitions\Tournament\Services\TournamentService;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;

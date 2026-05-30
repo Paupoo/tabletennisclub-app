@@ -6,7 +6,7 @@ use App\Domains\Shared\Enums\MeetingUserStatusEnum;
 use App\Models\ClubAdmin\Payment\Payment;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Meeting\Meeting;
-use App\Notifications\Meeting\MeetingRsvpConfirmationNotification;
+use App\Domains\Meetings\Notifications\MeetingRsvpConfirmationNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;

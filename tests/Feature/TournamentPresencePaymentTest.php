@@ -8,8 +8,8 @@ use App\Models\ClubAdmin\Payment\CashRegisterEntry;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Tournament\TournamentRegistration;
-use App\Notifications\Tournament\TournamentDebtReminderNotification;
-use App\Services\TournamentService;
+use App\Domains\Competitions\Tournament\Notifications\TournamentDebtReminderNotification;
+use App\Domains\Competitions\Tournament\Services\TournamentService;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 

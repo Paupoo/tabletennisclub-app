@@ -6,9 +6,9 @@ namespace App\Services;
 
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Interclub;
-use App\Notifications\Interclub\InterclubAvailabilityRequestNotification;
-use App\Notifications\Interclub\InterclubLineupBroadcastNotification;
-use App\Notifications\Interclub\InterclubSelectionNotification;
+use App\Domains\Competitions\Interclub\Notifications\InterclubAvailabilityRequestNotification;
+use App\Domains\Competitions\Interclub\Notifications\InterclubLineupBroadcastNotification;
+use App\Domains\Competitions\Interclub\Notifications\InterclubSelectionNotification;
 use Illuminate\Support\Facades\Notification;
 
 class InterclubAvailabilityService

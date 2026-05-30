@@ -8,7 +8,7 @@ use App\Domains\Shared\Enums\MeetingTypeEnum;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Meeting\Meeting;
-use App\Notifications\Meeting\MeetingInvitationNotification;
+use App\Domains\Meetings\Notifications\MeetingInvitationNotification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;

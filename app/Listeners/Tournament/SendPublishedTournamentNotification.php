@@ -6,7 +6,7 @@ namespace App\Listeners\Tournament;
 
 use App\Events\Tournament\NewTournamentPublished;
 use App\Models\ClubAdmin\Users\User;
-use App\Notifications\Tournament\NewTournamentPublishedNotification;
+use App\Domains\Competitions\Tournament\Notifications\NewTournamentPublishedNotification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
 class SendPublishedTournamentNotification implements ShouldQueue

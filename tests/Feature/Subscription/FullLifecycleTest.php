@@ -12,7 +12,7 @@ use App\Models\ClubAdmin\Subscription\Subscription;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Season;
 use App\Domains\Trainings\Models\TrainingPack;
-use App\Notifications\Subscription\SubscriptionRejectedNotification;
+use App\Domains\Subscriptions\Notifications\SubscriptionRejectedNotification;
 use Illuminate\Support\Facades\Notification;
 
 // ─── Flux A — Full registration + training, single payment ────────────────────

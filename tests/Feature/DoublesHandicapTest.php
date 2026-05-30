@@ -7,7 +7,7 @@ use App\Models\ClubEvents\Tournament\Pool;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Tournament\TournamentMatch;
 use App\Models\ClubEvents\Tournament\TournamentPair;
-use App\Services\TournamentMatchService;
+use App\Domains\Competitions\Tournament\Services\TournamentMatchService;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

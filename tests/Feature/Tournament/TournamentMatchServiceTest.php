@@ -7,7 +7,7 @@ use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Tournament\Pool;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Tournament\TournamentMatch;
-use App\Services\TournamentMatchService;
+use App\Domains\Competitions\Tournament\Services\TournamentMatchService;
 use Illuminate\Support\Facades\Event;
 
 function matchPool(array $tournamentOverrides = []): Pool

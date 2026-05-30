@@ -14,7 +14,7 @@ use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Tournament\TournamentMatch;
 use App\Domains\ClubPosts\Models\NewsPost;
 use App\Services\TournamentFinalPhaseService;
-use App\Services\TournamentMatchService;
+use App\Domains\Competitions\Tournament\Services\TournamentMatchService;
 use App\Services\TournamentPoolService;
 use App\Services\TournamentTableService;
 use App\Livewire\Concerns\HasBreadcrumbs;

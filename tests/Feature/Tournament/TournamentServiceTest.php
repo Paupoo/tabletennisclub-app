@@ -7,11 +7,11 @@ use App\Models\ClubAdmin\Payment\Payment;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Tournament\TournamentRegistration;
-use App\Notifications\Tournament\TournamentConfirmationExpiredNotification;
-use App\Notifications\Tournament\TournamentRegistrationCancelledNotification;
-use App\Notifications\Tournament\TournamentRegistrationConfirmedNotification;
-use App\Notifications\Tournament\TournamentWaitlistSpotOpenedNotification;
-use App\Services\TournamentService;
+use App\Domains\Competitions\Tournament\Notifications\TournamentConfirmationExpiredNotification;
+use App\Domains\Competitions\Tournament\Notifications\TournamentRegistrationCancelledNotification;
+use App\Domains\Competitions\Tournament\Notifications\TournamentRegistrationConfirmedNotification;
+use App\Domains\Competitions\Tournament\Notifications\TournamentWaitlistSpotOpenedNotification;
+use App\Domains\Competitions\Tournament\Services\TournamentService;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use App\Data\Tournament\TournamentConfig;
 use App\Domains\Shared\Enums\TournamentObjectiveEnum;
-use App\Services\TournamentSimulator;
+use App\Domains\Competitions\Tournament\Services\TournamentSimulator;
 
 beforeEach(function () {
     $this->simulator = new TournamentSimulator;

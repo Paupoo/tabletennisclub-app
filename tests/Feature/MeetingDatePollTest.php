@@ -8,7 +8,7 @@ use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Meeting\Meeting;
 use App\Models\ClubEvents\Meeting\MeetingDateProposal;
 use App\Models\ClubEvents\Meeting\MeetingDateVote;
-use App\Notifications\Meeting\MeetingDatePollNotification;
+use App\Domains\Meetings\Notifications\MeetingDatePollNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;

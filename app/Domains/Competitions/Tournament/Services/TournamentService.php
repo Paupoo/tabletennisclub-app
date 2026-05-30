@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Domains\ClubPosts\Services;
+namespace App\Domains\Competitions\Tournament\Services;
 
 use App\Actions\ClubAdmin\Payments\GeneratePaymentReference;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;

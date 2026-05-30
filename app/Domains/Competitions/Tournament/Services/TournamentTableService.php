@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services;
+namespace App\Domains\Competitions\Tournament\Services;
 
 use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubEvents\Tournament\Tournament;

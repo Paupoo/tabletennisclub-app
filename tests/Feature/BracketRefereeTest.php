@@ -6,7 +6,7 @@ use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Tournament\TournamentMatch;
-use App\Services\TournamentFinalPhaseService;
+use App\Domains\Competitions\Tournament\Services\TournamentFinalPhaseService;
 
 function makeBracketTournament(): Tournament
 {

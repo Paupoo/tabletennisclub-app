@@ -20,7 +20,7 @@ use App\Models\ClubEvents\Interclub\League;
 use App\Models\ClubEvents\Interclub\Season;
 use App\Models\ClubEvents\Interclub\Team;
 use App\Services\ForceList;
-use App\Services\TournamentTableService;
+use App\Domains\Competitions\Tournament\Services\TournamentTableService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;

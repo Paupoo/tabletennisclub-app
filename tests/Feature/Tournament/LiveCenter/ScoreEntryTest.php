@@ -9,7 +9,7 @@ use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Tournament\Pool;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Tournament\TournamentMatch;
-use App\Services\TournamentTableService;
+use App\Domains\Competitions\Tournament\Services\TournamentTableService;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 

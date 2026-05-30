@@ -8,7 +8,7 @@ use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Tournament\TournamentMatch;
 use App\Models\ClubEvents\Tournament\TournamentPair;
 use App\Domains\Competitions\Tournament\Services\TournamentMatchService;
-use App\Services\TournamentPoolService;
+use App\Domains\Competitions\Tournament\Services\TournamentPoolService;
 use Livewire\Livewire;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

@@ -23,7 +23,7 @@ use App\Domains\Competitions\Tournament\Notifications\TournamentInvitationNotifi
 use App\Domains\Competitions\Tournament\Notifications\TournamentUpdatedNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentWaitlistRemovedNotification;
 use App\Domains\Competitions\Tournament\Services\TournamentMatchService;
-use App\Services\TournamentPoolService;
+use App\Domains\Competitions\Tournament\Services\TournamentPoolService;
 use App\Domains\Competitions\Tournament\Services\TournamentService;
 use App\Domains\Competitions\Tournament\Services\TournamentSimulator;
 use App\Livewire\Concerns\HasBreadcrumbs;

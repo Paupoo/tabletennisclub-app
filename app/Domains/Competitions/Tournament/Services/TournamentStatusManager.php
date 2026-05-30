@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Domains\ClubPosts\Services;
+namespace App\Domains\Competitions\Tournament\Services;
 
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Models\ClubEvents\Tournament\Tournament;

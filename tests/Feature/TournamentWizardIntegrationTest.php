@@ -9,7 +9,7 @@ use App\Models\ClubEvents\Tournament\TournamentPair;
 use App\Domains\ClubPosts\Models\EventPost;
 use App\Domains\Competitions\Tournament\Notifications\TournamentInvitationNotification;
 use App\Domains\Competitions\Tournament\Services\TournamentMatchService;
-use App\Services\TournamentPoolService;
+use App\Domains\Competitions\Tournament\Services\TournamentPoolService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;

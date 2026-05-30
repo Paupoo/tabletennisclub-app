@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace App\Http\Controllers\ClubEvents\Meeting;
 
 use App\Actions\ClubAdmin\Payments\GeneratePaymentReference;
+use App\Domains\Meetings\Models\Meeting;
+use App\Domains\Meetings\Notifications\MeetingRsvpConfirmationNotification;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
 use App\Http\Controllers\Controller;
 use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Meeting\Meeting;
-use App\Domains\Meetings\Notifications\MeetingRsvpConfirmationNotification;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 

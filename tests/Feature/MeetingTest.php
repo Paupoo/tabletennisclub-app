@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
+use App\Domains\Meetings\Models\Meeting;
+use App\Domains\Meetings\Notifications\MeetingCancelledNotification;
+use App\Domains\Meetings\Notifications\MeetingDatePollNotification;
+use App\Domains\Meetings\Notifications\MeetingInvitationNotification;
+use App\Domains\Meetings\Notifications\MeetingPostponedNotification;
 use App\Domains\Shared\Enums\MeetingFormatEnum;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\MeetingTypeEnum;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
 use App\Jobs\SendMeetingInvitationsJob;
 use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Meeting\Meeting;
-use App\Domains\Meetings\Notifications\MeetingCancelledNotification;
-use App\Domains\Meetings\Notifications\MeetingDatePollNotification;
-use App\Domains\Meetings\Notifications\MeetingInvitationNotification;
-use App\Domains\Meetings\Notifications\MeetingPostponedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Notification;

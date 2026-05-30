@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domains\Meetings\Notifications;
 
+use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Shared\Enums\MeetingFormatEnum;
-use App\Models\ClubEvents\Meeting\Meeting;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;

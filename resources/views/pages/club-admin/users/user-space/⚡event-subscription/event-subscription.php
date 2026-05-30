@@ -9,7 +9,7 @@ use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Season;
-use App\Models\ClubEvents\Meeting\Meeting;
+use App\Domains\Meetings\Models\Meeting;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Tournament\TournamentPair;
 use App\Models\ClubEvents\Tournament\TournamentRegistration;

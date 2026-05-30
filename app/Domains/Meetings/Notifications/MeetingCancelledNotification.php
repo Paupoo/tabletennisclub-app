@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Meetings\Notifications;
 
-use App\Models\ClubEvents\Meeting\Meeting;
+use App\Domains\Meetings\Models\Meeting;
 use App\Services\IcsGenerator;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;

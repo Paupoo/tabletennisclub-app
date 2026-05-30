@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
+use App\Domains\Meetings\Models\Meeting;
+use App\Domains\Meetings\Notifications\MeetingInvitationNotification;
 use App\Domains\Shared\Enums\MeetingTypeEnum;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
 use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Meeting\Meeting;
-use App\Domains\Meetings\Notifications\MeetingInvitationNotification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;

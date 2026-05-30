@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Shared\Enums\MeetingFormatEnum;
-use App\Models\ClubEvents\Meeting\Meeting;
 use Illuminate\Support\Carbon;
 
 class IcsGenerator

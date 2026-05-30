@@ -6,7 +6,7 @@ use App\Domains\Shared\Enums\MeetingFormatEnum;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\MeetingTypeEnum;
 use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Meeting\Meeting;
+use App\Domains\Meetings\Models\Meeting;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\View\View;

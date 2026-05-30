@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Policies;
+namespace App\Domains\ClubPosts\Policies;
 
 use App\Models\ClubAdmin\Users\User;
 use App\Domains\ClubPosts\Models\EventPost;

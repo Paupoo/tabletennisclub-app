@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Policies;
+namespace App\Domains\Trainings\Policies;
 
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Models\User;

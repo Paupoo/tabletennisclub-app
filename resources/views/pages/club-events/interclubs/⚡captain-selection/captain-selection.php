@@ -9,7 +9,7 @@ use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Interclub;
 use App\Models\ClubEvents\Interclub\Season;
 use App\Models\ClubEvents\Interclub\Team;
-use App\Services\InterclubAvailabilityService;
+use App\Domains\Competitions\Interclub\Services\InterclubAvailabilityService;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Collection;

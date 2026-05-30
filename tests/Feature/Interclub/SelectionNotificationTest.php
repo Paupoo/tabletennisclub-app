@@ -12,7 +12,7 @@ use App\Models\ClubEvents\Interclub\Team;
 use App\Domains\Competitions\Interclub\Notifications\InterclubAvailabilityRequestNotification;
 use App\Domains\Competitions\Interclub\Notifications\InterclubLineupBroadcastNotification;
 use App\Domains\Competitions\Interclub\Notifications\InterclubSelectionNotification;
-use App\Services\InterclubAvailabilityService;
+use App\Domains\Competitions\Interclub\Services\InterclubAvailabilityService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Services;
+namespace App\Domains\Competitions\Interclub\Services;
 
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Interclub;

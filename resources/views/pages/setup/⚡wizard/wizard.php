@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Models\AppSetting;
+use App\Domains\Shared\Models\AppSetting;
 use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Club\Table;
 use App\Models\ClubAdmin\Users\User;

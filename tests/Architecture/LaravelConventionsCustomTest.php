@@ -87,7 +87,7 @@ arch()
 arch()
     ->expect('App')
     ->not->toExtend('Illuminate\Database\Eloquent\Model')
-    ->ignoring('App\Models');
+    ->ignoring(['App\Models', 'App\Domains\Shared\Models']);
 
 arch()
     ->expect('App\Http\Requests')

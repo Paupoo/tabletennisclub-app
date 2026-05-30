@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Competitions\Tournament\Notifications;
 
-use App\Models\ClubAdmin\Payment\Payment;
+use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Models\ClubEvents\Tournament\Tournament;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;

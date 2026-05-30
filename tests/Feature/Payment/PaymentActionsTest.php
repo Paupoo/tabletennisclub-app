@@ -7,11 +7,10 @@ use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
 use App\Actions\ClubAdmin\Payments\ProcessPaymentAction;
 use App\Actions\ClubAdmin\Payments\SendPayementInvite;
 use App\Mail\PaymentInvitationEmail;
-use App\Models\ClubAdmin\Payment\Payment;
 use App\Models\ClubAdmin\Subscription\Subscription;
 use App\Models\ClubAdmin\Users\User;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
 
 // ============================================================
@@ -23,10 +22,10 @@ describe('GeneratePaymentQR', function () {
     test('returns a base64 PNG data URI string', function () {
         $subscription = Subscription::factory()->create(['status' => 'confirmed', 'amount_due' => 125]);
         $payment = $subscription->payments()->create([
-            'reference'  => '100/2505/00101',
+            'reference' => '100/2505/00101',
             'amount_due' => 125,
             'amount_paid' => 0,
-            'status'     => 'pending',
+            'status' => 'pending',
         ]);
 
         $result = (new GeneratePaymentQR)($payment);
@@ -37,10 +36,10 @@ describe('GeneratePaymentQR', function () {
     test('QR content embeds the correct IBAN', function () {
         $subscription = Subscription::factory()->create(['status' => 'confirmed', 'amount_due' => 60]);
         $payment = $subscription->payments()->create([
-            'reference'  => '123/4567/89001',
+            'reference' => '123/4567/89001',
             'amount_due' => 60,
             'amount_paid' => 0,
-            'status'     => 'pending',
+            'status' => 'pending',
         ]);
 
         // Decode the PNG and verify the data URI can be base64-decoded
@@ -55,16 +54,16 @@ describe('GeneratePaymentQR', function () {
         $sub2 = Subscription::factory()->create(['status' => 'confirmed', 'amount_due' => 60]);
 
         $payment1 = $sub1->payments()->create([
-            'reference'  => '100/0001/00001',
+            'reference' => '100/0001/00001',
             'amount_due' => 60,
             'amount_paid' => 0,
-            'status'     => 'pending',
+            'status' => 'pending',
         ]);
         $payment2 = $sub2->payments()->create([
-            'reference'  => '200/0002/00002',
+            'reference' => '200/0002/00002',
             'amount_due' => 60,
             'amount_paid' => 0,
-            'status'     => 'pending',
+            'status' => 'pending',
         ]);
 
         $qr1 = (new GeneratePaymentQR)($payment1);
@@ -74,7 +73,6 @@ describe('GeneratePaymentQR', function () {
     })->group('payments', 'qr');
 
 })->group('payments');
-
 
 // ============================================================
 // GeneratePayment
@@ -119,11 +117,10 @@ describe('GeneratePayment', function () {
         $subscription = Subscription::factory()->create(['status' => 'confirmed', 'amount_due' => 125]);
 
         expect(fn () => (new GeneratePayment)($subscription))
-            ->toThrow(\Illuminate\Auth\Access\AuthorizationException::class);
+            ->toThrow(AuthorizationException::class);
     })->group('payments', 'generate');
 
 })->group('payments');
-
 
 // ============================================================
 // SendPayementInvite
@@ -137,15 +134,15 @@ describe('SendPayementInvite', function () {
         $user = User::factory()->create();
         $subscription = Subscription::factory()->create([
             'user_id' => $user->id,
-            'status'  => 'confirmed',
+            'status' => 'confirmed',
             'amount_due' => 125,
         ]);
         $payment = $subscription->payments()->create([
-            'reference'           => '100/2505/00101',
-            'amount_due'          => 125,
-            'amount_paid'         => 0,
-            'status'              => 'pending',
-            'invitation_counter'  => 0,
+            'reference' => '100/2505/00101',
+            'amount_due' => 125,
+            'amount_paid' => 0,
+            'status' => 'pending',
+            'invitation_counter' => 0,
         ]);
 
         (new SendPayementInvite)($payment);
@@ -159,15 +156,15 @@ describe('SendPayementInvite', function () {
         $user = User::factory()->create();
         $subscription = Subscription::factory()->create([
             'user_id' => $user->id,
-            'status'  => 'confirmed',
+            'status' => 'confirmed',
             'amount_due' => 125,
         ]);
         $payment = $subscription->payments()->create([
-            'reference'           => '100/2505/00101',
-            'amount_due'          => 125,
-            'amount_paid'         => 0,
-            'status'              => 'pending',
-            'invitation_counter'  => 0,
+            'reference' => '100/2505/00101',
+            'amount_due' => 125,
+            'amount_paid' => 0,
+            'status' => 'pending',
+            'invitation_counter' => 0,
         ]);
 
         (new SendPayementInvite)($payment);
@@ -181,14 +178,14 @@ describe('SendPayementInvite', function () {
         $user = User::factory()->create();
         $subscription = Subscription::factory()->create([
             'user_id' => $user->id,
-            'status'  => 'confirmed',
+            'status' => 'confirmed',
             'amount_due' => 125,
         ]);
         $payment = $subscription->payments()->create([
-            'reference'   => '100/2505/00101',
-            'amount_due'  => 125,
+            'reference' => '100/2505/00101',
+            'amount_due' => 125,
             'amount_paid' => 0,
-            'status'      => 'pending',
+            'status' => 'pending',
         ]);
 
         // invitation_counter is not in $fillable — set directly and save
@@ -206,14 +203,14 @@ describe('SendPayementInvite', function () {
         $user = User::factory()->create();
         $subscription = Subscription::factory()->create([
             'user_id' => $user->id,
-            'status'  => 'confirmed',
+            'status' => 'confirmed',
             'amount_due' => 125,
         ]);
         $payment = $subscription->payments()->create([
-            'reference'  => '100/2505/00101',
+            'reference' => '100/2505/00101',
             'amount_due' => 125,
             'amount_paid' => 0,
-            'status'     => 'pending',
+            'status' => 'pending',
         ]);
 
         $response = (new SendPayementInvite)($payment);
@@ -222,7 +219,6 @@ describe('SendPayementInvite', function () {
     })->group('payments', 'invite');
 
 })->group('payments');
-
 
 // ============================================================
 // ProcessPaymentAction
@@ -237,10 +233,10 @@ describe('ProcessPaymentAction', function () {
     test('marks pending payment as paid and transitions subscription', function () {
         $subscription = Subscription::factory()->create(['status' => 'confirmed', 'amount_due' => 150]);
         $payment = $subscription->payments()->create([
-            'reference'  => '100/2505/00301',
+            'reference' => '100/2505/00301',
             'amount_due' => 150,
             'amount_paid' => 0,
-            'status'     => 'pending',
+            'status' => 'pending',
         ]);
 
         // Work around the state() bug by calling model methods directly (as the action should)
@@ -256,7 +252,7 @@ describe('ProcessPaymentAction', function () {
         $subscription = Subscription::factory()->create(['status' => 'confirmed', 'amount_due' => 150]);
 
         expect(fn () => (new ProcessPaymentAction)->execute($subscription, 'TXN-1', 150.0))
-            ->toThrow(\DomainException::class, 'No pending payment found');
+            ->toThrow(DomainException::class, 'No pending payment found');
     })->group('payments', 'process');
 
 })->group('payments');

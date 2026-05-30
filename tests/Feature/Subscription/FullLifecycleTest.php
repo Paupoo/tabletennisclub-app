@@ -6,13 +6,13 @@ use App\Actions\ClubAdmin\Payments\GeneratePaymentReference;
 use App\Actions\ClubAdmin\Subscriptions\ApproveTrainingPacksAction;
 use App\Actions\ClubAdmin\Subscriptions\CalculatePriceAction;
 use App\Actions\ClubAdmin\Subscriptions\EnrollInTrainingPackAction;
-use App\Models\ClubAdmin\Payment\Payment;
-use App\Models\ClubAdmin\Payment\Transaction;
+use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\ClubAdmin\Payment\Models\Transaction;
+use App\Domains\Subscriptions\Notifications\SubscriptionRejectedNotification;
+use App\Domains\Trainings\Models\TrainingPack;
 use App\Models\ClubAdmin\Subscription\Subscription;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Season;
-use App\Domains\Trainings\Models\TrainingPack;
-use App\Domains\Subscriptions\Notifications\SubscriptionRejectedNotification;
 use Illuminate\Support\Facades\Notification;
 
 // ─── Flux A — Full registration + training, single payment ────────────────────

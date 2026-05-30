@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
-use App\Models\ClubAdmin\Payment\Payment;
+use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Actions\ClubAdmin\Subscriptions\CreateSubscriptionAction;
 use App\Actions\ClubAdmin\Subscriptions\EnrollInTrainingPackAction;
 use App\Actions\ClubAdmin\Subscriptions\LeaveTrainingPackAction;

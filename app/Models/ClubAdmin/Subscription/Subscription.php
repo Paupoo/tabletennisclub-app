@@ -6,10 +6,10 @@ namespace App\Models\ClubAdmin\Subscription;
 
 use App\Contracts\PayableInterface;
 use App\Contracts\SubscriptionState;
-use App\Models\ClubAdmin\Payment\Payment;
+use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\Trainings\Models\TrainingPack;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Season;
-use App\Domains\Trainings\Models\TrainingPack;
 use App\States\Payments\CancelledState;
 use App\States\Payments\PaidState;
 use App\States\Payments\PendingState;

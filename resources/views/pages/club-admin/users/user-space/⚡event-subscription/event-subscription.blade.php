@@ -277,7 +277,7 @@
     <x-modal wire:model="paymentModal" :title="__('Payment details')" box-class="max-w-sm">
     @if ($paymentQr && $selectedPaymentId)
         @php
-            $payment = \App\Models\ClubAdmin\Payment\Payment::with(['payable.tournament'])->find($selectedPaymentId);
+            $payment = \App\Domains\ClubAdmin\Payment\Models\Payment::with(['payable.tournament'])->find($selectedPaymentId);
             $eventName = $payment?->payable?->tournament?->name;
         @endphp
         <div class="flex flex-col items-center gap-5">

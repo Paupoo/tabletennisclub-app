@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\ClubAdmin\Payment\Notifications;
 
-use App\Models\ClubAdmin\Payment\Payment;
+use App\Domains\ClubAdmin\Payment\Models\Payment;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;

@@ -5,16 +5,9 @@ declare(strict_types=1);
 namespace App\Domains\Competitions\Tournament\Services;
 
 use App\Actions\ClubAdmin\Payments\GeneratePaymentReference;
-use App\Domains\Shared\Enums\CommitteeRolesEnum;
-use App\Domains\Shared\Enums\TournamentStatusEnum;
-use App\Events\Tournament\UserRegisteredToTournament;
-use App\Jobs\SendDebtReminderNotification;
-use App\Models\ClubAdmin\Payment\CashRegister;
-use App\Models\ClubAdmin\Payment\CashRegisterEntry;
-use App\Models\ClubAdmin\Payment\Payment;
-use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Tournament\Tournament;
-use App\Models\ClubEvents\Tournament\TournamentRegistration;
+use App\Domains\ClubAdmin\Payment\Models\CashRegister;
+use App\Domains\ClubAdmin\Payment\Models\CashRegisterEntry;
+use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Notifications\RefundRequestedNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentConfirmationExpiredNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentPaymentReminderNotification;
@@ -22,6 +15,13 @@ use App\Domains\Competitions\Tournament\Notifications\TournamentPaymentRequestNo
 use App\Domains\Competitions\Tournament\Notifications\TournamentRegistrationCancelledNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentRegistrationConfirmedNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentWaitlistSpotOpenedNotification;
+use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\TournamentStatusEnum;
+use App\Events\Tournament\UserRegisteredToTournament;
+use App\Jobs\SendDebtReminderNotification;
+use App\Models\ClubAdmin\Users\User;
+use App\Models\ClubEvents\Tournament\Tournament;
+use App\Models\ClubEvents\Tournament\TournamentRegistration;
 use Event;
 use Illuminate\Support\Facades\DB;
 

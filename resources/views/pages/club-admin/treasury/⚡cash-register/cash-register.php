@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Models\ClubAdmin\Payment\CashRegister;
-use App\Models\ClubAdmin\Payment\CashRegisterEntry;
+use App\Domains\ClubAdmin\Payment\Models\CashRegister;
+use App\Domains\ClubAdmin\Payment\Models\CashRegisterEntry;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Facades\Auth;

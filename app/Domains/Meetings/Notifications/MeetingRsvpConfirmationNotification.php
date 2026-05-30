@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domains\Meetings\Notifications;
 
+use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\Shared\Enums\MeetingFormatEnum;
-use App\Models\ClubAdmin\Payment\Payment;
 use App\Models\ClubEvents\Meeting\Meeting;
 use App\Services\IcsGenerator;
 use Illuminate\Bus\Queueable;

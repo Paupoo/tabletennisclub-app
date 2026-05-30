@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Database\Factories\ClubAdmin\Payment;
+namespace Database\Factories\Domains\ClubAdmin\Payment\Models;
 
-use App\Models\ClubAdmin\Payment\Payment;
+use App\Domains\ClubAdmin\Payment\Models\Payment;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -12,6 +12,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class PaymentFactory extends Factory
 {
+    protected $model = Payment::class;
+
     /**
      * Define the model's default state.
      *

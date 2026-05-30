@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-use App\Domains\Shared\Enums\TournamentStatusEnum;
-use App\Models\ClubAdmin\Payment\Payment;
-use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Tournament\Tournament;
-use App\Models\ClubEvents\Tournament\TournamentRegistration;
+use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\Competitions\Tournament\Notifications\TournamentConfirmationExpiredNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentRegistrationCancelledNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentRegistrationConfirmedNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentWaitlistSpotOpenedNotification;
 use App\Domains\Competitions\Tournament\Services\TournamentService;
+use App\Domains\Shared\Enums\TournamentStatusEnum;
+use App\Models\ClubAdmin\Users\User;
+use App\Models\ClubEvents\Tournament\Tournament;
+use App\Models\ClubEvents\Tournament\TournamentRegistration;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 

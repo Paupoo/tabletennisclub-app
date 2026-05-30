@@ -7,7 +7,7 @@ use App\Domains\Shared\Enums\NewsPostStatusEnum;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Mail\TournamentResultsMail;
 use App\Models\ClubAdmin\Club\Table;
-use App\Models\ClubAdmin\Payment\Payment;
+use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Tournament\Pool;
 use App\Models\ClubEvents\Tournament\Tournament;

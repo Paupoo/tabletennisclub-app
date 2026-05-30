@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Models\ClubAdmin\Subscription;
 
 use App\Contracts\PayableInterface;
-use App\Models\ClubAdmin\Payment\Payment;
+use App\Domains\ClubAdmin\Payment\Models\Payment;
 use Attribute;
 use Database\Factories\RegistrationFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

@@ -16,9 +16,9 @@ use const App\Http\Controllers\transactions;
 use const App\Http\Controllers\xlsx;
 use const App\Http\Controllers\XLSX;
 
+use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Http\Controllers\Controller;
-use App\Models\ClubAdmin\Payment\Payment;
-use App\Models\ClubAdmin\Payment\Transaction;
 use App\Models\ClubAdmin\Subscription\Subscription;
 use App\Models\ClubEvents\Tournament\TournamentRegistration;
 use Carbon\Carbon;

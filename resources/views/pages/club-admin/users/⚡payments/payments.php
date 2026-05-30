@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use App\Mail\PaymentInvitationEmail;
-use App\Models\ClubAdmin\Payment\Payment;
-use App\Models\ClubAdmin\Payment\Transaction;
+use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Models\ClubAdmin\Subscription\Subscription;
 use App\Models\ClubEvents\Tournament\TournamentRegistration;
 use App\Livewire\Concerns\HasBreadcrumbs;

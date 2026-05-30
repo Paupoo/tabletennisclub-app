@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Models\ClubAdmin\Payment;
+namespace App\Domains\ClubAdmin\Payment\Models;
 
 use App\Models\Clubadmin\Users\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

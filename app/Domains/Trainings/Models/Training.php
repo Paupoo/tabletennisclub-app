@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domains\Trainings\Models;
 
+use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\Shared\Enums\TrainingCancellationType;
-use App\Models\ClubAdmin\Club\Room;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Season;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

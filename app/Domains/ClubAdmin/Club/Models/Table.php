@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Models\ClubAdmin\Club;
+namespace App\Domains\ClubAdmin\Club\Models;
 
 use App\Models\ClubEvents\Tournament\TableTournament;
 use App\Models\ClubEvents\Tournament\Tournament;

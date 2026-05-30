@@ -9,8 +9,8 @@ use App\Domains\Shared\Enums\ClubEventTypeEnum;
 use App\Domains\Shared\Enums\TournamentObjectiveEnum;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Livewire\Concerns\HasEventPostForm;
-use App\Models\ClubAdmin\Club\Room;
-use App\Models\ClubAdmin\Club\Table;
+use App\Domains\ClubAdmin\Club\Models\Room;
+use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Domains\ClubAdmin\Payment\Models\CashRegister;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Models\ClubAdmin\Users\User;
@@ -755,8 +755,8 @@ new class extends Component
         if ($this->eventLocation === '') {
             $roomId = $this->selectedRooms[0] ?? null;
             $room   = $roomId
-                ? \App\Models\ClubAdmin\Club\Room::find($roomId)
-                : \App\Models\ClubAdmin\Club\Room::first();
+                ? \App\Domains\ClubAdmin\Club\Models\Room::find($roomId)
+                : \App\Domains\ClubAdmin\Club\Models\Room::first();
 
             if ($room) {
                 $this->eventLocation = implode(', ', array_filter([

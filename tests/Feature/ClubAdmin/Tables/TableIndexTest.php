@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Livewire;
 
-use App\Models\ClubAdmin\Club\Room;
-use App\Models\ClubAdmin\Club\Table;
+use App\Domains\ClubAdmin\Club\Models\Room;
+use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Models\ClubAdmin\Users\User;
 use Illuminate\Support\Collection;
 use Livewire\Livewire;

@@ -8,7 +8,7 @@ use App\Domains\Shared\Enums\TrainingCancellationType;
 use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Shared\Enums\TrainingType;
 use App\Livewire\Concerns\HasEventPostForm;
-use App\Models\ClubAdmin\Club\Room;
+use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Season;
 use App\Domains\Trainings\Models\Training;

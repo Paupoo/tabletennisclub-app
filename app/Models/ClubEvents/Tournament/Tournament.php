@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\Models\ClubEvents\Tournament;
 
+use App\Domains\ClubAdmin\Club\Models\Room;
+use App\Domains\ClubAdmin\Club\Models\Table;
+use App\Domains\ClubPosts\Models\EventPost;
+use App\Domains\ClubPosts\Models\NewsPost;
 use App\Domains\Shared\Casts\MoneyCast;
 use App\Domains\Shared\Enums\TournamentObjectiveEnum;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
-use App\Models\ClubAdmin\Club\Room;
-use App\Models\ClubAdmin\Club\Table;
 use App\Models\ClubAdmin\Users\User;
-use App\Domains\ClubPosts\Models\EventPost;
-use App\Domains\ClubPosts\Models\NewsPost;
 use App\Observers\TournamentObserver;
 use Database\Factories\ClubEvents\Tournament\TournamentFactory;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;

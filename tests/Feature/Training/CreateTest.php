@@ -6,10 +6,10 @@ declare(strict_types=1);
 // to a Livewire wizard based on the TrainingPack model. The legacy routes no longer exist.
 // These tests need to be rewritten against the Livewire component before they can be enabled.
 
+use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\Shared\Enums\Recurrence;
 use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Shared\Enums\TrainingType;
-use App\Models\ClubAdmin\Club\Room;
 use App\Domains\Trainings\Models\Training;
 use Tests\Trait\CreateUser;
 

@@ -8,7 +8,7 @@
             <x-input placeholder="Rechercher..." wire:model.live.debounce.300ms="search" icon="o-magnifying-glass" />
         </x-slot:middle>
         <x-slot:actions>
-            @can('create', \App\Models\ClubAdmin\Club\Table::class)
+            @can('create', \App\Domains\ClubAdmin\Club\Models\Table::class)
             <x-button :label="__('Create')" icon="o-plus" class="btn-primary btn-sm" link="{{ route('admin.tables.create') }}" />
             <x-button x-on:click="$wire.$refresh()" :label="__('Refresh')" class="btn-outline btn-sm"/>
             @endcan

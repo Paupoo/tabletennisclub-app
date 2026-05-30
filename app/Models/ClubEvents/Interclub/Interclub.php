@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Models\ClubEvents\Interclub;
 
+use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\Shared\Enums\LeagueCategory;
-use App\Models\ClubAdmin\Club\Room;
-use App\Models\ClubAdmin\Users\User;
 use App\Domains\Shared\Traits\HasAvailability;
+use App\Models\ClubAdmin\Users\User;
 use Carbon\Carbon;
 use Database\Factories\ClubEvents\Interclub\InterclubFactory;
 use Eloquent;

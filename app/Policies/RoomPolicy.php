@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
-use App\Models\ClubAdmin\Club\Room;
+use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Models\ClubAdmin\Users\User;
 
 class RoomPolicy

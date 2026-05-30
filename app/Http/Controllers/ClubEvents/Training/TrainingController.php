@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\ClubEvents\Training;
 
+use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\Shared\Enums\Recurrence;
 use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Shared\Enums\TrainingType;
-use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreTrainingRequest;
-use App\Http\Requests\UpdateTrainingRequest;
-use App\Models\ClubAdmin\Club\Room;
-use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Interclub\Season;
 use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Trainings\Services\TrainingBuilder;
 use App\Domains\Trainings\Services\TrainingDateGenerator;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreTrainingRequest;
+use App\Http\Requests\UpdateTrainingRequest;
+use App\Models\ClubAdmin\Users\User;
+use App\Models\ClubEvents\Interclub\Season;
 use App\Support\Breadcrumb;
 use Exception;
 use Illuminate\Contracts\View\View;

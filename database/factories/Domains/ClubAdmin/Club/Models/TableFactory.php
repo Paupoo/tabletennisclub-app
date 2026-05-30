@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Database\Factories\ClubAdmin\Club;
+namespace Database\Factories\Domains\ClubAdmin\Club\Models;
 
-use App\Models\ClubAdmin\Club\Table;
+use App\Domains\ClubAdmin\Club\Models\Table;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -12,6 +12,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class TableFactory extends Factory
 {
+    protected $model = Table::class;
+
     /**
      * Define the model's default state.
      *

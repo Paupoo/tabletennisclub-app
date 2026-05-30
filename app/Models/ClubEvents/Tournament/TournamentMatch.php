@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\ClubEvents\Tournament;
 
-use App\Models\ClubAdmin\Club\Table;
+use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Models\ClubAdmin\Users\User;
 use Database\Factories\ClubEvents\Tournament\TournamentMatchFactory;
 use Eloquent;

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models\ClubEvents\Interclub;
 
-use App\Models\ClubAdmin\Club\Room;
+use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Models\ClubAdmin\Users\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;

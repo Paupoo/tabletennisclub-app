@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Competitions\Tournament\Services;
 
-use App\Models\ClubAdmin\Club\Room;
+use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Tournament\TournamentMatch;
 

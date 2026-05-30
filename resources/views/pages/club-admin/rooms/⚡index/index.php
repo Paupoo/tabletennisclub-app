@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Domains\Shared\Enums\TournamentStatusEnum;
-use App\Models\ClubAdmin\Club\Room;
+use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Domains\Competitions\Tournament\Services\TournamentService;

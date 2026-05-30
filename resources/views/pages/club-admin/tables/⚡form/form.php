@@ -1,7 +1,7 @@
     <?php
 
-    use App\Models\ClubAdmin\Club\Room;
-use App\Models\ClubAdmin\Club\Table;
+    use App\Domains\ClubAdmin\Club\Models\Room;
+use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\View\View;

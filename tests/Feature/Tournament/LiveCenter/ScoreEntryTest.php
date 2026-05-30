@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Club\Models\Room;
+use App\Domains\ClubAdmin\Club\Models\Table;
+use App\Domains\Competitions\Tournament\Services\TournamentTableService;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
-use App\Models\ClubAdmin\Club\Room;
-use App\Models\ClubAdmin\Club\Table;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Tournament\Pool;
 use App\Models\ClubEvents\Tournament\Tournament;
 use App\Models\ClubEvents\Tournament\TournamentMatch;
-use App\Domains\Competitions\Tournament\Services\TournamentTableService;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 

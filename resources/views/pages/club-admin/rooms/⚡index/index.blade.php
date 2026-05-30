@@ -6,7 +6,7 @@
     <!-- HEADER -->
     <x-header :title="__('Rooms')" separator progress-indicator>
         <x-slot:actions>
-            @can('create', \App\Models\ClubAdmin\Club\Room::class)
+            @can('create', \App\Domains\ClubAdmin\Club\Models\Room::class)
                 <x-button :label="__('Create')" icon="o-plus" class="btn-primary" link="{{ route('admin.rooms.create') }}" />
             @endcan
         </x-slot:actions>
@@ -78,7 +78,7 @@
         @endforelse
     </div>
 
-    @can('create', \App\Models\ClubAdmin\Club\Room::class)
+    @can('create', \App\Domains\ClubAdmin\Club\Models\Room::class)
         <x-confirm-modal model="deleteRoomModal" :title="__('Delete this room?')" :subtitle="__('Warning!')"
             :confirmLabel="__('Delete')" confirmAction="deleteRoom">
             <p>{{ __('Are you sure you want to delete this room? This action is irreversible.') }}</p>

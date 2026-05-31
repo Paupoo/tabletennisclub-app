@@ -206,40 +206,78 @@ $payment->state()->refund();  // ❌ Exception si unpaid
 
 ### 4. Validation (Strategy + Livewire hybrid)
 
-**Purpose**: Valider depuis partout (API, CLI, Livewire) sans duplication.
+**Purpose**: Valider depuis partout (API, CLI, Livewire, Commands) sans duplication. **Replaces Form Requests.**
 
+#### **Validator Classes (Strategy Pattern)**
 ```php
-// app/Domains/Subscriptions/Validators/SubscriptionValidator.php
-class SubscriptionValidator {
+// app/Domains/Competitions/Interclub/Validators/TeamValidator.php
+namespace App\Domains\Competitions\Interclub\Validators;
+
+class TeamValidator {
   public function validateForCreation(array $data): array {
     return Validator::make($data, [
-      'user_id' => 'required|exists:users,id',
-      'season_id' => 'required|exists:seasons,id',
-      'subscription_price' => 'required|numeric|min:0',
+      'name' => 'required|string|min:2|max:255|unique:teams,name',
+      'captain_id' => 'required|exists:users,id',
+      'league_id' => 'required|exists:leagues,id',
+    ])->validate();
+  }
+  
+  public function validateForUpdate(array $data): array {
+    return Validator::make($data, [
+      'name' => 'sometimes|required|string|min:2|max:255',
+      'captain_id' => 'sometimes|required|exists:users,id',
     ])->validate();
   }
 }
+```
 
-// Dans Action
-class CreateSubscription {
-  public function handle(array $data): Subscription {
-    $validated = app(SubscriptionValidator::class)
-      ->validateForCreation($data);
-    return Subscription::create($validated);
-  }
-}
+#### **Action uses Validator**
+```php
+// app/Domains/Competitions/Interclub/Actions/CreateTeamAction.php
+class CreateTeamAction {
+  public function __construct(
+    private TeamValidator $validator,
+  ) {}
 
-// Dans Livewire (feedback immédiat)
-class CreateSubscriptionForm extends Component {
-  #[Validate('required|exists:users,id')]
-  public int $user_id = 0;
-  
-  public function save() {
-    $this->validate();  // ← Feedback immédiat au user
-    CreateSubscription::resolve()->handle($this->all());  // ← Action re-valide
+  public function handle(array $data): Team {
+    // 1. Validate
+    $validated = $this->validator->validateForCreation($data);
+    
+    // 2. Authorize
+    $this->authorize('create', Team::class);
+    
+    // 3. Execute
+    $team = Team::create($validated);
+    
+    // 4. Dispatch event
+    event(new TeamCreated($team));
+    
+    return $team;
   }
 }
 ```
+
+#### **Livewire (double validation: immediate feedback + backend security)**
+```php
+// app/Livewire/Admin/Competitions/CreateTeamForm.php
+class CreateTeamForm extends Component {
+  #[Validate('required|string|min:2|max:255')]
+  public string $name = '';
+  
+  #[Validate('required|exists:users,id')]
+  public int $captain_id = 0;
+  
+  public function save() {
+    $this->validate();  // ← Feedback immédiat au user
+    CreateTeamAction::resolve()->handle($this->all());  // ← Action re-valide
+    $this->dispatch('notification', 'Team created!');
+  }
+}
+```
+
+**Why double validation?**
+- **Livewire**: User sees errors immediately (UX)
+- **Action**: Backend validates again (security - never trust client)
 
 ---
 

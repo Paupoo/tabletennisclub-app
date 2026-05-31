@@ -4,59 +4,64 @@
 
 ---
 
-## Structure organisationnelle: Domaine-First
+## Structure organisationnelle: Domaine-First (12 Domaines)
 
-L'application est organisée par **domaines métier**, pas par type technique.
+L'application est **entièrement réorganisée** par domaines métier, pas par type technique.
+Tous les fichiers ont été migrés de `app/Models/`, `app/Actions/`, etc. vers `app/Domains/`.
 
 ```
-app/
-  Domains/                          # Logique métier par domaine
-    Competitions/
-      Models/
-      Actions/
-      Services/
-      Policies/
-      Events/
-      Notifications/
-    Trainings/
-      Models/
-      Actions/
-      Services/
-      ...
-    Meetings/
-    Subscriptions/
-    Communication/
-    Resources/
-    Bar/
-    Shared/                         # Transversal (Enums, Traits, ValueObjects, DomainEvents, Collections)
+app/Domains/
+  Bar/                              # Bar management
+    Models/, Actions/, Services/, ...
   
-  Livewire/                         # UI layer, organisé par contexte
+  ClubAdmin/                        # Administrative domain
+    Club/
+    Contact/
+    Payment/
+    Subscriptions/
+    Users/
+  
+  ClubPosts/                        # News and articles
+  
+  Competitions/                     # Team competitions and tournaments
+    Interclub/                      # (6 models, 7 factories)
+    Tournament/                     # (4 models, 4 factories)
+  
+  Meetings/                         # Committee meetings
+  
+  Shared/                           # Transversal utilities
+    Casts/
+    Enums/                          # (27 files)
+    Events/                         # (4 files: Tournament events)
+    Exceptions/
+    Models/                         # (Shared models like AppSetting)
+    Rules/                          # (Validation rules)
+    States/                         # (Payment states × 6, Tournament states × 11)
+    Traits/                         # (HasAvailability, etc.)
+  
+  Trainings/                        # Training sessions and packs
+
+  Livewire/                         # UI layer (organized by context)
     Admin/
-      Competitions/
-      Trainings/
-      Meetings/
-      Subscriptions/
+      Competitions/, Meetings/, Subscriptions/, ...
     Public/
-      Competitions/
-      ...
+      Competitions/, ...
     User/
-      Trainings/
-      ...
+      Trainings/, ...
     Shared/
-      _Components/                  # Composants réutilisables
+      _Components/                  # Reusable components
 
   Http/
-    Controllers/                    # Seulement tournois et paiements (edge cases)
+    Controllers/                    # (Minimal legacy, mostly migrated to Livewire)
     Requests/
     Middleware/
-  
-  Models/                          # (LEGACY - À migrer dans Domains/)
-  Policies/                        # (LEGACY - À migrer dans Domains/)
-  Services/
-  Actions/
-  Events/
-  Notifications/
 ```
+
+**Migration Status**: ✅ **100% Complete** (12/12 domains moved)
+- All models moved from `/Models/` → `/Domains/{Domain}/Models/`
+- All factories moved from `/database/factories/` → `/database/factories/Domains/{Domain}/Models/`
+- All events consolidated into `/Domains/Shared/Events/`
+- All states consolidated into `/Domains/Shared/States/`
 
 ---
 
@@ -516,20 +521,32 @@ test('can only refund paid payment', function () {
 
 ## Migration vers la nouvelle structure
 
-### Phase 1 (Déjà fait)
-- ✅ Nettoyé code mort (routes, controllers obsolètes)
-- ✅ Documenté domaines
+### Phase 1: Cleanup (Complété — bedcbfa5 + 090eb184)
+- ✅ Removed obsolete routes (REST endpoints for retired features)
+- ✅ Removed legacy Controllers/Actions/Livewire
+- ✅ Fixed all test failures (1316/1316 passing)
+- ✅ Adapted tests to use Livewire routes
 
-### Phase 2 (En cours)
-- [ ] Restructurer app/ par domaines
-- [ ] Migrer Models
-- [ ] Migrer Actions
-- [ ] Implémenter Validators (Strategy)
-- [ ] Implémenter States
-- [ ] Créer Value Objects, Enums, Collections
+### Phase 2: Domain Reorganization (Complété — c7f1d295 + 690a3b90 + c86ecf40)
+- ✅ Restructured all app/ by business domains (12 domains)
+- ✅ Migrated 11 models: Tournament, Meetings, Subscriptions, Interclub, User, etc.
+- ✅ Migrated all factories (added `protected $model` declarations)
+- ✅ Consolidated States (Payments × 6, Tournament × 11) into Shared
+- ✅ Consolidated Events (Tournament × 3, Public × 1) into Shared
+- ✅ Updated all imports across app/, tests/, database/ (219 User imports + States + Events)
+- ✅ Maintained 1316/1316 tests passing throughout
 
-### Phase 3 (Après démo)
-- [ ] Implémenter Domain Events
-- [ ] Créer Listeners complets
+**Key lessons learned:**
+- **Circular dependencies are solvable** — uniform namespace updates work
+- **Pint + factories needs care** — exclude database/factories/ from formatter
+- **Config files matter** — always check config/ for model imports
+- **Case-sensitive grep is essential** — `Clubadmin` vs `ClubAdmin` can hide
+
+### Phase 3: Patterns & Enhancements (Ready for future work)
+- [ ] Implement Validators (Strategy pattern)
+- [ ] Refine State machines (lightweight states already in place)
+- [ ] Create Value Objects (Price, Score, etc.)
+- [ ] Expand Domain Events and Listeners
 - [ ] 100% test coverage
+- [ ] Add Domain Collections
 

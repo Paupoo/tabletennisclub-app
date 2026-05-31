@@ -67,6 +67,57 @@ Comment utiliser les features principales:
 
 ---
 
+### 6. **[TESTING.md](./TESTING.md)** — Guide des tests Pest
+Comment écrire et exécuter les tests:
+- Exécution des tests (parallel, filtered)
+- Structure des tests (Feature vs Unit)
+- Conventions factories (`protected $model`, states)
+- Exemples par domaine (Livewire, Policy, Action, State)
+- Helpers utiles (actingAs, has, assert*)
+
+**Lire quand**: Vous écrivez un test, vous modifiez une factory, vous avez besoin d'exemples.
+
+---
+
+### 7. **[DEVELOPMENT_SETUP.md](./DEVELOPMENT_SETUP.md)** — Setup développement local
+Configurer l'environnement:
+- Prérequis (PHP 8.5, Composer, Node, MySQL)
+- Installation pas-à-pas (clone, composer install, .env, migrate)
+- Commandes quotidiennes (composer run dev, test, pint)
+- Configuration .env (database, queue, mail, cache)
+- Troubleshooting du setup
+
+**Lire quand**: Vous installez l'app localement, vous besoin de commandes quotidiennes.
+
+---
+
+### 8. **[TROUBLESHOOTING.md](./TROUBLESHOOTING.md)** — Résolution des problèmes
+Solutions aux erreurs courants:
+- Tests qui échouent (config/auth.php, factories, seeders)
+- Pint qui casse les factories (solution: exclure database/factories/)
+- "Class not found" (dump-autoload, config:clear)
+- Circular dependencies (pas un problème si uniform)
+- Vite manifest, migrations, queue jobs
+- Case-sensitive imports (Windows vs Linux)
+- Validation Livewire
+
+**Lire quand**: Quelque chose ne fonctionne pas, une erreur vous bloque.
+
+---
+
+### 9. **[SECURITY.md](./SECURITY.md)** — Modèle de sécurité
+Authentification, autorisation, validation:
+- **Authentification**: Laravel Sanctum, Breeze, sessions
+- **Autorisation**: Policies par domaine, rôles (admin, committee, roles)
+- **Protection des routes**: Middleware auth, route groups
+- **Validation**: Double validation (Livewire + Action)
+- **Rôles & permissions**: Tableau par domaine
+- **Best practices**: CSRF, mass assignment, logging
+
+**Lire quand**: Vous créez une nouvelle Policy, vous protégez une route, vous avez une question de sécurité.
+
+---
+
 ## 🚀 Pour commencer rapidement
 
 ### Je veux...
@@ -221,6 +272,10 @@ Types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`
 - **All patterns**: [ARCHITECTURE.md](./ARCHITECTURE.md#patterns-architecturaux)
 - **All components**: [GUIDELINES.md](./GUIDELINES.md#composants-livewire)
 - **How-to guides**: [FEATURES.md](./FEATURES.md)
+- **Running tests**: [TESTING.md](./TESTING.md)
+- **Local setup**: [DEVELOPMENT_SETUP.md](./DEVELOPMENT_SETUP.md)
+- **Debugging**: [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)
+- **Security & roles**: [SECURITY.md](./SECURITY.md)
 
 ---
 
@@ -235,7 +290,7 @@ After the initial demo (Day 20):
 
 ---
 
-**Version**: 1.0 (after Phase 1 cleanup/reorganization)  
-**Last updated**: 2026-05-30  
+**Version**: 1.1 (Phase 1 complete + documentation)  
+**Last updated**: 2026-05-31  
 **Maintained by**: [@aurelien](https://github.com/aurelienjp)
 

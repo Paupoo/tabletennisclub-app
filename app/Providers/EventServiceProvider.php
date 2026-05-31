@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
-use App\Events\Tournament\NewTournamentPublished;
-use App\Events\Tournament\UserRegisteredToTournament;
-use App\Events\Tournament\UserUnregisteredFromTournament;
+use App\Domains\Shared\Events\Tournament\NewTournamentPublished;
+use App\Domains\Shared\Events\Tournament\UserRegisteredToTournament;
+use App\Domains\Shared\Events\Tournament\UserUnregisteredFromTournament;
 use App\Listeners\SendWelcomeEmail;
 use App\Listeners\Tournament\SendPublishedTournamentNotification;
 use App\Listeners\Tournament\UserRegisteredToTournamentToTournament;

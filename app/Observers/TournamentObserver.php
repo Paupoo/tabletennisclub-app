@@ -6,7 +6,7 @@ namespace App\Observers;
 
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
-use App\Events\Tournament\NewTournamentPublished;
+use App\Domains\Shared\Events\Tournament\NewTournamentPublished;
 use Event;
 use Illuminate\Contracts\Events\ShouldHandleEventsAfterCommit;
 

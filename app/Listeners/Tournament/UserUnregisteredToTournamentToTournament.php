@@ -7,7 +7,7 @@ namespace App\Listeners\Tournament;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Notifications\UserUnregisteredFromTournament as TournamentUserUnregisteredFromTournament;
-use App\Events\Tournament\UserUnregisteredFromTournament;
+use App\Domains\Shared\Events\Tournament\UserUnregisteredFromTournament;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
 class UserUnregisteredToTournamentToTournament implements ShouldQueue

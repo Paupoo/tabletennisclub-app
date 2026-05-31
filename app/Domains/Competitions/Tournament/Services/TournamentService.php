@@ -20,7 +20,7 @@ use App\Domains\Competitions\Tournament\Notifications\TournamentRegistrationConf
 use App\Domains\Competitions\Tournament\Notifications\TournamentWaitlistSpotOpenedNotification;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
-use App\Events\Tournament\UserRegisteredToTournament;
+use App\Domains\Shared\Events\Tournament\UserRegisteredToTournament;
 use App\Jobs\SendDebtReminderNotification;
 use Event;
 use Illuminate\Support\Facades\DB;

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
-use App\Events\Tournament\NewTournamentPublished;
+use App\Domains\Shared\Events\Tournament\NewTournamentPublished;
 use App\Observers\TournamentObserver;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;

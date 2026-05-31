@@ -6,8 +6,8 @@ namespace App\Http\Controllers\ClubEvents\Tournament;
 
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
+use App\Domains\Shared\States\Tournament\TournamentStateMachine;
 use App\Http\Controllers\Controller;
-use App\States\Tournament\TournamentStateMachine;
 use Exception;
 use Illuminate\Http\RedirectResponse;
 use InvalidArgumentException;

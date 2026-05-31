@@ -1,3 +1,0 @@
-<svg class="inline flex-shrink-0 h-3 w-3 text-base-content/30" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" data-slot="icon">
-  <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/>
-</svg><?php /**PATH /home/aurelien/Documents/01 Projets/03-tabletennisclub-app/storage/framework/views/300ffdd0704b1f1ed3c671de380dec0d.blade.php ENDPATH**/ ?>

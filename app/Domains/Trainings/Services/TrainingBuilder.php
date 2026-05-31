@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App\Domains\Trainings\Services;
 
 use App\Domains\ClubAdmin\Club\Models\Room;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Models\TrainingPack;
-use App\Models\ClubAdmin\Users\User;
 use Carbon\Carbon;
 
 class TrainingBuilder

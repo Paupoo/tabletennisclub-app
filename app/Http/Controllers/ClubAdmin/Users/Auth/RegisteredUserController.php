@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\ClubAdmin\Users\Auth;
 
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Http\Controllers\Controller;
-use App\Models\ClubAdmin\Users\User;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;

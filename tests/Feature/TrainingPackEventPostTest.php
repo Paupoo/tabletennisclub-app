@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\ClubPosts\Models\EventPost;
 use App\Domains\Shared\Enums\ClubEventTypeEnum;
 use App\Domains\Shared\Enums\EventPostStatusEnum;
-use App\Models\ClubAdmin\Users\User;
 use App\Domains\Trainings\Models\TrainingPack;
-use App\Domains\ClubPosts\Models\EventPost;
 use Livewire\Livewire;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

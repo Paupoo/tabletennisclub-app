@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Models\ClubAdmin\Users\User;
+use App\Domains\ClubAdmin\Users\Models\User;
 use Carbon\Carbon;
 
 test('method set age', function (): void {

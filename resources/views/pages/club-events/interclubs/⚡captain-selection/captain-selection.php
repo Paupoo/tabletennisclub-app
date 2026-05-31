@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Resources\views\Pages\ClubEvents\Interclubs\CaptainSelection;
 
 use App\Domains\Shared\Enums\InterclubAvailability;
-use App\Models\ClubAdmin\Users\User;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Domains\Shared\Enums\NewsPostStatusEnum;
-use App\Models\ClubAdmin\Users\User;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\ClubPosts\Models\NewsPost;
+use App\Domains\Shared\Enums\NewsPostStatusEnum;
 use Livewire\Livewire;
 
 beforeEach(function (): void {

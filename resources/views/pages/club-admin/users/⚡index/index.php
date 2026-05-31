@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use App\Actions\User\RecalculateForceListAction;
 use App\Mail\InviteNewUserMail;
-use App\Models\ClubAdmin\Users\User;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;

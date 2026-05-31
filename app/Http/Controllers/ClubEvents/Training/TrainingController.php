@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\ClubEvents\Training;
 
 use App\Domains\ClubAdmin\Club\Models\Room;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\Recurrence;
 use App\Domains\Shared\Enums\TrainingLevel;
@@ -16,7 +17,6 @@ use App\Domains\Trainings\Services\TrainingDateGenerator;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreTrainingRequest;
 use App\Http\Requests\UpdateTrainingRequest;
-use App\Models\ClubAdmin\Users\User;
 use App\Support\Breadcrumb;
 use Exception;
 use Illuminate\Contracts\View\View;

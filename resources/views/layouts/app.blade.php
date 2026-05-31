@@ -20,7 +20,7 @@
 </head>
 
 <body class="bg-base-200 min-h-screen font-sans antialiased" x-data="{
-    dbTheme: '{{ App\Models\ClubAdmin\Users\User::first()->theme ?? 'auto' }}',
+    dbTheme: '{{ $user->theme ?? 'auto' }}',
     init() {
         let currentTheme = localStorage.getItem('theme') || this.dbTheme;
         this.updateTheme(currentTheme);

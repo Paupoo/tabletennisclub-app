@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Resources\views\Pages\ClubEvents\Interclubs\Teams;
 
 use App\Livewire\Concerns\HasBreadcrumbs;
-use App\Models\ClubAdmin\Users\User;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Support\Breadcrumb;
 use Illuminate\Validation\Rule as ValidationRule;

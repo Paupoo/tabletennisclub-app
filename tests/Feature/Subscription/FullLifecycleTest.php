@@ -9,10 +9,10 @@ use App\Actions\ClubAdmin\Subscriptions\EnrollInTrainingPackAction;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Subscriptions\Notifications\SubscriptionRejectedNotification;
 use App\Domains\Trainings\Models\TrainingPack;
-use App\Models\ClubAdmin\Users\User;
 use Illuminate\Support\Facades\Notification;
 
 // ─── Flux A — Full registration + training, single payment ────────────────────

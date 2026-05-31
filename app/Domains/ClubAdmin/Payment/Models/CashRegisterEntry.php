@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\ClubAdmin\Payment\Models;
 
-use App\Models\Clubadmin\Users\User;
+use App\Domains\ClubAdmin\Users\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;

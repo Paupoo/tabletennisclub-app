@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\ClubEvents\Meeting;
 
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Meetings\Models\MeetingDateVote;
 use App\Domains\Shared\Enums\MeetingDateVoteEnum;
 use App\Http\Controllers\Controller;
-use App\Models\ClubAdmin\Users\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;

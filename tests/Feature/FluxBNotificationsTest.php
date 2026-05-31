@@ -5,12 +5,12 @@ declare(strict_types=1);
 use App\Actions\ClubAdmin\Subscriptions\EnrollInTrainingPackAction;
 use App\Actions\ClubAdmin\Subscriptions\LeaveTrainingPackAction;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Trainings\Notifications\TrainingPackCancelledNotification;
 use App\Domains\Trainings\Notifications\TrainingPackRequestedNotification;
 use App\Domains\Trainings\Notifications\TrainingWaitlistJoinedNotification;
-use App\Models\ClubAdmin\Users\User;
 use Illuminate\Support\Facades\Notification;
 
 // ─── TrainingPackRequestedNotification (Flux B) ────────────────────────────────

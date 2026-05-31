@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Meetings\Models\MeetingDateProposal;
 use App\Domains\Meetings\Models\MeetingDateVote;
 use App\Domains\Meetings\Notifications\MeetingDatePollNotification;
 use App\Domains\Shared\Enums\MeetingDateVoteEnum;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
-use App\Models\ClubAdmin\Users\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;

@@ -6,7 +6,7 @@ use App\Domains\Shared\Enums\MeetingDateVoteEnum;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\MeetingTypeEnum;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
-use App\Models\ClubAdmin\Users\User;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Meetings\Models\MeetingDateProposal;
 use App\Domains\Meetings\Models\MeetingDateVote;

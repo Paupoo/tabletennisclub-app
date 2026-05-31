@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature\ClubAdmin\Users;
 
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
-use App\Models\ClubAdmin\Users\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);

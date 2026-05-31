@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Competitions\Interclub\Models;
 
-use App\Models\ClubAdmin\Users\User;
+use App\Domains\ClubAdmin\Users\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

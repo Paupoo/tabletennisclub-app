@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
-use App\Models\ClubAdmin\Users\User;
+use App\Domains\ClubAdmin\Users\Models\User;
 use Livewire\Livewire;
 
 beforeEach(function () {

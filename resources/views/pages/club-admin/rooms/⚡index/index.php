@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\ClubAdmin\Club\Models\Room;
-use App\Models\ClubAdmin\Users\User;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Services\TournamentService;
 use App\Livewire\Concerns\HasBreadcrumbs;

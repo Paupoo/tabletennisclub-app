@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
-use App\Models\ClubAdmin\Users\User;
+use App\Domains\ClubAdmin\Users\Models\User;
 use Illuminate\Validation\Rules\Enum;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Validate;

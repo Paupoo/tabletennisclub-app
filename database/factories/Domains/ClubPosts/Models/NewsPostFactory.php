@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Database\Factories\Domains\ClubPosts\Models;
 
-use App\Domains\Shared\Enums\NewsPostStatusEnum;
-use App\Models\ClubAdmin\Users\User;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\ClubPosts\Models\NewsPost;
+use App\Domains\Shared\Enums\NewsPostStatusEnum;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -16,6 +16,7 @@ use Illuminate\Support\Str;
 class NewsPostFactory extends Factory
 {
     protected $model = NewsPost::class;
+
     /**
      * Define the model's default state.
      *

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
-use App\Models\ClubAdmin\Users\User;
 use Livewire\Livewire;
 
 beforeEach(function (): void {

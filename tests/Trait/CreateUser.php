@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Trait;
 
-use App\Models\ClubAdmin\Users\User;
+use App\Domains\ClubAdmin\Users\Models\User;
 
 trait CreateUser
 {

@@ -5,9 +5,9 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
-use App\Models\ClubAdmin\Users\User;
 use Illuminate\Support\Facades\DB;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

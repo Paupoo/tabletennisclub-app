@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories\Domains\Competitions\Interclub\Models;
 
-use App\Models\ClubAdmin\Users\User;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Season;

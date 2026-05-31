@@ -8,6 +8,7 @@ namespace Database\Seeders;
 
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Season;
@@ -19,7 +20,6 @@ use App\Domains\Shared\Enums\LeagueCategory;
 use App\Domains\Shared\Enums\LeagueLevel;
 use App\Domains\Shared\Enums\Ranking;
 use App\Models\AppSetting;
-use App\Models\ClubAdmin\Users\User;
 use App\Services\ForceList;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;

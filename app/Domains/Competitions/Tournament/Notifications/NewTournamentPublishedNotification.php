@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domains\Competitions\Tournament\Notifications;
 
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
-use App\Models\ClubAdmin\Users\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;

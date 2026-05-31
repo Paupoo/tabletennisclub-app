@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Competitions\Tournament\Models;
 
-use App\Models\ClubAdmin\Users\User;
+use App\Domains\ClubAdmin\Users\Models\User;
 use Database\Factories\Domains\Competitions\Tournament\Models\TournamentPairFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

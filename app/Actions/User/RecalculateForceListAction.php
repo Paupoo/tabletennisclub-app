@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\User;
 
-use App\Models\ClubAdmin\Users\User;
+use App\Domains\ClubAdmin\Users\Models\User;
 
 class RecalculateForceListAction
 {

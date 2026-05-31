@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
-use App\Models\ClubAdmin\Users\User;
 use Livewire\Livewire;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Domains\Shared\Traits;
 
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\InterclubAvailability;
-use App\Models\ClubAdmin\Users\User;
 use Illuminate\Database\Eloquent\Collection;
 
 /**

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Database\Factories\Domains\Meetings\Models;
 
-use App\Domains\Shared\Enums\MeetingDateVoteEnum;
-use App\Models\ClubAdmin\Users\User;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Meetings\Models\MeetingDateProposal;
 use App\Domains\Meetings\Models\MeetingDateVote;
+use App\Domains\Shared\Enums\MeetingDateVoteEnum;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

@@ -10,7 +10,7 @@ use App\Actions\ClubAdmin\Subscriptions\LeaveTrainingPackAction;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
-use App\Models\ClubAdmin\Users\User;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Subscriptions\Notifications\SubscriptionCreatedNotification;

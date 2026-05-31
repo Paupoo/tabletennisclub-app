@@ -1,0 +1,3 @@
+<svg :class="open ? '' : '-rotate-90'" class="inline flex-shrink-0 h-4 w-4 opacity-40 transition-transform duration-200" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" data-slot="icon">
+  <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/>
+</svg><?php /**PATH /home/aurelien/Documents/01 Projets/03-tabletennisclub-app/storage/framework/views/66bd1011720ae3604a7e99e0caea0cf8.blade.php ENDPATH**/ ?>

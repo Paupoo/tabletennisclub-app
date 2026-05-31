@@ -7,7 +7,7 @@ namespace Resources\views\Pages\ClubEvents\Interclubs\Teams\Edit;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\LeagueLevel;
 use App\Domains\Shared\Enums\TeamName;
-use App\Models\ClubAdmin\Users\User;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Livewire\Concerns\HasBreadcrumbs;

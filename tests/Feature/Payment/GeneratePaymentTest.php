@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use App\Actions\ClubAdmin\Payments\GeneratePayment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
-use App\Models\ClubAdmin\Users\User;
+use App\Domains\ClubAdmin\Users\Models\User;
 use Illuminate\Http\RedirectResponse;
 
 uses()->group('payment');

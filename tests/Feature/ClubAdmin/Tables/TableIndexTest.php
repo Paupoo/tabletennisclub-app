@@ -6,7 +6,7 @@ namespace Tests\Feature\Livewire;
 
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
-use App\Models\ClubAdmin\Users\User;
+use App\Domains\ClubAdmin\Users\Models\User;
 use Illuminate\Support\Collection;
 use Livewire\Livewire;
 

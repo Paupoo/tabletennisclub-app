@@ -6,6 +6,7 @@ namespace App\Domains\Trainings\Models;
 
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\ClubPosts\Models\EventPost;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\Recurrence;
@@ -13,7 +14,6 @@ use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Shared\Enums\TrainingType;
 use App\Domains\Trainings\Services\TrainingBuilder;
 use App\Domains\Trainings\Services\TrainingDateGenerator;
-use App\Models\ClubAdmin\Users\User;
 use Carbon\Carbon;
 use Database\Factories\TrainingPackFactory;
 use Illuminate\Database\Eloquent\Builder;

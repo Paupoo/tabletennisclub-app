@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\ClubAdmin\Users;
 
-use App\Models\ClubAdmin\Users\User;
+use App\Domains\ClubAdmin\Users\Models\User;
 use Livewire\Livewire;
 
 // Évite la répétition du nom du composant dans chaque test

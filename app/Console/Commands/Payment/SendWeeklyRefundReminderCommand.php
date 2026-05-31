@@ -6,8 +6,8 @@ namespace App\Console\Commands\Payment;
 
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Notifications\WeeklyRefundReminderNotification;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
-use App\Models\ClubAdmin\Users\User;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;

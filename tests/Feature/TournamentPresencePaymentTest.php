@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Payment\Models\CashRegister;
 use App\Domains\ClubAdmin\Payment\Models\CashRegisterEntry;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Competitions\Tournament\Notifications\TournamentDebtReminderNotification;
 use App\Domains\Competitions\Tournament\Services\TournamentService;
 use App\Jobs\SendDebtReminderNotification;
-use App\Models\ClubAdmin\Users\User;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 

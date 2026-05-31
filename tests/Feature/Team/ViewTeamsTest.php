@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Models\ClubAdmin\Users\User;
+use App\Domains\ClubAdmin\Users\Models\User;
 
 test('logged user can see teams index', function (): void {
     $user = User::factory()->create();

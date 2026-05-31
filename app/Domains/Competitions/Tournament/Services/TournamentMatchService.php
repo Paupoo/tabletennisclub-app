@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace App\Domains\Competitions\Tournament\Services;
 
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Pool;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentMatch;
 use App\Domains\Competitions\Tournament\Models\TournamentPair;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Shared\Enums\Ranking;
-use App\Models\ClubAdmin\Users\User;
 use Illuminate\Support\Collection;
 use InvalidArgumentException;
 

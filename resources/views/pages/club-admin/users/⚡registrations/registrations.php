@@ -11,7 +11,7 @@ use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Mail\PaymentInvitationEmail;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
-use App\Models\ClubAdmin\Users\User;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Subscriptions\Notifications\SubscriptionRejectedNotification;

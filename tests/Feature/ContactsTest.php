@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Contact\Models\Contact;
-use App\Models\ClubAdmin\Users\User;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Services\ClubAdmin\Contact\ContactEmailService;
 use Livewire\Livewire;
 

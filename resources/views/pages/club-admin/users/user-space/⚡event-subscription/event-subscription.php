@@ -7,7 +7,7 @@ use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
-use App\Models\ClubAdmin\Users\User;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Competitions\Tournament\Models\Tournament;

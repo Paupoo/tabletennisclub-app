@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Pool;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentMatch;
 use App\Domains\Competitions\Tournament\Models\TournamentPair;
 use App\Domains\Competitions\Tournament\Services\TournamentMatchService;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
-use App\Models\ClubAdmin\Users\User;
 
 function conflictTournament(): Tournament
 {

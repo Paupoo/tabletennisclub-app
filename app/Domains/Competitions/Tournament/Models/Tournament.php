@@ -6,12 +6,12 @@ namespace App\Domains\Competitions\Tournament\Models;
 
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\ClubPosts\Models\EventPost;
 use App\Domains\ClubPosts\Models\NewsPost;
 use App\Domains\Shared\Casts\MoneyCast;
 use App\Domains\Shared\Enums\TournamentObjectiveEnum;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
-use App\Models\ClubAdmin\Users\User;
 use App\Observers\TournamentObserver;
 use Database\Factories\Domains\Competitions\Tournament\Models\TournamentFactory;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;

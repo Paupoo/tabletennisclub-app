@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Competitions\Tournament\Models;
 
 use App\Domains\ClubAdmin\Payment\Models\Payment;
-use App\Models\ClubAdmin\Users\User;
+use App\Domains\ClubAdmin\Users\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\Relations\Pivot;

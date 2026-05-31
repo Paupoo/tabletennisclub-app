@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\ClubPosts\Models\NewsPost;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentMatch;
 use App\Domains\Shared\Enums\NewsPostStatusEnum;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Mail\TournamentResultsMail;
-use App\Models\ClubAdmin\Users\User;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;

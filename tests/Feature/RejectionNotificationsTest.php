@@ -3,11 +3,11 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Subscriptions\Notifications\SubscriptionRejectedNotification;
 use App\Domains\Subscriptions\Notifications\TrainingPackRejectedNotification;
 use App\Domains\Trainings\Models\TrainingPack;
-use App\Models\ClubAdmin\Users\User;
 use Illuminate\Support\Facades\Notification;
 
 // ─── SubscriptionRejectedNotification ─────────────────────────────────────────

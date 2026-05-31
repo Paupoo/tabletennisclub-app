@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Domains\Competitions\Interclub\Models;
 
 use App\Domains\ClubAdmin\Club\Models\Room;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\LeagueCategory;
 use App\Domains\Shared\Traits\HasAvailability;
-use App\Models\ClubAdmin\Users\User;
 use Carbon\Carbon;
 use Database\Factories\ClubEvents\Interclub\InterclubFactory;
 use Eloquent;

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Models\ClubAdmin\Subscription\Subscription;
-use App\Models\ClubAdmin\Users\User;
 use Illuminate\Database\Seeder;
 
 class SubscriptionSeeder extends Seeder

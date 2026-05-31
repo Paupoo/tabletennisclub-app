@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\User\RecalculateForceListAction;
-use App\Models\ClubAdmin\Users\User;
+use App\Domains\ClubAdmin\Users\Models\User;
 use Tests\Trait\CreateUser;
 
 uses(CreateUser::class);

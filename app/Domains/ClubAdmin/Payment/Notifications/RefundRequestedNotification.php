@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Domains\ClubAdmin\Payment\Notifications;
 
 use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
-use App\Models\ClubAdmin\Users\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;

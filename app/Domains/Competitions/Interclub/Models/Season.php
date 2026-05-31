@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Domains\Competitions\Interclub\Models;
 
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Models\TrainingPack;
-use App\Models\ClubAdmin\Users\User;
 use Database\Factories\ClubEvents\Interclub\SeasonFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;

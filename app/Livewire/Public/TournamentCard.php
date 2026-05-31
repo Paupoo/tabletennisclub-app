@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Public;
 
-use App\Models\ClubAdmin\Users\User;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Services\TournamentService;
 use Auth;
 use Livewire\Component;

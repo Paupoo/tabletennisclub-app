@@ -247,6 +247,11 @@ new class extends Component
     {
         return TournamentMatch::where('tournament_id', $this->tournament->id)
             ->where('status', 'in_progress')
+            ->whereExists(fn ($q) => $q
+                ->from('table_tournament')
+                ->whereColumn('table_tournament.tournament_match_id', 'tournament_matches.id')
+                ->where('table_tournament.is_table_free', false)
+            )
             ->with(['pair1', 'pair2'])
             ->get()
             ->flatMap(fn (TournamentMatch $m) => [
@@ -568,17 +573,23 @@ new class extends Component
             return;
         }
 
-        \Illuminate\Support\Facades\DB::table('table_tournament')
-            ->where('tournament_id', $this->tournament->id)
-            ->where('table_id', $this->selectedTableId)
-            ->update([
-                'is_table_free'       => false,
-                'tournament_match_id' => $matchId,
-                'match_started_at'    => now(),
-                'match_ended_at'      => null,
-            ]);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($matchId) {
+            $rowsUpdated = \Illuminate\Support\Facades\DB::table('table_tournament')
+                ->where('tournament_id', $this->tournament->id)
+                ->where('table_id', $this->selectedTableId)
+                ->update([
+                    'is_table_free'       => false,
+                    'tournament_match_id' => $matchId,
+                    'match_started_at'    => now(),
+                    'match_ended_at'      => null,
+                ]);
 
-        TournamentMatch::where('id', $matchId)->update(['status' => 'in_progress']);
+            if ($rowsUpdated === 0) {
+                throw new \RuntimeException(__('Table not found or unable to assign match.'));
+            }
+
+            TournamentMatch::where('id', $matchId)->update(['status' => 'in_progress']);
+        });
 
         $this->launchDrawer    = false;
         $this->selectedTableId = null;

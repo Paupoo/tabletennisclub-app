@@ -580,4 +580,29 @@ describe('TableScoreEntry Livewire component', function () {
             ]));
     })->group('score', 'livewire', 'validation');
 
+    // ── Match state integrity: prevent zombie in_progress matches
+
+    it('zombie in_progress match (no table) does not block players', function () {
+        $p1 = User::factory()->create();
+        $p2 = User::factory()->create();
+        $tournament = makePendingTournament();
+        $match = makePoolMatch($tournament, $p1, $p2);
+
+        // Mark match as in_progress but DON'T assign any table
+        $match->update(['status' => 'in_progress']);
+
+        // Query for in_progress matches WITH table assigned
+        $busyMatches = TournamentMatch::where('tournament_id', $tournament->id)
+            ->where('status', 'in_progress')
+            ->whereExists(fn ($q) => $q
+                ->from('table_tournament')
+                ->whereColumn('table_tournament.tournament_match_id', 'tournament_matches.id')
+                ->where('table_tournament.is_table_free', false)
+            )
+            ->get();
+
+        // Zombie match should NOT appear because it has no table assigned
+        expect($busyMatches)->toHaveCount(0);
+    })->group('score', 'integrity');
+
 })->group('score');

@@ -270,6 +270,9 @@
                     updateSetValidationDrawer();
                 }
             }, true);
+
+            // Initial check after Livewire hydration
+            setTimeout(updateSetValidationDrawer, 100);
         </script>
     @endif
 

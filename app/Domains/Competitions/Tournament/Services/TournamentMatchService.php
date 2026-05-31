@@ -623,6 +623,11 @@ class TournamentMatchService
     {
         $activeMatches = TournamentMatch::where('tournament_id', $tournament->id)
             ->where('status', 'in_progress')
+            ->whereExists(fn ($q) => $q
+                ->from('table_tournament')
+                ->whereColumn('table_tournament.tournament_match_id', 'tournament_matches.id')
+                ->where('table_tournament.is_table_free', false)
+            )
             ->with(['pair1', 'pair2'])
             ->get();
 

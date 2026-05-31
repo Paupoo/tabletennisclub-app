@@ -186,10 +186,11 @@
         <div class="flex items-center gap-4 p-4 rounded-xl bg-base-200/60 border border-base-300 mb-6">
             <x-icon name="o-document-text" class="w-8 h-8 text-primary shrink-0" />
             <div class="flex-1 min-w-0">
-                <div class="font-bold text-sm">{{ $currentPayment->payable?->user?->first_name }} {{ $currentPayment->payable?->user?->last_name }}</div>
-                @if ($currentPayment->payable?->tournament)
+                @php $label = $currentPayment->payable instanceof \App\Contracts\DescribesPayment ? $currentPayment->payable->getPaymentLabel() : null; @endphp
+                <div class="font-bold text-sm">{{ $currentPayment->payable instanceof \App\Contracts\DescribesPayment ? $currentPayment->payable->getPayerName() : '—' }}</div>
+                @if ($label)
                     <div class="text-xs text-primary/70 mt-0.5">
-                        {{ __('Tournament') }} · {{ $currentPayment->payable->tournament->name }}
+                        <span class="font-medium">{{ $label['type'] }}</span> · {{ $label['name'] }}
                     </div>
                 @endif
                 <div class="font-mono text-xs text-primary mt-0.5">{{ $currentPayment->reference }}</div>
@@ -299,6 +300,11 @@
                     <x-icon name="o-check-circle" class="w-5 h-5 text-success shrink-0" />
                     <div class="flex-1 min-w-0">
                         <div class="font-semibold text-sm">{{ $match['member'] }}</div>
+                        @if (! empty($match['event_name']))
+                            <div class="text-[10px] opacity-50 mt-0.5">
+                                <span class="font-medium">{{ $match['event_type'] }}</span> · {{ $match['event_name'] }}
+                            </div>
+                        @endif
                         <div class="flex items-center gap-3 mt-0.5">
                             <span class="font-mono text-xs text-primary">{{ $match['reference'] }}</span>
                             <span class="text-xs opacity-40">·</span>
@@ -335,10 +341,11 @@
         <div class="flex items-center gap-4 p-4 rounded-xl bg-error/5 border border-error/20 mb-6">
             <x-icon name="o-arrow-uturn-left" class="w-8 h-8 text-error shrink-0" />
             <div class="flex-1 min-w-0">
-                <div class="font-bold text-sm">{{ $currentRefundPayment->payable?->user?->full_name }}</div>
-                @if ($currentRefundPayment->payable?->tournament)
+                @php $label = $currentRefundPayment->payable instanceof \App\Contracts\DescribesPayment ? $currentRefundPayment->payable->getPaymentLabel() : null; @endphp
+                <div class="font-bold text-sm">{{ $currentRefundPayment->payable instanceof \App\Contracts\DescribesPayment ? $currentRefundPayment->payable->getPayerName() : '—' }}</div>
+                @if ($label)
                     <div class="text-xs text-primary/70 mt-0.5">
-                        {{ __('Tournament') }} · {{ $currentRefundPayment->payable->tournament->name }}
+                        <span class="font-medium">{{ $label['type'] }}</span> · {{ $label['name'] }}
                     </div>
                 @endif
                 <div class="font-mono text-xs text-primary mt-0.5">{{ $currentRefundPayment->reference }}</div>
@@ -444,6 +451,11 @@
                     <x-icon name="o-arrow-uturn-left" class="w-5 h-5 text-error shrink-0" />
                     <div class="flex-1 min-w-0">
                         <div class="font-semibold text-sm">{{ $match['member'] }}</div>
+                        @if (! empty($match['event_name']))
+                            <div class="text-[10px] opacity-50 mt-0.5">
+                                <span class="font-medium">{{ $match['event_type'] }}</span> · {{ $match['event_name'] }}
+                            </div>
+                        @endif
                         <div class="flex items-center gap-3 mt-0.5">
                             <span class="font-mono text-xs text-primary">{{ $match['reference'] }}</span>
                             @if($match['iban'])

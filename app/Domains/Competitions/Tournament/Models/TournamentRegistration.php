@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Domains\Competitions\Tournament\Models;
 
+use App\Contracts\DescribesPayment;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Users\Models\User;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
-class TournamentRegistration extends Pivot
+class TournamentRegistration extends Pivot implements DescribesPayment
 {
     public $incrementing = true;
 
@@ -35,6 +36,22 @@ class TournamentRegistration extends Pivot
     ];
 
     protected $table = 'tournament_user';
+
+    public function getPayerName(): string
+    {
+        return $this->user?->full_name ?? '—';
+    }
+
+    /**
+     * @return array{type: string, name: string}
+     */
+    public function getPaymentLabel(): array
+    {
+        return [
+            'type' => __('Tournament'),
+            'name' => $this->tournament?->name ?? '—',
+        ];
+    }
 
     public function hasPaymentPending(): bool
     {

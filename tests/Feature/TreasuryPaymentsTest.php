@@ -6,6 +6,8 @@ use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
+use App\Domains\Meetings\Models\Meeting;
+use App\Domains\Shared\Enums\MeetingUserStatusEnum;
 use Livewire\Livewire;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -29,10 +31,27 @@ function treasuryTournamentPayment(User $user, Tournament $tournament, string $s
     ]);
 }
 
+function treasuryMeetingPayment(User $user, Meeting $meeting, string $status = 'pending')
+{
+    $meeting->users()->attach($user->id, ['status' => MeetingUserStatusEnum::CONFIRMED->value]);
+
+    $registration = $meeting->users()->where('users.id', $user->id)->first()->registration;
+
+    static $counter = 0;
+    $counter++;
+
+    return $registration->payment()->create([
+        'reference' => sprintf('MTG/2026/%05d', $counter),
+        'amount_due' => 10,
+        'amount_paid' => 0,
+        'status' => $status,
+    ]);
+}
+
 function mountTreasury(User $admin)
 {
     return Livewire::actingAs($admin)
-        ->test('pages::club-admin.users.payments');
+        ->test('pages::club-admin.treasury.payments');
 }
 
 // ── table — event name ────────────────────────────────────────────────────────
@@ -72,6 +91,58 @@ describe('treasury table — event name', function () {
 
         mountTreasury($admin)
             ->assertSee('SUB/2026/00001');
+    });
+
+    it('renders the meeting payer name and meeting label together', function () {
+        $admin = User::factory()->create();
+        $member = User::factory()->create(['first_name' => 'Bruno', 'last_name' => 'Lemaire']);
+        $meeting = Meeting::factory()->confirmed()->create([
+            'created_by' => $admin->id,
+            'title' => 'Comite Juin 2026',
+        ]);
+        treasuryMeetingPayment($member, $meeting);
+
+        mountTreasury($admin)
+            ->assertSee('Bruno Lemaire')
+            ->assertSee(__('Meeting'))
+            ->assertSee('Comite Juin 2026');
+    });
+
+    it('renders the subscription payer name and cotisation label together', function () {
+        $admin = User::factory()->create();
+        $member = User::factory()->create(['first_name' => 'Carla', 'last_name' => 'Petit']);
+        $subscription = Subscription::factory()->for($member)->create();
+
+        $subscription->payments()->create([
+            'reference' => 'SUB/2026/00099',
+            'amount_due' => 80,
+            'amount_paid' => 0,
+            'status' => 'pending',
+        ]);
+
+        mountTreasury($admin)
+            ->assertSee('Carla Petit')
+            ->assertSee(__('Subscription'))
+            ->assertSee($subscription->season->name);
+    });
+});
+
+// ── reconcile modal — meeting label ───────────────────────────────────────────
+
+describe('reconcile modal — meeting label', function () {
+    it('renders the meeting label in the reconcile modal header', function () {
+        $admin = User::factory()->create();
+        $member = User::factory()->create();
+        $meeting = Meeting::factory()->confirmed()->create([
+            'created_by' => $admin->id,
+            'title' => 'Reunion strategique',
+        ]);
+        $payment = treasuryMeetingPayment($member, $meeting);
+
+        mountTreasury($admin)
+            ->call('openReconcile', $payment->id)
+            ->assertSet('reconcileModal', true)
+            ->assertSee('Reunion strategique');
     });
 });
 

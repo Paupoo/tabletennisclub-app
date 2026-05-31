@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\ClubAdmin\Subscriptions\Models;
 
+use App\Contracts\DescribesPayment;
 use App\Contracts\PayableInterface;
 use App\Contracts\SubscriptionState;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
@@ -25,7 +26,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Subscription extends Model implements PayableInterface
+class Subscription extends Model implements DescribesPayment, PayableInterface
 {
     /** @use HasFactory<SubscriptionFactory> */
     use HasFactory, SoftDeletes;
@@ -110,6 +111,22 @@ class Subscription extends Model implements PayableInterface
     public function getAmountDue(): int|float
     {
         return $this->getAttribute('amount_due');
+    }
+
+    public function getPayerName(): string
+    {
+        return $this->user?->full_name ?? '—';
+    }
+
+    /**
+     * @return array{type: string, name: string}
+     */
+    public function getPaymentLabel(): array
+    {
+        return [
+            'type' => __('Subscription'),
+            'name' => $this->season?->name ?? '—',
+        ];
     }
 
     // Optionnel : helper pour obtenir le status actuel

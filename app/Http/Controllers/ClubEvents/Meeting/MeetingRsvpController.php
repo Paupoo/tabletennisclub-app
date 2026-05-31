@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\ClubEvents\Meeting;
 
+use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
 use App\Actions\ClubAdmin\Payments\GeneratePaymentReference;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Meetings\Models\Meeting;
@@ -59,12 +60,18 @@ class MeetingRsvpController extends Controller
 
         $meeting->loadMissing('agendaItems');
 
+        $paymentQr = null;
+        if ($payment) {
+            $paymentQr = (new GeneratePaymentQR)($payment);
+        }
+
         return view('meetings.rsvp-confirmation', [
             'meeting' => $meeting,
             'user' => $user,
             'response' => $newStatus,
             'wasAlreadyConfirmed' => $wasAlreadyConfirmed,
             'payment' => $payment,
+            'paymentQr' => $paymentQr,
         ]);
     }
 }

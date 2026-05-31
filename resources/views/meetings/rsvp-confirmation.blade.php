@@ -84,7 +84,7 @@
 
                 {{-- ── Bloc paiement repas (confirmé uniquement) ─────── --}}
                 @if ($isConfirmed && $payment)
-                    <div class="mt-4 rounded-xl border border-warning/30 bg-warning/5 p-4 space-y-1 text-sm">
+                    <div class="mt-4 rounded-xl border border-warning/30 bg-warning/5 p-4 space-y-3 text-sm">
                         <div class="flex items-center gap-2 font-semibold">
                             <x-icon name="o-cake" class="h-4 w-4 text-warning" />
                             {{ __('Meal payment') }}
@@ -99,7 +99,18 @@
                         <p class="text-base-content/70">
                             {{ __('Reference:') }} <span class="font-mono">{{ $payment->reference }}</span>
                         </p>
-                        <p class="text-xs text-base-content/50">
+
+                        @if ($paymentQr)
+                            <div class="flex justify-center pt-2">
+                                <img
+                                    alt="QR Code"
+                                    class="w-32 h-32 rounded-lg border border-base-200"
+                                    src="{{ $paymentQr }}"
+                                />
+                            </div>
+                        @endif
+
+                        <p class="text-xs text-base-content/50 pt-1">
                             {{ __('Payment details have been sent to your email.') }}
                         </p>
                     </div>

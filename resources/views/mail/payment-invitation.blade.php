@@ -3,7 +3,7 @@
 
 Bonjour **{{ $payment->payable->user->first_name ?? '' }}**,
 
-@if($payment->payable instanceof \App\Models\ClubAdmin\Subscription\Subscription)
+@if($payment->payable instanceof \App\Domains\ClubAdmin\Subscriptions\Models\Subscription)
 Vous êtes inscrit à la saison **{{ $payment->payable->season?->name ?? '' }}**.
 @elseif($payment->payable instanceof \App\Models\ClubEvents\Tournament\TournamentRegistration)
 Vous êtes inscrit au tournoi **{{ $payment->payable->tournament?->name ?? '' }}**.

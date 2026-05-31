@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Domains\ClubAdmin\Payment\Models\Payment;
-use App\Models\ClubAdmin\Subscription\Subscription;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use Illuminate\Database\Seeder;
 
 class PaymentSeeder extends Seeder

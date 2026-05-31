@@ -9,6 +9,9 @@ use App\Actions\ClubAdmin\Subscriptions\MarkPaidSubscriptionAction;
 use App\Actions\ClubAdmin\Subscriptions\MarkRefundSubscriptionAction;
 use App\Actions\ClubAdmin\Subscriptions\SubscribeToSeasonAction;
 use App\Actions\ClubAdmin\Subscriptions\UnconfirmSubscriptionAction;
+use App\Domains\ClubAdmin\Club\Models\Room;
+use App\Domains\ClubAdmin\Club\Models\Table;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Http\Controllers\ClubAdmin\Contact\ContactController;
 use App\Http\Controllers\ClubAdmin\Contact\InvitationController;
 use App\Http\Controllers\ClubAdmin\Payment\PaymentController;
@@ -25,7 +28,6 @@ use App\Http\Controllers\ClubPosts\PublicEventPostController;
 use App\Http\Controllers\ClubPosts\PublicNewsPostController;
 use App\Http\Controllers\HomeController;
 use App\Http\Middleware\ProtectAgainstSpam;
-use App\Models\ClubAdmin\Users\User;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -122,7 +124,7 @@ Route::prefix('admin/club-admin/rooms/')
     ->group(function (): void {
         Route::livewire('list', 'pages::club-admin.rooms.index')->name('admin.rooms.index');
 
-        Route::middleware('can:create,App\Models\ClubAdmin\Club\Room')
+        Route::middleware('can:create,' . Room::class)
             ->group(function (): void {
                 Route::livewire('create', 'pages::club-admin.rooms.form')->name('admin.rooms.create');
             });
@@ -143,7 +145,7 @@ Route::prefix('admin/club-admin/tables/')
                 Route::livewire('{table}/edit', 'pages::club-admin.tables.form')->name('admin.tables.edit');
             });
 
-        Route::middleware('can:create,App\Models\ClubAdmin\Club\Table')
+        Route::middleware('can:create,' . Table::class)
             ->group(function (): void {
                 Route::livewire('create', 'pages::club-admin.tables.form')->name('admin.tables.create');
             });

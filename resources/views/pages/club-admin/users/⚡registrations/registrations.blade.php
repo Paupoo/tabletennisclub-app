@@ -671,7 +671,7 @@
                     ]) }}
                 </p>
                 @php
-                    $subModel = $refundSubscriptionId ? App\Models\ClubAdmin\Subscription\Subscription::with('user')->find($refundSubscriptionId) : null;
+                    $subModel = $refundSubscriptionId ? App\Domains\ClubAdmin\Subscriptions\Models\Subscription::with('user')->find($refundSubscriptionId) : null;
                     $userIban = $subModel?->user?->iban;
                 @endphp
                 @if ($userIban)

@@ -6,6 +6,7 @@ namespace App\Domains\Meetings\Models;
 
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Support\Carbon;
@@ -27,6 +28,11 @@ class MeetingUser extends Pivot
         'invitation_sent_at' => 'datetime',
         'response_at' => 'datetime',
     ];
+
+    public function meeting(): BelongsTo
+    {
+        return $this->belongsTo(Meeting::class);
+    }
 
     public function payment(): MorphOne
     {

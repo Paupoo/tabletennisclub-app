@@ -60,7 +60,7 @@
 
     <x-menu-sub icon="o-academic-cap" :title="__('Trainings')">
         @if($user->is_committee_member || $user->is_admin)
-        <x-menu-item icon="o-cog-6-tooth" link="{{ route('admin.trainings.index') }}" :title="__('Settings')" />
+        <x-menu-item icon="o-tag" link="{{ route('admin.trainings.index') }}" :title="__('Training Packs')" />
         @endif
         @if($user->is_coach)
         <x-menu-item icon="o-calendar-days" link="{{ route('coach.trainings') }}" :title="__('My sessions')" />

@@ -15,7 +15,7 @@ use App\Domains\Shared\States\Payments\PendingState;
 use App\Domains\Shared\States\Payments\RefundedState;
 use App\Domains\Shared\States\Payments\ValidatedState;
 use App\Domains\Trainings\Models\TrainingPack;
-use Database\Factories\Domains\ClubAdmin\Subscriptions\Models\ClubAdmin\Subscription\SubscriptionFactory;
+use Database\Factories\Domains\ClubAdmin\Subscriptions\Models\SubscriptionFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

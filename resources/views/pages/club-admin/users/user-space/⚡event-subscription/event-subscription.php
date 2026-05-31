@@ -10,6 +10,7 @@ use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Meetings\Models\Meeting;
+use App\Domains\Meetings\Models\MeetingUser;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentPair;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
@@ -19,6 +20,7 @@ use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Mary\Traits\Toast;
@@ -147,10 +149,13 @@ new class extends Component
     public function pendingPayments(): Collection
     {
         return Payment::where('status', 'pending')
-            ->whereHasMorph('payable', TournamentRegistration::class,
+            ->whereHasMorph('payable', [TournamentRegistration::class, MeetingUser::class],
                 fn ($q) => $q->where('user_id', $this->user->id)
             )
-            ->with(['payable.tournament'])
+            ->with(['payable' => fn (MorphTo $morphTo) => $morphTo->morphWith([
+                TournamentRegistration::class => ['tournament'],
+                MeetingUser::class => ['meeting'],
+            ])])
             ->get();
     }
 
@@ -251,7 +256,7 @@ new class extends Component
     public function upcomingMeetings(): \Illuminate\Database\Eloquent\Collection
     {
         return $this->user->meetings()
-            ->where('status', MeetingStatusEnum::CONFIRMED->value)
+            ->where('meetings.status', MeetingStatusEnum::CONFIRMED->value)
             ->where('scheduled_at', '>=', now())
             ->orderBy('scheduled_at')
             ->get();

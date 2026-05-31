@@ -50,10 +50,12 @@
                     </div>
                     <div class="space-y-3">
                         @foreach ($this->pendingPayments as $payment)
-                            @php $tournament = $payment->payable->tournament; @endphp
+                            @php
+                                $eventName = $payment->payable?->tournament?->name ?? $payment->payable?->meeting?->title;
+                            @endphp
                             <div class="flex items-center justify-between gap-2">
                                 <div class="min-w-0">
-                                    <div class="truncate text-xs font-semibold">{{ $tournament->name }}</div>
+                                    <div class="truncate text-xs font-semibold">{{ $eventName }}</div>
                                     <div class="text-[10px] opacity-60">
                                         {{ number_format($payment->amount_due, 2, ',', ' ') }} €
                                     </div>
@@ -215,6 +217,41 @@
 
             </x-card>
 
+            {{-- Section : Mes réunions ──────────────────────────────────── --}}
+            @if ($this->upcomingMeetings->isNotEmpty())
+                <x-card icon="o-calendar-days" separator shadow :title="__('Upcoming Meetings')">
+                    @forelse ($this->upcomingMeetings as $meeting)
+                        <x-admin.shared.compact-event-preview
+                            :location="$meeting->format === \App\Domains\Shared\Enums\MeetingFormatEnum::PHYSICAL ? $meeting->location : null"
+                            :startDateTime="$meeting->scheduled_at->format('Y-m-d H:i:s')"
+                            link="#"
+                            name="{{ $meeting->title }}"
+                            type="meeting"
+                        >
+                            <x-slot:actions>
+                                <x-badge class="badge-success badge-sm" value="{{ __('Confirmed') }}" />
+                                @php
+                                    $meetingUser = $meeting->users()
+                                        ->where('users.id', $this->user->id)
+                                        ->first();
+                                    $payment = $meetingUser?->payment;
+                                @endphp
+                                @if ($payment && $payment->status === 'pending')
+                                    <x-button
+                                        class="btn-warning btn-xs"
+                                        icon="o-credit-card"
+                                        :label="__('Pay')"
+                                        spinner="openPaymentModal"
+                                        wire:click="openPaymentModal({{ $payment->id }})"
+                                    />
+                                @endif
+                            </x-slot:actions>
+                        </x-admin.shared.compact-event-preview>
+                    @empty
+                    @endforelse
+                </x-card>
+            @endif
+
             {{-- Section : Mes entraînements ────────────────────────────────── --}}
             @if ($this->upcomingTrainingSessions->isNotEmpty())
                 <x-card icon="o-academic-cap" separator shadow :title="__('My upcoming sessions')">
@@ -277,13 +314,15 @@
     <x-modal wire:model="paymentModal" :title="__('Payment details')" box-class="max-w-sm">
     @if ($paymentQr && $selectedPaymentId)
         @php
-            $payment = \App\Domains\ClubAdmin\Payment\Models\Payment::with(['payable.tournament'])->find($selectedPaymentId);
-            $eventName = $payment?->payable?->tournament?->name;
+            $payment = \App\Domains\ClubAdmin\Payment\Models\Payment::find($selectedPaymentId);
+            $isMeeting = $payment?->payable instanceof \App\Domains\Meetings\Models\MeetingUser;
+            $eventName = $isMeeting ? $payment?->payable?->meeting?->title : $payment?->payable?->tournament?->name;
+            $eventType = $isMeeting ? __('Meeting') : __('Tournament');
         @endphp
         <div class="flex flex-col items-center gap-5">
             @if ($eventName)
                 <div class="w-full rounded-xl bg-primary/5 border border-primary/10 px-4 py-3 text-center">
-                    <div class="text-[10px] font-bold uppercase tracking-wider opacity-50 mb-0.5">{{ __('Tournament') }}</div>
+                    <div class="text-[10px] font-bold uppercase tracking-wider opacity-50 mb-0.5">{{ $eventType }}</div>
                     <div class="font-bold text-sm text-primary">{{ $eventName }}</div>
                 </div>
             @endif

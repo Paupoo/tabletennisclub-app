@@ -109,6 +109,7 @@ describe('Meeting RSVP — confirmation email', function () {
 
         Notification::assertNothingSent();
     });
+
 });
 
 describe('Meeting RSVP — meal payment', function () {
@@ -130,6 +131,17 @@ describe('Meeting RSVP — meal payment', function () {
         expect($payment)->not->toBeNull()
             ->and($payment->status)->toBe('pending')
             ->and($payment->amount_due)->toBe(12.0); // 1200 cents → 12.00 €
+    });
+
+    test('confirmation page displays QR code for meal payment', function () {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $user = User::factory()->create(['is_active' => true]);
+        $meeting = Meeting::factory()->confirmed()->withMeal('Pizzas', 1200)->create(['created_by' => $admin->id]);
+        $meeting->users()->attach($user->id, ['status' => MeetingUserStatusEnum::INVITED->value]);
+
+        $this->get(rsvpUrl($meeting, $user, 'confirmed'))
+            ->assertOk()
+            ->assertSee('data:image/png;base64,');
     });
 
     test('confirming a free meeting does NOT generate a payment', function () {

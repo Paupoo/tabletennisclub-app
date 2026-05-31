@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Club\Models\Room;
+use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Pool;
 use App\Domains\Competitions\Tournament\Models\Tournament;
@@ -26,7 +28,7 @@ function conflictPool(Tournament $tournament): Pool
 
 function conflictMatch(Tournament $tournament, int $p1, int $p2, ?int $referee = null, string $status = 'scheduled'): TournamentMatch
 {
-    return TournamentMatch::create([
+    $match = TournamentMatch::create([
         'tournament_id' => $tournament->id,
         'pool_id' => conflictPool($tournament)->id,
         'player1_id' => $p1,
@@ -36,6 +38,28 @@ function conflictMatch(Tournament $tournament, int $p1, int $p2, ?int $referee =
         'player2_handicap_points' => 0,
         'status' => $status,
         'match_order' => 1,
+    ]);
+
+    if ($status === 'in_progress') {
+        occupyConflictTable($match);
+    }
+
+    return $match;
+}
+
+function occupyConflictTable(TournamentMatch $match): void
+{
+    $table = Table::create([
+        'name' => 'Table ' . $match->id,
+        'state' => 'used',
+        'purchased_on' => now()->subYears(2)->toDateString(),
+        'room_id' => Room::factory()->create()->id,
+    ]);
+
+    $match->tournament->tables()->attach($table->id, [
+        'is_table_free' => false,
+        'tournament_match_id' => $match->id,
+        'match_started_at' => now()->subMinutes(15),
     ]);
 }
 
@@ -111,13 +135,14 @@ describe('detectStartConflict', function () {
         $pool = Pool::factory()->for($tournament)->create(['name' => 'A']);
 
         // Active match: pair1 vs pair2 — $b is playing
-        TournamentMatch::create([
+        $active = TournamentMatch::create([
             'tournament_id' => $tournament->id, 'pool_id' => $pool->id,
             'pair1_id' => $pair1->id, 'pair2_id' => $pair2->id,
             'player1_id' => $a->id, 'player2_id' => $c->id,
             'player1_handicap_points' => 0, 'player2_handicap_points' => 0,
             'status' => 'in_progress', 'match_order' => 1,
         ]);
+        occupyConflictTable($active);
 
         // Next match: pair3 vs pair4, but $b (player2 of pair1) is the referee
         $next = TournamentMatch::create([

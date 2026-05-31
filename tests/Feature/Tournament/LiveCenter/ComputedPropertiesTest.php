@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Club\Models\Room;
+use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentMatch;
@@ -24,6 +26,22 @@ function liveCenterTournament(array $overrides = []): Tournament
         'deuce_enabled' => false,
         'price' => 0,
     ], $overrides));
+}
+
+function occupyTable(TournamentMatch $match): void
+{
+    $table = Table::create([
+        'name' => 'Table ' . $match->id,
+        'state' => 'used',
+        'purchased_on' => now()->subYears(2)->toDateString(),
+        'room_id' => Room::factory()->create()->id,
+    ]);
+
+    $match->tournament->tables()->attach($table->id, [
+        'is_table_free' => false,
+        'tournament_match_id' => $match->id,
+        'match_started_at' => now()->subMinutes(15),
+    ]);
 }
 
 function completedPoolMatch(Tournament $tournament, int $poolId, User $p1, User $p2): TournamentMatch
@@ -411,7 +429,7 @@ describe('busyPlayerIds', function () {
         $p2 = User::factory()->create();
         $pool = $tournament->pools()->create(['name' => 'A']);
 
-        TournamentMatch::create([
+        $match = TournamentMatch::create([
             'tournament_id' => $tournament->id,
             'pool_id' => $pool->id,
             'player1_id' => $p1->id,
@@ -421,6 +439,7 @@ describe('busyPlayerIds', function () {
             'status' => 'in_progress',
             'match_order' => 1,
         ]);
+        occupyTable($match);
 
         $component = Livewire::actingAs($admin)
             ->test('pages::club-events.tournaments.live-center', ['tournament' => $tournament]);
@@ -436,7 +455,7 @@ describe('busyPlayerIds', function () {
         [$p1, $p2, $p3, $p4] = User::factory(4)->create()->all();
         $pool = $tournament->pools()->create(['name' => 'A']);
 
-        TournamentMatch::create([
+        $match = TournamentMatch::create([
             'tournament_id' => $tournament->id,
             'pool_id' => $pool->id,
             'player1_id' => $p1->id,
@@ -446,6 +465,7 @@ describe('busyPlayerIds', function () {
             'status' => 'in_progress',
             'match_order' => 1,
         ]);
+        occupyTable($match);
 
         TournamentMatch::create([
             'tournament_id' => $tournament->id,
@@ -502,7 +522,7 @@ describe('busyPlayerIds', function () {
         [$p1, $p2, $ref] = User::factory(3)->create()->all();
         $pool = $tournament->pools()->create(['name' => 'A']);
 
-        TournamentMatch::create([
+        $match = TournamentMatch::create([
             'tournament_id' => $tournament->id,
             'pool_id' => $pool->id,
             'player1_id' => $p1->id,
@@ -513,6 +533,7 @@ describe('busyPlayerIds', function () {
             'status' => 'in_progress',
             'match_order' => 1,
         ]);
+        occupyTable($match);
 
         $component = Livewire::actingAs($admin)
             ->test('pages::club-events.tournaments.live-center', ['tournament' => $tournament]);
@@ -545,7 +566,7 @@ describe('busyPlayerIds', function () {
 
         $pool = $tournament->pools()->create(['name' => 'A']);
 
-        TournamentMatch::create([
+        $match = TournamentMatch::create([
             'tournament_id' => $tournament->id,
             'pool_id' => $pool->id,
             'pair1_id' => $pair1->id,
@@ -557,6 +578,7 @@ describe('busyPlayerIds', function () {
             'status' => 'in_progress',
             'match_order' => 1,
         ]);
+        occupyTable($match);
 
         $component = Livewire::actingAs($admin)
             ->test('pages::club-events.tournaments.live-center', ['tournament' => $tournament]);

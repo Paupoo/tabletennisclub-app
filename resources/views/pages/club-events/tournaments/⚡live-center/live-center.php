@@ -446,7 +446,10 @@ new class extends Component
             }
 
             $results[] = ['player1_score' => $p1, 'player2_score' => $p2];
-            $p1 > $p2 ? $p1Sets++ : $p2Sets++;
+            $isValidSet = $this->tournament->validateSetScore($p1, $p2, count($results), $this->p1Handicap, $this->p2Handicap) === null;
+            if ($isValidSet) {
+                $p1 > $p2 ? $p1Sets++ : $p2Sets++;
+            }
 
             if ($p1Sets >= $this->tournament->sets_to_win || $p2Sets >= $this->tournament->sets_to_win) {
                 break;

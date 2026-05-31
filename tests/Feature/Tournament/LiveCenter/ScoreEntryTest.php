@@ -466,4 +466,118 @@ describe('TableScoreEntry Livewire component', function () {
         expect($component->get('setScores.0.p1'))->toBe('9');
     })->group('score', 'livewire', 'sync');
 
+    // ── Set-win validation ────────────────────────────────────────────────────────
+
+    it('rejects submission when an invalid set score exists', function () {
+        $p1 = User::factory()->create();
+        $p2 = User::factory()->create();
+        $tournament = makePendingTournament(['sets_to_win' => 3, 'deuce_enabled' => false]);
+        $match = makePoolMatch($tournament, $p1, $p2);
+
+        $room = Room::factory()->create();
+        $table = Table::create([
+            'name' => 'T_invalid_low', 'state' => 'used',
+            'purchased_on' => now()->subYears(1)->toDateString(),
+            'room_id' => $room->id,
+        ]);
+        $tournament->tables()->attach($table->id, [
+            'is_table_free' => false,
+            'tournament_match_id' => $match->id,
+            'match_started_at' => now()->subMinutes(5),
+        ]);
+
+        // Set 1 invalid (5-3, no one reached 11), sets 2-4 valid but incomplete match
+        scoreEntryComponent($p1, $tournament, $match, $table)
+            ->set('setScores.0.p1', '5')->set('setScores.0.p2', '3')
+            ->set('setScores.1.p1', '11')->set('setScores.1.p2', '5')
+            ->set('setScores.2.p1', '11')->set('setScores.2.p2', '7')
+            ->set('setScores.3.p1', '11')->set('setScores.3.p2', '4')
+            ->call('submitScore')
+            ->assertSet('submitted', false);
+    })->group('score', 'livewire', 'validation');
+
+    it('rejects submission when deuce score has wrong lead', function () {
+        $p1 = User::factory()->create();
+        $p2 = User::factory()->create();
+        $tournament = makePendingTournament(['sets_to_win' => 3, 'deuce_enabled' => true]);
+        $match = makePoolMatch($tournament, $p1, $p2);
+
+        $room = Room::factory()->create();
+        $table = Table::create([
+            'name' => 'T_invalid_deuce', 'state' => 'used',
+            'purchased_on' => now()->subYears(1)->toDateString(),
+            'room_id' => $room->id,
+        ]);
+        $tournament->tables()->attach($table->id, [
+            'is_table_free' => false,
+            'tournament_match_id' => $match->id,
+            'match_started_at' => now()->subMinutes(5),
+        ]);
+
+        // Set 1 invalid: 11-15 (diff 4, needs 2)
+        scoreEntryComponent($p1, $tournament, $match, $table)
+            ->set('setScores.0.p1', '11')->set('setScores.0.p2', '15')
+            ->set('setScores.1.p1', '11')->set('setScores.1.p2', '5')
+            ->set('setScores.2.p1', '11')->set('setScores.2.p2', '7')
+            ->set('setScores.3.p1', '11')->set('setScores.3.p2', '4')
+            ->call('submitScore')
+            ->assertSet('submitted', false);
+    })->group('score', 'livewire', 'validation');
+
+    it('rejects submission when invalid set breaks match count', function () {
+        $p1 = User::factory()->create();
+        $p2 = User::factory()->create();
+        $tournament = makePendingTournament(['sets_to_win' => 3, 'deuce_enabled' => false]);
+        $match = makePoolMatch($tournament, $p1, $p2);
+
+        $room = Room::factory()->create();
+        $table = Table::create([
+            'name' => 'T_recount', 'state' => 'used',
+            'purchased_on' => now()->subYears(1)->toDateString(),
+            'room_id' => $room->id,
+        ]);
+        $tournament->tables()->attach($table->id, [
+            'is_table_free' => false,
+            'tournament_match_id' => $match->id,
+            'match_started_at' => now()->subMinutes(5),
+        ]);
+
+        // Set 1 invalid (11-15), only 2 valid wins follow (not enough for match finish)
+        scoreEntryComponent($p1, $tournament, $match, $table)
+            ->set('setScores.0.p1', '11')->set('setScores.0.p2', '15')  // Invalid
+            ->set('setScores.1.p1', '11')->set('setScores.1.p2', '5')   // p1 valid
+            ->set('setScores.2.p1', '11')->set('setScores.2.p2', '7')   // p1 valid (only 2)
+            ->call('submitScore')
+            ->assertSet('submitted', false);  // Match not finished
+    })->group('score', 'livewire', 'validation');
+
+    it('accepts submission when all sets are valid and match is finished', function () {
+        $p1 = User::factory()->create();
+        $p2 = User::factory()->create();
+        $tournament = makePendingTournament(['sets_to_win' => 3, 'deuce_enabled' => false]);
+        $match = makePoolMatch($tournament, $p1, $p2);
+
+        $room = Room::factory()->create();
+        $table = Table::create([
+            'name' => 'T_valid_3', 'state' => 'used',
+            'purchased_on' => now()->subYears(1)->toDateString(),
+            'room_id' => $room->id,
+        ]);
+        $tournament->tables()->attach($table->id, [
+            'is_table_free' => false,
+            'tournament_match_id' => $match->id,
+            'match_started_at' => now()->subMinutes(5),
+        ]);
+
+        scoreEntryComponent($p1, $tournament, $match, $table)
+            ->set('setScores.0.p1', '11')->set('setScores.0.p2', '5')
+            ->set('setScores.1.p1', '11')->set('setScores.1.p2', '7')
+            ->set('setScores.2.p1', '11')->set('setScores.2.p2', '4')
+            ->call('submitScore')
+            ->assertRedirect(route('tournament.table.score', [
+                'tournament' => $tournament->id,
+                'table' => $table->id,
+            ]));
+    })->group('score', 'livewire', 'validation');
+
 })->group('score');

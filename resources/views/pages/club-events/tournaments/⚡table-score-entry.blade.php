@@ -104,7 +104,10 @@ new class extends Component
             }
 
             $results[] = ['player1_score' => $p1, 'player2_score' => $p2];
-            $p1 > $p2 ? $p1Sets++ : $p2Sets++;
+            $isValidSet = $this->tournament->validateSetScore($p1, $p2, count($results), $this->p1Handicap, $this->p2Handicap) === null;
+            if ($isValidSet) {
+                $p1 > $p2 ? $p1Sets++ : $p2Sets++;
+            }
 
             if ($p1Sets >= $this->tournament->sets_to_win || $p2Sets >= $this->tournament->sets_to_win) {
                 break;
@@ -192,8 +195,23 @@ new class extends Component
             $hp1      = $p1Handicap ?? 0;
             $hp2      = $p2Handicap ?? 0;
             $doneSets = collect($setScores)->filter(fn ($s) => !((int)($s['p1'] ?? 0) === $hp1 && (int)($s['p2'] ?? 0) === $hp2));
-            $p1Sets   = $doneSets->filter(fn ($s) => (int)($s['p1'] ?? 0) > (int)($s['p2'] ?? 0))->count();
-            $p2Sets   = $doneSets->filter(fn ($s) => (int)($s['p2'] ?? 0) > (int)($s['p1'] ?? 0))->count();
+
+            $p1Sets = 0;
+            $p2Sets = 0;
+            $setNum = 0;
+            foreach ($doneSets as $s) {
+                $sp1  = (int)($s['p1'] ?? 0);
+                $sp2  = (int)($s['p2'] ?? 0);
+                $setNum++;
+                $validSet = $tournament->validateSetScore($sp1, $sp2, $setNum, $hp1, $hp2) === null;
+                if ($validSet) {
+                    $sp1 > $sp2 ? $p1Sets++ : $p2Sets++;
+                }
+                if ($p1Sets >= $tournament->sets_to_win || $p2Sets >= $tournament->sets_to_win) {
+                    break;
+                }
+            }
+
             $matchFinished = $p1Sets >= $tournament->sets_to_win || $p2Sets >= $tournament->sets_to_win;
             $hasSets  = $doneSets->isNotEmpty();
             $winner   = $matchFinished

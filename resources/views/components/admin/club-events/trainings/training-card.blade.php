@@ -86,7 +86,7 @@
                 </span>
 
                 <span class="{{ $full ? 'text-error' : 'text-success' }} font-medium">
-                    {{ $full ? __('Full') : __(':count free', ['count' => $training['max_spots'] - $training['current_spots']]) }}
+                    {{ $full ? __('Full') : __(':count available', ['count' => $training['max_spots'] - $training['current_spots']]) }}
                 </span>
             </div>
 

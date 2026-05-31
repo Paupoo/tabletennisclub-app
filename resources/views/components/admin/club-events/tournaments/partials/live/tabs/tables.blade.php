@@ -12,7 +12,7 @@
                     <span class="text-lg font-black tracking-tighter uppercase">{{ $roomName }}</span>
                     <div class="h-px bg-base-300 grow"></div>
                     <span class="text-xs opacity-40">
-                        {{ $roomTables->where('is_free', true)->count() }} {{ __('free') }} /
+                        {{ $roomTables->where('is_free', true)->count() }} {{ __('available') }} /
                         {{ $roomTables->count() }} {{ __('total') }}
                     </span>
                 </div>
@@ -49,7 +49,7 @@
                                 </div>
 
                                 @if ($table['is_free'])
-                                    <x-badge value="{{ __('FREE') }}" class="badge-success badge-sm font-bold" />
+                                    <x-badge value="{{ __('AVAILABLE') }}" class="badge-success badge-sm font-bold" />
                                 @else
                                     @php
                                         $elapsed = $table['match_started_at']

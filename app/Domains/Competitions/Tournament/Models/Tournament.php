@@ -12,6 +12,8 @@ use App\Domains\ClubPosts\Models\NewsPost;
 use App\Domains\Shared\Casts\MoneyCast;
 use App\Domains\Shared\Enums\TournamentObjectiveEnum;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
+use App\Domains\Shared\States\Tournament\Contracts\TournamentStateInterface;
+use App\Domains\Shared\States\Tournament\TournamentStateFactory;
 use App\Observers\TournamentObserver;
 use Database\Factories\Domains\Competitions\Tournament\Models\TournamentFactory;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -143,6 +145,11 @@ class Tournament extends Model
     public function isPaid(): bool
     {
         return $this->price > 0;
+    }
+
+    public function state(): TournamentStateInterface
+    {
+        return TournamentStateFactory::create($this->status);
     }
 
     public function matches(): HasMany

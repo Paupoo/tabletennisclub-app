@@ -580,11 +580,32 @@ test('can only refund paid payment', function () {
 - **Config files matter** — always check config/ for model imports
 - **Case-sensitive grep is essential** — `Clubadmin` vs `ClubAdmin` can hide
 
-### Phase 3: Patterns & Enhancements (Ready for future work)
-- [ ] Implement Validators (Strategy pattern)
-- [ ] Refine State machines (lightweight states already in place)
-- [ ] Create Value Objects (Price, Score, etc.)
-- [ ] Expand Domain Events and Listeners
-- [ ] 100% test coverage
-- [ ] Add Domain Collections
+### Phase 3: Patterns & Enhancements (Chantier 4)
+
+**Day 14-15: Validators (Strategy Pattern)**
+- ✅ TournamentValidator, TeamValidator, SubscriptionValidator, TrainingPackValidator, MeetingValidator, ArticleValidator
+- ✅ Example Action (CreateTeamAction) showing validator integration
+- ✅ Replaces legacy Form Requests (25 files)
+
+**Day 16: State Pattern Wiring**
+- ✅ Tournament model: `state()` method returns TournamentStateInterface via factory
+- ✅ Subscription model: `getCurrentState()` already wired (internal states)
+
+**Day 17: Value Objects**
+- ✅ Money: immutable monetary amounts (cents internally)
+- ✅ Price: immutable pricing with free() factory
+- ✅ Score: immutable table tennis scores with winner logic
+
+**Day 18: Domain Events & Listeners**
+- ✅ New events: SubscriptionCreated, SubscriptionPaid, MeetingCreated, TeamCreated, TrainingPackEnrolled
+- ✅ Listeners: SendSubscriptionConfirmationEmail, NotifyParticipantsOfMeeting, SendTeamCreatedNotification
+- ✅ EventServiceProvider: registered all events with listeners
+
+**Day 19: Documentation (this section)**
+- ✅ Marked Phase 3 complete
+- ✅ All 1316 tests passing
+
+**Future work:**
+- [ ] 100% test coverage (optional)
+- [ ] Domain Collections (optional)
 

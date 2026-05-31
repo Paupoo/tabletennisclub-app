@@ -4,9 +4,17 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Domains\Shared\Events\Interclub\TeamCreated;
+use App\Domains\Shared\Events\Meetings\MeetingCreated;
+use App\Domains\Shared\Events\Subscriptions\SubscriptionCreated;
+use App\Domains\Shared\Events\Subscriptions\SubscriptionPaid;
 use App\Domains\Shared\Events\Tournament\NewTournamentPublished;
 use App\Domains\Shared\Events\Tournament\UserRegisteredToTournament;
 use App\Domains\Shared\Events\Tournament\UserUnregisteredFromTournament;
+use App\Domains\Shared\Events\Trainings\TrainingPackEnrolled;
+use App\Listeners\NotifyParticipantsOfMeeting;
+use App\Listeners\SendSubscriptionConfirmationEmail;
+use App\Listeners\SendTeamCreatedNotification;
 use App\Listeners\SendWelcomeEmail;
 use App\Listeners\Tournament\SendPublishedTournamentNotification;
 use App\Listeners\Tournament\UserRegisteredToTournamentToTournament;
@@ -36,6 +44,21 @@ class EventServiceProvider extends ServiceProvider
         ],
         UserUnregisteredFromTournament::class => [
             UserUnregisteredToTournamentToTournament::class,
+        ],
+        SubscriptionCreated::class => [
+            SendSubscriptionConfirmationEmail::class,
+        ],
+        SubscriptionPaid::class => [
+            // Listener for subscription paid
+        ],
+        MeetingCreated::class => [
+            NotifyParticipantsOfMeeting::class,
+        ],
+        TeamCreated::class => [
+            SendTeamCreatedNotification::class,
+        ],
+        TrainingPackEnrolled::class => [
+            // Listener for training pack enrollment
         ],
     ];
 

@@ -9,6 +9,8 @@ use App\Domains\ClubAdmin\Payment\Models\CashRegister;
 use App\Domains\ClubAdmin\Payment\Models\CashRegisterEntry;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Notifications\RefundRequestedNotification;
+use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Competitions\Tournament\Notifications\TournamentConfirmationExpiredNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentPaymentReminderNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentPaymentRequestNotification;
@@ -20,8 +22,6 @@ use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Events\Tournament\UserRegisteredToTournament;
 use App\Jobs\SendDebtReminderNotification;
 use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Tournament\Tournament;
-use App\Models\ClubEvents\Tournament\TournamentRegistration;
 use Event;
 use Illuminate\Support\Facades\DB;
 

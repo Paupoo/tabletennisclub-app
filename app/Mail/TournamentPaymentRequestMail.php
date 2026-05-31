@@ -6,7 +6,7 @@ namespace App\Mail;
 
 use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
-use App\Models\ClubEvents\Tournament\Tournament;
+use App\Domains\Competitions\Tournament\Models\Tournament;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;

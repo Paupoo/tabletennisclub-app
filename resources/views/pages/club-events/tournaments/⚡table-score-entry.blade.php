@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Club\Models\Table;
-use App\Models\ClubEvents\Tournament\Tournament;
-use App\Models\ClubEvents\Tournament\TournamentMatch;
+use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Competitions\Tournament\Models\TournamentMatch;
 use App\Domains\Competitions\Tournament\Services\TournamentFinalPhaseService;
 use App\Domains\Competitions\Tournament\Services\TournamentTableService;
 use Illuminate\View\View;

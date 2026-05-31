@@ -6,7 +6,7 @@ use App\Mail\PaymentInvitationEmail;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Models\ClubAdmin\Subscription\Subscription;
-use App\Models\ClubEvents\Tournament\TournamentRegistration;
+use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Database\Eloquent\Relations\MorphTo;

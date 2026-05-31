@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-use App\Domains\Shared\Enums\TournamentStatusEnum;
-use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Tournament\Tournament;
-use App\Models\ClubEvents\Tournament\TournamentMatch;
-use App\Models\ClubEvents\Tournament\TournamentPair;
+use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Competitions\Tournament\Models\TournamentMatch;
+use App\Domains\Competitions\Tournament\Models\TournamentPair;
 use App\Domains\Competitions\Tournament\Services\TournamentFinalPhaseService;
 use App\Domains\Competitions\Tournament\Services\TournamentMatchService;
 use App\Domains\Competitions\Tournament\Services\TournamentPoolService;
+use App\Domains\Shared\Enums\TournamentStatusEnum;
+use App\Models\ClubAdmin\Users\User;
 use Illuminate\Database\Eloquent\Collection;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

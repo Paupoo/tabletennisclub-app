@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Feature\ClubEvents\Tournaments;
 
+use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Events\Tournament\NewTournamentPublished;
-use App\Models\ClubEvents\Tournament\Tournament;
 use App\Observers\TournamentObserver;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;

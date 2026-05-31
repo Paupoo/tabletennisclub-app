@@ -7,6 +7,8 @@ namespace App\Models\ClubAdmin\Users;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
 use App\Domains\ClubPosts\Models\NewsPost;
+use App\Domains\Competitions\Tournament\Models\Pool;
+use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Gender;
@@ -16,8 +18,6 @@ use App\Models\ClubEvents\Interclub\Club;
 use App\Models\ClubEvents\Interclub\Interclub;
 use App\Models\ClubEvents\Interclub\Season;
 use App\Models\ClubEvents\Interclub\Team;
-use App\Models\ClubEvents\Tournament\Pool;
-use App\Models\ClubEvents\Tournament\Tournament;
 use App\Observers\UserObserver;
 use Carbon\Carbon;
 use Database\Factories\ClubAdmin\Users\UserFactory;

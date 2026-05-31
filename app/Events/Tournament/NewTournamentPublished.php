@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Events\Tournament;
 
-use App\Models\ClubEvents\Tournament\Tournament;
+use App\Domains\Competitions\Tournament\Models\Tournament;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;

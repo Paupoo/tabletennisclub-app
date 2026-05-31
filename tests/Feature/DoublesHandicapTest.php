@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Tournament\Pool;
-use App\Models\ClubEvents\Tournament\Tournament;
-use App\Models\ClubEvents\Tournament\TournamentMatch;
-use App\Models\ClubEvents\Tournament\TournamentPair;
+use App\Domains\Competitions\Tournament\Models\Pool;
+use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Competitions\Tournament\Models\TournamentMatch;
+use App\Domains\Competitions\Tournament\Models\TournamentPair;
 use App\Domains\Competitions\Tournament\Services\TournamentMatchService;
+use App\Models\ClubAdmin\Users\User;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

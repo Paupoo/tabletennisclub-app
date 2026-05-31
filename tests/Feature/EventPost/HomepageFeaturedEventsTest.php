@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubPosts\Models\EventPost;
+use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Shared\Enums\ClubEventTypeEnum;
 use App\Domains\Shared\Enums\EventPostStatusEnum;
 use App\Models\ClubEvents\Interclub\Club;
-use App\Models\ClubEvents\Tournament\Tournament;
-use App\Domains\ClubPosts\Models\EventPost;
 
 // ── Setup : la homepage nécessite un Club correspondant à ourClub() ───────────
 beforeEach(function (): void {

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubPosts\Models\EventPost;
+use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Shared\Enums\ClubEventTypeEnum;
 use App\Domains\Shared\Enums\EventPostStatusEnum;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Tournament\Tournament;
-use App\Domains\ClubPosts\Models\EventPost;
 use Livewire\Livewire;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

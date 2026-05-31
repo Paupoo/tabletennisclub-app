@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Domains\ClubAdmin\Club\Models;
 
-use App\Models\ClubEvents\Interclub\Club;
-use App\Models\ClubEvents\Interclub\Interclub;
-use App\Models\ClubEvents\Tournament\Tournament;
+use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Models\TrainingPack;
+use App\Models\ClubEvents\Interclub\Club;
+use App\Models\ClubEvents\Interclub\Interclub;
 use Database\Factories\Domains\ClubAdmin\Club\Models\RoomFactory;
 use Eloquent;
 use Illuminate\Database\Eloquent\Builder;

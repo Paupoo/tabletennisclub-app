@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\ClubEvents\Tournament;
 
+use App\Domains\Competitions\Tournament\Models\Pool;
 use App\Http\Controllers\Controller;
-use App\Models\ClubEvents\Tournament\Pool;
 use Illuminate\Http\Request;
 
 class PoolController extends Controller

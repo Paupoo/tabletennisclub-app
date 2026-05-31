@@ -36,7 +36,7 @@
                 </div>
             @else
                 @php
-                    $remaining = \App\Models\ClubEvents\Tournament\TournamentMatch::where('tournament_id', $tournament->id)
+                    $remaining = \App\Domains\Competitions\Tournament\Models\TournamentMatch::where('tournament_id', $tournament->id)
                         ->whereIn('status', ['scheduled', 'in_progress'])->count();
                 @endphp
                 <div class="flex items-center gap-3 rounded-lg bg-warning/10 border border-warning/20 px-4 py-3">

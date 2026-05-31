@@ -11,7 +11,7 @@ use App\Models\ClubEvents\Interclub\Interclub;
 use App\Models\ClubEvents\Interclub\Season;
 use App\Models\ClubEvents\Interclub\Team;
 use App\Domains\Meetings\Models\Meeting;
-use App\Models\ClubEvents\Tournament\Tournament;
+use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Trainings\Models\Training;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;

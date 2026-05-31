@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Competitions\Tournament\Notifications\TournamentDebtReminderNotification;
 use App\Jobs\SendDebtReminderNotification;
 use App\Models\ClubAdmin\Subscription\Subscription;
 use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Tournament\Tournament;
-use App\Domains\Competitions\Tournament\Notifications\TournamentDebtReminderNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;

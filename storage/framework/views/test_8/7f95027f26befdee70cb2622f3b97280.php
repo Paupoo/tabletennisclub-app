@@ -1,3 +1,0 @@
-<svg @click="toggle(option.id)" x-show="!isReadonly && !isDisabled && !isSingle" class="inline flex-shrink-0 w-4 h-4 hover:text-error" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true" data-slot="icon">
-  <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
-</svg><?php /**PATH /home/aurelien/Documents/01 Projets/03-tabletennisclub-app/storage/framework/views/test_8/0183bea9c7f00b84720cc93f3881dd54.blade.php ENDPATH**/ ?>

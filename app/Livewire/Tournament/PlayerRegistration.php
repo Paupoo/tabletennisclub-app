@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Livewire\Tournament;
 
-use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Tournament\Tournament;
+use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Services\TournamentService;
+use App\Models\ClubAdmin\Users\User;
 use Livewire\Component;
 
 class PlayerRegistration extends Component

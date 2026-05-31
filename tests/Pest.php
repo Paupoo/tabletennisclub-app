@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Shared\Enums\TrainingType;
-use App\Models\ClubEvents\Interclub\Season;
-use App\Models\ClubEvents\Tournament\Tournament;
 use App\Domains\Trainings\Models\TrainingPack;
+use App\Models\ClubEvents\Interclub\Season;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

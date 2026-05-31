@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Controllers\ClubEvents\Tournament;
 
 use App\Actions\Tournament\ToggleHasPaidTournamentAction;
+use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Http\Controllers\Controller;
 use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Tournament\Tournament;
 use Exception;
 use Illuminate\Http\RedirectResponse;
 

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Domains\ClubAdmin\Club\Models;
 
-use App\Models\ClubEvents\Tournament\TableTournament;
-use App\Models\ClubEvents\Tournament\Tournament;
-use App\Models\ClubEvents\Tournament\TournamentMatch;
+use App\Domains\Competitions\Tournament\Models\TableTournament;
+use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Competitions\Tournament\Models\TournamentMatch;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

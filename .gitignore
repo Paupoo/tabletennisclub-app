@@ -96,6 +96,13 @@ Desktop.ini
 /storage/logs/*.log
 
 # ============================================
+# Storage
+# ============================================
+/storage/framework/cache/
+/storage/framework/sessions/
+/storage/framework/views/
+
+# ============================================
 # Database
 # ============================================
 *.sql

@@ -9,7 +9,7 @@ use App\Actions\ClubAdmin\Subscriptions\EnrollInTrainingPackAction;
 use App\Actions\ClubAdmin\Subscriptions\LeaveTrainingPackAction;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\TrainingLevel;
-use App\Models\ClubAdmin\Subscription\Subscription;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Season;
 use App\Domains\Trainings\Models\TrainingPack;

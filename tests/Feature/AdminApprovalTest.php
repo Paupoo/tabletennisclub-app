@@ -6,9 +6,9 @@ use App\Actions\ClubAdmin\Payments\GeneratePaymentReference;
 use App\Actions\ClubAdmin\Subscriptions\ApproveTrainingPacksAction;
 use App\Actions\ClubAdmin\Subscriptions\CalculatePriceAction;
 use App\Actions\ClubAdmin\Subscriptions\EnrollInTrainingPackAction;
-use App\Models\ClubAdmin\Subscription\Subscription;
-use App\Models\ClubAdmin\Users\User;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\Trainings\Models\TrainingPack;
+use App\Models\ClubAdmin\Users\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 
@@ -145,7 +145,7 @@ describe('trainingRequestPricingBreakdown — display logic', function () {
     });
 
     test('single new pack, no existing enrolled → no discount, no retro adjustments', function () {
-        $sub  = Subscription::factory()->create(['status' => 'paid', 'is_competitive' => true]);
+        $sub = Subscription::factory()->create(['status' => 'paid', 'is_competitive' => true]);
         $pack = TrainingPack::factory()->create(['price' => 90, 'allow_discount' => true]);
         $sub->trainingPacks()->attach($pack->id, ['status' => 'pending']);
 
@@ -162,7 +162,7 @@ describe('trainingRequestPricingBreakdown — display logic', function () {
     })->group('admin', 'pricing', 'breakdown');
 
     test('two new discountable packs → both discounted at 80€, no retro adjustments', function () {
-        $sub   = Subscription::factory()->create(['status' => 'paid', 'is_competitive' => true]);
+        $sub = Subscription::factory()->create(['status' => 'paid', 'is_competitive' => true]);
         $pack1 = TrainingPack::factory()->create(['price' => 90, 'allow_discount' => true]);
         $pack2 = TrainingPack::factory()->create(['price' => 90, 'allow_discount' => true]);
         $sub->trainingPacks()->attach($pack1->id, ['status' => 'pending']);
@@ -181,9 +181,9 @@ describe('trainingRequestPricingBreakdown — display logic', function () {
     })->group('admin', 'pricing', 'breakdown');
 
     test('1 already enrolled + 1 new → retro adjustment on enrolled pack', function () {
-        $sub     = Subscription::factory()->create(['status' => 'paid', 'is_competitive' => true]);
+        $sub = Subscription::factory()->create(['status' => 'paid', 'is_competitive' => true]);
         $existing = TrainingPack::factory()->create(['price' => 90, 'allow_discount' => true]);
-        $newPack  = TrainingPack::factory()->create(['price' => 90, 'allow_discount' => true]);
+        $newPack = TrainingPack::factory()->create(['price' => 90, 'allow_discount' => true]);
         $sub->trainingPacks()->attach($existing->id, ['status' => 'enrolled']);
         $sub->trainingPacks()->attach($newPack->id, ['status' => 'pending']);
 
@@ -201,7 +201,7 @@ describe('trainingRequestPricingBreakdown — display logic', function () {
     })->group('admin', 'pricing', 'breakdown');
 
     test('2 already enrolled + 1 new → no retro adjustment (discount was already active)', function () {
-        $sub   = Subscription::factory()->create(['status' => 'paid', 'is_competitive' => true]);
+        $sub = Subscription::factory()->create(['status' => 'paid', 'is_competitive' => true]);
         $pack1 = TrainingPack::factory()->create(['price' => 90, 'allow_discount' => true]);
         $pack2 = TrainingPack::factory()->create(['price' => 90, 'allow_discount' => true]);
         $pack3 = TrainingPack::factory()->create(['price' => 90, 'allow_discount' => true]);
@@ -221,9 +221,9 @@ describe('trainingRequestPricingBreakdown — display logic', function () {
     })->group('admin', 'pricing', 'breakdown');
 
     test('fixed-price pack is never discounted regardless of other packs', function () {
-        $sub         = Subscription::factory()->create(['status' => 'paid', 'is_competitive' => true]);
+        $sub = Subscription::factory()->create(['status' => 'paid', 'is_competitive' => true]);
         $discountable = TrainingPack::factory()->create(['price' => 90, 'allow_discount' => true]);
-        $fixed        = TrainingPack::factory()->create(['price' => 350, 'allow_discount' => false]);
+        $fixed = TrainingPack::factory()->create(['price' => 350, 'allow_discount' => false]);
         $sub->trainingPacks()->attach($discountable->id, ['status' => 'pending']);
         $sub->trainingPacks()->attach($fixed->id, ['status' => 'pending']);
 
@@ -241,7 +241,7 @@ describe('trainingRequestPricingBreakdown — display logic', function () {
     })->group('admin', 'pricing', 'breakdown');
 
     test('unchecking a pack dynamically removes discount', function () {
-        $sub   = Subscription::factory()->create(['status' => 'paid', 'is_competitive' => true]);
+        $sub = Subscription::factory()->create(['status' => 'paid', 'is_competitive' => true]);
         $pack1 = TrainingPack::factory()->create(['price' => 90, 'allow_discount' => true]);
         $pack2 = TrainingPack::factory()->create(['price' => 90, 'allow_discount' => true]);
         $sub->trainingPacks()->attach($pack1->id, ['status' => 'pending']);

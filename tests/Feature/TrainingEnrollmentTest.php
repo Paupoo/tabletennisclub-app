@@ -6,7 +6,7 @@ use App\Actions\ClubAdmin\Subscriptions\CalculatePriceAction;
 use App\Actions\ClubAdmin\Subscriptions\EnrollInTrainingPackAction;
 use App\Actions\ClubAdmin\Subscriptions\LeaveTrainingPackAction;
 use App\Actions\ClubAdmin\Subscriptions\PromoteFromTrainingWaitlistAction;
-use App\Models\ClubAdmin\Subscription\Subscription;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Trainings\Notifications\TrainingWaitlistJoinedNotification;
 use App\Domains\Trainings\Notifications\TrainingWaitlistSpotOfferedNotification;

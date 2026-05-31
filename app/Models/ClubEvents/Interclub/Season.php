@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Models\ClubEvents\Interclub;
 
-use App\Models\ClubAdmin\Subscription\Subscription;
-use App\Models\ClubAdmin\Users\User;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Models\TrainingPack;
+use App\Models\ClubAdmin\Users\User;
 use Database\Factories\ClubEvents\Interclub\SeasonFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;

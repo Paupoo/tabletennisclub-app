@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\Shared\Casts\MoneyCast;
-use App\Models\ClubAdmin\Subscription\Subscription;
 
 it('converts integer cents to float euros when getting', function (): void {
     $cast = new MoneyCast;

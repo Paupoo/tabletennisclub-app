@@ -7,7 +7,7 @@ namespace App\States\Payments;
 use const App\States\Tournament\Payments\paid;
 
 use App\Contracts\SubscriptionState;
-use App\Models\ClubAdmin\Subscription\Subscription;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 
 class PaidState implements SubscriptionState
 {

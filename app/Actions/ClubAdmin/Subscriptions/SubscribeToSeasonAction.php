@@ -6,7 +6,7 @@ namespace App\Actions\ClubAdmin\Subscriptions;
 
 use App\Actions\ClubAdmin\Payments\GeneratePayment;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
-use App\Models\ClubAdmin\Subscription\Subscription;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Season;
 use Illuminate\Http\RedirectResponse;

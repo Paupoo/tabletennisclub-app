@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Controllers\ClubAdmin\Subscription;
 
 use App\Actions\ClubAdmin\Subscriptions\SyncTrainingPackAction;
-use App\Http\Controllers\Controller;
-use App\Models\ClubAdmin\Subscription\Subscription;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\Trainings\Models\TrainingPack;
+use App\Http\Controllers\Controller;
 use App\Support\Breadcrumb;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;

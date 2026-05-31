@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace App\Domains\Trainings\Models;
 
 use App\Domains\ClubAdmin\Club\Models\Room;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubPosts\Models\EventPost;
 use App\Domains\Shared\Enums\Recurrence;
 use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Shared\Enums\TrainingType;
 use App\Domains\Trainings\Services\TrainingBuilder;
 use App\Domains\Trainings\Services\TrainingDateGenerator;
-use App\Models\ClubAdmin\Subscription\Subscription;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Season;
 use Carbon\Carbon;

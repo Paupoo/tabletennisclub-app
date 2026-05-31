@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\States\Payments;
 
 use App\Contracts\SubscriptionState;
-use App\Models\ClubAdmin\Subscription\Subscription;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 
 class ValidatedState implements SubscriptionState
 {

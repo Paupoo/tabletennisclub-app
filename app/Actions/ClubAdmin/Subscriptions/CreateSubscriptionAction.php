@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace App\Actions\ClubAdmin\Subscriptions;
 
-use App\Models\ClubAdmin\Subscription\Subscription;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Season;
-
 
 class CreateSubscriptionAction
 {
@@ -20,7 +19,7 @@ class CreateSubscriptionAction
         if (! $season->registrations_open) {
             throw new \DomainException('Registrations are currently closed');
         }
-        
+
         // Vérifie qu'il n'existe pas déjà une subscription pour cette saison
         $existing = Subscription::where('user_id', $user->id)
             ->where('season_id', $season->id)

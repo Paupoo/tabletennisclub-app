@@ -18,9 +18,9 @@ use const App\Http\Controllers\XLSX;
 
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Http\Controllers\Controller;
-use App\Models\ClubAdmin\Subscription\Subscription;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;

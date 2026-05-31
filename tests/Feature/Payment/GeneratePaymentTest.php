@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\ClubAdmin\Payments\GeneratePayment;
-use App\Models\ClubAdmin\Subscription\Subscription;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Models\ClubAdmin\Users\User;
 use Illuminate\Http\RedirectResponse;
 

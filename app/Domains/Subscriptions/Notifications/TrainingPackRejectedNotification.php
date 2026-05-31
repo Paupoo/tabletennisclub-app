@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Subscriptions\Notifications;
 
-use App\Models\ClubAdmin\Subscription\Subscription;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\Trainings\Models\TrainingPack;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;

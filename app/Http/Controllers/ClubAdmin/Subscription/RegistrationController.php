@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\ClubAdmin\Subscription;
 
+use App\Domains\ClubAdmin\Subscriptions\Models\Registration;
 use App\Http\Controllers\Controller;
-use App\Models\ClubAdmin\Subscription\Registration;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 

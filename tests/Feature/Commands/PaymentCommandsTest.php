@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use App\Domains\Shared\Enums\CommitteeRolesEnum;
-use App\Models\ClubAdmin\Subscription\Subscription;
-use App\Models\ClubAdmin\Users\User;
 use App\Domains\ClubAdmin\Payment\Notifications\WeeklyRefundReminderNotification;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Models\ClubAdmin\Users\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 

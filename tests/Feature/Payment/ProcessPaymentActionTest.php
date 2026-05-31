@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\ClubAdmin\Payments\ProcessPaymentAction;
-use App\Models\ClubAdmin\Subscription\Subscription;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);

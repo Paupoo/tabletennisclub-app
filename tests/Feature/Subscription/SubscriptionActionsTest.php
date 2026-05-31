@@ -11,10 +11,10 @@ use App\Actions\ClubAdmin\Subscriptions\SubscribeToSeasonAction;
 use App\Actions\ClubAdmin\Subscriptions\SyncTrainingPackAction;
 use App\Actions\ClubAdmin\Subscriptions\UnconfirmSubscriptionAction;
 use App\Actions\ClubAdmin\Subscriptions\UnsubscribeFromSeasonAction;
-use App\Models\ClubAdmin\Subscription\Subscription;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\Trainings\Models\TrainingPack;
 use App\Models\ClubAdmin\Users\User;
 use App\Models\ClubEvents\Interclub\Season;
-use App\Domains\Trainings\Models\TrainingPack;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -63,7 +63,6 @@ describe('CancelSubscriptionAction', function () {
 
 })->group('subscriptions');
 
-
 // ============================================================
 // ConfirmSubscriptionAction
 // ============================================================
@@ -106,7 +105,6 @@ describe('ConfirmSubscriptionAction', function () {
 
 })->group('subscriptions');
 
-
 // ============================================================
 // DeleteSubscriptionAction
 // ============================================================
@@ -126,10 +124,10 @@ describe('DeleteSubscriptionAction', function () {
     test('cascade-deletes payments when the subscription is deleted', function () {
         $subscription = Subscription::factory()->create(['status' => 'confirmed', 'amount_due' => 125]);
         $payment = $subscription->payments()->create([
-            'reference'  => '100/2505/00101',
+            'reference' => '100/2505/00101',
             'amount_due' => 125,
             'amount_paid' => 0,
-            'status'     => 'pending',
+            'status' => 'pending',
         ]);
 
         (new DeleteSubscriptionAction)($subscription);
@@ -139,7 +137,6 @@ describe('DeleteSubscriptionAction', function () {
     })->group('subscriptions', 'actions');
 
 })->group('subscriptions');
-
 
 // ============================================================
 // MarkPaidSubscriptionAction
@@ -177,7 +174,6 @@ describe('MarkPaidSubscriptionAction', function () {
 
 })->group('subscriptions');
 
-
 // ============================================================
 // MarkRefundSubscriptionAction
 // ============================================================
@@ -212,7 +208,6 @@ describe('MarkRefundSubscriptionAction', function () {
     })->group('subscriptions', 'actions');
 
 })->group('subscriptions');
-
 
 // ============================================================
 // SyncTrainingPackAction
@@ -257,7 +252,7 @@ describe('SyncTrainingPackAction', function () {
         $pack = TrainingPack::factory()->create();
 
         expect(fn () => (new SyncTrainingPackAction)([$pack->id], $subscription))
-            ->toThrow(\DomainException::class);
+            ->toThrow(DomainException::class);
     })->group('subscriptions', 'actions');
 
     test('throws DomainException when modifying a cancelled subscription', function () {
@@ -265,7 +260,7 @@ describe('SyncTrainingPackAction', function () {
         $pack = TrainingPack::factory()->create();
 
         expect(fn () => (new SyncTrainingPackAction)([$pack->id], $subscription))
-            ->toThrow(\DomainException::class);
+            ->toThrow(DomainException::class);
     })->group('subscriptions', 'actions');
 
     test('throws DomainException when modifying a refunded subscription', function () {
@@ -273,7 +268,7 @@ describe('SyncTrainingPackAction', function () {
         $pack = TrainingPack::factory()->create();
 
         expect(fn () => (new SyncTrainingPackAction)([$pack->id], $subscription))
-            ->toThrow(\DomainException::class);
+            ->toThrow(DomainException::class);
     })->group('subscriptions', 'actions');
 
     test('bug: does not recalculate price because CalculatePriceAction is instantiated but not invoked')
@@ -284,7 +279,6 @@ describe('SyncTrainingPackAction', function () {
         ->group('subscriptions', 'actions');
 
 })->group('subscriptions');
-
 
 // ============================================================
 // UnconfirmSubscriptionAction
@@ -321,7 +315,6 @@ describe('UnconfirmSubscriptionAction', function () {
 
 })->group('subscriptions');
 
-
 // ============================================================
 // UnsubscribeFromSeasonAction
 // ============================================================
@@ -332,9 +325,9 @@ describe('UnsubscribeFromSeasonAction', function () {
         $user = User::factory()->create();
         $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
         $subscription = Subscription::factory()->create([
-            'user_id'   => $user->id,
+            'user_id' => $user->id,
             'season_id' => $season->id,
-            'status'    => 'pending',
+            'status' => 'pending',
         ]);
 
         $response = (new UnsubscribeFromSeasonAction)($season, $user);
@@ -347,9 +340,9 @@ describe('UnsubscribeFromSeasonAction', function () {
         $user = User::factory()->create();
         $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
         $subscription = Subscription::factory()->create([
-            'user_id'   => $user->id,
+            'user_id' => $user->id,
             'season_id' => $season->id,
-            'status'    => 'confirmed',
+            'status' => 'confirmed',
         ]);
 
         (new UnsubscribeFromSeasonAction)($season, $user);
@@ -370,9 +363,9 @@ describe('UnsubscribeFromSeasonAction', function () {
         $user = User::factory()->create();
         $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
         Subscription::factory()->create([
-            'user_id'   => $user->id,
+            'user_id' => $user->id,
             'season_id' => $season->id,
-            'status'    => 'cancelled',
+            'status' => 'cancelled',
         ]);
 
         // No active subscription found because the query excludes 'cancelled'
@@ -385,9 +378,9 @@ describe('UnsubscribeFromSeasonAction', function () {
         $user = User::factory()->create();
         $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
         $subscription = Subscription::factory()->create([
-            'user_id'   => $user->id,
+            'user_id' => $user->id,
             'season_id' => $season->id,
-            'status'    => 'paid',
+            'status' => 'paid',
         ]);
 
         $response = (new UnsubscribeFromSeasonAction)($season, $user);
@@ -398,7 +391,6 @@ describe('UnsubscribeFromSeasonAction', function () {
     })->group('subscriptions', 'actions');
 
 })->group('subscriptions');
-
 
 // ============================================================
 // SubscribeToSeasonAction
@@ -412,17 +404,17 @@ describe('SubscribeToSeasonAction', function () {
 
         $request = Request::create('/subscribe', 'POST', [
             'user_id' => (string) $user->id,
-            'type'    => 'competitive',
+            'type' => 'competitive',
         ]);
 
         $response = (new SubscribeToSeasonAction)($season, $request);
 
         expect($response)->toBeInstanceOf(RedirectResponse::class);
         $this->assertDatabaseHas('subscriptions', [
-            'user_id'        => $user->id,
-            'season_id'      => $season->id,
+            'user_id' => $user->id,
+            'season_id' => $season->id,
             'is_competitive' => true,
-            'status'         => 'pending',
+            'status' => 'pending',
         ]);
     })->group('subscriptions', 'actions');
 
@@ -432,14 +424,14 @@ describe('SubscribeToSeasonAction', function () {
 
         $request = Request::create('/subscribe', 'POST', [
             'user_id' => (string) $user->id,
-            'type'    => 'casual',
+            'type' => 'casual',
         ]);
 
         (new SubscribeToSeasonAction)($season, $request);
 
         $this->assertDatabaseHas('subscriptions', [
-            'user_id'        => $user->id,
-            'season_id'      => $season->id,
+            'user_id' => $user->id,
+            'season_id' => $season->id,
             'is_competitive' => false,
         ]);
     })->group('subscriptions', 'actions');
@@ -449,14 +441,14 @@ describe('SubscribeToSeasonAction', function () {
         $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
 
         Subscription::factory()->create([
-            'user_id'   => $user->id,
+            'user_id' => $user->id,
             'season_id' => $season->id,
-            'status'    => 'pending',
+            'status' => 'pending',
         ]);
 
         $request = Request::create('/subscribe', 'POST', [
             'user_id' => (string) $user->id,
-            'type'    => 'competitive',
+            'type' => 'competitive',
         ]);
 
         $response = (new SubscribeToSeasonAction)($season, $request);
@@ -473,7 +465,7 @@ describe('SubscribeToSeasonAction', function () {
 
         $request = Request::create('/subscribe', 'POST', [
             'user_id' => (string) $user->id,
-            'type'    => 'competitive',
+            'type' => 'competitive',
         ]);
 
         (new SubscribeToSeasonAction)($season, $request);
@@ -488,7 +480,7 @@ describe('SubscribeToSeasonAction', function () {
 
         $request = Request::create('/subscribe', 'POST', [
             'user_id' => (string) $user->id,
-            'type'    => 'casual',
+            'type' => 'casual',
         ]);
 
         (new SubscribeToSeasonAction)($season, $request);

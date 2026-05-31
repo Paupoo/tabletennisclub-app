@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Domains\Competitions\Interclub\Services;
 
-use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Interclub\Interclub;
+use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Notifications\InterclubAvailabilityRequestNotification;
 use App\Domains\Competitions\Interclub\Notifications\InterclubLineupBroadcastNotification;
 use App\Domains\Competitions\Interclub\Notifications\InterclubSelectionNotification;
+use App\Models\ClubAdmin\Users\User;
 use Illuminate\Support\Facades\Notification;
 
 class InterclubAvailabilityService

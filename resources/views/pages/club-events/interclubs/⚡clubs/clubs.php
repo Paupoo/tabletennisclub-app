@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Resources\views\Pages\ClubEvents\Interclubs\Clubs;
 
-use App\Models\ClubEvents\Interclub\Club;
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Facades\Auth;

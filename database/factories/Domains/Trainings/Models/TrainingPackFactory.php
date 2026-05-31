@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Database\Factories\Domains\Trainings\Models;
 
 use App\Domains\ClubAdmin\Club\Models\Room;
+use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Shared\Enums\TrainingType;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Interclub\Season;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

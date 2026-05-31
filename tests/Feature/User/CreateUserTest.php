@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Interclub\Club;
 use Illuminate\Support\Facades\Hash;
 use Tests\Trait\CreateUser;
 

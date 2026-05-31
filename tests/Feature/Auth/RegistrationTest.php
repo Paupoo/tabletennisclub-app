@@ -1,7 +1,7 @@
 <?php
 
 declare(strict_types=1);
-use App\Models\ClubEvents\Interclub\Club;
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Providers\RouteServiceProvider;
 
 pest()->group('auth');

@@ -12,9 +12,9 @@ use App\Actions\ClubAdmin\Subscriptions\SyncTrainingPackAction;
 use App\Actions\ClubAdmin\Subscriptions\UnconfirmSubscriptionAction;
 use App\Actions\ClubAdmin\Subscriptions\UnsubscribeFromSeasonAction;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Interclub\Season;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 

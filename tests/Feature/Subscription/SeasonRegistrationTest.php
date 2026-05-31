@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Models\ClubEvents\Interclub\Season;
+use App\Domains\Competitions\Interclub\Models\Season;
 use Illuminate\Support\Facades\Cache;
 
 describe('Season Registration Management', function () {

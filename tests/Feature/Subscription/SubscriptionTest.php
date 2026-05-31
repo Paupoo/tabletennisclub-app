@@ -5,9 +5,9 @@ declare(strict_types=1);
 use App\Actions\ClubAdmin\Subscriptions\CalculatePriceAction;
 use App\Actions\ClubAdmin\Subscriptions\CreateSubscriptionAction;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Interclub\Season;
 
 describe('Subscription Business Rules', function () {
 

@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Resources\views\Pages\ClubEvents\Interclubs\ControlCenter;
 
 use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Interclub\Interclub;
-use App\Models\ClubEvents\Interclub\Season;
-use App\Models\ClubEvents\Interclub\Team;
+use App\Domains\Competitions\Interclub\Models\Interclub;
+use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Competitions\Interclub\Services\InterclubAvailabilityService;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;

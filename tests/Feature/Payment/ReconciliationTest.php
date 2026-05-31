@@ -6,8 +6,8 @@ use App\Actions\ClubAdmin\Payments\GeneratePaymentReference;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\Competitions\Interclub\Models\Season;
 use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Interclub\Season;
 
 // Helper: strip all non-digit characters from a reference string
 $normalize = fn (string $ref): string => preg_replace('/[^0-9]/', '', $ref) ?? '';

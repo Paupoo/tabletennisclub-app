@@ -6,6 +6,8 @@ namespace Database\Seeders;
 
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubPosts\Services\EventPostService;
+use App\Domains\Competitions\Interclub\Models\Club;
+use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\ClubEventTypeEnum;
 use App\Domains\Shared\Enums\EventPostStatusEnum;
 use App\Domains\Shared\Enums\Gender;
@@ -15,8 +17,6 @@ use App\Domains\Shared\Enums\TrainingType;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Models\ClubAdmin\Subscription\Subscription;
 use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Interclub\Club;
-use App\Models\ClubEvents\Interclub\Season;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;

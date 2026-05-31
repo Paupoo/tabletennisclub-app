@@ -6,10 +6,10 @@ namespace Resources\views\Pages\ClubEvents\Interclubs;
 
 use App\Domains\Shared\Enums\InterclubResult;
 use App\Domains\Shared\Enums\LeagueCategory;
-use App\Models\ClubEvents\Interclub\Interclub;
-use App\Models\ClubEvents\Interclub\MatchResult;
-use App\Models\ClubEvents\Interclub\Season;
-use App\Models\ClubEvents\Interclub\Team;
+use App\Domains\Competitions\Interclub\Models\Interclub;
+use App\Domains\Competitions\Interclub\Models\MatchResult;
+use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Competitions\Interclub\Models\Team;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;

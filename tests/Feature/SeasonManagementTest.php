@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Domains\Competitions\Interclub\Models\Season;
 use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Interclub\Season;
 use Livewire\Livewire;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -220,9 +220,9 @@ describe('season:provision command', function () {
         $now = now();
         $currentYear = $now->month >= 9 ? (int) $now->year : (int) $now->year - 1;
 
-        expect(Season::where('name', $currentYear.'-'.($currentYear + 1))->exists())->toBeTrue()
-            ->and(Season::where('name', ($currentYear + 1).'-'.($currentYear + 2))->exists())->toBeTrue()
-            ->and(Season::where('name', ($currentYear + 2).'-'.($currentYear + 3))->exists())->toBeTrue()
+        expect(Season::where('name', $currentYear . '-' . ($currentYear + 1))->exists())->toBeTrue()
+            ->and(Season::where('name', ($currentYear + 1) . '-' . ($currentYear + 2))->exists())->toBeTrue()
+            ->and(Season::where('name', ($currentYear + 2) . '-' . ($currentYear + 3))->exists())->toBeTrue()
             ->and(Season::count())->toBe(3);
     });
 

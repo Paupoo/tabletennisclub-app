@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Models\ClubEvents\Interclub\Club;
-use App\Models\ClubEvents\Interclub\Season;
-use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\ClubPosts\Models\EventPost;
 use App\Domains\ClubPosts\Models\NewsPost;
+use App\Domains\Competitions\Interclub\Models\Club;
+use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Trainings\Models\TrainingPack;
 use App\Support\Captcha;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;

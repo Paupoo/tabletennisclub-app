@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Models\ClubEvents\Interclub\Season;
+use App\Domains\Competitions\Interclub\Models\Season;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;

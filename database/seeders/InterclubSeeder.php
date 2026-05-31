@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Domains\Competitions\Interclub\Models\Club;
+use App\Domains\Competitions\Interclub\Models\Interclub;
+use App\Domains\Competitions\Interclub\Models\League;
+use App\Domains\Competitions\Interclub\Models\MatchResult;
+use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\InterclubAvailability;
 use App\Domains\Shared\Enums\LeagueCategory;
 use App\Domains\Shared\Enums\LeagueLevel;
 use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Interclub\Club;
-use App\Models\ClubEvents\Interclub\Interclub;
-use App\Models\ClubEvents\Interclub\League;
-use App\Models\ClubEvents\Interclub\MatchResult;
-use App\Models\ClubEvents\Interclub\Season;
-use App\Models\ClubEvents\Interclub\Team;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Cache;

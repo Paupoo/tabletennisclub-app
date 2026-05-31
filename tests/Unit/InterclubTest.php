@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Shared\Enums\LeagueCategory;
-use App\Models\ClubEvents\Interclub\Interclub;
 
 test('method set total players per team positive tests', function (): void {
     $interclub = new Interclub;

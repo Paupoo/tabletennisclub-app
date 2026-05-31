@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\Ranking;
-use App\Models\ClubEvents\Interclub\Club;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;

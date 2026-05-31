@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\ClubEvents\Interclub;
 
+use App\Domains\Competitions\Interclub\Models\MatchResult;
+use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\InterclubResult;
 use App\Domains\Shared\Enums\LeagueCategory;
 use App\Http\Controllers\Controller;
-use App\Models\ClubEvents\Interclub\MatchResult;
-use App\Models\ClubEvents\Interclub\Season;
-use App\Models\ClubEvents\Interclub\Team;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;

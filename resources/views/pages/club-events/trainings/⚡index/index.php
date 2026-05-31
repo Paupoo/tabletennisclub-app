@@ -10,7 +10,7 @@ use App\Domains\Shared\Enums\TrainingType;
 use App\Livewire\Concerns\HasEventPostForm;
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Interclub\Season;
+use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Trainings\Notifications\TrainingSessionCancelledNotification;

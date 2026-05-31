@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\Competitions\Interclub\Models\Season;
 use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Interclub\Season;
 
 describe('User::isAffiliatedForCurrentSeason()', function () {
     it('returns false when there is no active season', function () {

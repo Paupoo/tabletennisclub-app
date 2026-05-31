@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Competitions\Interclub\Notifications;
 
-use App\Models\ClubEvents\Interclub\Interclub;
+use App\Domains\Competitions\Interclub\Models\Interclub;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;

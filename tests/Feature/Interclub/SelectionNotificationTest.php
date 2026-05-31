@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-use App\Domains\Shared\Enums\InterclubAvailability;
-use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Interclub\Club;
-use App\Models\ClubEvents\Interclub\Interclub;
-use App\Models\ClubEvents\Interclub\League;
-use App\Models\ClubEvents\Interclub\Season;
-use App\Models\ClubEvents\Interclub\Team;
+use App\Domains\Competitions\Interclub\Models\Club;
+use App\Domains\Competitions\Interclub\Models\Interclub;
+use App\Domains\Competitions\Interclub\Models\League;
+use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Competitions\Interclub\Notifications\InterclubAvailabilityRequestNotification;
 use App\Domains\Competitions\Interclub\Notifications\InterclubLineupBroadcastNotification;
 use App\Domains\Competitions\Interclub\Notifications\InterclubSelectionNotification;
 use App\Domains\Competitions\Interclub\Services\InterclubAvailabilityService;
+use App\Domains\Shared\Enums\InterclubAvailability;
+use App\Models\ClubAdmin\Users\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 

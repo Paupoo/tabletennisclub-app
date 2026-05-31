@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Domains\Competitions\Interclub\Models\Club;
+use App\Domains\Competitions\Interclub\Models\League;
+use App\Domains\Competitions\Interclub\Models\MatchResult;
+use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\InterclubResult;
-use App\Models\ClubEvents\Interclub\Club;
-use App\Models\ClubEvents\Interclub\League;
-use App\Models\ClubEvents\Interclub\MatchResult;
-use App\Models\ClubEvents\Interclub\Season;
-use App\Models\ClubEvents\Interclub\Team;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 

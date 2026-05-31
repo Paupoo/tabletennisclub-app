@@ -3,9 +3,9 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Subscriptions\Notifications\SubscriptionCreatedNotification;
 use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Interclub\Season;
 use Illuminate\Support\Facades\Notification;
 
 describe('SubscriptionCreatedNotification', function () {

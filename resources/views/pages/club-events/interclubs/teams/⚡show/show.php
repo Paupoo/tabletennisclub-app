@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Resources\views\Pages\ClubEvents\Interclubs\Teams\Show;
 
 use App\Domains\Shared\Enums\LeagueLevel;
-use App\Models\ClubEvents\Interclub\Interclub;
-use App\Models\ClubEvents\Interclub\Team;
+use App\Domains\Competitions\Interclub\Models\Interclub;
+use App\Domains\Competitions\Interclub\Models\Team;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\View\View;

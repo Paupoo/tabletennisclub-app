@@ -11,7 +11,7 @@ use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Interclub\Season;
+use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Subscriptions\Notifications\SubscriptionCreatedNotification;
 use App\Livewire\Concerns\HasBreadcrumbs;

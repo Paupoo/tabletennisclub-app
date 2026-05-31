@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Domains\Competitions\Interclub\Models\Club;
+use App\Domains\Competitions\Interclub\Models\Interclub;
+use App\Domains\Competitions\Interclub\Models\League;
+use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Competitions\Interclub\Models\Team;
 use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Interclub\Club;
-use App\Models\ClubEvents\Interclub\Interclub;
-use App\Models\ClubEvents\Interclub\League;
-use App\Models\ClubEvents\Interclub\Season;
-use App\Models\ClubEvents\Interclub\Team;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 
@@ -17,21 +17,21 @@ beforeEach(function (): void {
     $this->season = Season::factory()->create(['is_active' => true]);
     $this->league = League::factory()->create([
         'season_id' => $this->season->id,
-        'category'  => 'MEN',
-        'division'  => 'P2A',
+        'category' => 'MEN',
+        'division' => 'P2A',
     ]);
 
     $this->ourClub = Club::factory()->create(['licence' => config('app.club_licence')]);
     $this->ourTeam = Team::factory()->create([
-        'name'      => 'A',
+        'name' => 'A',
         'season_id' => $this->season->id,
         'league_id' => $this->league->id,
-        'club_id'   => $this->ourClub->id,
+        'club_id' => $this->ourClub->id,
     ]);
 
-    $this->admin     = User::factory()->isAdmin()->create();
+    $this->admin = User::factory()->isAdmin()->create();
     $this->committee = User::factory()->isCommitteeMember()->create();
-    $this->user      = User::factory()->create();
+    $this->user = User::factory()->create();
 });
 
 // ── Access control ─────────────────────────────────────────────────────────────
@@ -104,10 +104,10 @@ it('reuses an existing club when the name already exists', function (): void {
 it('blocks duplicate team creation in the same division', function (): void {
     $oppClub = Club::factory()->create(['name' => 'TT Rixensart', 'licence' => 'OPP-TTRIXE']);
     Team::factory()->create([
-        'name'      => 'A',
+        'name' => 'A',
         'season_id' => $this->season->id,
         'league_id' => $this->league->id,
-        'club_id'   => $oppClub->id,
+        'club_id' => $oppClub->id,
     ]);
 
     $before = Team::count();
@@ -150,10 +150,10 @@ it('validates that team letter is a single alpha character', function (): void {
 it('deletes a participant that has no matches', function (): void {
     $oppClub = Club::factory()->create(['licence' => 'OPP-TTTEST1']);
     $oppTeam = Team::factory()->create([
-        'name'      => 'B',
+        'name' => 'B',
         'season_id' => $this->season->id,
         'league_id' => $this->league->id,
-        'club_id'   => $oppClub->id,
+        'club_id' => $oppClub->id,
     ]);
 
     Livewire::actingAs($this->admin)
@@ -169,16 +169,16 @@ it('deletes a participant that has no matches', function (): void {
 it('blocks deletion of a team that has matches', function (): void {
     $oppClub = Club::factory()->create(['licence' => 'OPP-TTTEST2']);
     $oppTeam = Team::factory()->create([
-        'name'      => 'C',
+        'name' => 'C',
         'season_id' => $this->season->id,
         'league_id' => $this->league->id,
-        'club_id'   => $oppClub->id,
+        'club_id' => $oppClub->id,
     ]);
 
     Interclub::factory()->create([
-        'season_id'        => $this->season->id,
-        'league_id'        => $this->league->id,
-        'visited_team_id'  => $this->ourTeam->id,
+        'season_id' => $this->season->id,
+        'league_id' => $this->league->id,
+        'visited_team_id' => $this->ourTeam->id,
         'visiting_team_id' => $oppTeam->id,
     ]);
 

@@ -3,9 +3,9 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Club\Models\Room;
+use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Shared\Enums\TrainingType;
-use App\Models\ClubEvents\Interclub\Season;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;

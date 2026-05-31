@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Database\Factories\Domains\ClubAdmin\Subscriptions\Models;
 
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\Competitions\Interclub\Models\Season;
 use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Interclub\Season;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

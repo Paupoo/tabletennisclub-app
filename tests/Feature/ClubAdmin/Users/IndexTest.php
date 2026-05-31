@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
+use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Competitions\Interclub\Models\Team;
 use App\Mail\InviteNewUserMail;
 use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Interclub\Season;
-use App\Models\ClubEvents\Interclub\Team;
 use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
 

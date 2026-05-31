@@ -5,13 +5,10 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Notifications\NewTournamentPublishedNotification;
-use App\Domains\Competitions\Tournament\Notifications\UserRegisteredToTournament as UserRegisteredToTournamentNotification;
 use App\Domains\Competitions\Tournament\Notifications\UserUnregisteredFromTournament as UserUnregisteredFromTournamentNotification;
 use App\Domains\Shared\Events\Tournament\NewTournamentPublished;
-use App\Domains\Shared\Events\Tournament\UserRegisteredToTournament;
 use App\Domains\Shared\Events\Tournament\UserUnregisteredFromTournament;
 use App\Listeners\Tournament\SendPublishedTournamentNotification;
-use App\Listeners\Tournament\UserRegisteredToTournamentToTournament;
 use App\Listeners\Tournament\UserUnregisteredToTournamentToTournament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
@@ -20,21 +17,6 @@ uses(RefreshDatabase::class);
 
 // All listeners implement ShouldQueue. We call handle() directly to bypass the
 // queue and assert the notification is sent synchronously.
-
-describe('UserRegisteredToTournamentToTournament listener', function (): void {
-    it('sends a registration notification to the user', function (): void {
-        Notification::fake();
-
-        $user = User::factory()->create();
-        $tournament = Tournament::factory()->create();
-        $event = new UserRegisteredToTournament($tournament, $user);
-
-        $listener = new UserRegisteredToTournamentToTournament($tournament, $user);
-        $listener->handle($event);
-
-        Notification::assertSentTo($user, UserRegisteredToTournamentNotification::class);
-    });
-});
 
 describe('UserUnregisteredToTournamentToTournament listener', function (): void {
     it('sends an unregistration notification to the user', function (): void {

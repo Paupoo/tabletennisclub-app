@@ -9,7 +9,6 @@ use App\Domains\Shared\Events\Meetings\MeetingCreated;
 use App\Domains\Shared\Events\Subscriptions\SubscriptionCreated;
 use App\Domains\Shared\Events\Subscriptions\SubscriptionPaid;
 use App\Domains\Shared\Events\Tournament\NewTournamentPublished;
-use App\Domains\Shared\Events\Tournament\UserRegisteredToTournament;
 use App\Domains\Shared\Events\Tournament\UserUnregisteredFromTournament;
 use App\Domains\Shared\Events\Trainings\TrainingPackEnrolled;
 use App\Listeners\NotifyParticipantsOfMeeting;
@@ -17,7 +16,6 @@ use App\Listeners\SendSubscriptionConfirmationEmail;
 use App\Listeners\SendTeamCreatedNotification;
 use App\Listeners\SendWelcomeEmail;
 use App\Listeners\Tournament\SendPublishedTournamentNotification;
-use App\Listeners\Tournament\UserRegisteredToTournamentToTournament;
 use App\Listeners\Tournament\UserUnregisteredToTournamentToTournament;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
@@ -38,9 +36,6 @@ class EventServiceProvider extends ServiceProvider
         ],
         NewTournamentPublished::class => [
             SendPublishedTournamentNotification::class,
-        ],
-        UserRegisteredToTournament::class => [
-            UserRegisteredToTournamentToTournament::class,
         ],
         UserUnregisteredFromTournament::class => [
             UserUnregisteredToTournamentToTournament::class,

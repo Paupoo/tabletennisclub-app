@@ -5,73 +5,57 @@ declare(strict_types=1);
 namespace App\Http\Controllers\ClubEvents\Meeting;
 
 use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
-use App\Actions\ClubAdmin\Payments\GeneratePaymentReference;
+use App\Actions\Meetings\RespondToMeetingRsvp;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Meetings\Models\Meeting;
-use App\Domains\Meetings\Notifications\MeetingRsvpConfirmationNotification;
-use App\Domains\Shared\Enums\MeetingUserStatusEnum;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class MeetingRsvpController extends Controller
 {
-    public function handle(Request $request, Meeting $meeting, User $user, string $response): View
+    public function show(Request $request, Meeting $meeting, User $user): View
     {
         abort_unless($request->hasValidSignature(), 403);
 
-        $newStatus = match ($response) {
-            'confirmed' => MeetingUserStatusEnum::CONFIRMED,
-            'declined' => MeetingUserStatusEnum::DECLINED,
-            default => abort(404),
-        };
+        $meeting->loadMissing('agendaItems');
 
-        // Statut actuel avant mise à jour
-        $currentStatus = $meeting->users()->where('users.id', $user->id)->first()?->registration?->status;
-        $wasAlreadyConfirmed = in_array($currentStatus, [
-            MeetingUserStatusEnum::CONFIRMED,
-            MeetingUserStatusEnum::ATTENDED,
-        ], true);
+        $registration = $meeting->users()->where('users.id', $user->id)->first()?->registration;
+        $payment = $registration?->payment;
 
-        $meeting->users()->syncWithoutDetaching([
-            $user->id => [
-                'status' => $newStatus->value,
-                'response_at' => now(),
+        return view('meetings.rsvp', [
+            'meeting' => $meeting,
+            'user' => $user,
+            'registration' => $registration,
+            'payment' => $payment,
+            'paymentQr' => $payment ? (new GeneratePaymentQR)($payment) : null,
+        ]);
+    }
+
+    public function submit(Request $request, Meeting $meeting, User $user): RedirectResponse
+    {
+        abort_unless($request->hasValidSignature(), 403);
+
+        $validated = $request->validate([
+            'attendance' => ['required', 'string', 'in:confirmed,declined'],
+            'meal' => [
+                Rule::requiredIf($request->input('attendance') === 'confirmed' && $meeting->has_meal),
+                'nullable',
+                'string',
+                'in:reserve,skip',
             ],
         ]);
 
-        $payment = null;
+        $mealReserved = match ($validated['meal'] ?? null) {
+            'reserve' => true,
+            'skip' => false,
+            default => null,
+        };
 
-        // Email de confirmation + paiement uniquement au premier "confirmed"
-        if ($newStatus === MeetingUserStatusEnum::CONFIRMED && ! $wasAlreadyConfirmed) {
-            if ($meeting->has_meal && ($meeting->meal_price_cents ?? 0) > 0) {
-                $registration = $meeting->users()->where('users.id', $user->id)->first()->registration;
+        (new RespondToMeetingRsvp)($meeting, $user, $validated['attendance'] === 'confirmed', $mealReserved);
 
-                $payment = $registration->payment()->create([
-                    'reference' => (new GeneratePaymentReference)(),
-                    'amount_due' => $meeting->meal_price, // accessor euros → setter convertit en centimes
-                    'amount_paid' => 0,
-                    'status' => 'pending',
-                ]);
-            }
-
-            $user->notify(new MeetingRsvpConfirmationNotification($meeting, $payment));
-        }
-
-        $meeting->loadMissing('agendaItems');
-
-        $paymentQr = null;
-        if ($payment) {
-            $paymentQr = (new GeneratePaymentQR)($payment);
-        }
-
-        return view('meetings.rsvp-confirmation', [
-            'meeting' => $meeting,
-            'user' => $user,
-            'response' => $newStatus,
-            'wasAlreadyConfirmed' => $wasAlreadyConfirmed,
-            'payment' => $payment,
-            'paymentQr' => $paymentQr,
-        ]);
+        return redirect()->back()->with('status', __('Your response has been saved. Thank you!'));
     }
 }

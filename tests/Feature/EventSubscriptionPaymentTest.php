@@ -2,9 +2,13 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
+use App\Domains\Meetings\Models\Meeting;
+use App\Domains\Shared\Enums\MeetingUserStatusEnum;
+use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -29,6 +33,17 @@ function mountEventSubscription(User $user)
 {
     return Livewire::actingAs($user)
         ->test('pages::club-admin.users.user-space.event-subscription', ['user' => $user]);
+}
+
+function futureMealMeeting(): Meeting
+{
+    $admin = User::factory()->create(['is_admin' => true]);
+
+    return Meeting::factory()->confirmed()->withMeal('Pizzas', 1200)->create([
+        'created_by' => $admin->id,
+        'scheduled_at' => now()->addWeek(),
+        'ends_at' => now()->addWeek()->addHours(2),
+    ]);
 }
 
 // ── pendingPayments ───────────────────────────────────────────────────────────
@@ -99,5 +114,68 @@ describe('openPaymentModal', function () {
         mountEventSubscription($user)
             ->call('openPaymentModal', $payment->id)
             ->assertSee('Summer Cup 2026');
+    });
+});
+
+// ── Meeting RSVP (in-app) ───────────────────────────────────────────────────────
+
+describe('meeting rsvp', function () {
+    it('opens the modal prefilled from the registration', function () {
+        $user = User::factory()->create();
+        $meeting = futureMealMeeting();
+        $meeting->users()->attach($user->id, ['status' => MeetingUserStatusEnum::CONFIRMED->value, 'meal_reserved' => true]);
+
+        mountEventSubscription($user)
+            ->call('openMeetingRsvp', $meeting->id)
+            ->assertSet('meetingRsvpModal', true)
+            ->assertSet('rsvpMeetingId', $meeting->id)
+            ->assertSet('rsvpAttendance', 'confirmed')
+            ->assertSet('rsvpMeal', 'reserve');
+    });
+
+    it('reserves the meal and creates a pending payment', function () {
+        Notification::fake();
+        $user = User::factory()->create();
+        $meeting = futureMealMeeting();
+        $meeting->users()->attach($user->id, ['status' => MeetingUserStatusEnum::INVITED->value]);
+
+        mountEventSubscription($user)
+            ->set('rsvpMeetingId', $meeting->id)
+            ->set('rsvpAttendance', 'confirmed')
+            ->set('rsvpMeal', 'reserve')
+            ->call('saveMeetingRsvp')
+            ->assertSet('meetingRsvpModal', false);
+
+        $reg = $meeting->users()->where('users.id', $user->id)->first()->registration;
+        expect($reg->meal_reserved)->toBeTrue()
+            ->and($reg->payment)->not->toBeNull()
+            ->and($reg->payment->status)->toBe('pending');
+    });
+
+    it('skips the meal without creating a payment', function () {
+        Notification::fake();
+        $user = User::factory()->create();
+        $meeting = futureMealMeeting();
+        $meeting->users()->attach($user->id, ['status' => MeetingUserStatusEnum::INVITED->value]);
+
+        mountEventSubscription($user)
+            ->set('rsvpMeetingId', $meeting->id)
+            ->set('rsvpAttendance', 'confirmed')
+            ->set('rsvpMeal', 'skip')
+            ->call('saveMeetingRsvp');
+
+        expect(Payment::count())->toBe(0)
+            ->and($meeting->users()->where('users.id', $user->id)->first()->registration->meal_reserved)->toBeFalse();
+    });
+
+    it('shows the real status and meal badge on the meeting row', function () {
+        $user = User::factory()->create();
+        $meeting = futureMealMeeting();
+        $meeting->users()->attach($user->id, ['status' => MeetingUserStatusEnum::CONFIRMED->value, 'meal_reserved' => true]);
+
+        mountEventSubscription($user)
+            ->assertSee($meeting->title)
+            ->assertSee(__('Meal · pending'))
+            ->assertSee(__('Manage'));
     });
 });

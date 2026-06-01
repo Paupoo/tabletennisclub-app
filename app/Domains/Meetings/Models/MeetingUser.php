@@ -20,6 +20,9 @@ use Illuminate\Support\Carbon;
  * @property MeetingUserStatusEnum $status
  * @property Carbon|null $invitation_sent_at
  * @property Carbon|null $response_at
+ * @property bool|null $meal_reserved
+ * @property Carbon|null $meal_responded_at
+ * @property-read Payment|null $payment
  */
 class MeetingUser extends Pivot implements DescribesPayment
 {
@@ -29,6 +32,8 @@ class MeetingUser extends Pivot implements DescribesPayment
         'status' => MeetingUserStatusEnum::class,
         'invitation_sent_at' => 'datetime',
         'response_at' => 'datetime',
+        'meal_reserved' => 'boolean',
+        'meal_responded_at' => 'datetime',
     ];
 
     public function getPayerName(): string
@@ -45,6 +50,22 @@ class MeetingUser extends Pivot implements DescribesPayment
             'type' => __('Meeting'),
             'name' => $this->meeting?->title ?? '—',
         ];
+    }
+
+    public function hasReservedMeal(): bool
+    {
+        return $this->meal_reserved === true;
+    }
+
+    /**
+     * A meal payment is locked once it has been (partially) paid: the meal can
+     * no longer be cancelled online, only adjusted by an organizer.
+     */
+    public function mealPaymentLocked(): bool
+    {
+        $payment = $this->payment;
+
+        return $payment !== null && ($payment->amount_paid > 0 || $payment->status !== 'pending');
     }
 
     public function meeting(): BelongsTo

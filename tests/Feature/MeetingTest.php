@@ -634,3 +634,44 @@ describe('Meeting minutes', function () {
         Notification::assertNothingSent();
     });
 });
+
+describe('Meeting attendance — catering view', function () {
+    test('the attendance tab shows the catering banner and per-attendee meal badges', function () {
+        $admin = meetingAdmin();
+        $meeting = Meeting::factory()->confirmed()->withMeal('Pizzas', 1200)->create(['created_by' => $admin->id]);
+
+        $reserver = User::factory()->create(['is_active' => true, 'last_name' => 'Aaa']);
+        $skipper = User::factory()->create(['is_active' => true, 'last_name' => 'Bbb']);
+
+        $meeting->users()->attach($reserver->id, ['status' => MeetingUserStatusEnum::CONFIRMED->value, 'meal_reserved' => true]);
+        $meeting->users()->attach($skipper->id, ['status' => MeetingUserStatusEnum::CONFIRMED->value, 'meal_reserved' => false]);
+
+        $meeting->users()->where('users.id', $reserver->id)->first()->registration
+            ->payment()->create([
+                'reference' => '001/2026/09001',
+                'amount_due' => 12,
+                'amount_paid' => 0,
+                'status' => 'pending',
+            ]);
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-events.meetings.show', ['meeting' => $meeting])
+            ->set('activeTab', 'attendance')
+            ->assertSee(__('Catering'))
+            ->assertSee('12,00')
+            ->assertSee(__('Meal · pending'))
+            ->assertSee(__('No meal'));
+    });
+
+    test('the catering banner is hidden when the meeting has no meal', function () {
+        $admin = meetingAdmin();
+        $meeting = Meeting::factory()->confirmed()->create(['created_by' => $admin->id]);
+        $user = User::factory()->create(['is_active' => true]);
+        $meeting->users()->attach($user->id, ['status' => MeetingUserStatusEnum::CONFIRMED->value]);
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-events.meetings.show', ['meeting' => $meeting])
+            ->set('activeTab', 'attendance')
+            ->assertDontSee(__('Catering'));
+    });
+});

@@ -83,20 +83,19 @@ class MeetingInvitationNotification extends Notification implements ShouldQueue
             $mail->line(__('**Quorum required:** :n members must confirm their attendance.', ['n' => $meeting->quorum]));
         }
 
-        $confirmUrl = URL::signedRoute(
+        $respondUrl = URL::signedRoute(
             'meetings.rsvp',
-            ['meeting' => $meeting->id, 'user' => $notifiable->id, 'response' => 'confirmed'],
-            now()->addDays(30),
-        );
-        $declineUrl = URL::signedRoute(
-            'meetings.rsvp',
-            ['meeting' => $meeting->id, 'user' => $notifiable->id, 'response' => 'declined'],
+            ['meeting' => $meeting->id, 'user' => $notifiable->id],
             now()->addDays(30),
         );
 
+        $intro = $meeting->has_meal
+            ? __('Please let us know whether you will attend and if you would like to reserve the meal.')
+            : __('Please let us know whether you will attend.');
+
         return $mail
-            ->action(__('I will attend'), $confirmUrl)
-            ->line('[' . __('I cannot attend') . '](' . $declineUrl . ')')
+            ->line($intro)
+            ->action(__('Respond to the invitation'), $respondUrl)
             ->salutation(__('See you there!'));
     }
 

@@ -318,6 +318,19 @@
             :heading="__('No invitations sent yet')"
             :message="__('Send invitations from the Overview tab once the date is confirmed.')" />
     @else
+    @if ($meeting->has_meal)
+        <div class="mb-3 flex flex-wrap items-center gap-x-6 gap-y-1 rounded-xl border border-warning/30 bg-warning/5 px-4 py-3 text-sm">
+            <span class="flex items-center gap-2 font-semibold">
+                <x-icon name="o-cake" class="h-4 w-4 text-warning" />
+                {{ __('Catering') }}
+            </span>
+            <span><span class="font-semibold">{{ $meeting->mealReservedCount() }}</span> {{ __('reserved') }}</span>
+            @if ($meeting->meal_price_cents)
+                <span class="text-base-content/60">{{ number_format($meeting->mealExpectedCents() / 100, 2, ',', ' ') }} € {{ __('expected') }}</span>
+                <span class="text-base-content/60">{{ number_format($meeting->mealPaidCents() / 100, 2, ',', ' ') }} € {{ __('paid') }}</span>
+            @endif
+        </div>
+    @endif
     <div class="space-y-3">
         @foreach ($meeting->users->sortBy('last_name') as $user)
         @php $reg = $user->registration; @endphp
@@ -342,6 +355,21 @@
             </div>
             <div class="flex items-center gap-2">
                 <x-badge :value="$reg->status->getLabel()" class="{{ $reg->status->getBadgeClass() }} badge-sm" />
+                @if ($meeting->has_meal)
+                    @php
+                        $mealPayment = $this->mealPaymentsByRegistration[$reg->id] ?? null;
+                        $mealPaid    = $mealPayment && ($mealPayment->amount_paid > 0 || $mealPayment->status !== 'pending');
+                    @endphp
+                    @if ($reg->meal_reserved === true && $mealPaid)
+                        <x-badge :value="__('Meal · paid')" class="badge-success badge-sm" />
+                    @elseif ($reg->meal_reserved === true)
+                        <x-badge :value="__('Meal · pending')" class="badge-warning badge-soft badge-sm" />
+                    @elseif ($reg->meal_reserved === false)
+                        <x-badge :value="__('No meal')" class="badge-ghost badge-sm" />
+                    @else
+                        <span class="text-xs text-base-content/30" title="{{ __('No meal answer yet') }}">—</span>
+                    @endif
+                @endif
                 @if ($this->canManage && $meeting->status === \App\Domains\Shared\Enums\MeetingStatusEnum::CONFIRMED && $meeting->scheduled_at?->isPast())
                     @if ($reg->status !== \App\Domains\Shared\Enums\MeetingUserStatusEnum::ATTENDED)
                         <x-button icon="o-check" class="btn-ghost btn-xs btn-circle text-success"

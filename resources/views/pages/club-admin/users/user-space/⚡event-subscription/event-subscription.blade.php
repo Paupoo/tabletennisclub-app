@@ -229,13 +229,24 @@
                             type="meeting"
                         >
                             <x-slot:actions>
-                                <x-badge class="badge-success badge-sm" value="{{ __('Confirmed') }}" />
                                 @php
-                                    $meetingUser = $meeting->users()
-                                        ->where('users.id', $this->user->id)
-                                        ->first();
-                                    $payment = $meetingUser?->payment;
+                                    $reg        = $this->meetingRegistrations[$meeting->id] ?? null;
+                                    $payment    = $reg?->payment;
+                                    $statusEnum = $reg?->status ?? \App\Domains\Shared\Enums\MeetingUserStatusEnum::INVITED;
+                                    $mealPaid   = $payment && ($payment->amount_paid > 0 || $payment->status !== 'pending');
                                 @endphp
+                                <x-badge :value="$statusEnum->getLabel()" class="{{ $statusEnum->getBadgeClass() }} badge-sm" />
+
+                                @if ($meeting->has_meal)
+                                    @if ($reg?->meal_reserved === true && $mealPaid)
+                                        <x-badge :value="__('Meal · paid')" class="badge-success badge-sm" />
+                                    @elseif ($reg?->meal_reserved === true)
+                                        <x-badge :value="__('Meal · pending')" class="badge-warning badge-soft badge-sm" />
+                                    @elseif ($reg?->meal_reserved === false)
+                                        <x-badge :value="__('No meal')" class="badge-ghost badge-sm" />
+                                    @endif
+                                @endif
+
                                 @if ($payment && $payment->status === 'pending')
                                     <x-button
                                         class="btn-warning btn-xs"
@@ -245,6 +256,13 @@
                                         wire:click="openPaymentModal({{ $payment->id }})"
                                     />
                                 @endif
+
+                                <x-button
+                                    class="btn-ghost btn-xs"
+                                    icon="o-pencil-square"
+                                    :label="__('Manage')"
+                                    wire:click="openMeetingRsvp({{ $meeting->id }})"
+                                />
                             </x-slot:actions>
                         </x-admin.shared.compact-event-preview>
                     @empty
@@ -354,6 +372,63 @@
     <x-slot:actions>
         <x-button :label="__('Close')" wire:click="$set('paymentModal', false)" />
     </x-slot:actions>
+    </x-modal>
+
+    {{-- Modal participation réunion --}}
+    <x-modal wire:model="meetingRsvpModal" :title="__('My participation')" box-class="max-w-sm">
+        @php $rsvpMeeting = $this->rsvpMeetingId ? \App\Domains\Meetings\Models\Meeting::find($this->rsvpMeetingId) : null; @endphp
+        @if ($rsvpMeeting)
+            @php $rsvpReg = $this->meetingRegistrations[$rsvpMeeting->id] ?? null; @endphp
+            <div class="space-y-4">
+                <p class="text-sm font-semibold">{{ $rsvpMeeting->title }}</p>
+
+                <x-radio
+                    :label="__('Will you attend?')"
+                    wire:model="rsvpAttendance"
+                    :options="[
+                        ['id' => 'confirmed', 'name' => __('Yes, I will attend')],
+                        ['id' => 'declined', 'name' => __('No, I cannot attend')],
+                    ]"
+                    class="radio-sm" />
+
+                @if ($rsvpMeeting->has_meal)
+                    <div x-show="$wire.rsvpAttendance === 'confirmed'"
+                        class="rounded-xl border border-warning/30 bg-warning/5 p-3 space-y-2">
+                        <div class="flex items-center gap-2 text-sm font-semibold">
+                            <x-icon name="o-cake" class="h-4 w-4 text-warning" />
+                            {{ __('Meal') }}
+                            @if ($rsvpMeeting->meal_price)
+                                <span class="text-base-content/60">— {{ number_format($rsvpMeeting->meal_price, 2) }} €</span>
+                            @endif
+                        </div>
+                        @if ($rsvpMeeting->meal_description)
+                            <p class="text-xs text-base-content/70">{{ $rsvpMeeting->meal_description }}</p>
+                        @endif
+
+                        @if ($rsvpReg?->mealPaymentLocked())
+                            <div class="flex items-center gap-2 text-xs text-base-content/70">
+                                <x-icon name="o-lock-closed" class="h-4 w-4 text-base-content/40 shrink-0" />
+                                {{ __('Meal already paid — contact the organizer to change it.') }}
+                            </div>
+                        @else
+                            <x-radio
+                                wire:model="rsvpMeal"
+                                :options="[
+                                    ['id' => 'reserve', 'name' => __('Reserve the meal')],
+                                    ['id' => 'skip', 'name' => __('I will skip the meal')],
+                                ]"
+                                class="radio-sm" />
+                        @endif
+                    </div>
+                @endif
+            </div>
+
+            <x-slot:actions>
+                <x-button :label="__('Cancel')" wire:click="$set('meetingRsvpModal', false)" />
+                <x-button :label="__('Save')" icon="o-check" class="btn-primary"
+                    wire:click="saveMeetingRsvp" spinner="saveMeetingRsvp" />
+            </x-slot:actions>
+        @endif
     </x-modal>
 
     <x-confirm-modal model="cancelConfirmModal" :title="__('Cancel registration?')"

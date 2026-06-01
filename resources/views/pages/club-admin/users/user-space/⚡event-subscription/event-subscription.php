@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
+use App\Actions\Meetings\RespondToMeetingRsvp;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
@@ -47,6 +48,15 @@ new class extends Component
     public int $partnerTournamentId = 0;
 
     public int $selectedPartnerId = 0;
+
+    // ── Meeting RSVP modal
+    public bool $meetingRsvpModal = false;
+
+    public ?int $rsvpMeetingId = null;
+
+    public string $rsvpAttendance = 'confirmed';
+
+    public string $rsvpMeal = 'skip';
 
     #[Computed]
     public function upcomingTournaments(): Collection
@@ -260,6 +270,52 @@ new class extends Component
             ->where('scheduled_at', '>=', now())
             ->orderBy('scheduled_at')
             ->get();
+    }
+
+    /**
+     * This user's meeting registrations (with payment), keyed by meeting id —
+     * powers the row status/meal badges and the RSVP modal prefill.
+     *
+     * @return \Illuminate\Support\Collection<int, MeetingUser>
+     */
+    #[Computed]
+    public function meetingRegistrations(): \Illuminate\Support\Collection
+    {
+        $meetingIds = $this->upcomingMeetings->pluck('id');
+
+        if ($meetingIds->isEmpty()) {
+            return collect();
+        }
+
+        return MeetingUser::with('payment')
+            ->where('user_id', $this->user->id)
+            ->whereIn('meeting_id', $meetingIds)
+            ->get()
+            ->keyBy('meeting_id');
+    }
+
+    public function openMeetingRsvp(int $meetingId): void
+    {
+        $registration = $this->meetingRegistrations[$meetingId] ?? null;
+
+        $this->rsvpMeetingId    = $meetingId;
+        $this->rsvpAttendance   = $registration?->status === MeetingUserStatusEnum::DECLINED ? 'declined' : 'confirmed';
+        $this->rsvpMeal         = $registration?->meal_reserved === true ? 'reserve' : 'skip';
+        $this->meetingRsvpModal = true;
+    }
+
+    public function saveMeetingRsvp(): void
+    {
+        $meeting = Meeting::findOrFail($this->rsvpMeetingId);
+
+        $attending    = $this->rsvpAttendance === 'confirmed';
+        $mealReserved = $meeting->has_meal ? ($this->rsvpMeal === 'reserve') : null;
+
+        (new RespondToMeetingRsvp)($meeting, $this->user, $attending, $mealReserved);
+
+        $this->meetingRsvpModal = false;
+        unset($this->upcomingMeetings, $this->meetingRegistrations, $this->pendingPayments);
+        $this->success(__('Your participation has been updated.'), icon: 'o-calendar-days');
     }
 
     protected function breadcrumbChain(): Breadcrumb

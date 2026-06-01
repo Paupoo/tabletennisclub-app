@@ -6,9 +6,11 @@ use App\Domains\Shared\Enums\MeetingDateVoteEnum;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\MeetingTypeEnum;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
+use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Meetings\Models\MeetingDateProposal;
+use App\Domains\Meetings\Models\MeetingUser;
 use App\Domains\Meetings\Models\MeetingDateVote;
 use App\Domains\Meetings\Models\MeetingMinutes;
 use App\Jobs\SendMeetingInvitationsJob;
@@ -98,6 +100,25 @@ new class extends Component
             'actionItems.assignedTo',
             'creator',
         ])->findOrFail($this->meetingId);
+    }
+
+    /**
+     * Meal payments for this meeting, keyed by registration (pivot) id —
+     * one query, used to render the per-attendee meal badge.
+     *
+     * @return \Illuminate\Support\Collection<int, Payment>
+     */
+    #[Computed]
+    public function mealPaymentsByRegistration(): \Illuminate\Support\Collection
+    {
+        if (! $this->meeting->has_meal) {
+            return collect();
+        }
+
+        return Payment::where('payable_type', (new MeetingUser)->getMorphClass())
+            ->whereIn('payable_id', $this->meeting->users->pluck('registration.id'))
+            ->get()
+            ->keyBy('payable_id');
     }
 
     #[Computed]

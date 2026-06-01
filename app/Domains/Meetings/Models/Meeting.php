@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Meetings\Models;
 
+use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\MeetingFormatEnum;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
@@ -156,6 +157,31 @@ class Meeting extends Model
         return $this->confirmedCount() >= $this->quorum;
     }
 
+    /** Expected catering revenue, in cents (reservations × meal price). */
+    public function mealExpectedCents(): int
+    {
+        return $this->mealReservedCount() * ($this->meal_price_cents ?? 0);
+    }
+
+    /** Catering revenue already collected, in cents. */
+    public function mealPaidCents(): int
+    {
+        return (int) Payment::query()
+            ->where('payable_type', (new MeetingUser)->getMorphClass())
+            ->whereIn('payable_id', function ($query): void {
+                $query->select('id')
+                    ->from('meeting_user')
+                    ->where('meeting_id', $this->id)
+                    ->where('meal_reserved', true);
+            })
+            ->sum('amount_paid');
+    }
+
+    public function mealReservedCount(): int
+    {
+        return $this->users()->wherePivot('meal_reserved', true)->count();
+    }
+
     public function minutes(): HasOne
     {
         return $this->hasOne(MeetingMinutes::class);
@@ -174,7 +200,7 @@ class Meeting extends Model
     {
         return $this->belongsToMany(User::class)
             ->using(MeetingUser::class)
-            ->withPivot(['id', 'status', 'invitation_sent_at', 'response_at'])
+            ->withPivot(['id', 'status', 'invitation_sent_at', 'response_at', 'meal_reserved', 'meal_responded_at'])
             ->as('registration')
             ->withTimestamps();
     }

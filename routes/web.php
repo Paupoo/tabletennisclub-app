@@ -179,8 +179,11 @@ Route::get('/meetings/{meeting}/poll/{user}', [MeetingPollController::class, 'sh
 Route::post('/meetings/{meeting}/poll/{user}', [MeetingPollController::class, 'vote'])
     ->name('meetings.poll.vote.submit')
     ->middleware('signed');
-Route::get('/meetings/{meeting}/rsvp/{user}/{response}', [MeetingRsvpController::class, 'handle'])
+Route::get('/meetings/{meeting}/rsvp/{user}', [MeetingRsvpController::class, 'show'])
     ->name('meetings.rsvp')
+    ->middleware('signed');
+Route::post('/meetings/{meeting}/rsvp/{user}', [MeetingRsvpController::class, 'submit'])
+    ->name('meetings.rsvp.submit')
     ->middleware('signed');
 
 Route::prefix('admin/club-events/tournaments')

@@ -34,7 +34,7 @@
                     @if ($user->is_admin)
                         <x-badge value="{{ __('Admin') }}" icon="o-power" class="badge-primary badge-sm" />
                     @endif
-                    @if ($user->is_committee_member)
+                    @if ($user->is_committee_member && $user->committee_role)
                         <x-badge :value="$user->committee_role->label()" icon="o-star" class="badge-secondary badge-sm text-black" />
                     @endif
                     @if (!$user->is_active)

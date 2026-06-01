@@ -9,7 +9,7 @@
                 </p>
 
                 <div class="space-y-6">
-                    @if (($club->latitude && $club->longitude) || ($club->street && $club->city_code && $club->city_name))
+                    @if (($club?->latitude && $club?->longitude) || ($club?->street && $club?->city_code && $club?->city_name))
                     <div class="flex items-start">
                         <div class="shrink-0 w-12 h-12 bg-club-blue rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -39,7 +39,7 @@
                     </div>
                     @endif
 
-                    @if ($club->phone_contact)
+                    @if ($club?->phone_contact)
                         <div class="flex items-start">
                             <div class="shrink-0 w-12 h-12 bg-club-blue rounded-lg flex items-center justify-center">
                                 <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor"
@@ -57,7 +57,7 @@
                         </div>
                     @endif
 
-                    @if ($club->email_contact)
+                    @if ($club?->email_contact)
                         <div class="flex items-start">
                             <div class="shrink-0 w-12 h-12 bg-club-yellow rounded-lg flex items-center justify-center">
                                 <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor"

@@ -98,9 +98,7 @@ Desktop.ini
 # ============================================
 # Storage
 # ============================================
-/storage/framework/cache/
-/storage/framework/sessions/
-/storage/framework/views/
+/public/storage
 
 # ============================================
 # Database

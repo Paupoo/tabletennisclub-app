@@ -34,4 +34,23 @@ describe('User Observer tests', function () {
 
         expect($user->fresh()->committee_role)->toBe(CommitteeRolesEnum::TREASURER);
     });
+
+    it('keeps committee_role when an unrelated field is updated', function () {
+        $user = User::factory()->create([
+            'is_committee_member' => true,
+            'committee_role' => CommitteeRolesEnum::PRESIDENT,
+        ]);
+
+        $user->update(['first_name' => 'Nouveau']);
+
+        expect($user->fresh()->committee_role)->toBe(CommitteeRolesEnum::PRESIDENT);
+    });
+
+    it('does not assign a committee_role when user is not a committee member', function () {
+        $user = User::factory()->create(['is_committee_member' => false]);
+
+        $user->update(['committee_role' => CommitteeRolesEnum::TREASURER]);
+
+        expect($user->fresh()->committee_role)->toBeNull();
+    });
 })->group('club-admin', 'Users', 'Observers');

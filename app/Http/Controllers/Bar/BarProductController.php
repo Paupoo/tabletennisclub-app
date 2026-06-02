@@ -4,19 +4,38 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Bar;
 
-use App\Http\Controllers\Controller;
 use App\Domains\Bar\Models\BarCategory;
 use App\Domains\Bar\Models\BarProduct;
-use App\Domains\Bar\Models\BarStockMovement;
+use App\Domains\Bar\Services\StockService;
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
 class BarProductController extends Controller
 {
+    private StockService $stockService;
+
+    public function __construct(StockService $stockService)
+    {
+        $this->middleware('auth');
+        $this->stockService = $stockService;
+    }
+
+    public function destroy(BarProduct $product)
+    {
+        if ((int) $product->stock > 0) {
+            return back()->with('error', 'Impossible de supprimer : stock non nul.');
+        }
+
+        $product->delete();
+
+        return back()->with('success', 'Produit supprimé avec succès.');
+    }
+
     public function index()
     {
         $categories = BarCategory::with(['products' => function ($q) {
-                $q->orderBy('name');
-            }])
+            $q->orderBy('name');
+        }])
             ->orderBy('name')
             ->get();
 
@@ -29,10 +48,10 @@ class BarProductController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'category_id'  => 'required|exists:bar_categories,id',
+            'category_id' => 'required|exists:bar_categories,id',
             'product_name' => 'required|string|max:150|unique:bar_products,name',
-            'sale_price'   => ['required', 'string', 'regex:/^\d+(?:[\.,]\d{1,2})?$/'],
-            'stock'        => 'required|integer|min:0',
+            'sale_price' => ['required', 'string', 'regex:/^\d+(?:[\.,]\d{1,2})?$/'],
+            'stock' => 'required|integer|min:0',
             'is_available' => 'required|boolean',
         ]);
 
@@ -48,14 +67,13 @@ class BarProductController extends Controller
         $product = BarProduct::create($validated);
 
         if ($initialStock > 0) {
-            BarStockMovement::create([
-                'product_id'    => $product->id,
-                'quantity'      => $initialStock,
-                'movement_type' => 'IN',
-                'reason'        => 'Initial stock',
-                'created_by'    => auth()->id(),
-                'modified_by'   => null,
-            ]);
+            $this->stockService->addIncomingStock(
+                (int) $product->id,
+                (int) $initialStock,
+                'Initial stock',
+                auth()->id(),
+                auth()->id()
+            );
         }
 
         session()->forget('product_form');
@@ -63,13 +81,28 @@ class BarProductController extends Controller
         return back()->with('success', 'Product created');
     }
 
+    public function storeState(Request $request)
+    {
+        session([
+            'product_form' => $request->only([
+                'product_name',
+                'sale_price',
+                'stock',
+                'is_available',
+                'category_id',
+            ]),
+        ]);
+
+        return response()->noContent();
+    }
+
     public function update(Request $request, BarProduct $product)
     {
         $validated = $request->validate([
             'product_name' => ['sometimes', 'string', 'max:150', 'unique:bar_products,name,' . $product->id],
-            'category_id'  => ['sometimes', 'exists:bar_categories,id'],
-            'sale_price'   => ['sometimes', 'string', 'regex:/^\d+(?:[\.,]\d{1,2})?$/'],
-            'stock'        => ['sometimes', 'integer', 'min:0'],
+            'category_id' => ['sometimes', 'exists:bar_categories,id'],
+            'sale_price' => ['sometimes', 'string', 'regex:/^\d+(?:[\.,]\d{1,2})?$/'],
+            'stock' => ['sometimes', 'integer', 'min:0'],
             'is_available' => ['sometimes', 'boolean'],
         ]);
 
@@ -85,23 +118,21 @@ class BarProductController extends Controller
             $delta = $newStock - $currentStock;
 
             if ($delta > 0) {
-                BarStockMovement::create([
-                    'product_id'    => $product->id,
-                    'quantity'      => $delta,
-                    'movement_type' => 'IN',
-                    'reason'        => 'Stock adjustment',
-                    'created_by'    => null,
-                    'modified_by'   => auth()->id(),
-                ]);
+                $this->stockService->addIncomingStock(
+                    (int) $product->id,
+                    (int) $delta,
+                    'Stock adjustment',
+                    auth()->id(),
+                    auth()->id()
+                );
             } elseif ($delta < 0) {
-                BarStockMovement::create([
-                    'product_id'    => $product->id,
-                    'quantity'      => abs($delta),
-                    'movement_type' => 'OUT',
-                    'reason'        => 'Stock adjustment',
-                    'created_by'    => null,
-                    'modified_by'   => auth()->id(),
-                ]);
+                $this->stockService->consumeFIFO(
+                    (int) $product->id,
+                    abs((int) $delta),
+                    'Stock adjustment',
+                    auth()->id(),
+                    auth()->id()
+                );
             }
         }
 
@@ -111,36 +142,10 @@ class BarProductController extends Controller
             unset($validated['product_name']);
         }
 
-        if (!empty($validated)) {
+        if (! empty($validated)) {
             $product->update($validated);
         }
 
         return back()->with('success', 'Product updated');
-    }
-
-    public function destroy(BarProduct $product)
-    {
-        if ((int) $product->stock > 0) {
-            return back()->with('error', 'Impossible de supprimer : stock non nul.');
-        }
-
-        $product->delete();
-
-        return back()->with('success', 'Produit supprimé avec succès.');
-    }
-
-    public function storeState(Request $request)
-    {
-        session([
-            'product_form' => $request->only([
-                'product_name',
-                'sale_price',
-                'stock',
-                'is_available',
-                'category_id',
-            ])
-        ]);
-
-        return response()->noContent();
     }
 }

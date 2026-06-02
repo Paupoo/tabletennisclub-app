@@ -11,8 +11,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class BarProduct extends Model
 {
-    protected $table = 'bar_products';
-
     protected $fillable = [
         'name',
         'sale_price',
@@ -20,17 +18,7 @@ class BarProduct extends Model
         'category_id',
     ];
 
-    protected static function booted(): void
-    {
-        static::creating(function ($model) {
-            $userId = auth()->id();
-            $model->created_by = $userId;
-        });
-
-        static::updating(function ($model) {
-            $model->modified_by = auth()->id();
-        });
-    }
+    protected $table = 'bar_products';
 
     public function category(): BelongsTo
     {
@@ -40,6 +28,23 @@ class BarProduct extends Model
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Computed stock (FIFO-ready): SUM(IN) - SUM(OUT).
+     * Falls back to a physical `stock` column if present and no movements exist.
+     */
+    public function getStockAttribute(): int
+    {
+        $in = (int) $this->stockMovements()->where('movement_type', 'IN')->sum('quantity');
+        $out = (int) $this->stockMovements()->where('movement_type', 'OUT')->sum('quantity');
+
+        // Backward compatibility: if there are no movements, use physical column if it exists.
+        if ($in === 0 && $out === 0 && array_key_exists('stock', $this->attributes)) {
+            return (int) ($this->attributes['stock'] ?? 0);
+        }
+
+        return max(0, $in - $out);
     }
 
     public function modifiedBy(): BelongsTo
@@ -52,20 +57,15 @@ class BarProduct extends Model
         return $this->hasMany(BarStockMovement::class, 'product_id');
     }
 
-    /**
-     * Computed stock (FIFO-ready): SUM(IN) - SUM(OUT).
-     * Falls back to a physical `stock` column if present and no movements exist.
-     */
-    public function getStockAttribute(): int
+    protected static function booted(): void
     {
-        $in  = (int) $this->stockMovements()->where('movement_type', 'in')->sum('quantity');
-        $out = (int) $this->stockMovements()->where('movement_type', 'out')->sum('quantity');
+        static::creating(function ($model) {
+            $userId = auth()->id();
+            $model->created_by = $userId;
+        });
 
-        // Backward compatibility: if there are no movements, use physical column if it exists.
-        if ($in === 0 && $out === 0 && array_key_exists('stock', $this->attributes)) {
-            return (int) ($this->attributes['stock'] ?? 0);
-        }
-
-        return max(0, $in - $out);
+        static::updating(function ($model) {
+            $model->modified_by = auth()->id();
+        });
     }
 }

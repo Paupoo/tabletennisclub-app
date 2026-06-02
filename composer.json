@@ -48,7 +48,7 @@
             "Database\\Seeders\\": "database/seeders/"
         },
         "files": [
-            "app/barHelpers.php"
+            "app/Domains/Bar/barHelpers.php"
         ]
     },
     "autoload-dev": {

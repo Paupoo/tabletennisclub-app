@@ -7,17 +7,13 @@ namespace tests\Architecture;
 use Throwable;
 
 arch()
-    ->expect('App\Enums')
-    ->toBeEnums()
-    ->ignoring('App\Enums\Concerns');
+    ->expect('App\Domains\Shared\Enums')
+    ->toBeEnums();
 arch()
     ->expect('App')
     ->not->toBeEnums()
-    ->ignoring(['App\Enums', 'App\Domains\Shared\Enums']);
+    ->ignoring('App\Domains\Shared\Enums');
 
-arch()
-    ->expect('App\Models')
-    ->toBeClasses();
 arch()
     ->expect('App\Http\Controllers')
     ->toBeClasses();
@@ -26,9 +22,6 @@ arch()
     ->toBeClasses();
 arch()
     ->expect('App\Services')
-    ->toBeClasses();
-arch()
-    ->expect('App\Http\Livewire')
     ->toBeClasses();
 arch()
     ->expect('App\Console\Commands')
@@ -42,20 +35,6 @@ arch()
 arch()
     ->expect('App\Observers')
     ->toBeClasses();
-arch()
-    ->expect('App\Traits')
-    ->toBeTraits();
-arch()
-    ->expect('App\Concerns')
-    ->toBeTraits();
-arch()
-    ->expect('App\Features')
-    ->toBeClasses()
-    ->ignoring('App\Features\Concerns');
-arch()
-    ->expect('App\Features')
-    ->toHaveMethod('resolve')
-    ->ignoring('App\Features\Concerns');
 
 arch()
     ->expect('App\Exceptions')
@@ -74,20 +53,9 @@ arch()
     ->toHaveMethod('handle');
 
 arch()
-    ->expect('App\Models')
-    ->classes()
-    ->toExtend('Illuminate\Database\Eloquent\Model')
-    ->ignoring('App\Models\Scopes');
-
-arch()
-    ->expect('App\Models')
-    ->classes()
-    ->not->toHaveSuffix('Model');
-
-arch()
     ->expect('App')
     ->not->toExtend('Illuminate\Database\Eloquent\Model')
-    ->ignoring(['App\Models', 'App\Domains']);
+    ->ignoring('App\Domains');
 
 arch()
     ->expect('App\Http\Requests')
@@ -153,13 +121,9 @@ arch()
     ->toHaveMethod('handle');
 
 arch()
-    ->expect('App\Notifications')
-    ->toExtend('Illuminate\Notifications\Notification');
-
-arch()
     ->expect('App')
     ->not->toExtend('Illuminate\Notifications\Notification')
-    ->ignoring(['App\Notifications', 'App\Domains']);
+    ->ignoring('App\Domains');
 
 arch()
     ->expect('App\Providers')

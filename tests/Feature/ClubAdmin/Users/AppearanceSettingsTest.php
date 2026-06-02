@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-namespace Tests\Feature\ClubAdmin\Users;
-
 use App\Domains\ClubAdmin\Users\Models\User;
 use Livewire\Livewire;
 

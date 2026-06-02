@@ -44,10 +44,13 @@
         <div class="kpi-label">💰 Payés :</div>
         <div class="kpi-value">{{ euros($totalRevenue) }}</div>
     </div>
-        <div class="kpi-card">
-            <div class="kpi-label">💰 Non payés :</div>
-            <div class="kpi-value">{{ euros($totalRevenueUnpaid) }}</div>
-        </div>
+    <div class="kpi-card">
+        <div class="kpi-label">🚫 Non payés :</div>
+        <div class="kpi-value">{{ euros($totalRevenueUnpaid) }}</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-label">🎁 Offerts :</div>
+        <div class="kpi-value">{{ euros($totalRevenueOffered) }}</div>
     </div>
 </div>
 {{-- ORDERS LIST --}}
@@ -66,6 +69,7 @@
                     <th>Articles</th>
                     <th>Total</th>
                     <th>Payé</th>
+                    <th>Raison</th>
                 </tr>
             </thead>
 
@@ -94,13 +98,21 @@
                         <td class="col-total"><b>{{ euros($order->total_price) }}</b></td>
 
                         <td class="col-flag">
-                            @if($order->is_paid)
+                            @if($order->payment_method === 'offered')
+                                <span class="flag flag--neutral">🎁 Offert</span>
+                            @elseif($order->is_paid)
                                 <span class="flag flag--ok">💳 Payé</span>
                             @else
                                 <span class="flag flag--warn">❌ Non payé</span>
                             @endif
                         </td>
-
+                        <td class="col-reason">
+                            @if($order->payment_method === 'offered' && $order->reason)
+                            🎁 {{ $order->reason }}
+                            @else
+                            -
+                            @endif
+                        </td>
                     </tr>
                 @endforeach
             </tbody>

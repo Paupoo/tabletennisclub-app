@@ -19,6 +19,7 @@ class BarOrder extends Model
         'is_paid',
         'paid_at',
         'payment_method',
+        'reason',
     ];
 
     /**

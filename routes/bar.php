@@ -43,7 +43,10 @@ Route::post('/cart/pay', [BarCartController::class, 'pay'])
 */
 Route::get('/orders/{order}/payment', [BarPaymentController::class, 'show'])
         ->name('payment.show');
-
+Route::post('/orders/{order}/payment', [BarPaymentController::class, 'show'])
+        ->name('payment.show.post');
+Route::post('/orders/{order}/payment/pay', [BarPaymentController::class, 'pay'])
+        ->name('payment.pay');
 /*
 |--------------------------------------------------------------------------
 | Orders
@@ -51,8 +54,8 @@ Route::get('/orders/{order}/payment', [BarPaymentController::class, 'show'])
 */
 Route::get('/orders', [BarOrderController::class, 'index'])
     ->name('orders.index');
-Route::post('/orders/{order}/pay', [BarOrderController::class, 'pay'])
-    ->name('orders.pay');
+// Route::post('/orders/{order}/pay', [BarOrderController::class, 'pay'])
+//     ->name('orders.pay');
 Route::get('/orders/history', [BarOrderController::class, 'history'])
     ->name('orders.history');
 Route::get('/orders/{order}/modify', [BarOrderController::class, 'modify'])
@@ -103,6 +106,6 @@ Route::prefix('products')->name('products.')->group(function () {
 Route::prefix('cashsheet')->name('cashSheet.')->group(function () {
     Route::get('/', [BarCashSheetController::class, 'index'])
         ->name('index');
-    Route::post('/send', [BarCashSheetController::class, 'sendToTreasurer'])
+    Route::post('/bar/cashSheet/send', [BarCashSheetController::class, 'send'])
         ->name('send');
 });

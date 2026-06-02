@@ -17,6 +17,7 @@ return new class extends Migration
             $table->tinyInteger('is_paid')->default(0);
             $table->timestamp('paid_at')->nullable();
             $table->string('payment_method')->nullable();
+            $table->string('reason')->nullable();
             // Audit fields
             $table->foreignId('created_by')
                   ->nullable()

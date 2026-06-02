@@ -1129,11 +1129,23 @@ body.login {
     border: 1px solid var(--line);
 }
 
-.kpis {
+/* .kpis {
   display: flex;
-  /* grid-template-columns: 1fr 1fr; */
   gap: 12px;
   margin: 14px;
+} */
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* 4 columns on desktop */
+  gap: 12px;
+  margin: 14px;
+}
+
+@media (max-width: 768px) {
+  .kpis {
+    grid-template-columns: repeat(2, 1fr); /* 2 columns on mobile */
+  }
 }
 
 .kpi-card {

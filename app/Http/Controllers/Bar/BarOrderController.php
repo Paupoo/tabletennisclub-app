@@ -33,35 +33,6 @@ class BarOrderController extends Controller
     }
 
     /**
-     * Mark an order as paid and store the payment metadata.
-     */
-    public function pay(Request $request, BarOrder $order)
-    {
-        if ((int) $order->created_by !== (int) auth()->id()) {
-            return back()->with('error', "Vous n'êtes pas autorisé à faire payer cette commande.");
-        }
-
-        if ($order->is_paid) {
-            return back()->with('error', 'Commande déjà payée.');
-        }
-
-        $request->validate([
-            'method' => 'required|string|in:offered,cash,qr'
-        ]);
-
-        DB::transaction(function () use ($order, $request) {
-            $order->update([
-                'is_paid' => 1,
-                'paid_at' => now(),
-                'payment_method' => $request->input('method'),
-            ]);
-        });
-
-        return redirect()->route('bar.orders.index')
-            ->with('success', 'Commande payée avec succès.');
-    }
-
-    /**
      * Re-open an unpaid order for modification:
      * - load order items into the session cart
      * - remember which order is being edited
@@ -168,8 +139,12 @@ class BarOrderController extends Controller
             ->orderByDesc('id')
             ->get();
 
-        $totalRevenue = $orders->where('is_paid', 1)->sum('total_price');
+        $totalRevenue = $orders
+            ->where('payment_method', '!=', 'offered')
+            ->where('is_paid', 1)
+            ->sum('total_price');
         $totalRevenueUnpaid = $orders->where('is_paid', 0)->sum('total_price');
+        $totalRevenueOffered = $orders->where('payment_method', 'offered')->sum('total_price');
         $orderCount = $orders->count();
 
         return view('bar.orders.history', [
@@ -178,6 +153,7 @@ class BarOrderController extends Controller
             'status' => $status,
             'totalRevenue' => $totalRevenue,
             'totalRevenueUnpaid' => $totalRevenueUnpaid,
+            'totalRevenueOffered' => $totalRevenueOffered,
             'orderCount' => $orderCount,
             'periodLabels' => [
                 'today' => "Aujourd'hui",

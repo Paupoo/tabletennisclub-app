@@ -54,32 +54,63 @@
 
             <div style="display:flex; gap:10px; flex-wrap:wrap;">
                 {{-- Offered --}}
-                <form method="POST" action="{{ route('bar.orders.pay', $order) }}">
+                <!-- <form method="POST" action="{{ route('bar.payment.pay', $order) }}">
                     @csrf
                     <input type="hidden" name="method" value="offered">
+                    <div class="form-field">
+                        <label class="form-label">Raison *</label>
+                        <input type="text" name="reason" class="form-input" required>
+                    </div>
                     <button class="btn btn-clear btn-block">
                         🎁 Offert
                     </button>
+                </form> -->
+                <button class="btn btn-clear" onclick="toggleOfferedForm()">🎁 Offert</button>
+                <form id="offered-form" style="display:none;" method="POST" action="{{ route('bar.payment.pay', $order) }}">
+                    @csrf
+                    <input type="hidden" name="method" value="offered">
+                    <input class="product-input" type="text" name="reason" placeholder="Raison..." required>
+                    <button class="btn btn-clear" type="submit">Confirmer</button>
                 </form>
+
                 {{-- Cash --}}
-                <form method="POST" action="{{ route('bar.orders.pay', $order) }}">
+                <form method="POST" action="{{ route('bar.payment.pay', $order) }}">
                     @csrf
                     <input type="hidden" name="method" value="cash">
-                    <button class="btn btn-pay btn-block">
+                    <button class="btn btn-pay">
                         💵 Cash
                     </button>
                 </form>
                 {{-- QR --}}
-                <form method="POST" action="{{ route('bar.orders.pay', $order) }}">
+                <form method="POST" action="{{ route('bar.payment.show', ['order' => $order->id, 'method' => 'qr']) }}">
                     @csrf
                     <input type="hidden" name="method" value="qr">
-                    <button class="btn btn-pay btn-block">
+                    <button class="btn btn-pay">
                         📱 QR Code
                     </button>
                 </form>
             </div>
         </div>
+        @if($method === 'qr' && $qrCode)
+            <div class="payment-qr">
+                <h3>Scannez pour payer</h3>
+                <img src="{{ $qrCode }}" alt="QR Code">
+                <p>Montant : {{ euros($order->total_price) }}</p>
+                {{-- Confirmation button --}}
+                <form method="POST" action="{{ route('bar.payment.pay', $order) }}">
+                    @csrf
+                    <input type="hidden" name="method" value="qr">
+                    <button class="btn btn-success">✅ Paiement reçu</button>
+                </form>
+            </div>
+        @endif
     </section>
 </div>
 
 @endsection
+<script>
+function toggleOfferedForm() {
+    const el = document.getElementById('offered-form');
+    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+</script>

@@ -34,7 +34,6 @@ use Illuminate\Support\Carbon;
  * @property-read Season $season
  * @property-read Collection<int, User> $users
  * @property-read int|null $users_count
- *
  * @method static \Database\Factories\Domains\Competitions\Interclub\Models\TeamFactory factory($count = null, $state = [])
  * @method static Builder<static>|Team inClub()
  * @method static Builder<static>|Team newModelQuery()
@@ -49,7 +48,7 @@ use Illuminate\Support\Carbon;
  * @method static Builder<static>|Team whereName($value)
  * @method static Builder<static>|Team whereSeasonId($value)
  * @method static Builder<static>|Team whereUpdatedAt($value)
- *
+ * @method static Builder<static>|Team whereFinalPosition($value)
  * @mixin \Eloquent
  */
 class Team extends Model

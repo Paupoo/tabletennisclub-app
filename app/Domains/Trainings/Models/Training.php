@@ -14,6 +14,46 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Carbon;
 
+/**
+ * @property int $id
+ * @property string $level
+ * @property string $type
+ * @property Carbon $start
+ * @property Carbon $end
+ * @property int $room_id
+ * @property int|null $trainer_id
+ * @property int $season_id
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property int|null $training_pack_id
+ * @property string $status
+ * @property string|null $cancellation_note
+ * @property Carbon|null $cancelled_at
+ * @property-read Room $room
+ * @property-read Season|null $season
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, User> $trainees
+ * @property-read int|null $trainees_count
+ * @property-read User|null $trainer
+ * @property-read \App\Domains\Trainings\Models\TrainingPack|null $trainingPack
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Training newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Training newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Training query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereCancellationNote($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereCancelledAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereEnd($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereLevel($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereRoomId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereSeasonId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereStart($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereTrainerId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereTrainingPackId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereUpdatedAt($value)
+ * @mixin \Eloquent
+ */
 class Training extends Model
 {
     use HasFactory;

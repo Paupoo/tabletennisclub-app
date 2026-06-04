@@ -23,6 +23,27 @@ use Illuminate\Support\Carbon;
  * @property int|null $published_by
  * @property Carbon|null $sent_to_committee_at
  * @property Carbon|null $sent_to_all_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read \App\Domains\Meetings\Models\Meeting $meeting
+ * @property-read User|null $publisher
+ * @method static \Database\Factories\Domains\Meetings\Models\MeetingMinutesFactory factory($count = null, $state = [])
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingMinutes newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingMinutes newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingMinutes query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingMinutes whereAnnouncements($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingMinutes whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingMinutes whereDecisions($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingMinutes whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingMinutes whereIsPublished($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingMinutes whereMeetingId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingMinutes whereNotes($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingMinutes wherePublishedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingMinutes wherePublishedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingMinutes whereSentToAllAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingMinutes whereSentToCommitteeAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingMinutes whereUpdatedAt($value)
+ * @mixin \Eloquent
  */
 #[UseFactory(MeetingMinutesFactory::class)]
 class MeetingMinutes extends Model

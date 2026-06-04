@@ -10,6 +10,41 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
+/**
+ * @property int $id
+ * @property string $reference
+ * @property string|null $transaction_id
+ * @property float $amount_due
+ * @property float $amount_paid
+ * @property string $status
+ * @property string $payable_type
+ * @property int $payable_id
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property int $invitation_counter
+ * @property int|null $refund_transaction_id
+ * @property string $payment_method
+ * @property-read Model|\Eloquent $payable
+ * @property-read \App\Domains\ClubAdmin\Payment\Models\Transaction|null $refundTransaction
+ * @method static \Database\Factories\Domains\ClubAdmin\Payment\Models\PaymentFactory factory($count = null, $state = [])
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Payment newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Payment newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Payment query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Payment whereAmountDue($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Payment whereAmountPaid($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Payment whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Payment whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Payment whereInvitationCounter($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Payment wherePayableId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Payment wherePayableType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Payment wherePaymentMethod($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Payment whereReference($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Payment whereRefundTransactionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Payment whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Payment whereTransactionId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Payment whereUpdatedAt($value)
+ * @mixin \Eloquent
+ */
 class Payment extends Model
 {
     use HasFactory;

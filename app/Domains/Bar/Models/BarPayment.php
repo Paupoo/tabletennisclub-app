@@ -7,6 +7,13 @@ namespace App\Domains\Bar\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property-read \App\Domains\Bar\Models\BarOrder|null $order
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BarPayment newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BarPayment newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BarPayment query()
+ * @mixin \Eloquent
+ */
 class BarPayment extends Model
 {
     protected $table = 'bar_payments';

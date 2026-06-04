@@ -34,7 +34,6 @@ use Illuminate\Support\Facades\DB;
  * @property-read int|null $teams_count
  * @property-read Collection<int, Training> $trainings
  * @property-read int|null $trainings_count
- *
  * @method static SeasonFactory factory($count = null, $state = [])
  * @method static Builder<static>|Season newModelQuery()
  * @method static Builder<static>|Season newQuery()
@@ -45,7 +44,19 @@ use Illuminate\Support\Facades\DB;
  * @method static Builder<static>|Season whereName($value)
  * @method static Builder<static>|Season whereStartYear($value)
  * @method static Builder<static>|Season whereUpdatedAt($value)
- *
+ * @property bool $is_active
+ * @property bool $registrations_open
+ * @property-read Collection<int, Subscription> $subscriptions
+ * @property-read int|null $subscriptions_count
+ * @property-read Collection<int, TrainingPack> $trainingPacks
+ * @property-read int|null $training_packs_count
+ * @property-read Collection<int, User> $users
+ * @property-read int|null $users_count
+ * @method static Builder<static>|Season active()
+ * @method static Builder<static>|Season whereEndAt($value)
+ * @method static Builder<static>|Season whereIsActive($value)
+ * @method static Builder<static>|Season whereRegistrationsOpen($value)
+ * @method static Builder<static>|Season whereStartAt($value)
  * @mixin \Eloquent
  */
 class Season extends Model

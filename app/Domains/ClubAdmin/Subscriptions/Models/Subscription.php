@@ -26,6 +26,53 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property int $id
+ * @property int $season_id
+ * @property int $user_id
+ * @property string $status
+ * @property bool $is_competitive
+ * @property bool $has_other_family_members
+ * @property int $trainings_count
+ * @property float $subscription_price
+ * @property float $training_unit_price
+ * @property float $amount_due
+ * @property float $amount_paid
+ * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Payment> $payments
+ * @property-read int|null $payments_count
+ * @property-read Season $season
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, TrainingPack> $trainingPacks
+ * @property-read int|null $training_packs_count
+ * @property-read User $user
+ * @method static Builder<static>|Subscription active()
+ * @method static \Database\Factories\Domains\ClubAdmin\Subscriptions\Models\SubscriptionFactory factory($count = null, $state = [])
+ * @method static Builder<static>|Subscription forSeason(\App\Domains\Competitions\Interclub\Models\Season|int $season)
+ * @method static Builder<static>|Subscription newModelQuery()
+ * @method static Builder<static>|Subscription newQuery()
+ * @method static Builder<static>|Subscription onlyTrashed()
+ * @method static Builder<static>|Subscription pendingPayment()
+ * @method static Builder<static>|Subscription query()
+ * @method static Builder<static>|Subscription whereAmountDue($value)
+ * @method static Builder<static>|Subscription whereAmountPaid($value)
+ * @method static Builder<static>|Subscription whereCreatedAt($value)
+ * @method static Builder<static>|Subscription whereDeletedAt($value)
+ * @method static Builder<static>|Subscription whereHasOtherFamilyMembers($value)
+ * @method static Builder<static>|Subscription whereId($value)
+ * @method static Builder<static>|Subscription whereIsCompetitive($value)
+ * @method static Builder<static>|Subscription whereSeasonId($value)
+ * @method static Builder<static>|Subscription whereStatus($value)
+ * @method static Builder<static>|Subscription whereSubscriptionPrice($value)
+ * @method static Builder<static>|Subscription whereTrainingUnitPrice($value)
+ * @method static Builder<static>|Subscription whereTrainingsCount($value)
+ * @method static Builder<static>|Subscription whereUpdatedAt($value)
+ * @method static Builder<static>|Subscription whereUserId($value)
+ * @method static Builder<static>|Subscription withTrashed(bool $withTrashed = true)
+ * @method static Builder<static>|Subscription withoutTrashed()
+ * @mixin \Eloquent
+ */
 class Subscription extends Model implements DescribesPayment, PayableInterface
 {
     /** @use HasFactory<SubscriptionFactory> */

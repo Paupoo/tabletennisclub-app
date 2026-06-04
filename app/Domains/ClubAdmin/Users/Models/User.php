@@ -81,7 +81,6 @@ use Laravel\Sanctum\PersonalAccessToken;
  * @property-read int|null $tournaments_count
  * @property-read Collection<int, Training> $trainings
  * @property-read int|null $trainings_count
- *
  * @method static UserFactory factory($count = null, $state = [])
  * @method static EloquentBuilder<static>|User newModelQuery()
  * @method static EloquentBuilder<static>|User newQuery()
@@ -112,7 +111,50 @@ use Laravel\Sanctum\PersonalAccessToken;
  * @method static EloquentBuilder<static>|User whereSex($value)
  * @method static EloquentBuilder<static>|User whereStreet($value)
  * @method static EloquentBuilder<static>|User whereUpdatedAt($value)
- *
+ * @property string|null $avatar_url
+ * @property Gender $gender
+ * @property int $emails_notifications
+ * @property string|null $family_id
+ * @property int $is_family_owner
+ * @property string|null $theme
+ * @property string|null $guardian_phone_number
+ * @property string|null $photo
+ * @property CommitteeRolesEnum|null $committee_role
+ * @property bool $is_coach
+ * @property string|null $medical_certificate_path
+ * @property string|null $parental_consent_path
+ * @property-read Collection<int, NewsPost> $articles
+ * @property-read int|null $articles_count
+ * @property-read Collection<int, User> $dependents
+ * @property-read int|null $dependents_count
+ * @property-read string $full_name
+ * @property-read Collection<int, User> $guardians
+ * @property-read int|null $guardians_count
+ * @property-read Collection<int, Meeting> $meetings
+ * @property-read int|null $meetings_count
+ * @property-read Collection<int, Season> $seasons
+ * @property-read int|null $seasons_count
+ * @property-read Collection<int, Subscription> $subscriptions
+ * @property-read int|null $subscriptions_count
+ * @method static EloquentBuilder<static>|User affiliatedForCurrentSeason()
+ * @method static EloquentBuilder<static>|User hasPaid()
+ * @method static EloquentBuilder<static>|User isActive()
+ * @method static EloquentBuilder<static>|User isCompetitor()
+ * @method static EloquentBuilder<static>|User searchTerms(string $search)
+ * @method static EloquentBuilder<static>|User whereAvatarUrl($value)
+ * @method static EloquentBuilder<static>|User whereCommitteeRole($value)
+ * @method static EloquentBuilder<static>|User whereEmailsNotifications($value)
+ * @method static EloquentBuilder<static>|User whereFamilyId($value)
+ * @method static EloquentBuilder<static>|User whereGender($value)
+ * @method static EloquentBuilder<static>|User whereGuardianPhoneNumber($value)
+ * @method static EloquentBuilder<static>|User whereHasPaid($value)
+ * @method static EloquentBuilder<static>|User whereIban($value)
+ * @method static EloquentBuilder<static>|User whereIsCoach($value)
+ * @method static EloquentBuilder<static>|User whereIsFamilyOwner($value)
+ * @method static EloquentBuilder<static>|User whereMedicalCertificatePath($value)
+ * @method static EloquentBuilder<static>|User whereParentalConsentPath($value)
+ * @method static EloquentBuilder<static>|User wherePhoto($value)
+ * @method static EloquentBuilder<static>|User whereTheme($value)
  * @mixin Eloquent
  */
 #[ObservedBy(UserObserver::class)]

@@ -9,6 +9,28 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property int|null $created_by
+ * @property int|null $modified_by
+ * @property-read User|null $createdBy
+ * @property-read User|null $modifiedBy
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Domains\Bar\Models\BarProduct> $products
+ * @property-read int|null $products_count
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BarCategory newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BarCategory newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BarCategory query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BarCategory whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BarCategory whereCreatedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BarCategory whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BarCategory whereModifiedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BarCategory whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BarCategory whereUpdatedAt($value)
+ * @mixin \Eloquent
+ */
 class BarCategory extends Model
 {
     // Only 'name' is fillable; created_by and modified_by are set automatically

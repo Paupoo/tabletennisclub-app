@@ -10,6 +10,31 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property int $tournament_id
+ * @property int $player1_id
+ * @property int $player2_id
+ * @property int $registered_by
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read User $player1
+ * @property-read User $player2
+ * @property-read User $registeredBy
+ * @property-read \App\Domains\Competitions\Tournament\Models\Tournament $tournament
+ * @method static \Database\Factories\Domains\Competitions\Tournament\Models\TournamentPairFactory factory($count = null, $state = [])
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentPair newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentPair newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentPair query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentPair whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentPair whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentPair wherePlayer1Id($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentPair wherePlayer2Id($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentPair whereRegisteredBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentPair whereTournamentId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentPair whereUpdatedAt($value)
+ * @mixin \Eloquent
+ */
 class TournamentPair extends Model
 {
     /** @use HasFactory<TournamentPairFactory> */

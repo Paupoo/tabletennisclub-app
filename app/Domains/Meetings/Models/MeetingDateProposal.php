@@ -22,6 +22,20 @@ use Illuminate\Support\Carbon;
  * @property bool $is_selected
  * @property-read Meeting $meeting
  * @property-read Collection<int, MeetingDateVote> $votes
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read int|null $votes_count
+ * @method static \Database\Factories\Domains\Meetings\Models\MeetingDateProposalFactory factory($count = null, $state = [])
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingDateProposal newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingDateProposal newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingDateProposal query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingDateProposal whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingDateProposal whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingDateProposal whereIsSelected($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingDateProposal whereMeetingId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingDateProposal whereProposedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingDateProposal whereUpdatedAt($value)
+ * @mixin \Eloquent
  */
 #[UseFactory(MeetingDateProposalFactory::class)]
 class MeetingDateProposal extends Model

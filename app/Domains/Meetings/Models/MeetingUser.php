@@ -23,6 +23,24 @@ use Illuminate\Support\Carbon;
  * @property bool|null $meal_reserved
  * @property Carbon|null $meal_responded_at
  * @property-read Payment|null $payment
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read \App\Domains\Meetings\Models\Meeting $meeting
+ * @property-read User $user
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingUser newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingUser newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingUser query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingUser whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingUser whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingUser whereInvitationSentAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingUser whereMealReserved($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingUser whereMealRespondedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingUser whereMeetingId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingUser whereResponseAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingUser whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingUser whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingUser whereUserId($value)
+ * @mixin \Eloquent
  */
 class MeetingUser extends Pivot implements DescribesPayment
 {

@@ -24,7 +24,6 @@ use Illuminate\Support\Carbon;
  * @property-read Season $season
  * @property-read Collection<int, Team> $teams
  * @property-read int|null $teams_count
- *
  * @method static \Database\Factories\Domains\Competitions\Interclub\Models\LeagueFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|League newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|League newQuery()
@@ -36,7 +35,6 @@ use Illuminate\Support\Carbon;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|League whereLevel($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|League whereSeasonId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|League whereUpdatedAt($value)
- *
  * @mixin \Eloquent
  */
 class League extends Model

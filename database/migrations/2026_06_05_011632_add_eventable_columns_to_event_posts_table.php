@@ -26,7 +26,7 @@ return new class extends Migration
         }
 
         Schema::table('event_posts', function (Blueprint $table): void {
-            $table->nullableMorphs('eventable')->after('id');
+            $table->nullableMorphs('eventable');
         });
     }
 };

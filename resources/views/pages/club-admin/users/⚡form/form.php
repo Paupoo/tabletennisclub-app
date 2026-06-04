@@ -2,13 +2,16 @@
 
 declare(strict_types=1);
 
+use App\Actions\User\AnonymizeUserAction;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Trainings\Models\TrainingPack;
 use App\Livewire\Concerns\HasBreadcrumbs;
+use App\Livewire\Concerns\HasPhotoUpload;
 use App\Support\Breadcrumb;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule as ValidationRule;
 use Illuminate\Validation\Rules\Enum;
 use Illuminate\Validation\Rules\Password;
@@ -21,11 +24,10 @@ use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
 use Mary\Traits\Toast;
-use PHPUnit\Event\Code\Throwable;
 
 new class extends Component
 {
-    use Toast, WithFileUploads, HasBreadcrumbs;
+    use Toast, WithFileUploads, HasBreadcrumbs, HasPhotoUpload;
 
     #[Rule('nullable|date')]
     public ?string $birthdate = null;
@@ -38,10 +40,6 @@ new class extends Component
 
     public ?string $committee_role = null;
 
-    public ?string $currentPhoto = null; // photo persistée
-
-    public bool $deleteModal = false;
-
     #[Rule('required|email')]
     public string $email = '';
 
@@ -52,8 +50,6 @@ new class extends Component
 
     #[Rule('required')]
     public ?Gender $gender = Gender::MEN;
-
-    public int $imageKey = 0; // pour gérer l'état de la photo et son delete en JS
 
     // Permissions
 
@@ -98,8 +94,6 @@ new class extends Component
     #[Rule('required|string')]
     public string $phone_number = '';
 
-    public $photo = null;          // upload Livewire uniquement
-
     public ?string $ranking = null;
 
     #[Rule('required|string')]
@@ -109,33 +103,14 @@ new class extends Component
 
     public ?User $user = null;
 
+    public bool $anonymizeModal = false;
+
+    public string $anonymizeConfirmText = '';
+
     #[Computed()]
     public function CommitteeRoleOptions(): array
     {
         return CommitteeRolesEnum::getOptions();
-    }
-
-    /**
-     * Effacer la photo
-     */
-    public function deletePhoto(): void
-    {
-        if (! $this->user || ! $this->user->photo) {
-            return;
-        }
-
-        $oldPath = str_replace('/storage/', '', $this->user->photo);
-        Storage::disk('public')->delete($oldPath);
-
-        $this->user->update(['photo' => null]);
-
-        $this->currentPhoto = null;
-        $this->photo = null;
-
-        $this->imageKey++;
-        $this->deleteModal = false;
-
-        $this->success(__('Photo deleted'));
     }
 
     public function mount(?User $user): void
@@ -228,25 +203,41 @@ new class extends Component
                 'max:2024',
             ],
             'ranking' => [
+                'nullable',
                 'string',
                 function ($attribute, $value, $fail) {
-
                     $isCompetitive = $this->licence_type === 'competitive' || $this->is_competitor;
 
-                    // obligatoire si compétitif
                     if ($isCompetitive && empty($value)) {
                         $fail('Ranking is required for competitive players.');
 
                         return;
                     }
 
-                    // interdiction de NA si compétitif
                     if ($isCompetitive && $value === 'NA') {
                         $fail('Ranking N/A is not allowed for competitors.');
                     }
                 },
             ],
         ];
+    }
+
+    public function confirmAnonymize(): void
+    {
+        abort_unless(Auth::user()->is_admin && Auth::user()->isNot($this->user), 403);
+
+        if (strtoupper($this->anonymizeConfirmText) !== 'ANONYMIZE') {
+            $this->error(__('Type ANONYMIZE to confirm.'));
+
+            return;
+        }
+
+        AnonymizeUserAction::handle($this->user);
+
+        $this->anonymizeModal = false;
+        $this->anonymizeConfirmText = '';
+
+        $this->success(__('User anonymized. All personal data has been erased.'), redirectTo: route('admin.users.index'));
     }
 
     public function save(): void
@@ -321,50 +312,7 @@ new class extends Component
             'licence_types' => collect([['id' => 'recreative', 'name' => __('Recreative')], ['id' => 'competitive', 'name' => __('Competitive')]]),
             'genders' => Gender::options(),
             'rankings' => [['id' => 'NA', 'name' => 'N/A'], ['id' => 'B0', 'name' => 'B0'], ['id' => 'B2', 'name' => 'B2'], ['id' => 'B4', 'name' => 'B4'], ['id' => 'B6', 'name' => 'B6'], ['id' => 'C0', 'name' => 'C0'], ['id' => 'C2', 'name' => 'C2'], ['id' => 'C4', 'name' => 'C4'], ['id' => 'C6', 'name' => 'C6'], ['id' => 'D0', 'name' => 'D0'], ['id' => 'D2', 'name' => 'D2'], ['id' => 'D4', 'name' => 'D4'], ['id' => 'D6', 'name' => 'D6'], ['id' => 'E0', 'name' => 'E0'], ['id' => 'E2', 'name' => 'E2'], ['id' => 'E4', 'name' => 'E4'], ['id' => 'E6', 'name' => 'E6'], ['id' => 'NC', 'name' => 'NC']],
-            'trainings' => collect([
-                [
-                    'id' => 1,
-                    'day' => __('Monday'),
-                    'group' => __('Free'),
-                    'availablePlaces' => null,
-                ],
-                [
-                    'id' => 2,
-                    'day' => __('Monday'),
-                    'group' => __('Directed - Starters'),
-                    'availablePlaces' => '2',
-                ],
-                // [
-                //     'id' => 3,
-                //     'day' => __('Tuesday'),
-                //     'group' => __('Directed - Advanced'),
-                //     'availablePlaces' => 0
-                // ],
-                [
-                    'id' => 4,
-                    'day' => __('Wednesday'),
-                    'group' => __('Directed - Kids'),
-                    'availablePlaces' => 3,
-                ],
-                [
-                    'id' => 5,
-                    'day' => __('Wednesday'),
-                    'group' => __('Directed - Kids'),
-                    'availablePlaces' => 1,
-                ],
-                // [
-                //     'id' => 6,
-                //     'day' => __('Saturday'),
-                //     'group' => __('Directed - Starters'),
-                //     'availablePlaces' => 0
-                // ],
-                [
-                    'id' => 7,
-                    'day' => __('Saturday'),
-                    'group' => __('Directed - Advanced'),
-                    'availablePlaces' => 4,
-                ],
-            ]),
+            'trainings' => TrainingPack::where('is_active', true)->get(),
             'quotes' => [
                 [
                     'text' => "A stranger is just a friend you haven't met yet.",
@@ -431,29 +379,4 @@ new class extends Component
         ];
     }
 
-    /**
-     * Gère l'upload et la suppression de l'ancienne image
-     */
-    protected function handlePhotoUpload(User $user): void
-    {
-        if (! $this->photo instanceof TemporaryUploadedFile) {
-            return;
-        }
-
-        // supprimer ancienne
-        if ($user->photo) {
-            $oldPath = str_replace('/storage/', '', $user->photo);
-            Storage::disk('public')->delete($oldPath);
-        }
-
-        // stocker nouvelle
-        $path = $this->photo->store('users', 'public');
-
-        $user->update([
-            'photo' => "/storage/{$path}",
-        ]);
-
-        $this->currentPhoto = "/storage/{$path}";
-        $this->photo = null;
-    }
 };

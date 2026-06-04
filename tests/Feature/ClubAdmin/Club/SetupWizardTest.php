@@ -6,6 +6,8 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Models\AppSetting;
+use Illuminate\Auth\Notifications\VerifyEmail;
+use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 
 // ── Access control ───────────────────────────────────────────────────────────
@@ -47,6 +49,24 @@ it('creates an admin user and logs in on step 2', function (): void {
     expect($user)->not->toBeNull();
     expect($user->is_admin)->toBeTrue();
     expect($user->is_active)->toBeTrue();
+});
+
+it('sends email verification notification automatically on step 2', function (): void {
+    Notification::fake();
+    AppSetting::where('key', 'setup_completed')->delete();
+
+    Livewire::test('pages::setup.wizard')
+        ->set('step', '2')
+        ->set('firstName', 'Jean')
+        ->set('lastName', 'Dupont')
+        ->set('email', 'admin@test.be')
+        ->set('password', 'password123')
+        ->set('passwordConfirmation', 'password123')
+        ->call('completeStep2');
+
+    $user = User::where('email', 'admin@test.be')->first();
+
+    Notification::assertSentTo($user, VerifyEmail::class);
 });
 
 it('fails step 2 when email is already taken', function (): void {

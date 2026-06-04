@@ -252,6 +252,16 @@
                         wire:click="$set('emailModal', true)" />
                 </div>
 
+                {{-- Intégrer comme membre --}}
+                @if (in_array($selectedContact->interest?->value, ['JOIN_US', 'TRIAL']) && $selectedContact->status !== 'processed')
+                    <div class="border-base-200 border-t pt-3">
+                        <x-button class="btn-primary btn-sm w-full" icon="o-user-plus"
+                            :label="__('Onboard as member')"
+                            wire:click="onboardContact({{ $selectedContact->id }})"
+                            spinner />
+                    </div>
+                @endif
+
                 {{-- Supprimer --}}
                 <div class="border-base-200 border-t pt-2">
                     <x-button class="btn-ghost btn-sm w-full text-error" icon="o-trash"

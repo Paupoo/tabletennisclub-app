@@ -48,9 +48,12 @@ describe('delete', function (): void {
         $target = User::factory()->create();
         expect($this->admin->can('delete', $target))->toBeTrue();
     });
-    it('allows committee member to delete', function (): void {
+    it('denies admin from deleting themselves', function (): void {
+        expect($this->admin->can('delete', $this->admin))->toBeFalse();
+    });
+    it('denies committee member to delete', function (): void {
         $target = User::factory()->create();
-        expect($this->member->can('delete', $target))->toBeTrue();
+        expect($this->member->can('delete', $target))->toBeFalse();
     });
     it('denies regular user', function (): void {
         $target = User::factory()->create();
@@ -85,9 +88,64 @@ describe('forceDelete', function (): void {
 });
 
 describe('restore', function (): void {
-    it('denies everyone including admin', function (): void {
+    it('allows admin to restore a soft deleted user', function (): void {
         $target = User::factory()->create();
-        expect($this->admin->can('restore', $target))->toBeFalse();
+        $target->delete();
+        expect($this->admin->can('restore', $target))->toBeTrue();
+    });
+    it('denies committee member to restore', function (): void {
+        $target = User::factory()->create();
+        $target->delete();
+        expect($this->member->can('restore', $target))->toBeFalse();
+    });
+    it('denies regular user to restore', function (): void {
+        $target = User::factory()->create();
+        $target->delete();
+        expect($this->regular->can('restore', $target))->toBeFalse();
+    });
+});
+
+describe('anonymize', function (): void {
+    it('allows admin to anonymize another user', function (): void {
+        $target = User::factory()->create();
+        expect($this->admin->can('anonymize', $target))->toBeTrue();
+    });
+    it('denies admin from anonymizing themselves', function (): void {
+        expect($this->admin->can('anonymize', $this->admin))->toBeFalse();
+    });
+    it('denies committee member to anonymize', function (): void {
+        $target = User::factory()->create();
+        expect($this->member->can('anonymize', $target))->toBeFalse();
+    });
+    it('denies regular user to anonymize', function (): void {
+        $target = User::factory()->create();
+        expect($this->regular->can('anonymize', $target))->toBeFalse();
+    });
+});
+
+describe('promoteAdmin', function (): void {
+    it('allows admin to promote to admin', function (): void {
+        $target = User::factory()->create();
+        expect($this->admin->can('promoteAdmin', $target))->toBeTrue();
+    });
+    it('denies committee member to promote to admin', function (): void {
+        $target = User::factory()->create();
+        expect($this->member->can('promoteAdmin', $target))->toBeFalse();
+    });
+});
+
+describe('promoteCommitteeMember', function (): void {
+    it('allows admin to promote to committee member', function (): void {
+        $target = User::factory()->create();
+        expect($this->admin->can('promoteCommitteeMember', $target))->toBeTrue();
+    });
+    it('allows committee member to promote to committee member', function (): void {
+        $target = User::factory()->create();
+        expect($this->member->can('promoteCommitteeMember', $target))->toBeTrue();
+    });
+    it('denies regular user to promote to committee member', function (): void {
+        $target = User::factory()->create();
+        expect($this->regular->can('promoteCommitteeMember', $target))->toBeFalse();
     });
 });
 

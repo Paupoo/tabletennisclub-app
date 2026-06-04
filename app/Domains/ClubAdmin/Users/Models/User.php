@@ -32,6 +32,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Notifications\DatabaseNotificationCollection;
@@ -118,7 +119,7 @@ use Laravel\Sanctum\PersonalAccessToken;
 #[ObservedBy(UserObserver::class)]
 class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
     /**
      * The attributes that should be cast.
@@ -150,6 +151,9 @@ class User extends Authenticatable implements MustVerifyEmail
         'avatar_url' => 'string',
         'theme' => 'string',
         'committee_role' => CommitteeRolesEnum::class,
+        'deleted_at' => 'datetime',
+        'last_invited_at' => 'datetime',
+        'email_verified_at' => 'datetime',
     ];
 
     /**
@@ -185,6 +189,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'is_coach',
         'medical_certificate_path',
         'parental_consent_path',
+        'updated_by',
+        'last_invited_at',
     ];
 
     /**
@@ -212,19 +218,6 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsTo(Club::class);
     }
 
-    public function dependents(): BelongsToMany
-    {
-        return $this->belongsToMany(
-            User::class,
-            'user_guardian',
-            'guardian_id',
-            'user_id'
-        );
-    }
-
-    /**
-     * Get the user's full name.
-     */
     public function getFullNameAttribute(): string
     {
         return "{$this->first_name} {$this->last_name}";
@@ -232,12 +225,12 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function guardians(): BelongsToMany
     {
-        return $this->belongsToMany(
-            User::class,
-            'user_guardian',
-            'user_id',
-            'guardian_id'
-        );
+        return $this->belongsToMany(Guardian::class, 'guardian_user');
+    }
+
+    public function hasGuardian(): bool
+    {
+        return $this->guardians()->exists();
     }
 
     public function interclubs(): BelongsToMany
@@ -246,6 +239,21 @@ class User extends Authenticatable implements MustVerifyEmail
             ->withPivot('is_subscribed', 'is_selected', 'has_played')
             ->as('registration')
             ->withTimestamps();
+    }
+
+    public function invitationStatus(): string
+    {
+        if ($this->email_verified_at !== null) {
+            return 'active';
+        }
+
+        if ($this->last_invited_at === null) {
+            return 'not_invited';
+        }
+
+        return $this->last_invited_at->greaterThan(now()->subHours(48))
+            ? 'pending'
+            : 'expired';
     }
 
     public function isAffiliatedForCurrentSeason(): bool
@@ -261,6 +269,11 @@ class User extends Authenticatable implements MustVerifyEmail
             ->exists();
     }
 
+    public function isMinor(): bool
+    {
+        return $this->birthdate !== null && Carbon::parse($this->birthdate)->age < 18;
+    }
+
     public function meetings(): BelongsToMany
     {
         return $this->belongsToMany(Meeting::class)
@@ -271,6 +284,11 @@ class User extends Authenticatable implements MustVerifyEmail
     public function pools(): BelongsToMany
     {
         return $this->belongsToMany(Pool::class, 'pool_user');
+    }
+
+    public function requiresGuardian(): bool
+    {
+        return $this->isMinor() && ! $this->hasGuardian();
     }
 
     public function scopeAffiliatedForCurrentSeason(EloquentBuilder $query): EloquentBuilder

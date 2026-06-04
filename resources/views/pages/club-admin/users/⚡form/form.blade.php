@@ -180,17 +180,32 @@
                     <x-menu-separator />
                 </div>
 
-                <!-- Section Danger/Delete -->
-                <div class="col-span-6 md:col-span-2">
-                    <x-header class="text-danger" :subtitle="__('Watch out! Be careful and act wisely...')"
-                        :title="__('Danger zone')" />
-                </div>
-                <div class="col-span-6 md:col-span-4">
-                    <x-input
-                        :hint="__('Type DELETE before pressing the red button. This will permanently delete your data and club history.')"
-                        :label="__('Delete Confirmation')" :placeholder="__('Confirm here')" />
-                    <x-button class="btn-error btn-md mt-6" :label="__('Request Deletion')" />
-                </div>
+                {{-- Zone de danger (RGPD) — admin uniquement, pas sur son propre compte --}}
+                @if ($user && Auth::user()->is_admin && Auth::id() !== $user->id)
+                    <div class="col-span-6 mt-4 border-t border-error/20 pt-6">
+                        <x-header
+                            :title="__('Danger zone')"
+                            :subtitle="__('Irreversible actions. Act with caution.')"
+                            class="!mb-0 text-error" />
+                    </div>
+                    <div class="col-span-6">
+                        <x-card class="border border-error/20 bg-error/5">
+                            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <p class="font-medium text-error">{{ __('GDPR Anonymization') }}</p>
+                                    <p class="mt-0.5 text-sm text-base-content/60">
+                                        {{ __('Permanently erases all personal data (name, email, phone, address, IBAN, documents). Tournament and payment history is preserved. Cannot be undone.') }}
+                                    </p>
+                                </div>
+                                <x-button
+                                    class="btn-error btn-soft btn-sm shrink-0"
+                                    icon="o-no-symbol"
+                                    :label="__('Anonymize (GDPR)')"
+                                    wire:click="$set('anonymizeModal', true)" />
+                            </div>
+                        </x-card>
+                    </div>
+                @endif
             @endif
 
         </div>
@@ -210,4 +225,29 @@
             </ul>
         </div>
     @endif
+
+    {{-- ── Modal anonymisation RGPD ─────────────────────────────────── --}}
+    <x-modal wire:model="anonymizeModal" :title="__('GDPR Anonymization — Irreversible')">
+        <div class="space-y-4">
+            <x-alert icon="o-exclamation-triangle" class="alert-error">
+                <p class="text-sm font-semibold">{{ __('This action permanently erases all personal data and cannot be undone.') }}</p>
+                <p class="mt-1 text-sm">{{ __('Name, email, phone, address, IBAN and documents will be replaced with anonymous placeholders. Tournament and payment history is preserved.') }}</p>
+            </x-alert>
+            <x-input
+                :label="__('Type ANONYMIZE to confirm')"
+                wire:model.live="anonymizeConfirmText"
+                :placeholder="__('ANONYMIZE')"
+                class="font-mono" />
+        </div>
+        <x-slot:actions>
+            <x-button :label="__('Cancel')" wire:click="$set('anonymizeModal', false)" />
+            <x-button
+                class="btn-error"
+                icon="o-no-symbol"
+                :label="__('Anonymize')"
+                wire:click="confirmAnonymize"
+                spinner="confirmAnonymize"
+                :disabled="strtoupper($anonymizeConfirmText) !== 'ANONYMIZE'" />
+        </x-slot:actions>
+    </x-modal>
 </div>

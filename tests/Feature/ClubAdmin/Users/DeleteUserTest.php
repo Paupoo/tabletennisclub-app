@@ -19,19 +19,29 @@ beforeEach(function (): void {
 }
 );
 
-test('admin and committee member can see delete button from users index view', function (): void {
-
+test('admin can see delete button for other users', function (): void {
     $response = $this
         ->actingAs($this->admin)
         ->get(route('admin.users.index'));
 
-    $response->assertSee('Delete');
+    $response->assertSee('Archive');
+});
 
+test('admin account is not archived when they try to delete themselves', function (): void {
+    Livewire\Livewire::actingAs($this->admin)
+        ->test('pages::club-admin.users.index')
+        ->call('confirmDelete', $this->admin->id)
+        ->call('delete');
+
+    expect(User::find($this->admin->id))->not->toBeNull();
+});
+
+test('committee member cannot see delete button from users index view', function (): void {
     $response = $this
         ->actingAs($this->committeeMember)
         ->get(route('admin.users.index'));
 
-    $response->assertSee('Delete');
+    $response->assertDontSee('Delete user');
 });
 test('user cant see delete button from users index view', function (): void {
 

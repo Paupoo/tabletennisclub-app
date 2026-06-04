@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Resources\views\Pages\Website\Contacts\Index;
 
-use App\Domains\Shared\Enums\ContactReasonEnum;
+use App\Actions\User\OnboardFromContactAction;
 use App\Domains\ClubAdmin\Contact\Models\Contact;
+use App\Domains\Shared\Enums\ContactReasonEnum;
 use App\Services\ClubAdmin\Contact\ContactEmailService;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
@@ -120,6 +121,15 @@ new class extends Component
         $this->emailCopy    = false;
 
         $this->success(__('Email sent.'));
+    }
+
+    public function onboardContact(int $id): void
+    {
+        $contact = Contact::findOrFail($id);
+
+        OnboardFromContactAction::handle($contact, Auth::user());
+
+        $this->success(__('User created and invitation sent to :email.', ['email' => $contact->email]));
     }
 
     public function confirmDelete(int $id): void

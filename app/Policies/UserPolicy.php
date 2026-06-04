@@ -8,6 +8,11 @@ use App\Domains\ClubAdmin\Users\Models\User;
 
 class UserPolicy
 {
+    public function anonymize(User $user, User $model): bool
+    {
+        return $user->is_admin && $user->isNot($model);
+    }
+
     /**
      * Determine whether the user can create models.
      */
@@ -22,8 +27,7 @@ class UserPolicy
      */
     public function delete(User $user, User $model): bool
     {
-        //
-        return $user->is_admin || $user->is_committee_member;
+        return $user->is_admin && $user->isNot($model);
     }
 
     /**
@@ -57,13 +61,22 @@ class UserPolicy
         return $user->is_admin || $user->is_committee_member || $user->is($model);
     }
 
+    public function promoteAdmin(User $user, User $model): bool
+    {
+        return $user->is_admin;
+    }
+
+    public function promoteCommitteeMember(User $user, User $model): bool
+    {
+        return $user->is_admin || $user->is_committee_member;
+    }
+
     /**
      * Determine whether the user can restore the model.
      */
     public function restore(User $user, User $model): bool
     {
-        //
-        return false;
+        return $user->is_admin;
     }
 
     /**

@@ -87,26 +87,6 @@ class UsersTable extends Component
         $this->resetSelection();
     }
 
-    public function bulkPaid()
-    {
-        $this->authorize('update', Auth::user());
-
-        User::whereIn('id', $this->selectedItems)->update(['has_paid' => true]);
-
-        session()->flash('success', count($this->selectedItems) . ' membre(s) mis à jour (payé).');
-        $this->resetSelection();
-    }
-
-    public function bulkUnpaid()
-    {
-        $this->authorize('update', Auth::user());
-
-        User::whereIn('id', $this->selectedItems)->update(['has_paid' => false]);
-
-        session()->flash('warning', count($this->selectedItems) . ' membre(s) mis à jour (non payé).');
-        $this->resetSelection();
-    }
-
     public function render()
     {
         return view('livewire.admin.users.users-table', [

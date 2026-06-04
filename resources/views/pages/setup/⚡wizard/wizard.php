@@ -214,6 +214,8 @@ new class extends Component
 
         Auth::login($user);
 
+        $user->sendEmailVerificationNotification();
+
         $this->password = '';
         $this->passwordConfirmation = '';
 

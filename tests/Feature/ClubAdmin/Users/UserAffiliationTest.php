@@ -5,6 +5,9 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
+use Illuminate\Support\Facades\Cache;
+
+beforeEach(fn () => Cache::forget('season.current'));
 
 describe('User::isAffiliatedForCurrentSeason()', function () {
     it('returns false when there is no active season', function () {

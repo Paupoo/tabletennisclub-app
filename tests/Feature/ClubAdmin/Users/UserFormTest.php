@@ -21,6 +21,17 @@ beforeEach(function () {
 });
 
 describe('ranking — recreational users', function () {
+    it('does not require ranking for recreational users', function () {
+        $user = User::factory()->create(['is_competitor' => false, 'is_coach' => false]);
+
+        Livewire::test(USER_FORM_COMPONENT, ['user' => $user])
+            ->set('licence_type', 'recreative')
+            ->set('ranking', null)
+            ->set('password', '')
+            ->call('save')
+            ->assertHasNoErrors(['ranking']);
+    });
+
     it('saves NA when updating a recreational user', function () {
         $user = User::factory()->create([
             'is_competitor' => false,

@@ -383,4 +383,33 @@
         {{ __('Are you sure you want to delete this picture? This action is irreversible.') }}
     </x-confirm-modal>
 
+    {{-- ════════════════════════════════
+         ZONE DE DANGER (RGPD)
+    ════════════════════════════════ --}}
+    @if (Auth::user()->is($user))
+        <div class="mt-8 border-t border-error/20 pt-6">
+            <div class="mx-auto max-w-2xl">
+                <p class="mb-1 text-xs font-semibold uppercase tracking-widest text-error/60">
+                    {{ __('Danger zone') }}
+                </p>
+                <x-card class="border border-error/20 bg-error/5">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <p class="font-medium text-error">{{ __('Request account deletion') }}</p>
+                            <p class="mt-0.5 text-sm text-base-content/60">
+                                {{ __('Send a deletion request to the administrator. Your data will be anonymized. Note: requests with pending payments may be delayed.') }}
+                            </p>
+                        </div>
+                        <x-button
+                            class="btn-error btn-soft btn-sm shrink-0"
+                            icon="o-trash"
+                            :label="__('Request deletion')"
+                            wire:click="requestErasure"
+                            spinner="requestErasure" />
+                    </div>
+                </x-card>
+            </div>
+        </div>
+    @endif
+
 </div>

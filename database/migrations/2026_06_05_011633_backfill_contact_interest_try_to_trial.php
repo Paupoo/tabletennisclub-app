@@ -9,15 +9,31 @@ return new class extends Migration
 {
     public function down(): void
     {
-        DB::table('contacts')
-            ->where('interest', 'TRIAL')
-            ->update(['interest' => 'try']);
+        $map = [
+            'JOIN_US' => 'join',
+            'TRIAL' => 'try',
+            'INFO_INTERCLUBS' => 'info_interclubs',
+            'BECOME_SUPPORTER' => 'become_supporter',
+            'PARTNERSHIP' => 'partnership',
+        ];
+
+        foreach ($map as $old => $new) {
+            DB::table('contacts')->where('interest', $old)->update(['interest' => $new]);
+        }
     }
 
     public function up(): void
     {
-        DB::table('contacts')
-            ->where('interest', 'try')
-            ->update(['interest' => 'TRIAL']);
+        $map = [
+            'join' => 'JOIN_US',
+            'try' => 'TRIAL',
+            'info_interclubs' => 'INFO_INTERCLUBS',
+            'become_supporter' => 'BECOME_SUPPORTER',
+            'partnership' => 'PARTNERSHIP',
+        ];
+
+        foreach ($map as $old => $new) {
+            DB::table('contacts')->where('interest', $old)->update(['interest' => $new]);
+        }
     }
 };

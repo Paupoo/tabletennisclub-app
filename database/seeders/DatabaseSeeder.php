@@ -19,7 +19,7 @@ use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\LeagueCategory;
 use App\Domains\Shared\Enums\LeagueLevel;
 use App\Domains\Shared\Enums\Ranking;
-use App\Models\AppSetting;
+use App\Domains\Shared\Models\AppSetting;
 use App\Services\ForceList;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;

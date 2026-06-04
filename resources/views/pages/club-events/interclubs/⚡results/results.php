@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Resources\views\Pages\ClubEvents\Interclubs;
 
-use App\Domains\Shared\Enums\InterclubResult;
+use App\Domains\Shared\Enums\InterclubResultEnum;
 use App\Domains\Shared\Enums\LeagueCategory;
 use App\Domains\Competitions\Interclub\Models\Interclub;
-use App\Domains\Competitions\Interclub\Models\MatchResult;
+use App\Domains\Competitions\Interclub\Models\InterclubResult;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Livewire\Concerns\HasBreadcrumbs;
@@ -28,10 +28,10 @@ new class extends Component
     public bool $deleteModal = false;
 
     // Delete confirmation
-    public ?int $deletingMatchResultId = null;
+    public ?int $deletingInterclubResultId = null;
 
     // Form fields
-    public ?int $editingMatchResultId = null;
+    public ?int $editingInterclubResultId = null;
 
     public ?int $editingTeamId = null;
 
@@ -60,7 +60,7 @@ new class extends Component
 
     public function confirmDelete(int $matchResultId): void
     {
-        $this->deletingMatchResultId = $matchResultId;
+        $this->deletingInterclubResultId = $matchResultId;
         $this->deleteModal = true;
     }
 
@@ -68,11 +68,11 @@ new class extends Component
     {
         $this->authorizeTeam($this->forfeitingTeamId);
 
-        MatchResult::where('team_id', $this->forfeitingTeamId)
+        InterclubResult::where('team_id', $this->forfeitingTeamId)
             ->where('season_id', $this->seasonId)
             ->whereNull('result')
             ->where('is_bye', false)
-            ->update(['result' => InterclubResult::WITHDRAWAL->value]);
+            ->update(['result' => InterclubResultEnum::WITHDRAWAL->value]);
 
         $this->teamForfeitModal = false;
         $this->forfeitingTeamId = null;
@@ -81,15 +81,15 @@ new class extends Component
 
     public function delete(): void
     {
-        if ($this->deletingMatchResultId) {
-            $matchResult = MatchResult::findOrFail($this->deletingMatchResultId);
+        if ($this->deletingInterclubResultId) {
+            $matchResult = InterclubResult::findOrFail($this->deletingInterclubResultId);
             $this->authorizeTeam($matchResult->team_id);
             $matchResult->delete();
             $this->success(__('Match deleted'));
         }
 
         $this->deleteModal = false;
-        $this->deletingMatchResultId = null;
+        $this->deletingInterclubResultId = null;
     }
 
     public function mount(): void
@@ -104,9 +104,9 @@ new class extends Component
 
     public function openEditModal(int $matchResultId): void
     {
-        $mr = MatchResult::findOrFail($matchResultId);
+        $mr = InterclubResult::findOrFail($matchResultId);
         $this->resetErrorBag();
-        $this->editingMatchResultId = $mr->id;
+        $this->editingInterclubResultId = $mr->id;
         $this->editingTeamId = $mr->team_id;
         $this->matchDate = $mr->match_date?->format('Y-m-d');
         $this->isHome = $mr->is_home;
@@ -124,10 +124,10 @@ new class extends Component
 
         $this->matchType = match (true) {
             $mr->is_bye => 'bye',
-            $mr->result === InterclubResult::FORFEIT_WIN => 'forfeit_opponent',
-            $mr->result === InterclubResult::WITHDRAWAL_OPPONENT => 'forfeit_general_opponent',
-            $mr->result === InterclubResult::FORFEIT_LOSS => 'forfeit_us',
-            $mr->result === InterclubResult::WITHDRAWAL => 'forfeit_general_us',
+            $mr->result === InterclubResultEnum::FORFEIT_WIN => 'forfeit_opponent',
+            $mr->result === InterclubResultEnum::WITHDRAWAL_OPPONENT => 'forfeit_general_opponent',
+            $mr->result === InterclubResultEnum::FORFEIT_LOSS => 'forfeit_us',
+            $mr->result === InterclubResultEnum::WITHDRAWAL => 'forfeit_general_us',
             default => 'normal',
         };
         $this->editModal = true;
@@ -201,10 +201,10 @@ new class extends Component
 
         $result = match ($this->matchType) {
             'bye' => null,
-            'forfeit_opponent' => InterclubResult::FORFEIT_WIN,
-            'forfeit_general_opponent' => InterclubResult::WITHDRAWAL_OPPONENT,
-            'forfeit_us' => InterclubResult::FORFEIT_LOSS,
-            'forfeit_general_us' => InterclubResult::WITHDRAWAL,
+            'forfeit_opponent' => InterclubResultEnum::FORFEIT_WIN,
+            'forfeit_general_opponent' => InterclubResultEnum::WITHDRAWAL_OPPONENT,
+            'forfeit_us' => InterclubResultEnum::FORFEIT_LOSS,
+            'forfeit_general_us' => InterclubResultEnum::WITHDRAWAL,
             default => $this->resultFromScore(),
         };
 
@@ -220,7 +220,7 @@ new class extends Component
             'is_bye' => $isBye,
         ];
 
-        MatchResult::findOrFail($this->editingMatchResultId)->update($data);
+        InterclubResult::findOrFail($this->editingInterclubResultId)->update($data);
 
         if ($this->matchType === 'normal' && $this->matchDate) {
             $interclub = Interclub::where('season_id', $this->seasonId)
@@ -256,7 +256,7 @@ new class extends Component
 
         $teamsQuery = Team::with([
             'league',
-            'matchResults' => fn ($q) => $q->where('season_id', $this->seasonId)->orderBy('match_date'),
+            'interclubResults' => fn ($q) => $q->where('season_id', $this->seasonId)->orderBy('match_date'),
         ])
             ->inClub()
             ->where('season_id', $this->seasonId);
@@ -269,7 +269,7 @@ new class extends Component
             ->sortBy(fn (Team $t) => $categoryOrder[$t->league?->category] ?? 99);
 
         $stats = $teams->mapWithKeys(fn (Team $team) => [
-            $team->id => $this->computeStats($team->matchResults),
+            $team->id => $this->computeStats($team->interclubResults),
         ]);
 
         $teamsByCategory = $teams->groupBy(fn (Team $t) => $t->league?->category ?? LeagueCategory::MEN->name);
@@ -302,13 +302,13 @@ new class extends Component
         abort_unless(Team::where('id', $teamId)->where('captain_id', $user->id)->exists(), 403);
     }
 
-    private function computeStats(Collection $matchResults): array
+    private function computeStats(Collection $interclubResults): array
     {
-        $real = $matchResults->where('is_bye', false)->filter(fn ($mr) => $mr->result !== null);
+        $real = $interclubResults->where('is_bye', false)->filter(fn ($mr) => $mr->result !== null);
         $played = $real->count();
-        $wins = $real->filter(fn ($mr) => in_array($mr->result, [InterclubResult::WIN, InterclubResult::FORFEIT_WIN]))->count();
-        $losses = $real->filter(fn ($mr) => in_array($mr->result, [InterclubResult::LOSS, InterclubResult::FORFEIT_LOSS]))->count();
-        $draws = $real->filter(fn ($mr) => $mr->result === InterclubResult::DRAW)->count();
+        $wins = $real->filter(fn ($mr) => in_array($mr->result, [InterclubResultEnum::WIN, InterclubResultEnum::FORFEIT_WIN]))->count();
+        $losses = $real->filter(fn ($mr) => in_array($mr->result, [InterclubResultEnum::LOSS, InterclubResultEnum::FORFEIT_LOSS]))->count();
+        $draws = $real->filter(fn ($mr) => $mr->result === InterclubResultEnum::DRAW)->count();
 
         return [
             'played' => $played,
@@ -319,16 +319,16 @@ new class extends Component
         ];
     }
 
-    private function resultFromScore(): ?InterclubResult
+    private function resultFromScore(): ?InterclubResultEnum
     {
         if ($this->scoreUs === null || $this->scoreThem === null) {
             return null;
         }
 
         return match (true) {
-            $this->scoreUs > $this->scoreThem => InterclubResult::WIN,
-            $this->scoreUs < $this->scoreThem => InterclubResult::LOSS,
-            default => InterclubResult::DRAW,
+            $this->scoreUs > $this->scoreThem => InterclubResultEnum::WIN,
+            $this->scoreUs < $this->scoreThem => InterclubResultEnum::LOSS,
+            default => InterclubResultEnum::DRAW,
         };
     }
 };

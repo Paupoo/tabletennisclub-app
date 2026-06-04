@@ -8,7 +8,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\League;
-use App\Domains\Competitions\Interclub\Models\MatchResult;
+use App\Domains\Competitions\Interclub\Models\InterclubResult;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\InterclubAvailability;
@@ -115,7 +115,7 @@ class InterclubSeeder extends Seeder
             Interclub::whereIn('id', $interclubIds)->delete();
         }
 
-        MatchResult::where('season_id', $seasonId)->delete();
+        InterclubResult::where('season_id', $seasonId)->delete();
 
         $ourTeamIds = Team::whereHas('club', fn ($q) => $q->where('licence', config('app.club_licence')))
             ->where('season_id', $seasonId)
@@ -165,8 +165,7 @@ class InterclubSeeder extends Seeder
             'league_id' => $ourTeam->league_id,
         ]);
 
-        $this->syncMatchResult($ourTeam, $opponentTeam, $interclub, $isHome);
-
+        // InterclubResult is created automatically by InterclubObserver.
         return $interclub;
     }
 
@@ -594,28 +593,7 @@ class InterclubSeeder extends Seeder
         $this->seedAvailabilityAndSelections($team, array_slice($interclubs, 0, 3));
     }
 
-    private function syncMatchResult(Team $ourTeam, Team $opponentTeam, Interclub $interclub, bool $isHome): void
-    {
-        $opponentName = trim(($opponentTeam->club?->name ?? '') . ' ' . ($opponentTeam->name ?? ''));
-
-        MatchResult::firstOrCreate(
-            [
-                'team_id' => $ourTeam->id,
-                'season_id' => $this->season->id,
-                'match_date' => $interclub->start_date_time->toDateString(),
-            ],
-            [
-                'week_number' => $interclub->week_number,
-                'is_home' => $isHome,
-                'opponent_name' => $opponentName,
-                'score' => null,
-                'result' => null,
-                'is_bye' => false,
-            ]
-        );
-    }
-
-    private function team(string $name, League $league, User $captain): Team
+private function team(string $name, League $league, User $captain): Team
     {
         $team = Team::firstOrCreate(
             ['name' => $name, 'season_id' => $this->season->id, 'league_id' => $league->id, 'club_id' => $this->club->id],

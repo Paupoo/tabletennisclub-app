@@ -6,7 +6,7 @@ namespace Resources\views\Pages\ClubEvents\Interclubs\Interclubs;
 
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Interclub;
-use App\Domains\Competitions\Interclub\Models\MatchResult;
+use App\Domains\Competitions\Interclub\Models\InterclubResult;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Livewire\Concerns\HasBreadcrumbs;
@@ -112,8 +112,7 @@ new class extends Component
             Interclub::findOrFail($this->editingInterclubId)->update($data);
             $this->success(__('Match updated'));
         } else {
-            $interclub = Interclub::create($data);
-            $this->syncMatchResult($ourTeam, $opponentTeam, $interclub, $this->formIsHome);
+            Interclub::create($data);
             $this->success(__('Match added'));
         }
 
@@ -272,28 +271,7 @@ new class extends Component
         ];
     }
 
-    private function syncMatchResult(Team $ourTeam, Team $opponentTeam, Interclub $interclub, bool $isHome): void
-    {
-        $opponentName = trim(($opponentTeam->club?->name ?? '') . ' ' . ($opponentTeam->name ?? ''));
-
-        MatchResult::firstOrCreate(
-            [
-                'team_id' => $ourTeam->id,
-                'season_id' => $this->seasonId,
-                'match_date' => $interclub->start_date_time->toDateString(),
-            ],
-            [
-                'week_number' => $interclub->week_number,
-                'is_home' => $isHome,
-                'opponent_name' => $opponentName,
-                'score' => null,
-                'result' => null,
-                'is_bye' => false,
-            ]
-        );
-    }
-
-    private function totalPlayersByCategory(?string $category): int
+private function totalPlayersByCategory(?string $category): int
     {
         return match ($category) {
             'MEN' => 4,

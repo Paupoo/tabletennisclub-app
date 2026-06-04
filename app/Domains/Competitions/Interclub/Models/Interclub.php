@@ -8,10 +8,12 @@ use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\LeagueCategory;
 use App\Domains\Shared\Traits\HasAvailability;
+use App\Observers\InterclubObserver;
 use Carbon\Carbon;
 use Database\Factories\Domains\Competitions\Interclub\Models\InterclubFactory;
 use Eloquent;
 use Exception;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -64,6 +66,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static Builder<static>|Interclub whereWeekNumber($value)
  * @mixin Eloquent
  */
+#[ObservedBy(InterclubObserver::class)]
 class Interclub extends Model
 {
     use HasAvailability;
@@ -71,10 +74,12 @@ class Interclub extends Model
 
     protected $casts = [
         'start_date_time' => 'datetime',
+        'is_bye'          => 'boolean',
     ];
 
     protected $fillable = [
         'address',
+        'is_bye',
         'league_id',
         'result',
         'score',
@@ -105,6 +110,11 @@ class Interclub extends Model
         $this->loadMissing('visitedTeam.club');
 
         return $this->visitedTeam?->club?->licence === config('app.club_licence');
+    }
+
+    public function interclubResult(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(InterclubResult::class);
     }
 
     public function league(): BelongsTo

@@ -5,10 +5,10 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\League;
-use App\Domains\Competitions\Interclub\Models\MatchResult;
+use App\Domains\Competitions\Interclub\Models\InterclubResult;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
-use App\Domains\Shared\Enums\InterclubResult;
+use App\Domains\Shared\Enums\InterclubResultEnum;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 
@@ -20,7 +20,7 @@ beforeEach(function (): void {
     $this->ourClub = Club::factory()->create(['licence' => config('app.club_licence')]);
 });
 
-function makeTeamWithMatchResult(Season $season, Club $ourClub, string $category): array
+function makeTeamWithInterclubResult(Season $season, Club $ourClub, string $category): array
 {
     $league = League::factory()->create([
         'season_id' => $season->id,
@@ -35,7 +35,7 @@ function makeTeamWithMatchResult(Season $season, Club $ourClub, string $category
         'club_id' => $ourClub->id,
     ]);
 
-    $matchResult = MatchResult::factory()->create([
+    $matchResult = InterclubResult::factory()->create([
         'team_id' => $team->id,
         'season_id' => $season->id,
         'is_home' => true,
@@ -49,7 +49,7 @@ function makeTeamWithMatchResult(Season $season, Club $ourClub, string $category
 // ── Hommes (max 16 points) ─────────────────────────────────────────────────────
 
 it('accepts a valid men score summing to 16', function (): void {
-    ['matchResult' => $mr] = makeTeamWithMatchResult($this->season, $this->ourClub, 'MEN');
+    ['matchResult' => $mr] = makeTeamWithInterclubResult($this->season, $this->ourClub, 'MEN');
 
     Livewire::actingAs($this->admin)
         ->test('pages::club-events.interclubs.results')
@@ -60,11 +60,11 @@ it('accepts a valid men score summing to 16', function (): void {
         ->call('save')
         ->assertHasNoErrors(['scoreUs', 'scoreThem']);
 
-    expect(MatchResult::find($mr->id)->score)->toBe('10-6');
+    expect(InterclubResult::find($mr->id)->score)->toBe('10-6');
 });
 
 it('rejects a men score whose sum is not 16', function (): void {
-    ['matchResult' => $mr] = makeTeamWithMatchResult($this->season, $this->ourClub, 'MEN');
+    ['matchResult' => $mr] = makeTeamWithInterclubResult($this->season, $this->ourClub, 'MEN');
 
     Livewire::actingAs($this->admin)
         ->test('pages::club-events.interclubs.results')
@@ -77,7 +77,7 @@ it('rejects a men score whose sum is not 16', function (): void {
 });
 
 it('rejects a men score exceeding 16 per side', function (): void {
-    ['matchResult' => $mr] = makeTeamWithMatchResult($this->season, $this->ourClub, 'MEN');
+    ['matchResult' => $mr] = makeTeamWithInterclubResult($this->season, $this->ourClub, 'MEN');
 
     Livewire::actingAs($this->admin)
         ->test('pages::club-events.interclubs.results')
@@ -92,7 +92,7 @@ it('rejects a men score exceeding 16 per side', function (): void {
 // ── Dames / Vétérans (max 10 points) ──────────────────────────────────────────
 
 it('accepts a valid women score summing to 10', function (): void {
-    ['matchResult' => $mr] = makeTeamWithMatchResult($this->season, $this->ourClub, 'WOMEN');
+    ['matchResult' => $mr] = makeTeamWithInterclubResult($this->season, $this->ourClub, 'WOMEN');
 
     Livewire::actingAs($this->admin)
         ->test('pages::club-events.interclubs.results')
@@ -103,11 +103,11 @@ it('accepts a valid women score summing to 10', function (): void {
         ->call('save')
         ->assertHasNoErrors(['scoreUs', 'scoreThem']);
 
-    expect(MatchResult::find($mr->id)->score)->toBe('6-4');
+    expect(InterclubResult::find($mr->id)->score)->toBe('6-4');
 });
 
 it('accepts a valid veterans score summing to 10', function (): void {
-    ['matchResult' => $mr] = makeTeamWithMatchResult($this->season, $this->ourClub, 'VETERANS');
+    ['matchResult' => $mr] = makeTeamWithInterclubResult($this->season, $this->ourClub, 'VETERANS');
 
     Livewire::actingAs($this->admin)
         ->test('pages::club-events.interclubs.results')
@@ -120,7 +120,7 @@ it('accepts a valid veterans score summing to 10', function (): void {
 });
 
 it('rejects a women score whose sum is not 10', function (): void {
-    ['matchResult' => $mr] = makeTeamWithMatchResult($this->season, $this->ourClub, 'WOMEN');
+    ['matchResult' => $mr] = makeTeamWithInterclubResult($this->season, $this->ourClub, 'WOMEN');
 
     Livewire::actingAs($this->admin)
         ->test('pages::club-events.interclubs.results')
@@ -133,7 +133,7 @@ it('rejects a women score whose sum is not 10', function (): void {
 });
 
 it('rejects a women score exceeding 10 per side', function (): void {
-    ['matchResult' => $mr] = makeTeamWithMatchResult($this->season, $this->ourClub, 'WOMEN');
+    ['matchResult' => $mr] = makeTeamWithInterclubResult($this->season, $this->ourClub, 'WOMEN');
 
     Livewire::actingAs($this->admin)
         ->test('pages::club-events.interclubs.results')
@@ -148,7 +148,7 @@ it('rejects a women score exceeding 10 per side', function (): void {
 // ── Score non requis pour les cas spéciaux ─────────────────────────────────────
 
 it('does not require a score for forfeit situations', function (): void {
-    ['matchResult' => $mr] = makeTeamWithMatchResult($this->season, $this->ourClub, 'MEN');
+    ['matchResult' => $mr] = makeTeamWithInterclubResult($this->season, $this->ourClub, 'MEN');
 
     Livewire::actingAs($this->admin)
         ->test('pages::club-events.interclubs.results')
@@ -157,5 +157,5 @@ it('does not require a score for forfeit situations', function (): void {
         ->call('save')
         ->assertHasNoErrors(['scoreUs', 'scoreThem']);
 
-    expect(MatchResult::find($mr->id)->result)->toBe(InterclubResult::FORFEIT_WIN);
+    expect(InterclubResult::find($mr->id)->result)->toBe(InterclubResultEnum::FORFEIT_WIN);
 });

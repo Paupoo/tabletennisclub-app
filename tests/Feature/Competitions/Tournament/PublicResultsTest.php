@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\League;
-use App\Domains\Competitions\Interclub\Models\MatchResult;
+use App\Domains\Competitions\Interclub\Models\InterclubResult;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
-use App\Domains\Shared\Enums\InterclubResult;
+use App\Domains\Shared\Enums\InterclubResultEnum;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -32,11 +32,11 @@ function makeSeasonWithTeamAndResults(string $name, bool $isActive, string $star
         'club_id' => $ourClub->id,
     ]);
 
-    MatchResult::factory()->create([
+    InterclubResult::factory()->create([
         'team_id' => $team->id,
         'season_id' => $season->id,
         'match_date' => Carbon::parse($startAt)->addMonth(),
-        'result' => InterclubResult::WIN,
+        'result' => InterclubResultEnum::WIN,
     ]);
 
     return compact('season', 'team', 'league');
@@ -148,11 +148,11 @@ test('shows no results message when season has no team data', function (): void 
 test('shows match results for the active season', function (): void {
     ['season' => $season, 'team' => $team] = makeSeasonWithTeamAndResults('2025-2026', true, '2025-09-01');
 
-    MatchResult::factory()->create([
+    InterclubResult::factory()->create([
         'team_id' => $team->id,
         'season_id' => $season->id,
         'opponent_name' => 'Adversaire Test A',
-        'result' => InterclubResult::WIN,
+        'result' => InterclubResultEnum::WIN,
         'match_date' => '2025-10-15',
     ]);
 

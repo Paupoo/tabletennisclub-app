@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Domains\Shared\Enums\InterclubResult;
+use App\Domains\Shared\Enums\InterclubResultEnum;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -25,7 +25,7 @@ return new class extends Migration
             $table->boolean('is_home')->default(true);
             $table->string('opponent_name', 100)->nullable();
             $table->string('score', 10)->nullable();
-            $table->enum('result', array_column(InterclubResult::cases(), 'value'))->nullable();
+            $table->enum('result', array_column(InterclubResultEnum::cases(), 'value'))->nullable();
             $table->boolean('is_bye')->default(false);
             $table->timestamps();
         });

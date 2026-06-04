@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Shared\Enums;
 
-enum InterclubResult: string
+enum InterclubResultEnum: string
 {
     case DRAW = 'Draw';
     case FORFEIT_LOSS = 'ForfeitLoss';

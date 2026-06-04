@@ -97,7 +97,7 @@
 
                                         {{-- Tableau des rencontres --}}
                                         <div x-show="open" x-collapse>
-                                            @if ($team->matchResults->isEmpty())
+                                            @if ($team->interclubResults->isEmpty())
                                                 <p class="py-4 text-center text-sm italic text-gray-400">{{ __('No matches scheduled for this team.') }}</p>
                                             @else
                                                 <div class="overflow-x-auto">
@@ -114,7 +114,7 @@
                                                             </tr>
                                                         </thead>
                                                         <tbody class="divide-y divide-gray-50">
-                                                            @foreach ($team->matchResults->sortBy('match_date') as $mr)
+                                                            @foreach ($team->interclubResults->sortBy('match_date') as $mr)
                                                                 <tr wire:key="mr-{{ $mr->id }}"
                                                                     @class(['text-gray-300' => $mr->is_bye, 'italic text-gray-400' => ! $mr->is_bye && $mr->result === null])>
                                                                     <td class="hidden py-2 pr-4 text-xs text-gray-400 sm:table-cell">
@@ -152,19 +152,19 @@
                                                                             <span class="rounded bg-gray-50 px-1.5 py-0.5 text-[10px] font-semibold text-gray-400">Bye</span>
                                                                         @elseif ($mr->result === null)
                                                                             <span class="text-xs italic text-gray-300">{{ __('Pending') }}</span>
-                                                                        @elseif ($mr->result === \App\Domains\Shared\Enums\InterclubResult::WIN)
+                                                                        @elseif ($mr->result === \App\Domains\Shared\Enums\InterclubResultEnum::WIN)
                                                                             <span class="rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-semibold text-green-700">{{ __('Win') }}</span>
-                                                                        @elseif ($mr->result === \App\Domains\Shared\Enums\InterclubResult::LOSS)
+                                                                        @elseif ($mr->result === \App\Domains\Shared\Enums\InterclubResultEnum::LOSS)
                                                                             <span class="rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold text-red-700">{{ __('Loss') }}</span>
-                                                                        @elseif ($mr->result === \App\Domains\Shared\Enums\InterclubResult::DRAW)
+                                                                        @elseif ($mr->result === \App\Domains\Shared\Enums\InterclubResultEnum::DRAW)
                                                                             <span class="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-semibold text-gray-600">{{ __('Draw') }}</span>
-                                                                        @elseif ($mr->result === \App\Domains\Shared\Enums\InterclubResult::FORFEIT_WIN)
+                                                                        @elseif ($mr->result === \App\Domains\Shared\Enums\InterclubResultEnum::FORFEIT_WIN)
                                                                             <span class="rounded bg-green-50 px-1.5 py-0.5 text-[10px] font-semibold text-green-600">{{ __('Forfait adv.') }}</span>
-                                                                        @elseif ($mr->result === \App\Domains\Shared\Enums\InterclubResult::FORFEIT_LOSS)
+                                                                        @elseif ($mr->result === \App\Domains\Shared\Enums\InterclubResultEnum::FORFEIT_LOSS)
                                                                             <span class="rounded bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold text-red-400">{{ __('Forfait') }}</span>
-                                                                        @elseif ($mr->result === \App\Domains\Shared\Enums\InterclubResult::WITHDRAWAL_OPPONENT)
+                                                                        @elseif ($mr->result === \App\Domains\Shared\Enums\InterclubResultEnum::WITHDRAWAL_OPPONENT)
                                                                             <span class="rounded bg-orange-50 px-1.5 py-0.5 text-[10px] font-semibold text-orange-500">{{ __('F. Gén. Adv.') }}</span>
-                                                                        @elseif ($mr->result === \App\Domains\Shared\Enums\InterclubResult::WITHDRAWAL)
+                                                                        @elseif ($mr->result === \App\Domains\Shared\Enums\InterclubResultEnum::WITHDRAWAL)
                                                                             <span class="rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-semibold text-orange-600">{{ __('F. Général') }}</span>
                                                                         @endif
                                                                     </td>

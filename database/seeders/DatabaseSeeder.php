@@ -333,6 +333,10 @@ class DatabaseSeeder extends Seeder
 
         $this->call(PaymentSeeder::class);
 
+        // 1-3: teams, divisions, opponents, Interclub fixtures (observer creates empty results)
+        $this->call(InterclubScheduleSeeder::class);
+
+        // 4: apply known 2025-2026 scores onto the results (last round 2026-04-17 left empty)
         $this->call(InterclubResultsSeeder::class);
 
         $this->call(InterclubSeeder::class);

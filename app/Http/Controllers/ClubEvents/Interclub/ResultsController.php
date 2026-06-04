@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\ClubEvents\Interclub;
 
-use App\Domains\Competitions\Interclub\Models\MatchResult;
+use App\Domains\Competitions\Interclub\Models\InterclubResult;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
-use App\Domains\Shared\Enums\InterclubResult;
+use App\Domains\Shared\Enums\InterclubResultEnum;
 use App\Domains\Shared\Enums\LeagueCategory;
 use App\Http\Controllers\Controller;
 use Illuminate\Contracts\View\View;
@@ -55,7 +55,7 @@ class ResultsController extends Controller
         if ($season) {
             $grouped = Team::with([
                 'league',
-                'matchResults' => fn ($q) => $q->where('season_id', $season->id)->orderBy('match_date'),
+                'interclubResults' => fn ($q) => $q->where('season_id', $season->id)->orderBy('match_date'),
             ])
                 ->inClub()
                 ->where('season_id', $season->id)
@@ -71,14 +71,14 @@ class ResultsController extends Controller
                         'name' => 'Équipe ' . $team->name . ($team->league ? ' - Division ' . $team->league->division : ''),
                         'position' => $team->final_position ?? '—',
                         'position_class' => $this->positionClass($team->final_position),
-                        'matches' => $team->matchResults->map(fn (MatchResult $mr) => [
+                        'matches' => $team->interclubResults->map(fn (InterclubResult $mr) => [
                             'date' => $mr->is_bye ? 'Bye' : $mr->match_date?->format('d M Y'),
                             'opponent' => $mr->opponent_name ?? 'Bye',
                             'venue' => $mr->is_home ? 'Domicile' : 'Extérieur',
                             'score' => $mr->score ?? ($mr->is_bye ? 'Bye' : '—'),
                             'result' => $this->frenchResult($mr),
                         ])->toArray(),
-                        'stats' => $this->buildStats($team->matchResults),
+                        'stats' => $this->buildStats($team->interclubResults),
                     ])->toArray(),
                 ];
             }
@@ -88,15 +88,15 @@ class ResultsController extends Controller
     }
 
     /**
-     * @param  Collection<int, MatchResult>  $matchResults
+     * @param  Collection<int, InterclubResult>  $interclubResults
      * @return array{played: int, wins: int, losses: int, win_rate: int}
      */
-    private function buildStats(Collection $matchResults): array
+    private function buildStats(Collection $interclubResults): array
     {
-        $real = $matchResults->where('is_bye', false)->filter(fn ($mr) => $mr->result !== null);
+        $real = $interclubResults->where('is_bye', false)->filter(fn ($mr) => $mr->result !== null);
         $played = $real->count();
-        $wins = $real->filter(fn ($mr) => in_array($mr->result, [InterclubResult::WIN, InterclubResult::FORFEIT_WIN]))->count();
-        $losses = $real->filter(fn ($mr) => in_array($mr->result, [InterclubResult::LOSS, InterclubResult::FORFEIT_LOSS]))->count();
+        $wins = $real->filter(fn ($mr) => in_array($mr->result, [InterclubResultEnum::WIN, InterclubResultEnum::FORFEIT_WIN]))->count();
+        $losses = $real->filter(fn ($mr) => in_array($mr->result, [InterclubResultEnum::LOSS, InterclubResultEnum::FORFEIT_LOSS]))->count();
 
         return [
             'played' => $played,
@@ -106,7 +106,7 @@ class ResultsController extends Controller
         ];
     }
 
-    private function frenchResult(MatchResult $mr): string
+    private function frenchResult(InterclubResult $mr): string
     {
         if ($mr->is_bye) {
             return 'Bye';
@@ -117,13 +117,13 @@ class ResultsController extends Controller
         }
 
         return match ($mr->result) {
-            InterclubResult::WIN => 'Victoire',
-            InterclubResult::LOSS => 'Défaite',
-            InterclubResult::DRAW => 'Nul',
-            InterclubResult::FORFEIT_WIN => 'Forfait Adverse',
-            InterclubResult::FORFEIT_LOSS => 'Forfait',
-            InterclubResult::WITHDRAWAL => 'Forfait Général',
-            InterclubResult::WITHDRAWAL_OPPONENT => 'Forfait Général Adverse',
+            InterclubResultEnum::WIN => 'Victoire',
+            InterclubResultEnum::LOSS => 'Défaite',
+            InterclubResultEnum::DRAW => 'Nul',
+            InterclubResultEnum::FORFEIT_WIN => 'Forfait Adverse',
+            InterclubResultEnum::FORFEIT_LOSS => 'Forfait',
+            InterclubResultEnum::WITHDRAWAL => 'Forfait Général',
+            InterclubResultEnum::WITHDRAWAL_OPPONENT => 'Forfait Général Adverse',
         };
     }
 

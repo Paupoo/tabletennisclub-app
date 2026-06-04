@@ -29,8 +29,8 @@ use Illuminate\Support\Carbon;
  * @property-read Collection<int, Interclub> $interclubs
  * @property-read int|null $interclubs_count
  * @property-read League|null $league
- * @property-read Collection<int, MatchResult> $matchResults
- * @property-read int|null $match_results_count
+ * @property-read Collection<int, InterclubResult> $interclubResults
+ * @property-read int|null $interclub_results_count
  * @property-read Season $season
  * @property-read Collection<int, User> $users
  * @property-read int|null $users_count
@@ -93,9 +93,9 @@ class Team extends Model
         return $this->belongsTo(League::class);
     }
 
-    public function matchResults(): HasMany
+    public function interclubResults(): HasMany
     {
-        return $this->hasMany(MatchResult::class);
+        return $this->hasMany(InterclubResult::class);
     }
 
     public function scopeInClub(Builder $query): void

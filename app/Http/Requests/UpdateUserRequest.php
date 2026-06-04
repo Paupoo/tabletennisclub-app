@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
-use App\Enums\Ranking;
-use App\Enums\Sex;
+use App\Domains\Shared\Enums\Gender;
+use App\Domains\Shared\Enums\Ranking;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -34,7 +35,7 @@ class UpdateUserRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array|string>
      */
     public function rules(): array
     {
@@ -60,13 +61,13 @@ class UpdateUserRequest extends FormRequest
                     Rule::in($rankings_enum->reject('NA')),     // Don't allow NA as the player must have a ranking...
                 ),
             ],
-            'sex' => ['required', Rule::in(collect(Sex::cases())->pluck('name'))],
+            'gender' => ['required', Rule::in(collect(Gender::cases())->pluck('name'))],
             'street' => ['nullable', 'string'],
             'team_id' => ['nullable', 'exists:teams,id'],
         ];
     }
 
-    public function withValidator($validator)
+    public function withValidator($validator): void
     {
         $validator->after(function ($validator): void {
             $validator->after(function ($validator): void {

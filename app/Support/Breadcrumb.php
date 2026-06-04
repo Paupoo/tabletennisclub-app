@@ -4,94 +4,141 @@ declare(strict_types=1);
 
 namespace App\Support;
 
+use App\Domains\Competitions\Tournament\Models\Tournament;
+
 class Breadcrumb
 {
-    protected $items = [];
+    protected array $items = [];
 
-    public static function make()
+    public static function make(): Breadcrumb
     {
         return new static;
     }
 
-    public function add($title, $url = null, $icon = null)
+    public function add(string $label, ?string $link = null, ?string $icon = null): Breadcrumb
     {
-        $this->items[] = compact('title', 'url', 'icon');
+        $this->items[] = compact('label', 'link', 'icon');
 
         return $this;
     }
 
-    public function articles($url = null)
+    public function articles(?string $url = null): Breadcrumb
     {
-        return $this->add('Articles', $url ?: route('admin.articles.index'), 'home');
+        return $this->add('Articles', $url ?: route('admin.website.articles.index'), 's-home');
     }
 
-    public function contacts($url = null)
+    public function contacts(?string $url = null): Breadcrumb
     {
-        return $this->add('Contacts', $url ?: route('admin.contacts.index'));
+        return $this->add('Contacts', $url ?: route('admin.website.contacts.index'));
     }
 
-    public function current($title)
+    public function current(string $title): Breadcrumb
     {
-        return $this->add($title, null);
+        return $this->add($title);
     }
 
-    public function events($url = null)
+    public function events(?string $url = null): Breadcrumb
     {
-        return $this->add('Events', $url ?: route('admin.events.index'), 'home');
+        return $this->add('Events', $url ?: route('eventPosts'), 's-home');
     }
 
-    public function home($url = null)
+    public function home(?string $url = null): Breadcrumb
     {
-        return $this->add('Admin', $url ?: route('dashboard'), 'home');
+        return $this->add(__('Admin Pannel'), $url ?: route('dashboard'), 's-home');
     }
 
-    public function matches($url = null)
+    public function matches(?string $url = null): Breadcrumb
     {
-        return $this->add('Matches', $url ?: route('interclubs.index'), 'home');
+        return $this->add('Matches', $url ?: route('admin.interclubs.interclubs'), 's-home');
     }
 
-    public function profile($url = null)
+    public function meetings(?string $url = null): Breadcrumb
+    {
+        return $this->add(__('Meetings'), $url ?: route('admin.meetings.index'), 'o-calendar-days');
+    }
+
+    public function profile(?string $url = null): Breadcrumb
     {
         return $this->add('Profile', $url ?: route('profile.edit'));
     }
 
-    public function rooms($url = null)
+    public function results(?string $url = null): Breadcrumb
     {
-        return $this->add('Rooms', $url ?: route('rooms.index'));
+        return $this->add(__('Results'), $url ?: route('admin.interclubs.results'));
     }
 
-    public function tables($url = null)
+    public function rooms(?string $url = null): Breadcrumb
     {
-        return $this->add('Tables', $url ?: route('tables.index'));
+        return $this->add('Rooms', $url ?: route('admin.rooms.index'));
     }
 
-    public function teams($url = null)
+    public function seasons(?string $url = null): Breadcrumb
     {
-        return $this->add('Teams', $url ?: route('teams.index'));
+        return $this->add(__('Seasons'), $url ?: route('admin.seasons.index'), 'o-calendar');
     }
 
-    public function toArray()
+    public function subscriptions(?string $url = null): Breadcrumb
+    {
+        return $this->add(__('Subscriptions'), $url ?: route('clubAdmin.subscriptions.index'), 'o-calendar');
+    }
+
+    public function tables(?string $url = null): Breadcrumb
+    {
+        return $this->add('Tables', $url ?: route('admin.tables.index'));
+    }
+
+    public function teams(?string $url = null): Breadcrumb
+    {
+        return $this->add('Teams', $url ?: route('admin.interclubs.teams'));
+    }
+
+    public function toArray(): array
     {
         return $this->items;
     }
 
-    public function tournament($tournament)
+    public function tournament(Tournament $tournament): Breadcrumb
     {
-        return $this->add($tournament->name, route('tournaments.show', $tournament));
+        return $this->add($tournament->name, route('admin.tournaments.live-center', $tournament));
     }
 
-    public function tournaments($url = null)
+    public function tournaments(?string $url = null): Breadcrumb
     {
-        return $this->add('Tournaments', $url ?: route('tournaments.index'));
+        return $this->add('Tournaments', $url ?: route('admin.tournaments.index'));
     }
 
-    public function trainings($url = null)
+    public function trainingPacks(?string $url = null): Breadcrumb
     {
-        return $this->add('Trainings', $url ?: route('trainings.index'));
+        return $this->add('Training Packs', $url ?: route('admin.trainings.index'));
     }
 
-    public function users($url = null)
+    public function trainings(?string $url = null): Breadcrumb
     {
-        return $this->add('Users', $url ?: route('users.index'));
+        return $this->add('Trainings', $url ?: route('admin.trainings.index'));
+    }
+
+    public function users(?string $url = null): Breadcrumb
+    {
+        return $this->add('Users', $url ?: route('admin.users.index'));
+    }
+
+    public function websiteArticles(?string $url = null): Breadcrumb
+    {
+        return $this->add(__('Articles'), $url ?: route('admin.website.articles.index'));
+    }
+
+    public function websiteContacts(?string $url = null): Breadcrumb
+    {
+        return $this->add(__('Contacts'), $url ?: route('admin.website.contacts.index'));
+    }
+
+    public function websiteEvents(?string $url = null): Breadcrumb
+    {
+        return $this->add(__('Events'), $url ?: route('admin.website.events.index'));
+    }
+
+    public function websiteSpams(?string $url = null): Breadcrumb
+    {
+        return $this->add(__('Spam'), $url ?: route('admin.website.spams.index'));
     }
 }

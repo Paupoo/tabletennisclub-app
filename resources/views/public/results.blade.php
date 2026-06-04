@@ -1,5 +1,4 @@
 <x-guest-layout title="Résultats - {{ config('app.name') }}">
-    <x-navigation :fixed="false" />
     
     <!-- Header -->
     <div class="relative h-auto pt-16 text-white flex items-center overflow-hidden">
@@ -7,24 +6,29 @@
         <div class="absolute inset-0">
             <img src="{{ asset('images/background_results.webp') }}" alt="Tennis table background" class="w-full h-full object-cover">
             <!-- Overlay avec votre dégradé + opacité -->
-            <div class="absolute inset-0 bg-gradient-to-br from-club-blue/85 via-club-blue/80 to-club-blue-light/85"></div>
+            <div class="absolute inset-0 bg-linear-to-br from-club-blue/85 via-club-blue/80 to-club-blue-light/85"></div>
         </div>
         <!-- Contenu -->
         <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-            <h1 class="text-4xl md:text-5xl font-bold mb-4 drop-shadow-lg">Résultats des compétitions</h1>
-            <p class="text-xl opacity-90 drop-shadow-md">Suivez les performances de nos équipes dans toutes les compétitions</p>
+            <h1 class="text-4xl md:text-5xl font-bold mb-4 drop-shadow-lg">{{ __('Competition Results') }}</h1>
+            <p class="text-xl opacity-90 drop-shadow-md">{{ __('Follow our teams\' performances across all competitions') }}</p>
         </div>
     </div>
 
     <!-- Season Filter -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" x-data="{ selectedSeason: '{{ $selectedSeason ?? '2024' }}' }">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <h2 class="text-2xl font-bold">Résultats des Équipes</h2>
+            <h2 class="text-2xl font-bold">{{ __('Team Results') }}</h2>
             <div class="flex items-center gap-2">
-                <label for="season" class="text-sm font-medium">Saison:</label>
-                <select x-model="selectedSeason" class="pr-8 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
-                    @foreach($seasons ?? ['2024', '2023', '2022'] as $season)
-                        <option value="{{ $season }}">{{ $season }}</option>
+                <label for="season" class="text-sm font-medium">Saison :</label>
+                <select
+                    id="season"
+                    onchange="window.location.href = '{{ route('results') }}?season=' + this.value"
+                    class="pr-8 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
+                    @foreach($seasons as $s)
+                        <option value="{{ $s->name }}" @selected($s->name === $effectiveSeasonName)>
+                            {{ $s->name }}
+                        </option>
                     @endforeach
                 </select>
             </div>
@@ -33,12 +37,32 @@
 
     <!-- Results Content -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
-        @forelse($teams ?? [] as $team)
-            <x-team-results :team="$team" />
+        @forelse($teamsByCategory ?? [] as $group)
+            @php
+                $catStyles = [
+                    'MEN'      => ['border' => 'border-blue-200',  'bg' => 'bg-blue-50',  'text' => 'text-blue-700',  'dot' => 'bg-blue-500'],
+                    'WOMEN'    => ['border' => 'border-pink-200',  'bg' => 'bg-pink-50',  'text' => 'text-pink-700',  'dot' => 'bg-pink-500'],
+                    'VETERANS' => ['border' => 'border-amber-200', 'bg' => 'bg-amber-50', 'text' => 'text-amber-700', 'dot' => 'bg-amber-500'],
+                ];
+                $style = $catStyles[$group['category']] ?? $catStyles['MEN'];
+            @endphp
+
+            {{-- Category separator --}}
+            <div class="flex items-center gap-4 mb-8 mt-10 first:mt-0">
+                <span class="inline-flex items-center gap-2 rounded-full {{ $style['bg'] }} border {{ $style['border'] }} px-5 py-2 shadow-xs">
+                    <span class="h-2.5 w-2.5 rounded-full {{ $style['dot'] }}"></span>
+                    <span class="text-base font-bold {{ $style['text'] }} tracking-wide">{{ $group['label'] }}</span>
+                </span>
+                <div class="flex-1 border-t {{ $style['border'] }}"></div>
+            </div>
+
+            @foreach($group['teams'] as $team)
+                <x-public.team-results :team="$team" />
+            @endforeach
         @empty
             <div class="text-center py-12 bg-gray-50 rounded-lg">
-                <h3 class="text-lg font-medium text-gray-900 mb-2">Aucun résultat disponible</h3>
-                <p class="text-gray-600">Les résultats seront publiés après les premières compétitions.</p>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">{{ __('No results available') }}</h3>
+                <p class="text-gray-600">{{ __('Results will be published after the first competitions.') }}</p>
             </div>
         @endforelse
     </div>

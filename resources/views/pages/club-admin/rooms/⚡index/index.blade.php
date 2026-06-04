@@ -1,0 +1,87 @@
+<x-slot:breadcrumbs>
+    <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
+</x-slot:breadcrumbs>
+
+<div>
+    <!-- HEADER -->
+    <x-header :title="__('Rooms')" separator progress-indicator>
+        <x-slot:actions>
+            @can('create', \App\Domains\ClubAdmin\Club\Models\Room::class)
+                <x-button :label="__('Create')" icon="o-plus" class="btn-primary" link="{{ route('admin.rooms.create') }}" />
+            @endcan
+        </x-slot:actions>
+    </x-header>
+
+    <div class="mt-6 grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+        @forelse ($rooms as $room)
+            <x-card title="{{ $room->name }}" shadow class="relative">
+
+                <x-slot:figure class="hidden lg:block">
+                    <img src="https://picsum.photos/200/300?random={{ $loop->iteration }}" alt=""
+                        class="w-full h-48 object-cover">
+                </x-slot:figure>
+
+                <div class="mb-2">
+                    <div class="flex items-center gap-2 mb-4">
+                        <x-admin.shared.tables-counter :total_tables="$room->tables()->count()" />
+                        <x-admin.shared.tables-capacity-counter :training_capacity="$room?->capacity_for_trainings" :interclub_capacity="$room?->capacity_for_interclubs" />
+                    </div>
+                    <div class="flex items-center gap-1 text-sm text-gray-500 mb-6">
+                        <x-icon name="o-map-pin" class="w-4 h-4" />
+                        <span>{{ $room->street }}, {{ $room->city_code }} {{ $room->city_name }}</span>
+                    </div>
+                    @foreach ($room->trainings as $training)
+                        <x-admin.shared.compact-event-preview link="#" :organizer="$training->trainer ? $training->trainer->first_name . ' ' . $training->trainer->last_name : null" :name="$training->type"
+                            :startDateTime="$training->start" type="training" />
+                    @endforeach
+                    @foreach ($room->interclubs as $interclub)
+                        <x-admin.shared.compact-event-preview link="#" :name="$interclub->week_number" :startDateTime="$interclub->start_date_time" type="interclub" />
+                    @endforeach
+                    @foreach ($room->tournaments as $tournament)
+                        @php
+                            $reg = $tournament->users->first()?->pivot;
+                            $regStatus = $reg?->registration_status;
+                            $isActive = in_array($regStatus, ['registered', 'confirmed', 'spot_offered']);
+                            $isWaiting = $regStatus === 'waiting';
+                            $isFull = $tournament->max_users > 0
+                                && $tournament->active_registrations_count >= $tournament->max_users;
+                            $remaining = $tournament->max_users > 0
+                                ? max(0, $tournament->max_users - $tournament->active_registrations_count)
+                                : null;
+                        @endphp
+                        <x-admin.shared.compact-event-preview link="#" :name="$tournament->name"
+                            :startDateTime="$tournament->start_date" :remainingSlots="$remaining" type="tournament">
+                        </x-admin.shared.compact-event-preview>
+                    @endforeach
+                </div>
+                <x-slot:actions>
+                    @can('update', $room)
+                        <x-button class="btn-primary btn-outline btn-sm" :label="__('Modify')"
+                            link="{{ route('admin.rooms.edit', $room) }}" />
+                    @endcan
+
+                    @can('delete', $room)
+                        <x-button class="btn-error btn-outline btn-sm" :label="__('Delete')"
+                            wire:click="confirmDeleteRoom({{ $room->id }})" />
+                    @endcan
+                </x-slot:actions>
+            </x-card>
+        @empty
+            <div class="col-span-full">
+                <x-empty-state
+                    icon="o-home"
+                    :heading="__('No rooms yet')"
+                    :message="__('Create the first room to start organizing your equipment.')"
+                    :buttonText="__('Create room')"
+                    href="{{ route('admin.rooms.create') }}" />
+            </div>
+        @endforelse
+    </div>
+
+    @can('create', \App\Domains\ClubAdmin\Club\Models\Room::class)
+        <x-confirm-modal model="deleteRoomModal" :title="__('Delete this room?')" :subtitle="__('Warning!')"
+            :confirmLabel="__('Delete')" confirmAction="deleteRoom">
+            <p>{{ __('Are you sure you want to delete this room? This action is irreversible.') }}</p>
+        </x-confirm-modal>
+    @endcan
+</div>

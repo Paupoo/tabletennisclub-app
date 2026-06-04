@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
-use App\Enums\Ranking;
-use App\Enums\Sex;
+use App\Domains\Shared\Enums\Gender;
+use App\Domains\Shared\Enums\Ranking;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
 
 class StoreUserRequest extends FormRequest
 {
@@ -33,7 +33,7 @@ class StoreUserRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
@@ -62,7 +62,7 @@ class StoreUserRequest extends FormRequest
                     Rule::in($rankings_enum),
                 ),
             ],
-            'sex' => ['required', Rule::in(collect(Sex::cases())->pluck('name'))],
+            'gender' => ['required', Rule::in(collect(Gender::cases())->pluck('name'))],
             'street' => ['nullable', 'string'],
             'team_id' => ['nullable', 'exists:teams,id'],
         ];

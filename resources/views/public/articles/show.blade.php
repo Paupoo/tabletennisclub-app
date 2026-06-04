@@ -1,7 +1,6 @@
-<x-guest-layout :title="($article['title'] ?? 'Article') . ' - Ace Table Tennis Club'">
-    <x-navigation :fixed="false" />
+<x-guest-layout :title="($article['title'] ?? 'NewsPost') . ' - Ace Table Tennis Club'">
 
-    <!-- Article Header -->
+    <!-- NewsPost Header -->
     <div class="bg-white">
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8">
             <!-- Breadcrumb -->
@@ -10,15 +9,15 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                 </svg>
-                <a href="{{ route('public.articles.index', $article) }}"
-                    class="hover:text-club-blue transition-colors">Actualités</a>
+                <a href="{{ route('public.clubPosts.index', $article) }}"
+                    class="hover:text-club-blue transition-colors">{{ __('News') }}</a>
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                 </svg>
-                <span class="text-gray-900">{{ Str::words($article['title'] ?? 'Article', 6, '[...]') }}</span>
+                <span class="text-gray-900">{{ Str::words($article['title'] ?? 'NewsPost', 6, '[...]') }}</span>
             </nav>
 
-            <!-- Article Meta -->
+            <!-- NewsPost Meta -->
             <div class="flex flex-wrap items-center gap-4 mb-6">
                 <span
                     class="@if (($article['category'] ?? '') === 'Compétition') bg-club-blue text-white @elseif(($article['category'] ?? '') === 'Formation') bg-club-yellow text-club-blue @else bg-gray-100 text-gray-800 @endif text-sm font-medium px-4 py-2 rounded-full">
@@ -79,12 +78,10 @@
         </div>
     @endif
 
-    <!-- Article Content -->
+    <!-- NewsPost Content -->
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="prose prose-lg max-w-none whitespace-pre-line">
-            <div class="text-gray-700 leading-relaxed">
-                {!! $article['content'] ?? '<p>Contenu de l\'article à venir...</p>' !!}
-            </div>
+        <div class="prose prose-lg max-w-none">
+            {!! $renderedContent ?? '<p>Contenu de l\'article à venir...</p>' !!}
         </div>
 
         <!-- Share -->
@@ -129,7 +126,7 @@
                 <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center">Articles Similaires</h2>
                 <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
                     @foreach ($relatedArticles as $relatedArticle)
-                        <x-news-card :article="$relatedArticle" />
+                        <x-public.news-card :article="$relatedArticle" />
                     @endforeach
                 </div>
             </div>
@@ -139,13 +136,13 @@
     <!-- Back to News -->
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div class="text-center">
-            <a href="{{ route('public.articles.index') }}"
+            <a href="{{ route('public.clubPosts.index') }}"
                 class="inline-flex items-center space-x-2 bg-club-blue text-white px-6 py-3 rounded-lg hover:bg-club-blue-light transition-colors font-semibold">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
                 </svg>
-                <span>Retour aux actualités</span>
+                <span>{{ __('Back to news') }}</span>
             </a>
         </div>
     </div>

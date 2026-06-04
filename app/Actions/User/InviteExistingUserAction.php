@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace App\Actions\User;
 
-use App\Http\Requests\StoreUserRequest;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Mail\InviteNewUserMail;
-use App\Models\User;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 
 class InviteExistingUserAction
 {
-    public static function handle(User $user)
+    public static function handle(User $user): RedirectResponse
     {
         $link = URL::temporarySignedRoute(
             'invitation.accept',

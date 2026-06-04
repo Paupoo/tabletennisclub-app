@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
-use App\Models\Table;
-use App\Models\User;
+use App\Domains\ClubAdmin\Club\Models\Table;
+use App\Domains\ClubAdmin\Users\Models\User;
 
 class TablePolicy
 {
@@ -29,6 +29,14 @@ class TablePolicy
      * Determine whether the user can delete the model.
      */
     public function delete(User $user, Table $table): bool
+    {
+        return $user->is_admin || $user->is_committee_member;
+    }
+
+    /**
+     * Determine whether the user can edit models.
+     */
+    public function edit(User $user): bool
     {
         return $user->is_admin || $user->is_committee_member;
     }

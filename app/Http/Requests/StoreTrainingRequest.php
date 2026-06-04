@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
-use App\Enums\Recurrence;
-use App\Enums\TrainingLevel;
-use App\Enums\TrainingType;
+use App\Domains\Shared\Enums\Recurrence;
+use App\Domains\Shared\Enums\TrainingLevel;
+use App\Domains\Shared\Enums\TrainingType;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -39,7 +40,7 @@ class StoreTrainingRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
@@ -95,6 +96,20 @@ class StoreTrainingRequest extends FormRequest
                 'required_if:type,' . TrainingType::SUPERVISED->name,
                 'integer',
                 'exists:users,id',
+            ],
+            'training_pack_id' => [
+                'nullable',
+                'integer',
+            ],
+            'training_pack_name' => [
+                'string',
+                'required_if:recurrence,' . Recurrence::DAILY->name,
+                'required_if:recurrence,' . Recurrence::WEEKLY->name,
+                'required_if:recurrence,' . Recurrence::BIWEEKLY->name,
+            ],
+            'training_pack_price' => [
+                'nullable',
+                'decimal:2',
             ],
             'type' => [
                 'required',

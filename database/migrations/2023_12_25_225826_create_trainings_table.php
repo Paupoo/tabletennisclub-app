@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use App\Enums\TrainingLevel;
-use App\Enums\TrainingType;
-use App\Models\Room;
-use App\Models\Season;
+use App\Domains\ClubAdmin\Club\Models\Room;
+use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Shared\Enums\TrainingLevel;
+use App\Domains\Shared\Enums\TrainingType;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;

@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
-use App\Enums\LeagueCategory;
-use App\Enums\LeagueLevel;
-use App\Enums\TeamName;
-use App\Models\Team;
+use App\Domains\Competitions\Interclub\Models\Team;
+use App\Domains\Shared\Enums\LeagueCategory;
+use App\Domains\Shared\Enums\LeagueLevel;
+use App\Domains\Shared\Enums\TeamName;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -54,7 +55,7 @@ class StoreOrUpdateTeamRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {

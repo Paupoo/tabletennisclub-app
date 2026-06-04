@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Listeners\Tournament;
 
-use App\Events\Tournament\UserUnregisteredFromTournament;
-use App\Models\Tournament;
-use App\Models\User;
-use App\Notifications\Tournament\UserUnregisteredFromTournament as TournamentUserUnregisteredFromTournament;
+use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Competitions\Tournament\Notifications\UserUnregisteredFromTournament as TournamentUserUnregisteredFromTournament;
+use App\Domains\Shared\Events\Tournament\UserUnregisteredFromTournament;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
 class UserUnregisteredToTournamentToTournament implements ShouldQueue

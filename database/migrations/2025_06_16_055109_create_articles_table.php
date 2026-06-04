@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Enums\ArticlesCategoryEnum;
-use App\Enums\ArticlesStatusEnum;
-use App\Models\User;
+use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\NewsPostCategoryEnum;
+use App\Domains\Shared\Enums\NewsPostStatusEnum;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -29,10 +29,10 @@ return new class extends Migration
             $table->string('title');
             $table->string('slug')->unique();
             $table->text('content');
-            $table->enum('category', ArticlesCategoryEnum::values());
+            $table->enum('category', NewsPostCategoryEnum::values());
             $table->string('image')->nullable();
             $table->foreignIdFor(User::class)->constrained()->cascadeOnDelete();
-            $table->enum('status', ArticlesStatusEnum::values())->default(ArticlesStatusEnum::DRAFT->value);
+            $table->enum('status', NewsPostStatusEnum::values())->default(NewsPostStatusEnum::DRAFT->value);
             $table->boolean('is_public')->default(false);
             $table->softDeletes();
             $table->timestamps();

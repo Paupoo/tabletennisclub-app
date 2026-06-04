@@ -1,8 +1,11 @@
 <?php
 
 declare(strict_types=1);
-use App\Models\User;
+
+use App\Domains\ClubAdmin\Users\Models\User;
 use Illuminate\Support\Facades\Hash;
+
+pest()->group('auth');
 
 test('correct password must be provided to update password', function (): void {
     $user = User::factory()->create();

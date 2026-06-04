@@ -13,7 +13,7 @@ trait CreateInterclub
             'opposite_club_id' => '2',
             'opposite_team_name' => 'G',
             'room_id' => '1',
-            'start_date_time' => now()->addDay()->format('Y-m-dTH:m'),
+            'start_date_time' => now()->addDay()->format('Y-m-d\TH:i'),
             'team_id' => '1',
         ];
     }
@@ -25,7 +25,7 @@ trait CreateInterclub
             'opposite_club_id' => '2',
             'opposite_team_name' => 'G',
             'room_id' => '1',
-            'start_date_time' => now()->addDay()->format('Y-m-dTH:m'),
+            'start_date_time' => now()->addDay()->format('Y-m-d\TH:i'),
             'team_id' => '1',
         ];
     }
@@ -36,7 +36,7 @@ trait CreateInterclub
             'opposite_club_id' => '2',
             'opposite_team_name' => 'G',
             'room_id' => null,
-            'start_date_time' => now()->addDay()->format('Y-m-dTH:m'),
+            'start_date_time' => now()->addDay()->format('Y-m-d\TH:i'),
             'team_id' => '1',
         ];
     }

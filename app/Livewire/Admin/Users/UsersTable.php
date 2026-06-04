@@ -4,186 +4,181 @@ declare(strict_types=1);
 
 namespace App\Livewire\Admin\Users;
 
-use App\Models\User;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Services\ForceList;
-use Exception;
 use Illuminate\Contracts\Database\Eloquent\Builder;
-use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
-use Livewire\Attributes\Url; // Ajout pour les URLs
 
 class UsersTable extends Component
 {
     use WithPagination;
 
-    // Utilisation d'Url attributes pour maintenir l'état dans l'URL
+    // --- Filtres et État de l'URL ---
     #[Url(as: 'competitor')]
     public string $competitor = '';
-    
+
     #[Url(as: 'per_page')]
     public int $perPage = 25;
-    
+
     #[Url(as: 'search')]
     public string $search = '';
-    
-    public ?int $selectedUserId = null;
-    
-    #[Url(as: 'sex')]
-    public string $sex = '';
-    
-    #[Url(as: 'sort_field')]
-    public string $sortByField = '';
-    
-    #[Url(as: 'sort_dir')]
-    public string $sortDirection = 'desc';
-    
-    #[Url(as: 'status')]
-    public string $status = '';
-    
-    protected ForceList $forceList;
-    public array $selectedItems = [];
+
     public bool $selectAll = false;
 
-    // Définir le nom de la page pour éviter les conflits
-    protected string $paginationView = 'custom-paginate';
+    // --- Propriétés de sélection (Manquantes précédemment) ---
+    public array $selectedItems = [];
+
+    public ?int $selectedUserId = null;
+
+    #[Url(as: 'gender')]
+    public string $sex = '';
+
+    #[Url(as: 'sort_field')]
+    public string $sortByField = '';
+
+    #[Url(as: 'sort_dir')]
+    public string $sortDirection = 'desc';
+
+    #[Url(as: 'status')]
+    public string $status = '';
+
+    protected ForceList $forceList;
+
     protected string $paginationTheme = 'tailwind';
 
+    // Injection de dépendances via boot
     public function boot(ForceList $forceList)
     {
         $this->forceList = $forceList;
     }
 
-    // Méthode pour s'assurer que la pagination utilise la bonne route
-    public function updatingPage($page)
-    {
-        $this->selectedItems = [];
-        $this->selectAll = false;
-    }
+    // --- Actions Groupées (Bulk Actions) ---
 
     public function bulkActivate()
     {
-        $this->authorize('update', Auth()->user());
+        $this->authorize('update', Auth::user());
 
-        User::whereIn('id', $this->selectedItems)->update([
-            'is_active' => true,
-        ]);
-        session()->flash('success', __(count($this->selectedItems) . ' member(s) have been activated.'));
+        User::whereIn('id', $this->selectedItems)->update(['is_active' => true]);
+
+        session()->flash('success', count($this->selectedItems) . ' membre(s) activé(s).');
         $this->resetSelection();
-        // Utiliser redirect au lieu de redirectRoute pour éviter les problèmes de méthode
-        return redirect()->route('users.index');
     }
 
     public function bulkDeactivate()
     {
-        $this->authorize('update', Auth()->user());
+        $this->authorize('update', Auth::user());
 
-        User::whereIn('id', $this->selectedItems)->update([
-            'is_active' => false,
-        ]);
-        session()->flash('warning', __(count($this->selectedItems) . ' member(s) have been deactivated.'));
+        User::whereIn('id', $this->selectedItems)->update(['is_active' => false]);
+
+        session()->flash('warning', count($this->selectedItems) . ' membre(s) désactivé(s).');
         $this->resetSelection();
-        return redirect()->route('users.index');
-    }
-
-    public function bulkPaid()
-    {
-        $this->authorize('update', Auth()->user());
-
-        User::whereIn('id', $this->selectedItems)->update([
-            'has_paid' => true,
-        ]);
-        session()->flash('success', __(count($this->selectedItems) . ' member(s) have been marked paid.'));
-        $this->resetSelection();
-        return redirect()->route('users.index');
-    }
-
-    public function bulkUnpaid()
-    {
-        $this->authorize('update', Auth()->user());
-
-        User::whereIn('id', $this->selectedItems)->update([
-            'has_paid' => false,
-        ]);
-        session()->flash('warning', __(count($this->selectedItems) . ' member(s) have marked unpaid.'));
-        $this->resetSelection();
-        return redirect()->route('users.index');
     }
 
     public function bulkDelete()
     {
-        $this->authorize('delete', Auth()->user());
+        $this->authorize('delete', Auth::user());
 
         User::whereIn('id', $this->selectedItems)->delete();
-        session()->flash('success', __(count($this->selectedItems) . ' member(s) have been deleted.'));
+
+        session()->flash('success', count($this->selectedItems) . ' membre(s) supprimé(s).');
         $this->resetSelection();
-        return redirect()->route('users.index');
-    }
-
-    // Méthode helper pour réinitialiser la sélection
-    private function resetSelection(): void
-    {
-        $this->selectedItems = [];
-        $this->selectAll = false;
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy()
-    {
-        $user = User::findOrFail($this->selectedUserId);
-        $this->authorize('delete', [Auth()->user(), $user]);
-        
-        try {
-            // Vérifier les contraintes métier
-            if ($user->tournaments()->whereIn('status', ['draft', 'open', 'pending'])->count() > 0) {
-                session()->flash('error', __('Cannot delete ' . $user->first_name . ' ' . $user->last_name . ' because he subscribed to one or more tournaments'));
-                return redirect()->route('users.index');
-            }
-            
-            $user->delete();
-            $this->forceList->setOrUpdateAll();
-            session()->flash('warning', __('User ' . $user->first_name . ' ' . $user->last_name . ' has been deleted'));
-            return redirect()->route('users.index');
-            
-        } catch (QueryException $e) {
-            session()->flash('error', __('The user could not be deleted'));
-            return redirect()->route('users.index');
-        }
     }
 
     public function render()
     {
-        $users = $this->getUsers()
-            ->paginate($this->perPage);
-
         return view('livewire.admin.users.users-table', [
-            'users' => $users,
+            'users' => $this->getUsers()->paginate($this->perPage),
             'user_model' => User::class,
         ]);
     }
+
+    public function sortBy($field)
+    {
+        if ($this->sortByField === $field) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortDirection = 'asc';
+        }
+
+        $this->sortByField = $field;
+        $this->resetPage();
+    }
+
+    public function updatedCompetitor(): void
+    {
+        $this->resetPage();
+        $this->resetSelection();
+    }
+
+    public function updatedPerPage(): void
+    {
+        $this->resetPage();
+        $this->resetSelection();
+    }
+
+    // --- Cycle de vie et Filtres ---
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+        $this->resetSelection();
+    }
+
+    // --- Gestion de la sélection ---
+
+    public function updatedSelectAll($value): void
+    {
+        if ($value) {
+            // Sélectionne uniquement les IDs de la page actuelle (convertis en string pour les checkboxes)
+            $this->selectedItems = $this->getUsers()
+                ->paginate($this->perPage)
+                ->pluck('id')
+                ->map(fn ($id) => (string) $id)
+                ->toArray();
+        } else {
+            $this->selectedItems = [];
+        }
+    }
+
+    public function updatedSelectedItems(): void
+    {
+        // Si on décoche un item manuellement, on décoche le "Tout sélectionner"
+        $this->selectAll = false;
+    }
+
+    public function updatedSex(): void
+    {
+        $this->resetPage();
+        $this->resetSelection();
+    }
+
+    public function updatedStatus(): void
+    {
+        $this->resetPage();
+        $this->resetSelection();
+    }
+
+    // --- Logique métier (Query) ---
 
     private function getUsers(): Builder
     {
         $query = User::query();
 
-        // Application des filtres de recherche
-        if (!empty($this->search)) {
+        if (! empty($this->search)) {
             $query->searchTerms($this->search);
         }
 
-        // Filtre competitor - vérification explicite des valeurs
         if ($this->competitor !== '' && $this->competitor !== 'all') {
             $query->where('is_competitor', $this->competitor === '1');
         }
 
-        // Filtre sex - vérification que la valeur correspond aux enum
-        if (!empty($this->sex) && $this->sex !== 'all') {
-            $query->where('sex', $this->sex);
+        if (! empty($this->sex) && $this->sex !== 'all') {
+            $query->where('gender', $this->sex);
         }
 
-        // Filtres de statut - logique améliorée
         switch ($this->status) {
             case 'active':
                 $query->where('is_active', true);
@@ -199,79 +194,24 @@ class UsersTable extends Component
                 break;
         }
 
-        // Gestion du tri
         if (empty($this->sortByField)) {
-            // Tri par défaut
             $query->orderBy('is_competitor', 'desc')
-                  ->orderBy('force_list')
-                  ->orderBy('ranking')
-                  ->orderBy('last_name')
-                  ->orderBy('first_name')
-                  ->with('teams');
+                ->orderBy('force_list')
+                ->orderBy('ranking')
+                ->orderBy('last_name')
+                ->orderBy('first_name');
         } else {
-            // Tri personnalisé
+            // Note: attention au tri sur les relations (ex: team_id->name),
+            // cela nécessite une jointure SQL pour fonctionner.
             $query->orderBy($this->sortByField, $this->sortDirection);
         }
 
-        return $query;
+        return $query->with('teams');
     }
 
-    public function sortBy($field)
+    private function resetSelection(): void
     {
-        if ($this->sortByField === $field) {
-            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
-        } else {
-            $this->sortDirection = 'asc';
-        }
-
-        $this->sortByField = $field;
-        $this->resetPage(); // Retourner à la page 1 lors du tri
-    }
-
-    // Méthode supprimée car elle duplique la logique de searchTerms
-    // private function applySearch($query, string $search): void { ... }
-
-    public function updatedSelectAll(): void
-    {
-        if ($this->selectAll) {
-            $this->selectedItems = $this->getUsers()
-                ->paginate($this->perPage)
-                ->pluck('id')
-                ->toArray();
-        } else {
-            $this->selectedItems = [];
-        }
-    }
-
-    public function updatedSelectedItems(): void
-    {
+        $this->selectedItems = [];
         $this->selectAll = false;
-    }
-
-    // Réinitialiser la pagination quand on change le nombre par page
-    public function updatedPerPage(): void
-    {
-        $this->resetPage();
-    }
-
-    // Méthodes pour réinitialiser la pagination lors des changements de filtres
-    public function updatedSearch(): void
-    {
-        $this->resetPage();
-    }
-
-    public function updatedCompetitor(): void
-    {
-        $this->resetPage();
-    }
-
-    public function updatedSex(): void
-    {
-        $this->resetPage();
-    }
-
-    public function updatedStatus(): void
-    {
-        $this->resetPage();
     }
 }

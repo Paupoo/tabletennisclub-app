@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Livewire\Public\Articles;
 
-use App\Enums\ArticlesCategoryEnum;
-use App\Enums\ArticlesStatusEnum;
-use App\Models\Article;
+use App\Domains\Shared\Enums\NewsPostCategoryEnum;
+use App\Domains\Shared\Enums\NewsPostStatusEnum;
+use App\Domains\ClubPosts\Models\NewsPost;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -65,8 +65,8 @@ class ArticleList extends Component
 
     public function getArticlesProperty(): LengthAwarePaginator
     {
-        $query = Article::query()
-            ->where('status', ArticlesStatusEnum::PUBLISHED->value);
+        $query = NewsPost::query()
+            ->where('status', NewsPostStatusEnum::PUBLISHED->value);
 
         $this->applyFilters($query);
 
@@ -76,10 +76,10 @@ class ArticleList extends Component
 
     public function mount(): void
     {
-        $this->categories = collect(ArticlesCategoryEnum::cases());
+        $this->categories = collect(NewsPostCategoryEnum::cases());
         $this->years = $this->loadYears();
         $this->months = $this->loadMonths();
-        $this->categories = collect(ArticlesCategoryEnum::cases())
+        $this->categories = collect(NewsPostCategoryEnum::cases())
             ->pluck('value');
     }
 
@@ -87,6 +87,7 @@ class ArticleList extends Component
     {
         return view('livewire.public.articles.articles-list', [
             'articles' => $this->articles,
+            'clubPosts' => $this->articles,
             'categories' => $this->categories,
             'years' => $this->years,
             'months' => $this->months,
@@ -104,7 +105,7 @@ class ArticleList extends Component
         \Log::info('Month: ' . ($this->month ?: 'empty'));
 
         // Test direct de la requête
-        $testQuery = Article::query()->where('status', 'published');
+        $testQuery = NewsPost::query()->where('status', 'published');
         $this->applyFilters($testQuery);
         \Log::info('SQL Query: ' . $testQuery->toSql());
         \Log::info('Bindings: ' . json_encode($testQuery->getBindings()));
@@ -153,10 +154,14 @@ class ArticleList extends Component
 
     private function loadYears(): Collection
     {
-        return Article::query()
-            ->selectRaw('YEAR(created_at) as year')
-            ->distinct()
-            ->orderBy('year', 'desc')
-            ->pluck('year');
+
+        return NewsPost::query()
+            ->whereNotNull('created_at')
+            ->get(['created_at'])
+            ->pluck('created_at')
+            ->map(fn ($date) => $date->year)
+            ->unique()
+            ->sortDesc()
+            ->values();
     }
 }

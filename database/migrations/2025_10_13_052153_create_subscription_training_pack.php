@@ -1,0 +1,34 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\Trainings\Models\TrainingPack;
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('subscription_training_pack');
+    }
+
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('subscription_training_pack', function (Blueprint $table) {
+            $table->id();
+            $table->foreignIdFor(Subscription::class)->constrained()->cascadeOnDelete();
+            $table->foreignIdFor(TrainingPack::class)->constrained()->cascadeOnDelete();
+            $table->boolean('discount')->default(false);
+            $table->timestamps();
+        });
+    }
+};

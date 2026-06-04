@@ -1,6 +1,5 @@
 <x-guest-layout title="Événements - Ace Table Tennis Club">
-    <x-navigation :fixed="false" />
-    
+
     <!-- Header -->
     <div class="relative h-auto pt-16 text-white flex items-center overflow-hidden">
         <!-- Image de fond -->
@@ -9,33 +8,33 @@
             <!-- Overlay avec votre dégradé + opacité -->
             <div class="absolute inset-0 bg-gradient-to-br from-club-blue/85 via-club-blue/80 to-club-blue-light/85"></div>
         </div>
-        
+
         <!-- Contenu -->
         <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-            <h1 class="text-4xl md:text-5xl font-bold mb-4 drop-shadow-lg">Événements à venir</h1>
-            <p class="text-xl opacity-90 drop-shadow-md">Rejoignez-nous pour des tournois, des séances d'entraînement et des événements communautaires</p>
+            <h1 class="text-4xl md:text-5xl font-bold mb-4 drop-shadow-lg">{{ __('Upcoming events') }}</h1>
+            <p class="text-xl opacity-90 drop-shadow-md">{{ __('Join us for tournaments, training sessions and community events') }}</p>
         </div>
     </div>
 
-    <!-- Event Filters -->
+    <!-- EventPost Filters -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" x-data="{ selectedCategory: 'all' }">
         <div class="flex flex-wrap gap-2 mb-8">
-            <button @click="selectedCategory = 'all'" 
+            <button @click="selectedCategory = 'all'"
                     :class="selectedCategory === 'all' ? 'bg-club-blue text-white' : 'bg-white text-gray-700 hover:bg-gray-50'"
                     class="px-4 py-2 rounded-lg border transition-colors">
                 Tous les Événements
             </button>
-            <button @click="selectedCategory = 'tournament'" 
+            <button @click="selectedCategory = 'tournament'"
                     :class="selectedCategory === 'tournament' ? 'bg-club-blue text-white' : 'bg-white text-gray-700 hover:bg-gray-50'"
                     class="px-4 py-2 rounded-lg border transition-colors">
                 Tournois
             </button>
-            <button @click="selectedCategory = 'training'" 
+            <button @click="selectedCategory = 'training'"
                     :class="selectedCategory === 'training' ? 'bg-club-blue text-white' : 'bg-white text-gray-700 hover:bg-gray-50'"
                     class="px-4 py-2 rounded-lg border transition-colors">
                 Entraînement
             </button>
-            <button @click="selectedCategory = 'club-life'" 
+            <button @click="selectedCategory = 'club-life'"
                     :class="selectedCategory === 'club-life' ? 'bg-club-blue text-white' : 'bg-white text-gray-700 hover:bg-gray-50'"
                     class="px-4 py-2 rounded-lg border transition-colors">
                 Vie du club
@@ -45,10 +44,10 @@
         <!-- Events Grid -->
         <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
             @forelse($events ?? [] as $event)
-                <x-event-card :event="$event" />
+                <x-public.event-card :event="$event" />
             @empty
                 <!-- Default events if no data provided -->
-                <x-event-card :event="[
+                <x-public.event-card :event="[
                     'category' => 'tournament',
                     'title' => 'Championnat du Nouvel An',
                     'description' => 'Championnat annuel du club ouvert à tous les membres. Catégories simple et double disponibles.',
@@ -58,8 +57,8 @@
                     'price' => '25€ d\'inscription',
                     'icon' => '🏆'
                 ]" />
-                
-                <x-event-card :event="[
+
+                <x-public.event-card :event="[
                     'category' => 'training',
                     'title' => 'Atelier Techniques Avancées',
                     'description' => 'Maîtrisez les services avancés, les effets et le jeu tactique avec notre entraîneur professionnel.',
@@ -69,8 +68,8 @@
                     'price' => 'Max 8 participants',
                     'icon' => '🎯'
                 ]" />
-                
-                <x-event-card :event="[
+
+                <x-public.event-card :event="[
                     'category' => 'club-life',
                     'title' => 'Soirée Sociale Mensuelle',
                     'description' => 'Jeux décontractés, pizza et amusement ! Parfait pour rencontrer d\'autres membres et se détendre.',

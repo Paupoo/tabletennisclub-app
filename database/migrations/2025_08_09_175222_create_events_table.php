@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Domains\Shared\Enums\ClubEventTypeEnum;
+use App\Domains\Shared\Enums\EventPostStatusEnum;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -23,23 +25,38 @@ return new class extends Migration
     {
         Schema::create('events', function (Blueprint $table) {
             $table->id();
+
+            // Polymorphisme
+            $table->morphs('eventable'); // eventable_type + eventable_id
+
+            // Type d'événement (pour faciliter les requêtes)
+            $table->enum('type', ClubEventTypeEnum::values());
+
+            // Informations communes
             $table->string('title');
             $table->text('description');
-            $table->enum('category', ['club-life', 'tournament', 'training'])->default('club-life');
-            $table->enum('status', ['draft', 'published', 'archived'])->default('draft');
+            $table->enum('status', EventPostStatusEnum::values())->default(EventPostStatusEnum::DRAFT->value);
+
+            // Date et heure (communes à tous)
             $table->date('event_date');
             $table->time('start_time');
             $table->time('end_time')->nullable();
+
+            // Lieu (commun)
             $table->string('location');
-            $table->string('price')->nullable(); // Peut être "Gratuit", "25€", etc.
+
+            // Informations optionnelles
+            $table->string('price')->nullable();
             $table->string('icon', 10)->default('📅');
             $table->integer('max_participants')->nullable();
-            $table->text('notes')->nullable(); // Notes privées pour les admins
-            $table->boolean('featured')->default(false); // Événement mis en avant
+            $table->text('notes')->nullable();
+            $table->boolean('featured')->default(false);
+
             $table->timestamps();
-            // Index pour optimiser les requêtes courantes
+
+            // Index pour optimiser les requêtes
             $table->index(['status', 'event_date']);
-            $table->index(['category', 'status']);
+            $table->index(['type', 'status']);
         });
     }
 };

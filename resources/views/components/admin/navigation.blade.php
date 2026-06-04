@@ -1,159 +1,108 @@
-<nav x-data="{ open: false }" class="bg-white border-b border-gray-100 dark:bg-gray-800 dark:border-gray-700">
-    <!-- Primary Navigation Menu -->
-    <div class="px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-            <div class="flex">
-                <!-- Logo -->
-                <div class="flex items-center shrink-0">
-                    <a href="{{ route('home') }}">
-                        <x-logo class="block w-auto text-gray-800 fill-current h-9 dark:text-gray-200" />
-                    </a>
-                </div>
+@php $unreadNotificationsCount = auth()->user()->unreadNotifications()->count(); @endphp
 
-                <!-- Navigation Links -->
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" wire:navigate>
-                        {{ __('Dashboard') }}
-                    </x-nav-link>
-                </div>
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('admin.users.index')" :active="request()->routeIs('users.index')" wire:navigate>
-                        {{ __('Members') }}
-                    </x-nav-link>
-                </div>
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('teams.index')" :active="request()->routeIs('teams.index')" wire:navigate>
-                        {{ __('Teams') }}
-                    </x-nav-link>
-                </div>
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('rooms.index')" :active="request()->routeIs('rooms.index')" wire:navigate>
-                        {{ __('Rooms') }}
-                    </x-nav-link>
-                </div>
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('tables.index')" :active="request()->routeIs('tables.index')" wire:navigate>
-                        {{ __('Tables') }}
-                    </x-nav-link>
-                </div>
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('trainings.index')" :active="request()->routeIs('trainings.index')" wire:navigate>
-                        {{ __('Trainings') }}
-                    </x-nav-link>
-                </div>
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('interclubs.index')" :active="request()->routeIs('interclubs.index')" wire:navigate>
-                        {{ __('Matches') }}
-                    </x-nav-link>
-                </div>
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('tournaments.index')" :active="request()->routeIs('tournaments.index')" wire:navigate>
-                        {{ __('Tournaments') }}
-                    </x-nav-link>
+<x-menu activate-by-route class="mt-10">
+    <x-menu-sub icon="o-user" title="{{ $user->first_name }}">
+        {{-- L'avatar et l'email s'affichent mieux ici dans un menu-item spécial ou le titre du sub-menu --}}
+        <x-slot:title>
+            <div class="flex items-center gap-3">
+                <div class="overflow-hidden truncate">
+                    <div class="truncate font-bold">{{ $user->first_name }}</div>
+                    <div class="truncate text-[10px] opacity-50">{{ $user->email }}</div>
                 </div>
             </div>
+        </x-slot:title>
 
-            <!-- Settings Dropdown -->
-            <div class="hidden sm:flex sm:items-center sm:ms-6">
-                <x-dropdown align="right" width="48">
-                    <x-slot name="trigger">
-                        <button class="inline-flex items-center px-3 py-2 text-sm font-medium leading-4 text-gray-500 transition duration-150 ease-in-out bg-white border border-transparent rounded-md dark:text-gray-400 dark:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300 focus:outline-hidden">
-                            <div>{{ Auth::user()->first_name}} {{ Auth::user()->last_name }}</div>
+        <x-menu-item icon="o-user" link="{{ route('admin.user.profile', $user) }}"
+            :title="__('My profile')" />
+        <x-menu-item icon="o-users" link="{{ route('admin.user.teams', $user) }}" :title="__('My team(s)')" />
+        <x-menu-item icon="o-star" link="{{ route('admin.user.event-subscription', $user) }}" :title="__('My registrations')" />
+        <x-menu-item icon="o-calendar-days" link="{{ route('admin.user.calendar', $user) }}" :title="__('My Calendar')" />
+        <x-menu-item icon="o-academic-cap" link="{{ route('admin.user.registration-management', $user) }}" :title="__('Affiliation & Trainings')" />
+        <x-menu-item icon="o-cog-8-tooth" :link="route('admin.user.settings', $user)" :title="__('Settings')" />
+        <x-menu-separator />
+        <livewire:actions.logout />
+    </x-menu-sub>
 
-                            <div class="ms-1">
-                                <svg class="w-4 h-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                </svg>
-                            </div>
-                        </button>
-                    </x-slot>
+    <x-menu-separator />
 
-                    <x-slot name="content">
-                        <x-dropdown-link :href="route('profile.edit')" wire:navigate>
-                            {{ __('Profile') }}
-                        </x-dropdown-link>
+    <x-menu-item
+        icon="o-bell"
+        link="{{ route('notifications.index') }}"
+        :title="__('Notifications')"
+        :badge="$unreadNotificationsCount > 0 ? (string) $unreadNotificationsCount : null"
+        badge-classes="badge-error"
+    />
 
-                        <!-- Authentication -->
-                        <form method="POST" action="{{ route('logout') }}">
-                            @csrf
+    <x-menu-separator />
+    @if(Auth()->user()->is_admin || Auth()->user()->is_committee_member )
+    <x-menu-sub icon="o-building-office" :title="__('Club Settings')">
+        <x-menu-item icon="o-identification" link="{{ route('admin.club-info') }}" :title="__('Informations')" />
+        <x-menu-item icon="o-calendar" link="{{ route('admin.seasons.index') }}" :title="__('Seasons')" />
+        <x-menu-item icon="o-building-office-2" link="{{ route('admin.rooms.index') }}" :title="__('Rooms')" />
+        <x-menu-item icon="o-squares-2x2" link="{{ route('admin.tables.index') }}" :title="__('Tables')" />
+    </x-menu-sub>
+                    
+    <x-menu-sub icon="o-inbox-stack" :title="__('Members Admin')">
+        <x-menu-item icon="o-users" link="{{ route('admin.users.index') }}" :title="__('Users')" />
+        <x-menu-item icon="o-credit-card" link="{{ route('admin.users.registrations') }}" :title="__('Registrations')" />
+    </x-menu-sub>
 
-                            <x-dropdown-link :href="route('logout')"
-                                    onclick="event.preventDefault();
-                                                this.closest('form').submit();">
-                                {{ __('Log Out') }}
-                            </x-dropdown-link>
-                        </form>
-                    </x-slot>
-                </x-dropdown>
-            </div>
+    <x-menu-sub icon="o-banknotes" :title="__('Treasury')">
+        <x-menu-item icon="o-credit-card" link="{{ route('admin.treasury.payments') }}" :title="__('Payments')" />
+        <x-menu-item icon="o-building-library" link="{{ route('admin.treasury.transactions') }}" :title="__('Bank Transactions')" />
+        <x-menu-item icon="o-currency-euro" link="{{ route('admin.treasury.cash') }}" :title="__('Cash Register')" />
+    </x-menu-sub>
+    <x-menu-sub icon="o-cog-6-tooth" link="#" :title="__('Club')">
+    </x-menu-sub>
 
-            <!-- Hamburger -->
-            <div class="flex items-center -me-2 sm:hidden">
-                <button @click="open = ! open" class="inline-flex items-center justify-center p-2 text-gray-400 transition duration-150 ease-in-out rounded-md dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-900 focus:outline-hidden focus:bg-gray-100 dark:focus:bg-gray-900 focus:text-gray-500 dark:focus:text-gray-400">
-                    <svg class="w-6 h-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                        <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                        <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-        </div>
-    </div>
+    <x-menu-separator />
+    @endif
 
-    <!-- Responsive Navigation Menu -->
-    <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
-        <div class="pt-2 pb-3 space-y-1">
-            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" wire:navigate>
-                {{ __('Dashboard') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('admin.users.index')" :active="request()->routeIs('users.index')" wire:navigate>
-                {{ __('Members') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('roles.index')" :active="request()->routeIs('roles.index')" wire:navigate>
-                {{ __('Roles') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('teams.index')" :active="request()->routeIs('teams.index')" wire:navigate>
-                {{ __('Teams') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('rooms.index')" :active="request()->routeIs('rooms.index')" wire:navigate>
-                {{ __('Rooms') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('tables.index')" :active="request()->routeIs('tables.index')" wire:navigate>
-                {{ __('Tables') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('home')" :active="request()->routeIs('home')" wire:navigate>
-                {{ __('Trainings') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('interclubs.index')" :active="request()->routeIs('interclubs.index')" wire:navigate>
-                {{ __('Matches') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('tournaments.index')" :active="request()->routeIs('tournaments.index')" wire:navigate>
-                {{ __('Tournaments') }}
-            </x-responsive-nav-link>
-        </div>
+    <x-menu-sub icon="o-academic-cap" :title="__('Trainings')">
+        @if($user->is_committee_member || $user->is_admin)
+        <x-menu-item icon="o-tag" link="{{ route('admin.trainings.index') }}" :title="__('Training Packs')" />
+        @endif
+        @if($user->is_coach)
+        <x-menu-item icon="o-calendar-days" link="{{ route('coach.trainings') }}" :title="__('My sessions')" />
+        @endif
+    </x-menu-sub>
 
-        <!-- Responsive Settings Options -->
-        <div class="pt-4 pb-1 border-t border-gray-200 dark:border-gray-600">
-            <div class="px-4">
-                <div class="text-base font-medium text-gray-800 dark:text-gray-200">{{ Auth::user()->name }}</div>
-                <div class="text-sm font-medium text-gray-500">{{ Auth::user()->email }}</div>
-            </div>
+    <x-menu-sub icon="o-calendar-days" link="#" :title="__('Interclubs')">
+        @if($user->is_competitor)
+        <x-menu-item icon="o-calendar" link="{{ route('admin.interclubs.my-matches') }}" :title="__('My matches')" />
+        @endif
+        @if($user->is_admin || $user->is_committee_member || $user->captainOf)
+        <x-menu-item icon="o-user-group" link="{{ route('admin.interclubs.captain-selection') }}" :title="__('Selections')" />
+        <x-menu-item icon="o-squares-2x2" link="{{ route('admin.interclubs.results') }}" :title="__('Results')" />
+        @endif
+        @if($user->is_admin || $user->is_committee_member)
+        <x-menu-item icon="o-calendar-days" link="{{ route('admin.interclubs.interclubs') }}" :title="__('Planning')" />
+        <x-menu-sub icon="o-cog-6-tooth" :title="__('Configuration saison')">
+            <x-menu-item icon="o-identification" link="{{ route('admin.interclubs.teams') }}" :title="__('Nos équipes')" />
+            <x-menu-item icon="o-table-cells" link="{{ route('admin.interclubs.division-setup') }}" :title="__('Adversaires')" />
+            <x-menu-item icon="o-building-office-2" link="{{ route('admin.interclubs.clubs') }}" :title="__('Clubs')" />
+        </x-menu-sub>
+        @endif
+    </x-menu-sub>
 
-            <div class="mt-3 space-y-1">
-                <x-responsive-nav-link :href="route('profile.edit')" wire:navigate>
-                    {{ __('Profile') }}
-                </x-responsive-nav-link>
+    @if($user->is_committee_member || $user->is_admin)
+    <x-menu-sub icon="o-star" :title="__('Events')">
+        <x-menu-item icon="o-calendar-days" link="{{ route('admin.meetings.index') }}" :title="__('Meetings')" />
+        <x-menu-item icon="o-trophy" link="{{ route('admin.tournaments.index') }}" :title="__('Tournaments')" />
+    </x-menu-sub>
+    
+    <x-menu-separator />
+    @endif
 
-                <!-- Authentication -->
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
+    @if($user->is_admin || $user->is_committee_member)
+    <x-menu-sub icon="o-globe-alt" :title="__('Website')">
+        <x-menu-item icon="o-newspaper" link="{{ route('admin.website.articles.index') }}" :title="__('Articles')" />
+        <x-menu-item icon="o-envelope-open" link="{{ route('admin.website.contacts.index') }}" :title="__('Contacts')" />
+        <x-menu-item icon="o-shield-exclamation" link="{{ route('admin.website.spams.index') }}" :title="__('Spam')" />
+        <x-menu-item icon="o-calendar-days" link="{{ route('admin.website.events.index') }}" :title="__('Events')" />
+    </x-menu-sub>
+    @endif
 
-                    <x-responsive-nav-link :href="route('logout')"
-                            onclick="event.preventDefault();
-                                        this.closest('form').submit();">
-                        {{ __('Log Out') }}
-                    </x-responsive-nav-link>
-                </form>
-            </div>
-        </div>
-    </div>
-</nav>
+    <x-menu-separator />
+
+</x-menu>

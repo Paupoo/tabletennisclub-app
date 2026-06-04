@@ -1,0 +1,36 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Actions\ClubAdmin\Payments;
+
+use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Mail\PaymentInvitationEmail;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Mail;
+
+class SendPayementInvite
+{
+    public function __invoke(Payment $payment): RedirectResponse
+    {
+        // Generate the QRCode
+        $QRGenerator = new GeneratePaymentQR($payment);
+        $payment = $payment->load('payable.user');
+
+        // Send an email with payment instructions
+        Mail::to($payment->payable->user)
+            ->send(
+                new PaymentInvitationEmail($payment
+                    ->load('payable.user', 'payable.season'))
+            );
+
+        // Increment invitation counter
+        $payment->invitation_counter++;
+        $payment->save();
+
+        return back()
+            ->with([
+                'success' => __('The payment invitation has been sent'),
+            ]);
+    }
+}

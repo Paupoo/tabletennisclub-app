@@ -1,0 +1,459 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Domains\ClubAdmin\Users\Models;
+
+// use Illuminate\Contracts\Auth\MustVerifyEmail;
+
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubPosts\Models\NewsPost;
+use App\Domains\Competitions\Interclub\Models\Club;
+use App\Domains\Competitions\Interclub\Models\Interclub;
+use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Competitions\Interclub\Models\Team;
+use App\Domains\Competitions\Tournament\Models\Pool;
+use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Meetings\Models\Meeting;
+use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\Gender;
+use App\Domains\Trainings\Models\Training;
+use App\Observers\UserObserver;
+use Carbon\Carbon;
+use Database\Factories\Domains\ClubAdmin\Users\Models\UserFactory;
+use Eloquent;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Database\Query\Builder;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
+use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Notifications\DatabaseNotificationCollection;
+use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
+use Laravel\Sanctum\PersonalAccessToken;
+
+/**
+ * @property int $id
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property bool $is_active
+ * @property bool $is_admin
+ * @property bool $is_committee_member
+ * @property bool $is_competitor
+ * @property bool $has_paid
+ * @property string $email
+ * @property string|null $email_verified_at
+ * @property string $password
+ * @property string|null $remember_token
+ * @property string $first_name
+ * @property string $last_name
+ * @property string $sex
+ * @property string|null $phone_number
+ * @property string|null $iban
+ * @property \Illuminate\Support\Carbon|null $birthdate
+ * @property string|null $street
+ * @property string|null $city_code
+ * @property string|null $city_name
+ * @property string $ranking
+ * @property string|null $licence
+ * @property int|null $force_list
+ * @property int $club_id
+ * @property-read Team|null $captainOf
+ * @property-read Club|null $club
+ * @property-read Collection<int, Interclub> $interclubs
+ * @property-read int|null $interclubs_count
+ * @property-read DatabaseNotificationCollection<int, DatabaseNotification> $notifications
+ * @property-read int|null $notifications_count
+ * @property-read Collection<int, Pool> $pools
+ * @property-read int|null $pools_count
+ * @property-read Collection<int, Team> $teams
+ * @property-read int|null $teams_count
+ * @property-read Collection<int, PersonalAccessToken> $tokens
+ * @property-read int|null $tokens_count
+ * @property-read Collection<int, Tournament> $tournaments
+ * @property-read int|null $tournaments_count
+ * @property-read Collection<int, Training> $trainings
+ * @property-read int|null $trainings_count
+ * @method static UserFactory factory($count = null, $state = [])
+ * @method static EloquentBuilder<static>|User newModelQuery()
+ * @method static EloquentBuilder<static>|User newQuery()
+ * @method static EloquentBuilder<static>|User query()
+ * @method static EloquentBuilder<static>|User search($value)
+ * @method static EloquentBuilder<static>|User unregisteredUsers($tournament)
+ * @method static EloquentBuilder<static>|User whereBirthdate($value)
+ * @method static EloquentBuilder<static>|User whereCityCode($value)
+ * @method static EloquentBuilder<static>|User whereCityName($value)
+ * @method static EloquentBuilder<static>|User whereClubId($value)
+ * @method static EloquentBuilder<static>|User whereCreatedAt($value)
+ * @method static EloquentBuilder<static>|User whereEmail($value)
+ * @method static EloquentBuilder<static>|User whereEmailVerifiedAt($value)
+ * @method static EloquentBuilder<static>|User whereFirstName($value)
+ * @method static EloquentBuilder<static>|User whereForceList($value)
+ * @method static EloquentBuilder<static>|User whereHasDebt($value)
+ * @method static EloquentBuilder<static>|User whereId($value)
+ * @method static EloquentBuilder<static>|User whereIsActive($value)
+ * @method static EloquentBuilder<static>|User whereIsAdmin($value)
+ * @method static EloquentBuilder<static>|User whereIsCommitteeMember($value)
+ * @method static EloquentBuilder<static>|User whereIsCompetitor($value)
+ * @method static EloquentBuilder<static>|User whereLastName($value)
+ * @method static EloquentBuilder<static>|User whereLicence($value)
+ * @method static EloquentBuilder<static>|User wherePassword($value)
+ * @method static EloquentBuilder<static>|User wherePhoneNumber($value)
+ * @method static EloquentBuilder<static>|User whereRanking($value)
+ * @method static EloquentBuilder<static>|User whereRememberToken($value)
+ * @method static EloquentBuilder<static>|User whereSex($value)
+ * @method static EloquentBuilder<static>|User whereStreet($value)
+ * @method static EloquentBuilder<static>|User whereUpdatedAt($value)
+ * @property string|null $avatar_url
+ * @property Gender $gender
+ * @property int $emails_notifications
+ * @property string|null $family_id
+ * @property int $is_family_owner
+ * @property string|null $theme
+ * @property string|null $guardian_phone_number
+ * @property string|null $photo
+ * @property CommitteeRolesEnum|null $committee_role
+ * @property bool $is_coach
+ * @property string|null $medical_certificate_path
+ * @property string|null $parental_consent_path
+ * @property-read Collection<int, NewsPost> $articles
+ * @property-read int|null $articles_count
+ * @property-read Collection<int, User> $dependents
+ * @property-read int|null $dependents_count
+ * @property-read string $full_name
+ * @property-read Collection<int, User> $guardians
+ * @property-read int|null $guardians_count
+ * @property-read Collection<int, Meeting> $meetings
+ * @property-read int|null $meetings_count
+ * @property-read Collection<int, Season> $seasons
+ * @property-read int|null $seasons_count
+ * @property-read Collection<int, Subscription> $subscriptions
+ * @property-read int|null $subscriptions_count
+ * @method static EloquentBuilder<static>|User affiliatedForCurrentSeason()
+ * @method static EloquentBuilder<static>|User hasPaid()
+ * @method static EloquentBuilder<static>|User isActive()
+ * @method static EloquentBuilder<static>|User isCompetitor()
+ * @method static EloquentBuilder<static>|User searchTerms(string $search)
+ * @method static EloquentBuilder<static>|User whereAvatarUrl($value)
+ * @method static EloquentBuilder<static>|User whereCommitteeRole($value)
+ * @method static EloquentBuilder<static>|User whereEmailsNotifications($value)
+ * @method static EloquentBuilder<static>|User whereFamilyId($value)
+ * @method static EloquentBuilder<static>|User whereGender($value)
+ * @method static EloquentBuilder<static>|User whereGuardianPhoneNumber($value)
+ * @method static EloquentBuilder<static>|User whereHasPaid($value)
+ * @method static EloquentBuilder<static>|User whereIban($value)
+ * @method static EloquentBuilder<static>|User whereIsCoach($value)
+ * @method static EloquentBuilder<static>|User whereIsFamilyOwner($value)
+ * @method static EloquentBuilder<static>|User whereMedicalCertificatePath($value)
+ * @method static EloquentBuilder<static>|User whereParentalConsentPath($value)
+ * @method static EloquentBuilder<static>|User wherePhoto($value)
+ * @method static EloquentBuilder<static>|User whereTheme($value)
+ * @mixin Eloquent
+ */
+#[ObservedBy(UserObserver::class)]
+class User extends Authenticatable implements MustVerifyEmail
+{
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array<string, string>
+     */
+    protected $casts = [
+        'is_active' => 'boolean',
+        'is_admin' => 'boolean',
+        'is_committee_member' => 'boolean',
+        'is_competitor' => 'boolean',
+        'has_paid' => 'boolean',
+        'is_coach' => 'boolean',
+        'email' => 'string',
+        'password' => 'hashed',
+        'first_name' => 'string',
+        'last_name' => 'string',
+        'gender' => Gender::class,
+        'phone_number' => 'string',
+        'guardian_phone_number' => 'string',
+        'photo' => 'string',
+        'birthdate' => 'datetime:d-m-Y',
+        'street' => 'string',
+        'city_code' => 'string',
+        'city_name' => 'string',
+        'ranking' => 'string',
+        'licence' => 'string',
+        'force_list' => 'integer',
+        'avatar_url' => 'string',
+        'theme' => 'string',
+        'committee_role' => CommitteeRolesEnum::class,
+        'deleted_at' => 'datetime',
+        'last_invited_at' => 'datetime',
+        'email_verified_at' => 'datetime',
+        'gdpr_erasure_requested_at' => 'datetime',
+    ];
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
+    protected $fillable = [
+        'birthdate',
+        'city_code',
+        'city_name',
+        'email',
+        'first_name',
+        'has_paid',
+        'is_active',
+        'is_admin',
+        'is_committee_member',
+        'is_competitor',
+        'last_name',
+        'licence',
+        'password',
+        'phone_number',
+        'iban',
+        'guardian_phone_number',
+        'photo',
+        'ranking',
+        'gender',
+        'street',
+        'avatar_url',
+        'theme',
+        'committee_role',
+        'force_list',
+        'is_coach',
+        'medical_certificate_path',
+        'parental_consent_path',
+        'updated_by',
+        'last_invited_at',
+        'gdpr_erasure_requested_at',
+    ];
+
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var array<int, string>
+     */
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    public function articles(): HasMany
+    {
+        return $this->hasMany(NewsPost::class);
+    }
+
+    public function captainOf(): HasOne
+    {
+        return $this->hasOne(Team::class, 'captain_id');
+    }
+
+    public function club(): BelongsTo
+    {
+        return $this->belongsTo(Club::class);
+    }
+
+    public function getFullNameAttribute(): string
+    {
+        return "{$this->first_name} {$this->last_name}";
+    }
+
+    public function guardians(): BelongsToMany
+    {
+        return $this->belongsToMany(Guardian::class, 'guardian_user');
+    }
+
+    public function hasGuardian(): bool
+    {
+        return $this->guardians()->exists();
+    }
+
+    public function interclubs(): BelongsToMany
+    {
+        return $this->belongsToMany(Interclub::class)
+            ->withPivot('is_subscribed', 'is_selected', 'has_played')
+            ->as('registration')
+            ->withTimestamps();
+    }
+
+    public function invitationStatus(): string
+    {
+        if ($this->email_verified_at !== null) {
+            return 'active';
+        }
+
+        if ($this->last_invited_at === null) {
+            return 'not_invited';
+        }
+
+        return $this->last_invited_at->greaterThan(now()->subHours(48))
+            ? 'pending'
+            : 'expired';
+    }
+
+    public function isAffiliatedForCurrentSeason(): bool
+    {
+        $season = Season::current();
+        if (! $season) {
+            return false;
+        }
+
+        return $this->subscriptions()
+            ->where('season_id', $season->id)
+            ->whereIn('status', ['pending', 'confirmed', 'paid'])
+            ->exists();
+    }
+
+    public function isMinor(): bool
+    {
+        return $this->birthdate !== null && Carbon::parse($this->birthdate)->age < 18;
+    }
+
+    public function meetings(): BelongsToMany
+    {
+        return $this->belongsToMany(Meeting::class)
+            ->withPivot(['status', 'invitation_sent_at', 'response_at'])
+            ->withTimestamps();
+    }
+
+    public function pools(): BelongsToMany
+    {
+        return $this->belongsToMany(Pool::class, 'pool_user');
+    }
+
+    public function requiresGuardian(): bool
+    {
+        return $this->isMinor() && ! $this->hasGuardian();
+    }
+
+    public function scopeAffiliatedForCurrentSeason(EloquentBuilder $query): EloquentBuilder
+    {
+        $seasonId = Season::current()?->id;
+
+        return $query->whereHas('subscriptions', fn (EloquentBuilder $q) => $q
+            ->where('season_id', $seasonId)
+            ->whereIn('status', ['pending', 'confirmed', 'paid'])
+        );
+    }
+
+    public function scopeHasPaid(Builder $query): Builder
+    {
+        return $query->where('has_paid', true);
+    }
+
+    public function scopeIsActive(Builder $query): Builder
+    {
+        return $query->where('is_active', true);
+    }
+
+    public function scopeIsCompetitor(EloquentBuilder $query): Builder
+    {
+        return $query->where('is_competitor', true);
+    }
+
+    /** Scopes */
+
+    /**
+     * Scope search to search by last or first name
+     */
+    public function scopeSearch(Builder $query, string $value): void
+    {
+        $query->where('last_name', 'like', '%' . $value . '%')
+            ->orWhere('first_name', 'like', '%' . $value . '%');
+    }
+
+    /**
+     * This scope allows searching for users by terms in their first or last name.
+     *
+     * @param  mixed  $query
+     */
+    public function scopeSearchTerms(Builder $query, string $search): void
+    {
+        $terms = collect(explode(' ', strtolower($search)))
+            ->filter();
+
+        foreach ($terms as $term) {
+            $query->where(function ($subQuery) use ($term): void {
+                $subQuery->whereRaw('LOWER(first_name) LIKE ?', ["%{$term}%"])
+                    ->orWhereRaw('LOWER(last_name) LIKE ?', ["%{$term}%"]);
+            });
+        }
+    }
+
+    public function scopeUnregisteredUsers(Builder $query, Tournament $tournament)
+    {
+        return $query->whereDoesntHave('tournaments', function ($query) use ($tournament): void {
+            $query->where('tournaments.id', $tournament->id);
+        })->orderBy('last_name')->orderBy('first_name');
+    }
+
+    public function seasons(): BelongsToMany
+    {
+        return $this->belongsToMany(Season::class, 'subscriptions')
+            ->withPivot('amount_due', 'is_competitive')
+            ->withTimestamps();
+    }
+
+    /**
+     * Calculate user's age and store it into ->age attribute.
+     */
+    public function setAge(): self
+    {
+        if ($this->birthdate !== null) {
+            $this->setAttribute('age', Carbon::parse($this->birthdate)->age);
+        } else {
+            $this->setAttribute('age', 'Unknown');
+        }
+
+        return $this;
+    }
+
+    /**
+     * Capitalize 1 first letter of each words
+     */
+    public function setFirstNameAttribute(string $value): string
+    {
+        $cleaned_name = mb_convert_case($value, MB_CASE_TITLE);
+
+        return $this->attributes['first_name'] = $cleaned_name;
+    }
+
+    /**
+     * Capitalize 1 first letter of each words
+     */
+    public function setLastNameAttribute(string $value): string
+    {
+        $cleaned_name = mb_convert_case($value, MB_CASE_TITLE);
+
+        return $this->attributes['last_name'] = $cleaned_name;
+    }
+
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(Subscription::class);
+    }
+
+    public function teams(): BelongsToMany
+    {
+        return $this->belongsToMany(Team::class);
+    }
+
+    public function tournaments(): BelongsToMany
+    {
+        return $this->belongsToMany(Tournament::class, 'tournament_user');
+    }
+
+    public function trainings(): BelongsToMany
+    {
+        return $this->belongsToMany(Training::class)->withPivot('status')->withTimestamps();
+    }
+}

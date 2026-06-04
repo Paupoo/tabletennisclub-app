@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use App\Enums\InterclubResult;
-use App\Models\League;
-use App\Models\Room;
-use App\Models\Season;
+use App\Domains\ClubAdmin\Club\Models\Room;
+use App\Domains\Competitions\Interclub\Models\League;
+use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Shared\Enums\InterclubResult;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -40,8 +40,8 @@ return new class extends Migration
             $table->foreignIdFor(Season::class)->nullable();
             $table->timestamps();
 
-            $table->foreign('visited_team_id')->references('id')->on('users');
-            $table->foreign('visiting_team_id')->references('id')->on('users');
+            $table->foreign('visited_team_id')->references('id')->on('teams')->nullOnDelete();
+            $table->foreign('visiting_team_id')->references('id')->on('teams')->nullOnDelete();
         });
     }
 };

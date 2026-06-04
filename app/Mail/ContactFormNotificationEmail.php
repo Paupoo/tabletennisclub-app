@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Mail;
 
-use App\Enums\ContactReasonEnum;
-use App\Models\Contact;
+use App\Domains\ClubAdmin\Contact\Models\Contact;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;
+use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
@@ -25,7 +25,7 @@ class ContactFormNotificationEmail extends Mailable implements ShouldQueue
     /**
      * Create a new message instance.
      */
-    public function __construct(private Contact $contact)
+    public function __construct(private readonly Contact $contact)
     {
         //
     }
@@ -33,7 +33,7 @@ class ContactFormNotificationEmail extends Mailable implements ShouldQueue
     /**
      * Get the attachments for the message.
      *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
+     * @return array<int, Attachment>
      */
     public function attachments(): array
     {
@@ -72,7 +72,7 @@ class ContactFormNotificationEmail extends Mailable implements ShouldQueue
                 address: config('mail.from.address'),
                 name: config('app.name') ?? config('mail.from.name')
             ),
-            subject: 'Formulaire de contact - ' . ($this->contact->interest->getLabel() ?? 'Demande générale'),
+            subject: 'Formulaire de contact - ' . ($this->contact->interest->getLabel() ?: 'Demande générale'),
         );
     }
 }

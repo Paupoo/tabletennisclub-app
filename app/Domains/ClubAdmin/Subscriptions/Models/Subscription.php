@@ -1,0 +1,333 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Domains\ClubAdmin\Subscriptions\Models;
+
+use App\Contracts\DescribesPayment;
+use App\Contracts\PayableInterface;
+use App\Contracts\SubscriptionState;
+use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Shared\States\Payments\CancelledState;
+use App\Domains\Shared\States\Payments\PaidState;
+use App\Domains\Shared\States\Payments\PendingState;
+use App\Domains\Shared\States\Payments\RefundedState;
+use App\Domains\Shared\States\Payments\ValidatedState;
+use App\Domains\Trainings\Models\TrainingPack;
+use Database\Factories\Domains\ClubAdmin\Subscriptions\Models\SubscriptionFactory;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+/**
+ * @property int $id
+ * @property int $season_id
+ * @property int $user_id
+ * @property string $status
+ * @property bool $is_competitive
+ * @property bool $has_other_family_members
+ * @property int $trainings_count
+ * @property float $subscription_price
+ * @property float $training_unit_price
+ * @property float $amount_due
+ * @property float $amount_paid
+ * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Payment> $payments
+ * @property-read int|null $payments_count
+ * @property-read Season $season
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, TrainingPack> $trainingPacks
+ * @property-read int|null $training_packs_count
+ * @property-read User $user
+ * @method static Builder<static>|Subscription active()
+ * @method static \Database\Factories\Domains\ClubAdmin\Subscriptions\Models\SubscriptionFactory factory($count = null, $state = [])
+ * @method static Builder<static>|Subscription forSeason(\App\Domains\Competitions\Interclub\Models\Season|int $season)
+ * @method static Builder<static>|Subscription newModelQuery()
+ * @method static Builder<static>|Subscription newQuery()
+ * @method static Builder<static>|Subscription onlyTrashed()
+ * @method static Builder<static>|Subscription pendingPayment()
+ * @method static Builder<static>|Subscription query()
+ * @method static Builder<static>|Subscription whereAmountDue($value)
+ * @method static Builder<static>|Subscription whereAmountPaid($value)
+ * @method static Builder<static>|Subscription whereCreatedAt($value)
+ * @method static Builder<static>|Subscription whereDeletedAt($value)
+ * @method static Builder<static>|Subscription whereHasOtherFamilyMembers($value)
+ * @method static Builder<static>|Subscription whereId($value)
+ * @method static Builder<static>|Subscription whereIsCompetitive($value)
+ * @method static Builder<static>|Subscription whereSeasonId($value)
+ * @method static Builder<static>|Subscription whereStatus($value)
+ * @method static Builder<static>|Subscription whereSubscriptionPrice($value)
+ * @method static Builder<static>|Subscription whereTrainingUnitPrice($value)
+ * @method static Builder<static>|Subscription whereTrainingsCount($value)
+ * @method static Builder<static>|Subscription whereUpdatedAt($value)
+ * @method static Builder<static>|Subscription whereUserId($value)
+ * @method static Builder<static>|Subscription withTrashed(bool $withTrashed = true)
+ * @method static Builder<static>|Subscription withoutTrashed()
+ * @mixin \Eloquent
+ */
+class Subscription extends Model implements DescribesPayment, PayableInterface
+{
+    /** @use HasFactory<SubscriptionFactory> */
+    use HasFactory, SoftDeletes;
+
+    protected $casts = [
+        'is_competitive' => 'boolean',
+        'has_other_family_members' => 'boolean',
+        'trainings_count' => 'integer',
+    ];
+
+    protected $fillable = [
+        'user_id',
+        'season_id',
+        'is_competitive',
+        'has_other_family_members',
+        'trainings_count',
+        'amount_due',
+        'amount_paid',
+        'subscription_price',
+        'training_unit_price',
+        'status',
+    ];
+
+    protected $table = 'subscriptions';
+
+    private SubscriptionState $state;
+
+    // ==================== Observers ====================
+    public static function booted(): void
+    {
+        static::deleting(function (self $subscription): void {
+            $subscription->payments()->delete();
+        });
+    }
+
+    // ==================== UI helpers ====================
+    public function availableTransitions(): array
+    {
+        return $this->getCurrentState()->availableTransitions();
+    }
+
+    /**
+     * Calcule le solde restant à payer
+     */
+    public function balanceDue(): float
+    {
+        return max(0, $this->amount_due - $this->totalPaid());
+    }
+
+    public function cancel(): void
+    {
+        $this->getCurrentState()->cancel($this);
+    }
+
+    public function canGeneratePayment(): bool
+    {
+        return $this->getCurrentState()->canGeneratePayment($this);
+    }
+
+    /**
+     * Check if a user can subscribe to this season (i.e. no active subscription for this season and season is active)
+     */
+    public function canUserSubscribe(User $user): bool
+    {
+        if (! $this->is_active) {
+            return false;
+        }
+
+        return ! Subscription::where('user_id', $user->id)
+            ->where('season_id', $this->id)
+            ->whereNotIn('status', ['cancelled'])
+            ->exists();
+    }
+
+    // ==================== Status ====================
+    public function confirm(): void
+    {
+        $this->getCurrentState()->confirm($this);
+    }
+
+    // ==================== Other ====================
+    public function getAmountDue(): int|float
+    {
+        return $this->getAttribute('amount_due');
+    }
+
+    public function getPayerName(): string
+    {
+        return $this->user?->full_name ?? '—';
+    }
+
+    /**
+     * @return array{type: string, name: string}
+     */
+    public function getPaymentLabel(): array
+    {
+        return [
+            'type' => __('Subscription'),
+            'name' => $this->season?->name ?? '—',
+        ];
+    }
+
+    // Optionnel : helper pour obtenir le status actuel
+    public function getStatus(): string
+    {
+        return $this->status;
+    }
+
+    /**
+     * Vérifie si la subscription est complètement payée
+     */
+    public function isFullyPaid(): bool
+    {
+        return $this->balanceDue() <= 0.01; // Tolérance de 1 centime
+    }
+
+    /**
+     * Vérifie si la subscription est dans un état terminal
+     */
+    public function isTerminal(): bool
+    {
+        return in_array($this->status, ['paid', 'canceled', 'refunded'], true);
+    }
+
+    public function markAsPaid(): void
+    {
+        $this->getCurrentState()->markAsPaid($this);
+    }
+
+    /**
+     * Tous les paiements associés à cette subscription
+     */
+    public function payments(): MorphMany
+    {
+        return $this->morphMany(Payment::class, 'payable');
+    }
+
+    public function refund(): void
+    {
+        $this->getCurrentState()->refund($this);
+    }
+
+    /**
+     * Scope pour récupérer les subscriptions actives (payées)
+     */
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('status', 'paid');
+    }
+
+    // ==================== Scopes ====================
+
+    /**
+     * Scope pour récupérer les subscriptions d'une saison
+     */
+    public function scopeForSeason(Builder $query, int|Season $season): Builder
+    {
+        $seasonId = $season instanceof Season ? $season->id : $season;
+
+        return $query->where('season_id', $seasonId);
+    }
+
+    /**
+     * Scope pour récupérer les subscriptions en attente de paiement
+     */
+    public function scopePendingPayment(Builder $query): Builder
+    {
+        return $query->whereIn('status', ['pending', 'confirmed']);
+    }
+
+    // ==================== Relations ====================
+
+    public function season(): BelongsTo
+    {
+        return $this->belongsTo(Season::class);
+    }
+
+    public function setState(SubscriptionState $state): void
+    {
+        $this->status = $state->getStatus();
+        $this->save();
+    }
+
+    public function subscriptionPrice(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?int $value): float => round(($value ?? 0) / 100, 2),
+            set: fn (int|float $value): int => (int) $value * 100,
+        );
+    }
+
+    // ==================== Others ====================
+
+    /**
+     * Calcule le total payé via tous les payments
+     */
+    public function totalPaid(): float
+    {
+        return (float) $this->payments()
+            ->whereIn('status', ['paid', 'refunded'])
+            ->sum('amount_paid');
+    }
+
+    public function trainingPacks(): BelongsToMany
+    {
+        return $this->belongsToMany(TrainingPack::class)
+            ->withPivot(['status', 'waitlist_position', 'confirmation_deadline', 'discount'])
+            ->withTimestamps();
+    }
+
+    public function unconfirm(): void
+    {
+        $this->getCurrentState()->unconfirm($this);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    // ==================== Accessors/Mutators ====================
+    protected function amountDue(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?int $value): float => round(($value ?? 0) / 100, 2),
+            set: fn (int|float $value): int => (int) ($value * 100),
+        );
+    }
+
+    protected function amountPaid(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?int $value): float => round(($value ?? 0) / 100, 2),
+            set: fn (int|float $value): int => (int) ($value * 100),
+        );
+    }
+
+    protected function trainingUnitPrice(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?int $value): float => round(($value ?? 0) / 100, 2),
+            set: fn (float|int $value): int => (int) ($value * 100),
+        );
+    }
+
+    private function getCurrentState(): SubscriptionState
+    {
+        return match ($this->status) {
+            'pending' => new PendingState,
+            'confirmed' => new ValidatedState,
+            'paid' => new PaidState,
+            'refunded' => new RefundedState,
+            'cancelled' => new CancelledState,
+            default => new PendingState,
+        };
+    }
+}

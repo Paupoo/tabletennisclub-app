@@ -24,6 +24,20 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        // Expire waitlist confirmation (48h) + payment deadlines (72h) + send daily reminders.
+        $schedule->command('tournament:process-deadlines')->hourly();
+
+        // Expire unconfirmed training waitlist offers (48h) and promote next waiter.
+        $schedule->command('training:process-deadlines')->hourly();
+
+        // Close registrations for tournaments whose deadline has passed.
+        $schedule->command('tournament:close-registrations')->dailyAt('00:05');
+
+        // Send weekly refund reminder to treasurer + secretary every Monday at 08:00.
+        $schedule->command('payment:send-refund-reminder')->weeklyOn(1, '08:00');
+
+        // On July 1st, ensure the upcoming two seasons are provisioned (+1 and +2).
+        // Safe to run any time — idempotent, creates only what is missing.
+        $schedule->command('season:provision')->yearlyOn(7, 1, '06:00');
     }
 }

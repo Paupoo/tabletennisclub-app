@@ -1,0 +1,93 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Domains\ClubPosts\Models;
+
+use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\NewsPostCategoryEnum;
+use App\Domains\Shared\Enums\NewsPostStatusEnum;
+use Illuminate\Contracts\Database\Query\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+/**
+ * @property int $id
+ * @property string $title
+ * @property string $slug
+ * @property string $content
+ * @property NewsPostCategoryEnum $category
+ * @property string|null $image
+ * @property int $user_id
+ * @property NewsPostStatusEnum $status
+ * @property bool $is_public
+ * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read User $user
+ * @method static \Database\Factories\Domains\ClubPosts\Models\NewsPostFactory factory($count = null, $state = [])
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NewsPost newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NewsPost newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NewsPost onlyTrashed()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NewsPost query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NewsPost search(string $value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NewsPost whereCategory($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NewsPost whereContent($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NewsPost whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NewsPost whereDeletedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NewsPost whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NewsPost whereImage($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NewsPost whereIsPublic($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NewsPost whereSlug($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NewsPost whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NewsPost whereTitle($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NewsPost whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NewsPost whereUserId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NewsPost withTrashed(bool $withTrashed = true)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|NewsPost withoutTrashed()
+ * @mixin \Eloquent
+ */
+class NewsPost extends Model
+{
+    use HasFactory, SoftDeletes;
+
+    protected $casts = [
+        'title' => 'string',
+        'slug' => 'string',
+        'content' => 'string',
+        'category' => NewsPostCategoryEnum::class,
+        'image' => 'string',
+        'status' => NewsPostStatusEnum::class,
+        'is_public' => 'boolean',
+        'user_id' => 'integer',
+    ];
+
+    protected $fillable = [
+        'title',
+        'slug',
+        'content',
+        'category',
+        'image',
+        'status',
+        'is_public',
+        'user_id',
+    ];
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
+    public function scopeSearch(Builder $query, string $value): void
+    {
+        $query->where('title', 'like', '%' . $value . '%')
+            ->orWhere('content', 'like', '%' . $value . '%');
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+}

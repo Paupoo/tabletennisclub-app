@@ -11,19 +11,21 @@
     @livewireStyles
     @if(app()->environment('production'))
     <script defer src="https://stats.cttottigniesblocry.be/umami-script" data-website-id="9d9befdc-3f9d-4ece-aab7-dc2858457005"></script>
+    <script defer src="https://stats.cttottigniesblocry.be/recorder.js" data-website-id="9d9befdc-3f9d-4ece-aab7-dc2858457005" data-sample-rate="0.2" data-mask-level="moderate" data-max-duration="300000"></script>
     @endif
 </head>
 
 <body class="bg-white text-gray-900 relative" x-data="{ mobileMenuOpen: false }">
+
     <div x-data="scrollAnimations">
 
-        <x-navigation />
+        <x-public.navigation />
 
         <main>
             {{ $slot }}
         </main>
 
-        <x-footer />
+        <x-public.footer />
     </div>
     @livewireScripts
 </body>

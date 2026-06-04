@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__laravel-boost__last-error",
+      "mcp__laravel-boost__browser-logs",
+      "mcp__laravel-boost__search-docs",
+      "Bash(vendor/bin/pint *)",
+      "Bash(php /tmp/fix_missing_trait.php)",
+      "Bash(php add_all_breadcrumbs.php)"
+    ]
+  }
+}

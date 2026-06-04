@@ -32,7 +32,7 @@
 @if($contact->message)
 ---
 
-### 💬 Votre message :
+### Votre message :
 
 > *"{{ $contact->message }}"*
 
@@ -40,7 +40,7 @@
 
 ---
 
-### 📧 Nous contacter :
+### Nous contacter :
 
 N'hésitez pas à nous contacter si vous avez des questions. Nous sommes là pour vous accompagner dans votre projet sportif !
 Une erreur, une précision à ajouter ? Pas problème, répondez simplement à cet email pour préciser votre demande.
@@ -56,11 +56,11 @@ Une erreur, une précision à ajouter ? Pas problème, répondez simplement à c
 
 ---
 
-Sportivement,  
+Sportivement,
 **L'équipe de {{ config('app.name') }}**
 
 ---
 
-*Cet email a été envoyé automatiquement suite à votre demande de contact.*  
+*Cet email a été envoyé automatiquement suite à votre demande de contact.*
 *Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer ce message.*
 </x-mail::message>

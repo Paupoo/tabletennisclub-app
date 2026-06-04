@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Services\Team;
 
-use App\Enums\LeagueCategory;
-use App\Enums\LeagueLevel;
-use App\Models\Club;
-use App\Models\Season;
-use App\Models\Team;
-use App\Models\User;
+use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Club;
+use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Competitions\Interclub\Models\Team;
+use App\Domains\Shared\Enums\LeagueCategory;
+use App\Domains\Shared\Enums\LeagueLevel;
 
 class TeamService
 {

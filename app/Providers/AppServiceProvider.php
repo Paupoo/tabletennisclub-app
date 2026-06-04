@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Domains\Competitions\Interclub\Services\InterclubService;
+use App\Domains\Trainings\Services\TrainingBuilder;
+use App\Domains\Trainings\Services\TrainingDateGenerator;
 use App\Services\ForceList;
-use App\Services\InterclubService;
-use App\Services\TrainingBuilder;
-use App\Services\TrainingDateGenerator;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\ServiceProvider;
 
@@ -18,7 +19,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Prevent lazy loading in non-production environments to catch N+1 queries early
+        if ($this->app->environment() !== 'production') {
+            Model::preventLazyLoading();
+        }
+
         Paginator::defaultView('custom-paginate');
     }
 

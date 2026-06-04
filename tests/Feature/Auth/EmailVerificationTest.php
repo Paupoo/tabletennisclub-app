@@ -1,11 +1,14 @@
 <?php
 
 declare(strict_types=1);
-use App\Models\User;
+
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\URL;
+
+pest()->group('auth');
 
 test('email can be verified', function (): void {
     $user = User::factory()->create([

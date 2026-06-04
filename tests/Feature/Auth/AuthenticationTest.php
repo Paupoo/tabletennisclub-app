@@ -1,8 +1,11 @@
 <?php
 
 declare(strict_types=1);
-use App\Models\User;
+
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Providers\RouteServiceProvider;
+
+pest()->group('auth');
 
 test('login screen can be rendered', function (): void {
     $response = $this->get('/login');

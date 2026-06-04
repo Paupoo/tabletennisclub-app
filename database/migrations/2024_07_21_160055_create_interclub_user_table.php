@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Models\Interclub;
-use App\Models\User;
+use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Interclub;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;

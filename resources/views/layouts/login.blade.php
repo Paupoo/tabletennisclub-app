@@ -9,6 +9,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @if(app()->environment('production'))
     <script defer src="https://stats.cttottigniesblocry.be/umami-script" data-website-id="9d9befdc-3f9d-4ece-aab7-dc2858457005"></script>
+    <script defer src="https://stats.cttottigniesblocry.be/recorder.js" data-website-id="9d9befdc-3f9d-4ece-aab7-dc2858457005" data-sample-rate="0.2" data-mask-level="moderate" data-max-duration="300000"></script>
     @endif
 </head>
 
@@ -64,30 +65,9 @@
 
             <!-- Info supplémentaire -->
             <div class="mt-8 text-center">
-                @if(!request()->routeIs('register'))
                 <p class="text-sm text-gray-600 dark:text-gray-400">
-                    Pas encore membre ?
-                    <a href="{{ route('register') }}" class="font-medium text-club-blue dark:text-club-yellow hover:underline transition-colors duration-200">
-                        Rejoignez notre club !
-                    </a>
-                </p>
-                @else
-                <p class="mt-1 text-sm text-center text-gray-600 dark:text-gray-400">
-                    @if(request()->routeIs('login') )
                     {{ __('Connection to your member space') }}
-                    @elseif (request()->routeIs('register'))
-                    {{ __('Note that by registering, you consent to share some private data with us.') }}
-                    <br>
-                    {{ __('We commit to never share your data with any third party, ever.') }}
-                    <br>
-                    {{ __('We commit to respect best practices to encrypt your data and keep it safe the best we can.') }}
-                    <br>
-                    {{ __('Upon request or should you leave us, we commit to delete fully your data.') }}
-                    <br>
-                    {{ __('Should we be hacked or should our policy change, we will warn you via an official email.') }}
-                    @endif
                 </p>
-                @endif
             </div>
         </div>
 

@@ -17,5 +17,11 @@ parameters:
             identifier: argument.type
             message: '#expects view-string\|null, string given\.#'
 
+        # larastan over-asserts non-null on belongsTo/first()/find()/morphTo,
+        # so it flags defensive `?->` before `??` as unnecessary. The FKs are
+        # genuinely nullable; the nullsafe access is correct. Cosmetic-only
+        # rule that can never hide a real bug.
+        - identifier: nullsafe.neverNull
+
 #    excludePaths:
 #        - ./*/*/FileToBeExcluded.php

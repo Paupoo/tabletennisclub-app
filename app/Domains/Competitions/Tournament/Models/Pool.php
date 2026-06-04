@@ -28,7 +28,6 @@ use Illuminate\Support\Carbon;
  * @property-read int|null $tournamentmatches_count
  * @property-read Collection<int, User> $users
  * @property-read int|null $users_count
- *
  * @method static PoolFactory factory($count = null, $state = [])
  * @method static Builder<static>|Pool newModelQuery()
  * @method static Builder<static>|Pool newQuery()
@@ -38,7 +37,8 @@ use Illuminate\Support\Carbon;
  * @method static Builder<static>|Pool whereName($value)
  * @method static Builder<static>|Pool whereTournamentId($value)
  * @method static Builder<static>|Pool whereUpdatedAt($value)
- *
+ * @property-read Collection<int, \App\Domains\Competitions\Tournament\Models\TournamentPair> $pairs
+ * @property-read int|null $pairs_count
  * @mixin Eloquent
  */
 class Pool extends Model

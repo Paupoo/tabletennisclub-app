@@ -46,8 +46,8 @@ function makeUser(int $id = 99, string $email = 'admin@example.com'): User
 // Suite : sendCustom()
 // ─────────────────────────────────────────────────────────────
 
-describe('sendCustom()', function () {
-    beforeEach(function () {
+describe('sendCustom()', function (): void {
+    beforeEach(function (): void {
         Mail::fake();
 
         $this->service = new ContactEmailService;
@@ -56,7 +56,7 @@ describe('sendCustom()', function () {
         $this->mailData = ['subject' => 'Hello', 'body' => 'Test body'];
     });
 
-    it('Sends custom e-mail to contact only when send_copy is false', function () {
+    it('Sends custom e-mail to contact only when send_copy is false', function (): void {
 
         $this->service->sendCustom($this->contact, $this->mailData, $this->user, false);
 
@@ -64,7 +64,7 @@ describe('sendCustom()', function () {
         Mail::assertSent(CustomEmail::class, fn ($mail) => $mail->hasTo($this->contact->email));
     });
 
-    it('Sends custom e-mail to contact and to user when send_copy is true', function () {
+    it('Sends custom e-mail to contact and to user when send_copy is true', function (): void {
         $this->service->sendCustom($this->contact, $this->mailData, $this->user, true);
 
         Mail::assertSent(CustomEmail::class, fn ($mail) => $mail->hasTo($this->contact->email));
@@ -73,7 +73,7 @@ describe('sendCustom()', function () {
 
     });
 
-    it('Writes a log after sending', function () {
+    it('Writes a log after sending', function (): void {
         // Watch out: Log checks must be done before launching the function that initiate them
         Log::shouldReceive('info')->once()->withArgs(function ($message, $context) {
             return $context['contact_id'] === $this->contact->id
@@ -89,9 +89,9 @@ describe('sendCustom()', function () {
 // Suite : sendTemplate()
 // ─────────────────────────────────────────────────────────────
 
-describe('sendTemplate()', function () {
+describe('sendTemplate()', function (): void {
 
-    beforeEach(function () {
+    beforeEach(function (): void {
         Mail::fake();
         Log::spy();
 
@@ -101,25 +101,25 @@ describe('sendTemplate()', function () {
 
     // ── Templates ────────────────────────────────────
 
-    it("Sends the welcome Email when template 'welcome' is called", function () {
+    it("Sends the welcome Email when template 'welcome' is called", function (): void {
         $result = $this->service->sendTemplate($this->contact, 'welcome');
         Mail::assertSent(WelcomeEmail::class, fn ($mail) => $mail->hasTo($this->contact->email));
         expect($result)->toContain('welcome');
     });
 
-    it("Sends the MembershipInfoDetailEmail Email when template 'membership_info' is called", function () {
+    it("Sends the MembershipInfoDetailEmail Email when template 'membership_info' is called", function (): void {
         $result = $this->service->sendTemplate($this->contact, 'membership_info');
         Mail::assertSent(MembershipInfoDetailEmail::class, fn ($mail) => $mail->hasTo($this->contact->email));
         expect($result)->toContain('membership_info');
     });
 
-    it("Sends the RequestInfoEmail Email when template 'request_info' is called", function () {
+    it("Sends the RequestInfoEmail Email when template 'request_info' is called", function (): void {
         $result = $this->service->sendTemplate($this->contact, 'request_info');
         Mail::assertSent(RequestInfoEmail::class, fn ($mail) => $mail->hasTo($this->contact->email));
         expect($result)->toContain('request_info');
     });
 
-    it("Sends PoliteDeclineEmail and update the contact status to reject when 'polite_decline' is called", function () {
+    it("Sends PoliteDeclineEmail and update the contact status to reject when 'polite_decline' is called", function (): void {
         // We need a true mock to check if update instruction received
         $contact = makeContact();
         $contact->shouldReceive('update')
@@ -133,19 +133,19 @@ describe('sendTemplate()', function () {
 
     // ── Unknown template ─────────────────────────────────────
 
-    it('Raises InvalidArgumentException for an unknown template', function () {
+    it('Raises InvalidArgumentException for an unknown template', function (): void {
         expect(fn () => $this->service->sendTemplate($this->contact, 'unknown_template'))
             ->toThrow(InvalidArgumentException::class);
     });
 
-    it('Includes the template\'s name in the error message', function () {
+    it('Includes the template\'s name in the error message', function (): void {
         expect(fn () => $this->service->sendTemplate($this->contact, 'bad_template'))
             ->toThrow(InvalidArgumentException::class, 'bad_template');
     });
 
     // ── Log ──────────────────────────────────────────────────
 
-    it('Writes an info log after each template sending', function () {
+    it('Writes an info log after each template sending', function (): void {
         Log::shouldReceive('info')->once()->withArgs(function ($message, $context) {
             return isset($context['contact_id']) && isset($context['template']);
         });

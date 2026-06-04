@@ -36,9 +36,9 @@ function mountLiveCenter(User $admin, Tournament $tournament)
 
 // ── Guard: allMatchesComplete ─────────────────────────────────────────────────
 
-describe('closeTournament — guard: matches must be complete', function () {
+describe('closeTournament — guard: matches must be complete', function (): void {
 
-    it('emits an error toast when matches are still pending', function () {
+    it('emits an error toast when matches are still pending', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $tournament = closureTournament();
 
@@ -64,7 +64,7 @@ describe('closeTournament — guard: matches must be complete', function () {
         expect($tournament->fresh()->status)->not->toBe(TournamentStatusEnum::CLOSED);
     })->group('closure', 'guard');
 
-    it('does not close the tournament when matches remain', function () {
+    it('does not close the tournament when matches remain', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $tournament = closureTournament();
 
@@ -93,9 +93,9 @@ describe('closeTournament — guard: matches must be complete', function () {
 
 // ── closeTournament — happy path ──────────────────────────────────────────────
 
-describe('closeTournament — happy path', function () {
+describe('closeTournament — happy path', function (): void {
 
-    it('sets tournament status to CLOSED when all matches are complete', function () {
+    it('sets tournament status to CLOSED when all matches are complete', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $tournament = closureTournament();
 
@@ -107,7 +107,7 @@ describe('closeTournament — happy path', function () {
         expect($tournament->fresh()->status)->toBe(TournamentStatusEnum::CLOSED);
     })->group('closure', 'status');
 
-    it('can close a tournament that has no matches at all', function () {
+    it('can close a tournament that has no matches at all', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $tournament = closureTournament();
 
@@ -123,9 +123,9 @@ describe('closeTournament — happy path', function () {
 
 // ── closeTournament — thank-you email ─────────────────────────────────────────
 
-describe('closeTournament — thank-you email', function () {
+describe('closeTournament — thank-you email', function (): void {
 
-    it('queues one email per confirmed participant when sendThankYou is true', function () {
+    it('queues one email per confirmed participant when sendThankYou is true', function (): void {
         Mail::fake();
         $admin = User::factory()->isAdmin()->create();
         $tournament = closureTournament();
@@ -145,7 +145,7 @@ describe('closeTournament — thank-you email', function () {
         Mail::assertQueued(TournamentResultsMail::class, 3);
     })->group('closure', 'email');
 
-    it('uses the edited subject when queueing emails', function () {
+    it('uses the edited subject when queueing emails', function (): void {
         Mail::fake();
         $admin = User::factory()->isAdmin()->create();
         $tournament = closureTournament();
@@ -163,7 +163,7 @@ describe('closeTournament — thank-you email', function () {
         );
     })->group('closure', 'email');
 
-    it('does not queue any email when sendThankYou is false', function () {
+    it('does not queue any email when sendThankYou is false', function (): void {
         Mail::fake();
         $admin = User::factory()->isAdmin()->create();
         $tournament = closureTournament();
@@ -178,7 +178,7 @@ describe('closeTournament — thank-you email', function () {
         Mail::assertNothingQueued();
     })->group('closure', 'email');
 
-    it('does not queue emails when subject or body is empty', function () {
+    it('does not queue emails when subject or body is empty', function (): void {
         Mail::fake();
         $admin = User::factory()->isAdmin()->create();
         $tournament = closureTournament();
@@ -195,7 +195,7 @@ describe('closeTournament — thank-you email', function () {
         Mail::assertNothingQueued();
     })->group('closure', 'email');
 
-    it('does not email waitlisted or cancelled participants', function () {
+    it('does not email waitlisted or cancelled participants', function (): void {
         Mail::fake();
         $admin = User::factory()->isAdmin()->create();
         $tournament = closureTournament();
@@ -225,9 +225,9 @@ describe('closeTournament — thank-you email', function () {
 
 // ── closeTournament — news post ───────────────────────────────────────────────
 
-describe('closeTournament — news post creation', function () {
+describe('closeTournament — news post creation', function (): void {
 
-    it('creates a published news post when createNewsPost is true', function () {
+    it('creates a published news post when createNewsPost is true', function (): void {
         Storage::fake('public');
         $admin = User::factory()->isAdmin()->create();
         $tournament = closureTournament();
@@ -245,7 +245,7 @@ describe('closeTournament — news post creation', function () {
             ->and($post->status)->toBe(NewsPostStatusEnum::PUBLISHED);
     })->group('closure', 'newspost');
 
-    it('links the news post to the tournament', function () {
+    it('links the news post to the tournament', function (): void {
         Storage::fake('public');
         $admin = User::factory()->isAdmin()->create();
         $tournament = closureTournament();
@@ -265,7 +265,7 @@ describe('closeTournament — news post creation', function () {
             ->and($post->title)->toBe('Résultats — Open Printemps');
     })->group('closure', 'newspost');
 
-    it('creates the news post as published', function () {
+    it('creates the news post as published', function (): void {
         Storage::fake('public');
         $admin = User::factory()->isAdmin()->create();
         $tournament = closureTournament();
@@ -281,7 +281,7 @@ describe('closeTournament — news post creation', function () {
         expect($post->status)->toBe(NewsPostStatusEnum::PUBLISHED);
     })->group('closure', 'newspost');
 
-    it('does not create a news post when createNewsPost is false', function () {
+    it('does not create a news post when createNewsPost is false', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $tournament = closureTournament();
         $countBefore = NewsPost::count();
@@ -294,7 +294,7 @@ describe('closeTournament — news post creation', function () {
         expect(NewsPost::count())->toBe($countBefore);
     })->group('closure', 'newspost');
 
-    it('does not create a news post when title is empty', function () {
+    it('does not create a news post when title is empty', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $tournament = closureTournament();
         $countBefore = NewsPost::count();
@@ -313,9 +313,9 @@ describe('closeTournament — news post creation', function () {
 
 // ── fillClosureFromRankings ────────────────────────────────────────────────────
 
-describe('fillClosureFromRankings', function () {
+describe('fillClosureFromRankings', function (): void {
 
-    it('populates thankYouBody with top 3 players from bracket results', function () {
+    it('populates thankYouBody with top 3 players from bracket results', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $tournament = closureTournament();
 
@@ -343,7 +343,7 @@ describe('fillClosureFromRankings', function () {
             ->and($body)->toContain('Bob');
     })->group('closure', 'rankings');
 
-    it('populates newsPostContent with podium markdown', function () {
+    it('populates newsPostContent with podium markdown', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $tournament = closureTournament();
 

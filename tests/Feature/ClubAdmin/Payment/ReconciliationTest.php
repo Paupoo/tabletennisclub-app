@@ -12,11 +12,11 @@ use App\Domains\Competitions\Interclub\Models\Season;
 // Helper: strip all non-digit characters from a reference string
 $normalize = fn (string $ref): string => preg_replace('/[^0-9]/', '', $ref) ?? '';
 
-describe('Payment Reconciliation', function () use ($normalize) {
+describe('Payment Reconciliation', function () use ($normalize): void {
 
     // ==================== REFERENCE NORMALIZATION ====================
 
-    test('reference normalization strips all non-digit characters', function () use ($normalize) {
+    test('reference normalization strips all non-digit characters', function () use ($normalize): void {
         expect($normalize('123/4567/89012'))->toBe('123456789012')
             ->and($normalize('+++123/4567/89012+++'))->toBe('123456789012')
             ->and($normalize('BE 1234 5678'))->toBe('12345678')
@@ -26,7 +26,7 @@ describe('Payment Reconciliation', function () use ($normalize) {
 
     // ==================== MANUAL RECONCILIATION ====================
 
-    test('reconciling a payment sets its status to paid', function () {
+    test('reconciling a payment sets its status to paid', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'confirmed', 'amount_due' => 125]);
         $payment = $subscription->payments()->create([
             'reference' => '123/4567/89012',
@@ -54,7 +54,7 @@ describe('Payment Reconciliation', function () use ($normalize) {
             ->and((int) $payment->fresh()->transaction_id)->toBe($transaction->id);
     })->group('payments', 'reconciliation');
 
-    test('reconciling a payment linked to a subscription marks the subscription as paid', function () {
+    test('reconciling a payment linked to a subscription marks the subscription as paid', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'confirmed', 'amount_due' => 125]);
         $payment = $subscription->payments()->create([
             'reference' => '100/2505/00101',
@@ -88,7 +88,7 @@ describe('Payment Reconciliation', function () use ($normalize) {
             ->and($subscription->fresh()->amount_paid)->toBe(125.0);
     })->group('payments', 'reconciliation');
 
-    test('a transaction linked to a payment is excluded from the unreconciled pool', function () {
+    test('a transaction linked to a payment is excluded from the unreconciled pool', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'paid', 'amount_due' => 60]);
 
         $transaction = Transaction::create([
@@ -116,7 +116,7 @@ describe('Payment Reconciliation', function () use ($normalize) {
 
     // ==================== MATCH SCORING ====================
 
-    test('match score is perfect when reference and amount both match', function () use ($normalize) {
+    test('match score is perfect when reference and amount both match', function () use ($normalize): void {
         $subscription = Subscription::factory()->create(['status' => 'confirmed', 'amount_due' => 150]);
         $payment = $subscription->payments()->create([
             'reference' => '100/2505/00101',
@@ -140,7 +140,7 @@ describe('Payment Reconciliation', function () use ($normalize) {
         expect($score)->toBe('perfect');
     })->group('payments', 'reconciliation');
 
-    test('match score is reference when only reference matches', function () use ($normalize) {
+    test('match score is reference when only reference matches', function () use ($normalize): void {
         $subscription = Subscription::factory()->create(['status' => 'confirmed', 'amount_due' => 150]);
         $payment = $subscription->payments()->create([
             'reference' => '100/2505/00101',
@@ -164,7 +164,7 @@ describe('Payment Reconciliation', function () use ($normalize) {
         expect($score)->toBe('reference');
     })->group('payments', 'reconciliation');
 
-    test('match score is amount when only amount matches', function () use ($normalize) {
+    test('match score is amount when only amount matches', function () use ($normalize): void {
         $subscription = Subscription::factory()->create(['status' => 'confirmed', 'amount_due' => 125]);
         $payment = $subscription->payments()->create([
             'reference' => '100/2505/00101',
@@ -188,7 +188,7 @@ describe('Payment Reconciliation', function () use ($normalize) {
         expect($score)->toBe('amount');
     })->group('payments', 'reconciliation');
 
-    test('match score is none when nothing matches', function () use ($normalize) {
+    test('match score is none when nothing matches', function () use ($normalize): void {
         $subscription = Subscription::factory()->create(['status' => 'confirmed', 'amount_due' => 125]);
         $payment = $subscription->payments()->create([
             'reference' => '100/2505/00101',
@@ -214,11 +214,11 @@ describe('Payment Reconciliation', function () use ($normalize) {
 
 })->group('payments');
 
-describe('Batch Auto-Reconciliation', function () use ($normalize) {
+describe('Batch Auto-Reconciliation', function () use ($normalize): void {
 
     // ==================== BATCH PREVIEW ====================
 
-    test('batch preview finds payments where reference and amount match a transaction', function () use ($normalize) {
+    test('batch preview finds payments where reference and amount match a transaction', function () use ($normalize): void {
         $subscription = Subscription::factory()->create(['status' => 'confirmed', 'amount_due' => 125]);
         $payment = $subscription->payments()->create([
             'reference' => '100/2505/00101',
@@ -262,7 +262,7 @@ describe('Batch Auto-Reconciliation', function () use ($normalize) {
             ->and($matches[0]['transaction_id'])->toBe($transaction->id);
     })->group('payments', 'batch');
 
-    test('batch preview excludes payments that already have a transaction', function () {
+    test('batch preview excludes payments that already have a transaction', function (): void {
         $alreadyReconciledTx = Transaction::create([
             'date' => now()->toDateString(),
             'amount' => 125.0,
@@ -285,7 +285,7 @@ describe('Batch Auto-Reconciliation', function () use ($normalize) {
         expect($pendingPayments->contains('id', $payment->id))->toBeFalse();
     })->group('payments', 'batch');
 
-    test('batch preview only matches a transaction once even if multiple payments are pending', function () use ($normalize) {
+    test('batch preview only matches a transaction once even if multiple payments are pending', function () use ($normalize): void {
         // One transaction (REF-A) + two pending payments
         // Payment 1 matches REF-A; payment 2 has a different reference and should not steal the transaction
         $sub1 = Subscription::factory()->create(['status' => 'confirmed', 'amount_due' => 125]);
@@ -334,7 +334,7 @@ describe('Batch Auto-Reconciliation', function () use ($normalize) {
             ->and($matches[0]['payment_id'])->toBe($payment1->id);
     })->group('payments', 'batch');
 
-    test('batch apply reconciles all matched payments and marks subscriptions as paid', function () use ($normalize) {
+    test('batch apply reconciles all matched payments and marks subscriptions as paid', function () use ($normalize): void {
         $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
 
         $subs = collect(User::factory()->count(2)->create())->map(fn ($user) => Subscription::factory()->create([
@@ -407,16 +407,16 @@ describe('Batch Auto-Reconciliation', function () use ($normalize) {
 
 })->group('payments');
 
-describe('Payment Reference Generation', function () {
+describe('Payment Reference Generation', function (): void {
 
-    test('generates a reference with a structured slash-separated format', function () {
+    test('generates a reference with a structured slash-separated format', function (): void {
         $reference = (new GeneratePaymentReference)();
 
         // Belgian structured communication: XXX/XXXX/XXXXX or XXX/XXXX/XXXX
         expect($reference)->toMatch('/^\d{3}\/\d{4}\/\d{4,5}$/');
     })->group('payments', 'reference');
 
-    test('each call generates a unique reference after a payment is created', function () {
+    test('each call generates a unique reference after a payment is created', function (): void {
         $sub = Subscription::factory()->create(['status' => 'confirmed']);
 
         $ref1 = (new GeneratePaymentReference)();
@@ -434,7 +434,7 @@ describe('Payment Reference Generation', function () {
         expect($ref1)->not->toBe($ref2);
     })->group('payments', 'reference');
 
-    test('checksum satisfies the modulo-97 constraint', function () {
+    test('checksum satisfies the modulo-97 constraint', function (): void {
         $reference = (new GeneratePaymentReference)();
 
         // The reference is: 0 + date(6) + sequence(3) = 10 base digits, then checksum appended
@@ -445,7 +445,7 @@ describe('Payment Reference Generation', function () {
         expect($base % 97)->toBe($checksum);
     })->group('payments', 'reference');
 
-    test('addSeparators inserts slashes at correct positions', function () {
+    test('addSeparators inserts slashes at correct positions', function (): void {
         $gen = new GeneratePaymentReference;
 
         $result = $gen->addSeparators('012345678901');

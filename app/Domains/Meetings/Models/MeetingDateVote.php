@@ -12,6 +12,27 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int $id
+ * @property int $meeting_date_proposal_id
+ * @property int $user_id
+ * @property MeetingDateVoteEnum $vote
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Domains\Meetings\Models\MeetingDateProposal $proposal
+ * @property-read User $user
+ * @method static \Database\Factories\Domains\Meetings\Models\MeetingDateVoteFactory factory($count = null, $state = [])
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingDateVote newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingDateVote newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingDateVote query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingDateVote whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingDateVote whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingDateVote whereMeetingDateProposalId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingDateVote whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingDateVote whereUserId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingDateVote whereVote($value)
+ * @mixin \Eloquent
+ */
 #[UseFactory(MeetingDateVoteFactory::class)]
 class MeetingDateVote extends Model
 {

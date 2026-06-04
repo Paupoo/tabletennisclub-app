@@ -61,7 +61,7 @@ class HomeController extends Controller
                         'day' => $dayNames[$pack->day_of_week],
                         'time' => $start->format('G\hi') . ' – ' . $end->format('G\hi'),
                         'activity' => $activity,
-                        'location' => $pack->room?->name,
+                        'location' => $pack->room->name,
                         'level' => $levelLabels[$pack->level->value] ?? $pack->level->value,
                         'coach' => $pack->trainer ? $pack->trainer->first_name . ' ' . $pack->trainer->last_name : null,
                         'capacity' => $pack->max_participants,

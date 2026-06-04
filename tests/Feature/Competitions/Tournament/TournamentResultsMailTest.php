@@ -10,9 +10,9 @@ use Illuminate\Support\Facades\Mail;
 
 // ── Envelope ──────────────────────────────────────────────────────────────────
 
-describe('TournamentResultsMail — envelope', function () {
+describe('TournamentResultsMail — envelope', function (): void {
 
-    it('uses emailSubject as the envelope subject', function () {
+    it('uses emailSubject as the envelope subject', function (): void {
         $tournament = Tournament::factory()->create();
         $recipient = User::factory()->create();
 
@@ -29,7 +29,7 @@ describe('TournamentResultsMail — envelope', function () {
         expect($envelope->subject)->toBe('Résultats — Open de Printemps');
     })->group('mail', 'tournament');
 
-    it('uses the configured from address', function () {
+    it('uses the configured from address', function (): void {
         $tournament = Tournament::factory()->create();
         $recipient = User::factory()->create();
 
@@ -50,9 +50,9 @@ describe('TournamentResultsMail — envelope', function () {
 
 // ── Content ───────────────────────────────────────────────────────────────────
 
-describe('TournamentResultsMail — content', function () {
+describe('TournamentResultsMail — content', function (): void {
 
-    it('uses the tournament-results markdown view', function () {
+    it('uses the tournament-results markdown view', function (): void {
         $tournament = Tournament::factory()->create();
         $recipient = User::factory()->create();
 
@@ -69,7 +69,7 @@ describe('TournamentResultsMail — content', function () {
         expect($content->markdown)->toBe('mail.tournament-results');
     })->group('mail', 'tournament');
 
-    it('exposes emailBody as a public property accessible to the view', function () {
+    it('exposes emailBody as a public property accessible to the view', function (): void {
         $tournament = Tournament::factory()->create();
         $recipient = User::factory()->create();
 
@@ -84,7 +84,7 @@ describe('TournamentResultsMail — content', function () {
         expect($mail->emailBody)->toBe('Chers participants, merci !');
     })->group('mail', 'tournament');
 
-    it('exposes rankings as a public property accessible to the view', function () {
+    it('exposes rankings as a public property accessible to the view', function (): void {
         $tournament = Tournament::factory()->create();
         $recipient = User::factory()->create();
         $p1 = User::factory()->create(['first_name' => 'Alice', 'last_name' => 'Smith']);
@@ -110,9 +110,9 @@ describe('TournamentResultsMail — content', function () {
 
 // ── Queue dispatch ────────────────────────────────────────────────────────────
 
-describe('TournamentResultsMail — queueing', function () {
+describe('TournamentResultsMail — queueing', function (): void {
 
-    it('can be queued via Mail::to()->queue()', function () {
+    it('can be queued via Mail::to()->queue()', function (): void {
         Mail::fake();
 
         $tournament = Tournament::factory()->create(['name' => 'Open Printemps']);
@@ -132,7 +132,7 @@ describe('TournamentResultsMail — queueing', function () {
         });
     })->group('mail', 'tournament', 'queue');
 
-    it('queues one email per participant', function () {
+    it('queues one email per participant', function (): void {
         Mail::fake();
 
         $tournament = Tournament::factory()->create();
@@ -151,7 +151,7 @@ describe('TournamentResultsMail — queueing', function () {
         Mail::assertQueuedCount(3);
     })->group('mail', 'tournament', 'queue');
 
-    it('implements ShouldQueue', function () {
+    it('implements ShouldQueue', function (): void {
         $mail = new TournamentResultsMail(
             tournament: Tournament::factory()->create(),
             recipient: User::factory()->create(),

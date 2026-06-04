@@ -7,9 +7,9 @@ use App\Domains\Competitions\Tournament\Models\Tournament;
 
 // ── Wizard route access ───────────────────────────────────────────────────────
 
-describe('wizard route authorization', function () {
+describe('wizard route authorization', function (): void {
 
-    it('returns 403 for regular members on the create wizard', function () {
+    it('returns 403 for regular members on the create wizard', function (): void {
         $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
 
         $this->actingAs($member)
@@ -17,7 +17,7 @@ describe('wizard route authorization', function () {
             ->assertForbidden();
     });
 
-    it('returns 403 for regular members on the edit wizard', function () {
+    it('returns 403 for regular members on the edit wizard', function (): void {
         $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
         $tournament = Tournament::factory()->create();
 
@@ -26,7 +26,7 @@ describe('wizard route authorization', function () {
             ->assertForbidden();
     });
 
-    it('allows admins to access the create wizard', function () {
+    it('allows admins to access the create wizard', function (): void {
         $admin = User::factory()->isAdmin()->create();
 
         $this->actingAs($admin)
@@ -34,7 +34,7 @@ describe('wizard route authorization', function () {
             ->assertSuccessful();
     });
 
-    it('allows admins to access the edit wizard', function () {
+    it('allows admins to access the edit wizard', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $tournament = Tournament::factory()->create();
 
@@ -43,7 +43,7 @@ describe('wizard route authorization', function () {
             ->assertSuccessful();
     });
 
-    it('allows committee members to access the create wizard', function () {
+    it('allows committee members to access the create wizard', function (): void {
         $committee = User::factory()->isCommitteeMember()->create();
 
         $this->actingAs($committee)
@@ -51,7 +51,7 @@ describe('wizard route authorization', function () {
             ->assertSuccessful();
     });
 
-    it('redirects unauthenticated users to login', function () {
+    it('redirects unauthenticated users to login', function (): void {
         $this->get(route('admin.tournaments.wizard'))
             ->assertRedirect(route('login'));
     });

@@ -48,8 +48,8 @@ function futureMealMeeting(): Meeting
 
 // ── pendingPayments ───────────────────────────────────────────────────────────
 
-describe('pendingPayments', function () {
-    it('returns the user pending tournament payment', function () {
+describe('pendingPayments', function (): void {
+    it('returns the user pending tournament payment', function (): void {
         $user = User::factory()->create();
         $tournament = paymentTournament();
         createTournamentPayment($user, $tournament);
@@ -59,7 +59,7 @@ describe('pendingPayments', function () {
         expect($component->get('pendingPayments'))->toHaveCount(1);
     });
 
-    it('excludes pending payments belonging to another user', function () {
+    it('excludes pending payments belonging to another user', function (): void {
         $user = User::factory()->create();
         $otherUser = User::factory()->create();
         $tournament = paymentTournament();
@@ -70,7 +70,7 @@ describe('pendingPayments', function () {
         expect($component->get('pendingPayments'))->toHaveCount(0);
     });
 
-    it('excludes paid payments', function () {
+    it('excludes paid payments', function (): void {
         $user = User::factory()->create();
         $tournament = paymentTournament();
         createTournamentPayment($user, $tournament, 'paid');
@@ -83,8 +83,8 @@ describe('pendingPayments', function () {
 
 // ── openPaymentModal ──────────────────────────────────────────────────────────
 
-describe('openPaymentModal', function () {
-    it('opens the modal and stores the payment id', function () {
+describe('openPaymentModal', function (): void {
+    it('opens the modal and stores the payment id', function (): void {
         $user = User::factory()->create();
         $tournament = paymentTournament();
         $payment = createTournamentPayment($user, $tournament);
@@ -95,7 +95,7 @@ describe('openPaymentModal', function () {
             ->assertSet('selectedPaymentId', $payment->id);
     });
 
-    it('generates a non-empty QR code string', function () {
+    it('generates a non-empty QR code string', function (): void {
         $user = User::factory()->create();
         $tournament = paymentTournament();
         $payment = createTournamentPayment($user, $tournament);
@@ -106,7 +106,7 @@ describe('openPaymentModal', function () {
         expect($component->get('paymentQr'))->toStartWith('data:image/png;base64,');
     });
 
-    it('renders the tournament name in the modal', function () {
+    it('renders the tournament name in the modal', function (): void {
         $user = User::factory()->create();
         $tournament = paymentTournament(['name' => 'Summer Cup 2026']);
         $payment = createTournamentPayment($user, $tournament);
@@ -119,8 +119,8 @@ describe('openPaymentModal', function () {
 
 // ── Meeting RSVP (in-app) ───────────────────────────────────────────────────────
 
-describe('meeting rsvp', function () {
-    it('opens the modal prefilled from the registration', function () {
+describe('meeting rsvp', function (): void {
+    it('opens the modal prefilled from the registration', function (): void {
         $user = User::factory()->create();
         $meeting = futureMealMeeting();
         $meeting->users()->attach($user->id, ['status' => MeetingUserStatusEnum::CONFIRMED->value, 'meal_reserved' => true]);
@@ -133,7 +133,7 @@ describe('meeting rsvp', function () {
             ->assertSet('rsvpMeal', 'reserve');
     });
 
-    it('reserves the meal and creates a pending payment', function () {
+    it('reserves the meal and creates a pending payment', function (): void {
         Notification::fake();
         $user = User::factory()->create();
         $meeting = futureMealMeeting();
@@ -152,7 +152,7 @@ describe('meeting rsvp', function () {
             ->and($reg->payment->status)->toBe('pending');
     });
 
-    it('skips the meal without creating a payment', function () {
+    it('skips the meal without creating a payment', function (): void {
         Notification::fake();
         $user = User::factory()->create();
         $meeting = futureMealMeeting();
@@ -168,7 +168,7 @@ describe('meeting rsvp', function () {
             ->and($meeting->users()->where('users.id', $user->id)->first()->registration->meal_reserved)->toBeFalse();
     });
 
-    it('shows the real status and meal badge on the meeting row', function () {
+    it('shows the real status and meal badge on the meeting row', function (): void {
         $user = User::factory()->create();
         $meeting = futureMealMeeting();
         $meeting->users()->attach($user->id, ['status' => MeetingUserStatusEnum::CONFIRMED->value, 'meal_reserved' => true]);

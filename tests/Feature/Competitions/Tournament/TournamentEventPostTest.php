@@ -40,8 +40,8 @@ function mountWizard(User $admin, Tournament $tournament)
 
 // ── saveEventPost — création ──────────────────────────────────────────────────
 
-describe('saveEventPost — create', function () {
-    it('creates an EventPost in draft status', function () {
+describe('saveEventPost — create', function (): void {
+    it('creates an EventPost in draft status', function (): void {
         $admin = User::factory()->create();
         $tournament = eventPostTournament();
 
@@ -61,7 +61,7 @@ describe('saveEventPost — create', function () {
             ->and($ep->location)->toBe('Club House');
     });
 
-    it('creates an EventPost in published status', function () {
+    it('creates an EventPost in published status', function (): void {
         $admin = User::factory()->create();
         $tournament = eventPostTournament();
 
@@ -77,7 +77,7 @@ describe('saveEventPost — create', function () {
         expect($ep->status)->toBe(EventPostStatusEnum::PUBLISHED);
     });
 
-    it('syncs start_time and computes end_time from duration_minutes', function () {
+    it('syncs start_time and computes end_time from duration_minutes', function (): void {
         $admin = User::factory()->create();
         $tournament = eventPostTournament(['start_time' => '09:00:00', 'duration_minutes' => 240]);
 
@@ -93,7 +93,7 @@ describe('saveEventPost — create', function () {
             ->and($ep->end_time->format('H:i'))->toBe('13:00');
     });
 
-    it('stores null end_time when tournament has no start_time', function () {
+    it('stores null end_time when tournament has no start_time', function (): void {
         $admin = User::factory()->create();
         $tournament = eventPostTournament(['start_time' => null]);
 
@@ -108,7 +108,7 @@ describe('saveEventPost — create', function () {
         expect($ep->end_time)->toBeNull();
     });
 
-    it('sets the polymorphic relation to the tournament', function () {
+    it('sets the polymorphic relation to the tournament', function (): void {
         $admin = User::factory()->create();
         $tournament = eventPostTournament();
 
@@ -124,7 +124,7 @@ describe('saveEventPost — create', function () {
             ->and($ep->eventable_id)->toEqual($tournament->id);
     });
 
-    it('fails validation when title is missing', function () {
+    it('fails validation when title is missing', function (): void {
         $admin = User::factory()->create();
         $tournament = eventPostTournament();
 
@@ -140,8 +140,8 @@ describe('saveEventPost — create', function () {
 
 // ── saveEventPost — mise à jour ───────────────────────────────────────────────
 
-describe('saveEventPost — update', function () {
-    it('updates an existing EventPost instead of creating a new one', function () {
+describe('saveEventPost — update', function (): void {
+    it('updates an existing EventPost instead of creating a new one', function (): void {
         $admin = User::factory()->create();
         $tournament = eventPostTournament();
 
@@ -164,7 +164,7 @@ describe('saveEventPost — update', function () {
             ->and(EventPost::first()->status)->toBe(EventPostStatusEnum::PUBLISHED);
     });
 
-    it('updates status from draft to published', function () {
+    it('updates status from draft to published', function (): void {
         $admin = User::factory()->create();
         $tournament = eventPostTournament();
 
@@ -187,8 +187,8 @@ describe('saveEventPost — update', function () {
 
 // ── Chargement depuis l'EventPost existant ────────────────────────────────────
 
-describe('loadTournament — pre-fills from existing EventPost', function () {
-    it('pre-fills wizard fields from an existing EventPost', function () {
+describe('loadTournament — pre-fills from existing EventPost', function (): void {
+    it('pre-fills wizard fields from an existing EventPost', function (): void {
         $admin = User::factory()->create();
         $tournament = eventPostTournament();
 
@@ -212,7 +212,7 @@ describe('loadTournament — pre-fills from existing EventPost', function () {
             ->assertSet('eventStatus', 'PUBLISHED');
     });
 
-    it('pre-fills eventTitle from tournament name when no EventPost exists', function () {
+    it('pre-fills eventTitle from tournament name when no EventPost exists', function (): void {
         $admin = User::factory()->create();
         $tournament = eventPostTournament(['name' => 'Summer Cup 2026']);
 
@@ -223,8 +223,8 @@ describe('loadTournament — pre-fills from existing EventPost', function () {
 
 // ── Page publique ─────────────────────────────────────────────────────────────
 
-describe('public events page', function () {
-    it('shows published EventPosts', function () {
+describe('public events page', function (): void {
+    it('shows published EventPosts', function (): void {
         $tournament = eventPostTournament();
 
         EventPost::create([
@@ -247,7 +247,7 @@ describe('public events page', function () {
             ->assertSee('10,00 €');
     });
 
-    it('does not show draft EventPosts', function () {
+    it('does not show draft EventPosts', function (): void {
         $tournament = eventPostTournament();
 
         EventPost::create([
@@ -268,7 +268,7 @@ describe('public events page', function () {
             ->assertDontSee('Hidden Draft');
     });
 
-    it('shows Gratuit when price is zero', function () {
+    it('shows Gratuit when price is zero', function (): void {
         $tournament = eventPostTournament(['price' => 0]);
 
         EventPost::create([

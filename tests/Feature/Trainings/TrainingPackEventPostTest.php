@@ -31,8 +31,8 @@ function mountTrainings(User $admin)
 
 // ── openEventPost — chargement du formulaire ──────────────────────────────────
 
-describe('openEventPost', function () {
-    it('opens the modal and pre-fills title from pack name', function () {
+describe('openEventPost', function (): void {
+    it('opens the modal and pre-fills title from pack name', function (): void {
         $admin = User::factory()->create();
         $pack = eventPostPack(['name' => 'Stage Olympique']);
 
@@ -43,7 +43,7 @@ describe('openEventPost', function () {
             ->assertSet('eventPostId', null);
     });
 
-    it('pre-fills fields from an existing EventPost', function () {
+    it('pre-fills fields from an existing EventPost', function (): void {
         $admin = User::factory()->create();
         $pack = eventPostPack();
 
@@ -68,7 +68,7 @@ describe('openEventPost', function () {
             ->assertSet('eventStatus', 'PUBLISHED');
     });
 
-    it('sets eventPostPackHasDate to false when pack has no start date', function () {
+    it('sets eventPostPackHasDate to false when pack has no start date', function (): void {
         $admin = User::factory()->create();
         $pack = eventPostPack(['pack_start_date' => null]);
 
@@ -77,7 +77,7 @@ describe('openEventPost', function () {
             ->assertSet('eventPostPackHasDate', false);
     });
 
-    it('sets eventPostPackHasDate to true when pack has a start date', function () {
+    it('sets eventPostPackHasDate to true when pack has a start date', function (): void {
         $admin = User::factory()->create();
         $pack = eventPostPack(['pack_start_date' => '2026-07-06']);
 
@@ -89,8 +89,8 @@ describe('openEventPost', function () {
 
 // ── saveEventPost — création ───────────────────────────────────────────────────
 
-describe('saveEventPost — create', function () {
-    it('creates an EventPost in draft status for a training pack', function () {
+describe('saveEventPost — create', function (): void {
+    it('creates an EventPost in draft status for a training pack', function (): void {
         $admin = User::factory()->create();
         $pack = eventPostPack();
 
@@ -111,7 +111,7 @@ describe('saveEventPost — create', function () {
             ->and($ep->icon)->toBe('🎯');
     });
 
-    it('creates an EventPost in published status', function () {
+    it('creates an EventPost in published status', function (): void {
         $admin = User::factory()->create();
         $pack = eventPostPack();
 
@@ -128,7 +128,7 @@ describe('saveEventPost — create', function () {
         expect($ep->status)->toBe(EventPostStatusEnum::PUBLISHED);
     });
 
-    it('syncs start_time and computes end_time from duration_minutes', function () {
+    it('syncs start_time and computes end_time from duration_minutes', function (): void {
         $admin = User::factory()->create();
         $pack = eventPostPack(['start_time' => '09:00:00', 'duration_minutes' => 420]);
 
@@ -145,7 +145,7 @@ describe('saveEventPost — create', function () {
             ->and($ep->end_time->format('H:i'))->toBe('16:00');
     });
 
-    it('uses pack_start_date as event_date', function () {
+    it('uses pack_start_date as event_date', function (): void {
         $admin = User::factory()->create();
         $pack = eventPostPack(['pack_start_date' => '2026-07-06']);
 
@@ -161,7 +161,7 @@ describe('saveEventPost — create', function () {
         expect($ep->event_date->toDateString())->toBe('2026-07-06');
     });
 
-    it('sets the polymorphic relation to the training pack', function () {
+    it('sets the polymorphic relation to the training pack', function (): void {
         $admin = User::factory()->create();
         $pack = eventPostPack();
 
@@ -176,7 +176,7 @@ describe('saveEventPost — create', function () {
             ->and($ep->eventable_id)->toEqual($pack->id);
     });
 
-    it('fails validation when title is missing', function () {
+    it('fails validation when title is missing', function (): void {
         $admin = User::factory()->create();
         $pack = eventPostPack();
 
@@ -189,7 +189,7 @@ describe('saveEventPost — create', function () {
         expect(EventPost::where('eventable_id', $pack->id)->exists())->toBeFalse();
     });
 
-    it('closes the modal after a successful save', function () {
+    it('closes the modal after a successful save', function (): void {
         $admin = User::factory()->create();
         $pack = eventPostPack();
 
@@ -203,8 +203,8 @@ describe('saveEventPost — create', function () {
 
 // ── saveEventPost — mise à jour ───────────────────────────────────────────────
 
-describe('saveEventPost — update', function () {
-    it('updates an existing EventPost instead of creating a new one', function () {
+describe('saveEventPost — update', function (): void {
+    it('updates an existing EventPost instead of creating a new one', function (): void {
         $admin = User::factory()->create();
         $pack = eventPostPack();
 
@@ -229,14 +229,14 @@ describe('saveEventPost — update', function () {
 
 // ── Relation morphOne ─────────────────────────────────────────────────────────
 
-describe('TrainingPack::eventPost relation', function () {
-    it('returns null when no event post exists', function () {
+describe('TrainingPack::eventPost relation', function (): void {
+    it('returns null when no event post exists', function (): void {
         $pack = eventPostPack();
 
         expect($pack->eventPost)->toBeNull();
     });
 
-    it('returns the event post via morphOne', function () {
+    it('returns the event post via morphOne', function (): void {
         $pack = eventPostPack();
 
         EventPost::create([
@@ -259,8 +259,8 @@ describe('TrainingPack::eventPost relation', function () {
 
 // ── Page publique ─────────────────────────────────────────────────────────────
 
-describe('public events page — training pack', function () {
-    it('shows a published training EventPost', function () {
+describe('public events page — training pack', function (): void {
+    it('shows a published training EventPost', function (): void {
         $pack = eventPostPack();
 
         EventPost::create([
@@ -283,7 +283,7 @@ describe('public events page — training pack', function () {
             ->assertSee('350,00 €');
     });
 
-    it('does not show a draft training EventPost', function () {
+    it('does not show a draft training EventPost', function (): void {
         $pack = eventPostPack();
 
         EventPost::create([

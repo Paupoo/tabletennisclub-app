@@ -6,6 +6,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Domains\ClubPosts\Models\EventPost;
 use App\Domains\Shared\Enums\ClubEventTypeEnum;
 use App\Domains\Shared\Enums\EventPostStatusEnum;
 use Illuminate\Foundation\Http\FormRequest;
@@ -18,7 +19,7 @@ class StoreEventRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()->can('create', Event::class);
+        return $this->user()->can('create', EventPost::class);
     }
 
     /**

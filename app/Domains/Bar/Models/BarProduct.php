@@ -4,11 +4,41 @@ declare(strict_types=1);
 
 namespace App\Domains\Bar\Models;
 
-use App\Models\User;
+use App\Domains\ClubAdmin\Users\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property int $id
+ * @property int $category_id
+ * @property string $name
+ * @property int $sale_price
+ * @property int $is_available
+ * @property int|null $created_by
+ * @property int|null $modified_by
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \App\Domains\Bar\Models\BarCategory $category
+ * @property-read User|null $createdBy
+ * @property-read int $stock
+ * @property-read User|null $modifiedBy
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Domains\Bar\Models\BarStockMovement> $stockMovements
+ * @property-read int|null $stock_movements_count
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BarProduct newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BarProduct newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BarProduct query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BarProduct whereCategoryId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BarProduct whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BarProduct whereCreatedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BarProduct whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BarProduct whereIsAvailable($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BarProduct whereModifiedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BarProduct whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BarProduct whereSalePrice($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|BarProduct whereUpdatedAt($value)
+ * @mixin \Eloquent
+ */
 class BarProduct extends Model
 {
     protected $fillable = [

@@ -38,8 +38,8 @@ function refereeUsers(int $count): Collection
 
 // ── assignRefereesToPool ──────────────────────────────────────────────────────
 
-describe('assignRefereesToPool', function () {
-    it('assigns a referee to every match in the pool', function () {
+describe('assignRefereesToPool', function (): void {
+    it('assigns a referee to every match in the pool', function (): void {
         $tournament = refereeTournament();
         $users = refereeUsers(4);
         $tournament->users()->attach($users->pluck('id'), ['registration_status' => 'registered']);
@@ -57,7 +57,7 @@ describe('assignRefereesToPool', function () {
         }
     });
 
-    it('never assigns a player as referee for their own match', function () {
+    it('never assigns a player as referee for their own match', function (): void {
         $tournament = refereeTournament();
         $users = refereeUsers(4);
         $tournament->users()->attach($users->pluck('id'), ['registration_status' => 'registered']);
@@ -77,7 +77,7 @@ describe('assignRefereesToPool', function () {
         }
     });
 
-    it('distributes referee duties roughly evenly', function () {
+    it('distributes referee duties roughly evenly', function (): void {
         // 4 players → 6 matches → each player referees ≈ 2 times (max diff = 1)
         $tournament = refereeTournament();
         $users = refereeUsers(4);
@@ -102,8 +102,8 @@ describe('assignRefereesToPool', function () {
 
 // ── assignRefereesToPool — doubles ───────────────────────────────────────────
 
-describe('assignRefereesToPool (doubles)', function () {
-    it('assigns a referee to every doubles match using pair players as candidates', function () {
+describe('assignRefereesToPool (doubles)', function (): void {
+    it('assigns a referee to every doubles match using pair players as candidates', function (): void {
         $tournament = refereeTournament(['match_type' => 'double']);
         $admin = User::factory()->create();
 
@@ -131,7 +131,7 @@ describe('assignRefereesToPool (doubles)', function () {
         }
     });
 
-    it('never assigns a pair member as referee for their own doubles match', function () {
+    it('never assigns a pair member as referee for their own doubles match', function (): void {
         $tournament = refereeTournament(['match_type' => 'double']);
         $admin = User::factory()->create();
 
@@ -172,8 +172,8 @@ describe('assignRefereesToPool (doubles)', function () {
 
 // ── assignBracketReferee ──────────────────────────────────────────────────────
 
-describe('assignBracketReferee', function () {
-    it('assigns the loser of a bracket match as referee of the next scheduled match', function () {
+describe('assignBracketReferee', function (): void {
+    it('assigns the loser of a bracket match as referee of the next scheduled match', function (): void {
         $tournament = refereeTournament();
         $users = refereeUsers(4);
 
@@ -207,7 +207,7 @@ describe('assignBracketReferee', function () {
         expect($match2->fresh()->referee_id)->toBe($users[1]->id);
     });
 
-    it('does not assign referee if loser is already playing the next match', function () {
+    it('does not assign referee if loser is already playing the next match', function (): void {
         $tournament = refereeTournament();
         $users = refereeUsers(4);
 
@@ -242,7 +242,7 @@ describe('assignBracketReferee', function () {
         expect($match2->fresh()->referee_id)->toBeNull();
     });
 
-    it('never assigns a referee to the final or bronze match', function () {
+    it('never assigns a referee to the final or bronze match', function (): void {
         $tournament = refereeTournament();
         $users = refereeUsers(4);
 
@@ -288,7 +288,7 @@ describe('assignBracketReferee', function () {
         expect($bronze->fresh()->referee_id)->toBeNull();
     });
 
-    it('completeMatch() triggers bracket referee assignment', function () {
+    it('completeMatch() triggers bracket referee assignment', function (): void {
         $tournament = refereeTournament();
         $users = refereeUsers(4);
 
@@ -353,9 +353,9 @@ function initialRefereeTournament(int $nbPools = 2, int $poolSize = 4): Tourname
     return $tournament;
 }
 
-describe('assignInitialBracketReferees', function () {
+describe('assignInitialBracketReferees', function (): void {
 
-    it('assigns pool non-qualifiers as referees to first-round bracket matches', function () {
+    it('assigns pool non-qualifiers as referees to first-round bracket matches', function (): void {
         $tournament = initialRefereeTournament(nbPools: 2, poolSize: 4);
         $service = app(TournamentFinalPhaseService::class);
 
@@ -382,7 +382,7 @@ describe('assignInitialBracketReferees', function () {
         }
     });
 
-    it('distributes assignments evenly — no non-qualifier referees more than once before others referee once', function () {
+    it('distributes assignments evenly — no non-qualifier referees more than once before others referee once', function (): void {
         // 2 pools × 4 = 8 players, 4 qualify, 4 non-qualifiers → 4 quarterfinal matches
         $tournament = initialRefereeTournament(nbPools: 4, poolSize: 4);
         $service = app(TournamentFinalPhaseService::class);
@@ -399,7 +399,7 @@ describe('assignInitialBracketReferees', function () {
         expect($counts->max() - $counts->min())->toBeLessThanOrEqual(1);
     });
 
-    it('never assigns a referee to final or bronze matches', function () {
+    it('never assigns a referee to final or bronze matches', function (): void {
         $tournament = initialRefereeTournament(nbPools: 2, poolSize: 4);
         app(TournamentFinalPhaseService::class)->configureKnockoutPhase($tournament, 'round_4');
 

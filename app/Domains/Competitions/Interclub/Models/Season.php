@@ -8,7 +8,7 @@ use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Models\TrainingPack;
-use Database\Factories\ClubEvents\Interclub\SeasonFactory;
+use Database\Factories\Domains\Competitions\Interclub\Models\SeasonFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -22,8 +22,8 @@ use Illuminate\Support\Facades\DB;
 /**
  * @property int $id
  * @property string $name
- * @property int $start_at
- * @property int $end_at
+ * @property Carbon $start_at
+ * @property Carbon $end_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Collection<int, Interclub> $interclubs
@@ -34,7 +34,6 @@ use Illuminate\Support\Facades\DB;
  * @property-read int|null $teams_count
  * @property-read Collection<int, Training> $trainings
  * @property-read int|null $trainings_count
- *
  * @method static SeasonFactory factory($count = null, $state = [])
  * @method static Builder<static>|Season newModelQuery()
  * @method static Builder<static>|Season newQuery()
@@ -45,7 +44,19 @@ use Illuminate\Support\Facades\DB;
  * @method static Builder<static>|Season whereName($value)
  * @method static Builder<static>|Season whereStartYear($value)
  * @method static Builder<static>|Season whereUpdatedAt($value)
- *
+ * @property bool $is_active
+ * @property bool $registrations_open
+ * @property-read Collection<int, Subscription> $subscriptions
+ * @property-read int|null $subscriptions_count
+ * @property-read Collection<int, TrainingPack> $trainingPacks
+ * @property-read int|null $training_packs_count
+ * @property-read Collection<int, User> $users
+ * @property-read int|null $users_count
+ * @method static Builder<static>|Season active()
+ * @method static Builder<static>|Season whereEndAt($value)
+ * @method static Builder<static>|Season whereIsActive($value)
+ * @method static Builder<static>|Season whereRegistrationsOpen($value)
+ * @method static Builder<static>|Season whereStartAt($value)
  * @mixin \Eloquent
  */
 class Season extends Model
@@ -79,7 +90,7 @@ class Season extends Model
 
     public function activate(): void
     {
-        DB::transaction(function () {
+        DB::transaction(function (): void {
             self::query()->where('id', '!=', $this->id)->update(['is_active' => false]);
             self::query()->whereKey($this->id)->update(['is_active' => true]);
             $this->is_active = true;
@@ -160,7 +171,7 @@ class Season extends Model
 
     protected static function booted()
     {
-        static::saving(function ($season) {
+        static::saving(function ($season): void {
             if ($season->start_at >= $season->end_at) {
                 throw new \DomainException('start_at must be before end_at');
             }

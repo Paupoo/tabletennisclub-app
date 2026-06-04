@@ -8,9 +8,9 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use Illuminate\Support\Collection;
 use Livewire\Livewire;
 
-describe('TableIndex Livewire Component', function () {
+describe('TableIndex Livewire Component', function (): void {
 
-    test('component renders with empty tables', function () {
+    test('component renders with empty tables', function (): void {
         // Arrange : Aucune table n'existe
         // (La DB est vide grâce à RefreshDatabase du TestCase)
 
@@ -22,7 +22,7 @@ describe('TableIndex Livewire Component', function () {
         expect($component->viewData('groupedTables')->count())->toBe(0);
     });
 
-    test('tables are grouped by room', function () {
+    test('tables are grouped by room', function (): void {
         // Arrange
         $room1 = Room::factory()->create(['name' => 'Room A']);
         $room2 = Room::factory()->create(['name' => 'Room B']);
@@ -39,7 +39,7 @@ describe('TableIndex Livewire Component', function () {
         expect($grouped->count())->toBe(2);
 
         // Vérifier que les groupes ont la bonne structure
-        $grouped->each(function ($group) {
+        $grouped->each(function ($group): void {
             expect($group)->toHaveKeys(['room', 'room_display', 'tables']);
             expect($group['tables'])->toBeInstanceOf(\Illuminate\Database\Eloquent\Collection::class);
         });
@@ -50,7 +50,7 @@ describe('TableIndex Livewire Component', function () {
         expect($group1['tables']->count())->toBe(2);
     });
 
-    test('unassigned tables are grouped separately', function () {
+    test('unassigned tables are grouped separately', function (): void {
         // Arrange
         $room = Room::factory()->create(['name' => 'Room A']);
 
@@ -70,7 +70,7 @@ describe('TableIndex Livewire Component', function () {
         expect($unassignedGroup['tables']->count())->toBe(1);
     });
 
-    test('unassigned group does not exist if all tables are linked', function () {
+    test('unassigned group does not exist if all tables are linked', function (): void {
         // Arrange: Only create assigned tables
         $room = Room::factory()->create();
         Table::factory()->for($room)->create();
@@ -84,7 +84,7 @@ describe('TableIndex Livewire Component', function () {
         expect($unassignedGroup)->toBeNull();
     });
 
-    test('groups are sorted alphabetically by room name', function () {
+    test('groups are sorted alphabetically by room name', function (): void {
         // Arrange
         $roomZ = Room::factory()->create(['name' => 'Zebra Room']);
         $roomA = Room::factory()->create(['name' => 'Alpha Room']);
@@ -103,7 +103,7 @@ describe('TableIndex Livewire Component', function () {
         expect($roomNames)->toBe(['Alpha Room', 'Milo Room', 'Zebra Room']);
     });
 
-    test('search filters tables by name', function () {
+    test('search filters tables by name', function (): void {
         // Arrange
         $room = Room::factory()->create();
         Table::factory()->for($room)->create(['name' => 'Premium Table']);
@@ -122,7 +122,7 @@ describe('TableIndex Livewire Component', function () {
         expect($grouped->first()['tables']->first()->name)->toBe('Premium Table');
     });
 
-    test('search filters tables by state', function () {
+    test('search filters tables by state', function (): void {
         // Arrange
         $room = Room::factory()->create();
         Table::factory()->for($room)->create(['name' => 'Table 1', 'state' => 'Good condition']);
@@ -140,7 +140,7 @@ describe('TableIndex Livewire Component', function () {
         expect($totalTables)->toBe(1);
     });
 
-    test('search is debounced', function () {
+    test('search is debounced', function (): void {
         // Arrange
         $room = Room::factory()->create();
         Table::factory(5)->for($room)->create();
@@ -161,7 +161,7 @@ describe('TableIndex Livewire Component', function () {
         expect($grouped)->not->toBeNull();
     });
 
-    test('unlink action removes table from room', function () {
+    test('unlink action removes table from room', function (): void {
         // Arrange
         $room = Room::factory()->create();
         $table = Table::factory()->for($room)->create();
@@ -179,7 +179,7 @@ describe('TableIndex Livewire Component', function () {
         expect($table->room_id)->toBeNull();
     });
 
-    test('unlink action displays success message', function () {
+    test('unlink action displays success message', function (): void {
         // Arrange
         $room = Room::factory()->create();
         $table = Table::factory()->for($room)->create();
@@ -198,7 +198,7 @@ describe('TableIndex Livewire Component', function () {
         });
     })->skip('Not able to test toasts');
 
-    test('refresh action updates data', function () {
+    test('refresh action updates data', function (): void {
         // Arrange
         $room = Room::factory()->create();
         Table::factory(3)->for($room)->create();
@@ -220,7 +220,7 @@ describe('TableIndex Livewire Component', function () {
         expect($newCount)->toBe($initialCount + 1);
     });
 
-    test('headers are properly configured', function () {
+    test('headers are properly configured', function (): void {
         // Arrange & Act
         $component = Livewire::test('pages::club-admin.tables');
         $headers = $component->viewData('headers');
@@ -230,7 +230,7 @@ describe('TableIndex Livewire Component', function () {
         expect($headers)->toHaveCount(5); // name, purchased_on, is_competition_ready, state, actions
 
         // Vérifier que chaque header a la structure attendue
-        collect($headers)->each(function ($header) {
+        collect($headers)->each(function ($header): void {
             expect($header)->toHaveKeys(['key', 'label', 'class']);
         });
 
@@ -245,7 +245,7 @@ describe('TableIndex Livewire Component', function () {
         ]);
     });
 
-    test('complete workflow: search, view, and unlink', function () {
+    test('complete workflow: search, view, and unlink', function (): void {
         // Arrange
         $room1 = Room::factory()->create(['name' => 'Room A']);
         $room2 = Room::factory()->create(['name' => 'Room B']);
@@ -284,7 +284,7 @@ describe('TableIndex Livewire Component', function () {
         expect($unassignedGroup['tables']->pluck('id')->contains($table1->id))->toBeTrue();
     });
 
-    test('breadcrumbs are correct', function () {
+    test('breadcrumbs are correct', function (): void {
         // Act
         $component = Livewire::test('pages::club-admin.tables');
         $breadcrumbs = $component->viewData('breadcrumbs');
@@ -294,16 +294,16 @@ describe('TableIndex Livewire Component', function () {
         expect($breadcrumbs)->not->toBeEmpty();
     });
 
-    describe('User permissions', function () {
-        test('a user cannot create a new table', function () {})->todo();
+    describe('User permissions', function (): void {
+        test('a user cannot create a new table', function (): void {})->todo();
 
-        test('a user cannot edit a table', function () {})->todo();
+        test('a user cannot edit a table', function (): void {})->todo();
 
-        test('a user cannot unlink a table from a room', function () {})->todo();
+        test('a user cannot unlink a table from a room', function (): void {})->todo();
 
-        test('a user cannot delete a table', function () {})->todo();
+        test('a user cannot delete a table', function (): void {})->todo();
 
-        test('an admin or committee member can create a new table', function () {
+        test('an admin or committee member can create a new table', function (): void {
             $admin = User::factory()->create(['is_admin' => true]); // Exemple
 
             Livewire::actingAs($admin)
@@ -311,7 +311,7 @@ describe('TableIndex Livewire Component', function () {
                 ->assertSee(__('Create'));
         });
 
-        test('an admin or committee member can edit a table', function () {
+        test('an admin or committee member can edit a table', function (): void {
 
             $table = Table::factory()->create();
             $admin = User::factory()->create(['is_admin' => true]); // Exemple
@@ -321,7 +321,7 @@ describe('TableIndex Livewire Component', function () {
                 ->assertSeeHtml(__('Edit'));
         });
 
-        test('an admin or committee member can unlink a table from a room', function () {
+        test('an admin or committee member can unlink a table from a room', function (): void {
             $admin = User::factory()->create(['is_admin' => true]);
             $room = Room::factory()->create();
             Table::factory()->for($room)->create();
@@ -331,7 +331,7 @@ describe('TableIndex Livewire Component', function () {
                 ->assertSee(__('Unlink'));
         });
 
-        test('an admin or committee member can delete a table', function () {
+        test('an admin or committee member can delete a table', function (): void {
             $admin = User::factory()->create(['is_admin' => true]); // Exemple
 
             Livewire::actingAs($admin)

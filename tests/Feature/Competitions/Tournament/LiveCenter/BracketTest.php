@@ -51,9 +51,9 @@ function tournamentReadyForBracket(int $nbPools = 2, int $poolSize = 4, int $qua
 
 // ── TournamentFinalPhaseService::configureKnockoutPhase ───────────────────────
 
-describe('configureKnockoutPhase', function () {
+describe('configureKnockoutPhase', function (): void {
 
-    it('throws when pools still have pending matches', function () {
+    it('throws when pools still have pending matches', function (): void {
         $tournament = Tournament::factory()->create([
             'status' => TournamentStatusEnum::PENDING,
             'nb_pools' => 1,
@@ -72,7 +72,7 @@ describe('configureKnockoutPhase', function () {
         )->toThrow(Exception::class);
     })->group('bracket', 'guard');
 
-    it('throws when pools have no matches at all', function () {
+    it('throws when pools have no matches at all', function (): void {
         $tournament = Tournament::factory()->create([
             'status' => TournamentStatusEnum::PENDING,
             'nb_pools' => 1,
@@ -83,7 +83,7 @@ describe('configureKnockoutPhase', function () {
         )->toThrow(DivisionByZeroError::class);
     })->group('bracket', 'guard');
 
-    it('creates a final and a bronze match at minimum', function () {
+    it('creates a final and a bronze match at minimum', function (): void {
         $tournament = tournamentReadyForBracket(nbPools: 2, poolSize: 4, qualifiersPerPool: 2);
 
         app(TournamentFinalPhaseService::class)
@@ -95,7 +95,7 @@ describe('configureKnockoutPhase', function () {
             ->and($bracketMatches->where('round', 'bronze'))->toHaveCount(1);
     })->group('bracket', 'creation');
 
-    it('creates semifinal matches when starting round is semifinal', function () {
+    it('creates semifinal matches when starting round is semifinal', function (): void {
         $tournament = tournamentReadyForBracket(nbPools: 2, poolSize: 4, qualifiersPerPool: 2);
 
         app(TournamentFinalPhaseService::class)
@@ -105,7 +105,7 @@ describe('configureKnockoutPhase', function () {
         expect($semifinals)->toHaveCount(2);
     })->group('bracket', 'creation');
 
-    it('creates quarterfinal matches when 8 qualifiers (quarterfinal start)', function () {
+    it('creates quarterfinal matches when 8 qualifiers (quarterfinal start)', function (): void {
         $tournament = tournamentReadyForBracket(nbPools: 4, poolSize: 4, qualifiersPerPool: 2);
 
         app(TournamentFinalPhaseService::class)
@@ -115,7 +115,7 @@ describe('configureKnockoutPhase', function () {
         expect($quarters)->toHaveCount(4);
     })->group('bracket', 'creation');
 
-    it('produces a non-zero total of bracket matches after generation', function () {
+    it('produces a non-zero total of bracket matches after generation', function (): void {
         $tournament = tournamentReadyForBracket(nbPools: 2, poolSize: 4, qualifiersPerPool: 2);
 
         app(TournamentFinalPhaseService::class)
@@ -125,7 +125,7 @@ describe('configureKnockoutPhase', function () {
         expect($bracketCount)->toBeGreaterThan(0);
     })->group('bracket', 'creation');
 
-    it('deletes existing bracket matches before re-generating', function () {
+    it('deletes existing bracket matches before re-generating', function (): void {
         $tournament = tournamentReadyForBracket(nbPools: 2, poolSize: 4, qualifiersPerPool: 2);
         $service = app(TournamentFinalPhaseService::class);
 
@@ -142,9 +142,9 @@ describe('configureKnockoutPhase', function () {
 
 // ── TournamentFinalPhaseService::completeMatch ────────────────────────────────
 
-describe('completeMatch', function () {
+describe('completeMatch', function (): void {
 
-    it('marks the match as completed with the correct winner', function () {
+    it('marks the match as completed with the correct winner', function (): void {
         $tournament = Tournament::factory()->create(['status' => TournamentStatusEnum::PENDING]);
         $p1 = User::factory()->create();
         $p2 = User::factory()->create();
@@ -166,7 +166,7 @@ describe('completeMatch', function () {
             ->and($match->fresh()->winner_id)->toBe($p1->id);
     })->group('bracket', 'progression');
 
-    it('advances the winner to player1_id of the next match when it is empty', function () {
+    it('advances the winner to player1_id of the next match when it is empty', function (): void {
         $tournament = Tournament::factory()->create(['status' => TournamentStatusEnum::PENDING]);
         $p1 = User::factory()->create();
         $p2 = User::factory()->create();
@@ -199,7 +199,7 @@ describe('completeMatch', function () {
         expect($final->fresh()->player1_id)->toBe($p1->id);
     })->group('bracket', 'progression');
 
-    it('advances the winner to player2_id of the next match when player1 is already set', function () {
+    it('advances the winner to player2_id of the next match when player1 is already set', function (): void {
         $tournament = Tournament::factory()->create(['status' => TournamentStatusEnum::PENDING]);
         [$p1, $p3, $p4] = User::factory(3)->create()->all();
 
@@ -231,7 +231,7 @@ describe('completeMatch', function () {
         expect($final->fresh()->player2_id)->toBe($p3->id);
     })->group('bracket', 'progression');
 
-    it('sends the loser of a semifinal to the bronze match', function () {
+    it('sends the loser of a semifinal to the bronze match', function (): void {
         $tournament = Tournament::factory()->create(['status' => TournamentStatusEnum::PENDING]);
         $p1 = User::factory()->create();
         $p2 = User::factory()->create();
@@ -282,9 +282,9 @@ describe('completeMatch', function () {
 
 // ── completeMatch — doubles pair propagation ──────────────────────────────────
 
-describe('completeMatch doubles pair propagation', function () {
+describe('completeMatch doubles pair propagation', function (): void {
 
-    it('propagates the winner pair_id to player1 slot of the next match', function () {
+    it('propagates the winner pair_id to player1 slot of the next match', function (): void {
         $tournament = Tournament::factory()->create(['status' => TournamentStatusEnum::PENDING]);
         [$p1, $p2] = User::factory(2)->create()->all();
         $pair1 = TournamentPair::factory()->create(['tournament_id' => $tournament->id, 'player1_id' => $p1->id, 'player2_id' => User::factory()->create()->id]);
@@ -316,7 +316,7 @@ describe('completeMatch doubles pair propagation', function () {
             ->and($next->fresh()->pair1_id)->toBe($pair1->id);
     })->group('bracket', 'doubles');
 
-    it('propagates the winner pair_id to player2 slot when player1 is already set', function () {
+    it('propagates the winner pair_id to player2 slot when player1 is already set', function (): void {
         $tournament = Tournament::factory()->create(['status' => TournamentStatusEnum::PENDING]);
         [$p1, $p2, $p3] = User::factory(3)->create()->all();
         $pairA = TournamentPair::factory()->create(['tournament_id' => $tournament->id, 'player1_id' => $p1->id, 'player2_id' => User::factory()->create()->id]);
@@ -351,7 +351,7 @@ describe('completeMatch doubles pair propagation', function () {
             ->and($final->fresh()->pair2_id)->toBe($pairB->id);
     })->group('bracket', 'doubles');
 
-    it('propagates the loser pair_id to the bronze match', function () {
+    it('propagates the loser pair_id to the bronze match', function (): void {
         $tournament = Tournament::factory()->create(['status' => TournamentStatusEnum::PENDING]);
         [$p1, $p2] = User::factory(2)->create()->all();
         $pair1 = TournamentPair::factory()->create(['tournament_id' => $tournament->id, 'player1_id' => $p1->id, 'player2_id' => User::factory()->create()->id]);
@@ -396,9 +396,9 @@ describe('completeMatch doubles pair propagation', function () {
 
 // ── generateBracket — startingRound logic ─────────────────────────────────────
 
-describe('generateBracket startingRound selection', function () {
+describe('generateBracket startingRound selection', function (): void {
 
-    it('selects semifinal when 4 qualifiers (2 pools × 2)', function () {
+    it('selects semifinal when 4 qualifiers (2 pools × 2)', function (): void {
         $tournament = Tournament::factory()->create([
             'nb_pools' => 2,
             'nb_qualifiers_per_pool' => 2,
@@ -414,7 +414,7 @@ describe('generateBracket startingRound selection', function () {
         expect($startingRound)->toBe('semifinal');
     })->group('bracket', 'round-selection');
 
-    it('selects quarterfinal when 8 qualifiers (4 pools × 2)', function () {
+    it('selects quarterfinal when 8 qualifiers (4 pools × 2)', function (): void {
         $tournament = Tournament::factory()->create([
             'nb_pools' => 4,
             'nb_qualifiers_per_pool' => 2,
@@ -430,7 +430,7 @@ describe('generateBracket startingRound selection', function () {
         expect($startingRound)->toBe('quarterfinal');
     })->group('bracket', 'round-selection');
 
-    it('selects round_16 when 16 qualifiers (8 pools × 2)', function () {
+    it('selects round_16 when 16 qualifiers (8 pools × 2)', function (): void {
         $tournament = Tournament::factory()->create([
             'nb_pools' => 8,
             'nb_qualifiers_per_pool' => 2,

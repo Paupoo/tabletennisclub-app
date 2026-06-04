@@ -20,6 +20,24 @@ use Illuminate\Support\Carbon;
  * @property int|null $assigned_to_id
  * @property Carbon|null $due_date
  * @property bool $is_completed
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read User|null $assignedTo
+ * @property-read \App\Domains\Meetings\Models\Meeting $meeting
+ * @method static \Database\Factories\Domains\Meetings\Models\MeetingActionItemFactory factory($count = null, $state = [])
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingActionItem newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingActionItem newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingActionItem query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingActionItem whereAssignedToId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingActionItem whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingActionItem whereDescription($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingActionItem whereDueDate($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingActionItem whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingActionItem whereIsCompleted($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingActionItem whereMeetingId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingActionItem whereTitle($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingActionItem whereUpdatedAt($value)
+ * @mixin \Eloquent
  */
 #[UseFactory(MeetingActionItemFactory::class)]
 class MeetingActionItem extends Model

@@ -39,19 +39,19 @@ function registeredUsersInTournament(Tournament $tournament, int $count = 2): ar
 
 // ── TournamentPair model ──────────────────────────────────────────────────────
 
-describe('TournamentPair model', function () {
-    it('belongs to a tournament', function () {
+describe('TournamentPair model', function (): void {
+    it('belongs to a tournament', function (): void {
         $pair = TournamentPair::factory()->create();
         expect($pair->tournament)->toBeInstanceOf(Tournament::class);
     });
 
-    it('belongs to player1 and player2', function () {
+    it('belongs to player1 and player2', function (): void {
         $pair = TournamentPair::factory()->create();
         expect($pair->player1)->toBeInstanceOf(User::class);
         expect($pair->player2)->toBeInstanceOf(User::class);
     });
 
-    it('returns a display name from last names', function () {
+    it('returns a display name from last names', function (): void {
         $p1 = User::factory()->create(['last_name' => 'Dupont']);
         $p2 = User::factory()->create(['last_name' => 'Martin']);
         $tournament = Tournament::factory()->create();
@@ -70,8 +70,8 @@ describe('TournamentPair model', function () {
 
 // ── Tournament relations ──────────────────────────────────────────────────────
 
-describe('Tournament pairs relation', function () {
-    it('has a pairs() hasMany relation', function () {
+describe('Tournament pairs relation', function (): void {
+    it('has a pairs() hasMany relation', function (): void {
         $tournament = doublesTournament();
         $admin = User::factory()->create();
         [$p1, $p2] = registeredUsersInTournament($tournament);
@@ -89,13 +89,13 @@ describe('Tournament pairs relation', function () {
 
 // ── doubles_registration_mode ─────────────────────────────────────────────────
 
-describe('doubles_registration_mode', function () {
-    it('is saved on the tournament', function () {
+describe('doubles_registration_mode', function (): void {
+    it('is saved on the tournament', function (): void {
         $t = Tournament::factory()->create(['doubles_registration_mode' => 'self']);
         expect($t->fresh()->doubles_registration_mode)->toBe('self');
     });
 
-    it('defaults to null for single tournaments', function () {
+    it('defaults to null for single tournaments', function (): void {
         $t = Tournament::factory()->create(['match_type' => 'single']);
         expect($t->doubles_registration_mode)->toBeNull();
     });
@@ -103,8 +103,8 @@ describe('doubles_registration_mode', function () {
 
 // ── Wizard createPair / deletePair ────────────────────────────────────────────
 
-describe('wizard createPair', function () {
-    it('creates a pair between two registered players', function () {
+describe('wizard createPair', function (): void {
+    it('creates a pair between two registered players', function (): void {
         $admin = User::factory()->create(['is_admin' => true]);
         $this->actingAs($admin);
 
@@ -120,7 +120,7 @@ describe('wizard createPair', function () {
         expect(TournamentPair::where('tournament_id', $tournament->id)->count())->toBe(1);
     });
 
-    it('rejects pairing the same player twice', function () {
+    it('rejects pairing the same player twice', function (): void {
         $admin = User::factory()->create(['is_admin' => true]);
         $this->actingAs($admin);
 
@@ -135,7 +135,7 @@ describe('wizard createPair', function () {
         expect(TournamentPair::where('tournament_id', $tournament->id)->count())->toBe(0);
     });
 
-    it('rejects creating a pair if a player is already paired', function () {
+    it('rejects creating a pair if a player is already paired', function (): void {
         $admin = User::factory()->create(['is_admin' => true]);
         $this->actingAs($admin);
 
@@ -157,7 +157,7 @@ describe('wizard createPair', function () {
         expect(TournamentPair::where('tournament_id', $tournament->id)->count())->toBe(1);
     });
 
-    it('deletes a pair', function () {
+    it('deletes a pair', function (): void {
         $admin = User::factory()->create(['is_admin' => true]);
         $this->actingAs($admin);
 

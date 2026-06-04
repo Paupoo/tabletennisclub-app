@@ -34,8 +34,8 @@ function registrationFor(Meeting $meeting, User $user)
 
 // ── Show page ──────────────────────────────────────────────────────────────
 
-describe('Meeting RSVP — show page', function () {
-    test('shows the response form with attendance options', function () {
+describe('Meeting RSVP — show page', function (): void {
+    test('shows the response form with attendance options', function (): void {
         $admin = User::factory()->create(['is_admin' => true]);
         $user = User::factory()->create(['is_active' => true]);
         $meeting = Meeting::factory()->confirmed()->create(['created_by' => $admin->id]);
@@ -47,7 +47,7 @@ describe('Meeting RSVP — show page', function () {
             ->assertDontSee(__('Reserve the meal'));
     });
 
-    test('shows meal options only when the meeting has a meal', function () {
+    test('shows meal options only when the meeting has a meal', function (): void {
         $admin = User::factory()->create(['is_admin' => true]);
         $user = User::factory()->create(['is_active' => true]);
         $meeting = Meeting::factory()->confirmed()->withMeal('Pizzas', 1200)->create(['created_by' => $admin->id]);
@@ -61,8 +61,8 @@ describe('Meeting RSVP — show page', function () {
 
 // ── Submitting ───────────────────────────────────────────────────────────────
 
-describe('Meeting RSVP — submitting', function () {
-    test('confirming attendance updates the pivot', function () {
+describe('Meeting RSVP — submitting', function (): void {
+    test('confirming attendance updates the pivot', function (): void {
         Notification::fake();
         $admin = User::factory()->create(['is_admin' => true]);
         $user = User::factory()->create(['is_active' => true]);
@@ -76,7 +76,7 @@ describe('Meeting RSVP — submitting', function () {
             ->and($reg->response_at)->not->toBeNull();
     });
 
-    test('declining attendance updates the pivot', function () {
+    test('declining attendance updates the pivot', function (): void {
         Notification::fake();
         $admin = User::factory()->create(['is_admin' => true]);
         $user = User::factory()->create(['is_active' => true]);
@@ -88,7 +88,7 @@ describe('Meeting RSVP — submitting', function () {
         expect(registrationFor($meeting, $user)->status)->toBe(MeetingUserStatusEnum::DECLINED);
     });
 
-    test('confirming and reserving a paid meal creates a pending payment', function () {
+    test('confirming and reserving a paid meal creates a pending payment', function (): void {
         Notification::fake();
         $admin = User::factory()->create(['is_admin' => true]);
         $user = User::factory()->create(['is_active' => true]);
@@ -106,7 +106,7 @@ describe('Meeting RSVP — submitting', function () {
             ->and($payment->amount_due)->toBe(12.0);
     });
 
-    test('confirming and skipping the meal creates no payment', function () {
+    test('confirming and skipping the meal creates no payment', function (): void {
         Notification::fake();
         $admin = User::factory()->create(['is_admin' => true]);
         $user = User::factory()->create(['is_active' => true]);
@@ -119,7 +119,7 @@ describe('Meeting RSVP — submitting', function () {
             ->and(Payment::count())->toBe(0);
     });
 
-    test('switching from reserve to skip deletes the pending payment', function () {
+    test('switching from reserve to skip deletes the pending payment', function (): void {
         Notification::fake();
         $admin = User::factory()->create(['is_admin' => true]);
         $user = User::factory()->create(['is_active' => true]);
@@ -135,7 +135,7 @@ describe('Meeting RSVP — submitting', function () {
             ->and(registrationFor($meeting, $user)->meal_reserved)->toBeFalse();
     });
 
-    test('a paid meal stays locked when trying to un-reserve', function () {
+    test('a paid meal stays locked when trying to un-reserve', function (): void {
         Notification::fake();
         $admin = User::factory()->create(['is_admin' => true]);
         $user = User::factory()->create(['is_active' => true]);
@@ -152,7 +152,7 @@ describe('Meeting RSVP — submitting', function () {
             ->and($reg->payment)->not->toBeNull();
     });
 
-    test('a free meal can be reserved without creating a payment', function () {
+    test('a free meal can be reserved without creating a payment', function (): void {
         Notification::fake();
         $admin = User::factory()->create(['is_admin' => true]);
         $user = User::factory()->create(['is_active' => true]);
@@ -165,7 +165,7 @@ describe('Meeting RSVP — submitting', function () {
             ->and(Payment::count())->toBe(0);
     });
 
-    test('declining removes a pending meal payment', function () {
+    test('declining removes a pending meal payment', function (): void {
         Notification::fake();
         $admin = User::factory()->create(['is_admin' => true]);
         $user = User::factory()->create(['is_active' => true]);
@@ -182,8 +182,8 @@ describe('Meeting RSVP — submitting', function () {
 
 // ── Confirmation email ─────────────────────────────────────────────────────────
 
-describe('Meeting RSVP — confirmation email', function () {
-    test('first confirmation sends the confirmation notification', function () {
+describe('Meeting RSVP — confirmation email', function (): void {
+    test('first confirmation sends the confirmation notification', function (): void {
         Notification::fake();
         $admin = User::factory()->create(['is_admin' => true]);
         $user = User::factory()->create(['is_active' => true]);
@@ -195,7 +195,7 @@ describe('Meeting RSVP — confirmation email', function () {
         Notification::assertSentTo($user, MeetingRsvpConfirmationNotification::class);
     });
 
-    test('declining does NOT send a confirmation notification', function () {
+    test('declining does NOT send a confirmation notification', function (): void {
         Notification::fake();
         $admin = User::factory()->create(['is_admin' => true]);
         $user = User::factory()->create(['is_active' => true]);
@@ -207,7 +207,7 @@ describe('Meeting RSVP — confirmation email', function () {
         Notification::assertNothingSent();
     });
 
-    test('re-confirming does NOT send a second confirmation email', function () {
+    test('re-confirming does NOT send a second confirmation email', function (): void {
         Notification::fake();
         $admin = User::factory()->create(['is_admin' => true]);
         $user = User::factory()->create(['is_active' => true]);
@@ -219,7 +219,7 @@ describe('Meeting RSVP — confirmation email', function () {
         Notification::assertNothingSent();
     });
 
-    test('the confirmation carries the payment only when the meal is reserved', function () {
+    test('the confirmation carries the payment only when the meal is reserved', function (): void {
         Notification::fake();
         $admin = User::factory()->create(['is_admin' => true]);
         $user = User::factory()->create(['is_active' => true]);
@@ -235,8 +235,8 @@ describe('Meeting RSVP — confirmation email', function () {
 
 // ── Security ───────────────────────────────────────────────────────────────────
 
-describe('Meeting RSVP — security', function () {
-    test('unsigned show URL is rejected with 403', function () {
+describe('Meeting RSVP — security', function (): void {
+    test('unsigned show URL is rejected with 403', function (): void {
         $admin = User::factory()->create(['is_admin' => true]);
         $user = User::factory()->create(['is_active' => true]);
         $meeting = Meeting::factory()->confirmed()->create(['created_by' => $admin->id]);
@@ -245,7 +245,7 @@ describe('Meeting RSVP — security', function () {
             ->assertStatus(403);
     });
 
-    test('unsigned submit URL is rejected with 403', function () {
+    test('unsigned submit URL is rejected with 403', function (): void {
         $admin = User::factory()->create(['is_admin' => true]);
         $user = User::factory()->create(['is_active' => true]);
         $meeting = Meeting::factory()->confirmed()->create(['created_by' => $admin->id]);
@@ -255,7 +255,7 @@ describe('Meeting RSVP — security', function () {
             ->assertStatus(403);
     });
 
-    test('an invalid attendance value is rejected', function () {
+    test('an invalid attendance value is rejected', function (): void {
         Notification::fake();
         $admin = User::factory()->create(['is_admin' => true]);
         $user = User::factory()->create(['is_active' => true]);
@@ -266,7 +266,7 @@ describe('Meeting RSVP — security', function () {
             ->assertSessionHasErrors('attendance');
     });
 
-    test('submitting attaches the user if not already invited', function () {
+    test('submitting attaches the user if not already invited', function (): void {
         Notification::fake();
         $admin = User::factory()->create(['is_admin' => true]);
         $user = User::factory()->create(['is_active' => true]);

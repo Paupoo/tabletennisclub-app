@@ -11,8 +11,8 @@ use Livewire\Livewire;
 
 // ── generateSessions ──────────────────────────────────────────────────────────
 
-describe('generateSessions', function () {
-    it('generates training sessions for the season', function () {
+describe('generateSessions', function (): void {
+    it('generates training sessions for the season', function (): void {
         $season = makeActiveSeason();
         $pack = makeTrainingPack($season);
 
@@ -21,7 +21,7 @@ describe('generateSessions', function () {
         expect($pack->trainings()->count())->toBeGreaterThan(0);
     });
 
-    it('generates weekly sessions', function () {
+    it('generates weekly sessions', function (): void {
         $season = Season::factory()->create([
             'is_active' => true,
             'start_at' => now()->startOfMonth(),
@@ -41,7 +41,7 @@ describe('generateSessions', function () {
         expect($trainings->count())->toBeGreaterThanOrEqual(1);
     });
 
-    it('does not create duplicate sessions on the same date', function () {
+    it('does not create duplicate sessions on the same date', function (): void {
         $season = makeActiveSeason();
         $pack = makeTrainingPack($season);
 
@@ -52,7 +52,7 @@ describe('generateSessions', function () {
         expect($pack->trainings()->count())->toBe($firstCount);
     });
 
-    it('creates sessions with correct start and end times', function () {
+    it('creates sessions with correct start and end times', function (): void {
         $season = makeActiveSeason();
         $pack = makeTrainingPack($season, [
             'start_time' => '19:00:00',
@@ -66,7 +66,7 @@ describe('generateSessions', function () {
         expect($session->end->format('H:i'))->toBe('20:30');
     });
 
-    it('returns without generating when day_of_week is null', function () {
+    it('returns without generating when day_of_week is null', function (): void {
         $season = makeActiveSeason();
         $pack = makeTrainingPack($season, ['day_of_week' => null]);
 
@@ -75,7 +75,7 @@ describe('generateSessions', function () {
         expect($pack->trainings()->count())->toBe(0);
     });
 
-    it('generates sessions on multiple specific days', function () {
+    it('generates sessions on multiple specific days', function (): void {
         $season = Season::factory()->create([
             'is_active' => true,
             'start_at' => now()->startOfMonth(),
@@ -92,7 +92,7 @@ describe('generateSessions', function () {
         expect($pack->trainings()->count())->toBeGreaterThanOrEqual(2);
     });
 
-    it('skips excluded dates when generating', function () {
+    it('skips excluded dates when generating', function (): void {
         $season = Season::factory()->create([
             'is_active' => true,
             'start_at' => now()->startOfMonth(),
@@ -115,7 +115,7 @@ describe('generateSessions', function () {
         expect($dates)->not->toContain($excluded);
     });
 
-    it('respects custom pack_start_date and pack_end_date', function () {
+    it('respects custom pack_start_date and pack_end_date', function (): void {
         $season = makeActiveSeason();
         $customStart = now()->startOfMonth()->addDays(10)->toDateString();
         $customEnd = now()->startOfMonth()->addDays(17)->toDateString();
@@ -128,13 +128,13 @@ describe('generateSessions', function () {
 
         $pack->generateSessions($season);
 
-        $pack->trainings()->each(function ($t) use ($customStart, $customEnd) {
+        $pack->trainings()->each(function ($t) use ($customStart, $customEnd): void {
             expect($t->start->toDateString())->toBeGreaterThanOrEqual($customStart);
             expect($t->start->toDateString())->toBeLessThanOrEqual($customEnd);
         });
     });
 
-    it('links generated sessions to the correct pack', function () {
+    it('links generated sessions to the correct pack', function (): void {
         $season = makeActiveSeason();
         $pack = makeTrainingPack($season);
 
@@ -147,15 +147,15 @@ describe('generateSessions', function () {
 
 // ── effectiveMaxParticipants ──────────────────────────────────────────────────
 
-describe('effectiveMaxParticipants', function () {
-    it('returns max_participants when explicitly set', function () {
+describe('effectiveMaxParticipants', function (): void {
+    it('returns max_participants when explicitly set', function (): void {
         $season = makeActiveSeason();
         $pack = makeTrainingPack($season, ['max_participants' => 12]);
 
         expect($pack->effectiveMaxParticipants())->toBe(12);
     });
 
-    it('falls back to room capacity when max_participants is null', function () {
+    it('falls back to room capacity when max_participants is null', function (): void {
         $room = Room::factory()->create(['capacity_for_trainings' => 15]);
         $season = makeActiveSeason();
         $pack = makeTrainingPack($season, [
@@ -170,8 +170,8 @@ describe('effectiveMaxParticipants', function () {
 
 // ── model bug fixes ───────────────────────────────────────────────────────────
 
-describe('model bug fixes', function () {
-    it('Room.trainingPacks() returns TrainingPack instances', function () {
+describe('model bug fixes', function (): void {
+    it('Room.trainingPacks() returns TrainingPack instances', function (): void {
         $room = Room::factory()->create();
         $season = makeActiveSeason();
         $pack = makeTrainingPack($season, ['room_id' => $room->id]);
@@ -182,7 +182,7 @@ describe('model bug fixes', function () {
         expect($result->id)->toBe($pack->id);
     });
 
-    it('User.trainings() pivot has status column', function () {
+    it('User.trainings() pivot has status column', function (): void {
         $user = User::factory()->create();
         $season = makeActiveSeason();
         $pack = makeTrainingPack($season);
@@ -198,8 +198,8 @@ describe('model bug fixes', function () {
 
 // ── regression: trainer change cascades to sessions ───────────────────────────
 
-describe('trainer update', function () {
-    it('propagates trainer change to all linked sessions', function () {
+describe('trainer update', function (): void {
+    it('propagates trainer change to all linked sessions', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $coachA = User::factory()->create(['is_coach' => true]);
         $coachB = User::factory()->create(['is_coach' => true]);

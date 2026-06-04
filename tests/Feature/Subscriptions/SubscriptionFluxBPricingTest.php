@@ -11,9 +11,9 @@ use App\Domains\Trainings\Models\TrainingPack;
 // The computed property replicates CalculatePriceAction logic on the approved
 // pack selection before the admin clicks "Approve". We test via the action.
 
-describe('Flux A pending review — estimated total', function () {
+describe('Flux A pending review — estimated total', function (): void {
 
-    test('competitive subscription with no packs → 125€', function () {
+    test('competitive subscription with no packs → 125€', function (): void {
         $subscription = Subscription::factory()->create([
             'status' => 'pending',
             'is_competitive' => true,
@@ -24,7 +24,7 @@ describe('Flux A pending review — estimated total', function () {
         expect($subscription->amount_due)->toBe(125.0);
     })->group('subscriptions', 'pricing', 'flux-a');
 
-    test('recreational subscription with no packs → 60€', function () {
+    test('recreational subscription with no packs → 60€', function (): void {
         $subscription = Subscription::factory()->create([
             'status' => 'pending',
             'is_competitive' => false,
@@ -35,7 +35,7 @@ describe('Flux A pending review — estimated total', function () {
         expect($subscription->amount_due)->toBe(60.0);
     })->group('subscriptions', 'pricing', 'flux-a');
 
-    test('one discountable pack → no discount (count = 1)', function () {
+    test('one discountable pack → no discount (count = 1)', function (): void {
         $subscription = Subscription::factory()->create([
             'status' => 'pending',
             'is_competitive' => true,
@@ -49,7 +49,7 @@ describe('Flux A pending review — estimated total', function () {
         expect($subscription->amount_due)->toBe(215.0);
     })->group('subscriptions', 'pricing', 'flux-a');
 
-    test('two discountable packs → −10€ each', function () {
+    test('two discountable packs → −10€ each', function (): void {
         $subscription = Subscription::factory()->create([
             'status' => 'pending',
             'is_competitive' => true,
@@ -65,7 +65,7 @@ describe('Flux A pending review — estimated total', function () {
         expect($subscription->amount_due)->toBe(285.0);
     })->group('subscriptions', 'pricing', 'flux-a');
 
-    test('family member with one discountable pack → discount applies', function () {
+    test('family member with one discountable pack → discount applies', function (): void {
         $subscription = Subscription::factory()->create([
             'status' => 'pending',
             'is_competitive' => true,
@@ -80,7 +80,7 @@ describe('Flux A pending review — estimated total', function () {
         expect($subscription->amount_due)->toBe(205.0);
     })->group('subscriptions', 'pricing', 'flux-a');
 
-    test('fixed price pack is never discounted', function () {
+    test('fixed price pack is never discounted', function (): void {
         $subscription = Subscription::factory()->create([
             'status' => 'pending',
             'is_competitive' => true,
@@ -96,7 +96,7 @@ describe('Flux A pending review — estimated total', function () {
         expect($subscription->amount_due)->toBe(125.0 + 90.0 + 350.0);
     })->group('subscriptions', 'pricing', 'flux-a');
 
-    test('pending packs are excluded from price calculation', function () {
+    test('pending packs are excluded from price calculation', function (): void {
         $subscription = Subscription::factory()->create([
             'status' => 'pending',
             'is_competitive' => true,
@@ -112,7 +112,7 @@ describe('Flux A pending review — estimated total', function () {
         expect($subscription->amount_due)->toBe(215.0);
     })->group('subscriptions', 'pricing', 'flux-a');
 
-    test('subscription_price DTO field is 125 for competitive and 60 for recreational', function () {
+    test('subscription_price DTO field is 125 for competitive and 60 for recreational', function (): void {
         $competitive = Subscription::factory()->create(['is_competitive' => true]);
         $recreational = Subscription::factory()->create(['is_competitive' => false]);
 
@@ -124,9 +124,9 @@ describe('Flux A pending review — estimated total', function () {
 
 // Flux B = member already paid/confirmed, requests additional training packs
 
-describe('Flux B delta pricing', function () {
+describe('Flux B delta pricing', function (): void {
 
-    test('delta payment applies multi-pack discount when adding a third discountable pack', function () {
+    test('delta payment applies multi-pack discount when adding a third discountable pack', function (): void {
         // Subscription with 2 discountable packs already enrolled at discounted price
         // 2 packs → applyDiscount = true → each costs 80€ → training total = 160€
         $subscription = Subscription::factory()->create([
@@ -161,7 +161,7 @@ describe('Flux B delta pricing', function () {
         expect($delta)->toBe(80.0);
     })->group('subscriptions', 'pricing', 'flux-b');
 
-    test('delta payment is full price when only one discountable pack total', function () {
+    test('delta payment is full price when only one discountable pack total', function (): void {
         $subscription = Subscription::factory()->create([
             'status' => 'paid',
             'is_competitive' => true,
@@ -186,7 +186,7 @@ describe('Flux B delta pricing', function () {
         expect($delta)->toBe(90.0);
     })->group('subscriptions', 'pricing', 'flux-b');
 
-    test('delta applies family discount even with a single new pack', function () {
+    test('delta applies family discount even with a single new pack', function (): void {
         $subscription = Subscription::factory()->create([
             'status' => 'paid',
             'is_competitive' => true,
@@ -211,7 +211,7 @@ describe('Flux B delta pricing', function () {
         expect($delta)->toBe(80.0);
     })->group('subscriptions', 'pricing', 'flux-b');
 
-    test('unapproved pending packs are detached and do not affect delta', function () {
+    test('unapproved pending packs are detached and do not affect delta', function (): void {
         $subscription = Subscription::factory()->create([
             'status' => 'paid',
             'is_competitive' => true,

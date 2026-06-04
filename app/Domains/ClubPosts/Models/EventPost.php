@@ -14,6 +14,61 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
 /**
  * @property EventPostStatusEnum $status
  * @property ClubEventTypeEnum $type
+ * @property int $id
+ * @property string $eventable_type
+ * @property int $eventable_id
+ * @property string $title
+ * @property string $description
+ * @property \Illuminate\Support\Carbon $event_date
+ * @property \Illuminate\Support\Carbon $start_time
+ * @property \Illuminate\Support\Carbon|null $end_time
+ * @property string $location
+ * @property string|null $price
+ * @property string $icon
+ * @property int|null $max_participants
+ * @property string|null $notes
+ * @property bool $featured
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property \Illuminate\Support\Carbon|null $featured_until
+ * @property-read Model|\Eloquent $eventable
+ * @property-read string $category_label
+ * @property-read string $formatted_date
+ * @property-read string $formatted_date_time
+ * @property-read string $formatted_time
+ * @property-read bool $is_past
+ * @property-read bool $is_upcoming
+ * @property-read string $public_url
+ * @property-read string $status_label
+ * @method static Builder<static>|EventPost byCategory(string $category)
+ * @method static \Database\Factories\Domains\ClubPosts\Models\EventPostFactory factory($count = null, $state = [])
+ * @method static Builder<static>|EventPost featured()
+ * @method static Builder<static>|EventPost newModelQuery()
+ * @method static Builder<static>|EventPost newQuery()
+ * @method static Builder<static>|EventPost past()
+ * @method static Builder<static>|EventPost published()
+ * @method static Builder<static>|EventPost query()
+ * @method static Builder<static>|EventPost upcoming()
+ * @method static Builder<static>|EventPost whereCreatedAt($value)
+ * @method static Builder<static>|EventPost whereDescription($value)
+ * @method static Builder<static>|EventPost whereEndTime($value)
+ * @method static Builder<static>|EventPost whereEventDate($value)
+ * @method static Builder<static>|EventPost whereEventableId($value)
+ * @method static Builder<static>|EventPost whereEventableType($value)
+ * @method static Builder<static>|EventPost whereFeatured($value)
+ * @method static Builder<static>|EventPost whereFeaturedUntil($value)
+ * @method static Builder<static>|EventPost whereIcon($value)
+ * @method static Builder<static>|EventPost whereId($value)
+ * @method static Builder<static>|EventPost whereLocation($value)
+ * @method static Builder<static>|EventPost whereMaxParticipants($value)
+ * @method static Builder<static>|EventPost whereNotes($value)
+ * @method static Builder<static>|EventPost wherePrice($value)
+ * @method static Builder<static>|EventPost whereStartTime($value)
+ * @method static Builder<static>|EventPost whereStatus($value)
+ * @method static Builder<static>|EventPost whereTitle($value)
+ * @method static Builder<static>|EventPost whereType($value)
+ * @method static Builder<static>|EventPost whereUpdatedAt($value)
+ * @mixin \Eloquent
  */
 class EventPost extends Model
 {

@@ -29,15 +29,15 @@ function committeeModalComponent(): string
 // MOUNT & RENDER
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe('Test Club Settings', function () {
-    describe('Mount & Render', function () {
+describe('Test Club Settings', function (): void {
+    describe('Mount & Render', function (): void {
 
-        it('renders the component without errors', function () {
+        it('renders the component without errors', function (): void {
             Livewire::test(clubSettingsComponent())
                 ->assertStatus(200);
         });
 
-        it('initialises properties from the club app defined in the .env', function () {
+        it('initialises properties from the club app defined in the .env', function (): void {
             // The component reads env('APP_CLUB_LICENCE') at runtime. The .env already
             // populated $_ENV with an empty value, which shadows putenv(), so $_ENV/$_SERVER
             // must be set too for env() to pick the test value up.
@@ -57,7 +57,7 @@ describe('Test Club Settings', function () {
             }
         });
 
-        it('displays committee members in the view', function () {
+        it('displays committee members in the view', function (): void {
             $member = User::factory()->create([
                 'is_committee_member' => true,
                 'first_name' => 'Alice',
@@ -70,7 +70,7 @@ describe('Test Club Settings', function () {
                 ->assertSee('Dumont');
         });
 
-        it('shows empty state when no committee members exist', function () {
+        it('shows empty state when no committee members exist', function (): void {
             User::where('is_committee_member', true)->update(['is_committee_member' => false]);
 
             Livewire::test(clubSettingsComponent())
@@ -83,9 +83,9 @@ describe('Test Club Settings', function () {
     // SEARCH MEMBERS (In the modal)
     // ─────────────────────────────────────────────────────────────────────────────
 
-    describe('searchMembers(in the modal)', function () {
+    describe('searchMembers(in the modal)', function (): void {
 
-        it('returns matching users by first name', function () {
+        it('returns matching users by first name', function (): void {
             User::factory()->create(['first_name' => 'Jean', 'last_name' => 'Dupont', 'licence' => 'BBW001']);
             User::factory()->create(['first_name' => 'Marie', 'last_name' => 'Curie', 'licence' => 'BBW002']);
 
@@ -97,7 +97,7 @@ describe('Test Club Settings', function () {
                 ->first()->toMatchArray(['name' => 'Jean Dupont']);
         });
 
-        it('returns matching users by last name', function () {
+        it('returns matching users by last name', function (): void {
             User::factory()->create(['first_name' => 'Jean', 'last_name' => 'Dupont', 'licence' => 'BBW001']);
 
             $component = Livewire::test(committeeModalComponent())
@@ -107,7 +107,7 @@ describe('Test Club Settings', function () {
                 ->toHaveCount(1);
         });
 
-        it('returns matching users by licence number', function () {
+        it('returns matching users by licence number', function (): void {
             User::factory()->create(['first_name' => 'Jean', 'last_name' => 'Dupont', 'licence' => 'BBW999']);
 
             $component = Livewire::test(committeeModalComponent())
@@ -118,7 +118,7 @@ describe('Test Club Settings', function () {
                 ->first()->toMatchArray(['description' => 'BBW999']);
         });
 
-        it('limits results to 5 users', function () {
+        it('limits results to 5 users', function (): void {
             User::factory()->count(10)->create(['first_name' => 'Test']);
 
             $component = Livewire::test(committeeModalComponent())
@@ -127,14 +127,14 @@ describe('Test Club Settings', function () {
             expect($component->get('membersSearchList'))->toHaveCount(5);
         });
 
-        it('returns an empty list when nothing matches', function () {
+        it('returns an empty list when nothing matches', function (): void {
             $component = Livewire::test(committeeModalComponent())
                 ->call('searchMembers', 'xxxxxxxxxxxxxxx');
 
             expect($component->get('membersSearchList'))->toBeEmpty();
         });
 
-        it('maps results with id, name and description keys', function () {
+        it('maps results with id, name and description keys', function (): void {
             $user = User::factory()->create([
                 'first_name' => 'Paul',
                 'last_name' => 'Martin',
@@ -159,9 +159,9 @@ describe('Test Club Settings', function () {
     // ADD MEMBER (in the modal)
     // ─────────────────────────────────────────────────────────────────────────────
 
-    describe('addMember(in the modal)', function () {
+    describe('addMember(in the modal)', function (): void {
 
-        it('adds a user to the committee with a valid role', function () {
+        it('adds a user to the committee with a valid role', function (): void {
             $user = User::factory()->create(['is_committee_member' => false]);
 
             Livewire::test(committeeModalComponent())
@@ -174,7 +174,7 @@ describe('Test Club Settings', function () {
                 ->committee_role->toBe(CommitteeRolesEnum::PRESIDENT);
         });
 
-        it('resets selectedMemberId, selectedRoleId and closes modal after adding', function () {
+        it('resets selectedMemberId, selectedRoleId and closes modal after adding', function (): void {
             $user = User::factory()->create(['is_committee_member' => false]);
 
             Livewire::test(committeeModalComponent())
@@ -186,7 +186,7 @@ describe('Test Club Settings', function () {
                 ->assertSet('addCommitteeMemberModal', false);
         });
 
-        it('fails validation when no member is selected', function () {
+        it('fails validation when no member is selected', function (): void {
             Livewire::test(committeeModalComponent())
                 ->set('selectedMemberId', null)
                 ->set('selectedRoleId', CommitteeRolesEnum::PRESIDENT->value)
@@ -194,7 +194,7 @@ describe('Test Club Settings', function () {
                 ->assertHasErrors(['selectedMemberId']);
         });
 
-        it('fails validation when no role is selected', function () {
+        it('fails validation when no role is selected', function (): void {
             $user = User::factory()->create();
 
             Livewire::test(committeeModalComponent())
@@ -204,7 +204,7 @@ describe('Test Club Settings', function () {
                 ->assertHasErrors(['selectedRoleId']);
         });
 
-        it('fails validation when role is not a valid CommitteeRolesEnum value', function () {
+        it('fails validation when role is not a valid CommitteeRolesEnum value', function (): void {
             $user = User::factory()->create();
 
             Livewire::test(committeeModalComponent())
@@ -215,7 +215,7 @@ describe('Test Club Settings', function () {
         });
 
         // Skippé, car je ne sais pas comment vérifier le toast Mary UI. (non critique)
-        it('dispatches a success toast after adding', function () {
+        it('dispatches a success toast after adding', function (): void {
             $user = User::factory()->create(['is_committee_member' => false]);
 
             Livewire::test(committeeModalComponent())
@@ -232,9 +232,9 @@ describe('Test Club Settings', function () {
     // REMOVE MEMBER
     // ─────────────────────────────────────────────────────────────────────────────
 
-    describe('removeMember', function () {
+    describe('removeMember', function (): void {
 
-        it('removes a user from the committee', function () {
+        it('removes a user from the committee', function (): void {
             $user = User::factory()->create([
                 'is_committee_member' => true,
                 'committee_role' => CommitteeRolesEnum::TREASURER,
@@ -249,7 +249,7 @@ describe('Test Club Settings', function () {
         });
 
         // Skippé, car je ne sais pas comment vérifier le toast Mary UI. (non critique)
-        it('dispatches a success toast after removing', function () {
+        it('dispatches a success toast after removing', function (): void {
             $user = User::factory()->create(['is_committee_member' => true]);
 
             Livewire::test(clubSettingsComponent())
@@ -257,7 +257,7 @@ describe('Test Club Settings', function () {
                 ->assertDispatched('toast');
         })->skip('not able to test toasts');
 
-        it('throws a 404 when user does not exist', function () {
+        it('throws a 404 when user does not exist', function (): void {
             Livewire::test(clubSettingsComponent())
                 ->call('removeMember', 99999);
         })->throws(ModelNotFoundException::class);
@@ -268,9 +268,9 @@ describe('Test Club Settings', function () {
     // COMPUTED PROPERTY : roleOptions (in the Modal)
     // ─────────────────────────────────────────────────────────────────────────────
 
-    describe('roleOptions(in the modal)', function () {
+    describe('roleOptions(in the modal)', function (): void {
 
-        it('returns an array of options from CommitteeRolesEnum', function () {
+        it('returns an array of options from CommitteeRolesEnum', function (): void {
             $component = Livewire::test(committeeModalComponent());
 
             // On vérifie que la computed prop est exploitable dans la vue
@@ -286,9 +286,9 @@ describe('Test Club Settings', function () {
     // COMMITTEE MEMBERS ORDERING
     // ─────────────────────────────────────────────────────────────────────────────
 
-    describe('committeeMembers ordering', function () {
+    describe('committeeMembers ordering', function (): void {
 
-        it('orders members by role priority: President first, then Secretary, Treasurer, others', function () {
+        it('orders members by role priority: President first, then Secretary, Treasurer, others', function (): void {
             User::factory()->create(['is_committee_member' => true, 'committee_role' => CommitteeRolesEnum::TREASURER, 'last_name' => 'Abc']);
             User::factory()->create(['is_committee_member' => true, 'committee_role' => CommitteeRolesEnum::SECRETARY, 'last_name' => 'Abc']);
             User::factory()->create(['is_committee_member' => true, 'committee_role' => CommitteeRolesEnum::PRESIDENT, 'last_name' => 'Abc']);

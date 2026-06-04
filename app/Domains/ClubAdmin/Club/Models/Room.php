@@ -44,7 +44,6 @@ use Illuminate\Support\Carbon;
  * @property-read int|null $tournaments_count
  * @property-read Collection<int, Training> $training
  * @property-read int|null $training_count
- *
  * @method static RoomFactory factory($count = null, $state = [])
  * @method static Builder<static>|Room newModelQuery()
  * @method static Builder<static>|Room newQuery()
@@ -63,7 +62,12 @@ use Illuminate\Support\Carbon;
  * @method static Builder<static>|Room whereTotalPlayableTables($value)
  * @method static Builder<static>|Room whereTotalTables($value)
  * @method static Builder<static>|Room whereUpdatedAt($value)
- *
+ * @property-read string $address
+ * @property-read Collection<int, TrainingPack> $trainingPacks
+ * @property-read int|null $training_packs_count
+ * @property-read Collection<int, Training> $trainings
+ * @property-read int|null $trainings_count
+ * @method static Builder<static>|Room search(string $value)
  * @mixin Eloquent
  */
 class Room extends Model

@@ -28,14 +28,14 @@ function createEntry(CashRegister $register, int $amount, User $user, string $re
 
 // ── CashRegister model ────────────────────────────────────────────────────────
 
-describe('CashRegister model', function () {
-    it('starts with a zero balance', function () {
+describe('CashRegister model', function (): void {
+    it('starts with a zero balance', function (): void {
         $register = createCashRegister();
 
         expect($register->currentBalance())->toBe(0);
     });
 
-    it('calculates balance from entries', function () {
+    it('calculates balance from entries', function (): void {
         $user = User::factory()->create();
         $register = createCashRegister();
 
@@ -46,7 +46,7 @@ describe('CashRegister model', function () {
         expect($register->currentBalance())->toBe(1300);
     });
 
-    it('has a hasMany relationship with entries', function () {
+    it('has a hasMany relationship with entries', function (): void {
         $user = User::factory()->create();
         $register = createCashRegister();
         createEntry($register, 500, $user);
@@ -57,8 +57,8 @@ describe('CashRegister model', function () {
 
 // ── CashRegisterEntry model ───────────────────────────────────────────────────
 
-describe('CashRegisterEntry model', function () {
-    it('belongs to a cash register', function () {
+describe('CashRegisterEntry model', function (): void {
+    it('belongs to a cash register', function (): void {
         $user = User::factory()->create();
         $register = createCashRegister();
         $entry = createEntry($register, 1000, $user);
@@ -66,7 +66,7 @@ describe('CashRegisterEntry model', function () {
         expect($entry->cashRegister->id)->toBe($register->id);
     });
 
-    it('belongs to the recorder', function () {
+    it('belongs to the recorder', function (): void {
         $user = User::factory()->create();
         $register = createCashRegister();
         $entry = createEntry($register, 1000, $user);
@@ -77,8 +77,8 @@ describe('CashRegisterEntry model', function () {
 
 // ── Payment model ─────────────────────────────────────────────────────────────
 
-describe('Payment payment_method field', function () {
-    it('has a payment_method column with electronic default', function () {
+describe('Payment payment_method field', function (): void {
+    it('has a payment_method column with electronic default', function (): void {
         DB::table('payments')->insert([
             'reference' => 'TEST/001',
             'amount_due' => 1000,
@@ -96,8 +96,8 @@ describe('Payment payment_method field', function () {
 
 // ── Treasury routes ────────────────────────────────────────────────────────────
 
-describe('Treasury routes', function () {
-    it('admin can access treasury payments view', function () {
+describe('Treasury routes', function (): void {
+    it('admin can access treasury payments view', function (): void {
         $admin = User::factory()->create(['is_admin' => true]);
 
         $this->actingAs($admin)
@@ -105,7 +105,7 @@ describe('Treasury routes', function () {
             ->assertOk();
     });
 
-    it('admin can access cash register view', function () {
+    it('admin can access cash register view', function (): void {
         $admin = User::factory()->create(['is_admin' => true]);
 
         $this->actingAs($admin)
@@ -113,7 +113,7 @@ describe('Treasury routes', function () {
             ->assertOk();
     });
 
-    it('admin can access transactions view', function () {
+    it('admin can access transactions view', function (): void {
         $admin = User::factory()->create(['is_admin' => true]);
 
         $this->actingAs($admin)
@@ -121,7 +121,7 @@ describe('Treasury routes', function () {
             ->assertOk();
     });
 
-    it('legacy payments route redirects to treasury', function () {
+    it('legacy payments route redirects to treasury', function (): void {
         $admin = User::factory()->create(['is_admin' => true]);
 
         $this->actingAs($admin)
@@ -132,8 +132,8 @@ describe('Treasury routes', function () {
 
 // ── Cash register Livewire component ─────────────────────────────────────────
 
-describe('Cash register view', function () {
-    it('creates a new cash register', function () {
+describe('Cash register view', function (): void {
+    it('creates a new cash register', function (): void {
         $admin = User::factory()->create(['is_admin' => true]);
 
         Livewire::actingAs($admin)
@@ -145,7 +145,7 @@ describe('Cash register view', function () {
         expect(CashRegister::where('name', 'Caisse tournoi')->exists())->toBeTrue();
     });
 
-    it('records a manual entry', function () {
+    it('records a manual entry', function (): void {
         $admin = User::factory()->create(['is_admin' => true]);
         $register = createCashRegister();
 

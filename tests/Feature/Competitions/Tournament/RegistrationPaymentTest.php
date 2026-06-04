@@ -45,8 +45,8 @@ function registrationWithoutPaymentRecord(Tournament $tournament, User $user): T
 
 // ── ensurePaymentExists ───────────────────────────────────────────────────────
 
-describe('ensurePaymentExists', function () {
-    it('creates a Payment when payment_id is null', function () {
+describe('ensurePaymentExists', function (): void {
+    it('creates a Payment when payment_id is null', function (): void {
         $tournament = paidTournamentNoPayment();
         $user = User::factory()->create();
         $registration = registrationWithoutPaymentRecord($tournament, $user);
@@ -64,7 +64,7 @@ describe('ensurePaymentExists', function () {
         )->toBe($payment->id);
     });
 
-    it('returns the existing Payment when payment_id is already set', function () {
+    it('returns the existing Payment when payment_id is already set', function (): void {
         $tournament = paidTournamentNoPayment();
         $user = User::factory()->create();
         $registration = registrationWithoutPaymentRecord($tournament, $user);
@@ -78,7 +78,7 @@ describe('ensurePaymentExists', function () {
             ->and(Payment::count())->toBe(1);
     });
 
-    it('does not create a Payment for free tournaments via direct call', function () {
+    it('does not create a Payment for free tournaments via direct call', function (): void {
         $tournament = paidTournamentNoPayment(['price' => 0]);
         $user = User::factory()->create();
         $registration = registrationWithoutPaymentRecord($tournament, $user);
@@ -91,8 +91,8 @@ describe('ensurePaymentExists', function () {
 
 // ── recordCashPayment ─────────────────────────────────────────────────────────
 
-describe('recordCashPayment', function () {
-    it('creates a Payment when payment_id is null, marks it paid and records cash entry', function () {
+describe('recordCashPayment', function (): void {
+    it('creates a Payment when payment_id is null, marks it paid and records cash entry', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $this->actingAs($admin);
 
@@ -118,7 +118,7 @@ describe('recordCashPayment', function () {
         expect(CashRegisterEntry::where('cash_register_id', $register->id)->exists())->toBeTrue();
     });
 
-    it('updates an existing Payment when payment_id is already set', function () {
+    it('updates an existing Payment when payment_id is already set', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $this->actingAs($admin);
 
@@ -139,8 +139,8 @@ describe('recordCashPayment', function () {
 
 // ── recordDebt ────────────────────────────────────────────────────────────────
 
-describe('recordDebt', function () {
-    it('creates a Payment when payment_id is null and dispatches the reminder job', function () {
+describe('recordDebt', function (): void {
+    it('creates a Payment when payment_id is null and dispatches the reminder job', function (): void {
         Bus::fake();
 
         $tournament = paidTournamentNoPayment();
@@ -155,7 +155,7 @@ describe('recordDebt', function () {
         Bus::assertDispatched(SendDebtReminderNotification::class);
     });
 
-    it('dispatches the reminder job when payment_id is already set', function () {
+    it('dispatches the reminder job when payment_id is already set', function (): void {
         Bus::fake();
 
         $tournament = paidTournamentNoPayment();
@@ -173,8 +173,8 @@ describe('recordDebt', function () {
 
 // ── openQrModal (Livewire) ────────────────────────────────────────────────────
 
-describe('openQrModal', function () {
-    it('creates a Payment on-the-fly and opens the QR modal for a registration without payment_id', function () {
+describe('openQrModal', function (): void {
+    it('creates a Payment on-the-fly and opens the QR modal for a registration without payment_id', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $tournament = paidTournamentNoPayment();
         $user = User::factory()->create();

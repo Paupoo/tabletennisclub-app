@@ -47,8 +47,8 @@ function registeredUserWithPayment(Tournament $tournament): array
 
 // ── recordCashPayment ─────────────────────────────────────────────────────────
 
-describe('recordCashPayment', function () {
-    it('marks payment as paid with cash method', function () {
+describe('recordCashPayment', function (): void {
+    it('marks payment as paid with cash method', function (): void {
         $admin = User::factory()->create(['is_admin' => true]);
         $this->actingAs($admin);
         $service = new TournamentService;
@@ -63,7 +63,7 @@ describe('recordCashPayment', function () {
         expect($payment->payment_method)->toBe('cash');
     });
 
-    it('sets has_paid to true on the pivot', function () {
+    it('sets has_paid to true on the pivot', function (): void {
         $admin = User::factory()->create(['is_admin' => true]);
         $this->actingAs($admin);
         $service = new TournamentService;
@@ -81,7 +81,7 @@ describe('recordCashPayment', function () {
         expect((bool) $pivot->has_paid)->toBeTrue();
     });
 
-    it('creates a cash register entry', function () {
+    it('creates a cash register entry', function (): void {
         $service = new TournamentService;
         $register = CashRegister::create(['name' => 'Test']);
         $tournament = paidTournament();
@@ -99,8 +99,8 @@ describe('recordCashPayment', function () {
 
 // ── recordDebt ────────────────────────────────────────────────────────────────
 
-describe('recordDebt', function () {
-    it('dispatches a delayed reminder job', function () {
+describe('recordDebt', function (): void {
+    it('dispatches a delayed reminder job', function (): void {
         Queue::fake();
 
         $service = new TournamentService;
@@ -112,7 +112,7 @@ describe('recordDebt', function () {
         Queue::assertPushed(SendDebtReminderNotification::class);
     });
 
-    it('does not mark the payment as paid', function () {
+    it('does not mark the payment as paid', function (): void {
         Queue::fake();
 
         $service = new TournamentService;
@@ -132,8 +132,8 @@ describe('recordDebt', function () {
 
 // ── SendDebtReminderNotification job ─────────────────────────────────────────
 
-describe('SendDebtReminderNotification job', function () {
-    it('sends notification when payment is still pending', function () {
+describe('SendDebtReminderNotification job', function (): void {
+    it('sends notification when payment is still pending', function (): void {
         Notification::fake();
 
         $tournament = paidTournament();
@@ -147,7 +147,7 @@ describe('SendDebtReminderNotification job', function () {
         );
     });
 
-    it('skips notification when payment is already paid', function () {
+    it('skips notification when payment is already paid', function (): void {
         Notification::fake();
 
         $tournament = paidTournament();

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 use App\Domains\Shared\Enums\ContactReasonEnum;
 
-describe('ContactReasonEnum', function () {
+describe('ContactReasonEnum', function (): void {
 
-    it('GetLabel function returns the correct label', function () {
+    it('GetLabel function returns the correct label', function (): void {
         $this->assertEquals(__('Join us'), ContactReasonEnum::JOIN_US->getLabel());
         $this->assertEquals(__('Have a try'), ContactReasonEnum::TRIAL->getLabel());
         $this->assertEquals(__('Info about competitions'), ContactReasonEnum::INFO_INTERCLUBS->getLabel());
@@ -14,7 +14,7 @@ describe('ContactReasonEnum', function () {
         $this->assertEquals(__('Partnership/Sponsoring'), ContactReasonEnum::PARTNERSHIP->getLabel());
     });
 
-    it('Returns the good string', function () {
+    it('Returns the good string', function (): void {
         $this->assertEquals(ContactReasonEnum::JOIN_US, ContactReasonEnum::from('JOIN_US'));
         $this->assertEquals(ContactReasonEnum::PARTNERSHIP, ContactReasonEnum::from('PARTNERSHIP'));
         $this->assertEquals(ContactReasonEnum::INFO_INTERCLUBS, ContactReasonEnum::from('INFO_INTERCLUBS'));
@@ -23,14 +23,14 @@ describe('ContactReasonEnum', function () {
     });
 
     // Is this test useful?
-    it('values() returns the array of values', function () {
+    it('values() returns the array of values', function (): void {
         $this->assertEquals(
             array_map(fn ($case) => $case->value, ContactReasonEnum::cases()),
             ContactReasonEnum::values()
         );
     });
 
-    it('Returns null when value not in enum', function () {
+    it('Returns null when value not in enum', function (): void {
         $this->assertNull(ContactReasonEnum::tryFrom('unknown'));
         $this->assertNull(ContactReasonEnum::tryFrom('join_us'));
     });

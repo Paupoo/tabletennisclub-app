@@ -5,11 +5,11 @@ declare(strict_types=1);
 use App\Domains\Competitions\Interclub\Models\Season;
 use Illuminate\Support\Facades\Cache;
 
-describe('Season Registration Management', function () {
+describe('Season Registration Management', function (): void {
 
     // ==================== OPEN / CLOSE ====================
 
-    test('openRegistrations sets registrations_open to true in database', function () {
+    test('openRegistrations sets registrations_open to true in database', function (): void {
         $season = Season::factory()->create(['is_active' => true, 'registrations_open' => false]);
 
         $season->openRegistrations();
@@ -21,7 +21,7 @@ describe('Season Registration Management', function () {
         ]);
     });
 
-    test('closeRegistrations sets registrations_open to false in database', function () {
+    test('closeRegistrations sets registrations_open to false in database', function (): void {
         $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
 
         $season->closeRegistrations();
@@ -33,7 +33,7 @@ describe('Season Registration Management', function () {
         ]);
     });
 
-    test('openRegistrations invalidates the season cache', function () {
+    test('openRegistrations invalidates the season cache', function (): void {
         $season = Season::factory()->create(['is_active' => true, 'registrations_open' => false]);
 
         // Warm the cache manually
@@ -45,7 +45,7 @@ describe('Season Registration Management', function () {
         expect(Cache::has('season.current'))->toBeFalse();
     });
 
-    test('closeRegistrations invalidates the season cache', function () {
+    test('closeRegistrations invalidates the season cache', function (): void {
         $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
 
         // Warm the cache manually
@@ -57,7 +57,7 @@ describe('Season Registration Management', function () {
         expect(Cache::has('season.current'))->toBeFalse();
     });
 
-    test('Season::current() returns the cached instance after first call', function () {
+    test('Season::current() returns the cached instance after first call', function (): void {
         Cache::forget('season.current');
         $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
 
@@ -68,7 +68,7 @@ describe('Season Registration Management', function () {
             ->and($second?->id)->toBe($season->id);
     });
 
-    test('Season::current() reflects updated registrations_open after cache bust', function () {
+    test('Season::current() reflects updated registrations_open after cache bust', function (): void {
         Cache::forget('season.current');
         $season = Season::factory()->create(['is_active' => true, 'registrations_open' => false]);
 
@@ -82,7 +82,7 @@ describe('Season Registration Management', function () {
         expect($fresh?->registrations_open)->toBeTrue();
     });
 
-    test('Season::current() returns null when no active season exists', function () {
+    test('Season::current() returns null when no active season exists', function (): void {
         Cache::forget('season.current');
         Season::query()->update(['is_active' => false]);
 
@@ -91,19 +91,19 @@ describe('Season Registration Management', function () {
 
     // ==================== SEASON HELPERS ====================
 
-    test('isCurrent returns true for active season', function () {
+    test('isCurrent returns true for active season', function (): void {
         $season = Season::factory()->create(['is_active' => true]);
 
         expect($season->isCurrent())->toBeTrue();
     });
 
-    test('isCurrent returns false for inactive season', function () {
+    test('isCurrent returns false for inactive season', function (): void {
         $season = Season::factory()->create(['is_active' => false]);
 
         expect($season->isCurrent())->toBeFalse();
     });
 
-    test('season registrations_open defaults to false', function () {
+    test('season registrations_open defaults to false', function (): void {
         $season = Season::factory()->create(['is_active' => true]);
 
         // The model attribute is null until we read back from DB (factory didn't set it, DB default applies)

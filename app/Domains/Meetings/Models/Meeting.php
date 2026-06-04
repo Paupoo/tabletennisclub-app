@@ -50,6 +50,43 @@ use Illuminate\Support\Carbon;
  * @property-read Collection<int, MeetingAgendaItem> $agendaItems
  * @property-read MeetingMinutes|null $minutes
  * @property-read Collection<int, MeetingActionItem> $actionItems
+ * @property-read int|null $action_items_count
+ * @property-read int|null $agenda_items_count
+ * @property-read \App\Domains\Meetings\Models\MeetingUser|null $registration
+ * @property-read Collection<int, User> $attendedUsers
+ * @property-read int|null $attended_users_count
+ * @property-read Collection<int, User> $confirmedUsers
+ * @property-read int|null $confirmed_users_count
+ * @property-read int|null $date_proposals_count
+ * @property-read float|null $meal_price
+ * @property-read int|null $users_count
+ * @method static \Database\Factories\Domains\Meetings\Models\MeetingFactory factory($count = null, $state = [])
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereCancellationNote($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereCreatedBy($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereDescription($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereEndsAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereFormat($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereHasMeal($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereIsPublic($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereLocation($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereMealDescription($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereMealPriceCents($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereMeetingLink($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting wherePostponedNote($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting wherePostponedTo($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereQuorum($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereRsvpDeadline($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereScheduledAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereTitle($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereType($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereUpdatedAt($value)
+ * @mixin \Eloquent
  */
 #[UseFactory(MeetingFactory::class)]
 class Meeting extends Model

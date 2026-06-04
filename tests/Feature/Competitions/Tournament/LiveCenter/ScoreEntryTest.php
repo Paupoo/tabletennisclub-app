@@ -44,9 +44,9 @@ function makePoolMatch(Tournament $tournament, User $p1, User $p2): TournamentMa
 
 // ── TournamentMatch::recordResult ─────────────────────────────────────────────
 
-describe('TournamentMatch::recordResult', function () {
+describe('TournamentMatch::recordResult', function (): void {
 
-    it('creates the correct number of MatchSet records', function () {
+    it('creates the correct number of MatchSet records', function (): void {
         $p1 = User::factory()->create();
         $p2 = User::factory()->create();
         $tournament = makePendingTournament();
@@ -61,7 +61,7 @@ describe('TournamentMatch::recordResult', function () {
         expect($match->fresh()->sets)->toHaveCount(3);
     })->group('score', 'match');
 
-    it('assigns the winner of each set correctly', function () {
+    it('assigns the winner of each set correctly', function (): void {
         $p1 = User::factory()->create();
         $p2 = User::factory()->create();
         $tournament = makePendingTournament();
@@ -79,7 +79,7 @@ describe('TournamentMatch::recordResult', function () {
             ->and($sets[2]->winner_id)->toBe($p1->id);
     })->group('score', 'match');
 
-    it('sets the match winner to the player who wins the most sets', function () {
+    it('sets the match winner to the player who wins the most sets', function (): void {
         $p1 = User::factory()->create();
         $p2 = User::factory()->create();
         $tournament = makePendingTournament(['sets_to_win' => 3]);
@@ -97,7 +97,7 @@ describe('TournamentMatch::recordResult', function () {
         expect($match->fresh()->winner_id)->toBe($p2->id);
     })->group('score', 'match');
 
-    it('marks the match as completed', function () {
+    it('marks the match as completed', function (): void {
         $p1 = User::factory()->create();
         $p2 = User::factory()->create();
         $tournament = makePendingTournament();
@@ -112,7 +112,7 @@ describe('TournamentMatch::recordResult', function () {
         expect($match->fresh()->status)->toBe('completed');
     })->group('score', 'match');
 
-    it('replaces existing sets when re-recording a result', function () {
+    it('replaces existing sets when re-recording a result', function (): void {
         $p1 = User::factory()->create();
         $p2 = User::factory()->create();
         $tournament = makePendingTournament();
@@ -134,7 +134,7 @@ describe('TournamentMatch::recordResult', function () {
         expect($match->fresh()->sets)->toHaveCount(3);
     })->group('score', 'match');
 
-    it('getTotalPoints returns sum of scores for a player across all sets', function () {
+    it('getTotalPoints returns sum of scores for a player across all sets', function (): void {
         $p1 = User::factory()->create();
         $p2 = User::factory()->create();
         $tournament = makePendingTournament();
@@ -151,7 +151,7 @@ describe('TournamentMatch::recordResult', function () {
             ->and($match->getTotalPoints($p2->id))->toBe(23); // 7+11+5
     })->group('score', 'match');
 
-    it('getSetsWon counts won sets for a player', function () {
+    it('getSetsWon counts won sets for a player', function (): void {
         $p1 = User::factory()->create();
         $p2 = User::factory()->create();
         $tournament = makePendingTournament();
@@ -172,9 +172,9 @@ describe('TournamentMatch::recordResult', function () {
 
 // ── TournamentMatch::saveDraft ────────────────────────────────────────────────
 
-describe('TournamentMatch::saveDraft', function () {
+describe('TournamentMatch::saveDraft', function (): void {
 
-    it('creates set records but does not mark the match as completed', function () {
+    it('creates set records but does not mark the match as completed', function (): void {
         $p1 = User::factory()->create();
         $p2 = User::factory()->create();
         $tournament = makePendingTournament();
@@ -189,7 +189,7 @@ describe('TournamentMatch::saveDraft', function () {
             ->and($match->fresh()->sets)->toHaveCount(2);
     })->group('score', 'draft');
 
-    it('replaces previous draft sets on re-save', function () {
+    it('replaces previous draft sets on re-save', function (): void {
         $p1 = User::factory()->create();
         $p2 = User::factory()->create();
         $tournament = makePendingTournament();
@@ -208,9 +208,9 @@ describe('TournamentMatch::saveDraft', function () {
 
 // ── TournamentTableService::freeUsedTable ─────────────────────────────────────
 
-describe('TournamentTableService::freeUsedTable', function () {
+describe('TournamentTableService::freeUsedTable', function (): void {
 
-    it('marks the table as free and records match_ended_at after completing a match', function () {
+    it('marks the table as free and records match_ended_at after completing a match', function (): void {
         $p1 = User::factory()->create();
         $p2 = User::factory()->create();
         $tournament = makePendingTournament();
@@ -250,7 +250,7 @@ describe('TournamentTableService::freeUsedTable', function () {
 
 // ── Table score entry Livewire component ──────────────────────────────────────
 
-describe('TableScoreEntry Livewire component', function () {
+describe('TableScoreEntry Livewire component', function (): void {
 
     function scoreEntryComponent(User $user, Tournament $tournament, TournamentMatch $match, Table $table)
     {
@@ -262,7 +262,7 @@ describe('TableScoreEntry Livewire component', function () {
             ]);
     }
 
-    it('redirects to the same page after a valid score submission', function () {
+    it('redirects to the same page after a valid score submission', function (): void {
         $p1 = User::factory()->create();
         $p2 = User::factory()->create();
         $tournament = makePendingTournament(['sets_to_win' => 3]);
@@ -294,7 +294,7 @@ describe('TableScoreEntry Livewire component', function () {
             ]));
     })->group('score', 'livewire');
 
-    it('does not set submitted when no sets are entered', function () {
+    it('does not set submitted when no sets are entered', function (): void {
         $p1 = User::factory()->create();
         $p2 = User::factory()->create();
         $tournament = makePendingTournament();
@@ -317,7 +317,7 @@ describe('TableScoreEntry Livewire component', function () {
             ->assertSet('submitted', false);
     })->group('score', 'livewire');
 
-    it('does not set submitted when match is not yet finished', function () {
+    it('does not set submitted when match is not yet finished', function (): void {
         $p1 = User::factory()->create();
         $p2 = User::factory()->create();
         $tournament = makePendingTournament(['sets_to_win' => 3]);
@@ -343,7 +343,7 @@ describe('TableScoreEntry Livewire component', function () {
             ->assertSet('submitted', false);
     })->group('score', 'livewire');
 
-    it('marks the match as completed after submission', function () {
+    it('marks the match as completed after submission', function (): void {
         $p1 = User::factory()->create();
         $p2 = User::factory()->create();
         $tournament = makePendingTournament(['sets_to_win' => 3]);
@@ -370,7 +370,7 @@ describe('TableScoreEntry Livewire component', function () {
         expect($match->fresh()->status)->toBe('completed');
     })->group('score', 'livewire');
 
-    it('frees the table after submission', function () {
+    it('frees the table after submission', function (): void {
         $p1 = User::factory()->create();
         $p2 = User::factory()->create();
         $tournament = makePendingTournament(['sets_to_win' => 3]);
@@ -404,7 +404,7 @@ describe('TableScoreEntry Livewire component', function () {
 
     // ── Live sync (rendering() hook) ─────────────────────────────────────────
 
-    it('syncs setScores from DB on poll when referee has not typed anything', function () {
+    it('syncs setScores from DB on poll when referee has not typed anything', function (): void {
         $p1 = User::factory()->create();
         $p2 = User::factory()->create();
         $tournament = makePendingTournament(['sets_to_win' => 3]);
@@ -434,7 +434,7 @@ describe('TableScoreEntry Livewire component', function () {
             ->and($component->get('setScores.0.p2'))->toBe('5');
     })->group('score', 'livewire', 'sync');
 
-    it('does not overwrite setScores from DB once the referee has typed', function () {
+    it('does not overwrite setScores from DB once the referee has typed', function (): void {
         $p1 = User::factory()->create();
         $p2 = User::factory()->create();
         $tournament = makePendingTournament(['sets_to_win' => 3]);
@@ -468,7 +468,7 @@ describe('TableScoreEntry Livewire component', function () {
 
     // ── Set-win validation ────────────────────────────────────────────────────────
 
-    it('rejects submission when an invalid set score exists', function () {
+    it('rejects submission when an invalid set score exists', function (): void {
         $p1 = User::factory()->create();
         $p2 = User::factory()->create();
         $tournament = makePendingTournament(['sets_to_win' => 3, 'deuce_enabled' => false]);
@@ -496,7 +496,7 @@ describe('TableScoreEntry Livewire component', function () {
             ->assertSet('submitted', false);
     })->group('score', 'livewire', 'validation');
 
-    it('rejects submission when deuce score has wrong lead', function () {
+    it('rejects submission when deuce score has wrong lead', function (): void {
         $p1 = User::factory()->create();
         $p2 = User::factory()->create();
         $tournament = makePendingTournament(['sets_to_win' => 3, 'deuce_enabled' => true]);
@@ -524,7 +524,7 @@ describe('TableScoreEntry Livewire component', function () {
             ->assertSet('submitted', false);
     })->group('score', 'livewire', 'validation');
 
-    it('rejects submission when invalid set breaks match count', function () {
+    it('rejects submission when invalid set breaks match count', function (): void {
         $p1 = User::factory()->create();
         $p2 = User::factory()->create();
         $tournament = makePendingTournament(['sets_to_win' => 3, 'deuce_enabled' => false]);
@@ -551,7 +551,7 @@ describe('TableScoreEntry Livewire component', function () {
             ->assertSet('submitted', false);  // Match not finished
     })->group('score', 'livewire', 'validation');
 
-    it('accepts submission when all sets are valid and match is finished', function () {
+    it('accepts submission when all sets are valid and match is finished', function (): void {
         $p1 = User::factory()->create();
         $p2 = User::factory()->create();
         $tournament = makePendingTournament(['sets_to_win' => 3, 'deuce_enabled' => false]);
@@ -582,7 +582,7 @@ describe('TableScoreEntry Livewire component', function () {
 
     // ── Match state integrity: prevent zombie in_progress matches
 
-    it('zombie in_progress match (no table) does not block players', function () {
+    it('zombie in_progress match (no table) does not block players', function (): void {
         $p1 = User::factory()->create();
         $p2 = User::factory()->create();
         $tournament = makePendingTournament();

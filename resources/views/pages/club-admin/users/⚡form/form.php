@@ -394,7 +394,7 @@ new class extends Component
             'ranking' => [
                 'nullable',
                 'string',
-                function ($attribute, $value, $fail) {
+                function ($attribute, $value, $fail): void {
                     $isCompetitive = $this->licence_type === 'competitive' || $this->is_competitor;
 
                     if ($isCompetitive && empty($value)) {

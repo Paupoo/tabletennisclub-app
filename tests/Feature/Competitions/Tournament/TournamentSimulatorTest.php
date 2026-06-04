@@ -6,7 +6,7 @@ use App\Data\Tournament\TournamentConfig;
 use App\Domains\Competitions\Tournament\Services\TournamentSimulator;
 use App\Domains\Shared\Enums\TournamentObjectiveEnum;
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->simulator = new TournamentSimulator;
 });
 
@@ -29,7 +29,7 @@ function defaultConfig(array $overrides = []): TournamentConfig
 
 // ── Formules combinatoires ────────────────────────────────────────────────────
 
-it('calculates pool matches as n(n-1)/2', function (int $poolSize, int $expected) {
+it('calculates pool matches as n(n-1)/2', function (int $poolSize, int $expected): void {
     $result = $this->simulator->simulate(defaultConfig(['poolSize' => $poolSize, 'nbPools' => 1]));
 
     expect($result->poolMatchesTotal)->toBe($expected);
@@ -40,7 +40,7 @@ it('calculates pool matches as n(n-1)/2', function (int $poolSize, int $expected
     'pool of 6' => [6, 15],
 ]);
 
-it('calculates bracket matches as N-1', function (int $nbPools, int $nbQualifiers, int $expected) {
+it('calculates bracket matches as N-1', function (int $nbPools, int $nbQualifiers, int $expected): void {
     $result = $this->simulator->simulate(defaultConfig([
         'nbPools' => $nbPools,
         'nbQualifiersPerPool' => $nbQualifiers,
@@ -53,13 +53,13 @@ it('calculates bracket matches as N-1', function (int $nbPools, int $nbQualifier
     '8 pools x 2 qualifiers = 16 finalists -> 15 matches' => [8, 2, 15],
 ]);
 
-it('calculates total players as nbPools x poolSize', function () {
+it('calculates total players as nbPools x poolSize', function (): void {
     $result = $this->simulator->simulate(defaultConfig(['nbPools' => 4, 'poolSize' => 5]));
 
     expect($result->totalPlayers)->toBe(20);
 });
 
-it('calculates grand total matches as pool + bracket', function () {
+it('calculates grand total matches as pool + bracket', function (): void {
     // 4 pools x 4 players = 6 matches/pool x 4 = 24 pool matches
     // 4 pools x 2 qualifiers = 8 finalists -> 7 bracket matches
     $result = $this->simulator->simulate(defaultConfig());
@@ -71,14 +71,14 @@ it('calculates grand total matches as pool + bracket', function () {
 
 // ── Duree des matchs ─────────────────────────────────────────────────────────
 
-it('adds 20% duration for doubles', function () {
+it('adds 20% duration for doubles', function (): void {
     $single = $this->simulator->simulate(defaultConfig(['matchType' => 'single', 'logisticsBufferMinutes' => 0]));
     $double = $this->simulator->simulate(defaultConfig(['matchType' => 'double', 'logisticsBufferMinutes' => 0]));
 
     expect($double->avgMatchMinutes)->toBeGreaterThan($single->avgMatchMinutes);
 });
 
-it('adds logistics buffer to avg match minutes', function () {
+it('adds logistics buffer to avg match minutes', function (): void {
     $withBuffer = $this->simulator->simulate(defaultConfig(['logisticsBufferMinutes' => 5]));
     $withoutBuffer = $this->simulator->simulate(defaultConfig(['logisticsBufferMinutes' => 0]));
 
@@ -87,14 +87,14 @@ it('adds logistics buffer to avg match minutes', function () {
 
 // ── Capacite & faisabilite ────────────────────────────────────────────────────
 
-it('applies congestion coefficient to total match capacity', function () {
+it('applies congestion coefficient to total match capacity', function (): void {
     $full = $this->simulator->simulate(defaultConfig(['congestionCoefficient' => 1.0]));
     $congested = $this->simulator->simulate(defaultConfig(['congestionCoefficient' => 0.80]));
 
     expect($congested->totalMatchCapacity)->toBeLessThan($full->totalMatchCapacity);
 });
 
-it('flags tournament as feasible when matches fit in capacity', function () {
+it('flags tournament as feasible when matches fit in capacity', function (): void {
     $result = $this->simulator->simulate(defaultConfig([
         'durationMinutes' => 300,
         'nbTables' => 10,
@@ -106,7 +106,7 @@ it('flags tournament as feasible when matches fit in capacity', function () {
         ->and($result->riskLevel)->toBe('ok');
 });
 
-it('flags tournament as not feasible when capacity is exceeded', function () {
+it('flags tournament as not feasible when capacity is exceeded', function (): void {
     $result = $this->simulator->simulate(defaultConfig([
         'durationMinutes' => 30,
         'nbTables' => 1,
@@ -118,7 +118,7 @@ it('flags tournament as not feasible when capacity is exceeded', function () {
         ->and($result->riskLevel)->toBe('danger');
 });
 
-it('calculates safety margin as capacity minus total matches', function () {
+it('calculates safety margin as capacity minus total matches', function (): void {
     $result = $this->simulator->simulate(defaultConfig([
         'durationMinutes' => 300,
         'nbTables' => 10,
@@ -128,7 +128,7 @@ it('calculates safety margin as capacity minus total matches', function () {
         ->toBe($result->totalMatchCapacity - $result->grandTotalMatches);
 });
 
-it('returns zero capacity and zero estimated minutes when nb tables is zero', function () {
+it('returns zero capacity and zero estimated minutes when nb tables is zero', function (): void {
     $result = $this->simulator->simulate(defaultConfig(['nbTables' => 0]));
 
     expect($result->totalMatchCapacity)->toBe(0)
@@ -137,7 +137,7 @@ it('returns zero capacity and zero estimated minutes when nb tables is zero', fu
 
 // ── Suggestions ───────────────────────────────────────────────────────────────
 
-it('suggest maximize players returns feasible config with players', function () {
+it('suggest maximize players returns feasible config with players', function (): void {
     $config = $this->simulator->suggestOptimalConfig(180, 8, TournamentObjectiveEnum::MaximizePlayers);
     $result = $this->simulator->simulate($config);
 
@@ -145,7 +145,7 @@ it('suggest maximize players returns feasible config with players', function () 
         ->and($result->totalPlayers)->toBeGreaterThan(0);
 });
 
-it('suggest competitive returns feasible config with sets to win 3', function () {
+it('suggest competitive returns feasible config with sets to win 3', function (): void {
     $config = $this->simulator->suggestOptimalConfig(240, 10, TournamentObjectiveEnum::Competitive);
     $result = $this->simulator->simulate($config);
 
@@ -153,7 +153,7 @@ it('suggest competitive returns feasible config with sets to win 3', function ()
         ->and($config->setsToWin)->toBe(3);
 });
 
-it('suggest maximize matches per player returns feasible config with large pools', function () {
+it('suggest maximize matches per player returns feasible config with large pools', function (): void {
     $config = $this->simulator->suggestOptimalConfig(240, 10, TournamentObjectiveEnum::MaximizeMatchesPerPlayer);
     $result = $this->simulator->simulate($config);
 
@@ -161,13 +161,13 @@ it('suggest maximize matches per player returns feasible config with large pools
         ->and($config->poolSize)->toBeGreaterThanOrEqual(5);
 });
 
-it('suggest leisure uses extended logistics buffer', function () {
+it('suggest leisure uses extended logistics buffer', function (): void {
     $config = $this->simulator->suggestOptimalConfig(180, 8, TournamentObjectiveEnum::Leisure);
 
     expect($config->logisticsBufferMinutes)->toBeGreaterThan(3);
 });
 
-it('suggest minimize duration returns small pool size', function () {
+it('suggest minimize duration returns small pool size', function (): void {
     $config = $this->simulator->suggestOptimalConfig(180, 8, TournamentObjectiveEnum::MinimizeDuration);
 
     expect($config->poolSize)->toBeLessThanOrEqual(4);

@@ -43,8 +43,8 @@ function competitiveUsers(int $count): Collection
 
 // ── sendInvitations ───────────────────────────────────────────────────────────
 
-describe('sendInvitations', function () {
-    it('dispatches invitation notification to each selected user', function () {
+describe('sendInvitations', function (): void {
+    it('dispatches invitation notification to each selected user', function (): void {
         Notification::fake();
 
         $tournament = wizardTournament();
@@ -64,7 +64,7 @@ describe('sendInvitations', function () {
         Notification::assertCount(3);
     });
 
-    it('creates a tournament_invitations record', function () {
+    it('creates a tournament_invitations record', function (): void {
         $tournament = wizardTournament();
         $users = competitiveUsers(4);
 
@@ -87,8 +87,8 @@ describe('sendInvitations', function () {
 
 // ── confirmBulkPresence ───────────────────────────────────────────────────────
 
-describe('confirmBulkPresence', function () {
-    it('updates registration_status to confirmed for selected users', function () {
+describe('confirmBulkPresence', function (): void {
+    it('updates registration_status to confirmed for selected users', function (): void {
         $tournament = wizardTournament();
         $users = competitiveUsers(3);
         $tournament->users()->attach($users->pluck('id'), ['registration_status' => 'registered']);
@@ -108,7 +108,7 @@ describe('confirmBulkPresence', function () {
         }
     });
 
-    it('updates registration_status to no_show', function () {
+    it('updates registration_status to no_show', function (): void {
         $tournament = wizardTournament();
         $user = competitiveUsers(1)->first();
         $tournament->users()->attach($user->id, ['registration_status' => 'registered']);
@@ -129,8 +129,8 @@ describe('confirmBulkPresence', function () {
 
 // ── generatePools ─────────────────────────────────────────────────────────────
 
-describe('generatePools', function () {
-    it('creates the correct number of pools', function () {
+describe('generatePools', function (): void {
+    it('creates the correct number of pools', function (): void {
         $tournament = wizardTournament(['nb_pools' => 3]);
         $users = competitiveUsers(9);
         $tournament->users()->attach($users->pluck('id'), ['registration_status' => 'registered']);
@@ -140,7 +140,7 @@ describe('generatePools', function () {
         expect($tournament->pools()->count())->toBe(3);
     });
 
-    it('distributes all registered players across pools', function () {
+    it('distributes all registered players across pools', function (): void {
         $tournament = wizardTournament(['nb_pools' => 2]);
         $users = competitiveUsers(8);
         $tournament->users()->attach($users->pluck('id'), ['registration_status' => 'registered']);
@@ -155,7 +155,7 @@ describe('generatePools', function () {
         expect($totalPlayersInPools)->toBe(8);
     });
 
-    it('distributes players evenly between pools (serpentine)', function () {
+    it('distributes players evenly between pools (serpentine)', function (): void {
         $tournament = wizardTournament(['nb_pools' => 2]);
         $users = competitiveUsers(8);
         $tournament->users()->attach($users->pluck('id'), ['registration_status' => 'registered']);
@@ -172,8 +172,8 @@ describe('generatePools', function () {
 
 // ── generateMatches ───────────────────────────────────────────────────────────
 
-describe('generateMatches', function () {
-    it('creates round-robin matches for all pools', function () {
+describe('generateMatches', function (): void {
+    it('creates round-robin matches for all pools', function (): void {
         $tournament = wizardTournament(['nb_pools' => 2]);
         $users = competitiveUsers(8);
         $tournament->users()->attach($users->pluck('id'), ['registration_status' => 'registered']);
@@ -190,8 +190,8 @@ describe('generateMatches', function () {
 
 // ── processLaunch ─────────────────────────────────────────────────────────────
 
-describe('processLaunch', function () {
-    it('transitions tournament from SETUP to PENDING', function () {
+describe('processLaunch', function (): void {
+    it('transitions tournament from SETUP to PENDING', function (): void {
         $tournament = wizardTournament(['status' => TournamentStatusEnum::SETUP]);
         $users = competitiveUsers(8);
         $tournament->users()->attach($users->pluck('id'), ['registration_status' => 'registered']);
@@ -205,7 +205,7 @@ describe('processLaunch', function () {
         expect($tournament->fresh()->status)->toBe(TournamentStatusEnum::PENDING);
     });
 
-    it('cannot launch without pools', function () {
+    it('cannot launch without pools', function (): void {
         $tournament = wizardTournament(['status' => TournamentStatusEnum::SETUP]);
 
         expect($tournament->pools()->exists())->toBeFalse();
@@ -215,8 +215,8 @@ describe('processLaunch', function () {
 
 // ── generatePools for doubles ─────────────────────────────────────────────────
 
-describe('generatePools for doubles', function () {
-    it('distributes pairs across pools', function () {
+describe('generatePools for doubles', function (): void {
+    it('distributes pairs across pools', function (): void {
         $tournament = wizardTournament(['match_type' => 'double', 'nb_pools' => 2]);
         $admin = User::factory()->create();
 
@@ -243,7 +243,7 @@ describe('generatePools for doubles', function () {
         expect($totalPairsInPools)->toBe(4);
     });
 
-    it('returns empty and creates no pools when no pairs exist', function () {
+    it('returns empty and creates no pools when no pairs exist', function (): void {
         $tournament = wizardTournament(['match_type' => 'double', 'nb_pools' => 2]);
 
         $result = app(TournamentPoolService::class)->distributePlayersInPools($tournament, 2);
@@ -255,9 +255,9 @@ describe('generatePools for doubles', function () {
 
 // ── saveEventPost validation ──────────────────────────────────────────────────
 
-describe('saveEventPost', function () {
+describe('saveEventPost', function (): void {
 
-    it('rejects publish when title is missing and shows an error toast', function () {
+    it('rejects publish when title is missing and shows an error toast', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $tournament = wizardTournament();
 
@@ -271,7 +271,7 @@ describe('saveEventPost', function () {
         $component->assertHasErrors(['eventTitle']);
     });
 
-    it('rejects publish when description is missing and shows an error toast', function () {
+    it('rejects publish when description is missing and shows an error toast', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $tournament = wizardTournament();
 
@@ -285,7 +285,7 @@ describe('saveEventPost', function () {
         $component->assertHasErrors(['eventDescription']);
     });
 
-    it('publishes without location — location is managed in setup step', function () {
+    it('publishes without location — location is managed in setup step', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $tournament = wizardTournament();
 
@@ -298,7 +298,7 @@ describe('saveEventPost', function () {
             ->assertHasNoErrors(['eventLocation']);
     });
 
-    it('saves as draft with only a title — description and location are optional', function () {
+    it('saves as draft with only a title — description and location are optional', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $tournament = wizardTournament();
 
@@ -311,7 +311,7 @@ describe('saveEventPost', function () {
             ->assertHasNoErrors();
     });
 
-    it('publishes successfully when all required fields are filled', function () {
+    it('publishes successfully when all required fields are filled', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $tournament = wizardTournament();
 

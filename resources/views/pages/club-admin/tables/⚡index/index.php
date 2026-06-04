@@ -82,7 +82,7 @@ new class extends Component
         // 1. Récupération avec les relations
         $tables = Table::query()
             ->with('room')
-            ->when($this->search, function ($query) {
+            ->when($this->search, function ($query): void {
                 $query->where('name', 'like', '%' . $this->search . '%')
                     ->orWhere('state', 'like', '%' . $this->search . '%');
             })

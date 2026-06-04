@@ -56,8 +56,8 @@ function mountTreasury(User $admin)
 
 // ── table — event name ────────────────────────────────────────────────────────
 
-describe('treasury table — event name', function () {
-    it('renders the tournament name in the table row', function () {
+describe('treasury table — event name', function (): void {
+    it('renders the tournament name in the table row', function (): void {
         $admin = User::factory()->create();
         $member = User::factory()->create();
         $tournament = paymentTournament(['name' => 'Winter Classic']);
@@ -67,7 +67,7 @@ describe('treasury table — event name', function () {
             ->assertSee('Winter Classic');
     });
 
-    it('renders the tournament name and member name together in the same row', function () {
+    it('renders the tournament name and member name together in the same row', function (): void {
         $admin = User::factory()->create();
         $member = User::factory()->create(['first_name' => 'Alice', 'last_name' => 'Durand']);
         $tournament = paymentTournament(['name' => 'Autumn Trophy']);
@@ -78,7 +78,7 @@ describe('treasury table — event name', function () {
             ->assertSee('Autumn Trophy');
     });
 
-    it('renders subscription payments without crashing', function () {
+    it('renders subscription payments without crashing', function (): void {
         $admin = User::factory()->create();
         $subscription = Subscription::factory()->create();
 
@@ -93,7 +93,7 @@ describe('treasury table — event name', function () {
             ->assertSee('SUB/2026/00001');
     });
 
-    it('renders the meeting payer name and meeting label together', function () {
+    it('renders the meeting payer name and meeting label together', function (): void {
         $admin = User::factory()->create();
         $member = User::factory()->create(['first_name' => 'Bruno', 'last_name' => 'Lemaire']);
         $meeting = Meeting::factory()->confirmed()->create([
@@ -108,7 +108,7 @@ describe('treasury table — event name', function () {
             ->assertSee('Comite Juin 2026');
     });
 
-    it('renders the subscription payer name and cotisation label together', function () {
+    it('renders the subscription payer name and cotisation label together', function (): void {
         $admin = User::factory()->create();
         $member = User::factory()->create(['first_name' => 'Carla', 'last_name' => 'Petit']);
         $subscription = Subscription::factory()->for($member)->create();
@@ -129,8 +129,8 @@ describe('treasury table — event name', function () {
 
 // ── reconcile modal — meeting label ───────────────────────────────────────────
 
-describe('reconcile modal — meeting label', function () {
-    it('renders the meeting label in the reconcile modal header', function () {
+describe('reconcile modal — meeting label', function (): void {
+    it('renders the meeting label in the reconcile modal header', function (): void {
         $admin = User::factory()->create();
         $member = User::factory()->create();
         $meeting = Meeting::factory()->confirmed()->create([
@@ -148,8 +148,8 @@ describe('reconcile modal — meeting label', function () {
 
 // ── reconcile modal — tournament name ─────────────────────────────────────────
 
-describe('reconcile modal — tournament name', function () {
-    it('renders the tournament name in the reconcile modal header', function () {
+describe('reconcile modal — tournament name', function (): void {
+    it('renders the tournament name in the reconcile modal header', function (): void {
         $admin = User::factory()->create();
         $member = User::factory()->create();
         $tournament = paymentTournament(['name' => 'Grand Prix Final']);

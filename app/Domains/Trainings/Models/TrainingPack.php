@@ -15,7 +15,7 @@ use App\Domains\Shared\Enums\TrainingType;
 use App\Domains\Trainings\Services\TrainingBuilder;
 use App\Domains\Trainings\Services\TrainingDateGenerator;
 use Carbon\Carbon;
-use Database\Factories\TrainingPackFactory;
+use Database\Factories\Domains\Trainings\Models\TrainingPackFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -25,6 +25,65 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 
+/**
+ * @property int $id
+ * @property string $name
+ * @property int $season_id
+ * @property float $price
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property TrainingLevel $level
+ * @property TrainingType $type
+ * @property int $room_id
+ * @property int|null $trainer_id
+ * @property int|null $day_of_week
+ * @property string|null $start_time
+ * @property int|null $duration_minutes
+ * @property string|null $description
+ * @property int|null $max_participants
+ * @property bool $is_active
+ * @property array<array-key, mixed>|null $days_of_week
+ * @property \Illuminate\Support\Carbon|null $pack_start_date
+ * @property \Illuminate\Support\Carbon|null $pack_end_date
+ * @property array<array-key, mixed>|null $excluded_dates
+ * @property bool $allow_discount
+ * @property bool $is_open_enrollment
+ * @property-read EventPost|null $eventPost
+ * @property-read Room $room
+ * @property-read Season $season
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Subscription> $subscriptions
+ * @property-read int|null $subscriptions_count
+ * @property-read User|null $trainer
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Domains\Trainings\Models\Training> $trainings
+ * @property-read int|null $trainings_count
+ * @method static \Database\Factories\Domains\Trainings\Models\TrainingPackFactory factory($count = null, $state = [])
+ * @method static Builder<static>|TrainingPack newModelQuery()
+ * @method static Builder<static>|TrainingPack newQuery()
+ * @method static Builder<static>|TrainingPack query()
+ * @method static Builder<static>|TrainingPack whereAllowDiscount($value)
+ * @method static Builder<static>|TrainingPack whereCreatedAt($value)
+ * @method static Builder<static>|TrainingPack whereDayOfWeek($value)
+ * @method static Builder<static>|TrainingPack whereDaysOfWeek($value)
+ * @method static Builder<static>|TrainingPack whereDescription($value)
+ * @method static Builder<static>|TrainingPack whereDurationMinutes($value)
+ * @method static Builder<static>|TrainingPack whereExcludedDates($value)
+ * @method static Builder<static>|TrainingPack whereId($value)
+ * @method static Builder<static>|TrainingPack whereIsActive($value)
+ * @method static Builder<static>|TrainingPack whereIsOpenEnrollment($value)
+ * @method static Builder<static>|TrainingPack whereLevel($value)
+ * @method static Builder<static>|TrainingPack whereMaxParticipants($value)
+ * @method static Builder<static>|TrainingPack whereName($value)
+ * @method static Builder<static>|TrainingPack wherePackEndDate($value)
+ * @method static Builder<static>|TrainingPack wherePackStartDate($value)
+ * @method static Builder<static>|TrainingPack wherePrice($value)
+ * @method static Builder<static>|TrainingPack whereRoomId($value)
+ * @method static Builder<static>|TrainingPack whereSeasonId($value)
+ * @method static Builder<static>|TrainingPack whereStartTime($value)
+ * @method static Builder<static>|TrainingPack whereTrainerId($value)
+ * @method static Builder<static>|TrainingPack whereType($value)
+ * @method static Builder<static>|TrainingPack whereUpdatedAt($value)
+ * @mixin \Eloquent
+ */
 class TrainingPack extends Model
 {
     /** @use HasFactory<TrainingPackFactory> */

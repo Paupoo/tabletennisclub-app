@@ -12,11 +12,11 @@ use App\Domains\Trainings\Notifications\TrainingWaitlistJoinedNotification;
 use App\Domains\Trainings\Notifications\TrainingWaitlistSpotOfferedNotification;
 use Illuminate\Support\Facades\Notification;
 
-describe('Training Enrollment', function () {
+describe('Training Enrollment', function (): void {
 
     // ── EnrollInTrainingPackAction ──────────────────────────────────────────
 
-    test('sets pending when spot is available (awaiting admin validation)', function () {
+    test('sets pending when spot is available (awaiting admin validation)', function (): void {
         $subscription = Subscription::factory()->create();
         $pack = TrainingPack::factory()->create(['max_participants' => 5, 'price' => 90]);
 
@@ -29,7 +29,7 @@ describe('Training Enrollment', function () {
             ->and($pivot->pivot->status)->toBe('pending');
     })->group('training', 'enrollment');
 
-    test('places on waitlist when pack is full (pending counts against capacity)', function () {
+    test('places on waitlist when pack is full (pending counts against capacity)', function (): void {
         Notification::fake();
 
         $pack = TrainingPack::factory()->create(['max_participants' => 1, 'price' => 90]);
@@ -49,7 +49,7 @@ describe('Training Enrollment', function () {
         Notification::assertSentTo($second->user, TrainingWaitlistJoinedNotification::class);
     })->group('training', 'enrollment', 'waitlist');
 
-    test('throws when subscription is cancelled', function () {
+    test('throws when subscription is cancelled', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'cancelled']);
         $pack = TrainingPack::factory()->create();
 
@@ -57,7 +57,7 @@ describe('Training Enrollment', function () {
             ->toThrow(DomainException::class);
     })->group('training', 'enrollment');
 
-    test('throws when already enrolled in pack', function () {
+    test('throws when already enrolled in pack', function (): void {
         $subscription = Subscription::factory()->create();
         $pack = TrainingPack::factory()->create(['price' => 90]);
 
@@ -69,7 +69,7 @@ describe('Training Enrollment', function () {
 
     // ── LeaveTrainingPackAction ─────────────────────────────────────────────
 
-    test('leaves enrolled pack and removes pivot', function () {
+    test('leaves enrolled pack and removes pivot', function (): void {
         $subscription = Subscription::factory()->create();
         $pack = TrainingPack::factory()->create(['max_participants' => 5, 'price' => 90]);
         $subscription->trainingPacks()->attach($pack->id, ['status' => 'enrolled']);
@@ -79,7 +79,7 @@ describe('Training Enrollment', function () {
         expect($subscription->trainingPacks()->where('training_pack_id', $pack->id)->exists())->toBeFalse();
     })->group('training', 'enrollment');
 
-    test('leaving an enrolled spot promotes first waiter', function () {
+    test('leaving an enrolled spot promotes first waiter', function (): void {
         Notification::fake();
 
         $pack = TrainingPack::factory()->create(['max_participants' => 1, 'price' => 90]);
@@ -100,7 +100,7 @@ describe('Training Enrollment', function () {
         Notification::assertSentTo($waiter->user, TrainingWaitlistSpotOfferedNotification::class);
     })->group('training', 'enrollment', 'waitlist');
 
-    test('leaving a waitlist spot does not promote anyone', function () {
+    test('leaving a waitlist spot does not promote anyone', function (): void {
         Notification::fake();
 
         $pack = TrainingPack::factory()->create(['max_participants' => 1, 'price' => 90]);
@@ -119,7 +119,7 @@ describe('Training Enrollment', function () {
 
     // ── PromoteFromTrainingWaitlistAction ───────────────────────────────────
 
-    test('promote renumbers remaining waitlist positions', function () {
+    test('promote renumbers remaining waitlist positions', function (): void {
         Notification::fake();
 
         $pack = TrainingPack::factory()->create(['max_participants' => 1, 'price' => 90]);
@@ -143,7 +143,7 @@ describe('Training Enrollment', function () {
 
     // ── Pricing with enrollment ─────────────────────────────────────────────
 
-    test('pending and waitlisted packs are excluded from price calculation', function () {
+    test('pending and waitlisted packs are excluded from price calculation', function (): void {
         $subscription = Subscription::factory()->create(['is_competitive' => false]);
         $pack1 = TrainingPack::factory()->create(['max_participants' => 5, 'price' => 90, 'allow_discount' => true]);
         $pack2 = TrainingPack::factory()->create(['max_participants' => 1, 'price' => 90, 'allow_discount' => true]);
@@ -166,7 +166,7 @@ describe('Training Enrollment', function () {
 
     // ── Enrolled pack protection ────────────────────────────────────────────
 
-    test('admin can remove an enrolled pack via LeaveTrainingPackAction (for refund purposes)', function () {
+    test('admin can remove an enrolled pack via LeaveTrainingPackAction (for refund purposes)', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'paid']);
         $pack = TrainingPack::factory()->create(['max_participants' => 5, 'price' => 90]);
         $subscription->trainingPacks()->attach($pack->id, ['status' => 'enrolled']);
@@ -176,7 +176,7 @@ describe('Training Enrollment', function () {
         expect($subscription->trainingPacks()->where('training_pack_id', $pack->id)->exists())->toBeFalse();
     })->group('training', 'enrollment', 'refund');
 
-    test('user-facing guard blocks leaving an enrolled pack via leaveTrainingPack method', function () {
+    test('user-facing guard blocks leaving an enrolled pack via leaveTrainingPack method', function (): void {
         // The guard checks pivot status before calling LeaveTrainingPackAction
         // We test the pivot status check logic directly
         $subscription = Subscription::factory()->create(['status' => 'paid']);

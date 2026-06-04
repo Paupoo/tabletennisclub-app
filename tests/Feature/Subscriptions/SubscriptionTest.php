@@ -9,11 +9,11 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Trainings\Models\TrainingPack;
 
-describe('Subscription Business Rules', function () {
+describe('Subscription Business Rules', function (): void {
 
     // ==================== SAISON ACTIVE ====================
 
-    test('user can only subscribe to active season', function () {
+    test('user can only subscribe to active season', function (): void {
         $user = User::factory()->create();
         $inactiveSeason = Season::factory()->create(['is_active' => false, 'registrations_open' => false]);
 
@@ -23,7 +23,7 @@ describe('Subscription Business Rules', function () {
             ->toThrow(DomainException::class, 'Cannot subscribe to an inactive season');
     })->group('subscriptions', 'business-rules');
 
-    test('user can subscribe to active season with open registrations', function () {
+    test('user can subscribe to active season with open registrations', function (): void {
         $user = User::factory()->create();
         $activeSeason = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
 
@@ -37,7 +37,7 @@ describe('Subscription Business Rules', function () {
 
     // ==================== INSCRIPTIONS OUVERTES/FERMEES ====================
 
-    test('user cannot subscribe when registrations are closed', function () {
+    test('user cannot subscribe when registrations are closed', function (): void {
         $user = User::factory()->create();
         $season = Season::factory()->create(['is_active' => true, 'registrations_open' => false]);
 
@@ -47,7 +47,7 @@ describe('Subscription Business Rules', function () {
             ->toThrow(DomainException::class, 'Registrations are currently closed');
     })->group('subscriptions', 'business-rules');
 
-    test('user can subscribe after registrations are opened', function () {
+    test('user can subscribe after registrations are opened', function (): void {
         $user = User::factory()->create();
         $season = Season::factory()->create(['is_active' => true, 'registrations_open' => false]);
 
@@ -59,7 +59,7 @@ describe('Subscription Business Rules', function () {
         expect($subscription->status)->toBe('pending');
     })->group('subscriptions', 'business-rules');
 
-    test('user cannot subscribe after registrations are closed again', function () {
+    test('user cannot subscribe after registrations are closed again', function (): void {
         $user = User::factory()->create();
         $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
 
@@ -73,7 +73,7 @@ describe('Subscription Business Rules', function () {
 
     // ==================== UNE SEULE SUBSCRIPTION ====================
 
-    test('user cannot have multiple subscriptions for same season', function () {
+    test('user cannot have multiple subscriptions for same season', function (): void {
         $user = User::factory()->create();
         $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
 
@@ -87,7 +87,7 @@ describe('Subscription Business Rules', function () {
             ->toThrow(DomainException::class, 'already has a subscription');
     })->group('subscriptions', 'business-rules');
 
-    test('user can resubscribe after cancellation', function () {
+    test('user can resubscribe after cancellation', function (): void {
         $user = User::factory()->create();
         $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
 
@@ -106,7 +106,7 @@ describe('Subscription Business Rules', function () {
 
     // ==================== CALCUL PRIX ====================
 
-    test('calculates price for competitive member without trainings', function () {
+    test('calculates price for competitive member without trainings', function (): void {
         $subscription = Subscription::factory()->create([
             'is_competitive' => true,
             'has_other_family_members' => false,
@@ -117,7 +117,7 @@ describe('Subscription Business Rules', function () {
         expect($subscription->fresh()->amount_due)->toBe(125.0);
     })->group('subscriptions', 'pricing');
 
-    test('calculates price for recreative member without trainings', function () {
+    test('calculates price for recreative member without trainings', function (): void {
         $subscription = Subscription::factory()->create([
             'is_competitive' => false,
             'has_other_family_members' => false,
@@ -130,7 +130,7 @@ describe('Subscription Business Rules', function () {
 
     test('applies family discount')->todo('Implement family discount logic')->group('subscriptions', 'pricing');
 
-    test('calculates price with one training pack', function () {
+    test('calculates price with one training pack', function (): void {
         $subscription = Subscription::factory()->create([
             'is_competitive' => false,
             'has_other_family_members' => false,
@@ -146,7 +146,7 @@ describe('Subscription Business Rules', function () {
             ->and($subscription->fresh()->trainings_count)->toBe(1);
     })->group('subscriptions', 'pricing');
 
-    test('no discount for single training pack with solo member', function () {
+    test('no discount for single training pack with solo member', function (): void {
         $subscription = Subscription::factory()->create([
             'is_competitive' => false,
             'has_other_family_members' => false,
@@ -163,7 +163,7 @@ describe('Subscription Business Rules', function () {
         expect($subscription->fresh()->training_unit_price)->toBe(90.0);
     })->group('subscriptions', 'pricing');
 
-    test('applies 10€ discount per pack when multiple discountable packs', function () {
+    test('applies 10€ discount per pack when multiple discountable packs', function (): void {
         $subscription = Subscription::factory()->create([
             'is_competitive' => false,
             'has_other_family_members' => false,
@@ -181,7 +181,7 @@ describe('Subscription Business Rules', function () {
             ->and($subscription->fresh()->training_unit_price)->toBe(80.0);
     })->group('subscriptions', 'pricing');
 
-    test('discount applies for 3 packs on competitive subscription', function () {
+    test('discount applies for 3 packs on competitive subscription', function (): void {
         $subscription = Subscription::factory()->create([
             'is_competitive' => true,
             'has_other_family_members' => false,
@@ -204,7 +204,7 @@ describe('Subscription Business Rules', function () {
 
     // ==================== WORKFLOW ====================
 
-    test('subscription workflow: pending → confirmed → paid', function () {
+    test('subscription workflow: pending → confirmed → paid', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'pending']);
 
         expect($subscription->status)->toBe('pending');
@@ -216,7 +216,7 @@ describe('Subscription Business Rules', function () {
         expect($subscription->fresh()->status)->toBe('paid');
     })->group('subscriptions', 'workflow');
 
-    test('pending subscription can be cancelled', function () {
+    test('pending subscription can be cancelled', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'pending']);
 
         $subscription->cancel();
@@ -224,7 +224,7 @@ describe('Subscription Business Rules', function () {
         expect($subscription->fresh()->status)->toBe('cancelled');
     })->group('subscriptions', 'workflow');
 
-    test('confirmed subscription can be cancelled', function () {
+    test('confirmed subscription can be cancelled', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'confirmed']);
 
         $subscription->cancel();
@@ -232,7 +232,7 @@ describe('Subscription Business Rules', function () {
         expect($subscription->fresh()->status)->toBe('cancelled');
     })->group('subscriptions', 'workflow');
 
-    test('confirmed subscription can be unconfirmed back to pending', function () {
+    test('confirmed subscription can be unconfirmed back to pending', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'confirmed']);
 
         $subscription->unconfirm();
@@ -240,28 +240,28 @@ describe('Subscription Business Rules', function () {
         expect($subscription->fresh()->status)->toBe('pending');
     })->group('subscriptions', 'workflow');
 
-    test('cannot mark pending subscription as paid directly', function () {
+    test('cannot mark pending subscription as paid directly', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'pending']);
 
         expect(fn () => $subscription->markAsPaid())
             ->toThrow(LogicException::class, 'Cannot mark as paid from pending status');
     })->group('subscriptions', 'workflow');
 
-    test('cannot confirm an already confirmed subscription', function () {
+    test('cannot confirm an already confirmed subscription', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'confirmed']);
 
         expect(fn () => $subscription->confirm())
             ->toThrow(LogicException::class, 'already confirmed');
     })->group('subscriptions', 'workflow');
 
-    test('cannot cancel a paid subscription', function () {
+    test('cannot cancel a paid subscription', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'paid']);
 
         expect(fn () => $subscription->cancel())
             ->toThrow(LogicException::class, 'Cannot cancel a paid subscription');
     })->group('subscriptions', 'workflow');
 
-    test('cannot modify training packs after confirmation', function () {
+    test('cannot modify training packs after confirmation', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'confirmed']);
 
         expect(fn () => $subscription->trainingPacks()->sync([1, 2]))
@@ -270,19 +270,19 @@ describe('Subscription Business Rules', function () {
 
     // ==================== PAYMENT GENERATION ====================
 
-    test('confirmed subscription can generate payment', function () {
+    test('confirmed subscription can generate payment', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'confirmed']);
 
         expect($subscription->canGeneratePayment())->toBeTrue();
     })->group('subscriptions', 'payments');
 
-    test('pending subscription cannot generate payment', function () {
+    test('pending subscription cannot generate payment', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'pending']);
 
         expect($subscription->canGeneratePayment())->toBeFalse();
     })->group('subscriptions', 'payments');
 
-    test('paid subscription cannot generate another payment', function () {
+    test('paid subscription cannot generate another payment', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'paid']);
 
         expect($subscription->canGeneratePayment())->toBeFalse();

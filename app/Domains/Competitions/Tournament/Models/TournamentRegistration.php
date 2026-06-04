@@ -11,6 +11,39 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 
+/**
+ * @property int $id
+ * @property int|null $user_id
+ * @property int|null $tournament_id
+ * @property bool $has_paid
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property string $registration_status
+ * @property int|null $waitlist_position
+ * @property \Illuminate\Support\Carbon|null $confirmation_deadline
+ * @property \Illuminate\Support\Carbon|null $payment_deadline
+ * @property int|null $payment_id
+ * @property bool $qr_confirmed
+ * @property-read Payment|null $payment
+ * @property-read \App\Domains\Competitions\Tournament\Models\Tournament|null $tournament
+ * @property-read User|null $user
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentRegistration newModelQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentRegistration newQuery()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentRegistration query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentRegistration whereConfirmationDeadline($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentRegistration whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentRegistration whereHasPaid($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentRegistration whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentRegistration wherePaymentDeadline($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentRegistration wherePaymentId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentRegistration whereQrConfirmed($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentRegistration whereRegistrationStatus($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentRegistration whereTournamentId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentRegistration whereUpdatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentRegistration whereUserId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentRegistration whereWaitlistPosition($value)
+ * @mixin \Eloquent
+ */
 class TournamentRegistration extends Pivot implements DescribesPayment
 {
     public $incrementing = true;

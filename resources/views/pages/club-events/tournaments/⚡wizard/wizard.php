@@ -1387,7 +1387,7 @@ new class extends Component
         $tournament->users()
             ->wherePivotIn('registration_status', ['waiting'])
             ->get()
-            ->each(function (User $user) use ($tournament) {
+            ->each(function (User $user) use ($tournament): void {
                 DB::table('tournament_user')
                     ->where('tournament_id', $tournament->id)
                     ->where('user_id', $user->id)

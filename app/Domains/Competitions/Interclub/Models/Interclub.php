@@ -9,7 +9,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\LeagueCategory;
 use App\Domains\Shared\Traits\HasAvailability;
 use Carbon\Carbon;
-use Database\Factories\ClubEvents\Interclub\InterclubFactory;
+use Database\Factories\Domains\Competitions\Interclub\Models\InterclubFactory;
 use Eloquent;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;
@@ -44,7 +44,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read int|null $users_count
  * @property-read Team|null $visitedTeam
  * @property-read Team|null $visitingTeam
- *
  * @method static InterclubFactory factory($count = null, $state = [])
  * @method static Builder<static>|Interclub newModelQuery()
  * @method static Builder<static>|Interclub newQuery()
@@ -63,7 +62,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static Builder<static>|Interclub whereVisitedTeamId($value)
  * @method static Builder<static>|Interclub whereVisitingTeamId($value)
  * @method static Builder<static>|Interclub whereWeekNumber($value)
- *
  * @mixin Eloquent
  */
 class Interclub extends Model

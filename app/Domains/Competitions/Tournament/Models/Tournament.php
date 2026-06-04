@@ -59,7 +59,6 @@ use Illuminate\Support\Carbon;
  * @property-read int|null $tables_count
  * @property-read Collection<int, User> $users
  * @property-read int|null $users_count
- *
  * @method static TournamentFactory factory($count = null, $state = [])
  * @method static Builder<static>|Tournament newModelQuery()
  * @method static Builder<static>|Tournament newQuery()
@@ -76,7 +75,34 @@ use Illuminate\Support\Carbon;
  * @method static Builder<static>|Tournament whereStatus($value)
  * @method static Builder<static>|Tournament whereTotalUsers($value)
  * @method static Builder<static>|Tournament whereUpdatedAt($value)
- *
+ * @property string|null $description
+ * @property string|null $location
+ * @property string|null $image
+ * @property int|null $news_post_id
+ * @property TournamentObjectiveEnum|null $objective
+ * @property bool $deuce_enabled
+ * @property string|null $doubles_registration_mode
+ * @property mixed $0
+ * @property-read EventPost|null $eventPost
+ * @property-read NewsPost|null $newsPost
+ * @property-read Collection<int, \App\Domains\Competitions\Tournament\Models\TournamentPair> $pairs
+ * @property-read int|null $pairs_count
+ * @method static Builder<static>|Tournament whereDescription($value)
+ * @method static Builder<static>|Tournament whereDeuceEnabled($value)
+ * @method static Builder<static>|Tournament whereDoublesRegistrationMode($value)
+ * @method static Builder<static>|Tournament whereDurationMinutes($value)
+ * @method static Builder<static>|Tournament whereImage($value)
+ * @method static Builder<static>|Tournament whereLocation($value)
+ * @method static Builder<static>|Tournament whereLogisticsBufferMinutes($value)
+ * @method static Builder<static>|Tournament whereMatchType($value)
+ * @method static Builder<static>|Tournament whereNbPools($value)
+ * @method static Builder<static>|Tournament whereNbQualifiersPerPool($value)
+ * @method static Builder<static>|Tournament whereNewsPostId($value)
+ * @method static Builder<static>|Tournament whereObjective($value)
+ * @method static Builder<static>|Tournament wherePoolSize($value)
+ * @method static Builder<static>|Tournament whereRegistrationDeadline($value)
+ * @method static Builder<static>|Tournament whereSetsToWin($value)
+ * @method static Builder<static>|Tournament whereStartTime($value)
  * @mixin \Eloquent
  */
 #[ObservedBy(TournamentObserver::class)]

@@ -399,7 +399,7 @@ class TournamentMatchService
             return;
         }
 
-        $isDoubles = $pool->tournament?->match_type === 'double';
+        $isDoubles = $pool->tournament->match_type === 'double';
 
         if ($isDoubles) {
             // Build candidate list from all individual players in the pool's pairs
@@ -676,7 +676,7 @@ class TournamentMatchService
     {
         $matches = TournamentMatch::where('tournament_id', $tournament->id)
             ->whereNotNull('pool_id')
-            ->where(function ($q) use ($user) {
+            ->where(function ($q) use ($user): void {
                 $q->where('player1_id', $user->id)
                     ->orWhere('player2_id', $user->id);
             })

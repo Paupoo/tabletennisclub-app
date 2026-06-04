@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use PHPUnit\Framework\AssertionFailedError;
 
-it('public and protected methods declare a return type', function () {
+it('public and protected methods declare a return type', function (): void {
     $appPath = base_path('app');
     $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($appPath));
 

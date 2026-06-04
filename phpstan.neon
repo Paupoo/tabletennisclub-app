@@ -10,8 +10,12 @@ parameters:
     # Level 10 is the highest level
     level: 5
 
-#    ignoreErrors:
-#        - '#PHPDoc tag @var#'
-#
+    ignoreErrors:
+        # view() helper: phpstan cannot resolve Blade view names to a
+        # view-string without a Blade analysis extension. Not real bugs.
+        -
+            identifier: argument.type
+            message: '#expects view-string\|null, string given\.#'
+
 #    excludePaths:
 #        - ./*/*/FileToBeExcluded.php

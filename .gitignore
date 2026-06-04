@@ -67,6 +67,7 @@ _ide_helper_models.php
 Homestead.json
 Homestead.yaml
 laravel
+/laravel_test_*
 /.vagrant
 
 # ============================================

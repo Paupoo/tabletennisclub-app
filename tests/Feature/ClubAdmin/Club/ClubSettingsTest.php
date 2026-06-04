@@ -38,12 +38,23 @@ describe('Test Club Settings', function () {
         });
 
         it('initialises properties from the club app defined in the .env', function () {
-            // On force des valeurs d'env pour le test
+            // The component reads env('APP_CLUB_LICENCE') at runtime. The .env already
+            // populated $_ENV with an empty value, which shadows putenv(), so $_ENV/$_SERVER
+            // must be set too for env() to pick the test value up.
             $testValue = 'ABC123';
+            $original = $_ENV['APP_CLUB_LICENCE'] ?? '';
+            $_ENV['APP_CLUB_LICENCE'] = $testValue;
+            $_SERVER['APP_CLUB_LICENCE'] = $testValue;
             putenv("APP_CLUB_LICENCE={$testValue}");
 
-            Livewire::test(clubSettingsComponent())
-                ->assertSet('licence', $testValue);
+            try {
+                Livewire::test(clubSettingsComponent())
+                    ->assertSet('licence', $testValue);
+            } finally {
+                $_ENV['APP_CLUB_LICENCE'] = $original;
+                $_SERVER['APP_CLUB_LICENCE'] = $original;
+                putenv("APP_CLUB_LICENCE={$original}");
+            }
         });
 
         it('displays committee members in the view', function () {

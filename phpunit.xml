@@ -49,6 +49,9 @@
         <!-- Environment -->
         <ini name="memory_limit" value="1G"/>
         <env name="APP_ENV" value="testing" />
+        <!-- Array cache is per-process and reset with the app each test: no file-cache
+             directory races under parallel testing, and no cross-test cache leakage. -->
+        <env name="CACHE_DRIVER" value="array" />
     </php>
 
     <coverage>

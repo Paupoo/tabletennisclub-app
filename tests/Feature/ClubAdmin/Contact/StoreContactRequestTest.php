@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\ThrottleRequests;
+use Illuminate\Support\Facades\Mail;
 
 // ─────────────────────────────────────────────────────────────
 // Suite : Security
@@ -68,6 +69,9 @@ describe('Contact Form - Public Submission', function () {
 
 describe('Contact Form validations', function () {
     beforeEach(function () {
+        // Club notification email is unset in the test env; fake mail so the
+        // happy path doesn't try to send to an empty recipient and throw.
+        Mail::fake();
         $this->withoutMiddleware(VerifyCsrfToken::class);
         $this->withoutMiddleware(ThrottleRequests::class);
         $this->withSession([

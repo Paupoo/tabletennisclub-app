@@ -17,9 +17,9 @@ function indexAs(User $user)
 
 // ── Draft visibility ──────────────────────────────────────────────────────────
 
-describe('draft tournament visibility', function () {
+describe('draft tournament visibility', function (): void {
 
-    it('hides draft tournaments from regular members', function () {
+    it('hides draft tournaments from regular members', function (): void {
         $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
         $draft = Tournament::factory()->create(['status' => TournamentStatusEnum::DRAFT]);
         $published = Tournament::factory()->create(['status' => TournamentStatusEnum::PUBLISHED]);
@@ -29,14 +29,14 @@ describe('draft tournament visibility', function () {
             ->assertSee($published->name);
     });
 
-    it('shows draft tournaments to admins', function () {
+    it('shows draft tournaments to admins', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $draft = Tournament::factory()->create(['status' => TournamentStatusEnum::DRAFT]);
 
         indexAs($admin)->assertSee($draft->name);
     });
 
-    it('shows draft tournaments to committee members', function () {
+    it('shows draft tournaments to committee members', function (): void {
         $committee = User::factory()->isCommitteeMember()->create();
         $draft = Tournament::factory()->create(['status' => TournamentStatusEnum::DRAFT]);
 
@@ -47,9 +47,9 @@ describe('draft tournament visibility', function () {
 
 // ── Draft filter isolation ────────────────────────────────────────────────────
 
-describe('draft status filter isolation', function () {
+describe('draft status filter isolation', function (): void {
 
-    it('hides draft tournaments from regular members even when filtering by draft status', function () {
+    it('hides draft tournaments from regular members even when filtering by draft status', function (): void {
         $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
         $draft = Tournament::factory()->create(['status' => TournamentStatusEnum::DRAFT]);
 
@@ -58,7 +58,7 @@ describe('draft status filter isolation', function () {
             ->assertDontSee($draft->name);
     });
 
-    it('shows draft tournaments to admins when filtering by draft status', function () {
+    it('shows draft tournaments to admins when filtering by draft status', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $draft = Tournament::factory()->create(['status' => TournamentStatusEnum::DRAFT]);
 
@@ -71,21 +71,21 @@ describe('draft status filter isolation', function () {
 
 // ── canManage flag ────────────────────────────────────────────────────────────
 
-describe('canManage computed', function () {
+describe('canManage computed', function (): void {
 
-    it('is false for regular members', function () {
+    it('is false for regular members', function (): void {
         $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
 
         indexAs($member)->assertSet('canManage', false);
     });
 
-    it('is true for admins', function () {
+    it('is true for admins', function (): void {
         $admin = User::factory()->isAdmin()->create();
 
         indexAs($admin)->assertSet('canManage', true);
     });
 
-    it('is true for committee members', function () {
+    it('is true for committee members', function (): void {
         $committee = User::factory()->isCommitteeMember()->create();
 
         indexAs($committee)->assertSet('canManage', true);

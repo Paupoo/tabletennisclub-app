@@ -39,8 +39,8 @@ function confirmedMeeting(?User $creator = null): Meeting
 }
 
 // ── Model ─────────────────────────────────────────────────────────────────────
-describe('Meeting model', function () {
-    test('quorum percentage calculates correctly', function () {
+describe('Meeting model', function (): void {
+    test('quorum percentage calculates correctly', function (): void {
         $admin = meetingAdmin();
         $meeting = Meeting::factory()->generalAssembly()->confirmed()->withQuorum(10)->create(['created_by' => $admin->id]);
         $members = User::factory()->count(6)->create(['is_active' => true]);
@@ -54,7 +54,7 @@ describe('Meeting model', function () {
             ->and($meeting->isQuorumReached())->toBeFalse();
     });
 
-    test('quorum is reached when confirmed count >= quorum', function () {
+    test('quorum is reached when confirmed count >= quorum', function (): void {
         $admin = meetingAdmin();
         $meeting = Meeting::factory()->generalAssembly()->confirmed()->withQuorum(5)->create(['created_by' => $admin->id]);
         $members = User::factory()->count(5)->create(['is_active' => true]);
@@ -67,12 +67,12 @@ describe('Meeting model', function () {
             ->and($meeting->quorumPercentage())->toBe(100.0);
     });
 
-    test('quorum is always reached when no quorum set', function () {
+    test('quorum is always reached when no quorum set', function (): void {
         $meeting = Meeting::factory()->committee()->confirmed()->create(['created_by' => meetingAdmin()->id]);
         expect($meeting->isQuorumReached())->toBeTrue();
     });
 
-    test('isInPollPhase returns true only when planning with proposals', function () {
+    test('isInPollPhase returns true only when planning with proposals', function (): void {
         $meeting = Meeting::factory()->committee()->planning()->create(['created_by' => meetingAdmin()->id]);
         expect($meeting->isInPollPhase())->toBeFalse();
 
@@ -80,7 +80,7 @@ describe('Meeting model', function () {
         expect($meeting->fresh()->isInPollPhase())->toBeTrue();
     });
 
-    test('meal_price accessor returns euros from cents', function () {
+    test('meal_price accessor returns euros from cents', function (): void {
         $meeting = Meeting::factory()->committee()->confirmed()
             ->withMeal('Pizzas', 1200)
             ->create(['created_by' => meetingAdmin()->id]);
@@ -88,27 +88,27 @@ describe('Meeting model', function () {
         expect($meeting->meal_price)->toBe(12.0);
     });
 
-    test('general assembly type isPublic returns true', function () {
+    test('general assembly type isPublic returns true', function (): void {
         expect(MeetingTypeEnum::GENERAL_ASSEMBLY->isPublic())->toBeTrue()
             ->and(MeetingTypeEnum::COMMITTEE->isPublic())->toBeFalse();
     });
 });
 
 // ── Index page ────────────────────────────────────────────────────────────────
-describe('Meeting index page', function () {
-    test('admin can access meeting index', function () {
+describe('Meeting index page', function (): void {
+    test('admin can access meeting index', function (): void {
         Livewire::actingAs(meetingAdmin())
             ->test('pages::club-events.meetings.index')
             ->assertStatus(200);
     });
 
-    test('regular member gets 403 on meeting index', function () {
+    test('regular member gets 403 on meeting index', function (): void {
         $this->actingAs(meetingMember())
             ->get(route('admin.meetings.index'))
             ->assertStatus(403);
     });
 
-    test('index lists meetings with search', function () {
+    test('index lists meetings with search', function (): void {
         $admin = meetingAdmin();
         $meeting = confirmedMeeting($admin);
 
@@ -118,7 +118,7 @@ describe('Meeting index page', function () {
             ->assertSeeText($meeting->title);
     });
 
-    test('index shows filter-specific empty state when filters yield no results', function () {
+    test('index shows filter-specific empty state when filters yield no results', function (): void {
         $admin = meetingAdmin();
         Meeting::factory()->committee()->confirmed()->create(['created_by' => $admin->id]);
 
@@ -128,13 +128,13 @@ describe('Meeting index page', function () {
             ->assertSeeText('No meetings match your filters');
     });
 
-    test('index shows generic empty state when no meetings exist at all', function () {
+    test('index shows generic empty state when no meetings exist at all', function (): void {
         Livewire::actingAs(meetingAdmin())
             ->test('pages::club-events.meetings.index')
             ->assertSeeText('No meetings yet');
     });
 
-    test('index filters by type', function () {
+    test('index filters by type', function (): void {
         $admin = meetingAdmin();
         $committee = Meeting::factory()->committee()->confirmed()->create(['created_by' => $admin->id]);
         $ga = Meeting::factory()->generalAssembly()->confirmed()->create(['created_by' => $admin->id]);
@@ -148,8 +148,8 @@ describe('Meeting index page', function () {
 });
 
 // ── Form (create / edit) ──────────────────────────────────────────────────────
-describe('Meeting form — fixed date mode', function () {
-    test('admin can create a meeting with a fixed date', function () {
+describe('Meeting form — fixed date mode', function (): void {
+    test('admin can create a meeting with a fixed date', function (): void {
         Bus::fake();
 
         $admin = meetingAdmin();
@@ -172,7 +172,7 @@ describe('Meeting form — fixed date mode', function () {
             ->and($meeting->scheduled_at)->not->toBeNull();
     });
 
-    test('creating with fixed date auto-dispatches invitation job', function () {
+    test('creating with fixed date auto-dispatches invitation job', function (): void {
         Bus::fake();
 
         $admin = meetingAdmin();
@@ -193,7 +193,7 @@ describe('Meeting form — fixed date mode', function () {
         Bus::assertDispatched(SendMeetingInvitationsJob::class);
     });
 
-    test('editing does NOT re-dispatch invitation job', function () {
+    test('editing does NOT re-dispatch invitation job', function (): void {
         Bus::fake();
 
         $admin = meetingAdmin();
@@ -209,7 +209,7 @@ describe('Meeting form — fixed date mode', function () {
         expect($meeting->fresh()->title)->toBe('Titre modifié');
     });
 
-    test('nextStep advances to review step', function () {
+    test('nextStep advances to review step', function (): void {
         $admin = meetingAdmin();
 
         Livewire::actingAs($admin)
@@ -229,7 +229,7 @@ describe('Meeting form — fixed date mode', function () {
             ->assertSet('step', '3');
     });
 
-    test('prevStep goes back from review step', function () {
+    test('prevStep goes back from review step', function (): void {
         $admin = meetingAdmin();
 
         Livewire::actingAs($admin)
@@ -247,7 +247,7 @@ describe('Meeting form — fixed date mode', function () {
             ->assertSet('step', '2');
     });
 
-    test('switching to poll mode clears scheduled date', function () {
+    test('switching to poll mode clears scheduled date', function (): void {
         $admin = meetingAdmin();
 
         Livewire::actingAs($admin)
@@ -260,8 +260,8 @@ describe('Meeting form — fixed date mode', function () {
     });
 });
 
-describe('Meeting form — poll mode', function () {
-    test('creating with poll mode auto-sends date poll to committee', function () {
+describe('Meeting form — poll mode', function (): void {
+    test('creating with poll mode auto-sends date poll to committee', function (): void {
         Notification::fake();
 
         $admin = meetingAdmin();
@@ -286,7 +286,7 @@ describe('Meeting form — poll mode', function () {
         Notification::assertSentTo($admin, MeetingDatePollNotification::class);
     });
 
-    test('creating with poll mode does NOT dispatch invitation job', function () {
+    test('creating with poll mode does NOT dispatch invitation job', function (): void {
         Bus::fake();
         Notification::fake();
 
@@ -307,7 +307,7 @@ describe('Meeting form — poll mode', function () {
         Bus::assertNotDispatched(SendMeetingInvitationsJob::class);
     });
 
-    test('nextStep goes to review step in poll mode', function () {
+    test('nextStep goes to review step in poll mode', function (): void {
         $admin = meetingAdmin();
 
         Livewire::actingAs($admin)
@@ -325,7 +325,7 @@ describe('Meeting form — poll mode', function () {
             ->assertSet('step', '3');
     });
 
-    test('switching to fixed date mode clears date proposals', function () {
+    test('switching to fixed date mode clears date proposals', function (): void {
         $admin = meetingAdmin();
 
         Livewire::actingAs($admin)
@@ -336,7 +336,7 @@ describe('Meeting form — poll mode', function () {
             ->assertSet('dateProposals', []);
     });
 
-    test('date proposals are saved when in poll mode', function () {
+    test('date proposals are saved when in poll mode', function (): void {
         Bus::fake();
         Notification::fake();
 
@@ -364,8 +364,8 @@ describe('Meeting form — poll mode', function () {
     });
 });
 
-describe('Meeting form — misc', function () {
-    test('meeting title is required', function () {
+describe('Meeting form — misc', function (): void {
+    test('meeting title is required', function (): void {
         Livewire::actingAs(meetingAdmin())
             ->test('pages::club-events.meetings.form')
             ->set('step', '3')
@@ -373,7 +373,7 @@ describe('Meeting form — misc', function () {
             ->assertHasErrors(['title' => 'required']);
     });
 
-    test('agenda items are saved with meeting', function () {
+    test('agenda items are saved with meeting', function (): void {
         Bus::fake();
 
         $admin = meetingAdmin();
@@ -399,7 +399,7 @@ describe('Meeting form — misc', function () {
             ->and($meeting->agendaItems)->toHaveCount(2);
     });
 
-    test('quorum field appears only for general assemblies', function () {
+    test('quorum field appears only for general assemblies', function (): void {
         Livewire::actingAs(meetingAdmin())
             ->test('pages::club-events.meetings.form')
             ->set('type', MeetingTypeEnum::COMMITTEE->value)
@@ -408,7 +408,7 @@ describe('Meeting form — misc', function () {
             ->assertSee('Quorum');
     });
 
-    test('mount detects poll mode from existing meeting', function () {
+    test('mount detects poll mode from existing meeting', function (): void {
         $admin = meetingAdmin();
         $meeting = Meeting::factory()->committee()->planning()->create(['created_by' => $admin->id]);
         $meeting->dateProposals()->create(['proposed_at' => now()->addWeek()]);
@@ -418,7 +418,7 @@ describe('Meeting form — misc', function () {
             ->assertSet('datePollMode', true);
     });
 
-    test('mount detects fixed date mode from existing meeting', function () {
+    test('mount detects fixed date mode from existing meeting', function (): void {
         $admin = meetingAdmin();
         $meeting = confirmedMeeting($admin);
 
@@ -429,8 +429,8 @@ describe('Meeting form — misc', function () {
 });
 
 // ── SendMeetingInvitationsJob ─────────────────────────────────────────────────
-describe('SendMeetingInvitationsJob', function () {
-    test('job sends invitation to committee members and updates pivot', function () {
+describe('SendMeetingInvitationsJob', function (): void {
+    test('job sends invitation to committee members and updates pivot', function (): void {
         Notification::fake();
 
         $admin = meetingAdmin();
@@ -445,7 +445,7 @@ describe('SendMeetingInvitationsJob', function () {
         expect($meeting->users()->where('users.id', $member->id)->exists())->toBeTrue();
     });
 
-    test('job updates pivot status to invited', function () {
+    test('job updates pivot status to invited', function (): void {
         Notification::fake();
 
         $admin = meetingAdmin();
@@ -459,7 +459,7 @@ describe('SendMeetingInvitationsJob', function () {
             ->and($pivot->invitation_sent_at)->not->toBeNull();
     });
 
-    test('job re-invites GA to all active members', function () {
+    test('job re-invites GA to all active members', function (): void {
         Notification::fake();
 
         $admin = meetingAdmin();
@@ -475,8 +475,8 @@ describe('SendMeetingInvitationsJob', function () {
 });
 
 // ── Show (control center) ─────────────────────────────────────────────────────
-describe('Meeting show page', function () {
-    test('admin can view a meeting', function () {
+describe('Meeting show page', function (): void {
+    test('admin can view a meeting', function (): void {
         $admin = meetingAdmin();
         $meeting = confirmedMeeting($admin);
 
@@ -486,7 +486,7 @@ describe('Meeting show page', function () {
             ->assertSeeText($meeting->title);
     });
 
-    test('sendInvitations dispatches job for confirmed meeting', function () {
+    test('sendInvitations dispatches job for confirmed meeting', function (): void {
         Bus::fake();
 
         $admin = meetingAdmin();
@@ -499,7 +499,7 @@ describe('Meeting show page', function () {
         Bus::assertDispatched(SendMeetingInvitationsJob::class, fn ($job) => $job->meetingId === $meeting->id);
     });
 
-    test('invitations cannot be dispatched if meeting is in planning status', function () {
+    test('invitations cannot be dispatched if meeting is in planning status', function (): void {
         Bus::fake();
 
         $admin = meetingAdmin();
@@ -512,7 +512,7 @@ describe('Meeting show page', function () {
         Bus::assertNotDispatched(SendMeetingInvitationsJob::class);
     });
 
-    test('cancel notifies invited users when pivot has entries', function () {
+    test('cancel notifies invited users when pivot has entries', function (): void {
         Notification::fake();
 
         $admin = meetingAdmin();
@@ -529,7 +529,7 @@ describe('Meeting show page', function () {
         Notification::assertSentTo($member, MeetingCancelledNotification::class);
     });
 
-    test('cancel falls back to committee when no invitations sent yet', function () {
+    test('cancel falls back to committee when no invitations sent yet', function (): void {
         Notification::fake();
 
         $admin = meetingAdmin();
@@ -546,7 +546,7 @@ describe('Meeting show page', function () {
         Notification::assertSentTo($admin, MeetingCancelledNotification::class);
     });
 
-    test('postpone notifies invited users when pivot has entries', function () {
+    test('postpone notifies invited users when pivot has entries', function (): void {
         Notification::fake();
 
         $admin = meetingAdmin();
@@ -563,7 +563,7 @@ describe('Meeting show page', function () {
         Notification::assertSentTo($member, MeetingPostponedNotification::class);
     });
 
-    test('postpone falls back to committee when no invitations sent yet', function () {
+    test('postpone falls back to committee when no invitations sent yet', function (): void {
         Notification::fake();
 
         $admin = meetingAdmin();
@@ -580,7 +580,7 @@ describe('Meeting show page', function () {
         Notification::assertSentTo($admin, MeetingPostponedNotification::class);
     });
 
-    test('admin can mark a user as attended', function () {
+    test('admin can mark a user as attended', function (): void {
         $admin = meetingAdmin();
         $member = meetingMember();
         $meeting = Meeting::factory()->committee()->create([
@@ -601,8 +601,8 @@ describe('Meeting show page', function () {
 });
 
 // ── Minutes ───────────────────────────────────────────────────────────────────
-describe('Meeting minutes', function () {
-    test('admin can publish minutes', function () {
+describe('Meeting minutes', function (): void {
+    test('admin can publish minutes', function (): void {
         $admin = meetingAdmin();
         $meeting = confirmedMeeting($admin);
 
@@ -620,7 +620,7 @@ describe('Meeting minutes', function () {
             ->and($minutes->decisions)->toHaveCount(2);
     });
 
-    test('minutes cannot be sent before being published', function () {
+    test('minutes cannot be sent before being published', function (): void {
         Notification::fake();
 
         $admin = meetingAdmin();
@@ -635,8 +635,8 @@ describe('Meeting minutes', function () {
     });
 });
 
-describe('Meeting attendance — catering view', function () {
-    test('the attendance tab shows the catering banner and per-attendee meal badges', function () {
+describe('Meeting attendance — catering view', function (): void {
+    test('the attendance tab shows the catering banner and per-attendee meal badges', function (): void {
         $admin = meetingAdmin();
         $meeting = Meeting::factory()->confirmed()->withMeal('Pizzas', 1200)->create(['created_by' => $admin->id]);
 
@@ -663,7 +663,7 @@ describe('Meeting attendance — catering view', function () {
             ->assertSee(__('No meal'));
     });
 
-    test('the catering banner is hidden when the meeting has no meal', function () {
+    test('the catering banner is hidden when the meeting has no meal', function (): void {
         $admin = meetingAdmin();
         $meeting = Meeting::factory()->confirmed()->create(['created_by' => $admin->id]);
         $user = User::factory()->create(['is_active' => true]);

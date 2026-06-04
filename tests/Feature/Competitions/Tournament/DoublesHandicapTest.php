@@ -45,12 +45,12 @@ function makePair(Tournament $t, string $r1, string $r2): TournamentPair
 
 // ── calculateDoublesHandicap ──────────────────────────────────────────────────
 
-describe('calculateDoublesHandicap', function () {
+describe('calculateDoublesHandicap', function (): void {
     // Alice(B2)+Bob(C4) vs Clara(B4)+David(D0)
     // pair1 receives: h['B4']['B2']=0, h['D0']['B2']=0, h['B4']['C4']=3, h['D0']['C4']=0 → total=3, ceil(3/4)=1
     // pair2 receives: h['B2']['B4']=1, h['C4']['B4']=0, h['B2']['D0']=4, h['C4']['D0']=2 → total=7, ceil(7/4)=2
     // pair2 is weaker → pair2_handicap=2, pair1_handicap=0
-    it('assigns handicap to the weaker pair (pair2)', function () {
+    it('assigns handicap to the weaker pair (pair2)', function (): void {
         $t = handicapTournament();
         $pair1 = makePair($t, 'B2', 'C4');
         $pair2 = makePair($t, 'B4', 'D0');
@@ -65,7 +65,7 @@ describe('calculateDoublesHandicap', function () {
             ->and($result['pair2_handicap'])->toBe(2);
     });
 
-    it('assigns handicap to pair1 when pair1 is weaker', function () {
+    it('assigns handicap to pair1 when pair1 is weaker', function (): void {
         $t = handicapTournament();
         $pair1 = makePair($t, 'B4', 'D0');
         $pair2 = makePair($t, 'B2', 'C4');
@@ -80,7 +80,7 @@ describe('calculateDoublesHandicap', function () {
             ->and($result['pair2_handicap'])->toBe(0);
     });
 
-    it('returns zeros for equally matched pairs', function () {
+    it('returns zeros for equally matched pairs', function (): void {
         $t = handicapTournament();
         $pair1 = makePair($t, 'C0', 'C0');
         $pair2 = makePair($t, 'C0', 'C0');
@@ -95,7 +95,7 @@ describe('calculateDoublesHandicap', function () {
             ->and($result['pair2_handicap'])->toBe(0);
     });
 
-    it('returns zeros when a pair has a missing player', function () {
+    it('returns zeros when a pair has a missing player', function (): void {
         $t = handicapTournament();
         $pair1 = makePair($t, 'B2', 'C4');
         $pair2 = TournamentPair::factory()->create(['tournament_id' => $t->id]);
@@ -114,8 +114,8 @@ describe('calculateDoublesHandicap', function () {
 
 // ── generateMatches doubles ───────────────────────────────────────────────────
 
-describe('generateMatches for doubles pool', function () {
-    it('generates round-robin matches with pair1_id and pair2_id', function () {
+describe('generateMatches for doubles pool', function (): void {
+    it('generates round-robin matches with pair1_id and pair2_id', function (): void {
         $t = handicapTournament();
         $pool = new Pool(['name' => 'Pool A']);
         $pool->tournament_id = $t->id;
@@ -135,7 +135,7 @@ describe('generateMatches for doubles pool', function () {
         expect($matches->every(fn ($m) => $m->player1_id !== null && $m->player2_id !== null))->toBeTrue();
     });
 
-    it('sets proxy player ids matching pair player1s', function () {
+    it('sets proxy player ids matching pair player1s', function (): void {
         $t = handicapTournament();
         $pool = new Pool(['name' => 'Pool A']);
         $pool->tournament_id = $t->id;
@@ -157,8 +157,8 @@ describe('generateMatches for doubles pool', function () {
 
 // ── calculatePoolStandings for doubles ────────────────────────────────────────
 
-describe('calculatePoolStandings for doubles', function () {
-    it('returns pair display names and counts wins per pair', function () {
+describe('calculatePoolStandings for doubles', function (): void {
+    it('returns pair display names and counts wins per pair', function (): void {
         $t = Tournament::factory()->create([
             'match_type' => 'double',
             'doubles_registration_mode' => 'club',

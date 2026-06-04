@@ -15,9 +15,9 @@ use Illuminate\Support\Facades\Notification;
 
 // ─── TrainingPackRequestedNotification (Flux B) ────────────────────────────────
 
-describe('TrainingPackRequestedNotification', function () {
+describe('TrainingPackRequestedNotification', function (): void {
 
-    test('notification is sent via mail and database channels', function () {
+    test('notification is sent via mail and database channels', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'paid']);
         $pack = TrainingPack::factory()->create(['name' => 'Pack Lundi']);
         $subscription->load('season');
@@ -27,7 +27,7 @@ describe('TrainingPackRequestedNotification', function () {
         expect($notification->via($subscription->user))->toBe(['mail', 'database']);
     })->group('notifications', 'flux-b');
 
-    test('mail subject contains the pack name', function () {
+    test('mail subject contains the pack name', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'paid']);
         $pack = TrainingPack::factory()->create(['name' => 'Pack Mardi']);
         $subscription->load(['user', 'season']);
@@ -37,7 +37,7 @@ describe('TrainingPackRequestedNotification', function () {
         expect($mail->subject)->toContain('Pack Mardi');
     })->group('notifications', 'flux-b');
 
-    test('mail body contains pack name and season name', function () {
+    test('mail body contains pack name and season name', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'paid']);
         $pack = TrainingPack::factory()->create(['name' => 'Pack Vendredi']);
         $subscription->load(['user', 'season']);
@@ -49,7 +49,7 @@ describe('TrainingPackRequestedNotification', function () {
             ->and($lines)->toContain($subscription->season->name);
     })->group('notifications', 'flux-b');
 
-    test('notification is sent when a paid member enrolls in a training pack (Flux B)', function () {
+    test('notification is sent when a paid member enrolls in a training pack (Flux B)', function (): void {
         Notification::fake();
 
         $subscription = Subscription::factory()->create(['status' => 'paid']);
@@ -60,7 +60,7 @@ describe('TrainingPackRequestedNotification', function () {
         Notification::assertSentTo($subscription->user, TrainingPackRequestedNotification::class);
     })->group('notifications', 'flux-b', 'enrollment');
 
-    test('notification is NOT sent when a pending member enrolls (Flux A — covered by subscription created notification)', function () {
+    test('notification is NOT sent when a pending member enrolls (Flux A — covered by subscription created notification)', function (): void {
         Notification::fake();
 
         $subscription = Subscription::factory()->create(['status' => 'pending']);
@@ -71,7 +71,7 @@ describe('TrainingPackRequestedNotification', function () {
         Notification::assertNotSentTo($subscription->user, TrainingPackRequestedNotification::class);
     })->group('notifications', 'flux-b', 'enrollment');
 
-    test('notification is NOT sent when a confirmed member enrolls (Flux A — not yet paid)', function () {
+    test('notification is NOT sent when a confirmed member enrolls (Flux A — not yet paid)', function (): void {
         Notification::fake();
 
         $subscription = Subscription::factory()->create(['status' => 'confirmed']);
@@ -82,7 +82,7 @@ describe('TrainingPackRequestedNotification', function () {
         Notification::assertNotSentTo($subscription->user, TrainingPackRequestedNotification::class);
     })->group('notifications', 'flux-b', 'enrollment');
 
-    test('waitlisted paid member receives waitlist notification, not TrainingPackRequested', function () {
+    test('waitlisted paid member receives waitlist notification, not TrainingPackRequested', function (): void {
         Notification::fake();
 
         $season = Season::factory()->create(['is_active' => true]);
@@ -106,9 +106,9 @@ describe('TrainingPackRequestedNotification', function () {
 
 // ─── TrainingPackCancelledNotification (Flux B) ────────────────────────────────
 
-describe('TrainingPackCancelledNotification', function () {
+describe('TrainingPackCancelledNotification', function (): void {
 
-    test('notification is sent via mail and database channels', function () {
+    test('notification is sent via mail and database channels', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'paid']);
         $pack = TrainingPack::factory()->create(['name' => 'Pack Lundi']);
         $subscription->load('season');
@@ -118,7 +118,7 @@ describe('TrainingPackCancelledNotification', function () {
         expect($notification->via($subscription->user))->toBe(['mail', 'database']);
     })->group('notifications', 'flux-b');
 
-    test('mail subject contains the pack name', function () {
+    test('mail subject contains the pack name', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'paid']);
         $pack = TrainingPack::factory()->create(['name' => 'Pack Jeudi']);
         $subscription->load(['user', 'season']);
@@ -128,7 +128,7 @@ describe('TrainingPackCancelledNotification', function () {
         expect($mail->subject)->toContain('Pack Jeudi');
     })->group('notifications', 'flux-b');
 
-    test('mail body contains pack name and season name', function () {
+    test('mail body contains pack name and season name', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'paid']);
         $pack = TrainingPack::factory()->create(['name' => 'Pack Samedi']);
         $subscription->load(['user', 'season']);
@@ -140,7 +140,7 @@ describe('TrainingPackCancelledNotification', function () {
             ->and($lines)->toContain($subscription->season->name);
     })->group('notifications', 'flux-b');
 
-    test('notification is sent when a paid member cancels a pending training pack', function () {
+    test('notification is sent when a paid member cancels a pending training pack', function (): void {
         Notification::fake();
 
         $subscription = Subscription::factory()->create(['status' => 'paid']);
@@ -153,7 +153,7 @@ describe('TrainingPackCancelledNotification', function () {
         Notification::assertSentTo($subscription->user, TrainingPackCancelledNotification::class);
     })->group('notifications', 'flux-b', 'enrollment');
 
-    test('notification is NOT sent when leaving a waitlisted slot', function () {
+    test('notification is NOT sent when leaving a waitlisted slot', function (): void {
         Notification::fake();
 
         $pack = TrainingPack::factory()->create(['max_participants' => 1, 'price' => 90]);
@@ -172,7 +172,7 @@ describe('TrainingPackCancelledNotification', function () {
         Notification::assertNotSentTo($subscription->user, TrainingPackCancelledNotification::class);
     })->group('notifications', 'flux-b', 'enrollment', 'waitlist');
 
-    test('notification is NOT sent when leaving an enrolled (admin-validated) pack', function () {
+    test('notification is NOT sent when leaving an enrolled (admin-validated) pack', function (): void {
         Notification::fake();
 
         $subscription = Subscription::factory()->create(['status' => 'paid']);

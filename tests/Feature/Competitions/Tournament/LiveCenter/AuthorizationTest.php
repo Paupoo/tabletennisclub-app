@@ -48,9 +48,9 @@ function liveCenterAs(User $user, Tournament $tournament)
 
 // ── canManageTournament ───────────────────────────────────────────────────────
 
-describe('canManageTournament', function () {
+describe('canManageTournament', function (): void {
 
-    it('is true for admins', function () {
+    it('is true for admins', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $tournament = authTournament();
 
@@ -58,7 +58,7 @@ describe('canManageTournament', function () {
             ->assertSet('canManageTournament', true);
     });
 
-    it('is true for committee members', function () {
+    it('is true for committee members', function (): void {
         $committee = User::factory()->isCommitteeMember()->create();
         $tournament = authTournament();
 
@@ -66,7 +66,7 @@ describe('canManageTournament', function () {
             ->assertSet('canManageTournament', true);
     });
 
-    it('is false for regular members', function () {
+    it('is false for regular members', function (): void {
         $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
         $tournament = authTournament();
 
@@ -78,9 +78,9 @@ describe('canManageTournament', function () {
 
 // ── Action guards: openScoreEntry ─────────────────────────────────────────────
 
-describe('openScoreEntry authorization', function () {
+describe('openScoreEntry authorization', function (): void {
 
-    it('allows committee members to open the score drawer', function () {
+    it('allows committee members to open the score drawer', function (): void {
         $committee = User::factory()->isCommitteeMember()->create();
         $tournament = authTournament();
         $match = authMatch($tournament);
@@ -90,7 +90,7 @@ describe('openScoreEntry authorization', function () {
             ->assertSet('scoreDrawer', true);
     });
 
-    it('forbids regular members from opening the score drawer', function () {
+    it('forbids regular members from opening the score drawer', function (): void {
         $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
         $tournament = authTournament();
         $match = authMatch($tournament);
@@ -104,9 +104,9 @@ describe('openScoreEntry authorization', function () {
 
 // ── Action guards: openLaunchDrawer ──────────────────────────────────────────
 
-describe('openLaunchDrawer authorization', function () {
+describe('openLaunchDrawer authorization', function (): void {
 
-    it('allows admins to open the launch drawer', function () {
+    it('allows admins to open the launch drawer', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $tournament = authTournament();
 
@@ -115,7 +115,7 @@ describe('openLaunchDrawer authorization', function () {
             ->assertSet('launchDrawer', true);
     });
 
-    it('forbids regular members from opening the launch drawer', function () {
+    it('forbids regular members from opening the launch drawer', function (): void {
         $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
         $tournament = authTournament();
 
@@ -128,9 +128,9 @@ describe('openLaunchDrawer authorization', function () {
 
 // ── Action guards: submitScore ────────────────────────────────────────────────
 
-describe('submitScore authorization', function () {
+describe('submitScore authorization', function (): void {
 
-    it('forbids regular members from submitting a score', function () {
+    it('forbids regular members from submitting a score', function (): void {
         $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
         $tournament = authTournament();
 
@@ -143,9 +143,9 @@ describe('submitScore authorization', function () {
 
 // ── Action guards: saveDraft ──────────────────────────────────────────────────
 
-describe('saveDraft authorization', function () {
+describe('saveDraft authorization', function (): void {
 
-    it('forbids regular members from saving a draft', function () {
+    it('forbids regular members from saving a draft', function (): void {
         $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
         $tournament = authTournament();
 
@@ -158,9 +158,9 @@ describe('saveDraft authorization', function () {
 
 // ── Action guards: startMatch ─────────────────────────────────────────────────
 
-describe('startMatch authorization', function () {
+describe('startMatch authorization', function (): void {
 
-    it('forbids regular members from starting a match', function () {
+    it('forbids regular members from starting a match', function (): void {
         $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
         $tournament = authTournament();
         $match = authMatch($tournament);
@@ -174,9 +174,9 @@ describe('startMatch authorization', function () {
 
 // ── Action guards: generateBracket ───────────────────────────────────────────
 
-describe('generateBracket authorization', function () {
+describe('generateBracket authorization', function (): void {
 
-    it('forbids regular members from generating the bracket', function () {
+    it('forbids regular members from generating the bracket', function (): void {
         $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
         $tournament = authTournament();
 
@@ -189,9 +189,9 @@ describe('generateBracket authorization', function () {
 
 // ── Action guards: closeTournament ────────────────────────────────────────────
 
-describe('closeTournament authorization', function () {
+describe('closeTournament authorization', function (): void {
 
-    it('forbids regular members from closing the tournament', function () {
+    it('forbids regular members from closing the tournament', function (): void {
         $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
         $tournament = authTournament();
 

@@ -4,38 +4,38 @@ declare(strict_types=1);
 
 use App\Domains\Shared\ValueObjects\Price;
 
-test('price can be created from cents', function () {
+test('price can be created from cents', function (): void {
     $price = Price::fromCents(2000);
     expect($price->cents())->toBe(2000);
 });
 
-test('price can be created from euros', function () {
+test('price can be created from euros', function (): void {
     $price = Price::fromEuros(20.00);
     expect($price->cents())->toBe(2000);
 });
 
-test('price can be created as free', function () {
+test('price can be created as free', function (): void {
     $price = Price::free();
     expect($price->cents())->toBe(0);
     expect($price->isFree())->toBeTrue();
 });
 
-test('price converts euros correctly', function () {
+test('price converts euros correctly', function (): void {
     $price = Price::fromCents(3450);
     expect($price->euros())->toBe(34.50);
 });
 
-test('price rejects negative amounts', function () {
+test('price rejects negative amounts', function (): void {
     expect(fn () => Price::fromCents(-100))
         ->toThrow(InvalidArgumentException::class);
 });
 
-test('price rejects negative euros', function () {
+test('price rejects negative euros', function (): void {
     expect(fn () => Price::fromEuros(-10.00))
         ->toThrow(InvalidArgumentException::class);
 });
 
-test('price can add amounts', function () {
+test('price can add amounts', function (): void {
     $price1 = Price::fromEuros(15.00);
     $price2 = Price::fromEuros(10.00);
     $result = $price1->add($price2);
@@ -43,7 +43,7 @@ test('price can add amounts', function () {
     expect($result->euros())->toBe(25.00);
 });
 
-test('price can subtract amounts', function () {
+test('price can subtract amounts', function (): void {
     $price1 = Price::fromEuros(20.00);
     $price2 = Price::fromEuros(5.00);
     $result = $price1->subtract($price2);
@@ -51,14 +51,14 @@ test('price can subtract amounts', function () {
     expect($result->euros())->toBe(15.00);
 });
 
-test('price can multiply by quantity', function () {
+test('price can multiply by quantity', function (): void {
     $price = Price::fromEuros(10.00);
     $result = $price->multiply(3);
 
     expect($result->euros())->toBe(30.00);
 });
 
-test('price recognizes free pricing', function () {
+test('price recognizes free pricing', function (): void {
     $free = Price::free();
     $paid = Price::fromEuros(5.00);
 
@@ -66,7 +66,7 @@ test('price recognizes free pricing', function () {
     expect($paid->isFree())->toBeFalse();
 });
 
-test('price can be compared for equality', function () {
+test('price can be compared for equality', function (): void {
     $price1 = Price::fromEuros(25.00);
     $price2 = Price::fromEuros(25.00);
     $price3 = Price::fromEuros(15.00);
@@ -75,7 +75,7 @@ test('price can be compared for equality', function () {
     expect($price1->equals($price3))->toBeFalse();
 });
 
-test('price can be compared for greater than', function () {
+test('price can be compared for greater than', function (): void {
     $price1 = Price::fromEuros(20.00);
     $price2 = Price::fromEuros(10.00);
 
@@ -83,7 +83,7 @@ test('price can be compared for greater than', function () {
     expect($price2->isGreaterThan($price1))->toBeFalse();
 });
 
-test('price can be compared for less than', function () {
+test('price can be compared for less than', function (): void {
     $price1 = Price::fromEuros(10.00);
     $price2 = Price::fromEuros(20.00);
 
@@ -91,12 +91,12 @@ test('price can be compared for less than', function () {
     expect($price2->isLessThan($price1))->toBeFalse();
 });
 
-test('price converts to string', function () {
+test('price converts to string', function (): void {
     $price = Price::fromEuros(49.99);
     expect((string) $price)->toContain('49,99');
 });
 
-test('price subtraction handles zero result', function () {
+test('price subtraction handles zero result', function (): void {
     $price1 = Price::fromEuros(10.00);
     $price2 = Price::fromEuros(10.00);
     $result = $price1->subtract($price2);

@@ -573,7 +573,7 @@ new class extends Component
             return;
         }
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($matchId) {
+        \Illuminate\Support\Facades\DB::transaction(function () use ($matchId): void {
             $rowsUpdated = \Illuminate\Support\Facades\DB::table('table_tournament')
                 ->where('tournament_id', $this->tournament->id)
                 ->where('table_id', $this->selectedTableId)

@@ -6,7 +6,7 @@ use App\View\Components\WeekCard;
 
 pest()->group('components', 'weekCard');
 
-it('détermine correctement le statut basé sur le score', function (array $score, string $expectedStatus) {
+it('détermine correctement le statut basé sur le score', function (array $score, string $expectedStatus): void {
     $component = new WeekCard(
         week: 1,
         opponent: 'Team A',
@@ -21,7 +21,7 @@ it('détermine correctement le statut basé sur le score', function (array $scor
     'nul' => [['home' => 7, 'away' => 7], 'draw'],
 ]);
 
-it('utilise le statut fourni explicitement au lieu de le calculer', function () {
+it('utilise le statut fourni explicitement au lieu de le calculer', function (): void {
     $component = new WeekCard(
         week: 1,
         opponent: 'Team A',
@@ -33,7 +33,7 @@ it('utilise le statut fourni explicitement au lieu de le calculer', function () 
     expect($component->status)->toBe('pending');
 });
 
-it('est futur si aucun score n est fourni', function () {
+it('est futur si aucun score n est fourni', function (): void {
     $component = new WeekCard(
         week: 1,
         opponent: 'Team A',
@@ -44,7 +44,7 @@ it('est futur si aucun score n est fourni', function () {
     expect($component->status)->toBe('future');
 });
 
-it('vérifie si le composant est extensible', function (string $status, ?array $matches, bool $expected) {
+it('vérifie si le composant est extensible', function (string $status, ?array $matches, bool $expected): void {
     $component = new WeekCard(
         week: 1,
         opponent: 'Team A',
@@ -61,7 +61,7 @@ it('vérifie si le composant est extensible', function (string $status, ?array $
     'loss avec matches' => ['loss', ['match1'], true],
 ]);
 
-it('retourne les bonnes classes CSS selon le statut', function (string $status, string $barColor, string $dotStyle) {
+it('retourne les bonnes classes CSS selon le statut', function (string $status, string $barColor, string $dotStyle): void {
     $component = new WeekCard(
         week: 1,
         opponent: 'Team A',
@@ -78,7 +78,7 @@ it('retourne les bonnes classes CSS selon le statut', function (string $status, 
     'status default' => ['unknown', 'bg-base-300', 'border border-base-300'],
 ]);
 
-it('calcule la classe CSS du score pour l équipe à domicile', function (string $status, string $expectedClass) {
+it('calcule la classe CSS du score pour l équipe à domicile', function (string $status, string $expectedClass): void {
     $component = new WeekCard(
         week: 1,
         opponent: 'Team A',
@@ -93,7 +93,7 @@ it('calcule la classe CSS du score pour l équipe à domicile', function (string
     'autre' => ['draw', 'bg-base-200 text-base-content'],
 ]);
 
-it('renvoie les bonnes données à la vue lors du rendu', function () {
+it('renvoie les bonnes données à la vue lors du rendu', function (): void {
     $component = new WeekCard(
         week: 1,
         opponent: 'Team A',

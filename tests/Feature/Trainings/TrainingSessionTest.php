@@ -7,8 +7,8 @@ use App\Domains\Trainings\Models\Training;
 
 // ── cancel ────────────────────────────────────────────────────────────────────
 
-describe('Training.cancel()', function () {
-    it('marks a session as cancelled_free', function () {
+describe('Training.cancel()', function (): void {
+    it('marks a session as cancelled_free', function (): void {
         $season = makeActiveSeason();
         $pack = makeTrainingPack($season);
         $pack->generateSessions($season);
@@ -22,7 +22,7 @@ describe('Training.cancel()', function () {
         expect($session->isCancelled())->toBeTrue();
     });
 
-    it('marks a session as cancelled_closed', function () {
+    it('marks a session as cancelled_closed', function (): void {
         $season = makeActiveSeason();
         $pack = makeTrainingPack($season);
         $pack->generateSessions($season);
@@ -35,7 +35,7 @@ describe('Training.cancel()', function () {
         expect($session->cancellation_note)->toBe('Fermeture exceptionnelle');
     });
 
-    it('stores the cancellation note', function () {
+    it('stores the cancellation note', function (): void {
         $season = makeActiveSeason();
         $pack = makeTrainingPack($season);
         $pack->generateSessions($season);
@@ -50,8 +50,8 @@ describe('Training.cancel()', function () {
 
 // ── isCancelled ───────────────────────────────────────────────────────────────
 
-describe('Training.isCancelled()', function () {
-    it('returns false for a scheduled session', function () {
+describe('Training.isCancelled()', function (): void {
+    it('returns false for a scheduled session', function (): void {
         $season = makeActiveSeason();
         $pack = makeTrainingPack($season);
         $pack->generateSessions($season);
@@ -61,7 +61,7 @@ describe('Training.isCancelled()', function () {
         expect($session->isCancelled())->toBeFalse();
     });
 
-    it('returns true after cancellation', function () {
+    it('returns true after cancellation', function (): void {
         $season = makeActiveSeason();
         $pack = makeTrainingPack($season);
         $pack->generateSessions($season);
@@ -75,8 +75,8 @@ describe('Training.isCancelled()', function () {
 
 // ── status default ────────────────────────────────────────────────────────────
 
-describe('Training status default', function () {
-    it('defaults to scheduled when generated', function () {
+describe('Training status default', function (): void {
+    it('defaults to scheduled when generated', function (): void {
         $season = makeActiveSeason();
         $pack = makeTrainingPack($season);
         $pack->generateSessions($season);

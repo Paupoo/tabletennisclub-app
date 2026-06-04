@@ -12,9 +12,9 @@ use Illuminate\Support\Facades\Notification;
 
 // ─── SubscriptionRejectedNotification ─────────────────────────────────────────
 
-describe('SubscriptionRejectedNotification', function () {
+describe('SubscriptionRejectedNotification', function (): void {
 
-    test('notification is sent via mail channel only', function () {
+    test('notification is sent via mail channel only', function (): void {
         $user = User::factory()->create();
         $season = Season::factory()->create(['name' => '2025-2026', 'is_active' => true]);
         $subscription = Subscription::factory()->create(['user_id' => $user->id, 'season_id' => $season->id]);
@@ -25,7 +25,7 @@ describe('SubscriptionRejectedNotification', function () {
         expect($notification->via($user))->toBe(['mail', 'database']);
     })->group('notifications', 'rejection');
 
-    test('mail subject contains the season name', function () {
+    test('mail subject contains the season name', function (): void {
         $user = User::factory()->create(['first_name' => 'Alice']);
         $season = Season::factory()->create(['name' => '2025-2026', 'is_active' => true]);
         $subscription = Subscription::factory()->create(['user_id' => $user->id, 'season_id' => $season->id]);
@@ -36,7 +36,7 @@ describe('SubscriptionRejectedNotification', function () {
         expect($mail->subject)->toContain('2025-2026');
     })->group('notifications', 'rejection');
 
-    test('mail greeting contains user first name and body contains season name', function () {
+    test('mail greeting contains user first name and body contains season name', function (): void {
         $user = User::factory()->create(['first_name' => 'Marie']);
         $season = Season::factory()->create(['name' => '2025-2026', 'is_active' => true]);
         $subscription = Subscription::factory()->create(['user_id' => $user->id, 'season_id' => $season->id]);
@@ -49,7 +49,7 @@ describe('SubscriptionRejectedNotification', function () {
             ->and($lines)->toContain('2025-2026');
     })->group('notifications', 'rejection');
 
-    test('template level adds level-mismatch reason line', function () {
+    test('template level adds level-mismatch reason line', function (): void {
         $user = User::factory()->create();
         $season = Season::factory()->create(['is_active' => true]);
         $subscription = Subscription::factory()->create(['user_id' => $user->id, 'season_id' => $season->id]);
@@ -61,7 +61,7 @@ describe('SubscriptionRejectedNotification', function () {
         expect($lines)->toContain('niveau');
     })->group('notifications', 'rejection', 'templates');
 
-    test('template full_teams adds team-capacity reason line', function () {
+    test('template full_teams adds team-capacity reason line', function (): void {
         $user = User::factory()->create();
         $season = Season::factory()->create(['is_active' => true]);
         $subscription = Subscription::factory()->create(['user_id' => $user->id, 'season_id' => $season->id]);
@@ -73,7 +73,7 @@ describe('SubscriptionRejectedNotification', function () {
         expect($lines)->toContain('complètes');
     })->group('notifications', 'rejection', 'templates');
 
-    test('custom message is included in the mail', function () {
+    test('custom message is included in the mail', function (): void {
         $user = User::factory()->create();
         $season = Season::factory()->create(['is_active' => true]);
         $subscription = Subscription::factory()->create(['user_id' => $user->id, 'season_id' => $season->id]);
@@ -86,7 +86,7 @@ describe('SubscriptionRejectedNotification', function () {
         expect($lines)->toContain($customMsg);
     })->group('notifications', 'rejection');
 
-    test('no template produces no extra reason lines', function () {
+    test('no template produces no extra reason lines', function (): void {
         $user = User::factory()->create();
         $season = Season::factory()->create(['is_active' => true]);
         $subscription = Subscription::factory()->create(['user_id' => $user->id, 'season_id' => $season->id]);
@@ -99,7 +99,7 @@ describe('SubscriptionRejectedNotification', function () {
             ->and($lines)->not->toContain('complètes');
     })->group('notifications', 'rejection');
 
-    test('reject flow: notification sent and subscription becomes cancelled', function () {
+    test('reject flow: notification sent and subscription becomes cancelled', function (): void {
         Notification::fake();
 
         $user = User::factory()->create();
@@ -128,9 +128,9 @@ describe('SubscriptionRejectedNotification', function () {
 
 // ─── TrainingPackRejectedNotification ─────────────────────────────────────────
 
-describe('TrainingPackRejectedNotification', function () {
+describe('TrainingPackRejectedNotification', function (): void {
 
-    test('notification is sent via mail channel only', function () {
+    test('notification is sent via mail channel only', function (): void {
         $user = User::factory()->create();
         $season = Season::factory()->create(['is_active' => true]);
         $subscription = Subscription::factory()->create(['user_id' => $user->id, 'season_id' => $season->id]);
@@ -142,7 +142,7 @@ describe('TrainingPackRejectedNotification', function () {
         expect($notification->via($user))->toBe(['mail', 'database']);
     })->group('notifications', 'rejection');
 
-    test('mail subject contains the season name', function () {
+    test('mail subject contains the season name', function (): void {
         $user = User::factory()->create();
         $season = Season::factory()->create(['name' => '2025-2026', 'is_active' => true]);
         $subscription = Subscription::factory()->create(['user_id' => $user->id, 'season_id' => $season->id]);
@@ -154,7 +154,7 @@ describe('TrainingPackRejectedNotification', function () {
         expect($mail->subject)->toContain('2025-2026');
     })->group('notifications', 'rejection');
 
-    test('mail body contains pack name and season name', function () {
+    test('mail body contains pack name and season name', function (): void {
         $user = User::factory()->create(['first_name' => 'Bob']);
         $season = Season::factory()->create(['name' => '2025-2026', 'is_active' => true]);
         $subscription = Subscription::factory()->create(['user_id' => $user->id, 'season_id' => $season->id]);
@@ -168,7 +168,7 @@ describe('TrainingPackRejectedNotification', function () {
             ->and($lines)->toContain('2025-2026');
     })->group('notifications', 'rejection');
 
-    test('template level adds level-mismatch reason', function () {
+    test('template level adds level-mismatch reason', function (): void {
         $user = User::factory()->create();
         $season = Season::factory()->create(['is_active' => true]);
         $subscription = Subscription::factory()->create(['user_id' => $user->id, 'season_id' => $season->id]);
@@ -181,7 +181,7 @@ describe('TrainingPackRejectedNotification', function () {
         expect($lines)->toContain('niveau');
     })->group('notifications', 'rejection', 'templates');
 
-    test('template full_teams adds team-capacity reason', function () {
+    test('template full_teams adds team-capacity reason', function (): void {
         $user = User::factory()->create();
         $season = Season::factory()->create(['is_active' => true]);
         $subscription = Subscription::factory()->create(['user_id' => $user->id, 'season_id' => $season->id]);
@@ -194,7 +194,7 @@ describe('TrainingPackRejectedNotification', function () {
         expect($lines)->toContain('complètes');
     })->group('notifications', 'rejection', 'templates');
 
-    test('custom message is appended to the mail', function () {
+    test('custom message is appended to the mail', function (): void {
         $user = User::factory()->create();
         $season = Season::factory()->create(['is_active' => true]);
         $subscription = Subscription::factory()->create(['user_id' => $user->id, 'season_id' => $season->id]);
@@ -211,7 +211,7 @@ describe('TrainingPackRejectedNotification', function () {
         expect($lines)->toContain('Essayez le pack du jeudi.');
     })->group('notifications', 'rejection');
 
-    test('one notification per rejected pack is dispatched', function () {
+    test('one notification per rejected pack is dispatched', function (): void {
         Notification::fake();
 
         $user = User::factory()->create();

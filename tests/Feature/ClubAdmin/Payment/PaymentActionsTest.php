@@ -17,9 +17,9 @@ use Illuminate\Support\Facades\Mail;
 // GeneratePaymentQR
 // ============================================================
 
-describe('GeneratePaymentQR', function () {
+describe('GeneratePaymentQR', function (): void {
 
-    test('returns a base64 PNG data URI string', function () {
+    test('returns a base64 PNG data URI string', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'confirmed', 'amount_due' => 125]);
         $payment = $subscription->payments()->create([
             'reference' => '100/2505/00101',
@@ -33,7 +33,7 @@ describe('GeneratePaymentQR', function () {
         expect($result)->toStartWith('data:image/png;base64,');
     })->group('payments', 'qr');
 
-    test('QR content embeds the correct IBAN', function () {
+    test('QR content embeds the correct IBAN', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'confirmed', 'amount_due' => 60]);
         $payment = $subscription->payments()->create([
             'reference' => '123/4567/89001',
@@ -49,7 +49,7 @@ describe('GeneratePaymentQR', function () {
         expect(base64_decode($base64, strict: true))->not->toBeFalse();
     })->group('payments', 'qr');
 
-    test('QR content changes when the reference changes', function () {
+    test('QR content changes when the reference changes', function (): void {
         $sub1 = Subscription::factory()->create(['status' => 'confirmed', 'amount_due' => 60]);
         $sub2 = Subscription::factory()->create(['status' => 'confirmed', 'amount_due' => 60]);
 
@@ -78,9 +78,9 @@ describe('GeneratePaymentQR', function () {
 // GeneratePayment
 // ============================================================
 
-describe('GeneratePayment', function () {
+describe('GeneratePayment', function (): void {
 
-    test('creates a pending payment for a confirmed subscription', function () {
+    test('creates a pending payment for a confirmed subscription', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $this->actingAs($admin);
 
@@ -98,7 +98,7 @@ describe('GeneratePayment', function () {
             ->and($payment->reference)->not->toBeNull();
     })->group('payments', 'generate');
 
-    test('returns error redirect when subscription cannot generate payment (pending state)', function () {
+    test('returns error redirect when subscription cannot generate payment (pending state)', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $this->actingAs($admin);
 
@@ -110,7 +110,7 @@ describe('GeneratePayment', function () {
         expect($subscription->payments()->count())->toBe(0);
     })->group('payments', 'generate');
 
-    test('non-admin cannot generate payment (Gate denies)', function () {
+    test('non-admin cannot generate payment (Gate denies)', function (): void {
         $user = User::factory()->create(['is_admin' => false]);
         $this->actingAs($user);
 
@@ -126,9 +126,9 @@ describe('GeneratePayment', function () {
 // SendPayementInvite
 // ============================================================
 
-describe('SendPayementInvite', function () {
+describe('SendPayementInvite', function (): void {
 
-    test('sends a PaymentInvitationEmail to the subscription user', function () {
+    test('sends a PaymentInvitationEmail to the subscription user', function (): void {
         Mail::fake();
 
         $user = User::factory()->create();
@@ -150,7 +150,7 @@ describe('SendPayementInvite', function () {
         Mail::assertSent(PaymentInvitationEmail::class, fn ($mail) => $mail->hasTo($user->email));
     })->group('payments', 'invite');
 
-    test('increments invitation_counter after sending', function () {
+    test('increments invitation_counter after sending', function (): void {
         Mail::fake();
 
         $user = User::factory()->create();
@@ -172,7 +172,7 @@ describe('SendPayementInvite', function () {
         expect($payment->fresh()->invitation_counter)->toBe(1);
     })->group('payments', 'invite');
 
-    test('increments counter on each subsequent send', function () {
+    test('increments counter on each subsequent send', function (): void {
         Mail::fake();
 
         $user = User::factory()->create();
@@ -197,7 +197,7 @@ describe('SendPayementInvite', function () {
         expect($payment->fresh()->invitation_counter)->toBe(3);
     })->group('payments', 'invite');
 
-    test('returns a redirect response', function () {
+    test('returns a redirect response', function (): void {
         Mail::fake();
 
         $user = User::factory()->create();
@@ -224,13 +224,13 @@ describe('SendPayementInvite', function () {
 // ProcessPaymentAction
 // ============================================================
 
-describe('ProcessPaymentAction', function () {
+describe('ProcessPaymentAction', function (): void {
 
     test('bug: action calls $subscription->state() which does not exist on the Subscription model')
         ->skip('ProcessPaymentAction calls $subscription->state() — method does not exist. Action needs refactoring to use $subscription->markAsPaid() directly.')
         ->group('payments', 'process');
 
-    test('marks pending payment as paid and transitions subscription', function () {
+    test('marks pending payment as paid and transitions subscription', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'confirmed', 'amount_due' => 150]);
         $payment = $subscription->payments()->create([
             'reference' => '100/2505/00301',
@@ -248,7 +248,7 @@ describe('ProcessPaymentAction', function () {
             ->and($payment->fresh()->amount_paid)->toBe(150.0);
     })->group('payments', 'process');
 
-    test('throws DomainException when no pending payment exists', function () {
+    test('throws DomainException when no pending payment exists', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'confirmed', 'amount_due' => 150]);
 
         expect(fn () => (new ProcessPaymentAction)->execute($subscription, 'TXN-1', 150.0))

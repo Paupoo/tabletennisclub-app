@@ -22,9 +22,9 @@ use Illuminate\Http\Request;
 // CancelSubscriptionAction
 // ============================================================
 
-describe('CancelSubscriptionAction', function () {
+describe('CancelSubscriptionAction', function (): void {
 
-    test('cancels a pending subscription', function () {
+    test('cancels a pending subscription', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'pending']);
 
         $response = (new CancelSubscriptionAction)($subscription);
@@ -33,7 +33,7 @@ describe('CancelSubscriptionAction', function () {
             ->and($response)->toBeInstanceOf(RedirectResponse::class);
     })->group('subscriptions', 'actions');
 
-    test('cancels a confirmed subscription', function () {
+    test('cancels a confirmed subscription', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'confirmed']);
 
         $response = (new CancelSubscriptionAction)($subscription);
@@ -42,7 +42,7 @@ describe('CancelSubscriptionAction', function () {
             ->and($response)->toBeInstanceOf(RedirectResponse::class);
     })->group('subscriptions', 'actions');
 
-    test('returns error redirect when cancelling a paid subscription', function () {
+    test('returns error redirect when cancelling a paid subscription', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'paid']);
 
         $response = (new CancelSubscriptionAction)($subscription);
@@ -52,7 +52,7 @@ describe('CancelSubscriptionAction', function () {
             ->and($response)->toBeInstanceOf(RedirectResponse::class);
     })->group('subscriptions', 'actions');
 
-    test('returns error redirect when cancelling an already cancelled subscription', function () {
+    test('returns error redirect when cancelling an already cancelled subscription', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'cancelled']);
 
         $response = (new CancelSubscriptionAction)($subscription);
@@ -67,9 +67,9 @@ describe('CancelSubscriptionAction', function () {
 // ConfirmSubscriptionAction
 // ============================================================
 
-describe('ConfirmSubscriptionAction', function () {
+describe('ConfirmSubscriptionAction', function (): void {
 
-    test('confirms a pending subscription', function () {
+    test('confirms a pending subscription', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'pending']);
 
         $response = (new ConfirmSubscriptionAction)($subscription);
@@ -78,7 +78,7 @@ describe('ConfirmSubscriptionAction', function () {
             ->and($response)->toBeInstanceOf(RedirectResponse::class);
     })->group('subscriptions', 'actions');
 
-    test('returns error redirect when confirming an already confirmed subscription', function () {
+    test('returns error redirect when confirming an already confirmed subscription', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'confirmed']);
 
         $response = (new ConfirmSubscriptionAction)($subscription);
@@ -87,7 +87,7 @@ describe('ConfirmSubscriptionAction', function () {
             ->and($response)->toBeInstanceOf(RedirectResponse::class);
     })->group('subscriptions', 'actions');
 
-    test('returns error redirect when confirming a paid subscription', function () {
+    test('returns error redirect when confirming a paid subscription', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'paid']);
 
         $response = (new ConfirmSubscriptionAction)($subscription);
@@ -109,9 +109,9 @@ describe('ConfirmSubscriptionAction', function () {
 // DeleteSubscriptionAction
 // ============================================================
 
-describe('DeleteSubscriptionAction', function () {
+describe('DeleteSubscriptionAction', function (): void {
 
-    test('soft-deletes the subscription', function () {
+    test('soft-deletes the subscription', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'pending']);
         $id = $subscription->id;
 
@@ -121,7 +121,7 @@ describe('DeleteSubscriptionAction', function () {
         expect($response)->toBeInstanceOf(RedirectResponse::class);
     })->group('subscriptions', 'actions');
 
-    test('cascade-deletes payments when the subscription is deleted', function () {
+    test('cascade-deletes payments when the subscription is deleted', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'confirmed', 'amount_due' => 125]);
         $payment = $subscription->payments()->create([
             'reference' => '100/2505/00101',
@@ -142,9 +142,9 @@ describe('DeleteSubscriptionAction', function () {
 // MarkPaidSubscriptionAction
 // ============================================================
 
-describe('MarkPaidSubscriptionAction', function () {
+describe('MarkPaidSubscriptionAction', function (): void {
 
-    test('marks a confirmed subscription as paid', function () {
+    test('marks a confirmed subscription as paid', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'confirmed']);
 
         $response = (new MarkPaidSubscriptionAction)($subscription);
@@ -153,7 +153,7 @@ describe('MarkPaidSubscriptionAction', function () {
             ->and($response)->toBeInstanceOf(RedirectResponse::class);
     })->group('subscriptions', 'actions');
 
-    test('returns error redirect when marking a pending subscription as paid', function () {
+    test('returns error redirect when marking a pending subscription as paid', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'pending']);
 
         $response = (new MarkPaidSubscriptionAction)($subscription);
@@ -163,7 +163,7 @@ describe('MarkPaidSubscriptionAction', function () {
             ->and($response)->toBeInstanceOf(RedirectResponse::class);
     })->group('subscriptions', 'actions');
 
-    test('returns error redirect when marking an already paid subscription as paid', function () {
+    test('returns error redirect when marking an already paid subscription as paid', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'paid']);
 
         $response = (new MarkPaidSubscriptionAction)($subscription);
@@ -178,9 +178,9 @@ describe('MarkPaidSubscriptionAction', function () {
 // MarkRefundSubscriptionAction
 // ============================================================
 
-describe('MarkRefundSubscriptionAction', function () {
+describe('MarkRefundSubscriptionAction', function (): void {
 
-    test('marks a paid subscription as refunded', function () {
+    test('marks a paid subscription as refunded', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'paid']);
 
         $response = (new MarkRefundSubscriptionAction)($subscription);
@@ -189,7 +189,7 @@ describe('MarkRefundSubscriptionAction', function () {
             ->and($response)->toBeInstanceOf(RedirectResponse::class);
     })->group('subscriptions', 'actions');
 
-    test('returns error redirect when refunding a pending subscription', function () {
+    test('returns error redirect when refunding a pending subscription', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'pending']);
 
         $response = (new MarkRefundSubscriptionAction)($subscription);
@@ -198,7 +198,7 @@ describe('MarkRefundSubscriptionAction', function () {
             ->and($response)->toBeInstanceOf(RedirectResponse::class);
     })->group('subscriptions', 'actions');
 
-    test('returns error redirect when refunding a confirmed subscription', function () {
+    test('returns error redirect when refunding a confirmed subscription', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'confirmed']);
 
         $response = (new MarkRefundSubscriptionAction)($subscription);
@@ -213,9 +213,9 @@ describe('MarkRefundSubscriptionAction', function () {
 // SyncTrainingPackAction
 // ============================================================
 
-describe('SyncTrainingPackAction', function () {
+describe('SyncTrainingPackAction', function (): void {
 
-    test('syncs training packs on a pending subscription', function () {
+    test('syncs training packs on a pending subscription', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'pending']);
         $packs = TrainingPack::factory()->count(2)->create();
 
@@ -224,7 +224,7 @@ describe('SyncTrainingPackAction', function () {
         expect($subscription->trainingPacks()->count())->toBe(2);
     })->group('subscriptions', 'actions');
 
-    test('syncs training packs on a confirmed subscription', function () {
+    test('syncs training packs on a confirmed subscription', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'confirmed']);
         $packs = TrainingPack::factory()->count(3)->create();
 
@@ -233,7 +233,7 @@ describe('SyncTrainingPackAction', function () {
         expect($subscription->trainingPacks()->count())->toBe(3);
     })->group('subscriptions', 'actions');
 
-    test('replaces existing training packs on re-sync', function () {
+    test('replaces existing training packs on re-sync', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'pending']);
         $oldPack = TrainingPack::factory()->create();
         $newPacks = TrainingPack::factory()->count(2)->create();
@@ -247,7 +247,7 @@ describe('SyncTrainingPackAction', function () {
             ->and($subscription->trainingPacks()->count())->toBe(2);
     })->group('subscriptions', 'actions');
 
-    test('throws DomainException when modifying a paid subscription', function () {
+    test('throws DomainException when modifying a paid subscription', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'paid']);
         $pack = TrainingPack::factory()->create();
 
@@ -255,7 +255,7 @@ describe('SyncTrainingPackAction', function () {
             ->toThrow(DomainException::class);
     })->group('subscriptions', 'actions');
 
-    test('throws DomainException when modifying a cancelled subscription', function () {
+    test('throws DomainException when modifying a cancelled subscription', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'cancelled']);
         $pack = TrainingPack::factory()->create();
 
@@ -263,7 +263,7 @@ describe('SyncTrainingPackAction', function () {
             ->toThrow(DomainException::class);
     })->group('subscriptions', 'actions');
 
-    test('throws DomainException when modifying a refunded subscription', function () {
+    test('throws DomainException when modifying a refunded subscription', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'refunded']);
         $pack = TrainingPack::factory()->create();
 
@@ -284,9 +284,9 @@ describe('SyncTrainingPackAction', function () {
 // UnconfirmSubscriptionAction
 // ============================================================
 
-describe('UnconfirmSubscriptionAction', function () {
+describe('UnconfirmSubscriptionAction', function (): void {
 
-    test('reverts a confirmed subscription back to pending', function () {
+    test('reverts a confirmed subscription back to pending', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'confirmed']);
 
         $response = (new UnconfirmSubscriptionAction)($subscription);
@@ -295,7 +295,7 @@ describe('UnconfirmSubscriptionAction', function () {
             ->and($response)->toBeInstanceOf(RedirectResponse::class);
     })->group('subscriptions', 'actions');
 
-    test('returns error redirect when subscription is already pending', function () {
+    test('returns error redirect when subscription is already pending', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'pending']);
 
         $response = (new UnconfirmSubscriptionAction)($subscription);
@@ -304,7 +304,7 @@ describe('UnconfirmSubscriptionAction', function () {
             ->and($response)->toBeInstanceOf(RedirectResponse::class);
     })->group('subscriptions', 'actions');
 
-    test('returns error redirect when subscription is paid', function () {
+    test('returns error redirect when subscription is paid', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'paid']);
 
         $response = (new UnconfirmSubscriptionAction)($subscription);
@@ -319,9 +319,9 @@ describe('UnconfirmSubscriptionAction', function () {
 // UnsubscribeFromSeasonAction
 // ============================================================
 
-describe('UnsubscribeFromSeasonAction', function () {
+describe('UnsubscribeFromSeasonAction', function (): void {
 
-    test('cancels a pending subscription for the given user and season', function () {
+    test('cancels a pending subscription for the given user and season', function (): void {
         $user = User::factory()->create();
         $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
         $subscription = Subscription::factory()->create([
@@ -336,7 +336,7 @@ describe('UnsubscribeFromSeasonAction', function () {
             ->and($response)->toBeInstanceOf(RedirectResponse::class);
     })->group('subscriptions', 'actions');
 
-    test('cancels a confirmed subscription', function () {
+    test('cancels a confirmed subscription', function (): void {
         $user = User::factory()->create();
         $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
         $subscription = Subscription::factory()->create([
@@ -350,7 +350,7 @@ describe('UnsubscribeFromSeasonAction', function () {
         expect($subscription->fresh()->status)->toBe('cancelled');
     })->group('subscriptions', 'actions');
 
-    test('returns error redirect when no active subscription exists for the user in the season', function () {
+    test('returns error redirect when no active subscription exists for the user in the season', function (): void {
         $user = User::factory()->create();
         $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
 
@@ -359,7 +359,7 @@ describe('UnsubscribeFromSeasonAction', function () {
         expect($response)->toBeInstanceOf(RedirectResponse::class);
     })->group('subscriptions', 'actions');
 
-    test('does not cancel an already cancelled subscription (returns error redirect)', function () {
+    test('does not cancel an already cancelled subscription (returns error redirect)', function (): void {
         $user = User::factory()->create();
         $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
         Subscription::factory()->create([
@@ -374,7 +374,7 @@ describe('UnsubscribeFromSeasonAction', function () {
         expect($response)->toBeInstanceOf(RedirectResponse::class);
     })->group('subscriptions', 'actions');
 
-    test('returns error redirect when attempting to unsubscribe a paid subscription (cannot cancel)', function () {
+    test('returns error redirect when attempting to unsubscribe a paid subscription (cannot cancel)', function (): void {
         $user = User::factory()->create();
         $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
         $subscription = Subscription::factory()->create([
@@ -396,9 +396,9 @@ describe('UnsubscribeFromSeasonAction', function () {
 // SubscribeToSeasonAction
 // ============================================================
 
-describe('SubscribeToSeasonAction', function () {
+describe('SubscribeToSeasonAction', function (): void {
 
-    test('creates a competitive subscription for a user in an active season', function () {
+    test('creates a competitive subscription for a user in an active season', function (): void {
         $user = User::factory()->create();
         $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
 
@@ -418,7 +418,7 @@ describe('SubscribeToSeasonAction', function () {
         ]);
     })->group('subscriptions', 'actions');
 
-    test('creates a recreational subscription for a user in an active season', function () {
+    test('creates a recreational subscription for a user in an active season', function (): void {
         $user = User::factory()->create();
         $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
 
@@ -436,7 +436,7 @@ describe('SubscribeToSeasonAction', function () {
         ]);
     })->group('subscriptions', 'actions');
 
-    test('prevents duplicate subscription for the same season', function () {
+    test('prevents duplicate subscription for the same season', function (): void {
         $user = User::factory()->create();
         $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
 
@@ -459,7 +459,7 @@ describe('SubscribeToSeasonAction', function () {
         )->toBe(1);
     })->group('subscriptions', 'actions');
 
-    test('competitive subscription is priced at 125', function () {
+    test('competitive subscription is priced at 125', function (): void {
         $user = User::factory()->create();
         $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
 
@@ -474,7 +474,7 @@ describe('SubscribeToSeasonAction', function () {
         expect($subscription->amount_due)->toBe(125.0);
     })->group('subscriptions', 'actions');
 
-    test('casual subscription is priced at 60', function () {
+    test('casual subscription is priced at 60', function (): void {
         $user = User::factory()->create();
         $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
 

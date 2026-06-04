@@ -8,8 +8,8 @@ use Illuminate\Support\Facades\Mail;
 
 // The anchor #contact is not testable : it's managed by the frontend and Laravel doesn't understand it, we will check it redirect to the expected page (home)
 
-describe('Contact Form Submission', function () {
-    beforeEach(function () {
+describe('Contact Form Submission', function (): void {
+    beforeEach(function (): void {
         $this->withoutMiddleware(VerifyCsrfToken::class);
         $this->withoutMiddleware(ThrottleRequests::class);
         $this->withSession([
@@ -19,7 +19,7 @@ describe('Contact Form Submission', function () {
     });
 
     // TODO: This test keeps sending success in session and so the errors expectations don't work
-    it('handles email sending errors gracefully : test not 100% ok', function () {
+    it('handles email sending errors gracefully : test not 100% ok', function (): void {
         Mail::shouldReceive('to->send')->andThrow(new Exception('Mail service down'));
 
         $data = [
@@ -37,7 +37,7 @@ describe('Contact Form Submission', function () {
         $response->assertRedirect(route('home') . '#contact');
     });
 
-    it('redirects to the home page on success', function () {
+    it('redirects to the home page on success', function (): void {
         $data = [
             'first_name' => 'Jean',
             'last_name' => 'Dupont',

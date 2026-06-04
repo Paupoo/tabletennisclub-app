@@ -127,7 +127,7 @@ new class extends Component
                 : $this->selectedTables = [];
 
         $this->allTables = Table::query()
-            ->where(function ($query) use ($room) {
+            ->where(function ($query) use ($room): void {
                 $query->doesntHave('room')
                     ->orWhere('room_id', $room->id ?? null);
             })

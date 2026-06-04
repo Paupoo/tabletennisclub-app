@@ -8,8 +8,8 @@ use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Subscriptions\Notifications\SubscriptionCreatedNotification;
 use Illuminate\Support\Facades\Notification;
 
-describe('SubscriptionCreatedNotification', function () {
-    it('sends a mail notification when triggered on a user', function () {
+describe('SubscriptionCreatedNotification', function (): void {
+    it('sends a mail notification when triggered on a user', function (): void {
         Notification::fake();
 
         $user = User::factory()->create(['first_name' => 'Alice']);
@@ -27,7 +27,7 @@ describe('SubscriptionCreatedNotification', function () {
         Notification::assertSentTo($user, SubscriptionCreatedNotification::class);
     });
 
-    it('sends via mail channel only', function () {
+    it('sends via mail channel only', function (): void {
         $user = User::factory()->create();
         $season = Season::factory()->create(['is_active' => true]);
         $subscription = Subscription::factory()->create([
@@ -40,7 +40,7 @@ describe('SubscriptionCreatedNotification', function () {
         expect($notification->via($user))->toBe(['mail', 'database']);
     });
 
-    it('includes season name in the mail subject', function () {
+    it('includes season name in the mail subject', function (): void {
         $user = User::factory()->create(['first_name' => 'Bob']);
         $season = Season::factory()->create(['name' => '2025-2026', 'is_active' => true]);
         $subscription = Subscription::factory()->create([

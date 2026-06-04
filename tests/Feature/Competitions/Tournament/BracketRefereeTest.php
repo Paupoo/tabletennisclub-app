@@ -43,9 +43,9 @@ function makeScheduledBracketMatch(Tournament $t, User $p1, User $p2, string $ro
     ]);
 }
 
-describe('assignBracketReferee', function () {
+describe('assignBracketReferee', function (): void {
 
-    it('assigns the loser of the completed match as referee of the next scheduled match', function () {
+    it('assigns the loser of the completed match as referee of the next scheduled match', function (): void {
         $winner = User::factory()->create();
         $loser = User::factory()->create();
         $p3 = User::factory()->create();
@@ -60,7 +60,7 @@ describe('assignBracketReferee', function () {
         expect($next->fresh()->referee_id)->toBe($loser->id);
     });
 
-    it('picks another loser when the current loser plays in the next match', function () {
+    it('picks another loser when the current loser plays in the next match', function (): void {
         $w1 = User::factory()->create();
         $loser = User::factory()->create();
         $w2 = User::factory()->create();
@@ -79,7 +79,7 @@ describe('assignBracketReferee', function () {
         expect($next->fresh()->referee_id)->toBe($otherLoser->id);
     });
 
-    it('picks the candidate with fewest existing referee assignments', function () {
+    it('picks the candidate with fewest existing referee assignments', function (): void {
         $w1 = User::factory()->create();
         $loser1 = User::factory()->create(); // will have 1 prior referee duty
         $w2 = User::factory()->create();
@@ -111,7 +111,7 @@ describe('assignBracketReferee', function () {
         expect($next->fresh()->referee_id)->toBe($loser2->id);
     });
 
-    it('does nothing when no next scheduled match exists', function () {
+    it('does nothing when no next scheduled match exists', function (): void {
         $winner = User::factory()->create();
         $loser = User::factory()->create();
 
@@ -122,7 +122,7 @@ describe('assignBracketReferee', function () {
             ->not->toThrow(Throwable::class);
     });
 
-    it('does nothing when every loser candidate is playing in the next match', function () {
+    it('does nothing when every loser candidate is playing in the next match', function (): void {
         $w1 = User::factory()->create();
         $loser = User::factory()->create();
 

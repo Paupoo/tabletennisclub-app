@@ -48,9 +48,9 @@ function makeTournamentWithPendingPayment(User $user, float $amount = 25.0): arr
 
 // ── Polymorphic dispatch: TournamentRegistration ──────────────────────────────
 
-describe('reconcileStore — TournamentRegistration payable', function () {
+describe('reconcileStore — TournamentRegistration payable', function (): void {
 
-    it('sets has_paid to true on the tournament_user pivot', function () {
+    it('sets has_paid to true on the tournament_user pivot', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $user = User::factory()->create();
 
@@ -78,7 +78,7 @@ describe('reconcileStore — TournamentRegistration payable', function () {
         )->toBe(1);
     })->group('reconciliation', 'tournament');
 
-    it('does not touch other participants when reconciling one payment', function () {
+    it('does not touch other participants when reconciling one payment', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $userA = User::factory()->create();
         $userB = User::factory()->create();
@@ -104,7 +104,7 @@ describe('reconcileStore — TournamentRegistration payable', function () {
         )->toBe(0);
     })->group('reconciliation', 'tournament');
 
-    it('returns a success flash after reconciling a tournament payment', function () {
+    it('returns a success flash after reconciling a tournament payment', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $user = User::factory()->create();
 
@@ -122,9 +122,9 @@ describe('reconcileStore — TournamentRegistration payable', function () {
 
 // ── Polymorphic dispatch: Subscription payable (regression) ──────────────────
 
-describe('reconcileStore — Subscription payable (regression)', function () {
+describe('reconcileStore — Subscription payable (regression)', function (): void {
 
-    it('still marks the subscription as paid when payable_type is Subscription', function () {
+    it('still marks the subscription as paid when payable_type is Subscription', function (): void {
         $admin = User::factory()->isAdmin()->create();
 
         $subscription = Subscription::factory()->create([
@@ -159,7 +159,7 @@ describe('reconcileStore — Subscription payable (regression)', function () {
         expect($subscription->fresh()->amount_paid)->toBe(125.0);
     })->group('reconciliation', 'subscription');
 
-    it('reconciles a subscription payment regardless of amount (partial payment)', function () {
+    it('reconciles a subscription payment regardless of amount (partial payment)', function (): void {
         $admin = User::factory()->isAdmin()->create();
 
         $subscription = Subscription::factory()->create([
@@ -197,9 +197,9 @@ describe('reconcileStore — Subscription payable (regression)', function () {
 
 // ── Validation ────────────────────────────────────────────────────────────────
 
-describe('reconcileStore — validation', function () {
+describe('reconcileStore — validation', function (): void {
 
-    it('rejects missing transaction_id', function () {
+    it('rejects missing transaction_id', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $subscription = Subscription::factory()->create(['status' => 'confirmed', 'amount_due' => 50]);
         $payment = $subscription->payments()->create([
@@ -214,7 +214,7 @@ describe('reconcileStore — validation', function () {
             ->assertSessionHasErrors('transaction_id');
     })->group('reconciliation', 'validation');
 
-    it('rejects non-existent transaction_id', function () {
+    it('rejects non-existent transaction_id', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $subscription = Subscription::factory()->create(['status' => 'confirmed', 'amount_due' => 50]);
         $payment = $subscription->payments()->create([
@@ -232,7 +232,7 @@ describe('reconcileStore — validation', function () {
             ->assertSessionHasErrors('transaction_id');
     })->group('reconciliation', 'validation');
 
-    it('rejects missing payment_id', function () {
+    it('rejects missing payment_id', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $transaction = Transaction::create([
             'date' => now()->toDateString(),

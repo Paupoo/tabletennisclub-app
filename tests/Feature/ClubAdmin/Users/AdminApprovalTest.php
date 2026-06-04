@@ -14,9 +14,9 @@ use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
-describe('ApproveTrainingPacksAction', function () {
+describe('ApproveTrainingPacksAction', function (): void {
 
-    test('approved packs transition from pending to enrolled', function () {
+    test('approved packs transition from pending to enrolled', function (): void {
         $subscription = Subscription::factory()->create();
         $pack1 = TrainingPack::factory()->create(['price' => 90, 'allow_discount' => true]);
         $pack2 = TrainingPack::factory()->create(['price' => 80, 'allow_discount' => true]);
@@ -33,7 +33,7 @@ describe('ApproveTrainingPacksAction', function () {
             ->and($pivot2->pivot->status)->toBe('enrolled');
     })->group('admin', 'approval');
 
-    test('non-approved pending packs are detached', function () {
+    test('non-approved pending packs are detached', function (): void {
         $subscription = Subscription::factory()->create();
         $pack1 = TrainingPack::factory()->create(['price' => 90]);
         $pack2 = TrainingPack::factory()->create(['price' => 80]);
@@ -47,7 +47,7 @@ describe('ApproveTrainingPacksAction', function () {
             ->and($subscription->trainingPacks()->where('training_pack_id', $pack2->id)->exists())->toBeFalse();
     })->group('admin', 'approval');
 
-    test('already enrolled packs are not affected', function () {
+    test('already enrolled packs are not affected', function (): void {
         $subscription = Subscription::factory()->create();
         $pack = TrainingPack::factory()->create(['price' => 90]);
 
@@ -59,7 +59,7 @@ describe('ApproveTrainingPacksAction', function () {
         expect($pivot->pivot->status)->toBe('enrolled');
     })->group('admin', 'approval');
 
-    test('price is recalculated after approval', function () {
+    test('price is recalculated after approval', function (): void {
         $subscription = Subscription::factory()->create(['is_competitive' => false]);
         $pack = TrainingPack::factory()->create(['price' => 90, 'allow_discount' => false]);
 
@@ -75,7 +75,7 @@ describe('ApproveTrainingPacksAction', function () {
         expect($subscription->fresh()->amount_due)->toBe(60.0 + 90.0);
     })->group('admin', 'approval', 'pricing');
 
-    test('empty approvedPackIds detaches all pending packs', function () {
+    test('empty approvedPackIds detaches all pending packs', function (): void {
         $subscription = Subscription::factory()->create();
         $pack = TrainingPack::factory()->create(['price' => 90]);
 
@@ -88,9 +88,9 @@ describe('ApproveTrainingPacksAction', function () {
 
 });
 
-describe('Admin — refund enrolled pack', function () {
+describe('Admin — refund enrolled pack', function (): void {
 
-    test('removing an enrolled pack detaches it and creates a negative pending payment', function () {
+    test('removing an enrolled pack detaches it and creates a negative pending payment', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'paid', 'amount_due' => 215]);
         $pack = TrainingPack::factory()->create(['price' => 90]);
         $subscription->trainingPacks()->attach($pack->id, ['status' => 'enrolled']);
@@ -115,7 +115,7 @@ describe('Admin — refund enrolled pack', function () {
             ->and($refundPayment->payment_method)->toBe('refund');
     })->group('admin', 'refund');
 
-    test('refund record is identifiable by negative amount_due and payment_method=refund', function () {
+    test('refund record is identifiable by negative amount_due and payment_method=refund', function (): void {
         $subscription = Subscription::factory()->create(['status' => 'paid', 'amount_due' => 125]);
         $pack = TrainingPack::factory()->create(['price' => 80]);
 
@@ -138,13 +138,13 @@ describe('Admin — refund enrolled pack', function () {
 
 })->group('admin');
 
-describe('trainingRequestPricingBreakdown — display logic', function () {
+describe('trainingRequestPricingBreakdown — display logic', function (): void {
 
     beforeEach(function (): void {
         $this->admin = User::factory()->isAdmin()->create();
     });
 
-    test('single new pack, no existing enrolled → no discount, no retro adjustments', function () {
+    test('single new pack, no existing enrolled → no discount, no retro adjustments', function (): void {
         $sub = Subscription::factory()->create(['status' => 'paid', 'is_competitive' => true]);
         $pack = TrainingPack::factory()->create(['price' => 90, 'allow_discount' => true]);
         $sub->trainingPacks()->attach($pack->id, ['status' => 'pending']);
@@ -161,7 +161,7 @@ describe('trainingRequestPricingBreakdown — display logic', function () {
             ->and($bd['new_packs'][$pack->id]['effective_price'])->toBe(90.0);
     })->group('admin', 'pricing', 'breakdown');
 
-    test('two new discountable packs → both discounted at 80€, no retro adjustments', function () {
+    test('two new discountable packs → both discounted at 80€, no retro adjustments', function (): void {
         $sub = Subscription::factory()->create(['status' => 'paid', 'is_competitive' => true]);
         $pack1 = TrainingPack::factory()->create(['price' => 90, 'allow_discount' => true]);
         $pack2 = TrainingPack::factory()->create(['price' => 90, 'allow_discount' => true]);
@@ -180,7 +180,7 @@ describe('trainingRequestPricingBreakdown — display logic', function () {
             ->and($bd['new_packs'][$pack2->id]['effective_price'])->toBe(80.0);
     })->group('admin', 'pricing', 'breakdown');
 
-    test('1 already enrolled + 1 new → retro adjustment on enrolled pack', function () {
+    test('1 already enrolled + 1 new → retro adjustment on enrolled pack', function (): void {
         $sub = Subscription::factory()->create(['status' => 'paid', 'is_competitive' => true]);
         $existing = TrainingPack::factory()->create(['price' => 90, 'allow_discount' => true]);
         $newPack = TrainingPack::factory()->create(['price' => 90, 'allow_discount' => true]);
@@ -200,7 +200,7 @@ describe('trainingRequestPricingBreakdown — display logic', function () {
             ->and($bd['new_packs'][$newPack->id]['effective_price'])->toBe(80.0);
     })->group('admin', 'pricing', 'breakdown');
 
-    test('2 already enrolled + 1 new → no retro adjustment (discount was already active)', function () {
+    test('2 already enrolled + 1 new → no retro adjustment (discount was already active)', function (): void {
         $sub = Subscription::factory()->create(['status' => 'paid', 'is_competitive' => true]);
         $pack1 = TrainingPack::factory()->create(['price' => 90, 'allow_discount' => true]);
         $pack2 = TrainingPack::factory()->create(['price' => 90, 'allow_discount' => true]);
@@ -220,7 +220,7 @@ describe('trainingRequestPricingBreakdown — display logic', function () {
             ->and($bd['new_packs'][$pack3->id]['effective_price'])->toBe(80.0);
     })->group('admin', 'pricing', 'breakdown');
 
-    test('fixed-price pack is never discounted regardless of other packs', function () {
+    test('fixed-price pack is never discounted regardless of other packs', function (): void {
         $sub = Subscription::factory()->create(['status' => 'paid', 'is_competitive' => true]);
         $discountable = TrainingPack::factory()->create(['price' => 90, 'allow_discount' => true]);
         $fixed = TrainingPack::factory()->create(['price' => 350, 'allow_discount' => false]);
@@ -240,7 +240,7 @@ describe('trainingRequestPricingBreakdown — display logic', function () {
             ->and($bd['new_packs'][$fixed->id]['effective_price'])->toBe(350.0);
     })->group('admin', 'pricing', 'breakdown');
 
-    test('unchecking a pack dynamically removes discount', function () {
+    test('unchecking a pack dynamically removes discount', function (): void {
         $sub = Subscription::factory()->create(['status' => 'paid', 'is_competitive' => true]);
         $pack1 = TrainingPack::factory()->create(['price' => 90, 'allow_discount' => true]);
         $pack2 = TrainingPack::factory()->create(['price' => 90, 'allow_discount' => true]);
@@ -266,9 +266,9 @@ describe('trainingRequestPricingBreakdown — display logic', function () {
 
 })->group('admin');
 
-describe('EnrollInTrainingPackAction — pending flow', function () {
+describe('EnrollInTrainingPackAction — pending flow', function (): void {
 
-    test('subscription with pending pack counts against capacity', function () {
+    test('subscription with pending pack counts against capacity', function (): void {
         $pack = TrainingPack::factory()->create(['max_participants' => 1, 'price' => 90]);
         $sub1 = Subscription::factory()->create();
         $sub2 = Subscription::factory()->for($sub1->season, 'season')->create();

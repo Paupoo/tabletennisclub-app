@@ -61,9 +61,9 @@ function completedPoolMatch(Tournament $tournament, int $poolId, User $p1, User 
 
 // ── allMatchesComplete ────────────────────────────────────────────────────────
 
-describe('allMatchesComplete', function () {
+describe('allMatchesComplete', function (): void {
 
-    it('returns true when there are no scheduled or in_progress matches', function () {
+    it('returns true when there are no scheduled or in_progress matches', function (): void {
         $tournament = liveCenterTournament();
         $p1 = User::factory()->create();
         $p2 = User::factory()->create();
@@ -78,7 +78,7 @@ describe('allMatchesComplete', function () {
         expect($allComplete)->toBeTrue();
     })->group('computed', 'closure');
 
-    it('returns false when a scheduled match exists', function () {
+    it('returns false when a scheduled match exists', function (): void {
         $tournament = liveCenterTournament();
         $p1 = User::factory()->create();
         $p2 = User::factory()->create();
@@ -102,7 +102,7 @@ describe('allMatchesComplete', function () {
         expect($allComplete)->toBeFalse();
     })->group('computed', 'closure');
 
-    it('returns false when an in_progress match exists', function () {
+    it('returns false when an in_progress match exists', function (): void {
         $tournament = liveCenterTournament();
         $p1 = User::factory()->create();
         $p2 = User::factory()->create();
@@ -126,7 +126,7 @@ describe('allMatchesComplete', function () {
         expect($allComplete)->toBeFalse();
     })->group('computed', 'closure');
 
-    it('returns true when tournament has no matches at all', function () {
+    it('returns true when tournament has no matches at all', function (): void {
         $tournament = liveCenterTournament();
 
         $allComplete = ! $tournament->matches()
@@ -140,9 +140,9 @@ describe('allMatchesComplete', function () {
 
 // ── poolsPhaseComplete ────────────────────────────────────────────────────────
 
-describe('poolsPhaseComplete', function () {
+describe('poolsPhaseComplete', function (): void {
 
-    it('returns true when every pool has all matches completed', function () {
+    it('returns true when every pool has all matches completed', function (): void {
         $tournament = liveCenterTournament(['nb_pools' => 1]);
         $players = User::factory(3)->create();
         $tournament->users()->attach($players->pluck('id'), ['registration_status' => 'confirmed']);
@@ -164,7 +164,7 @@ describe('poolsPhaseComplete', function () {
         expect($allDone)->toBeTrue();
     })->group('computed', 'pools');
 
-    it('returns false when at least one pool has a pending match', function () {
+    it('returns false when at least one pool has a pending match', function (): void {
         $tournament = liveCenterTournament(['nb_pools' => 1]);
         $players = User::factory(3)->create();
         $tournament->users()->attach($players->pluck('id'), ['registration_status' => 'confirmed']);
@@ -192,9 +192,9 @@ describe('poolsPhaseComplete', function () {
 
 // ── unpaidParticipants ────────────────────────────────────────────────────────
 
-describe('unpaidParticipants', function () {
+describe('unpaidParticipants', function (): void {
 
-    it('returns participants with has_paid=false for a paid tournament', function () {
+    it('returns participants with has_paid=false for a paid tournament', function (): void {
         $tournament = liveCenterTournament(['price' => 25]);
         $paid = User::factory()->create();
         $unpaid = User::factory()->create();
@@ -217,19 +217,19 @@ describe('unpaidParticipants', function () {
             ->and($result->first()->id)->toBe($unpaid->id);
     })->group('computed', 'payment');
 
-    it('isPaid() returns false for a free tournament', function () {
+    it('isPaid() returns false for a free tournament', function (): void {
         $tournament = liveCenterTournament(['price' => 0]);
 
         expect($tournament->isPaid())->toBeFalse();
     })->group('computed', 'payment');
 
-    it('isPaid() returns true for a paid tournament', function () {
+    it('isPaid() returns true for a paid tournament', function (): void {
         $tournament = liveCenterTournament(['price' => 25]);
 
         expect($tournament->isPaid())->toBeTrue();
     })->group('computed', 'payment');
 
-    it('excludes cancelled and waitlisted participants from the unpaid list', function () {
+    it('excludes cancelled and waitlisted participants from the unpaid list', function (): void {
         $tournament = liveCenterTournament(['price' => 25]);
 
         $confirmed = User::factory()->create();
@@ -259,7 +259,7 @@ describe('unpaidParticipants', function () {
             ->and($result->first()->id)->toBe($confirmed->id);
     })->group('computed', 'payment');
 
-    it('returns all participants as unpaid when none have paid', function () {
+    it('returns all participants as unpaid when none have paid', function (): void {
         $tournament = liveCenterTournament(['price' => 25]);
         $users = User::factory(3)->create();
         $users->each(fn ($u) => $tournament->users()->attach($u->id, [
@@ -279,9 +279,9 @@ describe('unpaidParticipants', function () {
 
 // ── bracketPhaseComplete ──────────────────────────────────────────────────────
 
-describe('bracketPhaseComplete', function () {
+describe('bracketPhaseComplete', function (): void {
 
-    it('returns false when no final match exists', function () {
+    it('returns false when no final match exists', function (): void {
         $tournament = liveCenterTournament();
 
         $complete = $tournament->matches()
@@ -292,7 +292,7 @@ describe('bracketPhaseComplete', function () {
         expect($complete)->toBeFalse();
     })->group('computed', 'bracket');
 
-    it('returns false when the final match is not yet completed', function () {
+    it('returns false when the final match is not yet completed', function (): void {
         $tournament = liveCenterTournament();
         $p1 = User::factory()->create();
         $p2 = User::factory()->create();
@@ -316,7 +316,7 @@ describe('bracketPhaseComplete', function () {
         expect($complete)->toBeFalse();
     })->group('computed', 'bracket');
 
-    it('returns true when the final match is completed', function () {
+    it('returns true when the final match is completed', function (): void {
         $tournament = liveCenterTournament();
         $p1 = User::factory()->create();
         $p2 = User::factory()->create();
@@ -345,9 +345,9 @@ describe('bracketPhaseComplete', function () {
 
 // ── calculatePoolStandings ────────────────────────────────────────────────────
 
-describe('TournamentMatchService::calculatePoolStandings', function () {
+describe('TournamentMatchService::calculatePoolStandings', function (): void {
 
-    it('returns correct wins, sets and points after pool matches', function () {
+    it('returns correct wins, sets and points after pool matches', function (): void {
         $tournament = liveCenterTournament(['nb_pools' => 1]);
         $players = User::factory(3)->create();
         $tournament->users()->attach($players->pluck('id'), ['registration_status' => 'confirmed']);
@@ -373,7 +373,7 @@ describe('TournamentMatchService::calculatePoolStandings', function () {
             ->and($top['total_points'])->toBeGreaterThan(0);
     })->group('computed', 'standings');
 
-    it('shows zero stats for players with no completed matches', function () {
+    it('shows zero stats for players with no completed matches', function (): void {
         $tournament = liveCenterTournament(['nb_pools' => 1]);
         $players = User::factory(3)->create();
         $tournament->users()->attach($players->pluck('id'), ['registration_status' => 'confirmed']);
@@ -396,9 +396,9 @@ describe('TournamentMatchService::calculatePoolStandings', function () {
 
 // ── busyPlayerIds ─────────────────────────────────────────────────────────────
 
-describe('busyPlayerIds', function () {
+describe('busyPlayerIds', function (): void {
 
-    it('returns an empty array when no matches are in progress', function () {
+    it('returns an empty array when no matches are in progress', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $tournament = liveCenterTournament();
         $p1 = User::factory()->create();
@@ -422,7 +422,7 @@ describe('busyPlayerIds', function () {
         expect($component->instance()->busyPlayerIds)->toBeEmpty();
     })->group('computed', 'busy-players');
 
-    it('returns player IDs from in_progress matches', function () {
+    it('returns player IDs from in_progress matches', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $tournament = liveCenterTournament();
         $p1 = User::factory()->create();
@@ -449,7 +449,7 @@ describe('busyPlayerIds', function () {
             ->toContain($p2->id);
     })->group('computed', 'busy-players');
 
-    it('does not include players from scheduled or completed matches', function () {
+    it('does not include players from scheduled or completed matches', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $tournament = liveCenterTournament();
         [$p1, $p2, $p3, $p4] = User::factory(4)->create()->all();
@@ -488,7 +488,7 @@ describe('busyPlayerIds', function () {
             ->not->toContain($p4->id);
     })->group('computed', 'busy-players');
 
-    it('only includes players from the same tournament', function () {
+    it('only includes players from the same tournament', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $tournament = liveCenterTournament();
         $other = liveCenterTournament();
@@ -516,7 +516,7 @@ describe('busyPlayerIds', function () {
             ->not->toContain($p4->id);
     })->group('computed', 'busy-players');
 
-    it('includes the referee from an in_progress match', function () {
+    it('includes the referee from an in_progress match', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $tournament = liveCenterTournament();
         [$p1, $p2, $ref] = User::factory(3)->create()->all();
@@ -541,7 +541,7 @@ describe('busyPlayerIds', function () {
         expect($component->instance()->busyPlayerIds)->toContain($ref->id);
     })->group('computed', 'busy-players');
 
-    it('includes all four pair members from an in_progress doubles match', function () {
+    it('includes all four pair members from an in_progress doubles match', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $tournament = Tournament::factory()->create([
             'status' => TournamentStatusEnum::PENDING,

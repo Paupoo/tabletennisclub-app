@@ -7,8 +7,8 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
-describe('Document upload — registration management', function () {
-    it('saves medical certificate path to user after upload', function () {
+describe('Document upload — registration management', function (): void {
+    it('saves medical certificate path to user after upload', function (): void {
         Storage::fake('public');
 
         $user = User::factory()->create(['birthdate' => now()->subYears(25)]);
@@ -24,7 +24,7 @@ describe('Document upload — registration management', function () {
         Storage::disk('public')->assertExists(str_replace('/storage/', '', $user->medical_certificate_path));
     });
 
-    it('saves parental consent path to user after upload', function () {
+    it('saves parental consent path to user after upload', function (): void {
         Storage::fake('public');
 
         $user = User::factory()->create(['birthdate' => now()->subYears(15)]);
@@ -40,7 +40,7 @@ describe('Document upload — registration management', function () {
         Storage::disk('public')->assertExists(str_replace('/storage/', '', $user->parental_consent_path));
     });
 
-    it('replaces existing medical certificate when a new one is uploaded', function () {
+    it('replaces existing medical certificate when a new one is uploaded', function (): void {
         Storage::fake('public');
 
         $user = User::factory()->create([
@@ -59,7 +59,7 @@ describe('Document upload — registration management', function () {
         Storage::disk('public')->assertExists(str_replace('/storage/', '', $user->medical_certificate_path));
     });
 
-    it('validates that only allowed file types are accepted for medical certificate', function () {
+    it('validates that only allowed file types are accepted for medical certificate', function (): void {
         Storage::fake('public');
 
         $user = User::factory()->create(['birthdate' => now()->subYears(25)]);
@@ -71,7 +71,7 @@ describe('Document upload — registration management', function () {
             ->assertHasErrors(['medicalCertificate']);
     });
 
-    it('marks user as minor when birthdate is less than 18 years ago', function () {
+    it('marks user as minor when birthdate is less than 18 years ago', function (): void {
         $user = User::factory()->create(['birthdate' => now()->subYears(15)]);
 
         $component = Livewire::actingAs($user)
@@ -80,7 +80,7 @@ describe('Document upload — registration management', function () {
         expect($component->get('registrations')[$user->id]['is_minor'])->toBeTrue();
     });
 
-    it('does not mark adult user as minor', function () {
+    it('does not mark adult user as minor', function (): void {
         $user = User::factory()->create(['birthdate' => now()->subYears(25)]);
 
         $component = Livewire::actingAs($user)

@@ -116,7 +116,7 @@ class TrainingController extends Controller
         $seasons = $this->getAdjacentSeasons();
         $types = TrainingType::cases();
         $users = User::all();
-        $notSubscribedUsers = User::whereDoesntHave('trainings', function ($query) use ($training) {
+        $notSubscribedUsers = User::whereDoesntHave('trainings', function ($query) use ($training): void {
             $query->where('training_id', $training->id);
         })->get();
         $trainingPacks = TrainingPack::with(['room', 'trainer'])->get();

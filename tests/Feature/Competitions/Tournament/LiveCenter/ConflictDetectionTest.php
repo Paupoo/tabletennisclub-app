@@ -63,8 +63,8 @@ function occupyConflictTable(TournamentMatch $match): void
     ]);
 }
 
-describe('detectStartConflict', function () {
-    it('returns null when no active matches exist', function () {
+describe('detectStartConflict', function (): void {
+    it('returns null when no active matches exist', function (): void {
         $tournament = conflictTournament();
         [$a, $b] = User::factory(2)->create()->all();
 
@@ -73,7 +73,7 @@ describe('detectStartConflict', function () {
         expect(app(TournamentMatchService::class)->detectStartConflict($tournament, $match))->toBeNull();
     });
 
-    it('returns null when active players are all different', function () {
+    it('returns null when active players are all different', function (): void {
         $tournament = conflictTournament();
         [$a, $b, $c, $d] = User::factory(4)->create()->all();
 
@@ -83,7 +83,7 @@ describe('detectStartConflict', function () {
         expect(app(TournamentMatchService::class)->detectStartConflict($tournament, $next))->toBeNull();
     });
 
-    it('detects a player already in an active match', function () {
+    it('detects a player already in an active match', function (): void {
         $tournament = conflictTournament();
         [$a, $b, $c] = User::factory(3)->create()->all();
 
@@ -93,7 +93,7 @@ describe('detectStartConflict', function () {
         expect(app(TournamentMatchService::class)->detectStartConflict($tournament, $next))->not->toBeNull();
     });
 
-    it('detects a referee already playing in an active match', function () {
+    it('detects a referee already playing in an active match', function (): void {
         $tournament = conflictTournament();
         [$a, $b, $c, $d] = User::factory(4)->create()->all();
 
@@ -105,7 +105,7 @@ describe('detectStartConflict', function () {
         expect(app(TournamentMatchService::class)->detectStartConflict($tournament, $next))->not->toBeNull();
     });
 
-    it('detects a referee already refereeing another active match', function () {
+    it('detects a referee already refereeing another active match', function (): void {
         $tournament = conflictTournament();
         [$a, $b, $c, $d, $ref] = User::factory(5)->create()->all();
 
@@ -118,7 +118,7 @@ describe('detectStartConflict', function () {
     // Real-world scenario: a doubles pair member is assigned as referee for another match
     // (exactly what happened in tournament 5: user 51 was in pair 8 playing at table 15
     //  AND assigned as referee for the match at table 2)
-    it('detects a doubles pair member assigned as referee for another active match', function () {
+    it('detects a doubles pair member assigned as referee for another active match', function (): void {
         $tournament = Tournament::factory()->create([
             'status' => TournamentStatusEnum::PENDING,
             'match_type' => 'double',

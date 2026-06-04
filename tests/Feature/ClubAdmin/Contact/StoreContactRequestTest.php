@@ -9,9 +9,9 @@ use Illuminate\Routing\Middleware\ThrottleRequests;
 // Suite : Security
 // ─────────────────────────────────────────────────────────────
 
-describe('Contact Form - Public Submission', function () {
+describe('Contact Form - Public Submission', function (): void {
 
-    it('has CSRF protection', function () {
+    it('has CSRF protection', function (): void {
         $this->withoutMiddleware(ThrottleRequests::class);
         $response = $this->postJson(route('contact.store'), [], [
             'X-CSRF-TOKEN' => 'invalid-token',
@@ -20,7 +20,7 @@ describe('Contact Form - Public Submission', function () {
         $response->assertStatus(419); // Token mismatch
     })->skip('postJson bypasses CSRF in test environment, unreliable to test');
 
-    it('implements rate limiting - allows 3 requests per 60 seconds', function () {
+    it('implements rate limiting - allows 3 requests per 60 seconds', function (): void {
         $this->withoutMiddleware(VerifyCsrfToken::class);
         $data = [
             'first_name' => 'Test',
@@ -43,7 +43,7 @@ describe('Contact Form - Public Submission', function () {
         $response->assertStatus(429);
     })->skip('Rate limiting requires captcha setup to reach the throttle layer');
 
-    it('preserves form data on validation error', function () {
+    it('preserves form data on validation error', function (): void {
         $this->withoutMiddleware(ThrottleRequests::class);
         $this->withoutMiddleware(VerifyCsrfToken::class);
 
@@ -66,8 +66,8 @@ describe('Contact Form - Public Submission', function () {
 // Suite : Form validation
 // ─────────────────────────────────────────────────────────────
 
-describe('Contact Form validations', function () {
-    beforeEach(function () {
+describe('Contact Form validations', function (): void {
+    beforeEach(function (): void {
         $this->withoutMiddleware(VerifyCsrfToken::class);
         $this->withoutMiddleware(ThrottleRequests::class);
         $this->withSession([
@@ -78,7 +78,7 @@ describe('Contact Form validations', function () {
 
     // Full form ──────────────────────────
 
-    it('stores valid contact form submission', function () {
+    it('stores valid contact form submission', function (): void {
         $data = [
             'first_name' => 'Jean',
             'last_name' => 'Dupont',
@@ -97,7 +97,7 @@ describe('Contact Form validations', function () {
         $response->assertStatus(302);
     });
 
-    it('preserves form data on validation error', function () {
+    it('preserves form data on validation error', function (): void {
         $data = [
             'first_name' => 'Jean',
             'last_name' => 'Dupont',
@@ -117,7 +117,7 @@ describe('Contact Form validations', function () {
 
     // Required fields ────────────────────
 
-    it('validates all required fields with custom messages', function () {
+    it('validates all required fields with custom messages', function (): void {
         $response = $this->post(route('contact.store'), []);
 
         $response->assertSessionHasErrors([
@@ -130,7 +130,7 @@ describe('Contact Form validations', function () {
         ]);
     });
 
-    it('rejects invalid email address', function () {
+    it('rejects invalid email address', function (): void {
         $response = $this->post(route('contact.store'), [
             'first_name' => 'Test',
             'last_name' => 'User',
@@ -143,7 +143,7 @@ describe('Contact Form validations', function () {
         $response->assertSessionHasErrors('email');
     });
 
-    it('validates required fields', function () {
+    it('validates required fields', function (): void {
         $response = $this->post(route('contact.store'), [
             'consent' => true,
         ]);
@@ -157,7 +157,7 @@ describe('Contact Form validations', function () {
         ]);
     });
 
-    it('requires consent acceptance', function () {
+    it('requires consent acceptance', function (): void {
         $response = $this->post(route('contact.store'), [
             'first_name' => 'Test',
             'last_name' => 'User',
@@ -172,7 +172,7 @@ describe('Contact Form validations', function () {
 
     // Optional fields ────────────────────
 
-    it('allows optional fields to be null', function () {
+    it('allows optional fields to be null', function (): void {
         $data = [
             'first_name' => 'Jean',
             'last_name' => 'Dupont',
@@ -191,7 +191,7 @@ describe('Contact Form validations', function () {
         $response->assertSessionHasNoErrors();
     });
 
-    it('validates message maximum length', function () {
+    it('validates message maximum length', function (): void {
         $response = $this->post(route('contact.store'), [
             'first_name' => 'Test',
             'last_name' => 'User',
@@ -204,7 +204,7 @@ describe('Contact Form validations', function () {
         $response->assertSessionHasErrors('message');
     });
 
-    it('allows phone to be optional', function () {
+    it('allows phone to be optional', function (): void {
         $data = [
             'first_name' => 'Jean',
             'last_name' => 'Dupont',
@@ -222,7 +222,7 @@ describe('Contact Form validations', function () {
             ->assertSessionHas('success');
     });
 
-    it('validates optional membership fields (must be numeric under 10)', function () {
+    it('validates optional membership fields (must be numeric under 10)', function (): void {
         $response = $this->post(route('contact.store'), [
             'membership_family_members' => 11, // Max is 10
             'membership_total_cost' => 'not-a-number', // Must be numeric
@@ -234,7 +234,7 @@ describe('Contact Form validations', function () {
         ]);
     });
 
-    it('validates membership fields as integers', function () {
+    it('validates membership fields as integers', function (): void {
         $response = $this->post(route('contact.store'), [
             'first_name' => 'Test',
             'last_name' => 'User',
@@ -248,7 +248,7 @@ describe('Contact Form validations', function () {
         $response->assertSessionHasErrors('membership_family_members');
     });
 
-    it('limits family members to maximum of 10', function () {
+    it('limits family members to maximum of 10', function (): void {
         $response = $this->post(route('contact.store'), [
             'first_name' => 'Test',
             'last_name' => 'User',

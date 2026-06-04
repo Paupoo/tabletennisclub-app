@@ -39,14 +39,14 @@ function eventsAdminIndexAs(User $user)
 
 // ── Contrôle d'accès ──────────────────────────────────────────────────────────
 
-describe('contrôle d\'accès', function () {
-    it('est accessible à un admin', function () {
+describe('contrôle d\'accès', function (): void {
+    it('est accessible à un admin', function (): void {
         $admin = User::factory()->isAdmin()->create();
 
         eventsAdminIndexAs($admin)->assertOk();
     });
 
-    it('est accessible à un membre du comité', function () {
+    it('est accessible à un membre du comité', function (): void {
         $committee = User::factory()->isCommitteeMember()->create();
 
         eventsAdminIndexAs($committee)->assertOk();
@@ -55,8 +55,8 @@ describe('contrôle d\'accès', function () {
 
 // ── Filtres ───────────────────────────────────────────────────────────────────
 
-describe('filtres', function () {
-    it('filtre par statut', function () {
+describe('filtres', function (): void {
+    it('filtre par statut', function (): void {
         $admin = User::factory()->isAdmin()->create();
         adminEventsEvent(['title' => 'Event Alpha Unique', 'status' => EventPostStatusEnum::DRAFT->value]);
         adminEventsEvent(['title' => 'Event Beta Unique',  'status' => EventPostStatusEnum::PUBLISHED->value]);
@@ -67,7 +67,7 @@ describe('filtres', function () {
             ->assertDontSee('Event Beta Unique');
     });
 
-    it('filtre par type', function () {
+    it('filtre par type', function (): void {
         $admin = User::factory()->isAdmin()->create();
         adminEventsEvent(['title' => 'Tournoi Alpha Unique', 'type' => ClubEventTypeEnum::TOURNAMENT->value]);
         adminEventsEvent(['title' => 'Stage Alpha Unique',   'type' => ClubEventTypeEnum::TRAINING->value]);
@@ -78,7 +78,7 @@ describe('filtres', function () {
             ->assertDontSee('Stage Alpha Unique');
     });
 
-    it('filtre par recherche sur le titre', function () {
+    it('filtre par recherche sur le titre', function (): void {
         $admin = User::factory()->isAdmin()->create();
         adminEventsEvent(['title' => 'Grand Tournoi']);
         adminEventsEvent(['title' => 'Stage été']);
@@ -89,7 +89,7 @@ describe('filtres', function () {
             ->assertDontSee('Stage été');
     });
 
-    it('réinitialise les filtres via resetFilters()', function () {
+    it('réinitialise les filtres via resetFilters()', function (): void {
         $admin = User::factory()->isAdmin()->create();
         adminEventsEvent(['title' => 'Brouillon', 'status' => EventPostStatusEnum::DRAFT->value]);
 
@@ -104,8 +104,8 @@ describe('filtres', function () {
 
 // ── Actions rapides ───────────────────────────────────────────────────────────
 
-describe('actions rapides', function () {
-    it('publie un événement en brouillon', function () {
+describe('actions rapides', function (): void {
+    it('publie un événement en brouillon', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $ep = adminEventsEvent(['status' => EventPostStatusEnum::DRAFT->value]);
 
@@ -114,7 +114,7 @@ describe('actions rapides', function () {
         expect($ep->fresh()->status)->toBe(EventPostStatusEnum::PUBLISHED);
     });
 
-    it('archive un événement publié', function () {
+    it('archive un événement publié', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $ep = adminEventsEvent(['status' => EventPostStatusEnum::PUBLISHED->value]);
 
@@ -123,7 +123,7 @@ describe('actions rapides', function () {
         expect($ep->fresh()->status)->toBe(EventPostStatusEnum::ARCHIVED);
     });
 
-    it('supprime un événement en brouillon', function () {
+    it('supprime un événement en brouillon', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $ep = adminEventsEvent(['status' => EventPostStatusEnum::DRAFT->value]);
 
@@ -134,7 +134,7 @@ describe('actions rapides', function () {
         expect(EventPost::find($ep->id))->toBeNull();
     });
 
-    it('ne supprime pas un événement publié', function () {
+    it('ne supprime pas un événement publié', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $ep = adminEventsEvent(['status' => EventPostStatusEnum::PUBLISHED->value]);
 
@@ -148,8 +148,8 @@ describe('actions rapides', function () {
 
 // ── Drawer d'édition ─────────────────────────────────────────────────────────
 
-describe('drawer d\'édition', function () {
-    it('pré-remplit les champs depuis l\'événement', function () {
+describe('drawer d\'édition', function (): void {
+    it('pré-remplit les champs depuis l\'événement', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $ep = adminEventsEvent(['title' => 'Titre original', 'location' => 'Salle B', 'featured' => true]);
 
@@ -161,7 +161,7 @@ describe('drawer d\'édition', function () {
             ->assertSet('editFeatured', true);
     });
 
-    it('sauvegarde les modifications', function () {
+    it('sauvegarde les modifications', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $ep = adminEventsEvent(['title' => 'Avant']);
 
@@ -178,7 +178,7 @@ describe('drawer d\'édition', function () {
         expect($ep->fresh()->title)->toBe('Après');
     });
 
-    it('rejette une date featured_until dans le passé', function () {
+    it('rejette une date featured_until dans le passé', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $ep = adminEventsEvent();
 
@@ -196,7 +196,7 @@ describe('drawer d\'édition', function () {
             ->assertHasErrors(['editFeaturedUntil']);
     });
 
-    it('accepte une date featured_until dans le futur', function () {
+    it('accepte une date featured_until dans le futur', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $ep = adminEventsEvent();
 
@@ -219,8 +219,8 @@ describe('drawer d\'édition', function () {
 
 // ── HasEventPostForm — featured_until ────────────────────────────────────────
 
-describe('HasEventPostForm — eventFeaturedUntil', function () {
-    it('pré-remplit eventFeaturedUntil depuis un EventPost existant', function () {
+describe('HasEventPostForm — eventFeaturedUntil', function (): void {
+    it('pré-remplit eventFeaturedUntil depuis un EventPost existant', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $tournament = Tournament::factory()->create([
             'status' => TournamentStatusEnum::PUBLISHED,
@@ -257,7 +257,7 @@ describe('HasEventPostForm — eventFeaturedUntil', function () {
             ->assertSet('eventFeaturedUntil', $futureDate);
     });
 
-    it('sauvegarde featured_until via le wizard', function () {
+    it('sauvegarde featured_until via le wizard', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $tournament = Tournament::factory()->create([
             'status' => TournamentStatusEnum::PUBLISHED,

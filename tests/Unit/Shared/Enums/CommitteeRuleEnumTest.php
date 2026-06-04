@@ -6,9 +6,9 @@ use App\Domains\Shared\Enums\CommitteeRolesEnum;
 
 use function PHPUnit\Framework\assertNull;
 
-describe('CommitteRolesEnum', function () {
+describe('CommitteRolesEnum', function (): void {
 
-    it('returns the correct string', function () {
+    it('returns the correct string', function (): void {
         $this->assertEquals(__('President'), CommitteeRolesEnum::PRESIDENT->label());
         $this->assertEquals(__('Vice-President'), CommitteeRolesEnum::VICE_PRESIDENT->label());
         $this->assertEquals(__('Treasurer'), CommitteeRolesEnum::TREASURER->label());
@@ -16,7 +16,7 @@ describe('CommitteRolesEnum', function () {
         $this->assertEquals(__('Administrator'), CommitteeRolesEnum::ADMINISTRATOR->label());
     });
 
-    it('generates an array for Mary-UI options', function () {
+    it('generates an array for Mary-UI options', function (): void {
         $this->assertEquals([
             ['id' => 'PRESIDENT', 'name' => __('President')],
             ['id' => 'VICE_PRESIDENT', 'name' => __('Vice-President')],
@@ -26,7 +26,7 @@ describe('CommitteRolesEnum', function () {
         ], CommitteeRolesEnum::getOptions());
     });
 
-    it('returns null when value not in enum', function () {
+    it('returns null when value not in enum', function (): void {
         assertNull(CommitteeRolesEnum::tryFrom('Président'));
         assertNull(CommitteeRolesEnum::tryFrom('Admin'));
         assertNull(CommitteeRolesEnum::tryFrom('president'));

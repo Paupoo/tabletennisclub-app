@@ -90,7 +90,7 @@ class Season extends Model
 
     public function activate(): void
     {
-        DB::transaction(function () {
+        DB::transaction(function (): void {
             self::query()->where('id', '!=', $this->id)->update(['is_active' => false]);
             self::query()->whereKey($this->id)->update(['is_active' => true]);
             $this->is_active = true;
@@ -171,7 +171,7 @@ class Season extends Model
 
     protected static function booted()
     {
-        static::saving(function ($season) {
+        static::saving(function ($season): void {
             if ($season->start_at >= $season->end_at) {
                 throw new \DomainException('start_at must be before end_at');
             }

@@ -8,8 +8,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-describe('User Observer tests', function () {
-    it('clears committee_role when user is not a committee member', function () {
+describe('User Observer tests', function (): void {
+    it('clears committee_role when user is not a committee member', function (): void {
         $user = User::factory()->create([
             'is_committee_member' => true,
             'committee_role' => CommitteeRolesEnum::PRESIDENT,
@@ -22,7 +22,7 @@ describe('User Observer tests', function () {
         expect($user->fresh()->committee_role)->toBeNull();
     });
 
-    it('keeps committee_role when user is a committee member', function () {
+    it('keeps committee_role when user is a committee member', function (): void {
         $user = User::factory()->create([
             'is_committee_member' => true,
             'committee_role' => CommitteeRolesEnum::PRESIDENT,
@@ -35,7 +35,7 @@ describe('User Observer tests', function () {
         expect($user->fresh()->committee_role)->toBe(CommitteeRolesEnum::TREASURER);
     });
 
-    it('keeps committee_role when an unrelated field is updated', function () {
+    it('keeps committee_role when an unrelated field is updated', function (): void {
         $user = User::factory()->create([
             'is_committee_member' => true,
             'committee_role' => CommitteeRolesEnum::PRESIDENT,
@@ -46,7 +46,7 @@ describe('User Observer tests', function () {
         expect($user->fresh()->committee_role)->toBe(CommitteeRolesEnum::PRESIDENT);
     });
 
-    it('does not assign a committee_role when user is not a committee member', function () {
+    it('does not assign a committee_role when user is not a committee member', function (): void {
         $user = User::factory()->create(['is_committee_member' => false]);
 
         $user->update(['committee_role' => CommitteeRolesEnum::TREASURER]);

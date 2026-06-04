@@ -17,9 +17,9 @@ use Illuminate\Support\Facades\Notification;
 
 // ─── Flux A — Full registration + training, single payment ────────────────────
 
-describe('Flux A — new affiliation with training packs, one payment', function () {
+describe('Flux A — new affiliation with training packs, one payment', function (): void {
 
-    test('user submits affiliation + 2 packs → all pending, price not yet calculated', function () {
+    test('user submits affiliation + 2 packs → all pending, price not yet calculated', function (): void {
         $user = User::factory()->create();
         $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
 
@@ -46,7 +46,7 @@ describe('Flux A — new affiliation with training packs, one payment', function
         expect($subscription->fresh()->amount_due)->toBe(125.0);
     })->group('lifecycle', 'flux-a');
 
-    test('admin approves subscription + both packs → enrolled, price recalculated', function () {
+    test('admin approves subscription + both packs → enrolled, price recalculated', function (): void {
         $user = User::factory()->create();
         $season = Season::factory()->create(['is_active' => true]);
 
@@ -76,7 +76,7 @@ describe('Flux A — new affiliation with training packs, one payment', function
         expect($pivots->every(fn ($p) => $p->pivot->status === 'enrolled'))->toBeTrue();
     })->group('lifecycle', 'flux-a');
 
-    test('admin approves only one pack → second detached, price reflects approved pack only', function () {
+    test('admin approves only one pack → second detached, price reflects approved pack only', function (): void {
         $user = User::factory()->create();
         $season = Season::factory()->create(['is_active' => true]);
 
@@ -102,7 +102,7 @@ describe('Flux A — new affiliation with training packs, one payment', function
         expect($subscription->trainingPacks()->where('training_pack_id', $pack2->id)->exists())->toBeFalse();
     })->group('lifecycle', 'flux-a');
 
-    test('payment generated after approval covers full price', function () {
+    test('payment generated after approval covers full price', function (): void {
         $season = Season::factory()->create(['is_active' => true]);
         $user = User::factory()->create();
 
@@ -129,7 +129,7 @@ describe('Flux A — new affiliation with training packs, one payment', function
 
 // ─── Flux A — Two-part payment by bank transfer ────────────────────────────────
 
-describe('Flux A — user pays affiliation + training in two separate bank transfers', function () {
+describe('Flux A — user pays affiliation + training in two separate bank transfers', function (): void {
 
     /**
      * Scenario: Alice registers (competitive, 125€) + 2 training packs (90€ + 80€).
@@ -142,7 +142,7 @@ describe('Flux A — user pays affiliation + training in two separate bank trans
      * The treasurer imports transfers one by one.
      * After both are reconciled the subscription is marked paid.
      */
-    test('two successive imports reconcile a split payment and mark the subscription paid', function () {
+    test('two successive imports reconcile a split payment and mark the subscription paid', function (): void {
         $season = Season::factory()->create(['is_active' => true]);
         $user = User::factory()->create();
 
@@ -205,7 +205,7 @@ describe('Flux A — user pays affiliation + training in two separate bank trans
             ->and($subscription->fresh()->amount_paid)->toBe(295.0);
     })->group('lifecycle', 'flux-a', 'payments');
 
-    test('first import partial, second import completes — subscription stays confirmed until fully paid', function () {
+    test('first import partial, second import completes — subscription stays confirmed until fully paid', function (): void {
         $season = Season::factory()->create(['is_active' => true]);
         $user = User::factory()->create();
 
@@ -244,9 +244,9 @@ describe('Flux A — user pays affiliation + training in two separate bank trans
 
 // ─── Flux B — Mid-season training pack added by a paid member ─────────────────
 
-describe('Flux B — paid member requests additional training pack mid-season', function () {
+describe('Flux B — paid member requests additional training pack mid-season', function (): void {
 
-    test('paid member requests training pack → pending, price unchanged', function () {
+    test('paid member requests training pack → pending, price unchanged', function (): void {
         $season = Season::factory()->create(['is_active' => true]);
         $user = User::factory()->create();
 
@@ -270,7 +270,7 @@ describe('Flux B — paid member requests additional training pack mid-season', 
         expect($subscription->fresh()->amount_due)->toBe(125.0);
     })->group('lifecycle', 'flux-b');
 
-    test('admin approves new pack → enrolled, supplementary payment created for pack cost only', function () {
+    test('admin approves new pack → enrolled, supplementary payment created for pack cost only', function (): void {
         $season = Season::factory()->create(['is_active' => true]);
         $user = User::factory()->create();
 
@@ -318,7 +318,7 @@ describe('Flux B — paid member requests additional training pack mid-season', 
         expect($payment->amount_due)->toBe(80.0);
     })->group('lifecycle', 'flux-b');
 
-    test('treasurer reconciles the supplementary payment independently of the original', function () {
+    test('treasurer reconciles the supplementary payment independently of the original', function (): void {
         $season = Season::factory()->create(['is_active' => true]);
         $user = User::factory()->create();
 
@@ -374,9 +374,9 @@ describe('Flux B — paid member requests additional training pack mid-season', 
 
 // ─── Re-affiliation after admin rejection ─────────────────────────────────────
 
-describe('re-affiliation after admin rejection', function () {
+describe('re-affiliation after admin rejection', function (): void {
 
-    test('rejected subscription is cancelled and user can create a new pending subscription', function () {
+    test('rejected subscription is cancelled and user can create a new pending subscription', function (): void {
         Notification::fake();
 
         $user = User::factory()->create();
@@ -415,7 +415,7 @@ describe('re-affiliation after admin rejection', function () {
             ->and($userSubs->firstWhere('status', 'pending'))->not->toBeNull();
     })->group('lifecycle', 'rejection', 're-affiliation');
 
-    test('second subscription can be independently approved and paid', function () {
+    test('second subscription can be independently approved and paid', function (): void {
         $user = User::factory()->create();
         $season = Season::factory()->create(['is_active' => true]);
 
@@ -468,7 +468,7 @@ describe('re-affiliation after admin rejection', function () {
 
 // ─── Complex: affiliate then add training + 2 successive treasurer imports ─────
 
-describe('complex — affiliate, add training mid-season, two successive import batches', function () {
+describe('complex — affiliate, add training mid-season, two successive import batches', function (): void {
 
     /**
      * Full story:
@@ -478,7 +478,7 @@ describe('complex — affiliate, add training mid-season, two successive import 
      * 4. Treasurer import batch 2: Bob's 90€ transfer arrives → Payment B reconciled.
      * 5. Both payments paid; subscription remains paid.
      */
-    test('affiliate + pay + add training + pay training via 2 successive import batches', function () {
+    test('affiliate + pay + add training + pay training via 2 successive import batches', function (): void {
         $season = Season::factory()->create(['is_active' => true]);
         $user = User::factory()->create();
 
@@ -565,7 +565,7 @@ describe('complex — affiliate, add training mid-season, two successive import 
             ->and($enrolledPacks->first()->id)->toBe($pack->id);
     })->group('lifecycle', 'complex', 'payments');
 
-    test('batch auto-reconciliation matches each payment to the correct transaction by reference', function () {
+    test('batch auto-reconciliation matches each payment to the correct transaction by reference', function (): void {
         $normalize = fn (string $ref): string => preg_replace('/[^0-9]/', '', $ref) ?? '';
 
         $season = Season::factory()->create(['is_active' => true]);

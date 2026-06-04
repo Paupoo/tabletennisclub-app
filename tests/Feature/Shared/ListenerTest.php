@@ -16,7 +16,7 @@ use App\Domains\Shared\Events\Subscriptions\SubscriptionCreated;
 use App\Domains\Subscriptions\Notifications\SubscriptionCreatedNotification;
 use Illuminate\Support\Facades\Notification;
 
-test('subscription created event triggers notification', function () {
+test('subscription created event triggers notification', function (): void {
     Notification::fake();
 
     $user = User::factory()->create();
@@ -27,7 +27,7 @@ test('subscription created event triggers notification', function () {
     Notification::assertSentTo($user, SubscriptionCreatedNotification::class);
 });
 
-test('meeting created event notifies all members for general assembly', function () {
+test('meeting created event notifies all members for general assembly', function (): void {
     Notification::fake();
 
     $user1 = User::factory()->create(['is_active' => true]);
@@ -41,7 +41,7 @@ test('meeting created event notifies all members for general assembly', function
     Notification::assertSentTo($user2, MeetingInvitationNotification::class);
 });
 
-test('meeting created event notifies committee only for committee meeting', function () {
+test('meeting created event notifies committee only for committee meeting', function (): void {
     Notification::fake();
 
     $member = User::factory()->create(['is_committee_member' => true, 'is_active' => true]);
@@ -55,7 +55,7 @@ test('meeting created event notifies committee only for committee meeting', func
     Notification::assertNotSentTo($regular, MeetingInvitationNotification::class);
 });
 
-test('team created event notifies admins', function () {
+test('team created event notifies admins', function (): void {
     Notification::fake();
 
     $season = Season::factory()->create();

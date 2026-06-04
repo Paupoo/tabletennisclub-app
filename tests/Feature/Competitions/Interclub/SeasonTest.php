@@ -8,12 +8,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Cache;
 
-describe('Season Model', function () {
+describe('Season Model', function (): void {
     // ============================================
     // VALIDATION & BUSINESS RULES
     // ============================================
 
-    test('validates start_at must be before end_at', function () {
+    test('validates start_at must be before end_at', function (): void {
         $season = Season::factory()->make([
             'start_at' => now()->addYear(),
             'end_at' => now(),
@@ -23,7 +23,7 @@ describe('Season Model', function () {
             ->toThrow(DomainException::class, 'start_at must be before end_at');
     });
 
-    test('allows valid date range', function () {
+    test('allows valid date range', function (): void {
         $season = Season::factory()->create([
             'start_at' => now(),
             'end_at' => now()->addMonths(9),
@@ -36,7 +36,7 @@ describe('Season Model', function () {
     // ACTIVATION LOGIC
     // ============================================
 
-    test('activates only one season at a time', function () {
+    test('activates only one season at a time', function (): void {
         $season1 = Season::factory()->create(['is_active' => true]);
         $season2 = Season::factory()->create(['is_active' => false]);
         $season3 = Season::factory()->create(['is_active' => false]);
@@ -48,7 +48,7 @@ describe('Season Model', function () {
             ->and($season3->fresh()->is_active)->toBeFalse();
     });
 
-    test('deactivates all seasons before activating new one', function () {
+    test('deactivates all seasons before activating new one', function (): void {
         Season::factory()->count(3)->create(['is_active' => true]);
 
         $newSeason = Season::factory()->create(['is_active' => false]);
@@ -58,12 +58,12 @@ describe('Season Model', function () {
             ->and($newSeason->fresh()->is_active)->toBeTrue();
     });
 
-    test('activate method is transactional', function () {
+    test('activate method is transactional', function (): void {
         $season1 = Season::factory()->create(['is_active' => true]);
         $season2 = Season::factory()->create(['is_active' => false]);
 
         // Force un échec dans la transaction
-        Season::saving(function () {
+        Season::saving(function (): void {
             throw new Exception('Force rollback');
         });
 
@@ -82,7 +82,7 @@ describe('Season Model', function () {
     // SCOPE & RETRIEVAL
     // ============================================
 
-    test('scope active returns only active season', function () {
+    test('scope active returns only active season', function (): void {
         Season::factory()->count(3)->create(['is_active' => false]);
         $activeSeason = Season::factory()->create(['is_active' => true]);
 
@@ -92,7 +92,7 @@ describe('Season Model', function () {
             ->and($result->first()->id)->toBe($activeSeason->id);
     });
 
-    test('current method returns cached active season', function () {
+    test('current method returns cached active season', function (): void {
         Cache::flush();
 
         $activeSeason = Season::factory()->create(['is_active' => true]);
@@ -104,14 +104,14 @@ describe('Season Model', function () {
             ->and(Cache::has('season.current'))->toBeTrue();
     });
 
-    test('current method returns null when no active season', function () {
+    test('current method returns null when no active season', function (): void {
         Cache::flush();
         Season::factory()->count(3)->create(['is_active' => false]);
 
         expect(Season::current())->toBeNull();
     });
 
-    test('current method uses cache', function () {
+    test('current method uses cache', function (): void {
         Cache::flush();
 
         $season = Season::factory()->create(['is_active' => true]);
@@ -132,7 +132,7 @@ describe('Season Model', function () {
     // STATUS HELPERS
     // ============================================
 
-    test('isCurrent returns true only for active season', function () {
+    test('isCurrent returns true only for active season', function (): void {
         $active = Season::factory()->create(['is_active' => true]);
         $inactive = Season::factory()->create(['is_active' => false]);
 
@@ -140,7 +140,7 @@ describe('Season Model', function () {
             ->and($inactive->isCurrent())->toBeFalse();
     });
 
-    test('isPast returns true for ended inactive seasons', function () {
+    test('isPast returns true for ended inactive seasons', function (): void {
         $past = Season::factory()->create([
             'is_active' => false,
             'start_at' => now()->subMonths(6),
@@ -157,7 +157,7 @@ describe('Season Model', function () {
             ->and($current->isPast())->toBeFalse();
     });
 
-    test('isFuture returns true for upcoming inactive seasons', function () {
+    test('isFuture returns true for upcoming inactive seasons', function (): void {
         $future = Season::factory()->create([
             'is_active' => false,
             'start_at' => now()->addYear(),
@@ -178,43 +178,43 @@ describe('Season Model', function () {
     // RELATIONSHIPS
     // ============================================
 
-    test('has interclubs relationship', function () {
+    test('has interclubs relationship', function (): void {
         $season = Season::factory()->create();
 
         expect($season->interclubs())->toBeInstanceOf(HasMany::class);
     });
 
-    test('has leagues relationship', function () {
+    test('has leagues relationship', function (): void {
         $season = Season::factory()->create();
 
         expect($season->leagues())->toBeInstanceOf(HasMany::class);
     });
 
-    test('has subscriptions relationship', function () {
+    test('has subscriptions relationship', function (): void {
         $season = Season::factory()->create();
 
         expect($season->subscriptions())->toBeInstanceOf(HasMany::class);
     });
 
-    test('has teams relationship', function () {
+    test('has teams relationship', function (): void {
         $season = Season::factory()->create();
 
         expect($season->teams())->toBeInstanceOf(HasMany::class);
     });
 
-    test('has training packs relationship', function () {
+    test('has training packs relationship', function (): void {
         $season = Season::factory()->create();
 
         expect($season->trainingPacks())->toBeInstanceOf(HasMany::class);
     });
 
-    test('has trainings relationship', function () {
+    test('has trainings relationship', function (): void {
         $season = Season::factory()->create();
 
         expect($season->trainings())->toBeInstanceOf(HasMany::class);
     });
 
-    test('has users many-to-many relationship', function () {
+    test('has users many-to-many relationship', function (): void {
         $season = Season::factory()->create();
 
         expect($season->users())->toBeInstanceOf(BelongsToMany::class);
@@ -224,7 +224,7 @@ describe('Season Model', function () {
     // CASTS & ATTRIBUTES
     // ============================================
 
-    test('casts dates correctly', function () {
+    test('casts dates correctly', function (): void {
         $season = Season::factory()->create([
             'start_at' => '2024-09-01',
             'end_at' => '2025-06-30',
@@ -234,14 +234,14 @@ describe('Season Model', function () {
             ->and($season->end_at)->toBeInstanceOf(Carbon::class);
     });
 
-    test('casts is_active as boolean', function () {
+    test('casts is_active as boolean', function (): void {
         $season = Season::factory()->create(['is_active' => 1]);
 
         expect($season->is_active)->toBeTrue()
             ->and($season->is_active)->toBeBool();
     });
 
-    test('factory creates valid season', function () {
+    test('factory creates valid season', function (): void {
         $season = Season::factory()->create();
 
         expect($season->exists)->toBeTrue()
@@ -251,7 +251,7 @@ describe('Season Model', function () {
             ->and($season->is_active)->toBeFalse();
     });
 
-    test('factory generates unique years', function () {
+    test('factory generates unique years', function (): void {
         $seasons = Season::factory()->count(3)->create();
 
         $names = $seasons->pluck('name')->unique();
@@ -259,7 +259,7 @@ describe('Season Model', function () {
         expect($names)->toHaveCount(3);
     });
 
-    test('factory respects september to june pattern', function () {
+    test('factory respects september to june pattern', function (): void {
         $season = Season::factory()->create();
 
         expect($season->start_at->month)->toBe(9) // Septembre

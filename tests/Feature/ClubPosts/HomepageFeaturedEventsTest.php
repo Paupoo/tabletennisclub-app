@@ -37,24 +37,24 @@ function featuredHomepageEvent(array $overrides = []): EventPost
 
 // ── Bloc présent / absent ─────────────────────────────────────────────────────
 
-describe('bloc featured sur la homepage', function () {
-    it("n'affiche pas le bloc quand aucun événement n'est featured", function () {
+describe('bloc featured sur la homepage', function (): void {
+    it("n'affiche pas le bloc quand aucun événement n'est featured", function (): void {
         $this->get('/')->assertOk()->assertDontSee('Événements à venir');
     });
 
-    it('affiche le bloc quand un événement est featured sans date de fin', function () {
+    it('affiche le bloc quand un événement est featured sans date de fin', function (): void {
         featuredHomepageEvent(['title' => 'Tournoi printanier']);
 
         $this->get('/')->assertOk()->assertSee('Tournoi printanier');
     });
 
-    it("affiche l'événement quand featured_until est aujourd'hui", function () {
+    it("affiche l'événement quand featured_until est aujourd'hui", function (): void {
         featuredHomepageEvent(['title' => 'Tournoi du jour', 'featured_until' => today()->toDateString()]);
 
         $this->get('/')->assertOk()->assertSee('Tournoi du jour');
     });
 
-    it('affiche un événement featured until demain', function () {
+    it('affiche un événement featured until demain', function (): void {
         featuredHomepageEvent(['title' => 'Tournoi demain', 'featured_until' => today()->addDay()->toDateString()]);
 
         $this->get('/')->assertOk()->assertSee('Tournoi demain');
@@ -63,14 +63,14 @@ describe('bloc featured sur la homepage', function () {
 
 // ── Expiration ────────────────────────────────────────────────────────────────
 
-describe('expiration du featuring', function () {
-    it("masque l'événement quand featured_until était hier", function () {
+describe('expiration du featuring', function (): void {
+    it("masque l'événement quand featured_until était hier", function (): void {
         featuredHomepageEvent(['title' => 'Tournoi expiré', 'featured_until' => today()->subDay()->toDateString()]);
 
         $this->get('/')->assertOk()->assertDontSee('Tournoi expiré');
     });
 
-    it('masque le bloc entier quand tous les événements sont expirés', function () {
+    it('masque le bloc entier quand tous les événements sont expirés', function (): void {
         featuredHomepageEvent(['title' => 'Expiré A', 'featured_until' => today()->subDay()->toDateString()]);
         featuredHomepageEvent(['title' => 'Expiré B', 'featured_until' => today()->subWeek()->toDateString()]);
 
@@ -80,7 +80,7 @@ describe('expiration du featuring', function () {
             ->assertDontSee('Expiré B');
     });
 
-    it("masque l'événement non publié même featured", function () {
+    it("masque l'événement non publié même featured", function (): void {
         featuredHomepageEvent([
             'title' => 'Brouillon featured',
             'status' => EventPostStatusEnum::DRAFT->value,
@@ -92,8 +92,8 @@ describe('expiration du featuring', function () {
 
 // ── Contenu de la carte ───────────────────────────────────────────────────────
 
-describe('contenu affiché dans la carte', function () {
-    it('affiche le titre, le lieu et la date', function () {
+describe('contenu affiché dans la carte', function (): void {
+    it('affiche le titre, le lieu et la date', function (): void {
         featuredHomepageEvent([
             'title' => 'Stage été 2026',
             'location' => 'Salle Blocry',

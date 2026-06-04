@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use PHPUnit\Framework\AssertionFailedError;
 
-it('PHP classes are defined in files matching their class name', function () {
+it('PHP classes are defined in files matching their class name', function (): void {
     $appPath = base_path('app');
     $iterator = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($appPath));
 

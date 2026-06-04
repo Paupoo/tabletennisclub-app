@@ -25,20 +25,20 @@ function makeRegularUser(): User
 
 // ── Access control ────────────────────────────────────────────────────────────
 
-describe('season management access', function () {
-    it('allows admin to access the seasons page', function () {
+describe('season management access', function (): void {
+    it('allows admin to access the seasons page', function (): void {
         $this->actingAs(makeAdmin())
             ->get(route('admin.seasons.index'))
             ->assertOk();
     });
 
-    it('allows committee member to access the seasons page', function () {
+    it('allows committee member to access the seasons page', function (): void {
         $this->actingAs(makeCommitteeMember())
             ->get(route('admin.seasons.index'))
             ->assertOk();
     });
 
-    it('denies regular users access to the seasons page', function () {
+    it('denies regular users access to the seasons page', function (): void {
         $this->actingAs(makeRegularUser())
             ->get(route('admin.seasons.index'))
             ->assertForbidden();
@@ -47,8 +47,8 @@ describe('season management access', function () {
 
 // ── Livewire component ────────────────────────────────────────────────────────
 
-describe('season management component', function () {
-    it('lists seasons ordered by start date ascending', function () {
+describe('season management component', function (): void {
+    it('lists seasons ordered by start date ascending', function (): void {
         $past = Season::factory()->create([
             'name' => '2023-2024',
             'start_at' => now()->subYears(2),
@@ -75,7 +75,7 @@ describe('season management component', function () {
             ->assertSee($future->name);
     });
 
-    it('hides older past seasons by default and shows only the most recent one', function () {
+    it('hides older past seasons by default and shows only the most recent one', function (): void {
         $older = Season::factory()->create([
             'name' => '1990-1991',
             'start_at' => now()->subYears(3),
@@ -103,7 +103,7 @@ describe('season management component', function () {
             ->assertSee($recent->name);
     });
 
-    it('reveals all past seasons when showAllPastSeasons is toggled', function () {
+    it('reveals all past seasons when showAllPastSeasons is toggled', function (): void {
         $older = Season::factory()->create([
             'start_at' => now()->subYears(3),
             'end_at' => now()->subYears(2),
@@ -128,7 +128,7 @@ describe('season management component', function () {
             ->assertSee($recent->name);
     });
 
-    it('activates a season and deactivates the previous one', function () {
+    it('activates a season and deactivates the previous one', function (): void {
         $current = Season::factory()->create(['is_active' => true]);
         $next = Season::factory()->create(['is_active' => false]);
 
@@ -143,7 +143,7 @@ describe('season management component', function () {
             ->and($next->fresh()->is_active)->toBeTrue();
     });
 
-    it('can create a new season', function () {
+    it('can create a new season', function (): void {
         Livewire::actingAs(makeAdmin())
             ->test('pages::club-admin.seasons.index')
             ->set('createName', '2099-2100')
@@ -154,7 +154,7 @@ describe('season management component', function () {
         expect(Season::where('name', '2099-2100')->exists())->toBeTrue();
     });
 
-    it('rejects duplicate season name on create', function () {
+    it('rejects duplicate season name on create', function (): void {
         Season::factory()->create(['name' => '2099-2100']);
 
         Livewire::actingAs(makeAdmin())
@@ -166,7 +166,7 @@ describe('season management component', function () {
             ->assertHasErrors('createName');
     });
 
-    it('can edit a season name and dates', function () {
+    it('can edit a season name and dates', function (): void {
         $season = Season::factory()->create(['name' => 'OldName']);
 
         Livewire::actingAs(makeAdmin())
@@ -180,14 +180,14 @@ describe('season management component', function () {
         expect($season->fresh()->name)->toBe('NewName');
     });
 
-    it('forbids regular users from creating a season', function () {
+    it('forbids regular users from creating a season', function (): void {
         Livewire::actingAs(makeRegularUser())
             ->test('pages::club-admin.seasons.index')
             ->call('createSeason')
             ->assertForbidden();
     });
 
-    it('forbids regular users from activating a season', function () {
+    it('forbids regular users from activating a season', function (): void {
         $season = Season::factory()->create(['is_active' => false]);
 
         Livewire::actingAs(makeRegularUser())
@@ -199,8 +199,8 @@ describe('season management component', function () {
 
 // ── season:provision command ──────────────────────────────────────────────────
 
-describe('season:provision command', function () {
-    it('creates the next two seasons when none exist beyond the latest', function () {
+describe('season:provision command', function (): void {
+    it('creates the next two seasons when none exist beyond the latest', function (): void {
         $latest = Season::factory()->create([
             'name' => '2030-2031',
             'start_at' => '2030-09-01',
@@ -214,7 +214,7 @@ describe('season:provision command', function () {
             ->and(Season::where('name', '2032-2033')->exists())->toBeTrue();
     });
 
-    it('bootstraps current season and two ahead when database is empty', function () {
+    it('bootstraps current season and two ahead when database is empty', function (): void {
         $this->artisan('season:provision')->assertSuccessful();
 
         $now = now();
@@ -226,7 +226,7 @@ describe('season:provision command', function () {
             ->and(Season::count())->toBe(3);
     });
 
-    it('is idempotent — does not create duplicates', function () {
+    it('is idempotent — does not create duplicates', function (): void {
         // Active season + the two expected upcoming ones already provisioned
         Season::factory()->create(['name' => '2030-2031', 'start_at' => '2030-09-01', 'end_at' => '2031-06-30', 'is_active' => true]);
         Season::factory()->create(['name' => '2031-2032', 'start_at' => '2031-09-01', 'end_at' => '2032-06-30']);

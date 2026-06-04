@@ -709,7 +709,7 @@ new class extends Component
                     ->find($this->currentTrainingRequestId)
                 : null,
             'membersFound' => strlen($this->searchMember) > 2
-                ? User::where(function ($q) {
+                ? User::where(function ($q): void {
                     $q->where('first_name', 'like', "%{$this->searchMember}%")
                         ->orWhere('last_name', 'like', "%{$this->searchMember}%")
                         ->orWhere('email', 'like', "%{$this->searchMember}%");

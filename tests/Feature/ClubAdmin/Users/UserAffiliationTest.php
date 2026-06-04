@@ -6,21 +6,21 @@ use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 
-describe('User::isAffiliatedForCurrentSeason()', function () {
-    it('returns false when there is no active season', function () {
+describe('User::isAffiliatedForCurrentSeason()', function (): void {
+    it('returns false when there is no active season', function (): void {
         $user = User::factory()->create();
 
         expect($user->isAffiliatedForCurrentSeason())->toBeFalse();
     });
 
-    it('returns false when the user has no subscription', function () {
+    it('returns false when the user has no subscription', function (): void {
         Season::factory()->create(['is_active' => true]);
         $user = User::factory()->create();
 
         expect($user->isAffiliatedForCurrentSeason())->toBeFalse();
     });
 
-    it('returns true for a pending subscription on the current season', function () {
+    it('returns true for a pending subscription on the current season', function (): void {
         $season = Season::factory()->create(['is_active' => true]);
         $user = User::factory()->create();
         Subscription::factory()->create(['user_id' => $user->id, 'season_id' => $season->id, 'status' => 'pending']);
@@ -28,7 +28,7 @@ describe('User::isAffiliatedForCurrentSeason()', function () {
         expect($user->isAffiliatedForCurrentSeason())->toBeTrue();
     });
 
-    it('returns true for a confirmed subscription on the current season', function () {
+    it('returns true for a confirmed subscription on the current season', function (): void {
         $season = Season::factory()->create(['is_active' => true]);
         $user = User::factory()->create();
         Subscription::factory()->create(['user_id' => $user->id, 'season_id' => $season->id, 'status' => 'confirmed']);
@@ -36,7 +36,7 @@ describe('User::isAffiliatedForCurrentSeason()', function () {
         expect($user->isAffiliatedForCurrentSeason())->toBeTrue();
     });
 
-    it('returns true for a paid subscription on the current season', function () {
+    it('returns true for a paid subscription on the current season', function (): void {
         $season = Season::factory()->create(['is_active' => true]);
         $user = User::factory()->create();
         Subscription::factory()->create(['user_id' => $user->id, 'season_id' => $season->id, 'status' => 'paid']);
@@ -44,7 +44,7 @@ describe('User::isAffiliatedForCurrentSeason()', function () {
         expect($user->isAffiliatedForCurrentSeason())->toBeTrue();
     });
 
-    it('returns false for a cancelled subscription', function () {
+    it('returns false for a cancelled subscription', function (): void {
         $season = Season::factory()->create(['is_active' => true]);
         $user = User::factory()->create();
         Subscription::factory()->create(['user_id' => $user->id, 'season_id' => $season->id, 'status' => 'cancelled']);
@@ -52,7 +52,7 @@ describe('User::isAffiliatedForCurrentSeason()', function () {
         expect($user->isAffiliatedForCurrentSeason())->toBeFalse();
     });
 
-    it('returns false when the subscription belongs to a past season', function () {
+    it('returns false when the subscription belongs to a past season', function (): void {
         Season::factory()->create(['is_active' => true]);
         $pastSeason = Season::factory()->create(['is_active' => false]);
         $user = User::factory()->create();
@@ -62,8 +62,8 @@ describe('User::isAffiliatedForCurrentSeason()', function () {
     });
 });
 
-describe('User::scopeAffiliatedForCurrentSeason()', function () {
-    it('returns only users affiliated for the current season', function () {
+describe('User::scopeAffiliatedForCurrentSeason()', function (): void {
+    it('returns only users affiliated for the current season', function (): void {
         $season = Season::factory()->create(['is_active' => true]);
 
         $affiliated = User::factory()->create();
@@ -77,7 +77,7 @@ describe('User::scopeAffiliatedForCurrentSeason()', function () {
             ->not->toContain($notAffiliated->id);
     });
 
-    it('excludes users with only cancelled subscriptions', function () {
+    it('excludes users with only cancelled subscriptions', function (): void {
         $season = Season::factory()->create(['is_active' => true]);
         $user = User::factory()->create();
         Subscription::factory()->create(['user_id' => $user->id, 'season_id' => $season->id, 'status' => 'cancelled']);

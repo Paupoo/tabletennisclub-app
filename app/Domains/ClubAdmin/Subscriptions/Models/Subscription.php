@@ -136,14 +136,6 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
     }
 
     /**
-     * Vérifie si la subscription est modifiable
-     */
-    public function isEditable(): bool
-    {
-        return $this->can('update_options');
-    }
-
-    /**
      * Vérifie si la subscription est complètement payée
      */
     public function isFullyPaid(): bool

@@ -35,7 +35,7 @@ use Illuminate\Support\Carbon;
  * @property-read Collection<int, User> $users
  * @property-read int|null $users_count
  *
- * @method static \Database\Factories\ClubEvents\Interclub\TeamFactory factory($count = null, $state = [])
+ * @method static \Database\Factories\Domains\Competitions\Interclub\Models\TeamFactory factory($count = null, $state = [])
  * @method static Builder<static>|Team inClub()
  * @method static Builder<static>|Team newModelQuery()
  * @method static Builder<static>|Team newQuery()

@@ -25,7 +25,7 @@ use Illuminate\Support\Carbon;
  * @property-read Collection<int, Team> $teams
  * @property-read int|null $teams_count
  *
- * @method static \Database\Factories\ClubEvents\Interclub\LeagueFactory factory($count = null, $state = [])
+ * @method static \Database\Factories\Domains\Competitions\Interclub\Models\LeagueFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|League newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|League newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|League query()

@@ -9,7 +9,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\LeagueCategory;
 use App\Domains\Shared\Traits\HasAvailability;
 use Carbon\Carbon;
-use Database\Factories\ClubEvents\Interclub\InterclubFactory;
+use Database\Factories\Domains\Competitions\Interclub\Models\InterclubFactory;
 use Eloquent;
 use Exception;
 use Illuminate\Database\Eloquent\Builder;

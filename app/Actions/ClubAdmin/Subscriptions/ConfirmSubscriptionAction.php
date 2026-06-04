@@ -12,7 +12,7 @@ class ConfirmSubscriptionAction
     public function __invoke(Subscription $subscription): RedirectResponse
     {
         try {
-            new CalculatePriceAction($subscription);
+            (new CalculatePriceAction)($subscription);
             $subscription->confirm();
         } catch (\Throwable $th) {
             return back()

@@ -8,7 +8,7 @@ use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Models\TrainingPack;
-use Database\Factories\ClubEvents\Interclub\SeasonFactory;
+use Database\Factories\Domains\Competitions\Interclub\Models\SeasonFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -22,8 +22,8 @@ use Illuminate\Support\Facades\DB;
 /**
  * @property int $id
  * @property string $name
- * @property int $start_at
- * @property int $end_at
+ * @property Carbon $start_at
+ * @property Carbon $end_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Collection<int, Interclub> $interclubs

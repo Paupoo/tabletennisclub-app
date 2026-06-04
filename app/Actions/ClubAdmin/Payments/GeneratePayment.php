@@ -18,7 +18,7 @@ class GeneratePayment
     {
         Gate::authorize('generatePayment', $subscription);
 
-        if (! $subscription->canGeneratePayment($subscription)) {
+        if (! $subscription->canGeneratePayment()) {
             return back()
                 ->withErrors(__('Cannot generate payment for current subscription state.'));
         }

@@ -24,6 +24,6 @@ class SyncTrainingPackAction
         $subscription->trainingPacks()->sync($trainingPacksIds);
 
         // Recalculate the price of the subscription
-        new CalculatePriceAction($subscription);
+        (new CalculatePriceAction)($subscription);
     }
 }

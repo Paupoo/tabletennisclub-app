@@ -15,7 +15,7 @@ use App\Domains\Shared\Enums\TrainingType;
 use App\Domains\Trainings\Services\TrainingBuilder;
 use App\Domains\Trainings\Services\TrainingDateGenerator;
 use Carbon\Carbon;
-use Database\Factories\TrainingPackFactory;
+use Database\Factories\Domains\Trainings\Models\TrainingPackFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

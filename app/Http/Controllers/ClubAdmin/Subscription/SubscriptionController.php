@@ -105,7 +105,7 @@ class SubscriptionController extends Controller
             $validated['training_packs'] = [];
         }
 
-        new SyncTrainingPackAction($validated['training_packs'], $subscription);
+        (new SyncTrainingPackAction)($validated['training_packs'], $subscription);
 
         return back()
             ->with([

@@ -7,12 +7,11 @@ namespace App\Data\User;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Gender;
 
-readonly class CreateUserData
+readonly class UpdateUserData
 {
     /**
-     * @param  string|null  $password  Plain password set by an admin; when null/empty the
-     *                                 user is created password-less and an invitation is sent.
-     * @param  array<int>  $guardianIds  Guardian ids to link to the new user.
+     * @param  array<int>  $guardianIds  Guardian ids to sync onto the user.
+     * @param  string|null  $password  Plain password; null/empty leaves it unchanged.
      */
     public function __construct(
         public string $first_name,
@@ -24,7 +23,9 @@ readonly class CreateUserData
         public ?string $city_code = null,
         public ?string $city_name = null,
         public ?string $birthdate = null,
-        public bool $is_active = true,
+        public ?string $guardian_phone_number = null,
+        public ?string $iban = null,
+        public bool $is_active = false,
         public bool $is_competitor = false,
         public bool $is_committee_member = false,
         public bool $is_admin = false,

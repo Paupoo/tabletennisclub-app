@@ -6,11 +6,14 @@ namespace App\Actions\User;
 
 use App\Data\User\CreateUserData;
 use App\Domains\ClubAdmin\Users\Models\User;
+use Illuminate\Support\Facades\Hash;
 
 class CreateUserAction
 {
     public static function handle(CreateUserData $data, User $actor): User
     {
+        $hasPassword = $data->password !== null && $data->password !== '';
+
         $user = User::create([
             'first_name' => $data->first_name,
             'last_name' => $data->last_name,
@@ -30,10 +33,17 @@ class CreateUserAction
             'ranking' => $data->ranking ?? 'NA',
             'committee_role' => $data->committee_role,
             'updated_by' => $actor->id,
-            'password' => '',
+            'password' => $hasPassword ? Hash::make($data->password) : '',
         ]);
 
-        SendInvitationAction::handle($user);
+        if ($data->guardianIds !== []) {
+            $user->guardians()->sync($data->guardianIds);
+        }
+
+        // Invitation flow only when the admin did not set a password directly.
+        if (! $hasPassword) {
+            SendInvitationAction::handle($user);
+        }
 
         return $user;
     }

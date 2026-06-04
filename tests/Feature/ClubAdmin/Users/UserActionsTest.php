@@ -9,13 +9,19 @@ use App\Actions\User\RestoreUserAction;
 use App\Actions\User\SendInvitationAction;
 use App\Actions\User\SoftDeleteUserAction;
 use App\Actions\User\ToggleActiveAction;
+use App\Actions\User\UpdateUserAction;
 use App\Data\User\CreateUserData;
+use App\Data\User\UpdateUserData;
 use App\Domains\ClubAdmin\Contact\Models\Contact;
+use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\ContactReasonEnum;
 use App\Domains\Shared\Enums\Gender;
 use App\Mail\InviteNewUserMail;
+use Illuminate\Auth\Notifications\VerifyEmail;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
 use Tests\Trait\CreateUser;
 
 uses(CreateUser::class);
@@ -76,6 +82,133 @@ describe('CreateUserAction', function (): void {
         $user = CreateUserAction::handle($data, $actor);
 
         expect($user->last_invited_at)->not->toBeNull();
+    });
+});
+
+// ── UpdateUserAction ─────────────────────────────────────────────────────────
+
+describe('UpdateUserAction', function (): void {
+    it('updates fields and records the actor in updated_by', function (): void {
+        $actor = $this->createFakeAdmin();
+        $user = User::factory()->create(['first_name' => 'Old', 'last_name' => 'Name']);
+
+        UpdateUserAction::handle(
+            $user,
+            new UpdateUserData(
+                first_name: 'New',
+                last_name: 'Name',
+                email: $user->email,
+                gender: Gender::MEN,
+            ),
+            $actor,
+        );
+
+        expect($user->fresh()->first_name)->toBe('New')
+            ->and($user->fresh()->updated_by)->toBe($actor->id);
+    });
+
+    it('leaves the password unchanged when none is provided', function (): void {
+        $actor = $this->createFakeAdmin();
+        $user = User::factory()->create();
+        $originalHash = $user->password;
+
+        UpdateUserAction::handle(
+            $user,
+            new UpdateUserData(
+                first_name: $user->first_name,
+                last_name: $user->last_name,
+                email: $user->email,
+                gender: Gender::MEN,
+                password: null,
+            ),
+            $actor,
+        );
+
+        expect($user->fresh()->password)->toBe($originalHash);
+    });
+
+    it('hashes and updates the password when provided', function (): void {
+        $actor = $this->createFakeAdmin();
+        $user = User::factory()->create();
+        $originalHash = $user->password;
+
+        UpdateUserAction::handle(
+            $user,
+            new UpdateUserData(
+                first_name: $user->first_name,
+                last_name: $user->last_name,
+                email: $user->email,
+                gender: Gender::MEN,
+                password: 'Sup3r-Secret!42',
+            ),
+            $actor,
+        );
+
+        expect($user->fresh()->password)->not->toBe($originalHash)
+            ->and(Hash::check('Sup3r-Secret!42', $user->fresh()->password))->toBeTrue();
+    });
+
+    it('syncs the linked guardians', function (): void {
+        $actor = $this->createFakeAdmin();
+        $user = User::factory()->create();
+        $guardian = Guardian::factory()->create();
+
+        UpdateUserAction::handle(
+            $user,
+            new UpdateUserData(
+                first_name: $user->first_name,
+                last_name: $user->last_name,
+                email: $user->email,
+                gender: Gender::MEN,
+                guardianIds: [$guardian->id],
+            ),
+            $actor,
+        );
+
+        expect($user->fresh()->guardians)->toHaveCount(1)
+            ->and($user->fresh()->guardians->first()->id)->toBe($guardian->id);
+    });
+
+    it('requires re-verification and notifies when the email changes', function (): void {
+        Notification::fake();
+
+        $actor = $this->createFakeAdmin();
+        $user = User::factory()->create(['email_verified_at' => now()]);
+
+        UpdateUserAction::handle(
+            $user,
+            new UpdateUserData(
+                first_name: $user->first_name,
+                last_name: $user->last_name,
+                email: 'changed.address@example.com',
+                gender: Gender::MEN,
+            ),
+            $actor,
+        );
+
+        expect($user->fresh()->email_verified_at)->toBeNull();
+        Notification::assertSentTo($user->fresh(), VerifyEmail::class);
+    });
+
+    it('keeps the verification status when the email is unchanged', function (): void {
+        Notification::fake();
+
+        $actor = $this->createFakeAdmin();
+        $user = User::factory()->create(['email_verified_at' => now()]);
+
+        UpdateUserAction::handle(
+            $user,
+            new UpdateUserData(
+                first_name: 'Renamed',
+                last_name: $user->last_name,
+                email: $user->email,
+                gender: Gender::MEN,
+            ),
+            $actor,
+        );
+
+        expect($user->fresh()->email_verified_at)->not->toBeNull();
+        Notification::assertNothingSent();
     });
 });
 

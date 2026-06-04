@@ -154,6 +154,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'deleted_at' => 'datetime',
         'last_invited_at' => 'datetime',
         'email_verified_at' => 'datetime',
+        'gdpr_erasure_requested_at' => 'datetime',
     ];
 
     /**
@@ -191,6 +192,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'parental_consent_path',
         'updated_by',
         'last_invited_at',
+        'gdpr_erasure_requested_at',
     ];
 
     /**

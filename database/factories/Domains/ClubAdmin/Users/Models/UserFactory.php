@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Database\Factories\Domains\ClubAdmin\Users\Models;
 
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\Ranking;
-use App\Domains\ClubAdmin\Users\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -45,7 +45,7 @@ class UserFactory extends Factory
             'phone_number' => fake()->numberBetween(460000000, 499000000),
             'birthdate' => fake()->dateTimeBetween('-75 years', '- 8 years'),
             'street' => fake()->streetAddress(),
-            'city_code' => fake()->postcode(),
+            'city_code' => (string) fake()->numberBetween(1000, 9999),
             'city_name' => fake()->city(),
             'ranking' => fake()->randomElement(array_column(Ranking::cases(), 'name')),
             'club_id' => 1,

@@ -103,12 +103,12 @@
                     </div>
                 </div>
                 @endif
-                @if ($user->parent_phone_number)
+                @if ($user->guardian_phone_number)
                     <div class="flex items-center gap-3 px-4 py-3">
                         <x-icon name="o-phone" class="w-4 h-4 opacity-40 shrink-0" />
                         <div class="min-w-0">
                             <div class="text-[10px] opacity-40 uppercase tracking-wider font-black">{{ __('Parent / Tutor') }}</div>
-                            <div class="text-sm font-semibold truncate">{{ $user->parent_phone_number }}</div>
+                            <div class="text-sm font-semibold truncate">{{ $user->guardian_phone_number }}</div>
                         </div>
                     </div>
                 @endif
@@ -334,19 +334,38 @@
         class="w-full lg:w-1/2 2xl:w-1/2">
         <x-form wire:submit="save">
             <div class="grid grid-cols-6 gap-4 md:gap-6">
+
+                {{-- Identity --}}
                 <div class="col-span-6 md:col-span-2">
-                    <x-header :title="__('Personal')" :subtitle="__('Personal information')" />
+                    <x-header :title="__('Identity')" :subtitle="__('Who you are')" />
                 </div>
-                <div class="col-span-6 md:col-span-4 grid gap-2">
+                <div class="col-span-6 md:col-span-4">
+                    <div class="grid lg:grid-cols-2 gap-6">
+                        <x-input :label="__('First Name')" wire:model="first_name" />
+                        <x-input :label="__('Last Name')" wire:model="last_name" />
+                        <x-group :options="$genders" class="btn-soft" inline :label="__('Gender')"
+                            wire:model="gender" />
+                        <x-input :label="__('Birthdate')" type="date" wire:model.live="birthdate" />
+                    </div>
+                </div>
+
+                <div class="col-span-6">
+                    <x-menu-separator />
+                </div>
+
+                {{-- Contact --}}
+                <div class="col-span-6 md:col-span-2">
+                    <x-header :title="__('Contact')" :subtitle="__('How to reach you')" />
+                </div>
+                <div class="col-span-6 md:col-span-4">
                     <div class="grid lg:grid-cols-2 gap-6">
                         <x-input :label="__('Email')" wire:model="email" />
+                        <x-input :label="__('Phone Number')" wire:model="phone_number" />
                         <x-input :label="__('Street')" wire:model="street" />
                         <x-input :label="__('Postal Code')" wire:model.live.debounce.500ms="city_code"
                             type="number" inputmode="numeric" pattern="[0-9]*"
                             autocomplete="city-code" min="1000" max="9999" />
                         <x-input :label="__('City')" wire:model="city_name" />
-                        <x-input :label="__('Phone Number')" wire:model="phone_number" />
-                        <x-input :label="__('Parent or tutor phone number')" wire:model="guardian_phone_number" />
                         <x-input :label="__('IBAN')" wire:model="iban"
                             placeholder="BE00 0000 0000 0000"
                             :hint="__('Used for refunds. Format: BE23 7323 3320 8791')" />
@@ -365,6 +384,45 @@
                             @endif
                         </div>
                     </div>
+                </div>
+
+                <div class="col-span-6">
+                    <x-menu-separator />
+                </div>
+
+                {{-- Documents --}}
+                <div class="col-span-6 md:col-span-2">
+                    <x-header :title="__('Documents')"
+                        :subtitle="$this->isMinor ? __('Medical certificate & parental consent') : __('Medical certificate')" />
+                </div>
+                <div class="col-span-6 md:col-span-4 space-y-4">
+                    <div>
+                        <x-file :label="__('Medical certificate')" wire:model="medicalCertificate"
+                            accept="image/png, image/jpeg, application/pdf"
+                            :hint="__('JPG, PNG or PDF — max 4 MB')" />
+                        @if ($user->medical_certificate_path)
+                            <a href="{{ asset($user->medical_certificate_path) }}" target="_blank"
+                                class="btn btn-ghost btn-xs gap-1 mt-1">
+                                <x-icon name="o-arrow-down-tray" class="w-3 h-3" />
+                                {{ __('View current') }}
+                            </a>
+                        @endif
+                    </div>
+                    {{-- Parental consent only applies to minors --}}
+                    @if ($this->isMinor)
+                        <div>
+                            <x-file :label="__('Parental consent')" wire:model="parentalConsent"
+                                accept="image/png, image/jpeg, application/pdf"
+                                :hint="__('Required for minors — JPG, PNG or PDF, max 4 MB')" />
+                            @if ($user->parental_consent_path)
+                                <a href="{{ asset($user->parental_consent_path) }}" target="_blank"
+                                    class="btn btn-ghost btn-xs gap-1 mt-1">
+                                    <x-icon name="o-arrow-down-tray" class="w-3 h-3" />
+                                    {{ __('View current') }}
+                                </a>
+                            @endif
+                        </div>
+                    @endif
                 </div>
             </div>
             <x-slot:actions>

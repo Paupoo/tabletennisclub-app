@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\Gender;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\Trait\CreateUser;
 
@@ -38,6 +41,73 @@ test('user can update identity fields', function (): void {
 
     expect($user->fresh()->first_name)->toBe('Pierre')
         ->and($user->fresh()->last_name)->toBe('Martin');
+});
+
+test('user can update gender and birthdate', function (): void {
+    $user = User::factory()->create(['gender' => Gender::MEN->value]);
+
+    Livewire::actingAs($user)
+        ->test('pages::club-admin.users.user-space.profile', ['user' => $user])
+        ->set('gender', Gender::WOMEN)
+        ->set('birthdate', '2000-05-15')
+        ->call('save');
+
+    expect($user->fresh()->gender)->toBe(Gender::WOMEN)
+        ->and($user->fresh()->birthdate->format('Y-m-d'))->toBe('2000-05-15');
+});
+
+test('user can upload a medical certificate', function (): void {
+    Storage::fake('public');
+    $user = User::factory()->create();
+
+    Livewire::actingAs($user)
+        ->test('pages::club-admin.users.user-space.profile', ['user' => $user])
+        ->set('medicalCertificate', UploadedFile::fake()->create('cert.pdf', 200, 'application/pdf'))
+        ->call('save');
+
+    $path = $user->fresh()->medical_certificate_path;
+    expect($path)->not->toBeNull();
+    Storage::disk('public')->assertExists(str_replace('/storage/', '', $path));
+});
+
+test('user can upload a parental consent', function (): void {
+    Storage::fake('public');
+    $user = User::factory()->create();
+
+    Livewire::actingAs($user)
+        ->test('pages::club-admin.users.user-space.profile', ['user' => $user])
+        ->set('parentalConsent', UploadedFile::fake()->create('consent.pdf', 200, 'application/pdf'))
+        ->call('save');
+
+    $path = $user->fresh()->parental_consent_path;
+    expect($path)->not->toBeNull();
+    Storage::disk('public')->assertExists(str_replace('/storage/', '', $path));
+});
+
+test('parental consent field is shown for minors', function (): void {
+    $minor = User::factory()->create(['birthdate' => now()->subYears(15)]);
+
+    Livewire::actingAs($minor)
+        ->test('pages::club-admin.users.user-space.profile', ['user' => $minor])
+        ->assertSee(__('Parental consent'));
+});
+
+test('parental consent field is hidden for adults', function (): void {
+    $adult = User::factory()->create(['birthdate' => now()->subYears(30)]);
+
+    Livewire::actingAs($adult)
+        ->test('pages::club-admin.users.user-space.profile', ['user' => $adult])
+        ->assertDontSee(__('Parental consent'));
+});
+
+test('parental consent field appears reactively when birthdate becomes minor', function (): void {
+    $adult = User::factory()->create(['birthdate' => now()->subYears(30)]);
+
+    Livewire::actingAs($adult)
+        ->test('pages::club-admin.users.user-space.profile', ['user' => $adult])
+        ->assertDontSee(__('Parental consent'))
+        ->set('birthdate', now()->subYears(14)->format('Y-m-d'))
+        ->assertSee(__('Parental consent'));
 });
 
 test('user cannot update another users profile', function (): void {

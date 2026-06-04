@@ -315,7 +315,7 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
 Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::resource('seasons', SeasonController::class)->names('clubEvents.interclubs.seasons');
     Route::resource('registrations', RegistrationController::class)->names('clubAdmin.registrations');
-    Route::resource('subscriptions', SubscriptionController::class)->names('clubAdmin.subscriptions');
+    Route::resource('subscriptions', SubscriptionController::class)->names('clubAdmin.subscriptions')->except(['show']);
     Route::resource('payments', PaymentController::class)->names('admin.payments');
     Route::post('seasons/{season}/subscribe/', SubscribeToSeasonAction::class)->name('clubEvents.interclubs.seasons.subscribe');
     Route::post('seasons/{season}/unsubscribe', [SubscriptionController::class, 'unsubscribe'])->name('clubAdmin.subscriptions.unsubscribe');

@@ -76,6 +76,8 @@ class Interclub extends Model
     protected $fillable = [
         'address',
         'league_id',
+        'result',
+        'score',
         'season_id',
         'start_date_time',
         'total_players',

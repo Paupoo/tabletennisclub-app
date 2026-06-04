@@ -9,6 +9,7 @@ use Database\Factories\Domains\Competitions\Tournament\Models\TournamentPairFact
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -16,12 +17,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $player1_id
  * @property int $player2_id
  * @property int $registered_by
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * @property-read User $player1
  * @property-read User $player2
  * @property-read User $registeredBy
- * @property-read \App\Domains\Competitions\Tournament\Models\Tournament $tournament
+ * @property-read Tournament $tournament
+ *
  * @method static \Database\Factories\Domains\Competitions\Tournament\Models\TournamentPairFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentPair newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentPair newQuery()
@@ -33,6 +35,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentPair whereRegisteredBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentPair whereTournamentId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentPair whereUpdatedAt($value)
+ *
  * @mixin \Eloquent
  */
 class TournamentPair extends Model
@@ -49,7 +52,7 @@ class TournamentPair extends Model
 
     public function averageRanking(): string
     {
-        $rankings = collect([$this->player1?->ranking, $this->player2?->ranking])
+        $rankings = collect([$this->player1->ranking, $this->player2->ranking])
             ->filter()
             ->map(fn ($r) => (int) $r);
 

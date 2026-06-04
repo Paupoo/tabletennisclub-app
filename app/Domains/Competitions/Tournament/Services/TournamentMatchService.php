@@ -399,7 +399,7 @@ class TournamentMatchService
             return;
         }
 
-        $isDoubles = $pool->tournament?->match_type === 'double';
+        $isDoubles = $pool->tournament->match_type === 'double';
 
         if ($isDoubles) {
             // Build candidate list from all individual players in the pool's pairs

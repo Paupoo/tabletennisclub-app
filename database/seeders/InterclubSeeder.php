@@ -7,8 +7,8 @@ namespace Database\Seeders;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Interclub;
-use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\InterclubResult;
+use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\InterclubAvailability;
@@ -52,7 +52,7 @@ class InterclubSeeder extends Seeder
         'TT Perwez' => 'BBW289',
     ];
 
-    private Club $club;
+    private ?Club $club;
 
     private Season $season;
 
@@ -593,7 +593,7 @@ class InterclubSeeder extends Seeder
         $this->seedAvailabilityAndSelections($team, array_slice($interclubs, 0, 3));
     }
 
-private function team(string $name, League $league, User $captain): Team
+    private function team(string $name, League $league, User $captain): Team
     {
         $team = Team::firstOrCreate(
             ['name' => $name, 'season_id' => $this->season->id, 'league_id' => $league->id, 'club_id' => $this->club->id],

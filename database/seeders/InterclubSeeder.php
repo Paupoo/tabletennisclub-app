@@ -181,15 +181,18 @@ class InterclubSeeder extends Seeder
     {
         $licence = self::CLUB_LICENCE_MAP[$clubName] ?? null;
 
-        $opponentClub = ($licence ? Club::firstWhere('licence', $licence) : null)
-            ?? Club::firstOrCreate(
-                ['name' => $clubName],
-                [
-                    'licence' => 'OPP-' . strtoupper(substr(preg_replace('/[^a-zA-Z]/', '', $clubName), 0, 8)),
-                    'city_name' => $clubName,
-                    'street' => $address,
-                ]
+        if ($licence) {
+            $opponentClub = Club::firstOrCreate(
+                ['licence' => $licence],
+                ['name' => $clubName, 'city_name' => $clubName, 'street' => $address]
             );
+        } else {
+            $suffix = strtoupper(substr(preg_replace('/[^a-zA-Z]/', '', $clubName), 0, 6));
+            $opponentClub = Club::firstOrCreate(
+                ['name' => $clubName],
+                ['licence' => 'OPP-' . $suffix, 'city_name' => $clubName, 'street' => $address]
+            );
+        }
 
         return Team::firstOrCreate(
             ['name' => $teamLetter, 'season_id' => $this->season->id, 'league_id' => $league->id, 'club_id' => $opponentClub->id],

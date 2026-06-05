@@ -81,7 +81,7 @@ new class extends Component
         $club = Club::firstOrCreate(
             ['name' => trim($this->formClubName)],
             [
-                'licence' => 'OPP-' . strtoupper(substr(preg_replace('/[^a-zA-Z]/', '', $this->formClubName), 0, 8)),
+                'licence' => 'OPP-' . strtoupper(substr(preg_replace('/[^a-zA-Z]/', '', $this->formClubName), 0, 6)),
                 'street'  => $this->formClubStreet ?: null,
             ]
         );

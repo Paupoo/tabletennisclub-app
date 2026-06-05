@@ -2333,5 +2333,22 @@
     "Available spots": "Places disponibles",
     "Linked to": "Lié à",
     "Edit event": "Modifier l'événement",
-    "Delete this event?": "Supprimer cet événement ?"
+    "Delete this event?": "Supprimer cet événement ?",
+    "Month:": "Mois :",
+    "All months": "Tous les mois",
+    "Oldest": "Plus ancien",
+    "Active filters:": "Filtres actifs :",
+    "Clear all filters": "Effacer tous les filtres",
+    "View all news": "Voir toutes les actualités",
+    "No articles published yet": "Aucun article publié pour l'instant",
+    "Club news coming soon — check back, there's always something happening!": "Les prochaines actualités du club arrivent bientôt — revenez vite, il se passe toujours quelque chose au club !",
+    "Become a member": "Devenir membre",
+    "Contact us": "Nous contacter",
+    ":count article found|:count articles found": ":count article trouvé|:count articles trouvés",
+    "All events": "Tous les événements",
+    "Club life": "Vie du club",
+    "No events scheduled yet": "Aucun événement planifié pour l'instant",
+    "Events coming soon — check back, there's always something happening at the club!": "Les prochains événements arrivent bientôt — revenez vite, il se passe toujours quelque chose au club !",
+    "Don't Miss Out!": "Ne ratez rien !",
+    "Join our events and become part of the Ace TTC community. All levels welcome!": "Rejoignez nos événements et devenez membre de la communauté Ace TTC. Tous les niveaux sont les bienvenus !"
 }

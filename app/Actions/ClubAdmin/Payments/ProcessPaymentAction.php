@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\ClubAdmin\Payments;
 
-use App\Models\ClubAdmin\Subscription\Subscription;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 
 class ProcessPaymentAction
 {
@@ -33,12 +33,7 @@ class ProcessPaymentAction
 
         // Si le paiement est réussi, met à jour la subscription
         if ($status === 'paid') {
-            $subscription->state()->markAsPaid();
-        } elseif ($status === 'failed') {
-            // Gère l'échec
-            if (method_exists($subscription->state(), 'markPaymentAsFailed')) {
-                $subscription->state()->markPaymentAsFailed();
-            }
+            $subscription->markAsPaid();
         }
 
         return $subscription->fresh();

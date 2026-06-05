@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Models\ClubAdmin\Users\User;
+use App\Domains\ClubAdmin\Users\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -15,13 +15,24 @@ pest()->group('club-admin', 'users');
 
 const USER_FORM_COMPONENT = 'pages::club-admin.users.form';
 
-beforeEach(function () {
+beforeEach(function (): void {
     $this->admin = User::factory()->create(['is_admin' => true, 'is_coach' => false]);
     actingAs($this->admin);
 });
 
-describe('ranking — recreational users', function () {
-    it('saves NA when updating a recreational user', function () {
+describe('ranking — recreational users', function (): void {
+    it('does not require ranking for recreational users', function (): void {
+        $user = User::factory()->create(['is_competitor' => false, 'is_coach' => false]);
+
+        Livewire::test(USER_FORM_COMPONENT, ['user' => $user])
+            ->set('licence_type', 'recreative')
+            ->set('ranking', null)
+            ->set('password', '')
+            ->call('save')
+            ->assertHasNoErrors(['ranking']);
+    });
+
+    it('saves NA when updating a recreational user', function (): void {
         $user = User::factory()->create([
             'is_competitor' => false,
             'is_coach' => false,
@@ -36,7 +47,7 @@ describe('ranking — recreational users', function () {
         expect($user->fresh()->ranking)->toBe('NA');
     });
 
-    it('does not throw a QueryException (no DB truncation) when saving a recreational user', function () {
+    it('does not throw a QueryException (no DB truncation) when saving a recreational user', function (): void {
         $user = User::factory()->create([
             'is_competitor' => false,
             'is_coach' => false,
@@ -49,7 +60,7 @@ describe('ranking — recreational users', function () {
         )->not->toThrow(QueryException::class);
     });
 
-    it('initialises ranking to a valid enum value (never N/A with slash) when mounting', function () {
+    it('initialises ranking to a valid enum value (never N/A with slash) when mounting', function (): void {
         $user = User::factory()->create([
             'is_competitor' => false,
             'is_coach' => false,

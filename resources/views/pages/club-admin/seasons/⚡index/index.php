@@ -2,7 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Models\ClubEvents\Interclub\Season;
+use App\Domains\Competitions\Interclub\Models\Season;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
@@ -12,7 +13,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast;
+    use Toast, HasBreadcrumbs;
 
     public ?int $activateId = null;
 
@@ -193,6 +194,13 @@ new class extends Component
 
     // ── Render ────────────────────────────────────────────────────────────────
 
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__('Seasons'));
+    }
+
     public function with(): array
     {
         $all = $this->seasons;
@@ -203,10 +211,7 @@ new class extends Component
             'seasons' => $hiddenPastCount > 0 ? $all->slice($hiddenPastCount)->values() : $all,
             'hiddenPastCount' => $hiddenPastCount,
             'pastCount' => $pastCount,
-            'breadcrumbs' => Breadcrumb::make()
-                ->home()
-                ->current(__('Seasons'))
-                ->toArray(),
+            'breadcrumbs' => $this->getBreadcrumbs(),
         ];
     }
 };

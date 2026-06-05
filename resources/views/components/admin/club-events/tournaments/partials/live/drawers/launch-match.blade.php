@@ -1,4 +1,4 @@
-<x-drawer wire:model="launchDrawer" title="{{ __('Launch a match') }}" right separator with-close-button class="lg:w-1/3">
+<x-drawer wire:model="launchDrawer" :title="__('Launch a match')" right separator with-close-button class="lg:w-1/3">
 
     <div class="space-y-4">
         <p class="text-sm text-base-content/60">
@@ -88,7 +88,7 @@
     </div>
 
     <x-slot:actions>
-        <x-button label="{{ __('Cancel') }}" @click="$wire.launchDrawer = false" />
+        <x-button :label="__('Cancel')" @click="$wire.launchDrawer = false" />
     </x-slot:actions>
 
 </x-drawer>

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands\Season;
 
-use App\Models\ClubEvents\Interclub\Season;
+use App\Domains\Competitions\Interclub\Models\Season;
 use Carbon\Carbon;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;

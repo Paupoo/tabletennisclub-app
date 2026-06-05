@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Models\ClubEvents\Interclub\Club;
-use App\Models\ClubPosts\NewsPost;
+use App\Domains\ClubPosts\Models\EventPost;
+use App\Domains\ClubPosts\Models\NewsPost;
+use App\Domains\Competitions\Interclub\Models\Club;
+use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Trainings\Models\TrainingPack;
 use App\Support\Captcha;
+use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
 
 class HomeController extends Controller
@@ -23,102 +27,68 @@ class HomeController extends Controller
             ->take(3)
             ->get();
 
-        $schedules = [
-            [
-                'day' => 'Lundi',
-                'time' => '18h00 - 20h00',
-                'activity' => 'Entraînement dirigé',
-                'location' => 'Blocry - salle G3',
-                'level' => 'Tous niveaux',
-                'capacity' => 10,
-                'description' => 'Séance d\'entraînement encadrée pour les jeunes',
-            ],
-            [
-                'day' => 'Lundi',
-                'time' => '20h00 - 22h30',
-                'activity' => 'Entraînement Libre',
-                'location' => 'Demeester 0',
-                'level' => 'Tous niveaux',
-                'capacity' => 8,
-                'description' => 'Séance libre pour tous les membres du club',
-            ],
-            [
-                'day' => 'Lundi',
-                'time' => '20h30 - 22h00',
-                'activity' => 'Entraînement Libre',
-                'location' => 'Demeester -1',
-                'level' => 'Tous niveaux',
-                'capacity' => 10,
-                'description' => 'Séance libre pour tous les membres du club',
-            ],
-            [
-                'day' => 'Mardi',
-                'time' => '20h30 - 22h00',
-                'activity' => 'Entraînement dirigé',
-                'location' => 'Demeester -1',
-                'level' => 'Débutant+ / Confirmé',
-                'coach' => 'Aloïse Lejeune',
-                'capacity' => 10,
-                'description' => 'Perfectionnement pour les joueurs classés',
-            ],
-            [
-                'day' => 'Mercredi',
-                'time' => '15h00 - 16h30',
-                'activity' => 'Entraînement dirigé',
-                'location' => 'Demeester -1',
-                'level' => 'Débutant',
-                'coach' => 'Éric Filée',
-                'capacity' => 8,
-                'description' => 'Initiation pour les jeunes',
-            ],
-            [
-                'day' => 'Mercredi',
-                'time' => '16h30 - 18h00',
-                'activity' => 'Entraînement dirigé',
-                'location' => 'Demeester -1',
-                'level' => 'Débutant+',
-                'coach' => 'Éric Filée',
-                'capacity' => 8,
-                'description' => 'Perfectionnement pour les jeunes',
-            ],
-            [
-                'day' => 'Vendredi',
-                'time' => '19h00 - 23h30',
-                'activity' => 'Interclubs',
-                'location' => 'Demeester (0 et -1)',
-                'description' => 'Matches de compétition à domicile. Venez nous supporter ! Chouette ambiance et beau jeu au programme',
-            ],
-            [
-                'day' => 'Samedi',
-                'time' => '09h00 - 10h30',
-                'activity' => 'Entraînement dirigé',
-                'location' => 'Demeester -1',
-                'level' => 'Débutant',
-                'coach' => 'Jean-Pierre Fikany',
-                'capacity' => 8,
-                'description' => 'Initiation pour les jeunes',
-            ],
-            [
-                'day' => 'Samedi',
-                'time' => '10h30 - 12h00',
-                'activity' => 'Entraînement dirigé',
-                'location' => 'Demeester -1',
-                'level' => 'Débutant+',
-                'coach' => 'Jean-Pierre Fikany',
-                'capacity' => 8,
-                'description' => 'Perfectionnement pour les jeunes',
-            ],
+        $dayNames = ['', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+        $dayOrder = ['Lundi' => 1, 'Mardi' => 2, 'Mercredi' => 3, 'Jeudi' => 4, 'Vendredi' => 5, 'Samedi' => 6, 'Dimanche' => 7];
+        $levelLabels = [
+            'Beginners' => 'Débutant',
+            'Elite' => 'Compétition',
+            'Intermediate' => 'Confirmé',
+            'Kids' => 'Jeunes',
+            'Open' => 'Tous niveaux',
+            'Young potential' => 'Jeunes espoirs',
         ];
 
-        // Clean d'un éventuel ancien captcha en session pour éviter un brute force sur le captcha
-        session()->forget(['captcha', 'captcha_created_at']);
+        $schedules = [];
 
-        $captcha = Captcha::generate();
+        $season = Season::where('is_active', true)->first();
 
-        session([
-            'captcha' => $captcha,
-            'captcha_created_at' => time(),
-        ]);
+        if ($season) {
+            TrainingPack::with(['trainer', 'room'])
+                ->where('season_id', $season->id)
+                ->where('is_active', true)
+                ->whereNotNull('day_of_week')
+                ->orderBy('day_of_week')
+                ->orderBy('start_time')
+                ->get()
+                ->each(function (TrainingPack $pack) use (&$schedules, $dayNames, $levelLabels): void {
+                    $start = Carbon::createFromFormat('H:i:s', $pack->start_time);
+                    $end = $start->copy()->addMinutes($pack->duration_minutes);
+
+                    // Strip day prefix ("Lundi — ") from pack name for display
+                    $activity = preg_replace('/^(Lundi|Mardi|Mercredi|Jeudi|Vendredi|Samedi|Dimanche)\s+—\s+/', '', $pack->name);
+
+                    $schedules[] = [
+                        'day' => $dayNames[$pack->day_of_week],
+                        'time' => $start->format('G\hi') . ' – ' . $end->format('G\hi'),
+                        'activity' => $activity,
+                        'location' => $pack->room->name,
+                        'level' => $levelLabels[$pack->level->value] ?? $pack->level->value,
+                        'coach' => $pack->trainer ? $pack->trainer->first_name . ' ' . $pack->trainer->last_name : null,
+                        'capacity' => $pack->max_participants,
+                        'description' => $pack->description,
+                        'price' => (float) $pack->price,
+                        'is_open_enrollment' => $pack->is_open_enrollment,
+                        'type' => $pack->type->value,
+                    ];
+                });
+        }
+
+        // Interclubs (vendredi soir) — événement récurrent, pas un training pack
+        $schedules[] = [
+            'day' => 'Vendredi',
+            'time' => '19h00 – 23h30',
+            'activity' => 'Interclubs',
+            'location' => 'Demeester (0 et -1)',
+            'level' => null,
+            'coach' => null,
+            'capacity' => null,
+            'description' => 'Matches de compétition à domicile. Venez nous supporter !',
+            'price' => null,
+            'is_open_enrollment' => true,
+            'type' => 'match',
+        ];
+
+        usort($schedules, fn (array $a, array $b): int => $dayOrder[$a['day']] <=> $dayOrder[$b['day']]);
 
         // Clean d'un éventuel ancien captcha en session pour éviter un brute force sur le captcha
         session()->forget(['captcha', 'captcha_created_at']);
@@ -132,6 +102,11 @@ class HomeController extends Controller
 
         $club = Club::ourClub()->first();
 
-        return view('public.home', compact('sponsors', 'articles', 'schedules', 'club'));
+        $featuredEvents = EventPost::published()
+            ->featured()
+            ->orderBy('event_date')
+            ->get();
+
+        return view('public.home', compact('sponsors', 'articles', 'schedules', 'club', 'featuredEvents'));
     }
 }

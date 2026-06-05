@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Livewire\Component;
 
@@ -48,6 +49,13 @@ new class extends Component
     public function selectWeek(int $week): void
     {
         $this->activeWeek = $week;
+    }
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__('My teams'));
     }
 
     public function with(): array

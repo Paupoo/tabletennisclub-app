@@ -3,25 +3,32 @@
 declare(strict_types=1);
 
 use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
-use App\Enums\TournamentStatusEnum;
-use App\Models\ClubAdmin\Payment\Payment;
-use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Interclub\Season;
-use App\Models\ClubEvents\Tournament\Tournament;
-use App\Models\ClubEvents\Tournament\TournamentPair;
-use App\Models\ClubEvents\Tournament\TournamentRegistration;
-use App\Models\ClubEvents\Training\Training;
-use App\Services\TournamentService;
+use App\Actions\Meetings\RespondToMeetingRsvp;
+use App\Domains\Shared\Enums\MeetingStatusEnum;
+use App\Domains\Shared\Enums\MeetingUserStatusEnum;
+use App\Domains\Shared\Enums\TournamentStatusEnum;
+use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Meetings\Models\Meeting;
+use App\Domains\Meetings\Models\MeetingUser;
+use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Competitions\Tournament\Models\TournamentPair;
+use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
+use App\Domains\Trainings\Models\Training;
+use App\Domains\Competitions\Tournament\Services\TournamentService;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast;
+    use Toast, HasBreadcrumbs;
 
     public User $user;
 
@@ -31,12 +38,25 @@ new class extends Component
 
     public ?int $selectedPaymentId = null;
 
+    public bool $cancelConfirmModal = false;
+
+    public ?int $cancelConfirmId = null;
+
     public ?string $paymentQr = null;
 
     // ── Doubles self-pairing
     public int $partnerTournamentId = 0;
 
     public int $selectedPartnerId = 0;
+
+    // ── Meeting RSVP modal
+    public bool $meetingRsvpModal = false;
+
+    public ?int $rsvpMeetingId = null;
+
+    public string $rsvpAttendance = 'confirmed';
+
+    public string $rsvpMeal = 'skip';
 
     #[Computed]
     public function upcomingTournaments(): Collection
@@ -139,10 +159,13 @@ new class extends Component
     public function pendingPayments(): Collection
     {
         return Payment::where('status', 'pending')
-            ->whereHasMorph('payable', TournamentRegistration::class,
+            ->whereHasMorph('payable', [TournamentRegistration::class, MeetingUser::class],
                 fn ($q) => $q->where('user_id', $this->user->id)
             )
-            ->with(['payable.tournament'])
+            ->with(['payable' => fn (MorphTo $morphTo) => $morphTo->morphWith([
+                TournamentRegistration::class => ['tournament'],
+                MeetingUser::class => ['meeting'],
+            ])])
             ->get();
     }
 
@@ -172,12 +195,41 @@ new class extends Component
         $this->success(__('Registration confirmed!'));
     }
 
+    public function confirmTournamentSpot(int $tournamentId): void
+    {
+        TournamentRegistration::where('user_id', $this->user->id)
+            ->where('tournament_id', $tournamentId)
+            ->where('registration_status', 'spot_offered')
+            ->update([
+                'registration_status'   => 'confirmed',
+                'confirmation_deadline' => null,
+            ]);
+
+        unset($this->upcomingTournaments);
+        $this->success(__('Spot confirmed!'));
+    }
+
+    public function openCancelConfirm(int $tournamentId): void
+    {
+        $this->cancelConfirmId    = $tournamentId;
+        $this->cancelConfirmModal = true;
+    }
+
     public function cancelRegistration(int $tournamentId): void
     {
         $tournament = Tournament::findOrFail($tournamentId);
         app(TournamentService::class)->cancelRegistration($tournament, $this->user);
         unset($this->upcomingTournaments);
+        $this->cancelConfirmModal = false;
+        $this->cancelConfirmId    = null;
         $this->warning(__('Registration cancelled.'));
+    }
+
+    public function confirmCancel(): void
+    {
+        if ($this->cancelConfirmId) {
+            $this->cancelRegistration($this->cancelConfirmId);
+        }
     }
 
     /** @return Collection<int, Training> */
@@ -210,13 +262,73 @@ new class extends Component
             ->get();
     }
 
+    #[Computed]
+    public function upcomingMeetings(): \Illuminate\Database\Eloquent\Collection
+    {
+        return $this->user->meetings()
+            ->where('meetings.status', MeetingStatusEnum::CONFIRMED->value)
+            ->where('scheduled_at', '>=', now())
+            ->orderBy('scheduled_at')
+            ->get();
+    }
+
+    /**
+     * This user's meeting registrations (with payment), keyed by meeting id —
+     * powers the row status/meal badges and the RSVP modal prefill.
+     *
+     * @return \Illuminate\Support\Collection<int, MeetingUser>
+     */
+    #[Computed]
+    public function meetingRegistrations(): \Illuminate\Support\Collection
+    {
+        $meetingIds = $this->upcomingMeetings->pluck('id');
+
+        if ($meetingIds->isEmpty()) {
+            return collect();
+        }
+
+        return MeetingUser::with('payment')
+            ->where('user_id', $this->user->id)
+            ->whereIn('meeting_id', $meetingIds)
+            ->get()
+            ->keyBy('meeting_id');
+    }
+
+    public function openMeetingRsvp(int $meetingId): void
+    {
+        $registration = $this->meetingRegistrations[$meetingId] ?? null;
+
+        $this->rsvpMeetingId    = $meetingId;
+        $this->rsvpAttendance   = $registration?->status === MeetingUserStatusEnum::DECLINED ? 'declined' : 'confirmed';
+        $this->rsvpMeal         = $registration?->meal_reserved === true ? 'reserve' : 'skip';
+        $this->meetingRsvpModal = true;
+    }
+
+    public function saveMeetingRsvp(): void
+    {
+        $meeting = Meeting::findOrFail($this->rsvpMeetingId);
+
+        $attending    = $this->rsvpAttendance === 'confirmed';
+        $mealReserved = $meeting->has_meal ? ($this->rsvpMeal === 'reserve') : null;
+
+        (new RespondToMeetingRsvp)($meeting, $this->user, $attending, $mealReserved);
+
+        $this->meetingRsvpModal = false;
+        unset($this->upcomingMeetings, $this->meetingRegistrations, $this->pendingPayments);
+        $this->success(__('Your participation has been updated.'), icon: 'o-calendar-days');
+    }
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__('Events & Activities'));
+    }
+
     public function with(): array
     {
         return [
-            'breadcrumbs' => Breadcrumb::make()
-                ->home()
-                ->current(__('Events & Activities'))
-                ->toArray(),
+            'breadcrumbs' => $this->getBreadcrumbs(),
         ];
     }
 };

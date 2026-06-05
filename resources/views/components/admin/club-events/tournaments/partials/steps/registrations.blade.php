@@ -7,7 +7,7 @@
         </div>
     @endif
 
-    <x-card title="{{ __('Registrated people') }}" shadow>
+    <x-card :title="__('Registrated people')" shadow>
         <x-slot:menu>
             <div class="flex gap-2">
                 @if (! $this->isLaunched)
@@ -19,7 +19,7 @@
                         :disabled="!$tournamentId" />
                     @if (! $this->registrationClosed && ! ($maxUsers > 0 && $this->registrations->count() >= $maxUsers))
                         <x-button
-                            label="{{ __('Register member') }}"
+                            :label="__('Register member')"
                             icon="o-user-plus"
                             class="btn-ghost btn-sm"
                             wire:click="$set('showRegisterModal', true)"
@@ -55,13 +55,13 @@
                         <x-button
                             icon="o-check"
                             class="btn-ghost btn-xs text-success"
-                            tooltip="{{ __('Confirm') }}"
+                            :tooltip="__('Confirm')"
                             wire:click="confirmPresence({{ $row['id'] }})"
                             wire:loading.attr="disabled" />
                         <x-button
                             icon="o-no-symbol"
                             class="btn-ghost btn-xs text-warning"
-                            tooltip="{{ __('No show') }}"
+                            :tooltip="__('No show')"
                             wire:click="markNoShow({{ $row['id'] }})" />
                     </div>
                 @else
@@ -94,12 +94,12 @@
                             <x-button
                                 icon="o-qr-code"
                                 class="btn-ghost btn-xs"
-                                tooltip="{{ __('QR / bank transfer') }}"
+                                :tooltip="__('QR / bank transfer')"
                                 wire:click="openQrModal({{ $row['id'] }})" />
                             <x-button
                                 icon="o-currency-euro"
                                 class="btn-ghost btn-xs text-success"
-                                tooltip="{{ __('Cash') }}"
+                                :tooltip="__('Cash')"
                                 wire:click="openCashConfirmModal({{ $row['id'] }})" />
                         </div>
                     @else
@@ -127,19 +127,19 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <x-stat title="Inscrits" :value="$registrationCount . ($maxUsers > 0 ? ' / ' . $maxUsers : '')" icon="o-user-group" />
         <x-stat title="Places restantes" :value="$maxUsers > 0 ? max(0, $maxUsers - $registrationCount) : '∞'" icon="o-receipt-percent" />
-        <x-stat title="Confirmés"
+        <x-stat :title="__('Confirmed')"
             :value="$this->registrations->filter(fn ($r) => $r['status'] === 'confirmed')->count()"
             icon="o-check-badge" />
     </div>
 
     {{-- Waiting list --}}
     @if ($waitlistCount > 0)
-        <x-card title="{{ __('Waiting list') }}" shadow class="mt-6">
+        <x-card :title="__('Waiting list')" shadow class="mt-6">
             <x-slot:menu>
                 <div class="flex gap-2">
                     <x-badge value="{{ $waitlistCount }} {{ __('waiting') }}" class="badge-warning" />
                     <x-button
-                        label="{{ __('Add to waitlist') }}"
+                        :label="__('Add to waitlist')"
                         icon="o-user-plus"
                         class="btn-ghost btn-sm"
                         wire:click="$set('showRegisterModal', true)"
@@ -167,11 +167,11 @@
                         @if (! $this->isLaunched)
                             <div class="w-20 flex justify-end gap-1">
                                 <x-button icon="o-arrow-up-circle" class="btn-ghost btn-xs text-success"
-                                    tooltip="{{ __('Promote to registered') }}"
+                                    :tooltip="__('Promote to registered')"
                                     wire:click="promoteFromWaitlist({{ $entry['id'] }})"
                                     :disabled="$maxUsers > 0 && $this->registrations->count() >= $maxUsers" />
                                 <x-button icon="o-x-mark" class="btn-ghost btn-xs text-error"
-                                    tooltip="{{ __('Remove from waitlist') }}"
+                                    :tooltip="__('Remove from waitlist')"
                                     wire:click="removeFromWaitlist({{ $entry['id'] }})" />
                             </div>
                         @endif
@@ -185,7 +185,7 @@
 
 {{-- ── Pair composition (doubles only, club mode) ─────────────────── --}}
 @if ($this->currentTournament?->match_type === 'double' && $this->currentTournament?->doubles_registration_mode === 'club')
-    <x-card title="{{ __('Pair composition') }}" shadow class="mt-6">
+    <x-card :title="__('Pair composition')" shadow class="mt-6">
         <x-slot:menu>
             @if (! $this->isLaunched)
                 <span class="text-xs text-base-content/50">{{ count($this->pairs) }} {{ __('pairs') }} &mdash; {{ count($this->unpaired) }} {{ __('unpaired') }}</span>
@@ -205,7 +205,7 @@
                         </div>
                         @if (! $this->isLaunched)
                             <x-button icon="o-x-mark" class="btn-ghost btn-xs text-error"
-                                tooltip="{{ __('Delete pair') }}"
+                                :tooltip="__('Delete pair')"
                                 wire:click="deletePair({{ $pair['id'] }})" />
                         @endif
                     </div>
@@ -216,11 +216,11 @@
         {{-- Create pair form --}}
         @if (! $this->isLaunched && ! empty($this->unpaired))
             <div class="flex items-end gap-3 mt-2">
-                <x-select label="{{ __('Player 1') }}" wire:model.live="pairPlayer1Id"
-                    :options="$this->unpaired" placeholder="{{ __('Select…') }}" class="flex-1" />
-                <x-select label="{{ __('Player 2') }}" wire:model.live="pairPlayer2Id"
-                    :options="$this->unpaired" placeholder="{{ __('Select…') }}" class="flex-1" />
-                <x-button label="{{ __('Create pair') }}" icon="o-user-group" class="btn-primary btn-sm mb-0.5"
+                <x-select :label="__('Player 1')" wire:model.live="pairPlayer1Id"
+                    :options="$this->unpaired" :placeholder="__('Select…')" class="flex-1" />
+                <x-select :label="__('Player 2')" wire:model.live="pairPlayer2Id"
+                    :options="$this->unpaired" :placeholder="__('Select…')" class="flex-1" />
+                <x-button :label="__('Create pair')" icon="o-user-group" class="btn-primary btn-sm mb-0.5"
                     wire:click="createPair" spinner="createPair"
                     :disabled="! $pairPlayer1Id || ! $pairPlayer2Id" />
             </div>
@@ -235,33 +235,33 @@
 @endif
 
 {{-- Manual register modal --}}
-<x-modal wire:model="showRegisterModal" title="{{ __('Register a member') }}" class="backdrop-blur">
+<x-modal wire:model="showRegisterModal" :title="__('Register a member')" class="backdrop-blur">
     <div class="space-y-4">
         <x-select
-            label="{{ __('Select member') }}"
+            :label="__('Select member')"
             wire:model.live="memberToRegister"
             :options="$this->registerableMembersOptions"
-            placeholder="{{ __('Search a member…') }}"
+            :placeholder="__('Search a member…')"
             searchable />
 
         @if ($memberToRegister && $this->currentTournament?->max_users > 0 && $this->registrations->count() >= $this->currentTournament->max_users)
             <x-alert
-                title="{{ __('Tournament is full') }}"
-                description="{{ __('This player will be added to the waiting list.') }}"
+                :title="__('Tournament is full')"
+                :description="__('This player will be added to the waiting list.')"
                 icon="o-exclamation-triangle"
                 class="alert-warning alert-soft" />
         @endif
     </div>
     <x-slot:actions>
-        <x-button label="{{ __('Cancel') }}" wire:click="$set('showRegisterModal', false)" />
-        <x-button label="{{ __('Register') }}" icon="o-user-plus" class="btn-primary"
+        <x-button :label="__('Cancel')" wire:click="$set('showRegisterModal', false)" />
+        <x-button :label="__('Register')" icon="o-user-plus" class="btn-primary"
             wire:click="registerMember" spinner="registerMember"
             :disabled="!$memberToRegister" />
     </x-slot:actions>
 </x-modal>
 
 {{-- ── Close registrations modal ─────────────────────────────── --}}
-<x-modal wire:model="showCloseRegistrationsModal" title="{{ __('Close registrations?') }}" class="backdrop-blur">
+<x-modal wire:model="showCloseRegistrationsModal" :title="__('Close registrations?')" class="backdrop-blur">
     <div class="space-y-4">
         <div class="flex items-start gap-3 p-4 bg-error/10 border border-error/20 rounded-xl text-sm text-error">
             <x-icon name="o-exclamation-triangle" class="w-5 h-5 shrink-0 mt-0.5" />
@@ -282,28 +282,28 @@
     </div>
 
     <x-slot:actions>
-        <x-button label="{{ __('Cancel') }}" wire:click="$set('showCloseRegistrationsModal', false)" />
-        <x-button label="{{ __('Close registrations') }}" icon="o-lock-closed" class="btn-error"
+        <x-button :label="__('Cancel')" wire:click="$set('showCloseRegistrationsModal', false)" />
+        <x-button :label="__('Close registrations')" icon="o-lock-closed" class="btn-error"
             wire:click="confirmCloseRegistrations" />
     </x-slot:actions>
 </x-modal>
 
 {{-- ── Open registrations modal ──────────────────────────────── --}}
-<x-modal wire:model="showOpenRegistrationsModal" title="{{ __('Reopen registrations?') }}" class="backdrop-blur">
+<x-modal wire:model="showOpenRegistrationsModal" :title="__('Reopen registrations?')" class="backdrop-blur">
     <div class="p-4 bg-warning/10 border border-warning/20 rounded-xl flex items-start gap-3 text-sm">
         <x-icon name="o-information-circle" class="w-5 h-5 shrink-0 mt-0.5 text-warning" />
         <p>{{ __('Reopening registrations will set the tournament back to "published" status. The tournament cannot be started until registrations are closed again.') }}</p>
     </div>
 
     <x-slot:actions>
-        <x-button label="{{ __('Cancel') }}" wire:click="$set('showOpenRegistrationsModal', false)" />
-        <x-button label="{{ __('Reopen registrations') }}" icon="o-lock-open" class="btn-warning"
+        <x-button :label="__('Cancel')" wire:click="$set('showOpenRegistrationsModal', false)" />
+        <x-button :label="__('Reopen registrations')" icon="o-lock-open" class="btn-warning"
             wire:click="confirmOpenRegistrations" />
     </x-slot:actions>
 </x-modal>
 
 {{-- ── QR / bank transfer modal ──────────────────────────── --}}
-<x-modal wire:model="showQrModal" title="{{ __('Payment by QR / Bank Transfer') }}" separator box-class="max-w-lg">
+<x-modal wire:model="showQrModal" :title="__('Payment by QR / Bank Transfer')" separator box-class="max-w-lg">
     @if($qrCodeData)
     <div class="flex flex-col items-center gap-4">
         <img src="{{ $qrCodeData }}" alt="SEPA QR" class="w-48 h-48 rounded-xl border border-base-200" />
@@ -333,13 +333,13 @@
     </div>
     @endif
     <x-slot:actions>
-        <x-button label="{{ __('Close') }}" wire:click="$set('showQrModal', false)" class="btn-ghost" />
+        <x-button :label="__('Close')" wire:click="$set('showQrModal', false)" class="btn-ghost" />
         @if($paymentActionUserId)
             <x-button
-                label="{{ __('I saw the payment succeed') }}"
+                :label="__('I saw the payment succeed')"
                 icon="o-eye"
                 class="btn-info btn-sm"
-                tooltip="{{ __('Mark that you visually confirmed the transfer on screen. The treasurer will reconcile it later.') }}"
+                :tooltip="__('Mark that you visually confirmed the transfer on screen. The treasurer will reconcile it later.')"
                 wire:click="markQrConfirmed({{ $paymentActionUserId }})"
                 spinner="markQrConfirmed" />
         @endif
@@ -347,7 +347,7 @@
 </x-modal>
 
 {{-- ── Cash payment confirm modal ────────────────────────── --}}
-<x-modal wire:model="showCashConfirmModal" title="{{ __('Confirm cash payment') }}" separator>
+<x-modal wire:model="showCashConfirmModal" :title="__('Confirm cash payment')" separator>
     <div class="flex items-start gap-3 p-4 bg-success/10 border border-success/20 rounded-xl text-sm">
         <x-icon name="o-currency-euro" class="w-5 h-5 shrink-0 mt-0.5 text-success" />
         <div>
@@ -356,8 +356,8 @@
         </div>
     </div>
     <x-slot:actions>
-        <x-button label="{{ __('Cancel') }}" wire:click="$set('showCashConfirmModal', false)" class="btn-ghost" />
-        <x-button label="{{ __('Confirm cash payment') }}" icon="o-currency-euro" class="btn-success"
+        <x-button :label="__('Cancel')" wire:click="$set('showCashConfirmModal', false)" class="btn-ghost" />
+        <x-button :label="__('Confirm cash payment')" icon="o-currency-euro" class="btn-success"
             wire:click="confirmCashPayment" spinner />
     </x-slot:actions>
 </x-modal>

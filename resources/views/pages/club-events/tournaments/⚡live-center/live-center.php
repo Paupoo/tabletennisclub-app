@@ -2,21 +2,22 @@
 
 declare(strict_types=1);
 
-use App\Enums\NewsPostCategoryEnum;
-use App\Enums\NewsPostStatusEnum;
-use App\Enums\TournamentStatusEnum;
+use App\Domains\Shared\Enums\NewsPostCategoryEnum;
+use App\Domains\Shared\Enums\NewsPostStatusEnum;
+use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Mail\TournamentResultsMail;
-use App\Models\ClubAdmin\Club\Table;
-use App\Models\ClubAdmin\Payment\Payment;
-use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Tournament\Pool;
-use App\Models\ClubEvents\Tournament\Tournament;
-use App\Models\ClubEvents\Tournament\TournamentMatch;
-use App\Models\ClubPosts\NewsPost;
-use App\Services\TournamentFinalPhaseService;
-use App\Services\TournamentMatchService;
-use App\Services\TournamentPoolService;
-use App\Services\TournamentTableService;
+use App\Domains\ClubAdmin\Club\Models\Table;
+use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Tournament\Models\Pool;
+use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Competitions\Tournament\Models\TournamentMatch;
+use App\Domains\ClubPosts\Models\NewsPost;
+use App\Domains\Competitions\Tournament\Services\TournamentFinalPhaseService;
+use App\Domains\Competitions\Tournament\Services\TournamentMatchService;
+use App\Domains\Competitions\Tournament\Services\TournamentPoolService;
+use App\Domains\Competitions\Tournament\Services\TournamentTableService;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Mail;
@@ -30,7 +31,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast, WithFileUploads;
+    use Toast, WithFileUploads, HasBreadcrumbs;
 
     public Tournament $tournament;
 
@@ -246,6 +247,11 @@ new class extends Component
     {
         return TournamentMatch::where('tournament_id', $this->tournament->id)
             ->where('status', 'in_progress')
+            ->whereExists(fn ($q) => $q
+                ->from('table_tournament')
+                ->whereColumn('table_tournament.tournament_match_id', 'tournament_matches.id')
+                ->where('table_tournament.is_table_free', false)
+            )
             ->with(['pair1', 'pair2'])
             ->get()
             ->flatMap(fn (TournamentMatch $m) => [
@@ -445,7 +451,10 @@ new class extends Component
             }
 
             $results[] = ['player1_score' => $p1, 'player2_score' => $p2];
-            $p1 > $p2 ? $p1Sets++ : $p2Sets++;
+            $isValidSet = $this->tournament->validateSetScore($p1, $p2, count($results), $this->p1Handicap, $this->p2Handicap) === null;
+            if ($isValidSet) {
+                $p1 > $p2 ? $p1Sets++ : $p2Sets++;
+            }
 
             if ($p1Sets >= $this->tournament->sets_to_win || $p2Sets >= $this->tournament->sets_to_win) {
                 break;
@@ -564,17 +573,23 @@ new class extends Component
             return;
         }
 
-        \Illuminate\Support\Facades\DB::table('table_tournament')
-            ->where('tournament_id', $this->tournament->id)
-            ->where('table_id', $this->selectedTableId)
-            ->update([
-                'is_table_free'       => false,
-                'tournament_match_id' => $matchId,
-                'match_started_at'    => now(),
-                'match_ended_at'      => null,
-            ]);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($matchId): void {
+            $rowsUpdated = \Illuminate\Support\Facades\DB::table('table_tournament')
+                ->where('tournament_id', $this->tournament->id)
+                ->where('table_id', $this->selectedTableId)
+                ->update([
+                    'is_table_free'       => false,
+                    'tournament_match_id' => $matchId,
+                    'match_started_at'    => now(),
+                    'match_ended_at'      => null,
+                ]);
 
-        TournamentMatch::where('id', $matchId)->update(['status' => 'in_progress']);
+            if ($rowsUpdated === 0) {
+                throw new \RuntimeException(__('Table not found or unable to assign match.'));
+            }
+
+            TournamentMatch::where('id', $matchId)->update(['status' => 'in_progress']);
+        });
 
         $this->launchDrawer    = false;
         $this->selectedTableId = null;
@@ -687,15 +702,19 @@ new class extends Component
     public function with(): array
     {
         return [
-            'breadcrumbs' => Breadcrumb::make()
-                ->home()
-                ->tournaments()
-                ->current('Live Center — ' . $this->tournament->name)
-                ->toArray(),
+            'breadcrumbs' => $this->getBreadcrumbs(),
         ];
     }
 
-    public function render(): View
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__("Live Center"));
+    }
+
+        public function render(): View
     {
         return view('pages.club-events.tournaments.⚡live-center.live-center');
     }

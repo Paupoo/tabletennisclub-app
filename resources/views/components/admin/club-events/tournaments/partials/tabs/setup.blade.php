@@ -55,8 +55,8 @@
                         :hint="$this->isContractLocked ? __('🔒 Locked — invitations sent or article published') : null" />
 
                     <div class="col-span-2">
-                        <x-toggle label="{{ __('Open registrations') }}" icon="o-eye"
-                            hint="{{ __('If chosen, this tournament will be open for external registration on our website.') }}"
+                        <x-toggle :label="__('Open registrations')" icon="o-eye"
+                            :hint="__('If chosen, this tournament will be open for external registration on our website.')"
                             wire:model.live="publicRegistration" />
                     </div>
                 </div>
@@ -93,16 +93,16 @@
         <x-admin.shared.form-section title="Rules and format"
             subtitle="Sport parameters directly impact the number and duration of matches.">
 
-            <x-select label="{{ __('Match type(*)') }}" icon="o-user" wire:model.live="matchType"
+            <x-select :label="__('Match type(*)')" icon="o-user" wire:model.live="matchType"
                 :options="[['id' => 'single', 'name' => 'Singles'], ['id' => 'double', 'name' => 'Doubles']]" />
             <x-select wire:model.live.debounce.500ms="totalSets" :options="$this->setOptions"
-                label="{{ __('Winning sets(*)') }}" icon="o-star"
+                :label="__('Winning sets(*)')" icon="o-star"
                 hint="Best of {{ ($this->totalSets * 2) - 1 }}" />
-            <x-input wire:model.live.debounce.500ms="nb_poules" label="{{ __('Number of pools(*)') }}"
+            <x-input wire:model.live.debounce.500ms="nb_poules" :label="__('Number of pools(*)')"
                 icon="o-calculator" type="number" min="1" />
-            <x-select wire:model.live.debounce.500ms="pool_size" label="{{ __('Players per pool(*)') }}"
+            <x-select wire:model.live.debounce.500ms="pool_size" :label="__('Players per pool(*)')"
                 icon="o-user-group" :options="$poolSizeOptions" hint="Strong impact on match count" />
-            <x-input wire:model.live.debounce.500ms="nb_qualifies" label="{{ __('Qualified per pool(*)') }}"
+            <x-input wire:model.live.debounce.500ms="nb_qualifies" :label="__('Qualified per pool(*)')"
                 icon="o-trophy" type="number" hint="Players advancing to the bracket" min="1"
                 numeric />
             <x-toggle label="Handicap points" right />
@@ -118,14 +118,14 @@
             subtitle="Let the assistant suggest the best configuration for your constraints.">
 
             <div class="lg:col-span-2 space-y-4">
-                <x-select label="{{ __('Tournament objective') }}" icon="o-light-bulb"
+                <x-select :label="__('Tournament objective')" icon="o-light-bulb"
                     wire:model.live="selectedObjective"
                     :options="$objectiveOptions"
                     placeholder="Choose an objective..." />
 
                 @if ($selectedObjective)
                     @php
-                        $obj = \App\Enums\TournamentObjectiveEnum::tryFrom($selectedObjective);
+                        $obj = \App\Domains\Shared\Enums\TournamentObjectiveEnum::tryFrom($selectedObjective);
                     @endphp
                     @if ($obj)
                         <div class="p-3 rounded-xl bg-primary/5 border border-primary/20 text-sm text-base-content/70">
@@ -135,7 +135,7 @@
                 @endif
 
                 <x-button
-                    label="{{ __('Suggest configuration') }}"
+                    :label="__('Suggest configuration')"
                     icon="o-sparkles"
                     class="btn-primary btn-outline btn-sm"
                     wire:click="applyObjectiveSuggestion"
@@ -279,7 +279,7 @@
         {{-- ── Save button ─────────────────────────────────────────────────────── --}}
         <div class="col-span-6 flex justify-end pt-2">
             <x-button
-                label="{{ $tournamentId ? __('Update tournament') : __('Create tournament') }}"
+                :label="$tournamentId ? __('Update tournament') : __('Create tournament')"
                 icon="{{ $tournamentId ? 'o-arrow-path' : 'o-plus-circle' }}"
                 class="btn-primary"
                 wire:click="save"

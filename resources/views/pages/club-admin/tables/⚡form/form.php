@@ -1,7 +1,8 @@
     <?php
 
-    use App\Models\ClubAdmin\Club\Room;
-use App\Models\ClubAdmin\Club\Table;
+    use App\Domains\ClubAdmin\Club\Models\Room;
+use App\Domains\ClubAdmin\Club\Models\Table;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\View\View;
 use Livewire\Attributes\Validate;
@@ -10,7 +11,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast;
+    use Toast, HasBreadcrumbs;
 
     #[Validate('nullable')]
     public ?string $brand = null;
@@ -51,7 +52,16 @@ new class extends Component
         $this->states = Table::getStates();
     }
 
-    public function render(): View
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->tables()
+            ->current($this->tableId ? __("Update") : __("Create"));
+    }
+
+        public function render(): View
     {
         return $this->view();
     }
@@ -72,11 +82,7 @@ new class extends Component
     public function with(): array
     {
         return [
-            'breadcrumbs' => Breadcrumb::make()
-                ->home()
-                ->tables()
-                ->current($this->tableId ? __('Update') : __('Create'))
-                ->toArray(),
+            'breadcrumbs' => $this->getBreadcrumbs(),
             'rooms' => Room::all(),
             'states' => $this->states,
         ];

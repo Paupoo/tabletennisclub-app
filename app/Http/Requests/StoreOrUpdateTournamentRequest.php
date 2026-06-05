@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
-use App\Enums\TournamentStatusEnum;
+use App\Domains\Shared\Enums\TournamentStatusEnum;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;

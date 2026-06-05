@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\ClubEvents\Tournament;
 
+use App\Domains\ClubAdmin\Club\Models\Table;
+use App\Domains\Competitions\Tournament\Models\TableTournament;
+use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Http\Controllers\Controller;
-use App\Models\ClubAdmin\Club\Table;
-use App\Models\ClubEvents\Tournament\TableTournament;
-use App\Models\ClubEvents\Tournament\Tournament;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 

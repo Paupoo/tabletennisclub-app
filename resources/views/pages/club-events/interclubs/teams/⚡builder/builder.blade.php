@@ -2,17 +2,17 @@
     <x-slot:breadcrumbs>
         <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
     </x-slot:breadcrumbs>
-    <x-header progress-indicator separator title="Compositeur d'équipes">
+    <x-header progress-indicator separator :title="__('Team Builder')">
         <x-slot:actions>
             <x-button class="btn-ghost" link="{{ route('admin.interclubs.teams') }}" icon="o-arrow-left"
-                label="Retour aux équipes" />
+                :label="__('Back to teams')" />
         </x-slot:actions>
     </x-header>
 
     {{-- ── ÉTAPE 1 : Paramètres ─────────────────────────────────────────── --}}
     @if ($step === 1)
         <div class="mx-auto max-w-lg">
-            <x-card class="border-gray-200 shadow-sm" title="Paramètres de composition">
+            <x-card class="border-gray-200 shadow-sm" :title="__('Composition settings')">
                 <div class="space-y-5">
                     <x-select
                         label="Saison"
@@ -20,16 +20,16 @@
                         option-label="name"
                         option-value="id"
                         wire:model.live="seasonId"
-                        placeholder="Sélectionnez une saison" />
+                        :placeholder="__('Select a season')" />
 
                     {{-- Sélecteur de catégorie --}}
                     <div>
-                        <p class="mb-2 text-sm font-medium text-gray-700">Catégorie</p>
+                        <p class="mb-2 text-sm font-medium text-gray-700">{{ __('Category') }}</p>
                         @php
                             $cats = [
-                                'MEN'      => ['label' => 'Hommes',   'desc' => 'Tous les compétiteurs', 'icon' => 'o-user-group'],
-                                'WOMEN'    => ['label' => 'Dames',    'desc' => 'Uniquement les compétitrices', 'icon' => 'o-user-group'],
-                                'VETERANS' => ['label' => 'Vétérans', 'desc' => 'Compétiteurs atteignant 40 ans pendant la saison', 'icon' => 'o-user-group'],
+                                'MEN'      => ['label' => 'Hommes',   'desc' => __('All competitors'), 'icon' => 'o-user-group'],
+                                'WOMEN'    => ['label' => 'Dames',    'desc' => __('Female competitors only'), 'icon' => 'o-user-group'],
+                                'VETERANS' => ['label' => 'Vétérans', 'desc' => __('Competitors turning 40 during the season'), 'icon' => 'o-user-group'],
                             ];
                         @endphp
                         <div class="grid grid-cols-3 gap-2">
@@ -60,7 +60,7 @@
                     @endif
 
                     <x-range
-                        label="Taille du noyau (joueurs par équipe)"
+                        :label="__('Core size (players per team)')"
                         wire:model.live="nucleusSize"
                         min="5"
                         max="20"
@@ -72,7 +72,7 @@
                         'bg-amber-50 text-amber-800' => $eligibleCount === 0,
                     ])>
                         @php $teamsPreview = ($nucleusSize > 0 && $eligibleCount > 0) ? intdiv($eligibleCount, $nucleusSize) : 0; @endphp
-                        <p class="font-semibold">Résultat estimé</p>
+                        <p class="font-semibold">{{ __('Estimated result') }}</p>
                         @if ($eligibleCount === 0)
                             <p class="mt-1">Aucun compétiteur éligible pour cette catégorie{{ $teamCategory === 'VETERANS' && !$seasonId ? ' (sélectionnez d\'abord une saison)' : '' }}.</p>
                         @else
@@ -90,7 +90,7 @@
 
                 <x-slot:actions>
                     <x-button class="btn-primary w-full" icon="o-bolt" label="Calculer la distribution"
-                        wire:click="computeDistribution" wire:loading.attr="disabled" />
+                        wire:click="startComputing" spinner="startComputing" />
                 </x-slot:actions>
             </x-card>
         </div>
@@ -103,7 +103,7 @@
 
             <p class="mb-6 text-sm text-gray-500">
                 {{ count($proposedTeams) }} équipes proposées ·
-                <span class="text-gray-400">glissez-déposez les joueurs · cliquez ⭐ pour désigner un capitaine</span>
+                <span class="text-gray-400">{{ __('drag and drop players · click ⭐ to designate a captain') }}</span>
             </p>
 
             <div class="grid gap-5 lg:grid-cols-2 xl:grid-cols-3">
@@ -183,7 +183,7 @@
                                     </div>
                                 @endif
                             @empty
-                                <p class="py-4 text-center text-sm italic text-gray-400">Déposez un joueur ici</p>
+                                <p class="py-4 text-center text-sm italic text-gray-400">{{ __('Drop a player here') }}</p>
                             @endforelse
                         </div>
 
@@ -194,7 +194,7 @@
                                 <x-select
                                     :options="$categoryOptions"
                                     wire:model="proposedTeams.{{ $index }}.category"
-                                    placeholder="Catégorie"
+                                    :placeholder="__('Category')"
                                     class="select-xs text-xs" />
                                 <x-select
                                     :options="$levelOptions"
@@ -223,7 +223,7 @@
 
                         <div class="flex items-center gap-2 rounded-t-xl bg-orange-50 px-4 py-3">
                             <x-heroicon-o-user-minus class="h-5 w-5 text-orange-400" />
-                            <span class="font-medium text-orange-800">Non assignés</span>
+                            <span class="font-medium text-orange-800">{{ __('Unassigned') }}</span>
                             @if (count($unassigned) > 0)
                                 <span class="ml-auto text-xs text-orange-500">
                                     {{ count($unassigned) }} joueur{{ count($unassigned) > 1 ? 's' : '' }}
@@ -260,7 +260,7 @@
                                     </div>
                                 @endif
                             @empty
-                                <p class="py-4 text-center text-sm italic text-gray-400">Déposez un joueur ici</p>
+                                <p class="py-4 text-center text-sm italic text-gray-400">{{ __('Drop a player here') }}</p>
                             @endforelse
                         </div>
                     </div>
@@ -269,12 +269,27 @@
 
             {{-- Actions bas de page --}}
             <div class="mt-8 flex justify-end gap-3">
-                <x-button class="btn-ghost" icon="o-arrow-left" label="Modifier les paramètres"
+                <x-button class="btn-ghost" icon="o-arrow-left" :label="__('Edit settings')"
                     wire:click="backToStep1" />
-                <x-button class="btn-primary" icon="o-check" label="Enregistrer toutes les équipes"
+                <x-button class="btn-primary" icon="o-check" :label="__('Save all teams')"
                     wire:click="save" wire:loading.attr="disabled" />
             </div>
 
         </div>{{-- /x-data --}}
     @endif
+
+    {{-- Modal calcul de distribution --}}
+    <x-modal wire:model="showComputingModal" :title="__('Building teams')" separator persistent>
+        <div class="py-10 text-center">
+            <div class="mb-6 flex justify-center">
+                <span class="loading loading-dots loading-lg text-primary"></span>
+            </div>
+            <h3 class="animate-pulse text-xl font-black uppercase italic tracking-widest">
+                {{ __('Calculating distribution...') }}
+            </h3>
+            <p class="mx-auto mt-4 max-w-xs text-sm opacity-60">
+                {{ __('Recalculating the force list and distributing players across teams.') }}
+            </p>
+        </div>
+    </x-modal>
 </div>

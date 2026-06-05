@@ -2,13 +2,21 @@
 
 declare(strict_types=1);
 
-use App\Mail\InviteNewUserMail;
-use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Interclub\Team;
+use App\Actions\User\AnonymizeUserAction;
+use App\Actions\User\CreateUserAction;
+use App\Actions\User\RecalculateForceListAction;
+use App\Actions\User\RestoreUserAction;
+use App\Actions\User\SendInvitationAction;
+use App\Actions\User\SoftDeleteUserAction;
+use App\Data\User\CreateUserData;
+use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\Gender;
+use Illuminate\Validation\Rule as ValidationRule;
+use App\Domains\Competitions\Interclub\Models\Team;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -16,10 +24,26 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast;
+    use Toast, HasBreadcrumbs;
     use WithPagination;
 
-    public array $categories = [];     // ex: ['men', 'women', 'youth']
+    public array $categories = [];
+
+    // ── Quick invite ─────────────────────────────────────────────────────────
+    public bool $quickInviteDrawer = false;
+
+    // ── Anonymize modal ───────────────────────────────────────────────────────
+    public bool $anonymizeModal = false;
+
+    public ?int $anonymizeUserId = null;
+
+    public string $anonymizeConfirmText = '';
+
+    public string $inviteFirstName = '';
+
+    public string $inviteLastName = '';
+
+    public string $inviteEmail = '';
 
     // ── Modales ──────────────────────────────────────────────────────────────
     public bool $deleteModal = false;
@@ -29,6 +53,8 @@ new class extends Component
     public ?int $event_id = null;
 
     public array $licenceTypes = [];   // ex: ['competitive', 'recreational']
+
+    public bool $showArchived = false;
 
     public bool $showInactiveUsers = false;
 
@@ -125,19 +151,78 @@ new class extends Component
     // Suppression simple
     // ────────────────────────────────────────────────────────────────────────
 
+    public function recalculateForceList(): void
+    {
+        abort_unless(Auth::user()->is_admin || Auth::user()->is_committee_member, 403);
+
+        RecalculateForceListAction::handle();
+
+        $this->success(__('Force list recalculated.'));
+    }
+
+    public function quickInvite(): void
+    {
+        $this->validate([
+            'inviteFirstName' => ['required', 'string', 'max:255'],
+            'inviteLastName'  => ['required', 'string', 'max:255'],
+            'inviteEmail'     => ['required', 'email', ValidationRule::unique('users', 'email')],
+        ]);
+
+        $email = $this->inviteEmail;
+
+        CreateUserAction::handle(
+            new CreateUserData(
+                first_name: $this->inviteFirstName,
+                last_name: $this->inviteLastName,
+                email: $email,
+                gender: Gender::MEN,
+            ),
+            Auth::user()
+        );
+
+        $this->reset(['inviteFirstName', 'inviteLastName', 'inviteEmail']);
+        $this->quickInviteDrawer = false;
+
+        $this->success(__('Invitation sent to :email.', ['email' => $email]));
+    }
+
     public function sendInvitation(int $userId): void
     {
         $user = User::findOrFail($userId);
 
-        $link = URL::temporarySignedRoute(
-            'invitation.accept',
-            now()->addHours(48),
-            ['user' => $user->id]
-        );
-
-        Mail::to($user->email)->send(new InviteNewUserMail($user, $link));
+        SendInvitationAction::handle($user);
 
         $this->success(__('Invitation sent to :email.', ['email' => $user->email]));
+    }
+
+    public function openAnonymizeModal(int $userId): void
+    {
+        $user = User::findOrFail($userId);
+        $this->authorize('anonymize', $user);
+
+        $this->anonymizeUserId = $userId;
+        $this->anonymizeConfirmText = '';
+        $this->anonymizeModal = true;
+    }
+
+    public function confirmAnonymize(): void
+    {
+        if (strtoupper($this->anonymizeConfirmText) !== 'ANONYMIZE') {
+            $this->error(__('Type ANONYMIZE to confirm.'));
+
+            return;
+        }
+
+        $user = User::findOrFail($this->anonymizeUserId);
+        $this->authorize('anonymize', $user);
+
+        AnonymizeUserAction::handle($user);
+
+        $this->anonymizeModal = false;
+        $this->anonymizeUserId = null;
+        $this->anonymizeConfirmText = '';
+
+        $this->success(__('User anonymized (GDPR). All personal data has been erased.'));
     }
 
     public function confirmDelete(int $userId): void
@@ -148,20 +233,52 @@ new class extends Component
 
     public function delete(): void
     {
-        User::findOrFail($this->userToDelete)->delete();
+        $user = User::findOrFail($this->userToDelete);
 
         $this->userToDelete = null;
         $this->deleteModal = false;
-        $this->success(__('User deleted.'));
+
+        if (Auth::user()->is($user)) {
+            $this->error(__('You cannot archive your own account.'));
+
+            return;
+        }
+
+        $this->authorize('delete', $user);
+
+        SoftDeleteUserAction::handle($user);
+
+        $this->success(__('User archived.'));
     }
 
     public function deleteSelected(): void
     {
-        User::whereIn('id', $this->selected)->delete();
+        abort_unless(Auth::user()->is_admin, 403);
+
+        $selfIncluded = in_array((string) Auth::id(), array_map('strval', $this->selected));
+
+        User::whereIn('id', $this->selected)
+            ->where('id', '!=', Auth::id())
+            ->each(fn (User $user) => SoftDeleteUserAction::handle($user));
 
         $this->selected = [];
         $this->deleteSelectedModal = false;
-        $this->success(__('Selected users deleted.'));
+
+        if ($selfIncluded) {
+            $this->warning(__('Users archived. Your own account was excluded from the selection.'));
+        } else {
+            $this->success(__('Selected users archived.'));
+        }
+    }
+
+    public function restoreUser(int $userId): void
+    {
+        $user = User::withTrashed()->findOrFail($userId);
+        $this->authorize('restore', $user);
+
+        RestoreUserAction::handle($user);
+
+        $this->success(__('User restored.'));
     }
 
     /**
@@ -201,6 +318,14 @@ new class extends Component
     // Render
     // ────────────────────────────────────────────────────────────────────────
 
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->users()
+            ->current(__('List'));
+    }
+
     public function render()
     {
         return $this->view([
@@ -208,12 +333,9 @@ new class extends Component
             'headers' => $this->headers,
             'teams' => $this->teams,
             'subscriptions' => $this->subscriptions,
-            'breadcrumbs' => Breadcrumb::make()
-                ->home()
-                ->users()
-                ->current(__('List'))
-                ->toArray(),
+            'breadcrumbs' => $this->getBreadcrumbs(),
             'activeFiltersCount' => $this->activeFiltersCount,
+            'stats'              => $this->stats,
         ]);
     }
 
@@ -262,6 +384,11 @@ new class extends Component
         $this->resetPage();
     }
 
+    public function updatedShowArchived(): void
+    {
+        $this->resetPage();
+    }
+
     public function updatedShowInactiveUsers(): void
     {
         $this->resetPage();
@@ -277,24 +404,39 @@ new class extends Component
         $this->resetPage();
     }
 
+    #[Computed]
+    public function stats(): array
+    {
+        return [
+            'total'       => User::count(),
+            'active'      => User::where('is_active', true)->count(),
+            'competitive' => User::where('is_competitor', true)->count(),
+            'inactive'    => User::where('is_active', false)->count(),
+        ];
+    }
+
     /**
      * Données de la table avec filtres appliqués.
      */
     #[Computed]
     public function users()
     {
-        return User::query()
+        $query = $this->showArchived
+            ? User::onlyTrashed()
+            : User::query();
+
+        return $query
             ->when($this->search, fn ($q) => $q->where(
                 fn ($q) => $q->where('first_name', 'like', "%{$this->search}%")
                     ->orWhere('last_name', 'like', "%{$this->search}%")
                     ->orWhere('email', 'like', "%{$this->search}%")
             ))
             ->when(
-                $this->selectedLicenceType === 'competitive',
+                ! $this->showArchived && $this->selectedLicenceType === 'competitive',
                 fn ($q) => $q->where('is_competitor', true)
             )
             ->when(
-                $this->selectedLicenceType === 'recreative',
+                ! $this->showArchived && $this->selectedLicenceType === 'recreative',
                 fn ($q) => $q->where('is_competitor', false)
             )
             ->when(
@@ -302,15 +444,15 @@ new class extends Component
                 fn ($q) => $q->whereIn('gender', $this->categories)
             )
             ->when(
-                !$this->showInactiveUsers,
+                ! $this->showArchived && ! $this->showInactiveUsers,
                 fn ($q) => $q->where('is_active', true)
             )
             ->when(
                 count($this->team_ids) > 0,
                 fn ($q) => $q->whereHas(
                     'teams',
-                    fn ($teamQuery) => $teamQuery->whereIn('teams.id', $this->team_ids))
-
+                    fn ($teamQuery) => $teamQuery->whereIn('teams.id', $this->team_ids)
+                )
             )
             ->orderBy($this->sortBy['column'], $this->sortBy['direction'])
             ->paginate(15);

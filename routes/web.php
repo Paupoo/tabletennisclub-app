@@ -9,34 +9,38 @@ use App\Actions\ClubAdmin\Subscriptions\MarkPaidSubscriptionAction;
 use App\Actions\ClubAdmin\Subscriptions\MarkRefundSubscriptionAction;
 use App\Actions\ClubAdmin\Subscriptions\SubscribeToSeasonAction;
 use App\Actions\ClubAdmin\Subscriptions\UnconfirmSubscriptionAction;
-use App\Actions\User\InviteExistingUserAction;
-use App\Http\Controllers\ClubAdmin\Club\RoomController;
-use App\Http\Controllers\ClubAdmin\Club\TableController;
+use App\Domains\ClubAdmin\Club\Models\Room;
+use App\Domains\ClubAdmin\Club\Models\Table;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Http\Controllers\ClubAdmin\Contact\ContactController;
 use App\Http\Controllers\ClubAdmin\Contact\InvitationController;
 use App\Http\Controllers\ClubAdmin\Payment\PaymentController;
 use App\Http\Controllers\ClubAdmin\Payment\TransactionController;
 use App\Http\Controllers\ClubAdmin\Subscription\RegistrationController;
 use App\Http\Controllers\ClubAdmin\Subscription\SubscriptionController;
-use App\Http\Controllers\ClubAdmin\Users\ProfileController;
-use App\Http\Controllers\ClubAdmin\Users\UserController;
-use App\Http\Controllers\ClubEvents\Interclub\InterclubController;
 use App\Http\Controllers\ClubEvents\Interclub\ResultsController;
 use App\Http\Controllers\ClubEvents\Interclub\SeasonController;
-use App\Http\Controllers\ClubEvents\Interclub\TeamController;
+use App\Http\Controllers\ClubEvents\Meeting\MeetingPollController;
+use App\Http\Controllers\ClubEvents\Meeting\MeetingRsvpController;
 use App\Http\Controllers\ClubEvents\Tournament\TableScoreController;
 use App\Http\Controllers\ClubEvents\Tournament\TournamentController;
-use App\Http\Controllers\ClubPosts\AdminEventPostController;
 use App\Http\Controllers\ClubPosts\PublicEventPostController;
 use App\Http\Controllers\ClubPosts\PublicNewsPostController;
 use App\Http\Controllers\HomeController;
 use App\Http\Middleware\ProtectAgainstSpam;
-use App\Models\ClubAdmin\Club\Room;
-use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Interclub\Team;
-use App\Models\ClubEvents\Training\Training;
-use App\Support\Breadcrumb;
 use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| Setup Wizard
+|--------------------------------------------------------------------------
+|
+| Accessible to anyone on first installation. Blocked once setup is done.
+|
+*/
+Route::livewire('/setup', 'pages::setup.wizard')
+    ->middleware('setup.not_complete')
+    ->name('setup');
 
 /*
 |--------------------------------------------------------------------------
@@ -54,6 +58,10 @@ Route::get('/results', [ResultsController::class, 'index'])
     ->name('results');
 Route::get('/eventPosts', [PublicEventPostController::class, 'index'])
     ->name('eventPosts');
+Route::get('/clubPosts', [PublicNewsPostController::class, 'index'])
+    ->name('public.clubPosts.index');
+Route::get('/clubPosts/{slug}', [PublicNewsPostController::class, 'show'])
+    ->name('public.clubPosts.show');
 Route::post('/contact', [ContactController::class, 'store'])
     ->middleware(ProtectAgainstSpam::class, 'throttle:10,1')
     ->name('contact.store');
@@ -116,7 +124,7 @@ Route::prefix('admin/club-admin/rooms/')
     ->group(function (): void {
         Route::livewire('list', 'pages::club-admin.rooms.index')->name('admin.rooms.index');
 
-        Route::middleware('can:create,App\Models\ClubAdmin\Club\Room')
+        Route::middleware('can:create,' . Room::class)
             ->group(function (): void {
                 Route::livewire('create', 'pages::club-admin.rooms.form')->name('admin.rooms.create');
             });
@@ -137,7 +145,7 @@ Route::prefix('admin/club-admin/tables/')
                 Route::livewire('{table}/edit', 'pages::club-admin.tables.form')->name('admin.tables.edit');
             });
 
-        Route::middleware('can:create,App\Models\ClubAdmin\Club\Table')
+        Route::middleware('can:create,' . Table::class)
             ->group(function (): void {
                 Route::livewire('create', 'pages::club-admin.tables.form')->name('admin.tables.create');
             });
@@ -155,6 +163,29 @@ Route::prefix('coach')
         Route::livewire('trainings', 'pages::club-events.trainings.coach')->name('coach.trainings');
     });
 
+Route::prefix('admin/club-events/meetings')
+    ->middleware(['auth', 'verified', 'committee'])
+    ->group(function (): void {
+        Route::livewire('/', 'pages::club-events.meetings.index')->name('admin.meetings.index');
+        Route::livewire('/create', 'pages::club-events.meetings.form')->name('admin.meetings.create');
+        Route::livewire('/{meeting}', 'pages::club-events.meetings.show')->name('admin.meetings.show');
+        Route::livewire('/{meeting}/edit', 'pages::club-events.meetings.form')->name('admin.meetings.edit');
+    });
+
+// Meeting signed-URL actions (no auth required)
+Route::get('/meetings/{meeting}/poll/{user}', [MeetingPollController::class, 'show'])
+    ->name('meetings.poll.vote')
+    ->middleware('signed');
+Route::post('/meetings/{meeting}/poll/{user}', [MeetingPollController::class, 'vote'])
+    ->name('meetings.poll.vote.submit')
+    ->middleware('signed');
+Route::get('/meetings/{meeting}/rsvp/{user}', [MeetingRsvpController::class, 'show'])
+    ->name('meetings.rsvp')
+    ->middleware('signed');
+Route::post('/meetings/{meeting}/rsvp/{user}', [MeetingRsvpController::class, 'submit'])
+    ->name('meetings.rsvp.submit')
+    ->middleware('signed');
+
 Route::prefix('admin/club-events/tournaments')
     ->middleware(['auth', 'verified'])
     ->group(function (): void {
@@ -171,12 +202,32 @@ Route::prefix('admin/club-events/interclubs/')
     ->group(function (): void {
         Route::livewire('captain-selection', 'pages::club-events.interclubs.captain-selection')->name('admin.interclubs.captain-selection');
         Route::livewire('control-center', 'pages::club-events.interclubs.control-center')->name('admin.interclubs.control-center');
+        Route::livewire('my-matches', 'pages::club-events.interclubs.my-matches')->name('admin.interclubs.my-matches');
         Route::livewire('teams', 'pages::club-events.interclubs.teams.index')->name('admin.interclubs.teams');
         Route::livewire('teams/builder', 'pages::club-events.interclubs.teams.builder')->name('admin.interclubs.teams.builder');
         Route::livewire('teams/{team}', 'pages::club-events.interclubs.teams.show')->name('admin.interclubs.teams.show');
         Route::livewire('teams/{team}/edit', 'pages::club-events.interclubs.teams.edit')->name('admin.interclubs.teams.edit');
         Route::livewire('results', 'pages::club-events.interclubs.results')->name('admin.interclubs.results');
+        Route::livewire('interclubs', 'pages::club-events.interclubs.interclubs')->name('admin.interclubs.interclubs');
+        Route::livewire('division-setup', 'pages::club-events.interclubs.division-setup')->name('admin.interclubs.division-setup');
+        Route::livewire('clubs', 'pages::club-events.interclubs.clubs')->name('admin.interclubs.clubs');
     });
+
+/**
+ * Notifications
+ */
+Route::middleware(['auth', 'verified'])->group(function (): void {
+    Route::livewire('admin/notifications', 'admin.notifications.index')->name('notifications.index');
+});
+
+/**
+ * Invitations
+ */
+Route::get('/invitation/accept/{user}', [InvitationController::class, 'showForm'])
+    ->name('invitation.accept')
+    ->middleware('signed');
+Route::post('/invitation/accept/{user}', [InvitationController::class, 'store'])
+    ->name('invitation.store');
 
 /*
 |--------------------------------------------------------------------------
@@ -190,134 +241,34 @@ Route::prefix('admin/club-events/interclubs/')
 */
 
 /**
- * Dashboard with sample of most data
+ * Dashboard with sample of most data (to implement, it's a mock (active) for now)
  */
 Route::get('/admin/dashboard', function () {
-    return view('clubAdmin.dashboard', [
-        'users' => User::latest()->take(5)->get(),
-        'users_total_active' => User::where('is_active', '=', true)->count(),
-        'users_total_inactive' => User::where('is_active', '=', false)->count(),
-        'users_total_competitors' => User::where('is_competitor', '=', true)->count(),
-        'users_total_casuals' => User::where('is_competitor', '=', false)->count(),
-        'rooms' => Room::orderby('name')->get(),
-        'trainings' => Training::latest()->take(5)->get(),
-        'teams' => Team::all()->load(['captain', 'users', 'league']),
-        'breadcrumbs' => Breadcrumb::make()->home()->toArray(),
+    return view('clubAdmin.dashboard_v4_personas', [
+        'members_total' => 42,
+        'members_active' => 38,
+        'members_inactive' => 4,
+        'members_competitors' => 24,
+        'members_unpaid' => 3,
+        'rooms_count' => 3,
+        'teams_count' => 4,
+        'trainings_count' => 6,
+        'interclubs_pending' => 2,
+        'payments_pending' => 18,
+        'affiliations_pending' => 5,
+        'events_count' => 1,
+        'recent_activity' => [
+            ['type' => 'member',    'label' => 'Jean Dupont a rejoint le club',        'time' => '1h'],
+            ['type' => 'contact',   'label' => 'Nouveau message de Pierre V.',         'time' => '3h'],
+            ['type' => 'match',     'label' => 'Match BBW114 vs BBW210 planifié',      'time' => '5h'],
+            ['type' => 'payment',   'label' => 'Cotisation payée par Marie L.',        'time' => '1j'],
+            ['type' => 'news',      'label' => 'Article "Résultats printemps" publié', 'time' => '1j'],
+            ['type' => 'selection', 'label' => 'Sélection équipe A envoyée',           'time' => '2j'],
+            ['type' => 'meeting',   'label' => 'CR réunion comité du 22 mai ajouté',  'time' => '3j'],
+            ['type' => 'member',    'label' => 'Sophie Martin inscrite',               'time' => '4j'],
+        ],
     ]);
-})->middleware(['auth', 'verified'])
-    ->name('dashboard');
-
-/**
- * Rooms management
- */
-Route::resource('/clubAdmin/club/rooms', RoomController::class)->middleware(['auth', 'verified']);
-
-/**
- * This route is used to manage clubPosts in the clubAdmin panel.
- * It allows authenticated and verified users to perform CRUD operations on clubPosts.
- * The clubPosts  are stored in the database and can be created, read, updated, and deleted through this interface.
- * This route is protected by authentication and verification middleware.
- */
-Route::prefix('clubPosts')->middleware('auth')->group(function (): void {
-    Route::resource('eventPosts', AdminEventPostController::class)->names('clubPosts.eventPosts');
-    Route::patch('eventPosts/{event}/publish', [AdminEventPostController::class, 'publish'])->name('clubPosts.eventPosts.publish');
-    Route::patch('eventPosts/{event}/archive', [AdminEventPostController::class, 'archive'])->name('clubPosts.eventPosts.archive');
-    Route::post('eventPosts/{event}/duplicate', [AdminEventPostController::class, 'duplicate'])->name('clubPosts.eventPosts.duplicate');
-});
-
-/**
- * Articles management (public)
- */
-Route::get('/clubPosts', [PublicNewsPostController::class, 'index'])->name('public.clubPosts.index');
-Route::get('/clubPosts/{slug}', [PublicNewsPostController::class, 'show'])->name('public.clubPosts.show');
-
-/**
- * Profile management
- */
-Route::middleware(['auth', 'verified'])->group(function (): void {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-});
-
-Route::get('/invitation/accept/{user}', [InvitationController::class, 'showForm'])
-    ->name('invitation.accept')
-    ->middleware('signed');
-Route::post('/invitation/accept/{user}', [InvitationController::class, 'store'])
-    ->name('invitation.store');
-
-/**
- * Tables management
- */
-// Route::resource('/clubAdmin/club/tables', TableController::class)->middleware(['auth', 'verified']);
-
-/**
- * Teams management
- */
-Route::get('/clubEvents/interclubs/teams/team-builder', [
-    TeamController::class,
-    'initiateTeamsBuilder',
-])->middleware(['auth', 'verified'])->name('teamBuilder.prepare');
-
-Route::post('/clubEvents/interclubs/teams/team-builder', [
-    TeamController::class,
-    'validateTeamsBuilder',
-])->middleware(['auth', 'verified'])->name('teamBuilder.create');
-
-Route::post('clubEvents/interclubs/teams/saveTeams', [
-    TeamController::class,
-    'saveTeams',
-])->middleware(['auth', 'verified'])->name('saveTeams');
-
-Route::resource('clubEvents/interclubs/teams', TeamController::class)->middleware(['auth', 'verified']);
-
-/**
- * Interclub management
- */
-Route::post('clubEvents/interclubs/subscribe', [
-    InterclubController::class,
-    'subscribe',
-])
-    ->middleware(['auth', 'verified'])
-    ->name('interclubs.subscription');
-
-Route::resource('clubEvents/interclubs', InterclubController::class)->middleware(['auth', 'verified']);
-
-Route::post('/clubEvents/interclub/add/{interclub}/{user}', [
-    InterclubController::class,
-    'addToSelection',
-])->middleware(['auth', 'verified'])
-    ->name('interclubs.addToSelection');
-
-Route::post('/clubEvents/interclub/toggle/{interclub}/{user}', [
-    InterclubController::class,
-    'toggleSelection',
-])->middleware(['auth', 'verified'])
-    ->name('interclubs.toggleSelection');
-
-Route::get('/clubEvents/interclub/selections', [
-    InterclubController::class,
-    'showSelections',
-])->name('interclubs.selections');
-
-/**
- * Users
- */
-Route::get('/clubAdmin/users/setForceList', [
-    UserController::class,
-    'setForceList',
-])->middleware(['auth', 'verified'])->name('setForceList');
-
-Route::get('/clubAdmin/users/deleteForceList', [
-    UserController::class,
-    'deleteForceList',
-])->middleware(['auth', 'verified'])->name('deleteForceList');
-
-Route::get('/clubAdmin/{user}/subscription', [UserController::class, 'toggleHasPaid'])->name('users.toggleHasPaid');
-
-Route::resource('clubAdmin/users', UserController::class)->middleware(['auth', 'verified']);
-
-Route::post('clubAdmin/users/{user}/invite', [InviteExistingUserAction::class, 'handle'])->name('clubAdmin.users.invite-existing-user');
+})->middleware(['auth', 'verified'])->name('dashboard');
 
 // Tournament email registration / waitlist actions (signed URLs, no auth required)
 Route::get('/tournament/{tournament}/join/{user}', [TournamentController::class, 'registerViaEmail'])
@@ -343,12 +294,13 @@ Route::middleware(['auth', 'verified'])
             ->name('tournament.table.score.submit');
     });
 
-Route::prefix('admin/website')->middleware(['auth', 'verified'])->group(function (): void {
+Route::prefix('admin/website')->middleware(['auth', 'verified', 'committee'])->group(function (): void {
     Route::livewire('/articles', 'pages::website.articles.index')->name('admin.website.articles.index');
     Route::livewire('/articles/create', 'pages::website.articles.edit')->name('admin.website.articles.create');
     Route::livewire('/articles/{newsPost}/edit', 'pages::website.articles.edit')->name('admin.website.articles.edit');
     Route::livewire('/contacts', 'pages::website.contacts.index')->name('admin.website.contacts.index');
     Route::livewire('/spams', 'pages::website.spams.index')->name('admin.website.spams.index');
+    Route::livewire('/events', 'pages::website.events.index')->name('admin.website.events.index');
 });
 
 Route::middleware(['auth', 'verified'])->group(function (): void {
@@ -357,17 +309,13 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     // (eventPosts admin routes moved earlier to match newsPosts routing structure)
 });
 
-Route::get('/test', function () {
-    return view('test', ['breadcrumbs' => []]);
-});
-Route::get('/test2', function () {
-    return view('wizzard', ['breadcrumbs' => []]);
-})->middleware(['auth', 'verified']);
-
+/**
+ * => obsolete, to clean and remove related code
+ */
 Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::resource('seasons', SeasonController::class)->names('clubEvents.interclubs.seasons');
     Route::resource('registrations', RegistrationController::class)->names('clubAdmin.registrations');
-    Route::resource('subscriptions', SubscriptionController::class)->names('clubAdmin.subscriptions');
+    Route::resource('subscriptions', SubscriptionController::class)->names('clubAdmin.subscriptions')->except(['show']);
     Route::resource('payments', PaymentController::class)->names('admin.payments');
     Route::post('seasons/{season}/subscribe/', SubscribeToSeasonAction::class)->name('clubEvents.interclubs.seasons.subscribe');
     Route::post('seasons/{season}/unsubscribe', [SubscriptionController::class, 'unsubscribe'])->name('clubAdmin.subscriptions.unsubscribe');

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Bar;
 
+use App\Domains\Bar\Models\BarOrder;
+use App\Domains\Bar\Services\StockService;
 use App\Http\Controllers\Controller;
-use App\Models\Bar\BarOrder;
-use App\Services\Bar\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -18,47 +18,6 @@ class BarOrderController extends Controller
     {
         $this->middleware('auth');
         $this->stockService = $stockService;
-    }
-    /**
-     * List open (unpaid) orders.
-     */
-    public function index()
-    {
-        $orders = BarOrder::with('items.product')
-            ->where('is_paid', 0)
-            ->orderByDesc('id')
-            ->get();
-
-        return view('bar.orders.index', compact('orders'));
-    }
-
-    /**
-     * Re-open an unpaid order for modification:
-     * - load order items into the session cart
-     * - remember which order is being edited
-     * - redirect back to the main menu page
-     */
-    public function modify(BarOrder $order)
-    {
-        if ((int) $order->created_by !== (int) auth()->id()) {
-            return back()->with('error', "Vous n'êtes pas autorisé à modifier cette commande.");
-        }
-
-        if ($order->is_paid) {
-            return back()->with('error', 'Commande déjà payée.');
-        }
-
-        $order->load('items');
-        
-        $cart = $order->items
-        ->mapWithKeys(fn($item) => [$item->product_id => (int) $item->quantity])
-        ->toArray();
-
-        session()->put('cart', $cart);
-        session()->put('editing_order_id', $order->id);
-
-        return redirect()->route('bar.index')
-            ->with('success', 'Commande chargée dans le panier pour modification.');
     }
 
     public function cancelEdit()
@@ -80,7 +39,7 @@ class BarOrderController extends Controller
             return back()->with('error', 'Impossible de supprimer une commande payée.');
         }
 
-        DB::transaction(function() use ($order) {
+        DB::transaction(function () use ($order) {
             $order->load('items');
             foreach ($order->items as $item) {
                 $this->stockService->restoreFromOrderItem(
@@ -167,5 +126,47 @@ class BarOrderController extends Controller
                 'unpaid' => 'Non payés',
             ],
         ]);
+    }
+
+    /**
+     * List open (unpaid) orders.
+     */
+    public function index()
+    {
+        $orders = BarOrder::with('items.product')
+            ->where('is_paid', 0)
+            ->orderByDesc('id')
+            ->get();
+
+        return view('bar.orders.index', compact('orders'));
+    }
+
+    /**
+     * Re-open an unpaid order for modification:
+     * - load order items into the session cart
+     * - remember which order is being edited
+     * - redirect back to the main menu page
+     */
+    public function modify(BarOrder $order)
+    {
+        if ((int) $order->created_by !== (int) auth()->id()) {
+            return back()->with('error', "Vous n'êtes pas autorisé à modifier cette commande.");
+        }
+
+        if ($order->is_paid) {
+            return back()->with('error', 'Commande déjà payée.');
+        }
+
+        $order->load('items');
+
+        $cart = $order->items
+            ->mapWithKeys(fn ($item) => [$item->product_id => (int) $item->quantity])
+            ->toArray();
+
+        session()->put('cart', $cart);
+        session()->put('editing_order_id', $order->id);
+
+        return redirect()->route('bar.index')
+            ->with('success', 'Commande chargée dans le panier pour modification.');
     }
 }

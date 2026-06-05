@@ -5,10 +5,10 @@
     
     <div class="grid md:grid-cols-2 gap-6 mb-6">
         <div>
-            <label for="first_name" class="block text-sm font-medium text-gray-700 mb-2">Prénom *</label>
+            <label for="first_name" class="block text-sm font-medium text-gray-700 mb-2">{{ __('First name *') }}</label>
             <input type="text" id="first_name" name="first_name" required value="{{ old('first_name') }}"
                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent transition-colors"
-                placeholder="Votre nom prénom">
+                placeholder="{{ __('Your full name') }}">
             @error('first_name')
                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
             @enderror
@@ -32,7 +32,7 @@
             @enderror
         </div>
         <div class="mb-6">
-            <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">Numéro de Téléphone</label>
+            <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">{{ __('Phone Number') }}</label>
             <input type="tel" id="phone" name="phone" value="{{ old('phone') }}"
                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent transition-colors"
                 placeholder="06 12 34 56 78">
@@ -43,11 +43,11 @@
     </div>
 
     <div class="mb-6" x-data="{ selectedInterest: '{{ old('interest') }}' }">
-        <label for="interest" class="block text-sm font-medium text-gray-700 mb-2">Je suis intéressé par *</label>
+        <label for="interest" class="block text-sm font-medium text-gray-700 mb-2">{{ __('I am interested in *') }}</label>
         <select id="interest" name="interest" required @change="onRequestTypeChange" x-model="selectedInterest"
             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent transition-colors">
-            <option value="">Sélectionnez une option</option>
-            @foreach (\App\Enums\ContactReasonEnum::cases() as $contactReason)
+            <option value="">{{ __('Select an option') }}</option>
+            @foreach (\App\Domains\Shared\Enums\ContactReasonEnum::cases() as $contactReason)
             <option value="{{ $contactReason->name }}" {{ old('interest') == $contactReason->name ? 'selected' : '' }}>{{ $contactReason->getLabel() }}</option>    
             @endforeach
         </select>
@@ -105,10 +105,10 @@
             </label>
             <select x-model="trainingSessions" name="membership_training_sessions"
                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
-                <option value="0">Aucune séance d'entraînement</option>
-                <option value="1">1 séance par semaine</option>
-                <option value="2">2 séances par semaine</option>
-                <option value="3">3 séances par semaine</option>
+                <option value="0">{{ __('No training sessions') }}</option>
+                <option value="1">{{ __('1 session per week') }}</option>
+                <option value="2">{{ __('2 sessions per week') }}</option>
+                <option value="3">{{ __('3 sessions per week') }}</option>
             </select>
         </div>
 
@@ -150,7 +150,7 @@
         <label for="message" class="block text-sm font-medium text-gray-700 mb-2">Message *</label>
         <textarea id="message" name="message" rows="4" required
             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent transition-colors resize-none"
-            placeholder="Parlez-nous de votre expérience au tennis de table ou de toute question que vous avez...">{{ old('message') }}</textarea>
+            placeholder="{{ __('Tell us about your table tennis experience or any questions you have...') }}">{{ old('message') }}</textarea>
         @error('message')
             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
         @enderror
@@ -160,7 +160,7 @@
         <label for="captcha" class="block text-sm font-medium text-gray-700 mb-2">Combien font {{ session('captcha.a') }} {{ session('captcha.operation') }} {{ session('captcha.b') }} ? *</label>
         <input type="number" id="captcha" name="captcha" required
             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent transition-colors"
-            placeholder="Entrez le résultat">
+            placeholder="{{ __('Enter the result') }}">
         @error('captcha')
             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
         @enderror

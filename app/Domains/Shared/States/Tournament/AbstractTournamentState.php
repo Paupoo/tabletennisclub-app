@@ -1,0 +1,74 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Domains\Shared\States\Tournament;
+
+use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Shared\Enums\TournamentStatusEnum;
+use App\Domains\Shared\States\Tournament\Contracts\TournamentStateInterface;
+
+abstract class AbstractTournamentState implements TournamentStateInterface
+{
+    public function setUp(Tournament $tournament): void
+    {
+        throw new \InvalidArgumentException('Cannot set up tournament from ' . $this->getStatus()->value . ' state');
+    }
+
+    public function cancel(Tournament $tournament): void
+    {
+        throw new \InvalidArgumentException('Cannot cancel tournament from ' . $this->getStatus()->value . ' state');
+    }
+
+    public function canCreatePools(): bool
+    {
+        return false;
+    }
+
+    public function canGenerateMatches(): bool
+    {
+        return false;
+    }
+
+    public function canModifyPools(): bool
+    {
+        return false;
+    }
+
+    // Comportements par défaut (peuvent être surchargés)
+    public function canRegisterUsers(): bool
+    {
+        return false;
+    }
+
+    public function canStartMatches(): bool
+    {
+        return false;
+    }
+
+    public function canTransitionTo(TournamentStatusEnum $newStatus): bool
+    {
+        return in_array($newStatus, $this->getAllowedTransitions());
+    }
+
+    public function close(Tournament $tournament): void
+    {
+        throw new \InvalidArgumentException('Cannot close tournament from ' . $this->getStatus()->value . ' state');
+    }
+
+    // Transitions par défaut (lèvent des exceptions)
+    public function publish(Tournament $tournament): void
+    {
+        throw new \InvalidArgumentException('Cannot publish tournament from ' . $this->getStatus()->value . ' state');
+    }
+
+    public function start(Tournament $tournament): void
+    {
+        throw new \InvalidArgumentException('Cannot start tournament from ' . $this->getStatus()->value . ' state');
+    }
+
+    public function unpublish(Tournament $tournament): void
+    {
+        throw new \InvalidArgumentException('Cannot unpublish tournament from ' . $this->getStatus()->value . ' state');
+    }
+}

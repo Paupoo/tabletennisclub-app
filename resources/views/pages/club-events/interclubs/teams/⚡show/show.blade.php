@@ -7,9 +7,11 @@
         :title="($team->club?->name ?? '') . ' ' . $team->name">
         <x-slot:actions>
             <x-button class="btn-ghost" link="{{ route('admin.interclubs.teams') }}" icon="o-arrow-left"
-                label="Toutes les équipes" />
-            <x-button class="btn-primary" link="{{ route('admin.interclubs.teams.edit', $team->id) }}"
-                icon="o-pencil" label="Modifier" />
+                :label="__('All teams')" />
+            @if (auth()->user()->is_admin || auth()->user()->is_committee_member)
+                <x-button class="btn-primary" link="{{ route('admin.interclubs.teams.edit', $team->id) }}"
+                    icon="o-pencil" label="Modifier" />
+            @endif
         </x-slot:actions>
     </x-header>
 
@@ -84,7 +86,7 @@
                                     </span>
                                 @endif
                                 @if ($user->is_competitor)
-                                    <span class="rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700">Compétiteur</span>
+                                    <span class="rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-700">{{ __('Competitor') }}</span>
                                 @endif
                             </div>
                         </div>
@@ -129,9 +131,9 @@
     @endif
 
     {{-- ── Résultats (mock) ─────────────────────────────────────────────── --}}
-    <x-card class="border-gray-200 shadow-sm" title="Résultats">
+    <x-card class="border-gray-200 shadow-sm" :title="__('Results')">
         <x-slot:subtitle>
-            <span class="text-xs text-orange-500">Module résultats à venir — données simulées</span>
+            <span class="text-xs text-orange-500">{{ __('Results module coming soon — simulated data') }}</span>
         </x-slot:subtitle>
 
         @if ($pastInterclubs->isEmpty())

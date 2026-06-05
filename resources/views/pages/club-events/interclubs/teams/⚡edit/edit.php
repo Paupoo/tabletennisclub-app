@@ -4,14 +4,16 @@ declare(strict_types=1);
 
 namespace Resources\views\Pages\ClubEvents\Interclubs\Teams\Edit;
 
-use App\Enums\Gender;
-use App\Enums\LeagueLevel;
-use App\Enums\TeamName;
-use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Interclub\League;
-use App\Models\ClubEvents\Interclub\Team;
+use App\Domains\Shared\Enums\Gender;
+use App\Domains\Shared\Enums\LeagueLevel;
+use App\Domains\Shared\Enums\TeamName;
+use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\League;
+use App\Domains\Competitions\Interclub\Models\Team;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
@@ -19,7 +21,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast;
+    use Toast, HasBreadcrumbs;
 
     #[Locked]
     public int $teamId;
@@ -31,13 +33,23 @@ new class extends Component
 
     public function mount(Team $team): void
     {
+        abort_unless(Auth::user()->is_admin || Auth::user()->is_committee_member, 403);
+
         $this->teamId    = $team->id;
         $this->name      = $team->name;
         $this->captainId = $team->captain_id;
         $this->memberIds = $team->users->pluck('id')->toArray();
     }
 
-    public function render(): View
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__("Edit Team"));
+    }
+
+        public function render(): View
     {
         return $this->view();
     }
@@ -48,7 +60,7 @@ new class extends Component
             'name'      => ['required', 'string', 'size:1'],
             'memberIds' => ['array', 'min:1'],
         ], [
-            'name.size'       => 'Le nom doit être une seule lettre (A–Z).',
+            'name.size'       => __('The name must be a single letter (A–Z).'),
             'memberIds.min'   => 'L\'équipe doit avoir au moins un joueur.',
         ]);
 
@@ -106,7 +118,7 @@ new class extends Component
         // Liste complète des candidats, filtrée selon la catégorie de l'équipe
         $competitors = User::where('is_competitor', true)
             ->when($category === Gender::WOMEN->value, fn ($q) => $q->where('gender', Gender::WOMEN->value))
-            ->when($category === 'VETERANS' && $season?->end_at, function ($q) use ($season) {
+            ->when($category === 'VETERANS' && $season?->end_at, function ($q) use ($season): void {
                 $cutoff = $season->end_at->copy()->subYears(40);
                 $q->whereNotNull('birthdate')->where('birthdate', '<=', $cutoff->toDateString());
             })

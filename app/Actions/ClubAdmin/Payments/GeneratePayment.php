@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Actions\ClubAdmin\Payments;
 
-use App\Models\ClubAdmin\Payment\Payment;
-use App\Models\ClubAdmin\Subscription\Subscription;
+use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 
@@ -18,7 +18,7 @@ class GeneratePayment
     {
         Gate::authorize('generatePayment', $subscription);
 
-        if (! $subscription->canGeneratePayment($subscription)) {
+        if (! $subscription->canGeneratePayment()) {
             return back()
                 ->withErrors(__('Cannot generate payment for current subscription state.'));
         }

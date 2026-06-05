@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Admin\Users;
 
-use App\Models\ClubAdmin\Users\User;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Services\ForceList;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
@@ -84,26 +84,6 @@ class UsersTable extends Component
         User::whereIn('id', $this->selectedItems)->delete();
 
         session()->flash('success', count($this->selectedItems) . ' membre(s) supprimé(s).');
-        $this->resetSelection();
-    }
-
-    public function bulkPaid()
-    {
-        $this->authorize('update', Auth::user());
-
-        User::whereIn('id', $this->selectedItems)->update(['has_paid' => true]);
-
-        session()->flash('success', count($this->selectedItems) . ' membre(s) mis à jour (payé).');
-        $this->resetSelection();
-    }
-
-    public function bulkUnpaid()
-    {
-        $this->authorize('update', Auth::user());
-
-        User::whereIn('id', $this->selectedItems)->update(['has_paid' => false]);
-
-        session()->flash('warning', count($this->selectedItems) . ' membre(s) mis à jour (non payé).');
         $this->resetSelection();
     }
 

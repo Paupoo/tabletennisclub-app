@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use App\Enums\InterclubResult;
-use App\Models\ClubAdmin\Club\Room;
-use App\Models\ClubEvents\Interclub\League;
-use App\Models\ClubEvents\Interclub\Season;
+use App\Domains\ClubAdmin\Club\Models\Room;
+use App\Domains\Competitions\Interclub\Models\League;
+use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Shared\Enums\InterclubResultEnum;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -32,7 +32,7 @@ return new class extends Migration
             $table->unsignedTinyInteger('week_number')->nullable();
             $table->unsignedTinyInteger('total_players');
             $table->string('score', 5)->nullable();
-            $table->enum('result', array_column(InterclubResult::cases(), 'value'))->nullable();
+            $table->enum('result', array_column(InterclubResultEnum::cases(), 'value'))->nullable();
             $table->unsignedBigInteger('visited_team_id')->nullable();
             $table->unsignedBigInteger('visiting_team_id')->nullable();
             $table->foreignIdFor(Room::class)->nullable();

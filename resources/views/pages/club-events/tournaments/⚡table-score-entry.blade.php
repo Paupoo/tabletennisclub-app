@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-use App\Models\ClubAdmin\Club\Table;
-use App\Models\ClubEvents\Tournament\Tournament;
-use App\Models\ClubEvents\Tournament\TournamentMatch;
-use App\Services\TournamentFinalPhaseService;
-use App\Services\TournamentTableService;
+use App\Domains\ClubAdmin\Club\Models\Table;
+use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Competitions\Tournament\Models\TournamentMatch;
+use App\Domains\Competitions\Tournament\Services\TournamentFinalPhaseService;
+use App\Domains\Competitions\Tournament\Services\TournamentTableService;
 use Illuminate\View\View;
 use Livewire\Component;
 use Mary\Traits\Toast;
@@ -104,7 +104,10 @@ new class extends Component
             }
 
             $results[] = ['player1_score' => $p1, 'player2_score' => $p2];
-            $p1 > $p2 ? $p1Sets++ : $p2Sets++;
+            $isValidSet = $this->tournament->validateSetScore($p1, $p2, count($results), $this->p1Handicap, $this->p2Handicap) === null;
+            if ($isValidSet) {
+                $p1 > $p2 ? $p1Sets++ : $p2Sets++;
+            }
 
             if ($p1Sets >= $this->tournament->sets_to_win || $p2Sets >= $this->tournament->sets_to_win) {
                 break;
@@ -192,8 +195,23 @@ new class extends Component
             $hp1      = $p1Handicap ?? 0;
             $hp2      = $p2Handicap ?? 0;
             $doneSets = collect($setScores)->filter(fn ($s) => !((int)($s['p1'] ?? 0) === $hp1 && (int)($s['p2'] ?? 0) === $hp2));
-            $p1Sets   = $doneSets->filter(fn ($s) => (int)($s['p1'] ?? 0) > (int)($s['p2'] ?? 0))->count();
-            $p2Sets   = $doneSets->filter(fn ($s) => (int)($s['p2'] ?? 0) > (int)($s['p1'] ?? 0))->count();
+
+            $p1Sets = 0;
+            $p2Sets = 0;
+            $setNum = 0;
+            foreach ($doneSets as $s) {
+                $sp1  = (int)($s['p1'] ?? 0);
+                $sp2  = (int)($s['p2'] ?? 0);
+                $setNum++;
+                $validSet = $tournament->validateSetScore($sp1, $sp2, $setNum, $hp1, $hp2) === null;
+                if ($validSet) {
+                    $sp1 > $sp2 ? $p1Sets++ : $p2Sets++;
+                }
+                if ($p1Sets >= $tournament->sets_to_win || $p2Sets >= $tournament->sets_to_win) {
+                    break;
+                }
+            }
+
             $matchFinished = $p1Sets >= $tournament->sets_to_win || $p2Sets >= $tournament->sets_to_win;
             $hasSets  = $doneSets->isNotEmpty();
             $winner   = $matchFinished
@@ -272,10 +290,15 @@ new class extends Component
                     );
                 @endphp
 
-                <div @class([
-                    'bg-base-100 rounded-xl shadow p-4 flex items-center gap-4 transition-all',
-                    'ring-2 ring-success/40' => $setWon,
-                ])>
+                <div class="bg-base-100 rounded-xl shadow p-4 flex items-center gap-4 transition-all set-row border border-base-300"
+                    data-set-index="{{ $i }}"
+                    data-hp1="{{ $hp1 }}"
+                    data-hp2="{{ $hp2 }}"
+                    data-deuce="{{ $tournament->deuce_enabled ? 'true' : 'false' }}"
+                    @class([
+                        'border-success/40 ring-2 ring-success/40' => $setWon,
+                    ])
+                >
                     <div @class([
                         'w-10 h-10 rounded-lg flex flex-col items-center justify-center shrink-0',
                         'bg-success text-success-content' => $setWon,
@@ -285,13 +308,13 @@ new class extends Component
                         <span class="text-base font-black leading-none">{{ $i + 1 }}</span>
                     </div>
 
-                    <x-input wire:model.live="setScores.{{ $i }}.p1"
+                    <x-input wire:model.debounce-300ms="setScores.{{ $i }}.p1"
                         type="number" min="{{ $hp1 }}" max="30" placeholder="{{ $hp1 }}"
                         class="input-lg text-center font-mono font-black text-2xl flex-1 p-1" />
 
                     <span class="text-lg font-black opacity-20">:</span>
 
-                    <x-input wire:model.live="setScores.{{ $i }}.p2"
+                    <x-input wire:model.debounce-300ms="setScores.{{ $i }}.p2"
                         type="number" min="{{ $hp2 }}" max="30" placeholder="{{ $hp2 }}"
                         class="input-lg text-center font-mono font-black text-2xl flex-1 p-1" />
                 </div>
@@ -354,5 +377,53 @@ new class extends Component
             </div>
         </div>
     </div>
+
+    <script>
+        function updateSetValidation() {
+            document.querySelectorAll('.set-row').forEach(setRow => {
+                const inputs = setRow.querySelectorAll('input[type="number"]');
+                if (inputs.length < 2) return;
+
+                const p1Str = inputs[0].value;
+                const p2Str = inputs[1].value;
+                const hp1 = parseInt(setRow.dataset.hp1) || 0;
+                const hp2 = parseInt(setRow.dataset.hp2) || 0;
+                const deuce = setRow.dataset.deuce === 'true';
+
+                const p1 = p1Str ? parseInt(p1Str) : hp1;
+                const p2 = p2Str ? parseInt(p2Str) : hp2;
+
+                // Check if set is won
+                let isWon = false;
+                if (p1 !== hp1 || p2 !== hp2) { // not empty
+                    if (p1 !== p2) { // not tied
+                        const max = Math.max(p1, p2);
+                        const min = Math.min(p1, p2);
+                        if (deuce) {
+                            isWon = (min < 10 && max === 11) || (min >= 10 && max - min === 2);
+                        } else {
+                            isWon = max === 11;
+                        }
+                    }
+                }
+
+                // Update ring and border classes
+                if (isWon) {
+                    setRow.classList.add('border-success/40', 'ring-2', 'ring-success/40');
+                    setRow.classList.remove('border-base-300');
+                } else {
+                    setRow.classList.remove('border-success/40', 'ring-2', 'ring-success/40');
+                    setRow.classList.add('border-base-300');
+                }
+            });
+        }
+
+        // Update on input
+        document.addEventListener('input', (e) => {
+            if (e.target.matches('input[type="number"]')) {
+                updateSetValidation();
+            }
+        }, true);
+    </script>
 
 </div>

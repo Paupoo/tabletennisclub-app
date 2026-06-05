@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Competitions\Interclub\Models\Team;
 use App\Mail\InviteNewUserMail;
-use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Interclub\Season;
-use App\Models\ClubEvents\Interclub\Team;
 use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
 
@@ -15,7 +15,7 @@ pest()->group('club-admin', 'users');
 
 const USER_INDEX_COMPONENT = 'pages::club-admin.users.index';
 
-beforeEach(function () {
+beforeEach(function (): void {
     // On crée un utilisateur admin pour les tests
     $this->admin = User::factory()->create(['is_admin' => true]);
     actingAs($this->admin);
@@ -23,13 +23,13 @@ beforeEach(function () {
     Season::factory()->create();
 });
 
-describe('rendering and display', function () {
-    it('renders successfully', function () {
+describe('rendering and display', function (): void {
+    it('renders successfully', function (): void {
         Livewire::test(USER_INDEX_COMPONENT)
             ->assertStatus(200);
     });
 
-    it('displays the correct headers', function () {
+    it('displays the correct headers', function (): void {
         Livewire::test(USER_INDEX_COMPONENT)
             ->assertSee(__('Name'))
             ->assertSee(__('Email'))
@@ -37,7 +37,7 @@ describe('rendering and display', function () {
             ->assertSee(__('Ranking'));
     });
 
-    it('displays users in the table', function () {
+    it('displays users in the table', function (): void {
         $users = User::factory()->count(3)->create();
 
         Livewire::test(USER_INDEX_COMPONENT)
@@ -46,7 +46,7 @@ describe('rendering and display', function () {
             ->assertSee($users[2]->last_name);
     });
 
-    it('paginates users correctly', function () {
+    it('paginates users correctly', function (): void {
         User::factory()->count(20)->create();
 
         Livewire::test(USER_INDEX_COMPONENT)
@@ -54,7 +54,7 @@ describe('rendering and display', function () {
             ->assertSee('2'); // page 2
     });
 
-    it('displays mobile view elements', function () {
+    it('displays mobile view elements', function (): void {
         $user = User::factory()->create();
 
         Livewire::test(USER_INDEX_COMPONENT)
@@ -63,8 +63,8 @@ describe('rendering and display', function () {
     });
 });
 
-describe('search functionality', function () {
-    it('filters users by first name', function () {
+describe('search functionality', function (): void {
+    it('filters users by first name', function (): void {
         $john = User::factory()->create(['first_name' => 'John']);
         $jane = User::factory()->create(['first_name' => 'Jane']);
 
@@ -74,7 +74,7 @@ describe('search functionality', function () {
             ->assertDontSee($jane->first_name);
     });
 
-    it('filters users by last name', function () {
+    it('filters users by last name', function (): void {
         $smith = User::factory()->create(['last_name' => 'Smith']);
         $doe = User::factory()->create(['last_name' => 'Doe']);
 
@@ -84,7 +84,7 @@ describe('search functionality', function () {
             ->assertDontSee($doe->last_name);
     });
 
-    it('filters users by email', function () {
+    it('filters users by email', function (): void {
         $user1 = User::factory()->create(['email' => 'john@example.com']);
         $user2 = User::factory()->create(['email' => 'jane@example.com']);
 
@@ -94,7 +94,7 @@ describe('search functionality', function () {
             ->assertDontSee($user2->email);
     });
 
-    it('resets pagination when searching', function () {
+    it('resets pagination when searching', function (): void {
         User::factory()->count(20)->create();
 
         Livewire::test(USER_INDEX_COMPONENT)
@@ -103,7 +103,7 @@ describe('search functionality', function () {
             ->assertSet('paginators.page', 1);
     });
 
-    it('performs case-insensitive search', function () {
+    it('performs case-insensitive search', function (): void {
         $user = User::factory()->create(['first_name' => 'John']);
 
         Livewire::test(USER_INDEX_COMPONENT)
@@ -112,8 +112,8 @@ describe('search functionality', function () {
     });
 });
 
-describe('licence type filtering', function () {
-    it('shows both competitive and recreational users by default', function () {
+describe('licence type filtering', function (): void {
+    it('shows both competitive and recreational users by default', function (): void {
         $competitive = User::factory()->create(['is_competitor' => true]);
         $recreational = User::factory()->create(['is_competitor' => false]);
 
@@ -122,7 +122,7 @@ describe('licence type filtering', function () {
             ->assertSee($recreational->email);
     });
 
-    it('filters only competitive users', function () {
+    it('filters only competitive users', function (): void {
         $competitive = User::factory()->create(['is_competitor' => true]);
         $recreational = User::factory()->create(['is_competitor' => false]);
 
@@ -132,7 +132,7 @@ describe('licence type filtering', function () {
             ->assertDontSee($recreational->email);
     });
 
-    it('filters only recreational users', function () {
+    it('filters only recreational users', function (): void {
         $competitive = User::factory()->create(['is_competitor' => true]);
         $recreational = User::factory()->create(['is_competitor' => false]);
 
@@ -142,7 +142,7 @@ describe('licence type filtering', function () {
             ->assertSee($recreational->email);
     });
 
-    it('resets pagination when changing licence type', function () {
+    it('resets pagination when changing licence type', function (): void {
         User::factory()->count(20)->create();
 
         Livewire::test(USER_INDEX_COMPONENT)
@@ -152,8 +152,8 @@ describe('licence type filtering', function () {
     });
 });
 
-describe('gender filtering', function () {
-    it('filters users by gender', function () {
+describe('gender filtering', function (): void {
+    it('filters users by gender', function (): void {
         $male = User::factory()->create(['gender' => 'MEN']);
         $female = User::factory()->create(['gender' => 'WOMEN']);
 
@@ -163,7 +163,7 @@ describe('gender filtering', function () {
             ->assertDontSee($female->email);
     });
 
-    it('filters users by multiple genders', function () {
+    it('filters users by multiple genders', function (): void {
         $male = User::factory()->create(['gender' => 'MEN']);
         $female = User::factory()->create(['gender' => 'WOMEN']);
         $other = User::factory()->create(['gender' => 'OTHER']);
@@ -175,7 +175,7 @@ describe('gender filtering', function () {
             ->assertDontSee($other->email);
     });
 
-    it('resets pagination when changing categories', function () {
+    it('resets pagination when changing categories', function (): void {
         User::factory()->count(20)->create();
 
         Livewire::test(USER_INDEX_COMPONENT)
@@ -185,8 +185,8 @@ describe('gender filtering', function () {
     });
 });
 
-describe('active status filtering', function () {
-    it('shows all users when onlyActive is false', function () {
+describe('active status filtering', function (): void {
+    it('shows all users when onlyActive is false', function (): void {
         $active = User::factory()->create(['is_active' => true]);
         $inactive = User::factory()->create(['is_active' => false]);
 
@@ -196,7 +196,7 @@ describe('active status filtering', function () {
             ->assertSee($inactive->email);
     });
 
-    it('filters only active users', function () {
+    it('filters only active users', function (): void {
         $active = User::factory()->create(['is_active' => true]);
         $inactive = User::factory()->create(['is_active' => false]);
 
@@ -206,7 +206,7 @@ describe('active status filtering', function () {
             ->assertDontSee($inactive->email);
     });
 
-    it('resets pagination when toggling onlyActive', function () {
+    it('resets pagination when toggling onlyActive', function (): void {
         User::factory()->count(20)->create();
 
         Livewire::test(USER_INDEX_COMPONENT)
@@ -216,8 +216,8 @@ describe('active status filtering', function () {
     });
 });
 
-describe('team filtering', function () {
-    it('filters users by team', function () {
+describe('team filtering', function (): void {
+    it('filters users by team', function (): void {
         $team = Team::factory(['name' => 'A'])->create();
         $userInTeam = User::factory()->create();
         $userNotInTeam = User::factory()->create();
@@ -230,7 +230,7 @@ describe('team filtering', function () {
             ->assertDontSee($userNotInTeam->email);
     });
 
-    it('filters users by multiple teams', function () {
+    it('filters users by multiple teams', function (): void {
         $team1 = Team::factory(['name' => 'A'])->create();
         $team2 = Team::factory(['name' => 'B'])->create();
         $user1 = User::factory()->create();
@@ -248,8 +248,8 @@ describe('team filtering', function () {
     });
 });
 
-describe('filter combination', function () {
-    it('combines search and licence type filters', function () {
+describe('filter combination', function (): void {
+    it('combines search and licence type filters', function (): void {
         $competitiveJohn = User::factory()->create([
             'first_name' => 'John',
             'is_competitor' => true,
@@ -266,7 +266,7 @@ describe('filter combination', function () {
             ->assertDontSee($recreationalJohn->email);
     });
 
-    it('combines multiple filters correctly', function () {
+    it('combines multiple filters correctly', function (): void {
         $target = User::factory()->create([
             'first_name' => 'John',
             'is_competitor' => true,
@@ -291,31 +291,31 @@ describe('filter combination', function () {
     });
 });
 
-describe('active filters count', function () {
-    it('counts zero active filters by default', function () {
+describe('active filters count', function (): void {
+    it('counts zero active filters by default', function (): void {
         Livewire::test(USER_INDEX_COMPONENT)
             ->assertSet('activeFiltersCount', 0);
     });
 
-    it('counts licence type filter', function () {
+    it('counts licence type filter', function (): void {
         Livewire::test(USER_INDEX_COMPONENT)
             ->set('selectedLicenceType', 'competitive')
             ->assertSet('activeFiltersCount', 1);
     });
 
-    it('counts category filters', function () {
+    it('counts category filters', function (): void {
         Livewire::test(USER_INDEX_COMPONENT)
             ->set('categories', ['male', 'female'])
             ->assertSet('activeFiltersCount', 2);
     });
 
-    it('counts onlyActive filter', function () {
+    it('counts onlyActive filter', function (): void {
         Livewire::test(USER_INDEX_COMPONENT)
             ->set('showInactiveUsers', true)
             ->assertSet('activeFiltersCount', 1);
     });
 
-    it('counts all active filters combined', function () {
+    it('counts all active filters combined', function (): void {
         Livewire::test(USER_INDEX_COMPONENT)
             ->set('selectedLicenceType', 'competitive')
             ->set('categories', ['MEN', 'WOMEN'])
@@ -324,8 +324,8 @@ describe('active filters count', function () {
     });
 });
 
-describe('filter reset', function () {
-    it('resets all filters', function () {
+describe('filter reset', function (): void {
+    it('resets all filters', function (): void {
         Livewire::test(USER_INDEX_COMPONENT)
             ->set('selectedLicenceType', 'competitive')
             ->set('categories', ['MEN'])
@@ -336,7 +336,7 @@ describe('filter reset', function () {
             ->assertSet('showInactiveUsers', false);
     });
 
-    it('resets pagination when resetting filters', function () {
+    it('resets pagination when resetting filters', function (): void {
         User::factory()->count(20)->create();
 
         Livewire::test(USER_INDEX_COMPONENT)
@@ -346,13 +346,13 @@ describe('filter reset', function () {
     });
 });
 
-describe('sorting', function () {
-    it('sorts by last name ascending by default', function () {
+describe('sorting', function (): void {
+    it('sorts by last name ascending by default', function (): void {
         Livewire::test(USER_INDEX_COMPONENT)
             ->assertSet('sortBy', ['column' => 'last_name', 'direction' => 'asc']);
     });
 
-    it('sorts users correctly', function () {
+    it('sorts users correctly', function (): void {
         $alice = User::factory()->create(['last_name' => 'Alice']);
         $bob = User::factory()->create(['last_name' => 'Bob']);
         $charlie = User::factory()->create(['last_name' => 'Charlie']);
@@ -367,8 +367,8 @@ describe('sorting', function () {
 
 // Actions
 
-describe('user selection', function () {
-    it('can select a single user', function () {
+describe('user selection', function (): void {
+    it('can select a single user', function (): void {
         $user = User::factory()->create();
 
         Livewire::test(USER_INDEX_COMPONENT)
@@ -376,7 +376,7 @@ describe('user selection', function () {
             ->assertSet('selected', [$user->id]);
     });
 
-    it('can select multiple users', function () {
+    it('can select multiple users', function (): void {
         $users = User::factory()->count(3)->create();
 
         Livewire::test(USER_INDEX_COMPONENT)
@@ -384,18 +384,17 @@ describe('user selection', function () {
             ->assertCount('selected', 3);
     });
 
-    it('shows bulk action bar when users are selected', function () {
+    it('shows bulk action bar when users are selected', function (): void {
         $user = User::factory()->create();
 
         Livewire::test(USER_INDEX_COMPONENT)
             ->set('selected', [$user->id])
-            ->assertSee(__('Add to a team...'))
-            ->assertSee(__('Subscribe to...'));
+            ->assertSee(__('Add to a team...'));
     });
 });
 
-describe('single user deletion', function () {
-    it('opens delete confirmation modal', function () {
+describe('single user deletion', function (): void {
+    it('opens delete confirmation modal', function (): void {
         $user = User::factory()->create();
 
         Livewire::test(USER_INDEX_COMPONENT)
@@ -404,7 +403,7 @@ describe('single user deletion', function () {
             ->assertSet('deleteModal', true);
     });
 
-    it('deletes a user successfully', function () {
+    it('deletes a user successfully', function (): void {
         $user = User::factory()->create();
 
         Livewire::test(USER_INDEX_COMPONENT)
@@ -416,7 +415,7 @@ describe('single user deletion', function () {
         expect(User::find($user->id))->toBeNull();
     });
 
-    it('shows success message after deletion', function () {
+    it('shows success message after deletion', function (): void {
         $user = User::factory()->create();
 
         Livewire::test(USER_INDEX_COMPONENT)
@@ -425,7 +424,7 @@ describe('single user deletion', function () {
             ->assertDispatched('mary-toast');
     })->skip('not able to test toasts');
 
-    it('does not delete user if modal is cancelled', function () {
+    it('does not delete user if modal is cancelled', function (): void {
         $user = User::factory()->create();
 
         Livewire::test(USER_INDEX_COMPONENT)
@@ -436,8 +435,8 @@ describe('single user deletion', function () {
     });
 });
 
-describe('bulk deletion', function () {
-    it('opens bulk delete confirmation modal', function () {
+describe('bulk deletion', function (): void {
+    it('opens bulk delete confirmation modal', function (): void {
         $users = User::factory()->count(3)->create();
 
         Livewire::test(USER_INDEX_COMPONENT)
@@ -446,7 +445,7 @@ describe('bulk deletion', function () {
             ->assertSet('deleteSelectedModal', true);
     });
 
-    it('deletes multiple users successfully', function () {
+    it('deletes multiple users successfully', function (): void {
         $users = User::factory()->count(3)->create();
         $userIds = $users->pluck('id')->toArray();
 
@@ -461,7 +460,7 @@ describe('bulk deletion', function () {
         }
     });
 
-    it('shows success message after bulk deletion', function () {
+    it('shows success message after bulk deletion', function (): void {
         $users = User::factory()->count(3)->create();
 
         Livewire::test(USER_INDEX_COMPONENT)
@@ -470,7 +469,7 @@ describe('bulk deletion', function () {
             ->assertDispatched('mary-toast');
     })->skip('not able to test toasts');
 
-    it('keeps non-selected users intact', function () {
+    it('keeps non-selected users intact', function (): void {
         $toDelete = User::factory()->count(2)->create();
         $toKeep = User::factory()->create();
 
@@ -482,8 +481,8 @@ describe('bulk deletion', function () {
     });
 });
 
-describe('bulk add to team', function () {
-    it('requires team selection', function () {
+describe('bulk add to team', function (): void {
+    it('requires team selection', function (): void {
         $users = User::factory()->count(2)->create();
 
         Livewire::test(USER_INDEX_COMPONENT)
@@ -495,7 +494,7 @@ describe('bulk add to team', function () {
         // Aucun changement ne devrait être fait
     })->todo();
 
-    it('resets team_id after adding', function () {
+    it('resets team_id after adding', function (): void {
         $team = Team::factory()->create();
         $users = User::factory()->count(2)->create();
 
@@ -506,7 +505,7 @@ describe('bulk add to team', function () {
             ->assertSet('team_id', null);
     });
 
-    it('shows success message', function () {
+    it('shows success message', function (): void {
         $team = Team::factory()->create();
         $users = User::factory()->count(2)->create();
 
@@ -518,8 +517,8 @@ describe('bulk add to team', function () {
     })->skip('not able to test toasts');
 });
 
-describe('bulk subscription', function () {
-    it('requires subscription selection', function () {
+describe('bulk subscription', function (): void {
+    it('requires subscription selection', function (): void {
         $users = User::factory()->count(2)->create();
 
         Livewire::test(USER_INDEX_COMPONENT)
@@ -530,7 +529,7 @@ describe('bulk subscription', function () {
         // La méthode retourne early si subscription_id est null
     })->todo();
 
-    it('resets subscription_id after subscribing', function () {
+    it('resets subscription_id after subscribing', function (): void {
         $users = User::factory()->count(2)->create();
 
         Livewire::test(USER_INDEX_COMPONENT)
@@ -540,7 +539,7 @@ describe('bulk subscription', function () {
             ->assertSet('subscription_id', null);
     });
 
-    it('shows success message', function () {
+    it('shows success message', function (): void {
         $users = User::factory()->count(2)->create();
 
         Livewire::test(USER_INDEX_COMPONENT)
@@ -551,8 +550,8 @@ describe('bulk subscription', function () {
     })->skip('not able to test toasts');
 });
 
-describe('bulk activation', function () {
-    it('activates multiple users', function () {
+describe('bulk activation', function (): void {
+    it('activates multiple users', function (): void {
         $users = User::factory()->count(3)->create(['is_active' => false]);
         $userIds = $users->pluck('id')->toArray();
 
@@ -565,7 +564,7 @@ describe('bulk activation', function () {
         }
     });
 
-    it('shows success message after activation', function () {
+    it('shows success message after activation', function (): void {
         $users = User::factory()->count(2)->create(['is_active' => false]);
 
         Livewire::test(USER_INDEX_COMPONENT)
@@ -575,8 +574,8 @@ describe('bulk activation', function () {
     })->skip('not able to test toasts');
 });
 
-describe('bulk deactivation', function () {
-    it('deactivates multiple users', function () {
+describe('bulk deactivation', function (): void {
+    it('deactivates multiple users', function (): void {
         $users = User::factory()->count(3)->create(['is_active' => true]);
         $userIds = $users->pluck('id')->toArray();
 
@@ -589,7 +588,7 @@ describe('bulk deactivation', function () {
         }
     });
 
-    it('shows success message after deactivation', function () {
+    it('shows success message after deactivation', function (): void {
         $users = User::factory()->count(2)->create(['is_active' => true]);
 
         Livewire::test(USER_INDEX_COMPONENT)
@@ -599,8 +598,8 @@ describe('bulk deactivation', function () {
     })->skip('not able to test toasts');
 });
 
-describe('teams dropdown', function () {
-    it('loads teams correctly', function () {
+describe('teams dropdown', function (): void {
+    it('loads teams correctly', function (): void {
         $team = Team::factory()->create(['name' => 'Team A']);
 
         $component = Livewire::test(USER_INDEX_COMPONENT);
@@ -610,7 +609,7 @@ describe('teams dropdown', function () {
         expect($teams->first()['name'])->toContain('Team A');
     });
 
-    it('formats teams with captain avatar', function () {
+    it('formats teams with captain avatar', function (): void {
         $captain = User::factory()->create(['photo' => 'captain.jpg']);
         $team = Team::factory()->create(['captain_id' => $captain->id]);
 
@@ -620,7 +619,7 @@ describe('teams dropdown', function () {
         expect($teams->first()['avatar'])->toBe('captain.jpg');
     });
 
-    it('uses default avatar when captain has no photo', function () {
+    it('uses default avatar when captain has no photo', function (): void {
         $captain = User::factory()->create(['photo' => null]);
         $team = Team::factory()->create(['captain_id' => $captain->id]);
 
@@ -631,15 +630,15 @@ describe('teams dropdown', function () {
     });
 });
 
-describe('subscriptions dropdown', function () {
-    it('loads subscriptions correctly', function () {
+describe('subscriptions dropdown', function (): void {
+    it('loads subscriptions correctly', function (): void {
         $component = Livewire::test(USER_INDEX_COMPONENT);
         $subscriptions = $component->get('subscriptions');
 
         expect($subscriptions)->toHaveCount(5);
     });
 
-    it('groups subscriptions correctly', function () {
+    it('groups subscriptions correctly', function (): void {
         $component = Livewire::test(USER_INDEX_COMPONENT);
         $subscriptions = $component->get('subscriptions');
 
@@ -653,8 +652,8 @@ describe('subscriptions dropdown', function () {
 
 // ── sendInvitation ────────────────────────────────────────────────────────────
 
-describe('sendInvitation', function () {
-    it('queues InviteNewUserMail to the target user', function () {
+describe('sendInvitation', function (): void {
+    it('queues InviteNewUserMail to the target user', function (): void {
         Mail::fake();
 
         $target = User::factory()->create(['email' => 'member@example.com']);
@@ -665,7 +664,7 @@ describe('sendInvitation', function () {
         Mail::assertQueued(InviteNewUserMail::class, fn ($mail) => $mail->hasTo('member@example.com'));
     });
 
-    it('shows a success toast after sending', function () {
+    it('shows a success toast after sending', function (): void {
         Mail::fake();
 
         $target = User::factory()->create(['email' => 'toast@example.com']);

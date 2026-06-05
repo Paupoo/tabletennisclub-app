@@ -1,3 +1,7 @@
+<x-slot:breadcrumbs>
+    <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
+</x-slot:breadcrumbs>
+
 <div>
     @if ($selectedSessionId && $selectedSession)
         {{-- ================================================================
@@ -7,9 +11,9 @@
             :subtitle="$selectedSession->start->translatedFormat('l d F Y') . ' · ' . $selectedSession->start->format('H:i') . '–' . $selectedSession->end->format('H:i')"
             :title="$selectedSession->trainingPack?->name ?? __('Session')">
             <x-slot:actions>
-                <x-button class="btn-ghost" icon="o-arrow-left" label="{{ __('Back') }}"
+                <x-button class="btn-ghost" icon="o-arrow-left" :label="__('Back')"
                     wire:click="backToList" />
-                <x-button class="btn-error btn-soft" icon="o-x-circle" label="{{ __('Cancel session') }}"
+                <x-button class="btn-error btn-soft" icon="o-x-circle" :label="__('Cancel session')"
                     wire:click="openCancel" />
             </x-slot:actions>
         </x-header>
@@ -37,7 +41,7 @@
                 </x-card>
 
                 {{-- Attendance legend --}}
-                <x-card title="{{ __('Attendance') }}">
+                <x-card :title="__('Attendance')">
                     <div class="space-y-1.5 text-xs text-base-content/60">
                         <div class="flex items-center gap-2">
                             <span class="h-2.5 w-2.5 rounded-full bg-success"></span>
@@ -57,7 +61,7 @@
 
             {{-- Right — member list --}}
             <div class="lg:col-span-2">
-                <x-card title="{{ __('Members') }}">
+                <x-card :title="__('Members')">
                     @forelse ($enrolledMembers as $member)
                         @php
                             $isMinor = $member->birthdate && \Carbon\Carbon::parse($member->birthdate)->age < 18;
@@ -116,7 +120,7 @@
                                             'btn-success' => $currentStatus === 'present',
                                             'btn-ghost' => $currentStatus !== 'present',
                                         ])
-                                        icon="o-check" tooltip="{{ __('Present') }}"
+                                        icon="o-check" :tooltip="__('Present')"
                                         wire:click="setAttendance({{ $member->id }}, 'present')" />
                                     <x-button
                                         @class([
@@ -124,7 +128,7 @@
                                             'btn-warning' => $currentStatus === 'excused',
                                             'btn-ghost' => $currentStatus !== 'excused',
                                         ])
-                                        icon="o-clock" tooltip="{{ __('Excused') }}"
+                                        icon="o-clock" :tooltip="__('Excused')"
                                         wire:click="setAttendance({{ $member->id }}, 'excused')" />
                                     <x-button
                                         @class([
@@ -132,7 +136,7 @@
                                             'btn-error' => $currentStatus === 'absent',
                                             'btn-ghost' => $currentStatus !== 'absent',
                                         ])
-                                        icon="o-x-mark" tooltip="{{ __('Absent') }}"
+                                        icon="o-x-mark" :tooltip="__('Absent')"
                                         wire:click="setAttendance({{ $member->id }}, 'absent')" />
                                 </div>
                             </div>
@@ -151,7 +155,7 @@
         {{-- ================================================================
              PLANNING — upcoming sessions list
         ================================================================ --}}
-        <x-header separator subtitle="{{ __('Your upcoming sessions') }}" title="{{ __('My sessions') }}" />
+        <x-header separator :subtitle="__('Your upcoming sessions')" :title="__('My sessions')" />
 
         @forelse ($upcomingSessions as $session)
             <div wire:click="viewSession({{ $session->id }})"
@@ -189,7 +193,7 @@
     {{-- ================================================================
          CANCELLATION MODAL
     ================================================================ --}}
-    <x-modal title="{{ __('Cancel this session') }}" wire:model="cancelModal" separator>
+    <x-modal :title="__('Cancel this session')" wire:model="cancelModal" separator>
         <div class="space-y-4">
             <div class="grid grid-cols-2 gap-3">
                 <div @class([
@@ -212,13 +216,13 @@
                 </div>
             </div>
 
-            <x-textarea label="{{ __('Note (optional)') }}"
-                placeholder="{{ __('E.g. Bank holiday, maintenance…') }}" wire:model="cancelNote" rows="2" />
+            <x-textarea :label="__('Note (optional)')"
+                :placeholder="__('E.g. Bank holiday, maintenance…')" wire:model="cancelNote" rows="2" />
         </div>
 
         <x-slot:actions>
-            <x-button label="{{ __('Abandon') }}" wire:click="$set('cancelModal', false)" />
-            <x-button class="btn-error" icon="o-x-circle" label="{{ __('Confirm cancellation') }}"
+            <x-button :label="__('Abandon')" wire:click="$set('cancelModal', false)" />
+            <x-button class="btn-error" icon="o-x-circle" :label="__('Confirm cancellation')"
                 wire:click="confirmCancel" />
         </x-slot:actions>
     </x-modal>

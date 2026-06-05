@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace App\Services\ClubAdmin\Contact;
 
+use App\Domains\ClubAdmin\Contact\Models\Contact;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Mail\CustomEmail;
 use App\Mail\MembershipInfoDetailEmail;
 use App\Mail\PoliteDeclineEmail;
 use App\Mail\RequestInfoEmail;
 use App\Mail\WelcomeEmail;
-use App\Models\ClubAdmin\Contact\Contact;
-use App\Models\ClubAdmin\Users\User;
 use Illuminate\Contracts\Mail\Mailable;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;

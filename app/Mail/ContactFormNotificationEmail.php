@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Mail;
 
-use App\Models\ClubAdmin\Contact\Contact;
+use App\Domains\ClubAdmin\Contact\Models\Contact;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;

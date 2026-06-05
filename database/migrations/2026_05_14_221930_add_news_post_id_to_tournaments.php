@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Models\ClubPosts\NewsPost;
+use App\Domains\ClubPosts\Models\NewsPost;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\ClubAdmin\Payments;
 
-use App\Models\ClubAdmin\Payment\Payment;
+use App\Domains\ClubAdmin\Payment\Models\Payment;
 use Carbon\Carbon;
 
 class GeneratePaymentReference

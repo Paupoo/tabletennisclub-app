@@ -10,7 +10,7 @@
     $activeRounds = array_filter($rounds, fn($matches) => $matches->count() > 0);
 @endphp
 
-<div @if ($tournament->status === \App\Enums\TournamentStatusEnum::PENDING) wire:poll.5s @endif class="mt-6">
+<div @if ($tournament->status === \App\Domains\Shared\Enums\TournamentStatusEnum::PENDING) wire:poll.5s @endif class="mt-6">
     @if (empty($activeRounds))
         <div class="flex flex-col items-center py-20 opacity-30">
             <x-icon name="o-trophy" class="w-12 h-12 mb-3" />
@@ -179,9 +179,9 @@
         {{-- Close tournament button
         @if ($this->bracketPhaseComplete && !$this->tournamentClosed)
             <div class="mt-12 flex justify-center">
-                <x-button label="{{ __('Close tournament') }}" icon="o-flag"
+                <x-button :label="__('Close tournament')" icon="o-flag"
                     class="btn-error btn-outline"
-                    wire:click="closeTournament" wire:confirm="{{ __('This will mark the tournament as closed. Continue?') }}" />
+                    wire:click="closeTournament" wire:confirm="__('This will mark the tournament as closed. Continue?')" />
             </div>
         @endif --}}
     @endif

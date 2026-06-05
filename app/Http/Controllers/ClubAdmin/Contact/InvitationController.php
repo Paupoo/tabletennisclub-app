@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\ClubAdmin\Contact;
 
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Http\Controllers\Controller;
-use App\Models\ClubAdmin\Users\User;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -28,8 +29,11 @@ class InvitationController extends Controller
             'password' => Hash::make($validated['password']),
         ]);
 
-        // connexion directe optionnelle
+        $user->markEmailAsVerified();
+
         auth()->login($user);
+
+        event(new Registered($user));
 
         return redirect()->route('dashboard')->with('success', __('Welcome!'));
     }

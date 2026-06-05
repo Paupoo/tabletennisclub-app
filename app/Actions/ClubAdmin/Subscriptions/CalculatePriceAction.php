@@ -4,34 +4,53 @@ declare(strict_types=1);
 
 namespace App\Actions\ClubAdmin\Subscriptions;
 
-use App\Models\ClubAdmin\Subscription\Subscription;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\Trainings\Models\TrainingPack;
 
 final class CalculatePriceAction
 {
-    private float $competitivePrice = 125;
-    private float $recreativePrice = 60;
-    private float $trainingDiscountedPrice = 80;
-    private float $trainingPrice = 90;
+    private const COMPETITIVE_PRICE = 125.0;
 
-    public function __invoke(Subscription $subscription): Subscription
+    private const DISCOUNT_AMOUNT = 10.0; // €
+
+    private const RECREATIVE_PRICE = 60.0;
+
+    public function __invoke(Subscription $subscription, int $familyMembersCount = 1): Subscription
     {
-        // Base price
-        $subscription->subscription_price = $subscription->is_competitive 
-            ? $this->competitivePrice 
-            : $this->recreativePrice;
+        // Affiliation price
+        $subscription->subscription_price = $subscription->is_competitive
+            ? self::COMPETITIVE_PRICE
+            : self::RECREATIVE_PRICE;
 
-        // Total Trainings
-        $subscription->trainings_count = $subscription->trainingPacks()->count();
+        // Training packs: only enrolled (not waitlisted)
+        $enrolledPacks = $subscription->trainingPacks()
+            ->wherePivot('status', 'enrolled')
+            ->get();
 
-        // Discounted price for trainings
-        $subscription->training_unit_price = $subscription->trainings_count > 1 
-            ? $this->trainingDiscountedPrice
-            : $this->trainingPrice;
+        $discountablePacks = $enrolledPacks->filter(fn (TrainingPack $p) => $p->allow_discount);
+        $fixedPacks = $enrolledPacks->filter(fn (TrainingPack $p) => ! $p->allow_discount);
 
-        $subscription->amount_due = array_sum([
-            $subscription->subscription_price,
-            $subscription->trainings_count * $subscription->training_unit_price,
-        ]);
+        $applyDiscount = $discountablePacks->count() > 1 || $familyMembersCount > 1;
+
+        $trainingTotal = 0.0;
+
+        foreach ($discountablePacks as $pack) {
+            $trainingTotal += $applyDiscount
+                ? max(0.0, (float) $pack->price - self::DISCOUNT_AMOUNT)
+                : (float) $pack->price;
+        }
+
+        foreach ($fixedPacks as $pack) {
+            $trainingTotal += (float) $pack->price;
+        }
+
+        $subscription->trainings_count = $enrolledPacks->count();
+        $subscription->training_unit_price = $enrolledPacks->isEmpty()
+            ? 0.0
+            : round($trainingTotal / $enrolledPacks->count(), 2);
+
+        // amount_due accessor expects euros, stores as cents internally
+        $subscription->amount_due = (float) $subscription->subscription_price + $trainingTotal;
 
         $subscription->save();
 

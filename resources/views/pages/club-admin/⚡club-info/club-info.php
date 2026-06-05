@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Resources\views\Pages\ClubEvents\Interclubs\Teams;
 
-use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Interclub\Club;
+use App\Livewire\Concerns\HasBreadcrumbs;
+use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Support\Breadcrumb;
 use Illuminate\Validation\Rule as ValidationRule;
 use Illuminate\Validation\ValidationException;
@@ -17,7 +18,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast;
+    use Toast, HasBreadcrumbs;
 
     public bool $addCommitteeMemberModal = false;
 
@@ -95,6 +96,13 @@ new class extends Component
         $this->success(__('Member removed from committee list'));
     }
 
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__('Club Information'));
+    }
+
     public function render(): View
     {
         return $this->view();
@@ -139,10 +147,7 @@ new class extends Component
     public function with(): array
     {
         return [
-            'breadcrumbs' => Breadcrumb::make()
-                ->home()
-                ->current(__('Club Information'))
-                ->toArray(),
+            'breadcrumbs' => $this->getBreadcrumbs(),
             'committeeMembers' => User::where('is_committee_member', true)
                 ->orderByRaw("
                     CASE

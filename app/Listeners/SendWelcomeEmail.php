@@ -4,19 +4,23 @@ declare(strict_types=1);
 
 namespace App\Listeners;
 
-use App\Mail\InviteNewUserMail;
+use App\Domains\ClubAdmin\Users\Models\User;
+use App\Mail\MemberWelcomeMail;
 use Illuminate\Auth\Events\Registered;
-use Mail;
+use Illuminate\Support\Facades\Mail;
 
 class SendWelcomeEmail
 {
-    /**
-     * Handle the event.
-     */
     public function handle(Registered $event): void
     {
-        // Mail::to($event->user->email)
-        //     ->send(new InviteNewUserMail($event->user, 'daefaefaefa'));
+        $user = $event->user;
 
+        if (! $user instanceof User) {
+            return;
+        }
+
+        $dashboardUrl = route('dashboard');
+
+        Mail::to($user->email)->queue(new MemberWelcomeMail($user, $dashboardUrl));
     }
 }

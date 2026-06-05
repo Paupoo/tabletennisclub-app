@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Bar;
 
 use App\Http\Controllers\Controller;
-use App\Models\Bar\BarOrder;
-use App\Models\Bar\BarOrderItem;
-use App\Services\Bar\CashSheetService;
+use App\Domains\Bar\Models\BarOrder;
+use App\Domains\Bar\Models\BarOrderItem;
+use App\Domains\Bar\Services\CashSheetService;
 use Illuminate\Http\Request;
 
 class BarCashSheetController extends Controller

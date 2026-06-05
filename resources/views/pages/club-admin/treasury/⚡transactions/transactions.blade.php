@@ -3,17 +3,17 @@
 </x-slot:breadcrumbs>
 
 <div>
-    <x-header title="{{ __('Bank Transactions') }}" subtitle="{{ __('Imported bank statements') }}" separator progress-indicator>
+    <x-header :title="__('Bank Transactions')" :subtitle="__('Imported bank statements')" separator progress-indicator>
         <x-slot:middle class="!justify-end">
             <x-input
-                placeholder="{{ __('Search counterparty, reference...') }}"
+                :placeholder="__('Search counterparty, reference...')"
                 wire:model.live.debounce.300ms="search"
                 icon="o-magnifying-glass"
                 class="border-none bg-base-200 w-64" />
         </x-slot:middle>
         <x-slot:actions>
             <x-button
-                label="{{ __('Import CSV') }}"
+                :label="__('Import CSV')"
                 icon="o-arrow-up-tray"
                 class="btn-primary btn-sm"
                 wire:click="$set('importModal', true)" />
@@ -117,7 +117,7 @@
     </x-card>
 
     {{-- Modal : Import --}}
-    <x-modal wire:model="importModal" title="{{ __('Import Bank Statement') }}" separator>
+    <x-modal wire:model="importModal" :title="__('Import Bank Statement')" separator>
         <div class="space-y-4">
             <p class="text-sm opacity-70">
                 {{ __('Upload your bank export (ODS, XLSX, CSV). Transactions will be imported and available for reconciliation.') }}
@@ -127,15 +127,15 @@
             </p>
             <x-file
                 wire:model="importFile"
-                label="{{ __('Bank file') }}"
+                :label="__('Bank file')"
                 accept=".ods,.xlsx,.xls,.csv,.txt"
                 hint="ODS · XLSX · CSV" />
         </div>
 
         <x-slot:actions>
-            <x-button label="{{ __('Cancel') }}" @click="$wire.importModal = false" class="btn-ghost" />
+            <x-button :label="__('Cancel')" @click="$wire.importModal = false" class="btn-ghost" />
             <x-button
-                label="{{ __('Start Import') }}"
+                :label="__('Start Import')"
                 icon="o-arrow-up-tray"
                 class="btn-primary"
                 wire:click="processImport"

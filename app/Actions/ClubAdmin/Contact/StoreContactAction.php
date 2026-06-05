@@ -6,7 +6,7 @@ namespace App\Actions\ClubAdmin\Contact;
 
 use App\Mail\ContactFormConfirmationEmail;
 use App\Mail\ContactFormNotificationEmail;
-use App\Models\ClubAdmin\Contact\Contact;
+use App\Domains\ClubAdmin\Contact\Models\Contact;
 use Exception;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;

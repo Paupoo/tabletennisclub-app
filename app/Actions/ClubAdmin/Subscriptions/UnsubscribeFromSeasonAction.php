@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Actions\ClubAdmin\Subscriptions;
 
-use App\Models\ClubAdmin\Subscription\Subscription;
-use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Interclub\Season;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Season;
 use Illuminate\Http\Request;
 
 class UnsubscribeFromSeasonAction
@@ -21,9 +21,9 @@ class UnsubscribeFromSeasonAction
             ->whereNotIn('status', ['cancelled', 'refunded'])
             ->first();
 
-        if (!$subscription) {
+        if (! $subscription) {
             return back()->withErrors([
-                'error' => __('No active subscription found for this season')
+                'error' => __('No active subscription found for this season'),
             ]);
         }
 

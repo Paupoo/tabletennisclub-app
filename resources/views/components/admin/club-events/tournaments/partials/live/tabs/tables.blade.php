@@ -1,4 +1,4 @@
-<div @if($tournament->status === \App\Enums\TournamentStatusEnum::PENDING) wire:poll.5s @endif class="mt-6">
+<div @if($tournament->status === \App\Domains\Shared\Enums\TournamentStatusEnum::PENDING) wire:poll.5s @endif class="mt-6">
     @if ($this->tables->isEmpty())
         <div class="flex flex-col items-center py-20 opacity-30">
             <x-icon name="o-squares-2x2" class="w-12 h-12 mb-3" />
@@ -12,7 +12,7 @@
                     <span class="text-lg font-black tracking-tighter uppercase">{{ $roomName }}</span>
                     <div class="h-px bg-base-300 grow"></div>
                     <span class="text-xs opacity-40">
-                        {{ $roomTables->where('is_free', true)->count() }} {{ __('free') }} /
+                        {{ $roomTables->where('is_free', true)->count() }} {{ __('available') }} /
                         {{ $roomTables->count() }} {{ __('total') }}
                     </span>
                 </div>
@@ -49,7 +49,7 @@
                                 </div>
 
                                 @if ($table['is_free'])
-                                    <x-badge value="{{ __('FREE') }}" class="badge-success badge-sm font-bold" />
+                                    <x-badge value="{{ __('AVAILABLE') }}" class="badge-success badge-sm font-bold" />
                                 @else
                                     @php
                                         $elapsed = $table['match_started_at']
@@ -88,7 +88,7 @@
                                     @endif
 
                                     <div class="flex gap-2 pt-1">
-                                        <x-button label="{{ __('Score') }}" icon="o-pencil"
+                                        <x-button :label="__('Score')" icon="o-pencil"
                                             class="btn-ghost btn-xs flex-1 bg-base-200"
                                             wire:click="openScoreEntry({{ $match->id }}, {{ $table['id'] }})" />
                                     </div>
@@ -106,7 +106,7 @@
                                 @else
                                     <div class="py-4 flex flex-col items-center justify-center border-2 border-dashed border-base-300 rounded-lg gap-3">
                                         <x-button
-                                            label="{{ __('Launch') }}"
+                                            :label="__('Launch')"
                                             icon="o-play"
                                             class="btn-outline btn-sm text-success"
                                             wire:click="openLaunchDrawer({{ $table['id'] }})" />
@@ -116,7 +116,7 @@
                                 {{-- QR code — direct link to mobile score page --}}
                                 {{-- <a href="{{ $tableUrl }}" target="_blank"
                                     class="w-full flex justify-center pt-1 opacity-40 hover:opacity-90 transition-opacity"
-                                    title="{{ __('Open mobile score page') }}">
+                                    :title="__('Open mobile score page')">
                                     {!! $svgSmall !!}
                                 </a> --}}
                             </div>

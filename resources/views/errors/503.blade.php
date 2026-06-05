@@ -71,7 +71,7 @@
                     <svg class="w-5 h-5 text-club-blue mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
-                    <span class="text-sm font-medium text-gray-700">Temps estimé</span>
+                    <span class="text-sm font-medium text-gray-700">{{ __('Estimated time') }}</span>
                 </div>
                 
                 <div class="grid grid-cols-3 gap-4 text-center">
@@ -93,7 +93,7 @@
                     <div class="bg-gray-200 rounded-full h-2">
                         <div class="bg-gradient-to-r from-club-blue to-club-blue-light h-2 rounded-full transition-all duration-1000" :style="`width: ${progress}%`"></div>
                     </div>
-                    <p class="text-sm text-gray-500 mt-2">Progression estimée</p>
+                    <p class="text-sm text-gray-500 mt-2">{{ __('Estimated progress') }}</p>
                 </div>
             </div>
 
@@ -134,7 +134,7 @@
             <!-- Footer -->
             <footer class="mt-12 text-sm text-gray-400">
                 <p>Merci pour votre patience</p>
-                <p class="mt-1">Dernière mise à jour : <span x-text="lastUpdated"></span></p>
+                <p class="mt-1">{{ __('Last updated:') }}<span x-text="lastUpdated"></span></p>
             </footer>
         </div>
     </div>

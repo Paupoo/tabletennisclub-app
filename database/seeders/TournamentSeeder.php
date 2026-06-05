@@ -4,18 +4,21 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Enums\Ranking;
-use App\Enums\TournamentObjectiveEnum;
-use App\Enums\TournamentStatusEnum;
-use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Tournament\Tournament;
-use App\Models\ClubEvents\Tournament\TournamentMatch;
-use App\Models\ClubEvents\Tournament\TournamentPair;
-use App\Services\TournamentFinalPhaseService;
-use App\Services\TournamentMatchService;
-use App\Services\TournamentPoolService;
-use App\Services\TournamentService;
-use App\Services\TournamentTableService;
+use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\ClubPosts\Services\EventPostService;
+use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Competitions\Tournament\Models\TournamentMatch;
+use App\Domains\Competitions\Tournament\Models\TournamentPair;
+use App\Domains\Competitions\Tournament\Services\TournamentFinalPhaseService;
+use App\Domains\Competitions\Tournament\Services\TournamentMatchService;
+use App\Domains\Competitions\Tournament\Services\TournamentPoolService;
+use App\Domains\Competitions\Tournament\Services\TournamentService;
+use App\Domains\Competitions\Tournament\Services\TournamentTableService;
+use App\Domains\Shared\Enums\ClubEventTypeEnum;
+use App\Domains\Shared\Enums\EventPostStatusEnum;
+use App\Domains\Shared\Enums\Ranking;
+use App\Domains\Shared\Enums\TournamentObjectiveEnum;
+use App\Domains\Shared\Enums\TournamentStatusEnum;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
@@ -28,6 +31,7 @@ class TournamentSeeder extends Seeder
         private readonly TournamentMatchService $matchService,
         private readonly TournamentFinalPhaseService $finalPhaseService,
         private readonly TournamentService $tournamentService,
+        private readonly EventPostService $eventPostService,
     ) {}
 
     public function run(): void
@@ -242,6 +246,25 @@ class TournamentSeeder extends Seeder
             ]);
         }
         $this->tournamentService->countRegisteredUsers($t);
+
+        $this->eventPostService->upsert(
+            model: $t,
+            type: ClubEventTypeEnum::TOURNAMENT,
+            title: 'Tournoi du club — inscriptions ouvertes',
+            description: 'Rejoignez notre tournoi interne ! Tous niveaux bienvenus. Inscriptions en ligne, places limitées.',
+            location: 'Centre Sportif Jean Demeester, Ottignies',
+            featured: true,
+            status: EventPostStatusEnum::PUBLISHED,
+            syncData: [
+                'event_date' => $t->start_date->toDateString(),
+                'start_time' => $t->start_date->format('H:i:s'),
+                'end_time' => $t->end_date?->format('H:i:s'),
+                'price' => '10 €',
+                'max_participants' => $t->max_users,
+                'icon' => '🏆',
+            ],
+            featuredUntil: $t->start_date->toDateString(),
+        );
     }
 
     private function seedSetupDoubles(Collection $players): void

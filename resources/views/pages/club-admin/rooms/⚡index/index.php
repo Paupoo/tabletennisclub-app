@@ -2,11 +2,12 @@
 
 declare(strict_types=1);
 
-use App\Enums\TournamentStatusEnum;
-use App\Models\ClubAdmin\Club\Room;
-use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Tournament\Tournament;
-use App\Services\TournamentService;
+use App\Domains\Shared\Enums\TournamentStatusEnum;
+use App\Domains\ClubAdmin\Club\Models\Room;
+use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Competitions\Tournament\Services\TournamentService;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\View\View;
@@ -16,7 +17,11 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast;
+    use Toast, HasBreadcrumbs;
+
+    public bool $deleteRoomModal = false;
+
+    public ?int $deletingRoomId = null;
 
     // ── Computed ──────────────────────────────────────────────────────────────
 
@@ -51,12 +56,40 @@ new class extends Component
 
     // ── Actions ───────────────────────────────────────────────────────────────
 
+    public function confirmDeleteRoom(int $id): void
+    {
+        $this->deletingRoomId  = $id;
+        $this->deleteRoomModal = true;
+    }
+
+    public function deleteRoom(): void
+    {
+        if ($this->deletingRoomId) {
+            $this->delete(Room::findOrFail($this->deletingRoomId));
+        }
+        $this->deleteRoomModal = false;
+        $this->deletingRoomId  = null;
+    }
+
     public function delete(Room $room): void
     {
         $this->authorize('delete', $room);
+
+        $hasRelatedRecords = $room->tables()->exists()
+            || $room->trainings()->exists()
+            || $room->trainingPacks()->exists()
+            || $room->interclubs()->exists()
+            || $room->tournaments()->exists();
+
+        if ($hasRelatedRecords) {
+            $this->error(__('This room cannot be deleted because it has linked tables, trainings, or events.'));
+
+            return;
+        }
+
         $room->delete();
         unset($this->rooms);
-        $this->success(__('The room ' . $room->name . ' has been deleted.'));
+        $this->success(__('The room :name has been deleted.', ['name' => $room->name]));
     }
 
     public function register(int $tournamentId): void
@@ -91,7 +124,15 @@ new class extends Component
 
     // ── Render ────────────────────────────────────────────────────────────────
 
-    public function render(): View
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__("Rooms"));
+    }
+
+        public function render(): View
     {
         return $this->view();
     }
@@ -100,10 +141,7 @@ new class extends Component
     {
         return [
             'rooms' => $this->rooms,
-            'breadcrumbs' => Breadcrumb::make()
-                ->home()
-                ->current(__('Rooms'))
-                ->toArray(),
+            'breadcrumbs' => $this->getBreadcrumbs(),
         ];
     }
 };

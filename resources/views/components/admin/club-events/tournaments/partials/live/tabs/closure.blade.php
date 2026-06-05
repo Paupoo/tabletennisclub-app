@@ -11,7 +11,7 @@
                 <p class="text-sm opacity-50 mt-1">{{ __('All data has been recorded. Results are final.') }}</p>
             </div>
             @if ($tournament->newsPost)
-                <x-button label="{{ __('View news post') }}" icon="o-newspaper"
+                <x-button :label="__('View news post')" icon="o-newspaper"
                     class="btn-ghost btn-sm"
                     link="{{ route('admin.website.articles.edit', $tournament->newsPost) }}" />
             @endif
@@ -36,7 +36,7 @@
                 </div>
             @else
                 @php
-                    $remaining = \App\Models\ClubEvents\Tournament\TournamentMatch::where('tournament_id', $tournament->id)
+                    $remaining = \App\Domains\Competitions\Tournament\Models\TournamentMatch::where('tournament_id', $tournament->id)
                         ->whereIn('status', ['scheduled', 'in_progress'])->count();
                 @endphp
                 <div class="flex items-center gap-3 rounded-lg bg-warning/10 border border-warning/20 px-4 py-3">
@@ -64,16 +64,16 @@
             @if ($sendThankYou)
                 <div class="space-y-4 mt-2">
                     <div class="flex justify-end">
-                        <x-button label="{{ __('Pre-fill from rankings') }}" icon="o-sparkles"
+                        <x-button :label="__('Pre-fill from rankings')" icon="o-sparkles"
                             class="btn-ghost btn-xs"
                             wire:click="fillClosureFromRankings" spinner="fillClosureFromRankings" />
                     </div>
 
-                    <x-input wire:model="thankYouSubject" label="{{ __('Subject') }}" />
+                    <x-input wire:model="thankYouSubject" :label="__('Subject')" />
 
                     <x-textarea wire:model="thankYouBody"
-                        label="{{ __('Message') }}"
-                        hint="{{ __('Rankings are automatically appended at the bottom of the email.') }}"
+                        :label="__('Message')"
+                        :hint="__('Rankings are automatically appended at the bottom of the email.')"
                         rows="7" />
                 </div>
             @else
@@ -98,12 +98,12 @@
             @if ($createNewsPost)
                 <div class="space-y-5 mt-2">
                     <div class="flex justify-end">
-                        <x-button label="{{ __('Pre-fill from rankings') }}" icon="o-sparkles"
+                        <x-button :label="__('Pre-fill from rankings')" icon="o-sparkles"
                             class="btn-ghost btn-xs"
                             wire:click="fillClosureFromRankings" spinner="fillClosureFromRankings" />
                     </div>
 
-                    <x-input wire:model="newsPostTitle" label="{{ __('Title') }}" />
+                    <x-input wire:model="newsPostTitle" :label="__('Title')" />
 
                     {{-- Image upload --}}
                     <div>
@@ -115,7 +115,7 @@
                                     alt="{{ __('Preview') }}"
                                     class="w-full max-h-48 object-cover rounded-xl" />
                                 <x-button class="btn-ghost btn-sm mt-2 text-error"
-                                    icon="o-trash" label="{{ __('Remove image') }}"
+                                    icon="o-trash" :label="__('Remove image')"
                                     wire:click="removeNewsPostImage" />
                             </div>
                         @endif
@@ -208,7 +208,7 @@
                                     <span class="flex-1 text-sm font-medium">{{ $entry['user']->full_name }}</span>
                                     @if ($entry['qr_confirmed'])
                                         <x-badge value="{{ __('QR seen') }}" class="badge-info badge-xs" icon="o-eye"
-                                            tooltip="{{ __('QR payment visually confirmed at reception — pending bank reconciliation') }}" />
+                                            :tooltip="__('QR payment visually confirmed at reception — pending bank reconciliation')" />
                                     @else
                                         <span class="text-xs text-base-content/40">{{ $entry['user']->email }}</span>
                                     @endif
@@ -225,7 +225,7 @@
         {{-- ── Close button ────────────────────────────────────────────── --}}
         <div class="flex justify-end pt-2 pb-8" x-data="{ confirm: false }">
             <div x-show="! confirm">
-                <x-button label="{{ __('Close tournament') }}" icon="o-lock-closed"
+                <x-button :label="__('Close tournament')" icon="o-lock-closed"
                     class="btn-error btn-sm"
                     :disabled="! $this->allMatchesComplete"
                     @click="confirm = true" />
@@ -233,8 +233,8 @@
 
             <div x-show="confirm" class="flex items-center gap-3 rounded-xl bg-error/10 border border-error/20 px-5 py-3">
                 <span class="text-sm font-medium">{{ __('This action is irreversible. Confirm?') }}</span>
-                <x-button label="{{ __('Cancel') }}" class="btn-ghost btn-sm" @click="confirm = false" />
-                <x-button label="{{ __('Yes, close') }}" icon="o-lock-closed"
+                <x-button :label="__('Cancel')" class="btn-ghost btn-sm" @click="confirm = false" />
+                <x-button :label="__('Yes, close')" icon="o-lock-closed"
                     class="btn-error btn-sm"
                     wire:click="closeTournament" spinner="closeTournament"
                     @click="confirm = false" />

@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\ClubEvents\Training;
 
-use App\Enums\Recurrence;
-use App\Enums\TrainingLevel;
-use App\Enums\TrainingType;
+use App\Domains\ClubAdmin\Club\Models\Room;
+use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Shared\Enums\Recurrence;
+use App\Domains\Shared\Enums\TrainingLevel;
+use App\Domains\Shared\Enums\TrainingType;
+use App\Domains\Trainings\Models\Training;
+use App\Domains\Trainings\Models\TrainingPack;
+use App\Domains\Trainings\Services\TrainingBuilder;
+use App\Domains\Trainings\Services\TrainingDateGenerator;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreTrainingRequest;
 use App\Http\Requests\UpdateTrainingRequest;
-use App\Models\ClubAdmin\Club\Room;
-use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Interclub\Season;
-use App\Models\ClubEvents\Training\Training;
-use App\Models\ClubEvents\Training\TrainingPack;
-use App\Services\TrainingBuilder;
-use App\Services\TrainingDateGenerator;
 use App\Support\Breadcrumb;
 use Exception;
 use Illuminate\Contracts\View\View;
@@ -116,7 +116,7 @@ class TrainingController extends Controller
         $seasons = $this->getAdjacentSeasons();
         $types = TrainingType::cases();
         $users = User::all();
-        $notSubscribedUsers = User::whereDoesntHave('trainings', function ($query) use ($training) {
+        $notSubscribedUsers = User::whereDoesntHave('trainings', function ($query) use ($training): void {
             $query->where('training_id', $training->id);
         })->get();
         $trainingPacks = TrainingPack::with(['room', 'trainer'])->get();
@@ -208,7 +208,7 @@ class TrainingController extends Controller
                 'trainer_id' => $validated['trainer_id'],
             ]);
 
-            $trainingPack = $newCreatedPack->id;
+            $trainingPackId = $newCreatedPack->id;
         }
 
         $training_dates = $this->dateGenerator->generateDates($validated['start_date'], $validated['end_date'], $validated['recurrence']);
@@ -222,7 +222,7 @@ class TrainingController extends Controller
                 ->setRoom($validated['room_id'])
                 ->setSeason($validated['season_id'])
                 ->setTrainer($validated['trainer_id'])
-                ->setTrainingPack($trainingPack)
+                ->setTrainingPack($trainingPackId)
                 ->buildAndSave();
         }
 

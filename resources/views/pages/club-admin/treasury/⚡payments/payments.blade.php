@@ -1,8 +1,12 @@
+<x-slot:breadcrumbs>
+    <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
+</x-slot:breadcrumbs>
+
 <div>
-    <x-header title="{{ __('Treasury') }}" subtitle="{{ __('Payment tracking') }}" separator progress-indicator>
+    <x-header :title="__('Treasury')" :subtitle="__('Payment tracking')" separator progress-indicator>
         <x-slot:middle class="!justify-end">
             <x-input
-                placeholder="{{ __('Search ref. or name...') }}"
+                :placeholder="__('Search ref. or name...')"
                 wire:model.live.debounce.300ms="search"
                 icon="o-magnifying-glass"
                 class="border-none bg-base-200 w-64" />
@@ -10,21 +14,21 @@
         <x-slot:actions>
             @if($statusFilter === 'to_refund')
             <x-button
-                label="{{ __('Auto-match refunds') }}"
+                :label="__('Auto-match refunds')"
                 icon="o-sparkles"
                 class="btn-error btn-sm"
                 wire:click="previewBatchRefundMatch"
                 spinner />
             @else
             <x-button
-                label="{{ __('Auto-match') }}"
+                :label="__('Auto-match')"
                 icon="o-sparkles"
                 class="btn-primary btn-sm"
                 wire:click="previewBatchMatch"
                 spinner />
             @endif
             <x-button
-                label="{{ __('Import CSV') }}"
+                :label="__('Import CSV')"
                 icon="o-arrow-up-tray"
                 class="btn-outline btn-sm"
                 wire:click="$set('importModal', true)" />
@@ -83,9 +87,9 @@
 
     {{-- Tabs + table --}}
     <x-tabs wire:model.live="statusFilter">
-        <x-tab name="pending"   label="{{ __('Pending') }}"   icon="o-clock" />
-        <x-tab name="paid"      label="{{ __('Paid') }}"      icon="o-check-badge" />
-        <x-tab name="to_refund" label="{{ __('To refund') }}" icon="o-arrow-uturn-left" />
+        <x-tab name="pending"   :label="__('Pending')"   icon="o-clock" />
+        <x-tab name="paid"      :label="__('Paid')"      icon="o-check-badge" />
+        <x-tab name="to_refund" :label="__('To refund')" icon="o-arrow-uturn-left" />
     </x-tabs>
 
     <x-card class="bg-base-100 border-none shadow-sm rounded-t-none">
@@ -137,14 +141,14 @@
                     tooltip="{{ $payment->invitation_counter > 0 ? __('Resend (:n sent)', ['n' => $payment->invitation_counter]) : __('Send invitation') }}"
                     spinner />
                 <x-button
-                    label="{{ __('Reconcile') }}"
+                    :label="__('Reconcile')"
                     icon="o-link"
                     wire:click="openReconcile({{ $payment->id }})"
                     class="btn-xs btn-outline" />
             </div>
             @elseif($this->statusFilter === 'to_refund')
             <x-button
-                label="{{ __('Confirm refund') }}"
+                :label="__('Confirm refund')"
                 icon="o-arrow-uturn-left"
                 wire:click="openRefundReconcile({{ $payment->id }})"
                 class="btn-xs btn-error btn-outline" />
@@ -174,7 +178,7 @@
     {{-- ========================================== --}}
     {{-- Modal : Réconciliation                     --}}
     {{-- ========================================== --}}
-    <x-modal wire:model="reconcileModal" title="{{ __('Reconcile Payment') }}" separator box-class="max-w-2xl">
+    <x-modal wire:model="reconcileModal" :title="__('Reconcile Payment')" separator box-class="max-w-2xl">
 
         @if($currentPayment)
 
@@ -182,10 +186,11 @@
         <div class="flex items-center gap-4 p-4 rounded-xl bg-base-200/60 border border-base-300 mb-6">
             <x-icon name="o-document-text" class="w-8 h-8 text-primary shrink-0" />
             <div class="flex-1 min-w-0">
-                <div class="font-bold text-sm">{{ $currentPayment->payable?->user?->first_name }} {{ $currentPayment->payable?->user?->last_name }}</div>
-                @if ($currentPayment->payable?->tournament)
+                @php $label = $currentPayment->payable instanceof \App\Contracts\DescribesPayment ? $currentPayment->payable->getPaymentLabel() : null; @endphp
+                <div class="font-bold text-sm">{{ $currentPayment->payable instanceof \App\Contracts\DescribesPayment ? $currentPayment->payable->getPayerName() : '—' }}</div>
+                @if ($label)
                     <div class="text-xs text-primary/70 mt-0.5">
-                        {{ __('Tournament') }} · {{ $currentPayment->payable->tournament->name }}
+                        <span class="font-medium">{{ $label['type'] }}</span> · {{ $label['name'] }}
                     </div>
                 @endif
                 <div class="font-mono text-xs text-primary mt-0.5">{{ $currentPayment->reference }}</div>
@@ -264,9 +269,9 @@
         @endif
 
         <x-slot:actions>
-            <x-button label="{{ __('Cancel') }}" @click="$wire.reconcileModal = false" class="btn-ghost" />
+            <x-button :label="__('Cancel')" @click="$wire.reconcileModal = false" class="btn-ghost" />
             <x-button
-                label="{{ __('Confirm Reconciliation') }}"
+                :label="__('Confirm Reconciliation')"
                 icon="o-check"
                 class="btn-primary"
                 wire:click="confirmReconcile"
@@ -279,7 +284,7 @@
     {{-- ========================================== --}}
     {{-- Modal : Batch Auto-Réconciliation          --}}
     {{-- ========================================== --}}
-    <x-modal wire:model="batchModal" title="{{ __('Auto-match — Confirm reconciliations') }}" separator box-class="max-w-2xl">
+    <x-modal wire:model="batchModal" :title="__('Auto-match — Confirm reconciliations')" separator box-class="max-w-2xl">
 
         <div class="space-y-4">
             <div class="flex items-start gap-3 p-3 rounded-xl bg-success/10 border border-success/20 text-sm">
@@ -295,6 +300,11 @@
                     <x-icon name="o-check-circle" class="w-5 h-5 text-success shrink-0" />
                     <div class="flex-1 min-w-0">
                         <div class="font-semibold text-sm">{{ $match['member'] }}</div>
+                        @if (! empty($match['event_name']))
+                            <div class="text-[10px] opacity-50 mt-0.5">
+                                <span class="font-medium">{{ $match['event_type'] }}</span> · {{ $match['event_name'] }}
+                            </div>
+                        @endif
                         <div class="flex items-center gap-3 mt-0.5">
                             <span class="font-mono text-xs text-primary">{{ $match['reference'] }}</span>
                             <span class="text-xs opacity-40">·</span>
@@ -310,9 +320,9 @@
         </div>
 
         <x-slot:actions>
-            <x-button label="{{ __('Cancel') }}" @click="$wire.batchModal = false" class="btn-ghost" />
+            <x-button :label="__('Cancel')" @click="$wire.batchModal = false" class="btn-ghost" />
             <x-button
-                label="{{ __('Confirm all (:count)', ['count' => count($batchMatches)]) }}"
+                :label="__('Confirm all (:count)', ['count' => count($batchMatches)])"
                 icon="o-check-badge"
                 class="btn-success"
                 wire:click="confirmBatchReconcile"
@@ -324,17 +334,18 @@
     {{-- ========================================== --}}
     {{-- Modal : Réconciliation remboursement       --}}
     {{-- ========================================== --}}
-    <x-modal wire:model="refundModal" title="{{ __('Confirm Refund') }}" separator box-class="max-w-2xl">
+    <x-modal wire:model="refundModal" :title="__('Confirm Refund')" separator box-class="max-w-2xl">
 
         @if($currentRefundPayment)
 
         <div class="flex items-center gap-4 p-4 rounded-xl bg-error/5 border border-error/20 mb-6">
             <x-icon name="o-arrow-uturn-left" class="w-8 h-8 text-error shrink-0" />
             <div class="flex-1 min-w-0">
-                <div class="font-bold text-sm">{{ $currentRefundPayment->payable?->user?->full_name }}</div>
-                @if ($currentRefundPayment->payable?->tournament)
+                @php $label = $currentRefundPayment->payable instanceof \App\Contracts\DescribesPayment ? $currentRefundPayment->payable->getPaymentLabel() : null; @endphp
+                <div class="font-bold text-sm">{{ $currentRefundPayment->payable instanceof \App\Contracts\DescribesPayment ? $currentRefundPayment->payable->getPayerName() : '—' }}</div>
+                @if ($label)
                     <div class="text-xs text-primary/70 mt-0.5">
-                        {{ __('Tournament') }} · {{ $currentRefundPayment->payable->tournament->name }}
+                        <span class="font-medium">{{ $label['type'] }}</span> · {{ $label['name'] }}
                     </div>
                 @endif
                 <div class="font-mono text-xs text-primary mt-0.5">{{ $currentRefundPayment->reference }}</div>
@@ -409,9 +420,9 @@
         @endif
 
         <x-slot:actions>
-            <x-button label="{{ __('Cancel') }}" @click="$wire.refundModal = false" class="btn-ghost" />
+            <x-button :label="__('Cancel')" @click="$wire.refundModal = false" class="btn-ghost" />
             <x-button
-                label="{{ __('Confirm Refund') }}"
+                :label="__('Confirm Refund')"
                 icon="o-arrow-uturn-left"
                 class="btn-error"
                 wire:click="confirmRefundReconcile"
@@ -424,7 +435,7 @@
     {{-- ========================================== --}}
     {{-- Modal : Batch remboursements               --}}
     {{-- ========================================== --}}
-    <x-modal wire:model="refundBatchModal" title="{{ __('Auto-match refunds — Confirm') }}" separator box-class="max-w-2xl">
+    <x-modal wire:model="refundBatchModal" :title="__('Auto-match refunds — Confirm')" separator box-class="max-w-2xl">
 
         <div class="space-y-4">
             <div class="flex items-start gap-3 p-3 rounded-xl bg-error/10 border border-error/20 text-sm">
@@ -440,6 +451,11 @@
                     <x-icon name="o-arrow-uturn-left" class="w-5 h-5 text-error shrink-0" />
                     <div class="flex-1 min-w-0">
                         <div class="font-semibold text-sm">{{ $match['member'] }}</div>
+                        @if (! empty($match['event_name']))
+                            <div class="text-[10px] opacity-50 mt-0.5">
+                                <span class="font-medium">{{ $match['event_type'] }}</span> · {{ $match['event_name'] }}
+                            </div>
+                        @endif
                         <div class="flex items-center gap-3 mt-0.5">
                             <span class="font-mono text-xs text-primary">{{ $match['reference'] }}</span>
                             @if($match['iban'])
@@ -457,9 +473,9 @@
         </div>
 
         <x-slot:actions>
-            <x-button label="{{ __('Cancel') }}" @click="$wire.refundBatchModal = false" class="btn-ghost" />
+            <x-button :label="__('Cancel')" @click="$wire.refundBatchModal = false" class="btn-ghost" />
             <x-button
-                label="{{ __('Confirm all (:count)', ['count' => count($refundBatchMatches)]) }}"
+                :label="__('Confirm all (:count)', ['count' => count($refundBatchMatches)])"
                 icon="o-arrow-uturn-left"
                 class="btn-error"
                 wire:click="confirmBatchRefundReconcile"
@@ -471,7 +487,7 @@
     {{-- ========================================== --}}
     {{-- Modal : Import relevé bancaire             --}}
     {{-- ========================================== --}}
-    <x-modal wire:model="importModal" title="{{ __('Import Bank Statement') }}" separator>
+    <x-modal wire:model="importModal" :title="__('Import Bank Statement')" separator>
         <div class="space-y-4">
             <p class="text-sm opacity-70">
                 {{ __('Upload your bank export (ODS, XLSX, CSV). Transactions will be imported and available for reconciliation.') }}
@@ -481,15 +497,15 @@
             </p>
             <x-file
                 wire:model="importFile"
-                label="{{ __('Bank file') }}"
+                :label="__('Bank file')"
                 accept=".ods,.xlsx,.xls,.csv,.txt"
                 hint="ODS · XLSX · CSV" />
         </div>
 
         <x-slot:actions>
-            <x-button label="{{ __('Cancel') }}" @click="$wire.importModal = false" class="btn-ghost" />
+            <x-button :label="__('Cancel')" @click="$wire.importModal = false" class="btn-ghost" />
             <x-button
-                label="{{ __('Start Import') }}"
+                :label="__('Start Import')"
                 icon="o-arrow-up-tray"
                 class="btn-primary"
                 wire:click="processImport"

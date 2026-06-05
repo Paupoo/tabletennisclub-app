@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Console\Commands\Payment;
 
-use App\Enums\CommitteeRolesEnum;
-use App\Models\ClubAdmin\Payment\Payment;
-use App\Models\ClubAdmin\Users\User;
-use App\Notifications\Payment\WeeklyRefundReminderNotification;
+use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\ClubAdmin\Payment\Notifications\WeeklyRefundReminderNotification;
+use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -18,7 +18,7 @@ class SendWeeklyRefundReminderCommand extends Command
 {
     public function handle(): int
     {
-        $payments = Payment::with(['payable.user', 'payable.tournament'])
+        $payments = Payment::with(['payable.user'])
             ->where('status', 'to_refund')
             ->get();
 

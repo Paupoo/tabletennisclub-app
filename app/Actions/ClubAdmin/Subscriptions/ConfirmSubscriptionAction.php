@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\ClubAdmin\Subscriptions;
 
-use App\Models\ClubAdmin\Subscription\Subscription;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use Illuminate\Http\RedirectResponse;
 
 class ConfirmSubscriptionAction
@@ -12,7 +12,7 @@ class ConfirmSubscriptionAction
     public function __invoke(Subscription $subscription): RedirectResponse
     {
         try {
-            new CalculatePriceAction($subscription);
+            (new CalculatePriceAction)($subscription);
             $subscription->confirm();
         } catch (\Throwable $th) {
             return back()

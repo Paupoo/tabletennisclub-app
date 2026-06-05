@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Tournament\Pool;
-use App\Models\ClubEvents\Tournament\Tournament;
+use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Tournament\Models\Pool;
+use App\Domains\Competitions\Tournament\Models\Tournament;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;

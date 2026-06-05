@@ -1,12 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    public function down(): void
+    {
+        Schema::dropIfExists('bar_stock_movements');
+    }
+
     public function up(): void
     {
         Schema::create('bar_stock_movements', function (Blueprint $table) {
@@ -59,12 +66,13 @@ return new class extends Migration
             $table->index('order_item_id');
         });
 
-        DB::statement('ALTER TABLE bar_stock_movements ADD CONSTRAINT chk_qty CHECK (quantity > 0)');
-        DB::statement('ALTER TABLE bar_stock_movements ADD CONSTRAINT chk_remaining CHECK (remaining_quantity >= 0)');
-    }
-
-    public function down(): void
-    {
-        Schema::dropIfExists('bar_stock_movements');
+        // CHECK constraints: SQLite cannot add them via ALTER TABLE after creation,
+        // so they are applied only on drivers that support ALTER ... ADD CONSTRAINT.
+        // On SQLite (dev/test) integrity is enforced at the application layer
+        // (see StockService, which rejects non-positive quantities).
+        if (in_array(DB::getDriverName(), ['mysql', 'mariadb', 'pgsql'], true)) {
+            DB::statement('ALTER TABLE bar_stock_movements ADD CONSTRAINT chk_qty CHECK (quantity > 0)');
+            DB::statement('ALTER TABLE bar_stock_movements ADD CONSTRAINT chk_remaining CHECK (remaining_quantity >= 0)');
+        }
     }
 };

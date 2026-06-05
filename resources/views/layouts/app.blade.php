@@ -20,7 +20,7 @@
 </head>
 
 <body class="bg-base-200 min-h-screen font-sans antialiased" x-data="{
-    dbTheme: '{{ App\Models\ClubAdmin\Users\User::first()->theme ?? 'auto' }}',
+    dbTheme: '{{ $user->theme ?? 'auto' }}',
     init() {
         let currentTheme = localStorage.getItem('theme') || this.dbTheme;
         this.updateTheme(currentTheme);
@@ -45,6 +45,9 @@
             <x-app-brand />
         </x-slot:brand>
         <x-slot:actions>
+            @auth
+                <livewire:admin.notification-bell />
+            @endauth
             <label class="me-3 lg:hidden" for="main-drawer">
                 <x-icon class="cursor-pointer" name="o-bars-3" />
             </label>

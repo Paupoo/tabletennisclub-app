@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Enums\NewsPostCategoryEnum;
-use App\Enums\NewsPostStatusEnum;
-use App\Models\ClubAdmin\Users\User;
+use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\NewsPostCategoryEnum;
+use App\Domains\Shared\Enums\NewsPostStatusEnum;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;

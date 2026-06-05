@@ -3,12 +3,12 @@
         <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
     </x-slot:breadcrumbs>
 
-    <x-header title="{{ $tournament->name }}" subtitle="{{ __('Live tournament management') }}">
+    <x-header title="{{ $tournament->name }}" :subtitle="__('Live tournament management')">
         <x-slot:actions>
             @if ($this->tournamentClosed)
                 <x-badge value="{{ __('Closed') }}" class="badge-neutral" icon="o-lock-closed" />
             @elseif ($this->canManageTournament && $this->poolsPhaseComplete && ! $this->bracketExists)
-                <x-button label="{{ __('Create bracket') }}" icon="o-trophy"
+                <x-button :label="__('Create bracket')" icon="o-trophy"
                     class="btn-warning btn-sm animate-pulse"
                     wire:click="generateBracket" spinner="generateBracket" />
             @endif

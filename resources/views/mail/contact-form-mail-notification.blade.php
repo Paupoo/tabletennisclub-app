@@ -1,5 +1,5 @@
 @php
-    use App\Enums\ContactReasonEnum;
+    use App\Domains\Shared\Enums\ContactReasonEnum;
 @endphp
 
 <x-mail::message>

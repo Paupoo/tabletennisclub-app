@@ -4,25 +4,29 @@ declare(strict_types=1);
 
 namespace Resources\views\Pages\ClubEvents\Interclubs\Teams;
 
-use App\Enums\LeagueCategory;
-use App\Enums\LeagueLevel;
-use App\Enums\TeamName;
-use App\Models\ClubEvents\Interclub\Club;
-use App\Models\ClubEvents\Interclub\Interclub;
-use App\Models\ClubEvents\Interclub\League;
-use App\Models\ClubEvents\Interclub\Season;
-use App\Models\ClubEvents\Interclub\Team;
+use App\Domains\Shared\Enums\LeagueCategory;
+use App\Domains\Shared\Enums\LeagueLevel;
+use App\Domains\Shared\Enums\TeamName;
+use App\Domains\Competitions\Interclub\Models\Club;
+use App\Domains\Competitions\Interclub\Models\Interclub;
+use App\Domains\Competitions\Interclub\Models\League;
+use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Competitions\Interclub\Models\Team;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Component;
 use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast;
+    use Toast, HasBreadcrumbs;
 
     public string $search = '';
+
+    public ?int $selectedSeasonId = null;
 
     public bool $deleteModal    = false;
     public bool $deleteAllModal = false;
@@ -34,13 +38,28 @@ new class extends Component
     public string $newLevel    = '';
     public string $newDivision = '';
 
-    public function render(): View
+    public function mount(): void
+    {
+        $this->selectedSeasonId = Season::current()?->id;
+    }
+
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__("Teams"));
+    }
+
+        public function render(): View
     {
         return $this->view();
     }
 
     public function createTeam(): void
     {
+        abort_unless(Auth::user()->is_admin || Auth::user()->is_committee_member, 403);
+
         $this->validate([
             'newTeamName' => ['required', 'string'],
             'newCategory' => ['required', 'string'],
@@ -48,8 +67,8 @@ new class extends Component
             'newDivision' => ['required', 'string'],
         ], [
             'newTeamName.required' => 'Choisissez une lettre pour l\'équipe.',
-            'newCategory.required' => 'Sélectionnez une catégorie.',
-            'newLevel.required'    => 'Sélectionnez un niveau.',
+            'newCategory.required' => __('Please select a category.'),
+            'newLevel.required'    => __('Please select a level.'),
             'newDivision.required' => 'Indiquez la division.',
         ]);
 
@@ -85,6 +104,8 @@ new class extends Component
 
     public function confirmDelete(int $id): void
     {
+        abort_unless(Auth::user()->is_admin || Auth::user()->is_committee_member, 403);
+
         $this->teamToDelete  = $id;
         $this->deleteModal   = true;
     }
@@ -103,6 +124,8 @@ new class extends Component
 
     public function deleteAll(): void
     {
+        abort_unless(Auth::user()->is_admin || Auth::user()->is_committee_member, 403);
+
         $season = Season::current();
 
         if (! $season) {
@@ -125,7 +148,9 @@ new class extends Component
 
     public function teams(): Collection
     {
-        $season = Season::current();
+        $season = $this->selectedSeasonId
+            ? Season::find($this->selectedSeasonId)
+            : Season::current();
 
         if (! $season) {
             return collect();
@@ -190,6 +215,10 @@ new class extends Component
     {
         $teams = $this->teams();
 
+        $selectedSeason = $this->selectedSeasonId
+            ? Season::find($this->selectedSeasonId)
+            : Season::current();
+
         return [
             'breadcrumbs' => Breadcrumb::make()
                 ->home()
@@ -197,11 +226,13 @@ new class extends Component
                 ->current(__('Our teams'))
                 ->toArray(),
             'teams'           => $teams,
-            'season'          => Season::current(),
+            'season'          => $selectedSeason,
+            'seasons'         => Season::orderBy('start_at')->get(),
             'teamsCount'      => $teams->count(),
             'teamNameOptions' => collect(TeamName::cases())->map(fn ($t) => ['id' => $t->name, 'name' => $t->name]),
             'categoryOptions' => collect(LeagueCategory::cases())->map(fn ($c) => ['id' => $c->name, 'name' => $c->value]),
-            'levelOptions'    => collect(LeagueLevel::cases())->map(fn ($l) => ['id' => $l->name, 'name' => $l->value]),
+            'levelOptions'          => collect(LeagueLevel::cases())->map(fn ($l) => ['id' => $l->name, 'name' => $l->value]),
+            'isAdminOrCommittee'    => Auth::user()->is_admin || Auth::user()->is_committee_member,
         ];
     }
 };

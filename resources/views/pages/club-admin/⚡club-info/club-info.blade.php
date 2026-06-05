@@ -3,17 +3,17 @@
 </x-slot:breadcrumbs>
 
 <div>
-    <x-header separator subtitle="{{ __('Configure your club identity and management team') }}"
-        title="{{ __('Club Info') }}" />
+    <x-header separator :subtitle="__('Configure your club identity and management team')"
+        :title="__('Club Info')" />
 
     <x-form wire:submit="save">
         {{-- Name & ID --}}
         <x-admin.shared.form-section :separator="true" :subtitle="__('Official name and federal affiliation')" :title="__('Club Identity')">
             <div class="col-span-6 grid gap-4 md:col-span-4">
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <x-input icon="o-trophy" label="{{ __('Club Name') }}" placeholder="E.g. CTT Ottignies"
+                    <x-input icon="o-trophy" :label="__('Club Name')" placeholder="E.g. CTT Ottignies"
                         wire:model="name" required />
-                    <x-input icon="o-identification" label="{{ __('Club ID / Licence') }}" placeholder="E.g. BBW042"
+                    <x-input icon="o-identification" :label="__('Club ID / Licence')" placeholder="E.g. BBW042"
                         wire:model="licence" required />
                 </div>
 
@@ -22,26 +22,26 @@
         
         {{-- Location --}}
         <x-admin.shared.form-section :separator="true" :subtitle="__('Information to help members and visitors to find our club.')" :title="__('Location Details')">
-            <x-input icon="o-map-pin" label="{{ __('Street') }}" wire:model="street" required/>
-            <x-input icon="o-map-pin" label="{{ __('City Code') }}" wire:model="city_code" required/>
-            <x-input icon="o-map-pin" label="{{ __('City Name') }}" wire:model="city_name" required/>
-            <x-input icon="o-building-office" label="{{ __('Building Name (Optional)') }}" wire:model="building_name"/>
-            <x-input icon="o-map-pin" label="{{ __('Latitude (Optional)') }}" wire:model="latitude" numeric/>
-            <x-input icon="o-map-pin" label="{{ __('Longitude (Optional)') }}" wire:model="longitude" numeric/>
+            <x-input icon="o-map-pin" :label="__('Street')" wire:model="street" required/>
+            <x-input icon="o-map-pin" :label="__('City Code')" wire:model="city_code" required/>
+            <x-input icon="o-map-pin" :label="__('City Name')" wire:model="city_name" required/>
+            <x-input icon="o-building-office" :label="__('Building Name (Optional)')" wire:model="building_name"/>
+            <x-input icon="o-map-pin" :label="__('Latitude (Optional)')" wire:model="latitude" numeric/>
+            <x-input icon="o-map-pin" :label="__('Longitude (Optional)')" wire:model="longitude" numeric/>
             
         </x-admin.shared.form-section>
         
         {{-- Contact --}}
         <x-admin.shared.form-section :separator="true" :subtitle="__('Information to facilitate people to contact us.')" :title="__('Contact Details')">
-                    <x-input icon="o-phone" label="{{ __('Phone Contact') }}" wire:model="phone_contact" />
-                    <x-input icon="o-envelope-open" label="{{ __('Email Contact') }}" wire:model="email_contact" />
-                    <x-input label="{{ __('Website URL') }}" prefix="https://" wire:model="website_url" />
+                    <x-input icon="o-phone" :label="__('Phone Contact')" wire:model="phone_contact" />
+                    <x-input icon="o-envelope-open" :label="__('Email Contact')" wire:model="email_contact" />
+                    <x-input :label="__('Website URL')" prefix="https://" wire:model="website_url" />
         </x-admin.shared.form-section>
 
         {{-- Accounting --}}
         <x-admin.shared.form-section :separator="true" :subtitle="__('Banking and accounting data')" :title="__('Accounting')">
-            <x-input icon="o-currency-euro" label="{{ __('Bank Account') }}" wire:model="bank_account" />
-            <x-input icon="o-identification" label="{{ __('Enterprise Number (Optional)') }}" wire:model="enterprise_number" />
+            <x-input icon="o-currency-euro" :label="__('Bank Account')" wire:model="bank_account" />
+            <x-input icon="o-identification" :label="__('Enterprise Number (Optional)')" wire:model="enterprise_number" />
         </x-admin.shared.form-section>
                 
         {{-- Committee --}}
@@ -53,7 +53,7 @@
                             class="text-xs font-bold uppercase tracking-widest opacity-60">{{ __('Board Members') }}</span>
                         @if($committeeMembers->count() > 0)
                         <x-button @click="$dispatch('open-committee-modal')" class="btn-xs btn-outline"
-                            icon="o-plus" label="{{ __('Add Member') }}" />
+                            icon="o-plus" :label="__('Add Member')" />
                         @endif
                     </div>
 
@@ -78,8 +78,8 @@
                         @empty
                             <x-admin.shared.empty
                                 icon="o-users"
-                                title="{{ __('No committee members defined yet.') }}"
-                                subtitle="{{ __('Add your first board member using the button above.') }}"
+                                :title="__('No committee members defined yet.')"
+                                :subtitle="__('Add your first board member using the button above.')"
                                 action="{{ __('Add Member') }}"
                                 wireClick="$dispatch('open-committee-modal')"
                             />
@@ -95,8 +95,8 @@
         </x-admin.shared.form-section>
 
         <div class="col-span-6 mt-6 flex justify-end gap-3">
-            <x-button label="{{ __('Cancel') }}" />
-            <x-button class="btn-primary" label="{{ __('Save Changes') }}" spinner="save" type="submit" />
+            <x-button :label="__('Cancel')" />
+            <x-button class="btn-primary" :label="__('Save Changes')" spinner="save" type="submit" />
         </div>
     </x-form>
 

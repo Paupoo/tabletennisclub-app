@@ -1,4 +1,4 @@
-<x-modal wire:model="showLaunchModal" title="{{ __('Finalizing Tournament') }}" separator persistent>
+<x-modal wire:model="showLaunchModal" :title="__('Finalizing Tournament')" separator persistent>
     <div class="text-center py-10">
         {{-- Une animation plus sympa --}}
         <div class="flex justify-center mb-6">

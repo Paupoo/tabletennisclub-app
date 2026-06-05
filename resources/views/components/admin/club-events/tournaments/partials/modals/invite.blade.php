@@ -1,18 +1,18 @@
 <x-modal wire:model="showInviteModal" title="Confirmer l'envoi" separator>
     <div class="space-y-4">
-        <p>Vous êtes sur le point d'envoyer une invitation à <strong>{{ count($selectedMembers) }}</strong>
+        <p>{{ __('You are about to send an invitation to') }}<strong>{{ count($selectedMembers) }}</strong>
             membres.</p>
 
         <x-alert icon="o-information-circle" class="alert-info text-sm text-white">
             Un email contenant les détails du tournoi et un lien de confirmation leur sera envoyé.
         </x-alert>
 
-        <x-textarea label="Message personnalisé (optionnel)" wire:model="inviteMessage"
-            placeholder="Ex: Pensez à prendre vos raquettes et vos gourdes !" rows="3" />
+        <x-textarea :label="__('Custom message (optional)')" wire:model="inviteMessage"
+            :placeholder="__('E.g. Remember to bring your paddles and water bottles!')" rows="3" />
 
         @if ($eventPostId)
-            <x-toggle label="Inclure un lien vers l'événement web" wire:model.live="inviteIncludeArticle"
-                hint="Un lien vers l'événement web sera inclus dans l'email." />
+            <x-toggle :label="__('Include a link to the web event')" wire:model.live="inviteIncludeArticle"
+                :hint="__('A link to the web event will be included in the email.')" />
         @endif
     </div>
 

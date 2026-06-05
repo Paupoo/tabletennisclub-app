@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
-use App\Models\Club;
-use App\Models\ClubAdmin\Users\User;
+use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Club;
 
 class ClubPolicy
 {

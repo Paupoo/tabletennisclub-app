@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Actions\ClubAdmin\Payments;
 
+use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Mail\PaymentInvitationEmail;
-use App\Models\ClubAdmin\Payment\Payment;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Mail;
 

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Mail;
 
 use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
-use App\Models\ClubAdmin\Payment\Payment;
+use App\Domains\ClubAdmin\Payment\Models\Payment;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;
@@ -50,7 +50,7 @@ class PaymentInvitationEmail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'mail.payment-invitation',
+            markdown: 'mail.payment-invitation',
             with: [
                 'instructions' => __('Veuillez effectuer le versement avant le ' . today()->addDays(30)->format('d/m/Y')),
             ],
@@ -64,7 +64,7 @@ class PaymentInvitationEmail extends Mailable
     {
         return new Envelope(
             from: new Address('test@example.com', 'CTT Ottignies-Blocry'),
-            subject: 'Payment Invitation for the seasons',
+            subject: __('Payment Invitation for the seasons'),
         );
     }
 }

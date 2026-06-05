@@ -4,17 +4,16 @@
 
 <div>
     <!-- HEADER -->
-    <x-header title="{{ __('Rooms') }}" separator progress-indicator>
-
+    <x-header :title="__('Rooms')" separator progress-indicator>
         <x-slot:actions>
-            @can('create', \App\Models\ClubAdmin\Club\Room::class)
-                <x-button label="{{ __('Create') }}" class="btn-primary btn-sm" responsive link="{{ route('admin.rooms.create') }}" />
+            @can('create', \App\Domains\ClubAdmin\Club\Models\Room::class)
+                <x-button :label="__('Create')" icon="o-plus" class="btn-primary" link="{{ route('admin.rooms.create') }}" />
             @endcan
         </x-slot:actions>
     </x-header>
 
-    <div class="mt-6 grid lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        @foreach ($rooms as $room)
+    <div class="mt-6 grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+        @forelse ($rooms as $room)
             <x-card title="{{ $room->name }}" shadow class="relative">
 
                 <x-slot:figure class="hidden lg:block">
@@ -57,16 +56,32 @@
                 </div>
                 <x-slot:actions>
                     @can('update', $room)
-                        <x-button class="btn-primary btn-outline btn-sm" label="{{ __('Modify') }}"
+                        <x-button class="btn-primary btn-outline btn-sm" :label="__('Modify')"
                             link="{{ route('admin.rooms.edit', $room) }}" />
                     @endcan
 
                     @can('delete', $room)
-                        <x-button class="btn-error btn-outline btn-sm" label="{{ __('Delete') }}"
-                            wire:click="delete({{ $room->id }})" wire:confirm="{{ __('Are you sure?') }}" />
+                        <x-button class="btn-error btn-outline btn-sm" :label="__('Delete')"
+                            wire:click="confirmDeleteRoom({{ $room->id }})" />
                     @endcan
                 </x-slot:actions>
             </x-card>
-        @endforeach
+        @empty
+            <div class="col-span-full">
+                <x-empty-state
+                    icon="o-home"
+                    :heading="__('No rooms yet')"
+                    :message="__('Create the first room to start organizing your equipment.')"
+                    :buttonText="__('Create room')"
+                    href="{{ route('admin.rooms.create') }}" />
+            </div>
+        @endforelse
     </div>
+
+    @can('create', \App\Domains\ClubAdmin\Club\Models\Room::class)
+        <x-confirm-modal model="deleteRoomModal" :title="__('Delete this room?')" :subtitle="__('Warning!')"
+            :confirmLabel="__('Delete')" confirmAction="deleteRoom">
+            <p>{{ __('Are you sure you want to delete this room? This action is irreversible.') }}</p>
+        </x-confirm-modal>
+    @endcan
 </div>

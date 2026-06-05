@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Domains\Competitions\Interclub\Services\InterclubService;
+use App\Domains\Trainings\Services\TrainingBuilder;
+use App\Domains\Trainings\Services\TrainingDateGenerator;
 use App\Services\ForceList;
-use App\Services\InterclubService;
-use App\Services\TrainingBuilder;
-use App\Services\TrainingDateGenerator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\ServiceProvider;

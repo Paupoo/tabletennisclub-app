@@ -2,12 +2,23 @@
 
 declare(strict_types=1);
 
-use App\Enums\CommitteeRolesEnum;
-use App\Enums\Gender;
-use App\Models\ClubAdmin\Users\User;
+use App\Actions\User\AnonymizeUserAction;
+use App\Actions\User\CreateUserAction;
+use App\Actions\User\SendInvitationAction;
+use App\Actions\User\UpdateUserAction;
+use App\Data\User\CreateUserData;
+use App\Data\User\UpdateUserData;
+use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\Gender;
+use App\Domains\ClubAdmin\Users\Models\Guardian;
+use App\Domains\ClubAdmin\Users\Models\User;
+use App\Livewire\Concerns\HasBreadcrumbs;
+use App\Livewire\Concerns\HasPhotoUpload;
 use App\Support\Breadcrumb;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Password as PasswordBroker;
 use Illuminate\Validation\Rule as ValidationRule;
 use Illuminate\Validation\Rules\Enum;
 use Illuminate\Validation\Rules\Password;
@@ -20,11 +31,10 @@ use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
 use Mary\Traits\Toast;
-use PHPUnit\Event\Code\Throwable;
 
 new class extends Component
 {
-    use Toast, WithFileUploads;
+    use Toast, WithFileUploads, HasBreadcrumbs, HasPhotoUpload;
 
     #[Rule('nullable|date')]
     public ?string $birthdate = null;
@@ -37,10 +47,6 @@ new class extends Component
 
     public ?string $committee_role = null;
 
-    public ?string $currentPhoto = null; // photo persistée
-
-    public bool $deleteModal = false;
-
     #[Rule('required|email')]
     public string $email = '';
 
@@ -51,8 +57,6 @@ new class extends Component
 
     #[Rule('required')]
     public ?Gender $gender = Gender::MEN;
-
-    public int $imageKey = 0; // pour gérer l'état de la photo et son delete en JS
 
     // Permissions
 
@@ -82,11 +86,27 @@ new class extends Component
     #[Rule('nullable|string')]
     public ?string $licence_type = null;
 
-    #[Rule('nullable|string')]
-    public ?string $parent_phone_number = null;
-
-    #[Rule(['nullable', new \App\Rules\ValidIban])]
+    #[Rule(['nullable', new \App\Domains\Shared\Rules\ValidIban])]
     public ?string $iban = null;
+
+    // Guardian (legal representatives for minors)
+
+    /** @var array<int> Linked guardian ids (source of truth, synced on save). */
+    public array $guardianIds = [];
+
+    public string $guardianSearch = '';
+
+    public bool $showGuardianForm = false;
+
+    public string $guardianFirstName = '';
+
+    public string $guardianLastName = '';
+
+    public string $guardianPhone = '';
+
+    public ?string $guardianEmail = null;
+
+    public ?string $guardianIban = null;
 
     // Security
     #[Validate()]
@@ -97,16 +117,16 @@ new class extends Component
     #[Rule('required|string')]
     public string $phone_number = '';
 
-    public $photo = null;          // upload Livewire uniquement
-
     public ?string $ranking = null;
 
     #[Rule('required|string')]
     public string $street = '';
 
-    public array $trainings_ids = [];
-
     public ?User $user = null;
+
+    public bool $anonymizeModal = false;
+
+    public string $anonymizeConfirmText = '';
 
     #[Computed()]
     public function CommitteeRoleOptions(): array
@@ -115,42 +135,187 @@ new class extends Component
     }
 
     /**
-     * Effacer la photo
+     * Whether the currently entered birthdate makes the member a minor (< 18y).
      */
-    public function deletePhoto(): void
+    #[Computed()]
+    public function isMinor(): bool
     {
-        if (! $this->user || ! $this->user->photo) {
-            return;
+        return $this->birthdate !== null
+            && $this->birthdate !== ''
+            && Carbon::parse($this->birthdate)->age < 18;
+    }
+
+    /**
+     * Guardians currently linked to the member (from in-memory selection).
+     *
+     * @return \Illuminate\Support\Collection<int, Guardian>
+     */
+    #[Computed()]
+    public function linkedGuardians(): \Illuminate\Support\Collection
+    {
+        if ($this->guardianIds === []) {
+            return collect();
         }
 
-        $oldPath = str_replace('/storage/', '', $this->user->photo);
-        Storage::disk('public')->delete($oldPath);
+        return Guardian::whereIn('id', $this->guardianIds)->get();
+    }
 
-        $this->user->update(['photo' => null]);
+    /**
+     * Existing guardians matching the search box, excluding already-linked ones.
+     *
+     * @return \Illuminate\Support\Collection<int, Guardian>
+     */
+    #[Computed()]
+    public function guardianSearchResults(): \Illuminate\Support\Collection
+    {
+        $term = trim($this->guardianSearch);
 
-        $this->currentPhoto = null;
-        $this->photo = null;
+        if (mb_strlen($term) < 2) {
+            return collect();
+        }
 
-        $this->imageKey++;
-        $this->deleteModal = false;
+        return Guardian::query()
+            ->whereNotIn('id', $this->guardianIds)
+            ->where(function ($query) use ($term): void {
+                $query->where('first_name', 'like', "%{$term}%")
+                    ->orWhere('last_name', 'like', "%{$term}%")
+                    ->orWhere('email', 'like', "%{$term}%");
+            })
+            ->orderBy('last_name')
+            ->limit(8)
+            ->get();
+    }
 
-        $this->success(__('Photo deleted'));
+    /**
+     * Adult club members matching the search box, who can be linked as a guardian.
+     * Excludes the member being edited, minors, and members already a guardian.
+     *
+     * @return \Illuminate\Support\Collection<int, User>
+     */
+    #[Computed()]
+    public function memberSearchResults(): \Illuminate\Support\Collection
+    {
+        $term = trim($this->guardianSearch);
+
+        if (mb_strlen($term) < 2) {
+            return collect();
+        }
+
+        return User::query()
+            ->when($this->user?->exists, fn ($query) => $query->whereKeyNot($this->user->id))
+            ->whereNotIn('id', Guardian::whereNotNull('user_id')->pluck('user_id'))
+            ->where(function ($query): void {
+                $query->whereNull('birthdate')
+                    ->orWhereDate('birthdate', '<=', now()->subYears(18));
+            })
+            ->where(function ($query) use ($term): void {
+                $query->where('first_name', 'like', "%{$term}%")
+                    ->orWhere('last_name', 'like', "%{$term}%")
+                    ->orWhere('email', 'like', "%{$term}%");
+            })
+            ->orderBy('last_name')
+            ->limit(8)
+            ->get();
+    }
+
+    public function attachGuardian(int $guardianId): void
+    {
+        if (! in_array($guardianId, $this->guardianIds, true)) {
+            $this->guardianIds[] = $guardianId;
+        }
+
+        $this->guardianSearch = '';
+        unset($this->linkedGuardians, $this->guardianSearchResults, $this->memberSearchResults);
+    }
+
+    /**
+     * Link an existing club member as a guardian: reuse or create a Guardian
+     * record pre-filled from the member's data, keyed by user_id.
+     */
+    public function attachMemberAsGuardian(int $userId): void
+    {
+        Gate::authorize('create', Guardian::class);
+
+        $member = User::findOrFail($userId);
+
+        $guardian = Guardian::firstOrCreate(
+            ['user_id' => $member->id],
+            [
+                'first_name' => $member->first_name,
+                'last_name'  => $member->last_name,
+                'phone'      => $member->phone_number,
+                'email'      => $member->email,
+                'iban'       => $member->iban,
+            ],
+        );
+
+        if (! in_array($guardian->id, $this->guardianIds, true)) {
+            $this->guardianIds[] = $guardian->id;
+        }
+
+        $this->guardianSearch = '';
+        unset($this->linkedGuardians, $this->guardianSearchResults, $this->memberSearchResults);
+    }
+
+    public function detachGuardian(int $guardianId): void
+    {
+        $this->guardianIds = array_values(
+            array_filter($this->guardianIds, fn (int $id): bool => $id !== $guardianId)
+        );
+
+        unset($this->linkedGuardians, $this->guardianSearchResults, $this->memberSearchResults);
+    }
+
+    public function createGuardian(): void
+    {
+        Gate::authorize('create', Guardian::class);
+
+        $validated = $this->validate([
+            'guardianFirstName' => ['required', 'string', 'max:255'],
+            'guardianLastName'  => ['required', 'string', 'max:255'],
+            'guardianPhone'     => ['required', 'string', 'max:30'],
+            'guardianEmail'     => ['nullable', 'email', 'max:255'],
+            'guardianIban'      => ['nullable', new \App\Domains\Shared\Rules\ValidIban],
+        ]);
+
+        $guardian = Guardian::create([
+            'first_name' => $validated['guardianFirstName'],
+            'last_name'  => $validated['guardianLastName'],
+            'phone'      => $validated['guardianPhone'],
+            'email'      => $validated['guardianEmail'] ?? null,
+            'iban'       => $validated['guardianIban'] ?? null,
+        ]);
+
+        $this->guardianIds[] = $guardian->id;
+
+        $this->reset([
+            'guardianFirstName',
+            'guardianLastName',
+            'guardianPhone',
+            'guardianEmail',
+            'guardianIban',
+            'showGuardianForm',
+        ]);
+
+        unset($this->linkedGuardians, $this->guardianSearchResults, $this->memberSearchResults);
+
+        $this->success(__('Guardian added and linked.'));
     }
 
     public function mount(?User $user): void
     {
         if ($user && $user->exists) {
-            $this->first_name = $user->first_name;
-            $this->last_name = $user->last_name;
-            $this->gender = $user->gender;
-            $this->email = $user->email;
-            $this->street = $user->street;
-            $this->city_code = $user->city_code;
-            $this->city_name = $user->city_name;
-            $this->phone_number = $user->phone_number;
+            $this->first_name   = $user->first_name ?? '';
+            $this->last_name    = $user->last_name ?? '';
+            $this->gender       = $user->gender ?? '';
+            $this->email        = $user->email ?? '';
+            $this->street       = $user->street ?? '';
+            $this->city_code    = $user->city_code ?? '';
+            $this->city_name    = $user->city_name ?? '';
+            $this->phone_number = $user->phone_number ?? '';
             $this->birthdate = $user->birthdate?->format('Y-m-d');
-            $this->parent_phone_number = $user->parent_phone_number;
             $this->iban = $user->iban;
+            $this->guardianIds = $user->guardians()->pluck('guardians.id')->all();
             $this->currentPhoto = $user->photo;
             $this->licence_type = $user->is_competitor ? 'competitive' : 'recreative';
             $this->licence = $user->licence;
@@ -164,7 +329,16 @@ new class extends Component
         }
     }
 
-    public function render(): View
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->users()
+            ->current($this->user?->exists ? __("Edit") : __("Create"));
+    }
+
+        public function render(): View
     {
         return $this->view()
             ->title($this->user?->exists
@@ -218,25 +392,61 @@ new class extends Component
                 'max:2024',
             ],
             'ranking' => [
+                'nullable',
                 'string',
-                function ($attribute, $value, $fail) {
-
+                function ($attribute, $value, $fail): void {
                     $isCompetitive = $this->licence_type === 'competitive' || $this->is_competitor;
 
-                    // obligatoire si compétitif
                     if ($isCompetitive && empty($value)) {
                         $fail('Ranking is required for competitive players.');
 
                         return;
                     }
 
-                    // interdiction de NA si compétitif
                     if ($isCompetitive && $value === 'NA') {
                         $fail('Ranking N/A is not allowed for competitors.');
                     }
                 },
             ],
         ];
+    }
+
+    public function confirmAnonymize(): void
+    {
+        abort_unless(Auth::user()->is_admin && Auth::user()->isNot($this->user), 403);
+
+        if (strtoupper($this->anonymizeConfirmText) !== 'ANONYMIZE') {
+            $this->error(__('Type ANONYMIZE to confirm.'));
+
+            return;
+        }
+
+        AnonymizeUserAction::handle($this->user);
+
+        $this->anonymizeModal = false;
+        $this->anonymizeConfirmText = '';
+
+        $this->success(__('User anonymized. All personal data has been erased.'), redirectTo: route('admin.users.index'));
+    }
+
+    public function resendInvitation(): void
+    {
+        abort_unless($this->user !== null, 404);
+        Gate::authorize('update', $this->user);
+
+        SendInvitationAction::handle($this->user);
+
+        $this->success(__('Invitation re-sent to :email.', ['email' => $this->user->email]));
+    }
+
+    public function sendPasswordResetLink(): void
+    {
+        abort_unless($this->user !== null, 404);
+        Gate::authorize('updatePassword', $this->user);
+
+        PasswordBroker::sendResetLink(['email' => $this->user->email]);
+
+        $this->success(__('Password reset link sent to :email.', ['email' => $this->user->email]));
     }
 
     public function save(): void
@@ -258,39 +468,98 @@ new class extends Component
             );
         }
 
-        // Ici on est certain que $validated existe et est valide
-        if ($this->licence_type === 'recreative') {
-            $validated['licence'] = null;
-            $validated['ranking'] = 'NA';
+        // Règles « membre mineur » (droit belge, < 18 ans).
+        // Hard block : un mineur sans tuteur légal ne peut pas être affilié (actif).
+        // Warn : sinon on enregistre mais on avertit qu'un tuteur manque.
+        $minorWithoutGuardian = $this->isMinor && $this->guardianIds === [];
+
+        if ($minorWithoutGuardian && $this->is_active) {
+            $this->addError('is_active', __('A minor cannot be set as an active member without a legal guardian. Please add a guardian first.'));
+            $this->error(__('A minor cannot be affiliated without a legal guardian.'));
+
+            return;
         }
 
+        $actor = Auth::user();
+        $licence = $this->licence_type === 'recreative' ? null : $this->licence;
+        $ranking = $this->licence_type === 'recreative' ? 'NA' : $this->ranking;
+        $committeeRole = ($this->is_committee_member && $this->committee_role !== null && $this->committee_role !== '')
+            ? CommitteeRolesEnum::from($this->committee_role)
+            : null;
+
         if ($this->user) {
-            unset($validated['password_confirmation']);
-            unset($validated['photo']);
-
-            // $validated['password'] = Hash::make($validated['password']);
-
             $this->handlePhotoUpload($this->user);
 
-            if (! empty($validated['password'])) {
-                $validated['password'] = Hash::make($validated['password']);
-            } else {
-                unset($validated['password']); // Ne pas écraser le mot de passe s'il est vide
+            UpdateUserAction::handle(
+                $this->user,
+                new UpdateUserData(
+                    first_name: $this->first_name,
+                    last_name: $this->last_name,
+                    email: $this->email,
+                    gender: $this->gender,
+                    phone_number: $this->phone_number,
+                    street: $this->street,
+                    city_code: $this->city_code,
+                    city_name: $this->city_name,
+                    birthdate: $this->birthdate,
+                    guardian_phone_number: $this->user->guardian_phone_number,
+                    iban: $this->iban,
+                    is_active: $this->is_active,
+                    is_competitor: $this->is_competitor,
+                    is_committee_member: $this->is_committee_member,
+                    is_admin: $this->is_admin,
+                    is_coach: $this->is_coach,
+                    licence: $licence,
+                    ranking: $ranking,
+                    committee_role: $committeeRole,
+                    password: $this->password !== '' ? $this->password : null,
+                    guardianIds: $this->guardianIds,
+                ),
+                $actor,
+            );
+
+            if ($minorWithoutGuardian) {
+                $this->warning(__('Member saved, but this minor has no legal guardian linked. Please add one.'));
+
+                return;
             }
 
-            $this->user->update($validated);
-
-            $this->success('User ' . $this->user->first_name . ' created with success', redirectTo: route('admin.users.index'));
+            $this->success('User ' . $this->user->first_name . ' updated with success', redirectTo: route('admin.users.index'));
         } else {
-            unset($validated['password_confirmation']);
-            unset($validated['photo']);
+            $newUser = CreateUserAction::handle(
+                new CreateUserData(
+                    first_name: $this->first_name,
+                    last_name: $this->last_name,
+                    email: $this->email,
+                    gender: $this->gender,
+                    phone_number: $this->phone_number,
+                    street: $this->street,
+                    city_code: $this->city_code,
+                    city_name: $this->city_name,
+                    birthdate: $this->birthdate,
+                    is_active: $this->is_active,
+                    is_competitor: $this->is_competitor,
+                    is_committee_member: $this->is_committee_member,
+                    is_admin: $this->is_admin,
+                    is_coach: $this->is_coach,
+                    licence: $licence,
+                    ranking: $ranking,
+                    committee_role: $committeeRole,
+                    password: $this->password !== '' ? $this->password : null,
+                    guardianIds: $this->guardianIds,
+                ),
+                $actor,
+            );
 
-            $validated['password'] = Hash::make($validated['password']);
-
-            $newUser = User::create($validated);
             if ($this->photo) {
                 $url = $this->photo->store('users', 'public');
                 $newUser->update(['photo' => "/storage/{$url}"]);
+            }
+
+            if ($minorWithoutGuardian) {
+                $this->warning(__('Member created, but this minor has no legal guardian linked. Please add one.'));
+
+                return;
             }
 
             $this->success('User ' . $newUser->first_name . ' created with success', redirectTo: route('admin.users.index'));
@@ -311,50 +580,6 @@ new class extends Component
             'licence_types' => collect([['id' => 'recreative', 'name' => __('Recreative')], ['id' => 'competitive', 'name' => __('Competitive')]]),
             'genders' => Gender::options(),
             'rankings' => [['id' => 'NA', 'name' => 'N/A'], ['id' => 'B0', 'name' => 'B0'], ['id' => 'B2', 'name' => 'B2'], ['id' => 'B4', 'name' => 'B4'], ['id' => 'B6', 'name' => 'B6'], ['id' => 'C0', 'name' => 'C0'], ['id' => 'C2', 'name' => 'C2'], ['id' => 'C4', 'name' => 'C4'], ['id' => 'C6', 'name' => 'C6'], ['id' => 'D0', 'name' => 'D0'], ['id' => 'D2', 'name' => 'D2'], ['id' => 'D4', 'name' => 'D4'], ['id' => 'D6', 'name' => 'D6'], ['id' => 'E0', 'name' => 'E0'], ['id' => 'E2', 'name' => 'E2'], ['id' => 'E4', 'name' => 'E4'], ['id' => 'E6', 'name' => 'E6'], ['id' => 'NC', 'name' => 'NC']],
-            'trainings' => collect([
-                [
-                    'id' => 1,
-                    'day' => __('Monday'),
-                    'group' => __('Free'),
-                    'availablePlaces' => null,
-                ],
-                [
-                    'id' => 2,
-                    'day' => __('Monday'),
-                    'group' => __('Directed - Starters'),
-                    'availablePlaces' => '2',
-                ],
-                // [
-                //     'id' => 3,
-                //     'day' => __('Tuesday'),
-                //     'group' => __('Directed - Advanced'),
-                //     'availablePlaces' => 0
-                // ],
-                [
-                    'id' => 4,
-                    'day' => __('Wednesday'),
-                    'group' => __('Directed - Kids'),
-                    'availablePlaces' => 3,
-                ],
-                [
-                    'id' => 5,
-                    'day' => __('Wednesday'),
-                    'group' => __('Directed - Kids'),
-                    'availablePlaces' => 1,
-                ],
-                // [
-                //     'id' => 6,
-                //     'day' => __('Saturday'),
-                //     'group' => __('Directed - Starters'),
-                //     'availablePlaces' => 0
-                // ],
-                [
-                    'id' => 7,
-                    'day' => __('Saturday'),
-                    'group' => __('Directed - Advanced'),
-                    'availablePlaces' => 4,
-                ],
-            ]),
             'quotes' => [
                 [
                     'text' => "A stranger is just a friend you haven't met yet.",
@@ -417,37 +642,8 @@ new class extends Component
                     'author' => 'Bernard Laporte',
                 ],
             ],
-            'breadcrumbs' => Breadcrumb::make()
-                ->home()
-                ->users()
-                ->current($this->user?->exists ? __('Edit') : __('Create'))
-                ->toArray(),
+            'breadcrumbs' => $this->getBreadcrumbs(),
         ];
     }
 
-    /**
-     * Gère l'upload et la suppression de l'ancienne image
-     */
-    protected function handlePhotoUpload(User $user): void
-    {
-        if (! $this->photo instanceof TemporaryUploadedFile) {
-            return;
-        }
-
-        // supprimer ancienne
-        if ($user->photo) {
-            $oldPath = str_replace('/storage/', '', $user->photo);
-            Storage::disk('public')->delete($oldPath);
-        }
-
-        // stocker nouvelle
-        $path = $this->photo->store('users', 'public');
-
-        $user->update([
-            'photo' => "/storage/{$path}",
-        ]);
-
-        $this->currentPhoto = "/storage/{$path}";
-        $this->photo = null;
-    }
 };

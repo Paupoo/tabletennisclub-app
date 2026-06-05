@@ -4,56 +4,51 @@
 
     {{-- Name --}}
     <div>
-        <x-input-label for="name" :value="__('Name')" />
-        <x-text-input id="name" name="name" type="text" class="block w-full mt-1"
-            :value="old('name', $table->name)" placeholder="{{ __('Table name or number') }}" required autofocus autocomplete="name"></x-text-input>
-        <x-input-error class="mt-2" :messages="$errors->get('name')" />
+        <x-form.field name="name" :label="__('Name')">
+            <x-text-input id="name" name="name" type="text" class="block w-full mt-1"
+                :value="old('name', $table->name)" :placeholder="__('Table name or number')" required autofocus autocomplete="name" />
+        </x-form.field>
     </div>
 
     {{-- Date of purchase --}}
     <div>
-        <x-input-label for="purchased_on" :value="__('Date of Purchase (facultative)')" />
-        <x-text-input id="purchased_on" name="purchased_on" type="date" class="block w-full mt-1"
-            :value="old('purchased_on', $table->name)" autofocus></x-text-input>
-        <x-input-error class="mt-2" :messages="$errors->get('purchased_on')" />
+        <x-form.field name="purchased_on" :label="__('Date of Purchase (facultative)')">
+            <x-text-input id="purchased_on" name="purchased_on" type="date" class="block w-full mt-1"
+                :value="old('purchased_on', $table->name)" autofocus />
+        </x-form.field>
     </div>
 
     {{-- State --}}
     <div>
-        <x-input-label for="state" :value="__('State (facultative)')" />
-        <x-text-input id="state" name="state" list="state_list" class="block w-full mt-1"
-            :value="old('state', $table->name)" autofocus>
-        </x-text-input>
-        <datalist id="state_list">
-            <option value="New"></option>
-            <option value="Used"></option>
-            <option value="Degraded"></option>
-            <option value="Out of Service"></option>
-            <option value="Unknown"></option>
-        </datalist>
-        <x-input-error class="mt-2" :messages="$errors->get('state')" />
+        <x-form.field name="state" :label="__('State (facultative)')">
+            <x-text-input id="state" name="state" list="state_list" class="block w-full mt-1"
+                :value="old('state', $table->name)" autofocus />
+            <datalist id="state_list">
+                <option value="New"></option>
+                <option value="Used"></option>
+                <option value="Degraded"></option>
+                <option value="Out of Service"></option>
+                <option value="Unknown"></option>
+            </datalist>
+        </x-form.field>
     </div>
 
     {{-- Room --}}
     <div>
-        <x-input-label for="room_id" :value="__('Room')" />
-        <x-select-input id="room_id" name="room_id" class="block w-full mt-1" required autofocus>
-            <option selected disable>{{ __('Select a room') }}</option>
-            @foreach ($rooms as $room)
-                <option @selected(old('room_id', $table->room_id) == $room->id) value="{{ $room->id }}">{{ $room->name }}</option>
-            @endforeach
-        </x-text-input>
-        <x-input-error class="mt-2" :messages="$errors->get('room_id')" />
+        <x-form.field name="room_id" :label="__('Room')">
+            <x-select-input id="room_id" name="room_id" class="block w-full mt-1" required autofocus>
+                <option selected disable>{{ __('Select a room') }}</option>
+                @foreach ($rooms as $room)
+                    <option @selected(old('room_id', $table->room_id) == $room->id) value="{{ $room->id }}">{{ $room->name }}</option>
+                @endforeach
+            </x-select-input>
+        </x-form.field>
     </div>
 
     <div>
-        <x-primary-button>
-            @if ($table->id === null)
-                {{ __('Create new table') }}
-            @else
-                {{ __('Update table') }}
-            @endif
-        </x-primary-button>
+        <x-button type="submit"
+            :label="$table->id === null ? __('Create new table') : __('Update table')"
+            class="btn-primary" />
     </div>
 
 </form>

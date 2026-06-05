@@ -3,21 +3,23 @@
 declare(strict_types=1);
 
 use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
-use App\Actions\ClubAdmin\Subscriptions\CalculatePriceAction;
+use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Actions\ClubAdmin\Subscriptions\CreateSubscriptionAction;
-use App\Notifications\Subscription\SubscriptionCreatedNotification;
-use App\Enums\Gender;
-use App\Enums\TrainingLevel;
-use App\Models\ClubAdmin\Subscription\Subscription;
-use App\Models\Clubadmin\Users\User;
-use App\Models\ClubEvents\Interclub\Season;
-use App\Models\ClubEvents\Training\TrainingPack;
+use App\Actions\ClubAdmin\Subscriptions\EnrollInTrainingPackAction;
+use App\Actions\ClubAdmin\Subscriptions\LeaveTrainingPackAction;
+use App\Domains\Shared\Enums\Gender;
+use App\Domains\Shared\Enums\TrainingLevel;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Trainings\Models\TrainingPack;
+use App\Domains\Subscriptions\Notifications\SubscriptionCreatedNotification;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
-use Livewire\Attributes\Computed;
+use Illuminate\Support\Str;
 use Livewire\Attributes\Rule;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -25,10 +27,24 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast, WithFileUploads;
+    use Toast, WithFileUploads, HasBreadcrumbs;
 
-    // --- Gestion du Modal "Ajouter un membre" ---
+    // --- Modal "Ajouter un membre" ---
     public bool $addMemberModal = false;
+
+    // --- Modal confirmation annulation affiliation ---
+    public bool $cancelAffiliationModal = false;
+
+    public int $cancelAffiliationUserId = 0;
+
+    // --- Modal confirmation quitter/annuler un pack ---
+    public bool $leavePackModal = false;
+
+    public int $leavePackId = 0;
+
+    public int $leavePackUserId = 0;
+
+    public string $leavePackContext = 'leave';
 
     #[Rule('required|string')]
     public string $new_birthdate = '';
@@ -48,39 +64,66 @@ new class extends Component
     #[Rule('nullable|string')]
     public string $new_phone_number = '';
 
+    /** @var array<int, array<string, mixed>> */
     public array $registrations = [];
 
-    // Subscriptions existantes pour la saison courante, indexées par user_id
+    /** @var array<int, array<string, mixed>> */
     public array $existingSubscriptions = [];
 
-    // Modal de détails de paiement
     public bool $paymentModal = false;
+
+    /** @var array<string, mixed> */
     public array $paymentDetails = [];
 
-    // Modal "Add a family member" — recherche vs création
     public string $memberSearchQuery = '';
-    public string $memberModalMode   = 'search'; // 'search' | 'create'
 
-    public string $selectedTab;
+    public string $memberModalMode = 'search';
+
+    public string $selectedTab = '';
 
     public $medicalCertificate = null;
 
     public $parentalConsent = null;
 
-    // --- Gestion du panier d'inscriptions ---
-    // Contient les données d'inscription pour chaque membre : id, formula, trainings[]
     public User $user;
+
+    /**
+     * Pack IDs pre-selected before affiliation submission, keyed by user ID.
+     *
+     * @var array<int, int[]>
+     */
+    public array $pendingPackIds = [];
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Lifecycle
+    // ──────────────────────────────────────────────────────────────────────────
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__('Registration management'));
+    }
+
+    public function mount(): void
+    {
+        $this->user = Auth::user();
+        $this->addRegistrationTab($this->user);
+        $this->selectedTab = 'tab-' . $this->user->id;
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Member management
+    // ──────────────────────────────────────────────────────────────────────────
 
     public function addRegistrationTab(User $user): void
     {
         $season = Season::current();
 
-        // Cherche une subscription existante (non annulée) pour la saison courante
         $existing = $season
             ? Subscription::where('user_id', $user->id)
                 ->where('season_id', $season->id)
                 ->whereNotIn('status', ['cancelled'])
-                ->with('trainingPacks')
                 ->first()
             : null;
 
@@ -95,7 +138,6 @@ new class extends Component
                 'amount_paid' => $paidPayment?->amount_paid ?? 0,
                 'paid_at'     => $paidPayment?->updated_at?->format('d/m/Y'),
                 'formula'     => $existing->is_competitive ? 'competitive' : 'recreative',
-                'trainings'   => $existing->trainingPacks->pluck('id')->map(fn ($id) => (string) $id)->toArray(),
             ];
         }
 
@@ -103,88 +145,14 @@ new class extends Component
             'user_id'                  => $user->id,
             'name'                     => $user->first_name . ' ' . $user->last_name,
             'formula'                  => $existing?->is_competitive ? 'competitive' : 'recreative',
-            'trainings'                => $existing ? $existing->trainingPacks->pluck('id')->map(fn ($id) => (string) $id)->toArray() : [],
             'is_minor'                 => $user->birthdate && $user->birthdate->age < 18,
             'medical_certificate_path' => $user->medical_certificate_path,
             'parental_consent_path'    => $user->parental_consent_path,
         ];
-    }
 
-    public function confirmSubscription(): void
-    {
-        $season = Season::current();
-        if (! $season) {
-            $this->error(__('No active season found.'));
-            return;
+        if (! isset($this->pendingPackIds[$user->id])) {
+            $this->pendingPackIds[$user->id] = [];
         }
-
-        if (! $season->registrations_open) {
-            $this->error(__('Registrations are currently closed.'));
-            return;
-        }
-
-        $createAction = new CreateSubscriptionAction;
-        $calculateAction = new CalculatePriceAction;
-
-        foreach ($this->registrations as $userId => $reg) {
-            // Ignore les membres qui ont déjà une subscription active
-            if (isset($this->existingSubscriptions[$userId])) {
-                continue;
-            }
-
-            $user = User::find((int) $userId);
-            $subscription = $createAction->execute($user, $season, [
-                'is_competitive'  => ($reg['formula'] ?? 'recreative') === 'competitive',
-                'trainings_count' => count($reg['trainings'] ?? []),
-            ]);
-
-            if (! empty($reg['trainings'])) {
-                $subscription->trainingPacks()->sync($reg['trainings']);
-            }
-
-            $calculateAction($subscription);
-
-            $subscription->load(['season', 'trainingPacks']);
-            $user->notify(new SubscriptionCreatedNotification($subscription));
-        }
-
-        $this->success(__('Your registration has been submitted. The club will process it shortly.'));
-    }
-
-    public function openPaymentModal(int $userId): void
-    {
-        $existingSub = $this->existingSubscriptions[$userId] ?? null;
-        if (! $existingSub || $existingSub['status'] !== 'confirmed') {
-            return;
-        }
-
-        $season = Season::current();
-        $subscription = Subscription::where('user_id', $userId)
-            ->where('season_id', $season->id)
-            ->where('status', 'confirmed')
-            ->first();
-
-        $payment = $subscription?->payments()
-            ->where('status', 'pending')
-            ->latest()
-            ->first();
-
-        if (! $payment) {
-            $this->error(__('No payment found. Please contact the club.'));
-
-            return;
-        }
-
-        $this->paymentDetails = [
-            'name'        => $this->registrations[$userId]['name'] ?? '',
-            'reference'   => $payment->reference,
-            'amount_due'  => $payment->amount_due,
-            'iban'        => 'BE23 7323 3320 8791',
-            'bic'         => 'CREGBEBB',
-            'beneficiary' => 'CTT Ottignies-Blocry ASBL',
-            'qr_code'     => (new GeneratePaymentQR)($payment),
-        ];
-        $this->paymentModal = true;
     }
 
     public function addExistingMember(int $userId): void
@@ -204,33 +172,254 @@ new class extends Component
     {
         $this->validate();
 
-        // Création rapide du profil avec un mot de passe aléatoire
-        $newMember = User::firstOrCreate([
-            'email' => $this->new_email,
-        ],
+        $newMember = User::firstOrCreate(
+            ['email' => $this->new_email],
             [
-                'first_name' => $this->new_first_name,
-                'last_name' => $this->new_last_name,
-                'email' => $this->new_email,
-                'birthdate' => $this->new_birthdate,
-                'gender' => $this->new_gender,
-                'phone_number' => $this->phone_number ?? User::first()->phone_number,
-
-                // On hérite des infos du parent
-                'street' => Auth::user()->street,
-                'postal_code' => Auth::user()->postal_code,
-                'city' => Auth::user()->city,
-
-                // LA CORRECTION EST ICI 👇
-                'password' => Hash::make(Str::random(16)),
-            ]);
+                'first_name'   => $this->new_first_name,
+                'last_name'    => $this->new_last_name,
+                'email'        => $this->new_email,
+                'birthdate'    => $this->new_birthdate,
+                'gender'       => $this->new_gender,
+                'phone_number' => $this->new_phone_number ?: null,
+                'street'       => Auth::user()->street,
+                'city_code'    => Auth::user()->city_code,
+                'city_name'    => Auth::user()->city_name,
+                'password'     => Hash::make(Str::random(16)),
+            ]
+        );
 
         $this->addRegistrationTab($newMember);
-
         $this->reset(['new_first_name', 'new_last_name', 'new_birthdate', 'new_gender', 'new_email', 'new_phone_number', 'addMemberModal', 'memberSearchQuery']);
         $this->memberModalMode = 'search';
         $this->success(__('Member added successfully!'));
     }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Affiliation
+    // ──────────────────────────────────────────────────────────────────────────
+
+    public function confirmAffiliation(int $userId): void
+    {
+        $season = Season::current();
+        if (! $season || ! $season->registrations_open) {
+            $this->error(__('Registrations are currently closed.'));
+
+            return;
+        }
+
+        $user = User::find($userId);
+        if (! $user) {
+            return;
+        }
+
+        $reg = $this->registrations[$userId] ?? null;
+        if (! $reg) {
+            return;
+        }
+
+        $subscription = (new CreateSubscriptionAction)->execute($user, $season, [
+            'is_competitive' => ($reg['formula'] ?? 'recreative') === 'competitive',
+        ]);
+
+        $selectedPackIds = $this->pendingPackIds[$userId] ?? [];
+        if (! empty($selectedPackIds)) {
+            $attachData = array_fill_keys(
+                $selectedPackIds,
+                ['status' => 'pending']
+            );
+            $subscription->trainingPacks()->attach($attachData);
+        }
+
+        $subscription->load('season');
+        $user->notify(new SubscriptionCreatedNotification($subscription));
+
+        $this->existingSubscriptions[$userId] = [
+            'status'      => $subscription->status,
+            'amount_due'  => $subscription->amount_due,
+            'amount_paid' => 0,
+            'paid_at'     => null,
+            'formula'     => $reg['formula'],
+        ];
+
+        $this->pendingPackIds[$userId] = [];
+        $this->success(__('Your registration has been submitted. The club will process it shortly.'));
+    }
+
+    public function confirmCancelAffiliation(int $userId): void
+    {
+        $this->cancelAffiliationUserId = $userId;
+        $this->cancelAffiliationModal = true;
+    }
+
+    public function cancelAffiliation(): void
+    {
+        $userId = $this->cancelAffiliationUserId;
+        $season = Season::current();
+        if (! $season) {
+            return;
+        }
+
+        $subscription = Subscription::where('user_id', $userId)
+            ->where('season_id', $season->id)
+            ->where('status', 'pending')
+            ->first();
+
+        if (! $subscription) {
+            return;
+        }
+
+        $subscription->cancel();
+
+        unset($this->existingSubscriptions[$userId]);
+        $this->cancelAffiliationModal = false;
+        $this->warning(__('Your registration request has been cancelled.'));
+    }
+
+    public function openPaymentModal(int $userId, int $paymentId): void
+    {
+        $payment = Payment::find($paymentId);
+
+        if (! $payment) {
+            $this->error(__('No payment found. Please contact the club.'));
+
+            return;
+        }
+
+        $this->paymentDetails = [
+            'name'        => $this->registrations[$userId]['name'] ?? '',
+            'reference'   => $payment->reference,
+            'amount_due'  => $payment->amount_due,
+            'iban'        => 'BE23 7323 3320 8791',
+            'bic'         => 'CREGBEBB',
+            'beneficiary' => 'CTT Ottignies-Blocry ASBL',
+            'qr_code'     => (new GeneratePaymentQR)($payment),
+        ];
+        $this->paymentModal = true;
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Training enrollment
+    // ──────────────────────────────────────────────────────────────────────────
+
+    public function enrollInPack(int $packId, int $userId): void
+    {
+        $season = Season::current();
+        if (! $season) {
+            return;
+        }
+
+        $pack = TrainingPack::find($packId);
+        if (! $pack) {
+            return;
+        }
+
+        if ($pack->trainer_id === $userId) {
+            $this->error(__('You cannot enroll in a training pack you coach.'));
+
+            return;
+        }
+
+        $subscription = Subscription::where('user_id', $userId)
+            ->where('season_id', $season->id)
+            ->whereNotIn('status', ['cancelled'])
+            ->first();
+
+        if (! $subscription) {
+            $this->error(__('You need an active club membership to enroll in training.'));
+
+            return;
+        }
+
+        try {
+            $status = (new EnrollInTrainingPackAction)(
+                $subscription,
+                $pack,
+                count($this->registrations)
+            );
+
+            if ($status === 'pending') {
+                $this->success(__('Your request for :pack has been submitted for validation.', ['pack' => $pack->name]));
+            } else {
+                $this->warning(__('Added to the waiting list for :pack.', ['pack' => $pack->name]));
+            }
+        } catch (\DomainException $e) {
+            $this->error($e->getMessage());
+        }
+    }
+
+    public function confirmLeaveTrainingPack(int $packId, int $userId, string $context = 'leave'): void
+    {
+        $this->leavePackId = $packId;
+        $this->leavePackUserId = $userId;
+        $this->leavePackContext = $context;
+        $this->leavePackModal = true;
+    }
+
+    public function leaveTrainingPack(int $packId, int $userId): void
+    {
+        $season = Season::current();
+        if (! $season) {
+            return;
+        }
+
+        $subscription = Subscription::where('user_id', $userId)
+            ->where('season_id', $season->id)
+            ->whereNotIn('status', ['cancelled'])
+            ->first();
+
+        if (! $subscription) {
+            return;
+        }
+
+        $pack = TrainingPack::find($packId);
+        if (! $pack) {
+            return;
+        }
+
+        $pivot = $subscription->trainingPacks()->where('training_pack_id', $packId)->first();
+        if ($pivot?->pivot->status === 'enrolled') {
+            $this->error(__('You cannot leave a validated training pack. Please contact the club.'));
+            return;
+        }
+
+        (new LeaveTrainingPackAction)($subscription, $pack, count($this->registrations));
+        $this->success(__('Removed from :pack.', ['pack' => $pack->name]));
+    }
+
+    public function leaveTrainingPackConfirmed(): void
+    {
+        $this->leaveTrainingPack($this->leavePackId, $this->leavePackUserId);
+        $this->leavePackModal = false;
+    }
+
+    public function confirmWaitlistOffer(int $packId, int $userId): void
+    {
+        $season = Season::current();
+        if (! $season) {
+            return;
+        }
+
+        $subscription = Subscription::where('user_id', $userId)
+            ->where('season_id', $season->id)
+            ->whereNotIn('status', ['cancelled'])
+            ->first();
+
+        if (! $subscription) {
+            return;
+        }
+
+        $subscription->trainingPacks()->updateExistingPivot($packId, [
+            'status'                => 'enrolled',
+            'waitlist_position'     => null,
+            'confirmation_deadline' => null,
+        ]);
+
+        $this->success(__('Spot confirmed!'));
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Documents
+    // ──────────────────────────────────────────────────────────────────────────
 
     public function uploadMedicalCertificate(int $userId): void
     {
@@ -253,7 +442,6 @@ new class extends Component
         $user->update(['medical_certificate_path' => "/storage/{$path}"]);
         $this->registrations[$userId]['medical_certificate_path'] = "/storage/{$path}";
         $this->medicalCertificate = null;
-
         $this->success(__('Medical certificate uploaded successfully.'));
     }
 
@@ -278,105 +466,144 @@ new class extends Component
         $user->update(['parental_consent_path' => "/storage/{$path}"]);
         $this->registrations[$userId]['parental_consent_path'] = "/storage/{$path}";
         $this->parentalConsent = null;
-
         $this->success(__('Parental consent uploaded successfully.'));
     }
 
-    public function mount(): void
-    {
-        // On initialise avec le membre connecté par défaut
-        $this->user = Auth::user();
-        $this->addRegistrationTab($this->user);
-        $this->selectedTab = (string) 'tab-' . $this->user->id;
-    }
-
-    #[Computed()]
-    public function stats(): array
-    {
-        $registrations = collect($this->registrations);
-        $countMembers = $registrations->count();
-
-        // 1. Compter les types de licences
-        $countCompetitors = $registrations->where('formula', 'competitive')->count();
-        $countRecreative = $countMembers - $countCompetitors;
-
-        // 2. Compter le total des sessions d'entraînement choisies par la famille
-        $totalSessions = $registrations->sum(fn ($r) => count($r['trainings'] ?? []));
-
-        // 3. Calcul du prix des licences (Base)
-        $basePrice = ($countRecreative * 60) + ($countCompetitors * 125);
-
-        // 4. Calcul du prix des entraînements (Logique de ton Alpine)
-        $trainingPrice = 0;
-        if ($totalSessions > 0) {
-            // 90€ si solo, 80€ si famille (>1 membre)
-            $firstSessionRate = $countMembers > 1 ? 80 : 90;
-
-            if ($totalSessions === 1) {
-                $trainingPrice = $firstSessionRate;
-            } else {
-                // Première session au tarif plein (ou réduit famille) + les autres à 80€
-                $trainingPrice = $firstSessionRate + (($totalSessions - 1) * 80);
-            }
-        }
-
-        return [
-            'base' => $basePrice,
-            'training' => $trainingPrice,
-            'total' => $basePrice + $trainingPrice,
-            'countMembers' => $countMembers,
-            'countSessions' => $totalSessions,
-        ];
-    }
+    // ──────────────────────────────────────────────────────────────────────────
+    // View data
+    // ──────────────────────────────────────────────────────────────────────────
 
     public function with(): array
     {
         $season = Season::current();
-        $alreadyAddedIds = array_keys($this->registrations);
+        $userIds = array_keys($this->registrations);
+        $alreadyAddedIds = $userIds;
+
+        // Current season subscriptions (keyed by user_id, excludes cancelled)
+        $currentSubs = $season
+            ? Subscription::whereIn('user_id', $userIds)
+                ->where('season_id', $season->id)
+                ->whereNotIn('status', ['cancelled'])
+                ->with(['trainingPacks'])
+                ->get()
+                ->keyBy('user_id')
+            : collect();
+
+        // All subscriptions for history (all seasons, including cancelled)
+        $allSubs = Subscription::whereIn('user_id', $userIds)
+            ->with(['season', 'trainingPacks', 'payments'])
+            ->orderByDesc('created_at')
+            ->get()
+            ->groupBy('user_id');
+
+        // Subscription history per user + can_reaffiliate flag
+        $subscriptionHistory = collect($userIds)->mapWithKeys(function (int $uid) use ($allSubs, $season, $currentSubs): array {
+            $subs = $allSubs->get($uid, collect());
+            $currentSub = $currentSubs->get($uid);
+
+            $hasCancelledCurrentSeason = $season && $subs
+                ->where('season_id', $season->id)
+                ->where('status', 'cancelled')
+                ->isNotEmpty();
+
+            $canReAffiliate = $hasCancelledCurrentSeason && ! $currentSub;
+
+            return [$uid => [
+                'history' => $subs->map(fn ($sub) => [
+                    'season_name'       => $sub->season?->name ?? '—',
+                    'season_id'         => $sub->season_id,
+                    'status'            => $sub->status,
+                    'is_competitive'    => $sub->is_competitive,
+                    'amount_due'        => $sub->amount_due,
+                    'amount_paid'       => $sub->amount_paid,
+                    'enrolled_packs'    => $sub->trainingPacks
+                        ->filter(fn ($p) => in_array($p->pivot->status, ['enrolled', 'pending'], true))
+                        ->map(fn ($p) => ['name' => $p->name, 'status' => $p->pivot->status])
+                        ->values()
+                        ->toArray(),
+                    'is_current_season'  => $season && $sub->season_id === $season->id,
+                    'pending_payments'   => $sub->payments
+                        ->where('status', 'pending')
+                        ->map(fn ($p) => [
+                            'id'         => $p->id,
+                            'reference'  => $p->reference,
+                            'amount_due' => (float) $p->amount_due,
+                        ])
+                        ->values()
+                        ->toArray(),
+                ])->toArray(),
+                'can_reaffiliate' => $canReAffiliate,
+            ]];
+        })->toArray();
+
+        // Available training packs for current season with per-user enrollment
+        $availablePacks = [];
+        if ($season) {
+            $availablePacks = TrainingPack::with(['trainer', 'room'])
+                ->where('season_id', $season->id)
+                ->where('is_active', true)
+                ->get()
+                ->map(function (TrainingPack $pack) use ($userIds, $currentSubs): array {
+                    $enrollments = [];
+                    foreach ($userIds as $uid) {
+                        $sub = $currentSubs->get($uid);
+                        if (! $sub) {
+                            $enrollments[$uid] = ['status' => null];
+                            continue;
+                        }
+                        $enrolled = $sub->trainingPacks->firstWhere('id', $pack->id);
+                        $enrollments[$uid] = $enrolled ? [
+                            'status'   => $enrolled->pivot->status,
+                            'position' => $enrolled->pivot->waitlist_position,
+                            'deadline' => $enrolled->pivot->confirmation_deadline,
+                        ] : ['status' => null];
+                    }
+
+                    return [
+                        'id'              => $pack->id,
+                        'name'            => $pack->name,
+                        'description'     => $pack->description,
+                        'price'           => (float) $pack->price,
+                        'allow_discount'  => $pack->allow_discount,
+                        'trainer_id'      => $pack->trainer_id,
+                        'level'           => $pack->level->value,
+                        'dot_color'       => match ($pack->level) {
+                            TrainingLevel::ELITE, TrainingLevel::INTERMEDIATE => 'bg-error',
+                            TrainingLevel::YOUNG_POTENTIAL                    => 'bg-info',
+                            TrainingLevel::KIDS                               => 'bg-warning',
+                            TrainingLevel::BEGINNERS                          => 'bg-success',
+                            default                                           => 'bg-primary',
+                        },
+                        'coach'           => $pack->trainer
+                            ? $pack->trainer->first_name . ' ' . $pack->trainer->last_name
+                            : '—',
+                        'is_open_enrollment' => $pack->is_open_enrollment,
+                        'spots_remaining' => max(0, $pack->effectiveMaxParticipants() - $pack->enrolledCount()),
+                        'waitlist_count'  => $pack->waitlistCount(),
+                        'is_full'         => ! $pack->hasAvailableSpot(),
+                        'enrollments'     => $enrollments,
+                    ];
+                })
+                ->toArray();
+        }
 
         return [
-            'registrationsOpen' => $season?->registrations_open ?? false,
-            'memberSearchResults' => strlen($this->memberSearchQuery) >= 2
-                ? User::where(function ($q) {
+            'registrationsOpen'    => $season?->registrations_open ?? false,
+            'currentSeasonName'    => $season?->name ?? '—',
+            'subscriptionHistory'  => $subscriptionHistory,
+            'availablePacks'       => $availablePacks,
+            'memberSearchResults'  => strlen($this->memberSearchQuery) >= 2
+                ? User::where(function ($q): void {
                     $q->where('first_name', 'like', "%{$this->memberSearchQuery}%")
-                      ->orWhere('last_name', 'like', "%{$this->memberSearchQuery}%")
-                      ->orWhere('email', 'like', "%{$this->memberSearchQuery}%");
+                        ->orWhere('last_name', 'like', "%{$this->memberSearchQuery}%")
+                        ->orWhere('email', 'like', "%{$this->memberSearchQuery}%");
                 })
                 ->whereNotIn('id', $alreadyAddedIds)
                 ->limit(6)
                 ->get()
                 : collect(),
-            'breadcrumbs' => Breadcrumb::make()
-                ->home()
-                ->current(__('Registration management'))
-                ->toArray(),
-            'licenceTypes' => collect([
-                ['id' => 'competitive', 'value' => 'competitive'],
-                ['id' => 'recreative', 'value' => 'recreative'],
-            ]),
-            'genders' => Gender::options(),
-            'trainings' => TrainingPack::with(['trainer', 'room'])
-                ->where('season_id', $season?->id)
-                ->get()
-                ->map(fn (TrainingPack $pack) => [
-                    'id'        => $pack->id,
-                    'day'       => $pack->name,
-                    'time'      => $pack->type->value,
-                    'coach'     => $pack->trainer
-                        ? $pack->trainer->first_name . ' ' . $pack->trainer->last_name
-                        : '—',
-                    'level'     => $pack->level->value,
-                    'dot_color' => match ($pack->level) {
-                        TrainingLevel::ELITE, TrainingLevel::INTERMEDIATE => 'bg-error',
-                        TrainingLevel::YOUNG_POTENTIAL                    => 'bg-info',
-                        TrainingLevel::KIDS                               => 'bg-warning',
-                        TrainingLevel::BEGINNERS                          => 'bg-success',
-                        default                                           => 'bg-primary',
-                    },
-                    'spots' => $pack->effectiveMaxParticipants(),
-                    'full'  => $pack->effectiveMaxParticipants() > 0 && $pack->enrolledCount() >= $pack->effectiveMaxParticipants(),
-                ])
-                ->toArray(),
+            'breadcrumbs' => $this->getBreadcrumbs(),
+            'genders'              => Gender::options(),
         ];
     }
 };

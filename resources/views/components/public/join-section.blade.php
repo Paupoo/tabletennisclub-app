@@ -1,7 +1,7 @@
 <section id="join" class="h-auto flex items-center py-20 bg-white">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16 animate-on-scroll">
-            <h2 class="text-4xl font-bold text-gray-900 mb-4">Prêt à nous rejoindre ?</h2>
+            <h2 class="text-4xl font-bold text-gray-900 mb-4">{{ __('Ready to join us?') }}</h2>
             <p class="text-xl text-gray-600 max-w-3xl mx-auto">
                 Devenez membre de notre famille de tennis de table dès aujourd'hui. Tous les niveaux sont les bienvenus&nbsp;!
             </p>
@@ -15,19 +15,19 @@
             <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div class="flex items-center">
                     <span class="text-club-yellow mr-3 text-xl">✓</span>
-                    <span>Accès aux tables et conseils pour les équipements</span>
+                    <span>{{ __('Access to tables and equipment advice') }}</span>
                 </div>
                 <div class="flex items-center">
                     <span class="text-club-yellow mr-3 text-xl">✓</span>
-                    <span>Séances d'entraînement hebdomadaires</span>
+                    <span>{{ __('Weekly training sessions') }}</span>
                 </div>
                 <div class="flex items-center">
                     <span class="text-club-yellow mr-3 text-xl">✓</span>
-                    <span>Opportunités de participation au championnat</span>
+                    <span>{{ __('Championship participation opportunities') }}</span>
                 </div>
                 <div class="flex items-center">
                     <span class="text-club-yellow mr-3 text-xl">✓</span>
-                    <span>Événements sociaux et championnats du club</span>
+                    <span>{{ __('Social events and club championships') }}</span>
                 </div>
                 <div class="flex items-center">
                     <span class="text-club-yellow mr-3 text-xl">✓</span>
@@ -35,7 +35,7 @@
                 </div>
                 <div class="flex items-center">
                     <span class="text-club-yellow mr-3 text-xl">✓</span>
-                    <span>Accès aux installations du club</span>
+                    <span>{{ __('Access to club facilities') }}</span>
                 </div>
             </div>
         </div>
@@ -53,7 +53,7 @@
                         </svg>
                     </div>
                     <h3 class="text-2xl font-bold text-gray-900 mb-2">Affiliations</h3>
-                    <p class="text-gray-600 mb-4">Minimum - Licence récréative</p>
+                    <p class="text-gray-600 mb-4">{{ __('Minimum - Recreational licence') }}</p>
                     <!-- Nouvelle présentation des tarifs -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-lg mx-auto">
                         <!-- Licence Récréative -->
@@ -77,37 +77,37 @@
                         <div class="space-y-3 mb-6 text-left">
                             <div class="flex items-center text-sm">
                                 <span class="text-club-blue mr-2">•</span>
-                                <span>Licence récréative de l'AFTT </span>
+                                <span>{{ __('AFTT recreational licence') }}</span>
                             </div>
                             <div class="flex items-center text-sm">
                                 <span class="text-club-blue mr-2">•</span>
-                                <span>Assurance responsabilité civile</span>
+                                <span>{{ __('Civil liability insurance') }}</span>
                             </div>
                             <div class="flex items-center text-sm">
                                 <span class="text-club-blue mr-2">•</span>
-                                <span>Accès libre aux créneaux libres</span>
+                                <span>{{ __('Free access to free slots') }}</span>
                             </div>
                         </div>
                         <div class="space-y-3 mb-6 text-left">
                             <div class="flex items-center text-sm">
                                 <span class="text-club-blue mr-2">•</span>
-                                <span>Licence compétitive de l'AFTT</span>
+                                <span>{{ __('AFTT competitive licence') }}</span>
                             </div>
                             <div class="flex items-center text-sm">
                                 <span class="text-club-blue mr-2">•</span>
-                                <span>Assurance responsabilité civile</span>
+                                <span>{{ __('Civil liability insurance') }}</span>
                             </div>
                             <div class="flex items-center text-sm">
                                 <span class="text-club-blue mr-2">•</span>
-                                <span>Accès libre aux créneaux libres</span>
+                                <span>{{ __('Free access to free slots') }}</span>
                             </div>
                             <div class="flex items-center text-sm">
                                 <span class="text-club-blue mr-2">•</span>
-                                <span>Accès prioritaire aux entraînements dirigés</span>
+                                <span>{{ __('Priority access to directed training') }}</span>
                             </div>
                             <div class="flex items-center text-sm">
                                 <span class="text-club-blue mr-2">•</span>
-                                <span>Participation aux compétitions</span>
+                                <span>{{ __('Competition participation') }}</span>
                             </div>
                         </div>
                     </div>
@@ -128,25 +128,25 @@
                                 d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                         </svg>
                     </div>
-                    <h3 class="text-2xl font-bold text-gray-900 mb-2">Entraînements Dirigés</h3>
-                    <p class="text-gray-600 mb-4">Optionnel - Avec entraîneur qualifié</p>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-2">{{ __('Directed Training') }}</h3>
+                    <p class="text-gray-600 mb-4">{{ __('Optional - With qualified coach') }}</p>
                 </div>
 
                 <div class="space-y-4 mb-6">
                     <div class="bg-gray-50 rounded-lg p-4">
                         <div class="flex justify-between items-center mb-2">
-                            <span class="font-semibold">1ère séance</span>
+                            <span class="font-semibold">{{ __('1st session') }}</span>
                             <span class="text-2xl font-bold text-club-blue">90€</span>
                         </div>
-                        <p class="text-sm text-gray-600">Par an - 1 séance/semaine</p>
+                        <p class="text-sm text-gray-600">{{ __('Per year - 1 session/week') }}</p>
                     </div>
 
                     <div class="bg-club-yellow/10 rounded-lg p-4 border border-club-yellow">
                         <div class="flex justify-between items-center mb-2">
-                            <span class="font-semibold">Séances supplémentaires</span>
+                            <span class="font-semibold">{{ __('Additional sessions') }}</span>
                             <span class="text-2xl font-bold text-club-blue">80€</span>
                         </div>
-                        <p class="text-sm text-gray-600">Par an - Réduction de 10€</p>
+                        <p class="text-sm text-gray-600">{{ __('Per year - 10€ discount') }}</p>
                         <div class="mt-2 text-xs text-club-blue font-medium">
                             💡 Valable aussi pour les membres d'une même famille
                         </div>
@@ -156,15 +156,15 @@
                 <div class="space-y-2 text-sm text-gray-600">
                     <div class="flex items-center">
                         <span class="text-club-yellow mr-2">•</span>
-                        <span>Entraînement technique personnalisé</span>
+                        <span>{{ __('Personalised technical training') }}</span>
                     </div>
                     <div class="flex items-center">
                         <span class="text-club-yellow mr-2">•</span>
-                        <span>Progression adaptée à votre niveau</span>
+                        <span>{{ __('Progress tailored to your level') }}</span>
                     </div>
                     <div class="flex items-center">
                         <span class="text-club-yellow mr-2">•</span>
-                        <span>Groupes de 6 à 10 joueurs maximum</span>
+                        <span>{{ __('Groups of 6 to 10 players maximum') }}</span>
                     </div>
                 </div>
             </div>
@@ -214,16 +214,16 @@
                         </label>
                         <select x-model="trainingSessions"
                             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
-                            <option value="0">Aucune séance d'entraînement</option>
-                            <option value="1">1 séance par semaine</option>
-                            <option value="2">2 séances par semaine</option>
-                            <option value="3">3 séances par semaine</option>
+                            <option value="0">{{ __('No training sessions') }}</option>
+                            <option value="1">{{ __('1 session per week') }}</option>
+                            <option value="2">{{ __('2 sessions per week') }}</option>
+                            <option value="3">{{ __('3 sessions per week') }}</option>
                         </select>
                     </div>
                 </div>
 
                 <div class="bg-gray-50 rounded-lg p-6">
-                    <h4 class="text-lg font-semibold mb-4">Récapitulatif</h4>
+                    <h4 class="text-lg font-semibold mb-4">{{ __('Summary') }}</h4>
 
                     <div class="space-y-3 mb-4">
                         <div class="flex justify-between">
@@ -284,10 +284,10 @@
                     <ul class="text-sm text-gray-600 space-y-1">
                         <li>• L'affiliation annuelle est obligatoire et inclut la licence fédérale. Il n'est pas
                             obligatoire de participer aux championnats (licence récréative)</li>
-                        <li>• Les entraînements dirigés sont optionnels et se déroulent en groupes</li>
-                        <li>• Réduction automatique à partir de la 2ème séance ou du 2ème membre de famille</li>
-                        <li>• Possibilité de paiement échelonné (nous contacter)</li>
-                        <li>• Séance d'essai gratuite pour les nouveaux membres</li>
+                        <li>{{ __('• Directed training sessions are optional and take place in groups') }}</li>
+                        <li>{{ __('• Automatic discount from the 2nd session or 2nd family member') }}</li>
+                        <li>{{ __('• Instalment payment option (contact us)') }}</li>
+                        <li>{{ __('• Free trial session for new members') }}</li>
                     </ul>
                 </div>
             </div>

@@ -2,7 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Models\ClubAdmin\Club\Table;
+use App\Domains\ClubAdmin\Club\Models\Table;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\View\View;
 use Livewire\Component;
@@ -10,7 +11,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast;
+    use Toast, HasBreadcrumbs;
 
     public bool $deleteModal = false;
 
@@ -50,7 +51,15 @@ new class extends Component
         }
     }
 
-    public function render(): View
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__("Tables"));
+    }
+
+        public function render(): View
     {
         return $this->view();
     }
@@ -73,7 +82,7 @@ new class extends Component
         // 1. Récupération avec les relations
         $tables = Table::query()
             ->with('room')
-            ->when($this->search, function ($query) {
+            ->when($this->search, function ($query): void {
                 $query->where('name', 'like', '%' . $this->search . '%')
                     ->orWhere('state', 'like', '%' . $this->search . '%');
             })
@@ -98,10 +107,7 @@ new class extends Component
             ->values();
 
         return [
-            'breadcrumbs' => Breadcrumb::make()
-                ->home()
-                ->current(__('Tables'))
-                ->toArray(),
+            'breadcrumbs' => $this->getBreadcrumbs(),
 
             'headers' => [
                 ['key' => 'name', 'label' => __('Name'), 'class' => 'w-1/3'],

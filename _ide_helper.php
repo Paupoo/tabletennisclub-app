@@ -5,7 +5,7 @@
 
 /**
  * A helper file for Laravel, to provide autocomplete information to your IDE
- * Generated for Laravel 13.9.0.
+ * Generated for Laravel 13.11.2.
  *
  * This file should not be included in your code, only analyzed by your IDE!
  *
@@ -1201,6 +1201,57 @@ namespace Illuminate\Support\Facades {
         }
 
         /**
+         * Register a custom macro.
+         *
+         * @param string $name
+         * @param object|callable $macro
+         * @param-closure-this static  $macro
+         * @return void
+         * @static
+         */
+        public static function macro($name, $macro)
+        {
+            \Illuminate\Foundation\Application::macro($name, $macro);
+        }
+
+        /**
+         * Mix another object into the class.
+         *
+         * @param object $mixin
+         * @param bool $replace
+         * @return void
+         * @throws \ReflectionException
+         * @static
+         */
+        public static function mixin($mixin, $replace = true)
+        {
+            \Illuminate\Foundation\Application::mixin($mixin, $replace);
+        }
+
+        /**
+         * Checks if macro is registered.
+         *
+         * @param string $name
+         * @return bool
+         * @static
+         */
+        public static function hasMacro($name)
+        {
+            return \Illuminate\Foundation\Application::hasMacro($name);
+        }
+
+        /**
+         * Flush the existing macros.
+         *
+         * @return void
+         * @static
+         */
+        public static function flushMacros()
+        {
+            \Illuminate\Foundation\Application::flushMacros();
+        }
+
+        /**
          * Define a contextual binding.
          *
          * @param array|string $concrete
@@ -1610,17 +1661,13 @@ namespace Illuminate\Support\Facades {
         }
 
         /**
-         * Finds an entry of the container by its identifier and returns it.
+         * {@inheritdoc}
          *
          * @template TClass of object
          * @param string|class-string<TClass> $id
          * @return ($id is class-string<TClass> ? TClass : mixed)
          * @throws \Illuminate\Contracts\Container\CircularDependencyException
          * @throws \Illuminate\Container\EntryNotFoundException
-         * @param string $id Identifier of the entry to look for.
-         * @throws NotFoundExceptionInterface  No entry was found for **this** identifier.
-         * @throws ContainerExceptionInterface Error while retrieving the entry.
-         * @return mixed Entry.
          * @static
          */
         public static function get($id)
@@ -1928,57 +1975,6 @@ namespace Illuminate\Support\Facades {
             //Method inherited from \Illuminate\Container\Container 
             /** @var \Illuminate\Foundation\Application $instance */
             return $instance->offsetUnset($offset);
-        }
-
-        /**
-         * Register a custom macro.
-         *
-         * @param string $name
-         * @param object|callable $macro
-         * @param-closure-this static  $macro
-         * @return void
-         * @static
-         */
-        public static function macro($name, $macro)
-        {
-            \Illuminate\Foundation\Application::macro($name, $macro);
-        }
-
-        /**
-         * Mix another object into the class.
-         *
-         * @param object $mixin
-         * @param bool $replace
-         * @return void
-         * @throws \ReflectionException
-         * @static
-         */
-        public static function mixin($mixin, $replace = true)
-        {
-            \Illuminate\Foundation\Application::mixin($mixin, $replace);
-        }
-
-        /**
-         * Checks if macro is registered.
-         *
-         * @param string $name
-         * @return bool
-         * @static
-         */
-        public static function hasMacro($name)
-        {
-            return \Illuminate\Foundation\Application::hasMacro($name);
-        }
-
-        /**
-         * Flush the existing macros.
-         *
-         * @return void
-         * @static
-         */
-        public static function flushMacros()
-        {
-            \Illuminate\Foundation\Application::flushMacros();
         }
 
             }
@@ -2459,7 +2455,7 @@ namespace Illuminate\Support\Facades {
         /**
          * Get the currently authenticated user.
          *
-         * @return \App\Models\ClubAdmin\Users\User|null
+         * @return \App\Domains\ClubAdmin\Users\Models\User|null
          * @static
          */
         public static function user()
@@ -2497,7 +2493,7 @@ namespace Illuminate\Support\Facades {
          * Log the given user ID into the application without sessions or cookies.
          *
          * @param mixed $id
-         * @return \App\Models\ClubAdmin\Users\User|false
+         * @return \App\Domains\ClubAdmin\Users\Models\User|false
          * @static
          */
         public static function onceUsingId($id)
@@ -2583,7 +2579,7 @@ namespace Illuminate\Support\Facades {
          *
          * @param mixed $id
          * @param bool $remember
-         * @return \App\Models\ClubAdmin\Users\User|false
+         * @return \App\Domains\ClubAdmin\Users\Models\User|false
          * @static
          */
         public static function loginUsingId($id, $remember = false)
@@ -2651,7 +2647,7 @@ namespace Illuminate\Support\Facades {
          * The application must be using the AuthenticateSession middleware.
          *
          * @param string $password
-         * @return \App\Models\ClubAdmin\Users\User|null
+         * @return \App\Domains\ClubAdmin\Users\Models\User|null
          * @throws \Illuminate\Auth\AuthenticationException
          * @static
          */
@@ -2677,7 +2673,7 @@ namespace Illuminate\Support\Facades {
         /**
          * Get the last user we attempted to authenticate.
          *
-         * @return \App\Models\ClubAdmin\Users\User
+         * @return \App\Domains\ClubAdmin\Users\Models\User
          * @static
          */
         public static function getLastAttempted()
@@ -2801,7 +2797,7 @@ namespace Illuminate\Support\Facades {
         /**
          * Return the currently cached user.
          *
-         * @return \App\Models\ClubAdmin\Users\User|null
+         * @return \App\Domains\ClubAdmin\Users\Models\User|null
          * @static
          */
         public static function getUser()
@@ -2863,7 +2859,7 @@ namespace Illuminate\Support\Facades {
         /**
          * Determine if the current user is authenticated. If not, throw an exception.
          *
-         * @return \App\Models\ClubAdmin\Users\User
+         * @return \App\Domains\ClubAdmin\Users\Models\User
          * @throws \Illuminate\Auth\AuthenticationException
          * @static
          */
@@ -3439,35 +3435,6 @@ namespace Illuminate\Support\Facades {
         }
 
         /**
-         * Get the path to the compiled version of a view.
-         *
-         * @param string $path
-         * @return string
-         * @static
-         */
-        public static function getCompiledPath($path)
-        {
-            //Method inherited from \Illuminate\View\Compilers\Compiler 
-            /** @var \Illuminate\View\Compilers\BladeCompiler $instance */
-            return $instance->getCompiledPath($path);
-        }
-
-        /**
-         * Determine if the view at the given path is expired.
-         *
-         * @param string $path
-         * @return bool
-         * @throws \ErrorException
-         * @static
-         */
-        public static function isExpired($path)
-        {
-            //Method inherited from \Illuminate\View\Compilers\Compiler 
-            /** @var \Illuminate\View\Compilers\BladeCompiler $instance */
-            return $instance->isExpired($path);
-        }
-
-        /**
          * Get a new component hash for a component name.
          *
          * @param string $component
@@ -3568,6 +3535,35 @@ namespace Illuminate\Support\Facades {
         {
             /** @var \Illuminate\View\Compilers\BladeCompiler $instance */
             return $instance->applyEchoHandler($value);
+        }
+
+        /**
+         * Get the path to the compiled version of a view.
+         *
+         * @param string $path
+         * @return string
+         * @static
+         */
+        public static function getCompiledPath($path)
+        {
+            //Method inherited from \Illuminate\View\Compilers\Compiler 
+            /** @var \Illuminate\View\Compilers\BladeCompiler $instance */
+            return $instance->getCompiledPath($path);
+        }
+
+        /**
+         * Determine if the view at the given path is expired.
+         *
+         * @param string $path
+         * @return bool
+         * @throws \ErrorException
+         * @static
+         */
+        public static function isExpired($path)
+        {
+            //Method inherited from \Illuminate\View\Compilers\Compiler 
+            /** @var \Illuminate\View\Compilers\BladeCompiler $instance */
+            return $instance->isExpired($path);
         }
 
             }
@@ -6801,6 +6797,156 @@ namespace Illuminate\Support\Facades {
 
             }
     /**
+     * @see \Illuminate\Encryption\Encrypter
+     */
+    class Crypt {
+        /**
+         * Determine if the given key and cipher combination is valid.
+         *
+         * @param string $key
+         * @param string $cipher
+         * @return bool
+         * @static
+         */
+        public static function supported($key, $cipher)
+        {
+            return \Illuminate\Encryption\Encrypter::supported($key, $cipher);
+        }
+
+        /**
+         * Create a new encryption key for the given cipher.
+         *
+         * @param string $cipher
+         * @return string
+         * @static
+         */
+        public static function generateKey($cipher)
+        {
+            return \Illuminate\Encryption\Encrypter::generateKey($cipher);
+        }
+
+        /**
+         * Encrypt the given value.
+         *
+         * @param mixed $value
+         * @param bool $serialize
+         * @return string
+         * @throws \Illuminate\Contracts\Encryption\EncryptException
+         * @static
+         */
+        public static function encrypt($value, $serialize = true)
+        {
+            /** @var \Illuminate\Encryption\Encrypter $instance */
+            return $instance->encrypt($value, $serialize);
+        }
+
+        /**
+         * Encrypt a string without serialization.
+         *
+         * @param string $value
+         * @return string
+         * @throws \Illuminate\Contracts\Encryption\EncryptException
+         * @static
+         */
+        public static function encryptString($value)
+        {
+            /** @var \Illuminate\Encryption\Encrypter $instance */
+            return $instance->encryptString($value);
+        }
+
+        /**
+         * Decrypt the given value.
+         *
+         * @param string $payload
+         * @param bool $unserialize
+         * @return mixed
+         * @throws \Illuminate\Contracts\Encryption\DecryptException
+         * @static
+         */
+        public static function decrypt($payload, $unserialize = true)
+        {
+            /** @var \Illuminate\Encryption\Encrypter $instance */
+            return $instance->decrypt($payload, $unserialize);
+        }
+
+        /**
+         * Decrypt the given string without unserialization.
+         *
+         * @param string $payload
+         * @return string
+         * @throws \Illuminate\Contracts\Encryption\DecryptException
+         * @static
+         */
+        public static function decryptString($payload)
+        {
+            /** @var \Illuminate\Encryption\Encrypter $instance */
+            return $instance->decryptString($payload);
+        }
+
+        /**
+         * Determine if the given value appears to be encrypted by this encrypter.
+         *
+         * @param mixed $value
+         * @return bool
+         * @static
+         */
+        public static function appearsEncrypted($value)
+        {
+            return \Illuminate\Encryption\Encrypter::appearsEncrypted($value);
+        }
+
+        /**
+         * Get the encryption key that the encrypter is currently using.
+         *
+         * @return string
+         * @static
+         */
+        public static function getKey()
+        {
+            /** @var \Illuminate\Encryption\Encrypter $instance */
+            return $instance->getKey();
+        }
+
+        /**
+         * Get the current encryption key and all previous encryption keys.
+         *
+         * @return array
+         * @static
+         */
+        public static function getAllKeys()
+        {
+            /** @var \Illuminate\Encryption\Encrypter $instance */
+            return $instance->getAllKeys();
+        }
+
+        /**
+         * Get the previous encryption keys.
+         *
+         * @return array
+         * @static
+         */
+        public static function getPreviousKeys()
+        {
+            /** @var \Illuminate\Encryption\Encrypter $instance */
+            return $instance->getPreviousKeys();
+        }
+
+        /**
+         * Set the previous / legacy encryption keys that should be utilized if decryption fails.
+         *
+         * @param array $keys
+         * @return \Illuminate\Encryption\Encrypter
+         * @throws \RuntimeException
+         * @static
+         */
+        public static function previousKeys($keys)
+        {
+            /** @var \Illuminate\Encryption\Encrypter $instance */
+            return $instance->previousKeys($keys);
+        }
+
+            }
+    /**
      * @see https://carbon.nesbot.com/docs/
      * @see https://github.com/briannesbitt/Carbon/blob/master/src/Carbon/Factory.php
      * @method static bool canBeCreatedFromFormat(?string $date, string $format)
@@ -6978,7 +7124,7 @@ namespace Illuminate\Support\Facades {
          * Build a database connection instance from the given configuration.
          *
          * @param array $config
-         * @return \Illuminate\Database\MariaDbConnection
+         * @return \Illuminate\Database\SQLiteConnection
          * @static
          */
         public static function build($config)
@@ -7005,7 +7151,7 @@ namespace Illuminate\Support\Facades {
          * @param \UnitEnum|string $name
          * @param array $config
          * @param bool $force
-         * @return \Illuminate\Database\MariaDbConnection
+         * @return \Illuminate\Database\SQLiteConnection
          * @throws \RuntimeException
          * @static
          */
@@ -7256,43 +7402,19 @@ namespace Illuminate\Support\Facades {
          */
         public static function getDriverTitle()
         {
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->getDriverTitle();
-        }
-
-        /**
-         * Determine if the connected database is a MariaDB database.
-         *
-         * @return bool
-         * @static
-         */
-        public static function isMaria()
-        {
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
-            return $instance->isMaria();
-        }
-
-        /**
-         * Get the server version for the connection.
-         *
-         * @return string
-         * @static
-         */
-        public static function getServerVersion()
-        {
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
-            return $instance->getServerVersion();
         }
 
         /**
          * Get a schema builder instance for the connection.
          *
-         * @return \Illuminate\Database\Schema\MariaDbBuilder
+         * @return \Illuminate\Database\Schema\SQLiteBuilder
          * @static
          */
         public static function getSchemaBuilder()
         {
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->getSchemaBuilder();
         }
 
@@ -7301,42 +7423,13 @@ namespace Illuminate\Support\Facades {
          *
          * @param \Illuminate\Filesystem\Filesystem|null $files
          * @param callable|null $processFactory
-         * @return \Illuminate\Database\Schema\MariaDbSchemaState
+         * @throws \RuntimeException
          * @static
          */
         public static function getSchemaState($files = null, $processFactory = null)
         {
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->getSchemaState($files, $processFactory);
-        }
-
-        /**
-         * Run an insert statement against the database.
-         *
-         * @param string $query
-         * @param array $bindings
-         * @param string|null $sequence
-         * @return bool
-         * @static
-         */
-        public static function insert($query, $bindings = [], $sequence = null)
-        {
-            //Method inherited from \Illuminate\Database\MySqlConnection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
-            return $instance->insert($query, $bindings, $sequence);
-        }
-
-        /**
-         * Get the connection's last insert ID.
-         *
-         * @return string|int|null
-         * @static
-         */
-        public static function getLastInsertId()
-        {
-            //Method inherited from \Illuminate\Database\MySqlConnection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
-            return $instance->getLastInsertId();
         }
 
         /**
@@ -7348,7 +7441,7 @@ namespace Illuminate\Support\Facades {
         public static function useDefaultQueryGrammar()
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             $instance->useDefaultQueryGrammar();
         }
 
@@ -7361,7 +7454,7 @@ namespace Illuminate\Support\Facades {
         public static function useDefaultSchemaGrammar()
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             $instance->useDefaultSchemaGrammar();
         }
 
@@ -7374,7 +7467,7 @@ namespace Illuminate\Support\Facades {
         public static function useDefaultPostProcessor()
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             $instance->useDefaultPostProcessor();
         }
 
@@ -7389,7 +7482,7 @@ namespace Illuminate\Support\Facades {
         public static function table($table, $as = null)
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->table($table, $as);
         }
 
@@ -7402,7 +7495,7 @@ namespace Illuminate\Support\Facades {
         public static function query()
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->query();
         }
 
@@ -7418,7 +7511,7 @@ namespace Illuminate\Support\Facades {
         public static function selectOne($query, $bindings = [], $useReadPdo = true)
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->selectOne($query, $bindings, $useReadPdo);
         }
 
@@ -7435,7 +7528,7 @@ namespace Illuminate\Support\Facades {
         public static function scalar($query, $bindings = [], $useReadPdo = true)
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->scalar($query, $bindings, $useReadPdo);
         }
 
@@ -7450,7 +7543,7 @@ namespace Illuminate\Support\Facades {
         public static function selectFromWriteConnection($query, $bindings = [])
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->selectFromWriteConnection($query, $bindings);
         }
 
@@ -7467,7 +7560,7 @@ namespace Illuminate\Support\Facades {
         public static function select($query, $bindings = [], $useReadPdo = true, $fetchUsing = [])
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->select($query, $bindings, $useReadPdo, $fetchUsing);
         }
 
@@ -7484,7 +7577,7 @@ namespace Illuminate\Support\Facades {
         public static function selectResultSets($query, $bindings = [], $useReadPdo = true, $fetchUsing = [])
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->selectResultSets($query, $bindings, $useReadPdo, $fetchUsing);
         }
 
@@ -7501,8 +7594,23 @@ namespace Illuminate\Support\Facades {
         public static function cursor($query, $bindings = [], $useReadPdo = true, $fetchUsing = [])
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->cursor($query, $bindings, $useReadPdo, $fetchUsing);
+        }
+
+        /**
+         * Run an insert statement against the database.
+         *
+         * @param string $query
+         * @param array $bindings
+         * @return bool
+         * @static
+         */
+        public static function insert($query, $bindings = [])
+        {
+            //Method inherited from \Illuminate\Database\Connection 
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
+            return $instance->insert($query, $bindings);
         }
 
         /**
@@ -7516,7 +7624,7 @@ namespace Illuminate\Support\Facades {
         public static function update($query, $bindings = [])
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->update($query, $bindings);
         }
 
@@ -7531,7 +7639,7 @@ namespace Illuminate\Support\Facades {
         public static function delete($query, $bindings = [])
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->delete($query, $bindings);
         }
 
@@ -7546,7 +7654,7 @@ namespace Illuminate\Support\Facades {
         public static function statement($query, $bindings = [])
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->statement($query, $bindings);
         }
 
@@ -7561,7 +7669,7 @@ namespace Illuminate\Support\Facades {
         public static function affectingStatement($query, $bindings = [])
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->affectingStatement($query, $bindings);
         }
 
@@ -7575,7 +7683,7 @@ namespace Illuminate\Support\Facades {
         public static function unprepared($query)
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->unprepared($query);
         }
 
@@ -7588,7 +7696,7 @@ namespace Illuminate\Support\Facades {
         public static function threadCount()
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->threadCount();
         }
 
@@ -7602,7 +7710,7 @@ namespace Illuminate\Support\Facades {
         public static function pretend($callback)
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->pretend($callback);
         }
 
@@ -7616,7 +7724,7 @@ namespace Illuminate\Support\Facades {
         public static function withoutPretending($callback)
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->withoutPretending($callback);
         }
 
@@ -7631,7 +7739,7 @@ namespace Illuminate\Support\Facades {
         public static function bindValues($statement, $bindings)
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             $instance->bindValues($statement, $bindings);
         }
 
@@ -7645,7 +7753,7 @@ namespace Illuminate\Support\Facades {
         public static function prepareBindings($bindings)
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->prepareBindings($bindings);
         }
 
@@ -7661,7 +7769,7 @@ namespace Illuminate\Support\Facades {
         public static function logQuery($query, $bindings, $time = null)
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             $instance->logQuery($query, $bindings, $time);
         }
 
@@ -7676,7 +7784,7 @@ namespace Illuminate\Support\Facades {
         public static function whenQueryingForLongerThan($threshold, $handler)
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             $instance->whenQueryingForLongerThan($threshold, $handler);
         }
 
@@ -7689,7 +7797,7 @@ namespace Illuminate\Support\Facades {
         public static function allowQueryDurationHandlersToRunAgain()
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             $instance->allowQueryDurationHandlersToRunAgain();
         }
 
@@ -7702,7 +7810,7 @@ namespace Illuminate\Support\Facades {
         public static function totalQueryDuration()
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->totalQueryDuration();
         }
 
@@ -7715,7 +7823,7 @@ namespace Illuminate\Support\Facades {
         public static function resetTotalQueryDuration()
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             $instance->resetTotalQueryDuration();
         }
 
@@ -7728,7 +7836,7 @@ namespace Illuminate\Support\Facades {
         public static function reconnectIfMissingConnection()
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             $instance->reconnectIfMissingConnection();
         }
 
@@ -7736,13 +7844,13 @@ namespace Illuminate\Support\Facades {
          * Register a hook to be run just before a database transaction is started.
          *
          * @param \Closure $callback
-         * @return \Illuminate\Database\MariaDbConnection
+         * @return \Illuminate\Database\SQLiteConnection
          * @static
          */
         public static function beforeStartingTransaction($callback)
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->beforeStartingTransaction($callback);
         }
 
@@ -7750,13 +7858,13 @@ namespace Illuminate\Support\Facades {
          * Register a hook to be run just before a database query is executed.
          *
          * @param \Closure $callback
-         * @return \Illuminate\Database\MariaDbConnection
+         * @return \Illuminate\Database\SQLiteConnection
          * @static
          */
         public static function beforeExecuting($callback)
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->beforeExecuting($callback);
         }
 
@@ -7770,7 +7878,7 @@ namespace Illuminate\Support\Facades {
         public static function listen($callback)
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             $instance->listen($callback);
         }
 
@@ -7784,7 +7892,7 @@ namespace Illuminate\Support\Facades {
         public static function raw($value)
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->raw($value);
         }
 
@@ -7800,7 +7908,7 @@ namespace Illuminate\Support\Facades {
         public static function escape($value, $binary = false)
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->escape($value, $binary);
         }
 
@@ -7813,7 +7921,7 @@ namespace Illuminate\Support\Facades {
         public static function hasModifiedRecords()
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->hasModifiedRecords();
         }
 
@@ -7827,7 +7935,7 @@ namespace Illuminate\Support\Facades {
         public static function recordsHaveBeenModified($value = true)
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             $instance->recordsHaveBeenModified($value);
         }
 
@@ -7835,13 +7943,13 @@ namespace Illuminate\Support\Facades {
          * Set the record modification state.
          *
          * @param bool $value
-         * @return \Illuminate\Database\MariaDbConnection
+         * @return \Illuminate\Database\SQLiteConnection
          * @static
          */
         public static function setRecordModificationState($value)
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->setRecordModificationState($value);
         }
 
@@ -7854,7 +7962,7 @@ namespace Illuminate\Support\Facades {
         public static function forgetRecordModificationState()
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             $instance->forgetRecordModificationState();
         }
 
@@ -7862,13 +7970,13 @@ namespace Illuminate\Support\Facades {
          * Indicate that the connection should use the write PDO connection for reads.
          *
          * @param bool $value
-         * @return \Illuminate\Database\MariaDbConnection
+         * @return \Illuminate\Database\SQLiteConnection
          * @static
          */
         public static function useWriteConnectionWhenReading($value = true)
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->useWriteConnectionWhenReading($value);
         }
 
@@ -7881,7 +7989,7 @@ namespace Illuminate\Support\Facades {
         public static function getPdo()
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->getPdo();
         }
 
@@ -7894,7 +8002,7 @@ namespace Illuminate\Support\Facades {
         public static function getRawPdo()
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->getRawPdo();
         }
 
@@ -7907,7 +8015,7 @@ namespace Illuminate\Support\Facades {
         public static function getReadPdo()
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->getReadPdo();
         }
 
@@ -7920,7 +8028,7 @@ namespace Illuminate\Support\Facades {
         public static function getRawReadPdo()
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->getRawReadPdo();
         }
 
@@ -7928,13 +8036,13 @@ namespace Illuminate\Support\Facades {
          * Set the PDO connection.
          *
          * @param \PDO|\Closure|null $pdo
-         * @return \Illuminate\Database\MariaDbConnection
+         * @return \Illuminate\Database\SQLiteConnection
          * @static
          */
         public static function setPdo($pdo)
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->setPdo($pdo);
         }
 
@@ -7942,13 +8050,13 @@ namespace Illuminate\Support\Facades {
          * Set the PDO connection used for reading.
          *
          * @param \PDO|\Closure|null $pdo
-         * @return \Illuminate\Database\MariaDbConnection
+         * @return \Illuminate\Database\SQLiteConnection
          * @static
          */
         public static function setReadPdo($pdo)
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->setReadPdo($pdo);
         }
 
@@ -7956,13 +8064,13 @@ namespace Illuminate\Support\Facades {
          * Set the read PDO connection configuration.
          *
          * @param array $config
-         * @return \Illuminate\Database\MariaDbConnection
+         * @return \Illuminate\Database\SQLiteConnection
          * @static
          */
         public static function setReadPdoConfig($config)
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->setReadPdoConfig($config);
         }
 
@@ -7975,7 +8083,7 @@ namespace Illuminate\Support\Facades {
         public static function getName()
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->getName();
         }
 
@@ -7988,7 +8096,7 @@ namespace Illuminate\Support\Facades {
         public static function getNameWithReadWriteType()
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->getNameWithReadWriteType();
         }
 
@@ -8002,7 +8110,7 @@ namespace Illuminate\Support\Facades {
         public static function getConfig($option = null)
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->getConfig($option);
         }
 
@@ -8015,7 +8123,7 @@ namespace Illuminate\Support\Facades {
         public static function getDriverName()
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->getDriverName();
         }
 
@@ -8028,7 +8136,7 @@ namespace Illuminate\Support\Facades {
         public static function getQueryGrammar()
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->getQueryGrammar();
         }
 
@@ -8036,13 +8144,13 @@ namespace Illuminate\Support\Facades {
          * Set the query grammar used by the connection.
          *
          * @param \Illuminate\Database\Query\Grammars\Grammar $grammar
-         * @return \Illuminate\Database\MariaDbConnection
+         * @return \Illuminate\Database\SQLiteConnection
          * @static
          */
         public static function setQueryGrammar($grammar)
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->setQueryGrammar($grammar);
         }
 
@@ -8055,7 +8163,7 @@ namespace Illuminate\Support\Facades {
         public static function getSchemaGrammar()
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->getSchemaGrammar();
         }
 
@@ -8063,13 +8171,13 @@ namespace Illuminate\Support\Facades {
          * Set the schema grammar used by the connection.
          *
          * @param \Illuminate\Database\Schema\Grammars\Grammar $grammar
-         * @return \Illuminate\Database\MariaDbConnection
+         * @return \Illuminate\Database\SQLiteConnection
          * @static
          */
         public static function setSchemaGrammar($grammar)
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->setSchemaGrammar($grammar);
         }
 
@@ -8082,7 +8190,7 @@ namespace Illuminate\Support\Facades {
         public static function getPostProcessor()
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->getPostProcessor();
         }
 
@@ -8090,13 +8198,13 @@ namespace Illuminate\Support\Facades {
          * Set the query post processor used by the connection.
          *
          * @param \Illuminate\Database\Query\Processors\Processor $processor
-         * @return \Illuminate\Database\MariaDbConnection
+         * @return \Illuminate\Database\SQLiteConnection
          * @static
          */
         public static function setPostProcessor($processor)
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->setPostProcessor($processor);
         }
 
@@ -8109,7 +8217,7 @@ namespace Illuminate\Support\Facades {
         public static function getEventDispatcher()
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->getEventDispatcher();
         }
 
@@ -8117,13 +8225,13 @@ namespace Illuminate\Support\Facades {
          * Set the event dispatcher instance on the connection.
          *
          * @param \Illuminate\Contracts\Events\Dispatcher $events
-         * @return \Illuminate\Database\MariaDbConnection
+         * @return \Illuminate\Database\SQLiteConnection
          * @static
          */
         public static function setEventDispatcher($events)
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->setEventDispatcher($events);
         }
 
@@ -8136,7 +8244,7 @@ namespace Illuminate\Support\Facades {
         public static function unsetEventDispatcher()
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             $instance->unsetEventDispatcher();
         }
 
@@ -8144,13 +8252,13 @@ namespace Illuminate\Support\Facades {
          * Set the transaction manager instance on the connection.
          *
          * @param \Illuminate\Database\DatabaseTransactionsManager $manager
-         * @return \Illuminate\Database\MariaDbConnection
+         * @return \Illuminate\Database\SQLiteConnection
          * @static
          */
         public static function setTransactionManager($manager)
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->setTransactionManager($manager);
         }
 
@@ -8163,7 +8271,7 @@ namespace Illuminate\Support\Facades {
         public static function unsetTransactionManager()
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             $instance->unsetTransactionManager();
         }
 
@@ -8176,7 +8284,7 @@ namespace Illuminate\Support\Facades {
         public static function pretending()
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->pretending();
         }
 
@@ -8189,7 +8297,7 @@ namespace Illuminate\Support\Facades {
         public static function getQueryLog()
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->getQueryLog();
         }
 
@@ -8202,7 +8310,7 @@ namespace Illuminate\Support\Facades {
         public static function getRawQueryLog()
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->getRawQueryLog();
         }
 
@@ -8215,7 +8323,7 @@ namespace Illuminate\Support\Facades {
         public static function flushQueryLog()
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             $instance->flushQueryLog();
         }
 
@@ -8228,7 +8336,7 @@ namespace Illuminate\Support\Facades {
         public static function enableQueryLog()
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             $instance->enableQueryLog();
         }
 
@@ -8241,7 +8349,7 @@ namespace Illuminate\Support\Facades {
         public static function disableQueryLog()
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             $instance->disableQueryLog();
         }
 
@@ -8254,7 +8362,7 @@ namespace Illuminate\Support\Facades {
         public static function logging()
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->logging();
         }
 
@@ -8267,7 +8375,7 @@ namespace Illuminate\Support\Facades {
         public static function getDatabaseName()
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->getDatabaseName();
         }
 
@@ -8275,13 +8383,13 @@ namespace Illuminate\Support\Facades {
          * Set the name of the connected database.
          *
          * @param string $database
-         * @return \Illuminate\Database\MariaDbConnection
+         * @return \Illuminate\Database\SQLiteConnection
          * @static
          */
         public static function setDatabaseName($database)
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->setDatabaseName($database);
         }
 
@@ -8289,13 +8397,13 @@ namespace Illuminate\Support\Facades {
          * Set the read / write type of the connection.
          *
          * @param string|null $readWriteType
-         * @return \Illuminate\Database\MariaDbConnection
+         * @return \Illuminate\Database\SQLiteConnection
          * @static
          */
         public static function setReadWriteType($readWriteType)
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->setReadWriteType($readWriteType);
         }
 
@@ -8308,7 +8416,7 @@ namespace Illuminate\Support\Facades {
         public static function getTablePrefix()
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->getTablePrefix();
         }
 
@@ -8316,13 +8424,13 @@ namespace Illuminate\Support\Facades {
          * Set the table prefix in use by the connection.
          *
          * @param string $prefix
-         * @return \Illuminate\Database\MariaDbConnection
+         * @return \Illuminate\Database\SQLiteConnection
          * @static
          */
         public static function setTablePrefix($prefix)
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->setTablePrefix($prefix);
         }
 
@@ -8336,8 +8444,21 @@ namespace Illuminate\Support\Facades {
         public static function withoutTablePrefix($callback)
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->withoutTablePrefix($callback);
+        }
+
+        /**
+         * Get the server version for the connection.
+         *
+         * @return string
+         * @static
+         */
+        public static function getServerVersion()
+        {
+            //Method inherited from \Illuminate\Database\Connection 
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
+            return $instance->getServerVersion();
         }
 
         /**
@@ -8351,7 +8472,7 @@ namespace Illuminate\Support\Facades {
         public static function resolverFor($driver, $callback)
         {
             //Method inherited from \Illuminate\Database\Connection 
-            \Illuminate\Database\MariaDbConnection::resolverFor($driver, $callback);
+            \Illuminate\Database\SQLiteConnection::resolverFor($driver, $callback);
         }
 
         /**
@@ -8364,7 +8485,7 @@ namespace Illuminate\Support\Facades {
         public static function getResolver($driver)
         {
             //Method inherited from \Illuminate\Database\Connection 
-            return \Illuminate\Database\MariaDbConnection::getResolver($driver);
+            return \Illuminate\Database\SQLiteConnection::getResolver($driver);
         }
 
         /**
@@ -8380,7 +8501,7 @@ namespace Illuminate\Support\Facades {
         public static function transaction($callback, $attempts = 1)
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->transaction($callback, $attempts);
         }
 
@@ -8394,7 +8515,7 @@ namespace Illuminate\Support\Facades {
         public static function beginTransaction()
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             $instance->beginTransaction();
         }
 
@@ -8408,7 +8529,7 @@ namespace Illuminate\Support\Facades {
         public static function commit()
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             $instance->commit();
         }
 
@@ -8423,7 +8544,7 @@ namespace Illuminate\Support\Facades {
         public static function rollBack($toLevel = null)
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             $instance->rollBack($toLevel);
         }
 
@@ -8436,7 +8557,7 @@ namespace Illuminate\Support\Facades {
         public static function transactionLevel()
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             return $instance->transactionLevel();
         }
 
@@ -8451,7 +8572,7 @@ namespace Illuminate\Support\Facades {
         public static function afterCommit($callback)
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             $instance->afterCommit($callback);
         }
 
@@ -8466,7 +8587,7 @@ namespace Illuminate\Support\Facades {
         public static function afterRollBack($callback)
         {
             //Method inherited from \Illuminate\Database\Connection 
-            /** @var \Illuminate\Database\MariaDbConnection $instance */
+            /** @var \Illuminate\Database\SQLiteConnection $instance */
             $instance->afterRollBack($callback);
         }
 
@@ -11035,34 +11156,6 @@ namespace Illuminate\Support\Facades {
         }
 
         /**
-         * Set the parsed value of a key.
-         *
-         * @param string $key
-         * @param array $parsed
-         * @return void
-         * @static
-         */
-        public static function setParsedKey($key, $parsed)
-        {
-            //Method inherited from \Illuminate\Support\NamespacedItemResolver 
-            /** @var \Illuminate\Translation\Translator $instance */
-            $instance->setParsedKey($key, $parsed);
-        }
-
-        /**
-         * Flush the cache of parsed keys.
-         *
-         * @return void
-         * @static
-         */
-        public static function flushParsedKeys()
-        {
-            //Method inherited from \Illuminate\Support\NamespacedItemResolver 
-            /** @var \Illuminate\Translation\Translator $instance */
-            $instance->flushParsedKeys();
-        }
-
-        /**
          * Register a custom macro.
          *
          * @param string $name
@@ -11111,6 +11204,34 @@ namespace Illuminate\Support\Facades {
         public static function flushMacros()
         {
             \Illuminate\Translation\Translator::flushMacros();
+        }
+
+        /**
+         * Set the parsed value of a key.
+         *
+         * @param string $key
+         * @param array $parsed
+         * @return void
+         * @static
+         */
+        public static function setParsedKey($key, $parsed)
+        {
+            //Method inherited from \Illuminate\Support\NamespacedItemResolver 
+            /** @var \Illuminate\Translation\Translator $instance */
+            $instance->setParsedKey($key, $parsed);
+        }
+
+        /**
+         * Flush the cache of parsed keys.
+         *
+         * @return void
+         * @static
+         */
+        public static function flushParsedKeys()
+        {
+            //Method inherited from \Illuminate\Support\NamespacedItemResolver 
+            /** @var \Illuminate\Translation\Translator $instance */
+            $instance->flushParsedKeys();
         }
 
             }
@@ -12048,74 +12169,6 @@ namespace Illuminate\Support\Facades {
         }
 
         /**
-         * Register a custom driver creator Closure.
-         *
-         * @param string $driver
-         * @param-closure-this $this  $callback
-         * @return \Illuminate\Notifications\ChannelManager
-         * @static
-         */
-        public static function extend($driver, $callback)
-        {
-            //Method inherited from \Illuminate\Support\Manager 
-            /** @var \Illuminate\Notifications\ChannelManager $instance */
-            return $instance->extend($driver, $callback);
-        }
-
-        /**
-         * Get all of the created "drivers".
-         *
-         * @return array<string, mixed>
-         * @static
-         */
-        public static function getDrivers()
-        {
-            //Method inherited from \Illuminate\Support\Manager 
-            /** @var \Illuminate\Notifications\ChannelManager $instance */
-            return $instance->getDrivers();
-        }
-
-        /**
-         * Get the container instance used by the manager.
-         *
-         * @return \Illuminate\Contracts\Container\Container
-         * @static
-         */
-        public static function getContainer()
-        {
-            //Method inherited from \Illuminate\Support\Manager 
-            /** @var \Illuminate\Notifications\ChannelManager $instance */
-            return $instance->getContainer();
-        }
-
-        /**
-         * Set the container instance used by the manager.
-         *
-         * @param \Illuminate\Contracts\Container\Container $container
-         * @return \Illuminate\Notifications\ChannelManager
-         * @static
-         */
-        public static function setContainer($container)
-        {
-            //Method inherited from \Illuminate\Support\Manager 
-            /** @var \Illuminate\Notifications\ChannelManager $instance */
-            return $instance->setContainer($container);
-        }
-
-        /**
-         * Forget all of the resolved driver instances.
-         *
-         * @return \Illuminate\Notifications\ChannelManager
-         * @static
-         */
-        public static function forgetDrivers()
-        {
-            //Method inherited from \Illuminate\Support\Manager 
-            /** @var \Illuminate\Notifications\ChannelManager $instance */
-            return $instance->forgetDrivers();
-        }
-
-        /**
          * Register a custom macro.
          *
          * @param string $name
@@ -12190,6 +12243,74 @@ namespace Illuminate\Support\Facades {
         {
             /** @var \Illuminate\Notifications\ChannelManager $instance */
             return $instance->resolveQueueFromQueueRoute($queueable);
+        }
+
+        /**
+         * Register a custom driver creator Closure.
+         *
+         * @param string $driver
+         * @param-closure-this $this  $callback
+         * @return \Illuminate\Notifications\ChannelManager
+         * @static
+         */
+        public static function extend($driver, $callback)
+        {
+            //Method inherited from \Illuminate\Support\Manager 
+            /** @var \Illuminate\Notifications\ChannelManager $instance */
+            return $instance->extend($driver, $callback);
+        }
+
+        /**
+         * Get all of the created "drivers".
+         *
+         * @return array<string, mixed>
+         * @static
+         */
+        public static function getDrivers()
+        {
+            //Method inherited from \Illuminate\Support\Manager 
+            /** @var \Illuminate\Notifications\ChannelManager $instance */
+            return $instance->getDrivers();
+        }
+
+        /**
+         * Get the container instance used by the manager.
+         *
+         * @return \Illuminate\Contracts\Container\Container
+         * @static
+         */
+        public static function getContainer()
+        {
+            //Method inherited from \Illuminate\Support\Manager 
+            /** @var \Illuminate\Notifications\ChannelManager $instance */
+            return $instance->getContainer();
+        }
+
+        /**
+         * Set the container instance used by the manager.
+         *
+         * @param \Illuminate\Contracts\Container\Container $container
+         * @return \Illuminate\Notifications\ChannelManager
+         * @static
+         */
+        public static function setContainer($container)
+        {
+            //Method inherited from \Illuminate\Support\Manager 
+            /** @var \Illuminate\Notifications\ChannelManager $instance */
+            return $instance->setContainer($container);
+        }
+
+        /**
+         * Forget all of the resolved driver instances.
+         *
+         * @return \Illuminate\Notifications\ChannelManager
+         * @static
+         */
+        public static function forgetDrivers()
+        {
+            //Method inherited from \Illuminate\Support\Manager 
+            /** @var \Illuminate\Notifications\ChannelManager $instance */
+            return $instance->forgetDrivers();
         }
 
         /**
@@ -12947,6 +13068,20 @@ namespace Illuminate\Support\Facades {
         }
 
         /**
+         * Determine which of the given queues are currently paused.
+         *
+         * @param string $connection
+         * @param array $queues
+         * @return array
+         * @static
+         */
+        public static function getPausedQueues($connection, $queues)
+        {
+            /** @var \Illuminate\Queue\QueueManager $instance */
+            return $instance->getPausedQueues($connection, $queues);
+        }
+
+        /**
          * Indicate that queue workers should not poll for restart or pause signals.
          *
          * This prevents the workers from hitting the application cache to determine if they need to pause or restart.
@@ -13119,6 +13254,19 @@ namespace Illuminate\Support\Facades {
         }
 
         /**
+         * Assert if a job was pushed exactly once.
+         *
+         * @param string $job
+         * @return void
+         * @static
+         */
+        public static function assertPushedOnce($job)
+        {
+            /** @var \Illuminate\Support\Testing\Fakes\QueueFake $instance */
+            $instance->assertPushedOnce($job);
+        }
+
+        /**
          * Assert if a job was pushed based on a truth-test callback.
          *
          * @param \UnitEnum|string $queue
@@ -13284,7 +13432,7 @@ namespace Illuminate\Support\Facades {
         /**
          * Get the size of the queue.
          *
-         * @param string|null $queue
+         * @param \UnitEnum|string|null $queue
          * @return int
          * @static
          */
@@ -13297,7 +13445,7 @@ namespace Illuminate\Support\Facades {
         /**
          * Get the number of pending jobs.
          *
-         * @param string|null $queue
+         * @param \UnitEnum|string|null $queue
          * @return int
          * @static
          */
@@ -13310,7 +13458,7 @@ namespace Illuminate\Support\Facades {
         /**
          * Get the number of delayed jobs.
          *
-         * @param string|null $queue
+         * @param \UnitEnum|string|null $queue
          * @return int
          * @static
          */
@@ -13323,7 +13471,7 @@ namespace Illuminate\Support\Facades {
         /**
          * Get the number of reserved jobs.
          *
-         * @param string|null $queue
+         * @param \UnitEnum|string|null $queue
          * @return int
          * @static
          */
@@ -13336,7 +13484,7 @@ namespace Illuminate\Support\Facades {
         /**
          * Get the pending jobs for the given queue.
          *
-         * @param string|null $queue
+         * @param \UnitEnum|string|null $queue
          * @return \Illuminate\Support\Collection<int, \Illuminate\Queue\Jobs\InspectedJob>
          * @static
          */
@@ -13349,7 +13497,7 @@ namespace Illuminate\Support\Facades {
         /**
          * Get the delayed jobs for the given queue.
          *
-         * @param string|null $queue
+         * @param \UnitEnum|string|null $queue
          * @return \Illuminate\Support\Collection
          * @static
          */
@@ -13362,7 +13510,7 @@ namespace Illuminate\Support\Facades {
         /**
          * Get the reserved jobs for the given queue.
          *
-         * @param string|null $queue
+         * @param \UnitEnum|string|null $queue
          * @return \Illuminate\Support\Collection
          * @static
          */
@@ -13411,7 +13559,7 @@ namespace Illuminate\Support\Facades {
         /**
          * Get the creation timestamp of the oldest pending job, excluding delayed jobs.
          *
-         * @param string|null $queue
+         * @param \UnitEnum|string|null $queue
          * @return int|null
          * @static
          */
@@ -13426,7 +13574,7 @@ namespace Illuminate\Support\Facades {
          *
          * @param string|object $job
          * @param mixed $data
-         * @param string|null $queue
+         * @param \UnitEnum|string|null $queue
          * @return mixed
          * @static
          */
@@ -13453,7 +13601,7 @@ namespace Illuminate\Support\Facades {
          * Push a raw payload onto the queue.
          *
          * @param string $payload
-         * @param string|null $queue
+         * @param \UnitEnum|string|null $queue
          * @param array $options
          * @return mixed
          * @static
@@ -13470,7 +13618,7 @@ namespace Illuminate\Support\Facades {
          * @param \DateTimeInterface|\DateInterval|int $delay
          * @param string|object $job
          * @param mixed $data
-         * @param string|null $queue
+         * @param \UnitEnum|string|null $queue
          * @return mixed
          * @static
          */
@@ -13483,7 +13631,7 @@ namespace Illuminate\Support\Facades {
         /**
          * Push a new job onto the queue.
          *
-         * @param string $queue
+         * @param \UnitEnum|string $queue
          * @param string|object $job
          * @param mixed $data
          * @return mixed
@@ -13498,7 +13646,7 @@ namespace Illuminate\Support\Facades {
         /**
          * Push a new job onto a specific queue after (n) seconds.
          *
-         * @param string $queue
+         * @param \UnitEnum|string $queue
          * @param \DateTimeInterface|\DateInterval|int $delay
          * @param string|object $job
          * @param mixed $data
@@ -13514,7 +13662,7 @@ namespace Illuminate\Support\Facades {
         /**
          * Pop the next job off of the queue.
          *
-         * @param string|null $queue
+         * @param \UnitEnum|string|null $queue
          * @return \Illuminate\Contracts\Queue\Job|null
          * @static
          */
@@ -13529,7 +13677,7 @@ namespace Illuminate\Support\Facades {
          *
          * @param array $jobs
          * @param mixed $data
-         * @param string|null $queue
+         * @param \UnitEnum|string|null $queue
          * @return mixed
          * @static
          */
@@ -13614,6 +13762,89 @@ namespace Illuminate\Support\Facades {
         }
 
         /**
+         * Release a reserved job back onto the queue after (n) seconds.
+         *
+         * @param string $queue
+         * @param \Illuminate\Queue\Jobs\DatabaseJobRecord $job
+         * @param int $delay
+         * @return mixed
+         * @static
+         */
+        public static function release($queue, $job, $delay)
+        {
+            /** @var \Illuminate\Queue\DatabaseQueue $instance */
+            return $instance->release($queue, $job, $delay);
+        }
+
+        /**
+         * Delete a reserved job from the queue.
+         *
+         * @param string $queue
+         * @param string $id
+         * @return void
+         * @throws \Throwable
+         * @static
+         */
+        public static function deleteReserved($queue, $id)
+        {
+            /** @var \Illuminate\Queue\DatabaseQueue $instance */
+            $instance->deleteReserved($queue, $id);
+        }
+
+        /**
+         * Delete a reserved job from the reserved queue and release it.
+         *
+         * @param string $queue
+         * @param \Illuminate\Queue\Jobs\DatabaseJob $job
+         * @param int $delay
+         * @return void
+         * @static
+         */
+        public static function deleteAndRelease($queue, $job, $delay)
+        {
+            /** @var \Illuminate\Queue\DatabaseQueue $instance */
+            $instance->deleteAndRelease($queue, $job, $delay);
+        }
+
+        /**
+         * Delete all of the jobs from the queue.
+         *
+         * @param string $queue
+         * @return int
+         * @static
+         */
+        public static function clear($queue)
+        {
+            /** @var \Illuminate\Queue\DatabaseQueue $instance */
+            return $instance->clear($queue);
+        }
+
+        /**
+         * Get the queue or return the default.
+         *
+         * @param string|null $queue
+         * @return string
+         * @static
+         */
+        public static function getQueue($queue)
+        {
+            /** @var \Illuminate\Queue\DatabaseQueue $instance */
+            return $instance->getQueue($queue);
+        }
+
+        /**
+         * Get the underlying database instance.
+         *
+         * @return \Illuminate\Database\Connection
+         * @static
+         */
+        public static function getDatabase()
+        {
+            /** @var \Illuminate\Queue\DatabaseQueue $instance */
+            return $instance->getDatabase();
+        }
+
+        /**
          * Get the maximum number of attempts for an object-based queue handler.
          *
          * @param mixed $job
@@ -13623,7 +13854,7 @@ namespace Illuminate\Support\Facades {
         public static function getJobTries($job)
         {
             //Method inherited from \Illuminate\Queue\Queue 
-            /** @var \Illuminate\Queue\SyncQueue $instance */
+            /** @var \Illuminate\Queue\DatabaseQueue $instance */
             return $instance->getJobTries($job);
         }
 
@@ -13637,7 +13868,7 @@ namespace Illuminate\Support\Facades {
         public static function getJobBackoff($job)
         {
             //Method inherited from \Illuminate\Queue\Queue 
-            /** @var \Illuminate\Queue\SyncQueue $instance */
+            /** @var \Illuminate\Queue\DatabaseQueue $instance */
             return $instance->getJobBackoff($job);
         }
 
@@ -13651,7 +13882,7 @@ namespace Illuminate\Support\Facades {
         public static function getJobExpiration($job)
         {
             //Method inherited from \Illuminate\Queue\Queue 
-            /** @var \Illuminate\Queue\SyncQueue $instance */
+            /** @var \Illuminate\Queue\DatabaseQueue $instance */
             return $instance->getJobExpiration($job);
         }
 
@@ -13665,7 +13896,7 @@ namespace Illuminate\Support\Facades {
         public static function createPayloadUsing($callback)
         {
             //Method inherited from \Illuminate\Queue\Queue 
-            \Illuminate\Queue\SyncQueue::createPayloadUsing($callback);
+            \Illuminate\Queue\DatabaseQueue::createPayloadUsing($callback);
         }
 
         /**
@@ -13677,20 +13908,20 @@ namespace Illuminate\Support\Facades {
         public static function getConfig()
         {
             //Method inherited from \Illuminate\Queue\Queue 
-            /** @var \Illuminate\Queue\SyncQueue $instance */
+            /** @var \Illuminate\Queue\DatabaseQueue $instance */
             return $instance->getConfig();
         }
 
         /**
          * Set the queue configuration array.
          *
-         * @return \Illuminate\Queue\SyncQueue
+         * @return \Illuminate\Queue\DatabaseQueue
          * @static
          */
         public static function setConfig($config)
         {
             //Method inherited from \Illuminate\Queue\Queue 
-            /** @var \Illuminate\Queue\SyncQueue $instance */
+            /** @var \Illuminate\Queue\DatabaseQueue $instance */
             return $instance->setConfig($config);
         }
 
@@ -13703,7 +13934,7 @@ namespace Illuminate\Support\Facades {
         public static function getContainer()
         {
             //Method inherited from \Illuminate\Queue\Queue 
-            /** @var \Illuminate\Queue\SyncQueue $instance */
+            /** @var \Illuminate\Queue\DatabaseQueue $instance */
             return $instance->getContainer();
         }
 
@@ -13716,7 +13947,7 @@ namespace Illuminate\Support\Facades {
         public static function setContainer($container)
         {
             //Method inherited from \Illuminate\Queue\Queue 
-            /** @var \Illuminate\Queue\SyncQueue $instance */
+            /** @var \Illuminate\Queue\DatabaseQueue $instance */
             $instance->setContainer($container);
         }
 
@@ -14896,6 +15127,904 @@ namespace Illuminate\Support\Facades {
         }
 
         /**
+         * Filter the given array of rules into an array of rules that are included in precognitive headers.
+         *
+         * @param array $rules
+         * @return array
+         * @static
+         */
+        public static function filterPrecognitiveRules($rules)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->filterPrecognitiveRules($rules);
+        }
+
+        /**
+         * Determine if the request is attempting to be precognitive.
+         *
+         * @return bool
+         * @static
+         */
+        public static function isAttemptingPrecognition()
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->isAttemptingPrecognition();
+        }
+
+        /**
+         * Determine if the request is precognitive.
+         *
+         * @return bool
+         * @static
+         */
+        public static function isPrecognitive()
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->isPrecognitive();
+        }
+
+        /**
+         * Determine if the request is sending JSON.
+         *
+         * @return bool
+         * @static
+         */
+        public static function isJson()
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->isJson();
+        }
+
+        /**
+         * Determine if the current request probably expects a JSON response.
+         *
+         * @return bool
+         * @static
+         */
+        public static function expectsJson()
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->expectsJson();
+        }
+
+        /**
+         * Determine if the current request is asking for JSON.
+         *
+         * @return bool
+         * @static
+         */
+        public static function wantsJson()
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->wantsJson();
+        }
+
+        /**
+         * Determine if the current request is asking for Markdown.
+         *
+         * @return bool
+         * @static
+         */
+        public static function wantsMarkdown()
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->wantsMarkdown();
+        }
+
+        /**
+         * Determines whether the current requests accepts a given content type.
+         *
+         * @param string|array $contentTypes
+         * @return bool
+         * @static
+         */
+        public static function accepts($contentTypes)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->accepts($contentTypes);
+        }
+
+        /**
+         * Return the most suitable content type from the given array based on content negotiation.
+         *
+         * @param string|array $contentTypes
+         * @return string|null
+         * @static
+         */
+        public static function prefers($contentTypes)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->prefers($contentTypes);
+        }
+
+        /**
+         * Determine if the current request accepts any content type.
+         *
+         * @return bool
+         * @static
+         */
+        public static function acceptsAnyContentType()
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->acceptsAnyContentType();
+        }
+
+        /**
+         * Determines whether a request accepts JSON.
+         *
+         * @return bool
+         * @static
+         */
+        public static function acceptsJson()
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->acceptsJson();
+        }
+
+        /**
+         * Determines whether a request accepts Markdown.
+         *
+         * @return bool
+         * @static
+         */
+        public static function acceptsMarkdown()
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->acceptsMarkdown();
+        }
+
+        /**
+         * Determines whether a request accepts HTML.
+         *
+         * @return bool
+         * @static
+         */
+        public static function acceptsHtml()
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->acceptsHtml();
+        }
+
+        /**
+         * Determine if the given content types match.
+         *
+         * @param string $actual
+         * @param string $type
+         * @return bool
+         * @static
+         */
+        public static function matchesType($actual, $type)
+        {
+            return \Illuminate\Http\Request::matchesType($actual, $type);
+        }
+
+        /**
+         * Get the data format expected in the response.
+         *
+         * @param string $default
+         * @return string
+         * @static
+         */
+        public static function format($default = 'html')
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->format($default);
+        }
+
+        /**
+         * Retrieve an old input item.
+         *
+         * @param string|null $key
+         * @param \Illuminate\Database\Eloquent\Model|string|array|null $default
+         * @return string|array|null
+         * @static
+         */
+        public static function old($key = null, $default = null)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->old($key, $default);
+        }
+
+        /**
+         * Flash the input for the current request to the session.
+         *
+         * @return void
+         * @static
+         */
+        public static function flash()
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            $instance->flash();
+        }
+
+        /**
+         * Flash only some of the input to the session.
+         *
+         * @param mixed $keys
+         * @return void
+         * @static
+         */
+        public static function flashOnly($keys)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            $instance->flashOnly($keys);
+        }
+
+        /**
+         * Flash only some of the input to the session.
+         *
+         * @param mixed $keys
+         * @return void
+         * @static
+         */
+        public static function flashExcept($keys)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            $instance->flashExcept($keys);
+        }
+
+        /**
+         * Flush all of the old input from the session.
+         *
+         * @return void
+         * @static
+         */
+        public static function flush()
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            $instance->flush();
+        }
+
+        /**
+         * Retrieve a server variable from the request.
+         *
+         * @param string|null $key
+         * @param string|array|null $default
+         * @return string|array|null
+         * @static
+         */
+        public static function server($key = null, $default = null)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->server($key, $default);
+        }
+
+        /**
+         * Determine if a header is set on the request.
+         *
+         * @param string $key
+         * @return bool
+         * @static
+         */
+        public static function hasHeader($key)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->hasHeader($key);
+        }
+
+        /**
+         * Retrieve a header from the request.
+         *
+         * @param string|null $key
+         * @param string|array|null $default
+         * @return string|array|null
+         * @static
+         */
+        public static function header($key = null, $default = null)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->header($key, $default);
+        }
+
+        /**
+         * Get the bearer token from the request headers.
+         *
+         * @return string|null
+         * @static
+         */
+        public static function bearerToken()
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->bearerToken();
+        }
+
+        /**
+         * Get the keys for all of the input and files.
+         *
+         * @return array
+         * @static
+         */
+        public static function keys()
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->keys();
+        }
+
+        /**
+         * Get all of the input and files for the request.
+         *
+         * @param mixed $keys
+         * @return array
+         * @static
+         */
+        public static function all($keys = null)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->all($keys);
+        }
+
+        /**
+         * Retrieve an input item from the request.
+         *
+         * @param string|null $key
+         * @param mixed $default
+         * @return mixed
+         * @static
+         */
+        public static function input($key = null, $default = null)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->input($key, $default);
+        }
+
+        /**
+         * Retrieve input from the request as a Fluent object instance.
+         *
+         * @param array|string|null $key
+         * @param array $default
+         * @return \Illuminate\Support\Fluent
+         * @static
+         */
+        public static function fluent($key = null, $default = [])
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->fluent($key, $default);
+        }
+
+        /**
+         * Retrieve a query string item from the request.
+         *
+         * @param string|null $key
+         * @param string|array|null $default
+         * @return string|array|null
+         * @static
+         */
+        public static function query($key = null, $default = null)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->query($key, $default);
+        }
+
+        /**
+         * Retrieve a request payload item from the request.
+         *
+         * @param string|null $key
+         * @param string|array|null $default
+         * @return string|array|null
+         * @static
+         */
+        public static function post($key = null, $default = null)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->post($key, $default);
+        }
+
+        /**
+         * Determine if a cookie is set on the request.
+         *
+         * @param string $key
+         * @return bool
+         * @static
+         */
+        public static function hasCookie($key)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->hasCookie($key);
+        }
+
+        /**
+         * Retrieve a cookie from the request.
+         *
+         * @param string|null $key
+         * @param string|array|null $default
+         * @return string|array|null
+         * @static
+         */
+        public static function cookie($key = null, $default = null)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->cookie($key, $default);
+        }
+
+        /**
+         * Get an array of all of the files on the request.
+         *
+         * @return array<string, \Illuminate\Http\UploadedFile|\Illuminate\Http\UploadedFile[]>
+         * @static
+         */
+        public static function allFiles()
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->allFiles();
+        }
+
+        /**
+         * Determine if the uploaded data contains a file.
+         *
+         * @param string $key
+         * @return bool
+         * @static
+         */
+        public static function hasFile($key)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->hasFile($key);
+        }
+
+        /**
+         * Retrieve a file from the request.
+         *
+         * @param string|null $key
+         * @param mixed $default
+         * @return ($key is null ? array<string, \Illuminate\Http\UploadedFile|\Illuminate\Http\UploadedFile[]> : \Illuminate\Http\UploadedFile|\Illuminate\Http\UploadedFile[]|null)
+         * @static
+         */
+        public static function file($key = null, $default = null)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->file($key, $default);
+        }
+
+        /**
+         * Dump the items.
+         *
+         * @param mixed $keys
+         * @return \Illuminate\Http\Request
+         * @static
+         */
+        public static function dump($keys = [])
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->dump($keys);
+        }
+
+        /**
+         * Dump the given arguments and terminate execution.
+         *
+         * @param mixed $args
+         * @return never
+         * @static
+         */
+        public static function dd(...$args)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->dd(...$args);
+        }
+
+        /**
+         * Determine if the data contains a given key.
+         *
+         * @param string|array $key
+         * @return bool
+         * @static
+         */
+        public static function exists($key)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->exists($key);
+        }
+
+        /**
+         * Determine if the data contains a given key.
+         *
+         * @param string|array $key
+         * @return bool
+         * @static
+         */
+        public static function has($key)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->has($key);
+        }
+
+        /**
+         * Determine if the instance contains any of the given keys.
+         *
+         * @param string|array $keys
+         * @return bool
+         * @static
+         */
+        public static function hasAny($keys)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->hasAny($keys);
+        }
+
+        /**
+         * Apply the callback if the instance contains the given key.
+         *
+         * @param string $key
+         * @param callable $callback
+         * @param callable|null $default
+         * @return $this|mixed
+         * @static
+         */
+        public static function whenHas($key, $callback, $default = null)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->whenHas($key, $callback, $default);
+        }
+
+        /**
+         * Determine if the instance contains a non-empty value for the given key.
+         *
+         * @param string|array $key
+         * @return bool
+         * @static
+         */
+        public static function filled($key)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->filled($key);
+        }
+
+        /**
+         * Determine if the instance contains an empty value for the given key.
+         *
+         * @param string|array $key
+         * @return bool
+         * @static
+         */
+        public static function isNotFilled($key)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->isNotFilled($key);
+        }
+
+        /**
+         * Determine if the instance contains a non-empty value for any of the given keys.
+         *
+         * @param string|array $keys
+         * @return bool
+         * @static
+         */
+        public static function anyFilled($keys)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->anyFilled($keys);
+        }
+
+        /**
+         * Apply the callback if the instance contains a non-empty value for the given key.
+         *
+         * @param string $key
+         * @param callable $callback
+         * @param callable|null $default
+         * @return $this|mixed
+         * @static
+         */
+        public static function whenFilled($key, $callback, $default = null)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->whenFilled($key, $callback, $default);
+        }
+
+        /**
+         * Determine if the instance is missing a given key.
+         *
+         * @param string|array $key
+         * @return bool
+         * @static
+         */
+        public static function missing($key)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->missing($key);
+        }
+
+        /**
+         * Apply the callback if the instance is missing the given key.
+         *
+         * @param string $key
+         * @param callable $callback
+         * @param callable|null $default
+         * @return $this|mixed
+         * @static
+         */
+        public static function whenMissing($key, $callback, $default = null)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->whenMissing($key, $callback, $default);
+        }
+
+        /**
+         * Retrieve data from the instance as a Stringable instance.
+         *
+         * @param string $key
+         * @param mixed $default
+         * @return \Illuminate\Support\Stringable
+         * @static
+         */
+        public static function str($key, $default = null)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->str($key, $default);
+        }
+
+        /**
+         * Retrieve data from the instance as a Stringable instance.
+         *
+         * @param string $key
+         * @param mixed $default
+         * @return \Illuminate\Support\Stringable
+         * @static
+         */
+        public static function string($key, $default = null)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->string($key, $default);
+        }
+
+        /**
+         * Retrieve data as a boolean value.
+         *
+         * Returns true when value is "1", "true", "on", and "yes". Otherwise, returns false.
+         *
+         * @param string|null $key
+         * @param bool $default
+         * @return bool
+         * @static
+         */
+        public static function boolean($key = null, $default = false)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->boolean($key, $default);
+        }
+
+        /**
+         * Retrieve data as an integer value.
+         *
+         * @param string $key
+         * @param int $default
+         * @return int
+         * @static
+         */
+        public static function integer($key, $default = 0)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->integer($key, $default);
+        }
+
+        /**
+         * Retrieve data as a float value.
+         *
+         * @param string $key
+         * @param float $default
+         * @return float
+         * @static
+         */
+        public static function float($key, $default = 0.0)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->float($key, $default);
+        }
+
+        /**
+         * Retrieve data clamped between min and max values.
+         *
+         * @param string $key
+         * @param int|float $min
+         * @param int|float $max
+         * @param int|float $default
+         * @return float|int
+         * @static
+         */
+        public static function clamp($key, $min, $max, $default = 0)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->clamp($key, $min, $max, $default);
+        }
+
+        /**
+         * Retrieve data from the instance as a Carbon instance.
+         *
+         * @param string $key
+         * @param string|null $format
+         * @param \UnitEnum|string|null $tz
+         * @return \Illuminate\Support\Carbon|null
+         * @throws \Carbon\Exceptions\InvalidFormatException
+         * @static
+         */
+        public static function date($key, $format = null, $tz = null)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->date($key, $format, $tz);
+        }
+
+        /**
+         * Retrieve data from the instance as a CarbonInterval instance.
+         *
+         * @param string $key
+         * @param \Carbon\Unit|string|null $unit
+         * @return \Carbon\CarbonInterval|null
+         * @static
+         */
+        public static function interval($key, $unit = null)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->interval($key, $unit);
+        }
+
+        /**
+         * Retrieve data from the instance as an enum.
+         *
+         * @template TEnum of \BackedEnum
+         * @template TDefault of TEnum|null
+         * @param string $key
+         * @param class-string<TEnum> $enumClass
+         * @param TDefault $default
+         * @return TEnum|TDefault
+         * @static
+         */
+        public static function enum($key, $enumClass, $default = null)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->enum($key, $enumClass, $default);
+        }
+
+        /**
+         * Retrieve data from the instance as an array of enums.
+         *
+         * @template TEnum of \BackedEnum
+         * @param string $key
+         * @param class-string<TEnum> $enumClass
+         * @return TEnum[]
+         * @static
+         */
+        public static function enums($key, $enumClass)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->enums($key, $enumClass);
+        }
+
+        /**
+         * Retrieve data from the instance as an array.
+         *
+         * @param array|string|null $key
+         * @return array
+         * @static
+         */
+        public static function array($key = null)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->array($key);
+        }
+
+        /**
+         * Retrieve data from the instance as a collection.
+         *
+         * @param array|string|null $key
+         * @return \Illuminate\Support\Collection
+         * @static
+         */
+        public static function collect($key = null)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->collect($key);
+        }
+
+        /**
+         * Get a subset containing the provided keys with values from the instance data.
+         *
+         * @param mixed $keys
+         * @return array
+         * @static
+         */
+        public static function only($keys)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->only($keys);
+        }
+
+        /**
+         * Get all of the data except for a specified array of items.
+         *
+         * @param mixed $keys
+         * @return array
+         * @static
+         */
+        public static function except($keys)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->except($keys);
+        }
+
+        /**
+         * Apply the callback if the given "value" is (or resolves to) truthy.
+         *
+         * @template TWhenParameter
+         * @template TWhenReturnType
+         * @param (\Closure($this): TWhenParameter)|TWhenParameter|null $value
+         * @param (callable($this, TWhenParameter): TWhenReturnType)|null $callback
+         * @param (callable($this, TWhenParameter): TWhenReturnType)|null $default
+         * @return $this|TWhenReturnType
+         * @static
+         */
+        public static function when($value = null, $callback = null, $default = null)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->when($value, $callback, $default);
+        }
+
+        /**
+         * Apply the callback if the given "value" is (or resolves to) falsy.
+         *
+         * @template TUnlessParameter
+         * @template TUnlessReturnType
+         * @param (\Closure($this): TUnlessParameter)|TUnlessParameter|null $value
+         * @param (callable($this, TUnlessParameter): TUnlessReturnType)|null $callback
+         * @param (callable($this, TUnlessParameter): TUnlessReturnType)|null $default
+         * @return $this|TUnlessReturnType
+         * @static
+         */
+        public static function unless($value = null, $callback = null, $default = null)
+        {
+            /** @var \Illuminate\Http\Request $instance */
+            return $instance->unless($value, $callback, $default);
+        }
+
+        /**
+         * Register a custom macro.
+         *
+         * @param string $name
+         * @param object|callable $macro
+         * @param-closure-this static  $macro
+         * @return void
+         * @static
+         */
+        public static function macro($name, $macro)
+        {
+            \Illuminate\Http\Request::macro($name, $macro);
+        }
+
+        /**
+         * Mix another object into the class.
+         *
+         * @param object $mixin
+         * @param bool $replace
+         * @return void
+         * @throws \ReflectionException
+         * @static
+         */
+        public static function mixin($mixin, $replace = true)
+        {
+            \Illuminate\Http\Request::mixin($mixin, $replace);
+        }
+
+        /**
+         * Checks if macro is registered.
+         *
+         * @param string $name
+         * @return bool
+         * @static
+         */
+        public static function hasMacro($name)
+        {
+            return \Illuminate\Http\Request::hasMacro($name);
+        }
+
+        /**
+         * Flush the existing macros.
+         *
+         * @return void
+         * @static
+         */
+        public static function flushMacros()
+        {
+            \Illuminate\Http\Request::flushMacros();
+        }
+
+        /**
          * Sets the parameters for this request.
          *
          * This method also re-initializes all properties.
@@ -15904,904 +17033,6 @@ namespace Illuminate\Support\Facades {
             //Method inherited from \Symfony\Component\HttpFoundation\Request 
             /** @var \Illuminate\Http\Request $instance */
             return $instance->isFromTrustedProxy();
-        }
-
-        /**
-         * Filter the given array of rules into an array of rules that are included in precognitive headers.
-         *
-         * @param array $rules
-         * @return array
-         * @static
-         */
-        public static function filterPrecognitiveRules($rules)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->filterPrecognitiveRules($rules);
-        }
-
-        /**
-         * Determine if the request is attempting to be precognitive.
-         *
-         * @return bool
-         * @static
-         */
-        public static function isAttemptingPrecognition()
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->isAttemptingPrecognition();
-        }
-
-        /**
-         * Determine if the request is precognitive.
-         *
-         * @return bool
-         * @static
-         */
-        public static function isPrecognitive()
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->isPrecognitive();
-        }
-
-        /**
-         * Determine if the request is sending JSON.
-         *
-         * @return bool
-         * @static
-         */
-        public static function isJson()
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->isJson();
-        }
-
-        /**
-         * Determine if the current request probably expects a JSON response.
-         *
-         * @return bool
-         * @static
-         */
-        public static function expectsJson()
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->expectsJson();
-        }
-
-        /**
-         * Determine if the current request is asking for JSON.
-         *
-         * @return bool
-         * @static
-         */
-        public static function wantsJson()
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->wantsJson();
-        }
-
-        /**
-         * Determine if the current request is asking for Markdown.
-         *
-         * @return bool
-         * @static
-         */
-        public static function wantsMarkdown()
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->wantsMarkdown();
-        }
-
-        /**
-         * Determines whether the current requests accepts a given content type.
-         *
-         * @param string|array $contentTypes
-         * @return bool
-         * @static
-         */
-        public static function accepts($contentTypes)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->accepts($contentTypes);
-        }
-
-        /**
-         * Return the most suitable content type from the given array based on content negotiation.
-         *
-         * @param string|array $contentTypes
-         * @return string|null
-         * @static
-         */
-        public static function prefers($contentTypes)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->prefers($contentTypes);
-        }
-
-        /**
-         * Determine if the current request accepts any content type.
-         *
-         * @return bool
-         * @static
-         */
-        public static function acceptsAnyContentType()
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->acceptsAnyContentType();
-        }
-
-        /**
-         * Determines whether a request accepts JSON.
-         *
-         * @return bool
-         * @static
-         */
-        public static function acceptsJson()
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->acceptsJson();
-        }
-
-        /**
-         * Determines whether a request accepts Markdown.
-         *
-         * @return bool
-         * @static
-         */
-        public static function acceptsMarkdown()
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->acceptsMarkdown();
-        }
-
-        /**
-         * Determines whether a request accepts HTML.
-         *
-         * @return bool
-         * @static
-         */
-        public static function acceptsHtml()
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->acceptsHtml();
-        }
-
-        /**
-         * Determine if the given content types match.
-         *
-         * @param string $actual
-         * @param string $type
-         * @return bool
-         * @static
-         */
-        public static function matchesType($actual, $type)
-        {
-            return \Illuminate\Http\Request::matchesType($actual, $type);
-        }
-
-        /**
-         * Get the data format expected in the response.
-         *
-         * @param string $default
-         * @return string
-         * @static
-         */
-        public static function format($default = 'html')
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->format($default);
-        }
-
-        /**
-         * Retrieve an old input item.
-         *
-         * @param string|null $key
-         * @param \Illuminate\Database\Eloquent\Model|string|array|null $default
-         * @return string|array|null
-         * @static
-         */
-        public static function old($key = null, $default = null)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->old($key, $default);
-        }
-
-        /**
-         * Flash the input for the current request to the session.
-         *
-         * @return void
-         * @static
-         */
-        public static function flash()
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            $instance->flash();
-        }
-
-        /**
-         * Flash only some of the input to the session.
-         *
-         * @param mixed $keys
-         * @return void
-         * @static
-         */
-        public static function flashOnly($keys)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            $instance->flashOnly($keys);
-        }
-
-        /**
-         * Flash only some of the input to the session.
-         *
-         * @param mixed $keys
-         * @return void
-         * @static
-         */
-        public static function flashExcept($keys)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            $instance->flashExcept($keys);
-        }
-
-        /**
-         * Flush all of the old input from the session.
-         *
-         * @return void
-         * @static
-         */
-        public static function flush()
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            $instance->flush();
-        }
-
-        /**
-         * Retrieve a server variable from the request.
-         *
-         * @param string|null $key
-         * @param string|array|null $default
-         * @return string|array|null
-         * @static
-         */
-        public static function server($key = null, $default = null)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->server($key, $default);
-        }
-
-        /**
-         * Determine if a header is set on the request.
-         *
-         * @param string $key
-         * @return bool
-         * @static
-         */
-        public static function hasHeader($key)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->hasHeader($key);
-        }
-
-        /**
-         * Retrieve a header from the request.
-         *
-         * @param string|null $key
-         * @param string|array|null $default
-         * @return string|array|null
-         * @static
-         */
-        public static function header($key = null, $default = null)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->header($key, $default);
-        }
-
-        /**
-         * Get the bearer token from the request headers.
-         *
-         * @return string|null
-         * @static
-         */
-        public static function bearerToken()
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->bearerToken();
-        }
-
-        /**
-         * Get the keys for all of the input and files.
-         *
-         * @return array
-         * @static
-         */
-        public static function keys()
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->keys();
-        }
-
-        /**
-         * Get all of the input and files for the request.
-         *
-         * @param mixed $keys
-         * @return array
-         * @static
-         */
-        public static function all($keys = null)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->all($keys);
-        }
-
-        /**
-         * Retrieve an input item from the request.
-         *
-         * @param string|null $key
-         * @param mixed $default
-         * @return mixed
-         * @static
-         */
-        public static function input($key = null, $default = null)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->input($key, $default);
-        }
-
-        /**
-         * Retrieve input from the request as a Fluent object instance.
-         *
-         * @param array|string|null $key
-         * @param array $default
-         * @return \Illuminate\Support\Fluent
-         * @static
-         */
-        public static function fluent($key = null, $default = [])
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->fluent($key, $default);
-        }
-
-        /**
-         * Retrieve a query string item from the request.
-         *
-         * @param string|null $key
-         * @param string|array|null $default
-         * @return string|array|null
-         * @static
-         */
-        public static function query($key = null, $default = null)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->query($key, $default);
-        }
-
-        /**
-         * Retrieve a request payload item from the request.
-         *
-         * @param string|null $key
-         * @param string|array|null $default
-         * @return string|array|null
-         * @static
-         */
-        public static function post($key = null, $default = null)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->post($key, $default);
-        }
-
-        /**
-         * Determine if a cookie is set on the request.
-         *
-         * @param string $key
-         * @return bool
-         * @static
-         */
-        public static function hasCookie($key)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->hasCookie($key);
-        }
-
-        /**
-         * Retrieve a cookie from the request.
-         *
-         * @param string|null $key
-         * @param string|array|null $default
-         * @return string|array|null
-         * @static
-         */
-        public static function cookie($key = null, $default = null)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->cookie($key, $default);
-        }
-
-        /**
-         * Get an array of all of the files on the request.
-         *
-         * @return array<string, \Illuminate\Http\UploadedFile|\Illuminate\Http\UploadedFile[]>
-         * @static
-         */
-        public static function allFiles()
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->allFiles();
-        }
-
-        /**
-         * Determine if the uploaded data contains a file.
-         *
-         * @param string $key
-         * @return bool
-         * @static
-         */
-        public static function hasFile($key)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->hasFile($key);
-        }
-
-        /**
-         * Retrieve a file from the request.
-         *
-         * @param string|null $key
-         * @param mixed $default
-         * @return ($key is null ? array<string, \Illuminate\Http\UploadedFile|\Illuminate\Http\UploadedFile[]> : \Illuminate\Http\UploadedFile|\Illuminate\Http\UploadedFile[]|null)
-         * @static
-         */
-        public static function file($key = null, $default = null)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->file($key, $default);
-        }
-
-        /**
-         * Dump the items.
-         *
-         * @param mixed $keys
-         * @return \Illuminate\Http\Request
-         * @static
-         */
-        public static function dump($keys = [])
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->dump($keys);
-        }
-
-        /**
-         * Dump the given arguments and terminate execution.
-         *
-         * @param mixed $args
-         * @return never
-         * @static
-         */
-        public static function dd(...$args)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->dd(...$args);
-        }
-
-        /**
-         * Determine if the data contains a given key.
-         *
-         * @param string|array $key
-         * @return bool
-         * @static
-         */
-        public static function exists($key)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->exists($key);
-        }
-
-        /**
-         * Determine if the data contains a given key.
-         *
-         * @param string|array $key
-         * @return bool
-         * @static
-         */
-        public static function has($key)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->has($key);
-        }
-
-        /**
-         * Determine if the instance contains any of the given keys.
-         *
-         * @param string|array $keys
-         * @return bool
-         * @static
-         */
-        public static function hasAny($keys)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->hasAny($keys);
-        }
-
-        /**
-         * Apply the callback if the instance contains the given key.
-         *
-         * @param string $key
-         * @param callable $callback
-         * @param callable|null $default
-         * @return $this|mixed
-         * @static
-         */
-        public static function whenHas($key, $callback, $default = null)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->whenHas($key, $callback, $default);
-        }
-
-        /**
-         * Determine if the instance contains a non-empty value for the given key.
-         *
-         * @param string|array $key
-         * @return bool
-         * @static
-         */
-        public static function filled($key)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->filled($key);
-        }
-
-        /**
-         * Determine if the instance contains an empty value for the given key.
-         *
-         * @param string|array $key
-         * @return bool
-         * @static
-         */
-        public static function isNotFilled($key)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->isNotFilled($key);
-        }
-
-        /**
-         * Determine if the instance contains a non-empty value for any of the given keys.
-         *
-         * @param string|array $keys
-         * @return bool
-         * @static
-         */
-        public static function anyFilled($keys)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->anyFilled($keys);
-        }
-
-        /**
-         * Apply the callback if the instance contains a non-empty value for the given key.
-         *
-         * @param string $key
-         * @param callable $callback
-         * @param callable|null $default
-         * @return $this|mixed
-         * @static
-         */
-        public static function whenFilled($key, $callback, $default = null)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->whenFilled($key, $callback, $default);
-        }
-
-        /**
-         * Determine if the instance is missing a given key.
-         *
-         * @param string|array $key
-         * @return bool
-         * @static
-         */
-        public static function missing($key)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->missing($key);
-        }
-
-        /**
-         * Apply the callback if the instance is missing the given key.
-         *
-         * @param string $key
-         * @param callable $callback
-         * @param callable|null $default
-         * @return $this|mixed
-         * @static
-         */
-        public static function whenMissing($key, $callback, $default = null)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->whenMissing($key, $callback, $default);
-        }
-
-        /**
-         * Retrieve data from the instance as a Stringable instance.
-         *
-         * @param string $key
-         * @param mixed $default
-         * @return \Illuminate\Support\Stringable
-         * @static
-         */
-        public static function str($key, $default = null)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->str($key, $default);
-        }
-
-        /**
-         * Retrieve data from the instance as a Stringable instance.
-         *
-         * @param string $key
-         * @param mixed $default
-         * @return \Illuminate\Support\Stringable
-         * @static
-         */
-        public static function string($key, $default = null)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->string($key, $default);
-        }
-
-        /**
-         * Retrieve data as a boolean value.
-         *
-         * Returns true when value is "1", "true", "on", and "yes". Otherwise, returns false.
-         *
-         * @param string|null $key
-         * @param bool $default
-         * @return bool
-         * @static
-         */
-        public static function boolean($key = null, $default = false)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->boolean($key, $default);
-        }
-
-        /**
-         * Retrieve data as an integer value.
-         *
-         * @param string $key
-         * @param int $default
-         * @return int
-         * @static
-         */
-        public static function integer($key, $default = 0)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->integer($key, $default);
-        }
-
-        /**
-         * Retrieve data as a float value.
-         *
-         * @param string $key
-         * @param float $default
-         * @return float
-         * @static
-         */
-        public static function float($key, $default = 0.0)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->float($key, $default);
-        }
-
-        /**
-         * Retrieve data clamped between min and max values.
-         *
-         * @param string $key
-         * @param int|float $min
-         * @param int|float $max
-         * @param int|float $default
-         * @return float|int
-         * @static
-         */
-        public static function clamp($key, $min, $max, $default = 0)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->clamp($key, $min, $max, $default);
-        }
-
-        /**
-         * Retrieve data from the instance as a Carbon instance.
-         *
-         * @param string $key
-         * @param string|null $format
-         * @param \UnitEnum|string|null $tz
-         * @return \Illuminate\Support\Carbon|null
-         * @throws \Carbon\Exceptions\InvalidFormatException
-         * @static
-         */
-        public static function date($key, $format = null, $tz = null)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->date($key, $format, $tz);
-        }
-
-        /**
-         * Retrieve data from the instance as a CarbonInterval instance.
-         *
-         * @param string $key
-         * @param \Carbon\Unit|string|null $unit
-         * @return \Carbon\CarbonInterval|null
-         * @static
-         */
-        public static function interval($key, $unit = null)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->interval($key, $unit);
-        }
-
-        /**
-         * Retrieve data from the instance as an enum.
-         *
-         * @template TEnum of \BackedEnum
-         * @template TDefault of TEnum|null
-         * @param string $key
-         * @param class-string<TEnum> $enumClass
-         * @param TDefault $default
-         * @return TEnum|TDefault
-         * @static
-         */
-        public static function enum($key, $enumClass, $default = null)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->enum($key, $enumClass, $default);
-        }
-
-        /**
-         * Retrieve data from the instance as an array of enums.
-         *
-         * @template TEnum of \BackedEnum
-         * @param string $key
-         * @param class-string<TEnum> $enumClass
-         * @return TEnum[]
-         * @static
-         */
-        public static function enums($key, $enumClass)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->enums($key, $enumClass);
-        }
-
-        /**
-         * Retrieve data from the instance as an array.
-         *
-         * @param array|string|null $key
-         * @return array
-         * @static
-         */
-        public static function array($key = null)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->array($key);
-        }
-
-        /**
-         * Retrieve data from the instance as a collection.
-         *
-         * @param array|string|null $key
-         * @return \Illuminate\Support\Collection
-         * @static
-         */
-        public static function collect($key = null)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->collect($key);
-        }
-
-        /**
-         * Get a subset containing the provided keys with values from the instance data.
-         *
-         * @param mixed $keys
-         * @return array
-         * @static
-         */
-        public static function only($keys)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->only($keys);
-        }
-
-        /**
-         * Get all of the data except for a specified array of items.
-         *
-         * @param mixed $keys
-         * @return array
-         * @static
-         */
-        public static function except($keys)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->except($keys);
-        }
-
-        /**
-         * Apply the callback if the given "value" is (or resolves to) truthy.
-         *
-         * @template TWhenParameter
-         * @template TWhenReturnType
-         * @param (\Closure($this): TWhenParameter)|TWhenParameter|null $value
-         * @param (callable($this, TWhenParameter): TWhenReturnType)|null $callback
-         * @param (callable($this, TWhenParameter): TWhenReturnType)|null $default
-         * @return $this|TWhenReturnType
-         * @static
-         */
-        public static function when($value = null, $callback = null, $default = null)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->when($value, $callback, $default);
-        }
-
-        /**
-         * Apply the callback if the given "value" is (or resolves to) falsy.
-         *
-         * @template TUnlessParameter
-         * @template TUnlessReturnType
-         * @param (\Closure($this): TUnlessParameter)|TUnlessParameter|null $value
-         * @param (callable($this, TUnlessParameter): TUnlessReturnType)|null $callback
-         * @param (callable($this, TUnlessParameter): TUnlessReturnType)|null $default
-         * @return $this|TUnlessReturnType
-         * @static
-         */
-        public static function unless($value = null, $callback = null, $default = null)
-        {
-            /** @var \Illuminate\Http\Request $instance */
-            return $instance->unless($value, $callback, $default);
-        }
-
-        /**
-         * Register a custom macro.
-         *
-         * @param string $name
-         * @param object|callable $macro
-         * @param-closure-this static  $macro
-         * @return void
-         * @static
-         */
-        public static function macro($name, $macro)
-        {
-            \Illuminate\Http\Request::macro($name, $macro);
-        }
-
-        /**
-         * Mix another object into the class.
-         *
-         * @param object $mixin
-         * @param bool $replace
-         * @return void
-         * @throws \ReflectionException
-         * @static
-         */
-        public static function mixin($mixin, $replace = true)
-        {
-            \Illuminate\Http\Request::mixin($mixin, $replace);
-        }
-
-        /**
-         * Checks if macro is registered.
-         *
-         * @param string $name
-         * @return bool
-         * @static
-         */
-        public static function hasMacro($name)
-        {
-            return \Illuminate\Http\Request::hasMacro($name);
-        }
-
-        /**
-         * Flush the existing macros.
-         *
-         * @return void
-         * @static
-         */
-        public static function flushMacros()
-        {
-            \Illuminate\Http\Request::flushMacros();
         }
 
         /**
@@ -18571,6 +18802,62 @@ namespace Illuminate\Support\Facades {
      */
     class Schema {
         /**
+         * Create a database in the schema.
+         *
+         * @param string $name
+         * @return bool
+         * @static
+         */
+        public static function createDatabase($name)
+        {
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
+            return $instance->createDatabase($name);
+        }
+
+        /**
+         * Drop a database from the schema if the database exists.
+         *
+         * @param string $name
+         * @return bool
+         * @static
+         */
+        public static function dropDatabaseIfExists($name)
+        {
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
+            return $instance->dropDatabaseIfExists($name);
+        }
+
+        /**
+         * @inheritDoc
+         * @static
+         */
+        public static function getTables($schema = null)
+        {
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
+            return $instance->getTables($schema);
+        }
+
+        /**
+         * @inheritDoc
+         * @static
+         */
+        public static function getViews($schema = null)
+        {
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
+            return $instance->getViews($schema);
+        }
+
+        /**
+         * @inheritDoc
+         * @static
+         */
+        public static function getColumns($table)
+        {
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
+            return $instance->getColumns($table);
+        }
+
+        /**
          * Drop all tables from the database.
          *
          * @return void
@@ -18578,8 +18865,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function dropAllTables()
         {
-            //Method inherited from \Illuminate\Database\Schema\MySqlBuilder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
             $instance->dropAllTables();
         }
 
@@ -18591,9 +18877,35 @@ namespace Illuminate\Support\Facades {
          */
         public static function dropAllViews()
         {
-            //Method inherited from \Illuminate\Database\Schema\MySqlBuilder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
             $instance->dropAllViews();
+        }
+
+        /**
+         * Get the value for the given pragma name or set the given value.
+         *
+         * @param string $key
+         * @param mixed $value
+         * @return mixed
+         * @static
+         */
+        public static function pragma($key, $value = null)
+        {
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
+            return $instance->pragma($key, $value);
+        }
+
+        /**
+         * Empty the database file.
+         *
+         * @param string|null $path
+         * @return void
+         * @static
+         */
+        public static function refreshDatabaseFile($path = null)
+        {
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
+            $instance->refreshDatabaseFile($path);
         }
 
         /**
@@ -18604,8 +18916,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function getCurrentSchemaListing()
         {
-            //Method inherited from \Illuminate\Database\Schema\MySqlBuilder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
             return $instance->getCurrentSchemaListing();
         }
 
@@ -18619,7 +18930,7 @@ namespace Illuminate\Support\Facades {
         public static function defaultStringLength($length)
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            \Illuminate\Database\Schema\MariaDbBuilder::defaultStringLength($length);
+            \Illuminate\Database\Schema\SQLiteBuilder::defaultStringLength($length);
         }
 
         /**
@@ -18630,7 +18941,7 @@ namespace Illuminate\Support\Facades {
         public static function defaultTimePrecision($precision)
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            return \Illuminate\Database\Schema\MariaDbBuilder::defaultTimePrecision($precision);
+            return \Illuminate\Database\Schema\SQLiteBuilder::defaultTimePrecision($precision);
         }
 
         /**
@@ -18644,7 +18955,7 @@ namespace Illuminate\Support\Facades {
         public static function defaultMorphKeyType($type)
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            \Illuminate\Database\Schema\MariaDbBuilder::defaultMorphKeyType($type);
+            \Illuminate\Database\Schema\SQLiteBuilder::defaultMorphKeyType($type);
         }
 
         /**
@@ -18656,7 +18967,7 @@ namespace Illuminate\Support\Facades {
         public static function morphUsingUuids()
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            \Illuminate\Database\Schema\MariaDbBuilder::morphUsingUuids();
+            \Illuminate\Database\Schema\SQLiteBuilder::morphUsingUuids();
         }
 
         /**
@@ -18668,35 +18979,7 @@ namespace Illuminate\Support\Facades {
         public static function morphUsingUlids()
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            \Illuminate\Database\Schema\MariaDbBuilder::morphUsingUlids();
-        }
-
-        /**
-         * Create a database in the schema.
-         *
-         * @param string $name
-         * @return bool
-         * @static
-         */
-        public static function createDatabase($name)
-        {
-            //Method inherited from \Illuminate\Database\Schema\Builder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
-            return $instance->createDatabase($name);
-        }
-
-        /**
-         * Drop a database from the schema if the database exists.
-         *
-         * @param string $name
-         * @return bool
-         * @static
-         */
-        public static function dropDatabaseIfExists($name)
-        {
-            //Method inherited from \Illuminate\Database\Schema\Builder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
-            return $instance->dropDatabaseIfExists($name);
+            \Illuminate\Database\Schema\SQLiteBuilder::morphUsingUlids();
         }
 
         /**
@@ -18708,7 +18991,7 @@ namespace Illuminate\Support\Facades {
         public static function getSchemas()
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
             return $instance->getSchemas();
         }
 
@@ -18722,7 +19005,7 @@ namespace Illuminate\Support\Facades {
         public static function hasTable($table)
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
             return $instance->hasTable($table);
         }
 
@@ -18736,22 +19019,8 @@ namespace Illuminate\Support\Facades {
         public static function hasView($view)
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
             return $instance->hasView($view);
-        }
-
-        /**
-         * Get the tables that belong to the connection.
-         *
-         * @param string|string[]|null $schema
-         * @return \Illuminate\Database\Schema\list<array{name: string, schema: string|null, schema_qualified_name: string, size: int|null, comment: string|null, collation: string|null, engine: string|null}>
-         * @static
-         */
-        public static function getTables($schema = null)
-        {
-            //Method inherited from \Illuminate\Database\Schema\Builder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
-            return $instance->getTables($schema);
         }
 
         /**
@@ -18765,22 +19034,8 @@ namespace Illuminate\Support\Facades {
         public static function getTableListing($schema = null, $schemaQualified = true)
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
             return $instance->getTableListing($schema, $schemaQualified);
-        }
-
-        /**
-         * Get the views that belong to the connection.
-         *
-         * @param string|string[]|null $schema
-         * @return \Illuminate\Database\Schema\list<array{name: string, schema: string|null, schema_qualified_name: string, definition: string}>
-         * @static
-         */
-        public static function getViews($schema = null)
-        {
-            //Method inherited from \Illuminate\Database\Schema\Builder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
-            return $instance->getViews($schema);
         }
 
         /**
@@ -18793,7 +19048,7 @@ namespace Illuminate\Support\Facades {
         public static function getTypes($schema = null)
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
             return $instance->getTypes($schema);
         }
 
@@ -18808,7 +19063,7 @@ namespace Illuminate\Support\Facades {
         public static function hasColumn($table, $column)
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
             return $instance->hasColumn($table, $column);
         }
 
@@ -18823,7 +19078,7 @@ namespace Illuminate\Support\Facades {
         public static function hasColumns($table, $columns)
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
             return $instance->hasColumns($table, $columns);
         }
 
@@ -18839,7 +19094,7 @@ namespace Illuminate\Support\Facades {
         public static function whenTableHasColumn($table, $column, $callback)
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
             $instance->whenTableHasColumn($table, $column, $callback);
         }
 
@@ -18855,7 +19110,7 @@ namespace Illuminate\Support\Facades {
         public static function whenTableDoesntHaveColumn($table, $column, $callback)
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
             $instance->whenTableDoesntHaveColumn($table, $column, $callback);
         }
 
@@ -18872,7 +19127,7 @@ namespace Illuminate\Support\Facades {
         public static function whenTableHasIndex($table, $index, $callback, $type = null)
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
             $instance->whenTableHasIndex($table, $index, $callback, $type);
         }
 
@@ -18889,7 +19144,7 @@ namespace Illuminate\Support\Facades {
         public static function whenTableDoesntHaveIndex($table, $index, $callback, $type = null)
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
             $instance->whenTableDoesntHaveIndex($table, $index, $callback, $type);
         }
 
@@ -18906,7 +19161,7 @@ namespace Illuminate\Support\Facades {
         public static function getColumnType($table, $column, $fullDefinition = false)
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
             return $instance->getColumnType($table, $column, $fullDefinition);
         }
 
@@ -18920,22 +19175,8 @@ namespace Illuminate\Support\Facades {
         public static function getColumnListing($table)
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
             return $instance->getColumnListing($table);
-        }
-
-        /**
-         * Get the columns for a given table.
-         *
-         * @param string $table
-         * @return \Illuminate\Database\Schema\list<array{name: string, type: string, type_name: string, collation: string|null, nullable: bool, default: mixed, auto_increment: bool, comment: string|null, generation: array{type: string, expression: string|null}|null}>
-         * @static
-         */
-        public static function getColumns($table)
-        {
-            //Method inherited from \Illuminate\Database\Schema\Builder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
-            return $instance->getColumns($table);
         }
 
         /**
@@ -18948,7 +19189,7 @@ namespace Illuminate\Support\Facades {
         public static function getIndexes($table)
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
             return $instance->getIndexes($table);
         }
 
@@ -18962,7 +19203,7 @@ namespace Illuminate\Support\Facades {
         public static function getIndexListing($table)
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
             return $instance->getIndexListing($table);
         }
 
@@ -18978,8 +19219,23 @@ namespace Illuminate\Support\Facades {
         public static function hasIndex($table, $index, $type = null)
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
             return $instance->hasIndex($table, $index, $type);
+        }
+
+        /**
+         * Determine if the table has a given foreign key.
+         *
+         * @param string $table
+         * @param array|string $foreignKey
+         * @return bool
+         * @static
+         */
+        public static function hasForeignKey($table, $foreignKey)
+        {
+            //Method inherited from \Illuminate\Database\Schema\Builder 
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
+            return $instance->hasForeignKey($table, $foreignKey);
         }
 
         /**
@@ -18992,7 +19248,7 @@ namespace Illuminate\Support\Facades {
         public static function getForeignKeys($table)
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
             return $instance->getForeignKeys($table);
         }
 
@@ -19007,7 +19263,7 @@ namespace Illuminate\Support\Facades {
         public static function table($table, $callback)
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
             $instance->table($table, $callback);
         }
 
@@ -19022,7 +19278,7 @@ namespace Illuminate\Support\Facades {
         public static function create($table, $callback)
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
             $instance->create($table, $callback);
         }
 
@@ -19036,7 +19292,7 @@ namespace Illuminate\Support\Facades {
         public static function drop($table)
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
             $instance->drop($table);
         }
 
@@ -19050,7 +19306,7 @@ namespace Illuminate\Support\Facades {
         public static function dropIfExists($table)
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
             $instance->dropIfExists($table);
         }
 
@@ -19065,7 +19321,7 @@ namespace Illuminate\Support\Facades {
         public static function dropColumns($table, $columns)
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
             $instance->dropColumns($table, $columns);
         }
 
@@ -19079,7 +19335,7 @@ namespace Illuminate\Support\Facades {
         public static function dropAllTypes()
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
             $instance->dropAllTypes();
         }
 
@@ -19094,7 +19350,7 @@ namespace Illuminate\Support\Facades {
         public static function rename($from, $to)
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
             $instance->rename($from, $to);
         }
 
@@ -19107,7 +19363,7 @@ namespace Illuminate\Support\Facades {
         public static function enableForeignKeyConstraints()
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
             return $instance->enableForeignKeyConstraints();
         }
 
@@ -19120,7 +19376,7 @@ namespace Illuminate\Support\Facades {
         public static function disableForeignKeyConstraints()
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
             return $instance->disableForeignKeyConstraints();
         }
 
@@ -19135,7 +19391,7 @@ namespace Illuminate\Support\Facades {
         public static function withoutForeignKeyConstraints($callback)
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
             return $instance->withoutForeignKeyConstraints($callback);
         }
 
@@ -19149,7 +19405,7 @@ namespace Illuminate\Support\Facades {
         public static function ensureVectorExtensionExists($schema = null)
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
             $instance->ensureVectorExtensionExists($schema);
         }
 
@@ -19165,7 +19421,7 @@ namespace Illuminate\Support\Facades {
         public static function ensureExtensionExists($name, $schema = null)
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
             $instance->ensureExtensionExists($name, $schema);
         }
 
@@ -19178,7 +19434,7 @@ namespace Illuminate\Support\Facades {
         public static function getCurrentSchemaName()
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
             return $instance->getCurrentSchemaName();
         }
 
@@ -19194,7 +19450,7 @@ namespace Illuminate\Support\Facades {
         public static function parseSchemaAndTable($reference, $withDefaultSchema = null)
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
             return $instance->parseSchemaAndTable($reference, $withDefaultSchema);
         }
 
@@ -19207,7 +19463,7 @@ namespace Illuminate\Support\Facades {
         public static function getConnection()
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
             return $instance->getConnection();
         }
 
@@ -19221,7 +19477,7 @@ namespace Illuminate\Support\Facades {
         public static function blueprintResolver($resolver)
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            /** @var \Illuminate\Database\Schema\MariaDbBuilder $instance */
+            /** @var \Illuminate\Database\Schema\SQLiteBuilder $instance */
             $instance->blueprintResolver($resolver);
         }
 
@@ -19237,7 +19493,7 @@ namespace Illuminate\Support\Facades {
         public static function macro($name, $macro)
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            \Illuminate\Database\Schema\MariaDbBuilder::macro($name, $macro);
+            \Illuminate\Database\Schema\SQLiteBuilder::macro($name, $macro);
         }
 
         /**
@@ -19252,7 +19508,7 @@ namespace Illuminate\Support\Facades {
         public static function mixin($mixin, $replace = true)
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            \Illuminate\Database\Schema\MariaDbBuilder::mixin($mixin, $replace);
+            \Illuminate\Database\Schema\SQLiteBuilder::mixin($mixin, $replace);
         }
 
         /**
@@ -19265,7 +19521,7 @@ namespace Illuminate\Support\Facades {
         public static function hasMacro($name)
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            return \Illuminate\Database\Schema\MariaDbBuilder::hasMacro($name);
+            return \Illuminate\Database\Schema\SQLiteBuilder::hasMacro($name);
         }
 
         /**
@@ -19277,7 +19533,7 @@ namespace Illuminate\Support\Facades {
         public static function flushMacros()
         {
             //Method inherited from \Illuminate\Database\Schema\Builder 
-            \Illuminate\Database\Schema\MariaDbBuilder::flushMacros();
+            \Illuminate\Database\Schema\SQLiteBuilder::flushMacros();
         }
 
             }
@@ -20489,6 +20745,40 @@ namespace Illuminate\Support\Facades {
         }
 
         /**
+         * Apply the callback if the given "value" is (or resolves to) truthy.
+         *
+         * @template TWhenParameter
+         * @template TWhenReturnType
+         * @param (\Closure($this): TWhenParameter)|TWhenParameter|null $value
+         * @param (callable($this, TWhenParameter): TWhenReturnType)|null $callback
+         * @param (callable($this, TWhenParameter): TWhenReturnType)|null $default
+         * @return $this|TWhenReturnType
+         * @static
+         */
+        public static function when($value = null, $callback = null, $default = null)
+        {
+            /** @var \Illuminate\Filesystem\LocalFilesystemAdapter $instance */
+            return $instance->when($value, $callback, $default);
+        }
+
+        /**
+         * Apply the callback if the given "value" is (or resolves to) falsy.
+         *
+         * @template TUnlessParameter
+         * @template TUnlessReturnType
+         * @param (\Closure($this): TUnlessParameter)|TUnlessParameter|null $value
+         * @param (callable($this, TUnlessParameter): TUnlessReturnType)|null $callback
+         * @param (callable($this, TUnlessParameter): TUnlessReturnType)|null $default
+         * @return $this|TUnlessReturnType
+         * @static
+         */
+        public static function unless($value = null, $callback = null, $default = null)
+        {
+            /** @var \Illuminate\Filesystem\LocalFilesystemAdapter $instance */
+            return $instance->unless($value, $callback, $default);
+        }
+
+        /**
          * Assert that the given file or directory exists.
          *
          * @param string|array $path
@@ -21150,40 +21440,6 @@ namespace Illuminate\Support\Facades {
             //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
             /** @var \Illuminate\Filesystem\LocalFilesystemAdapter $instance */
             $instance->buildTemporaryUploadUrlsUsing($callback);
-        }
-
-        /**
-         * Apply the callback if the given "value" is (or resolves to) truthy.
-         *
-         * @template TWhenParameter
-         * @template TWhenReturnType
-         * @param (\Closure($this): TWhenParameter)|TWhenParameter|null $value
-         * @param (callable($this, TWhenParameter): TWhenReturnType)|null $callback
-         * @param (callable($this, TWhenParameter): TWhenReturnType)|null $default
-         * @return $this|TWhenReturnType
-         * @static
-         */
-        public static function when($value = null, $callback = null, $default = null)
-        {
-            /** @var \Illuminate\Filesystem\LocalFilesystemAdapter $instance */
-            return $instance->when($value, $callback, $default);
-        }
-
-        /**
-         * Apply the callback if the given "value" is (or resolves to) falsy.
-         *
-         * @template TUnlessParameter
-         * @template TUnlessReturnType
-         * @param (\Closure($this): TUnlessParameter)|TUnlessParameter|null $value
-         * @param (callable($this, TUnlessParameter): TUnlessReturnType)|null $callback
-         * @param (callable($this, TUnlessParameter): TUnlessReturnType)|null $default
-         * @return $this|TUnlessReturnType
-         * @static
-         */
-        public static function unless($value = null, $callback = null, $default = null)
-        {
-            /** @var \Illuminate\Filesystem\LocalFilesystemAdapter $instance */
-            return $instance->unless($value, $callback, $default);
         }
 
         /**
@@ -25383,6 +25639,7 @@ namespace  {
     class Config extends \Illuminate\Support\Facades\Config {}
     class Context extends \Illuminate\Support\Facades\Context {}
     class Cookie extends \Illuminate\Support\Facades\Cookie {}
+    class Crypt extends \Illuminate\Support\Facades\Crypt {}
     class Date extends \Illuminate\Support\Facades\Date {}
     class DB extends \Illuminate\Support\Facades\DB {}
 

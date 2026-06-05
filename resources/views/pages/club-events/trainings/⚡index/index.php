@@ -2,17 +2,20 @@
 
 declare(strict_types=1);
 
-use App\Enums\Recurrence;
-use App\Enums\TrainingCancellationType;
-use App\Enums\TrainingLevel;
-use App\Enums\TrainingType;
-use App\Models\ClubAdmin\Club\Room;
-use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Interclub\Season;
-use App\Models\ClubEvents\Training\Training;
-use App\Models\ClubEvents\Training\TrainingPack;
-use App\Notifications\Training\TrainingSessionCancelledNotification;
-use App\Services\TrainingDateGenerator;
+use App\Domains\Shared\Enums\ClubEventTypeEnum;
+use App\Domains\Shared\Enums\Recurrence;
+use App\Domains\Shared\Enums\TrainingCancellationType;
+use App\Domains\Shared\Enums\TrainingLevel;
+use App\Domains\Shared\Enums\TrainingType;
+use App\Livewire\Concerns\HasEventPostForm;
+use App\Domains\ClubAdmin\Club\Models\Room;
+use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Trainings\Models\Training;
+use App\Domains\Trainings\Models\TrainingPack;
+use App\Domains\Trainings\Notifications\TrainingSessionCancelledNotification;
+use App\Domains\Trainings\Services\TrainingDateGenerator;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
@@ -21,11 +24,16 @@ use Livewire\Component;
 use Mary\Traits\Toast;
 
 new class extends Component
-{
-    use Toast;
+    {
+    use HasBreadcrumbs;
+    use HasEventPostForm, Toast;
 
     // ── Cancellation modal ────────────────────────────────────────────────────
     public bool $cancelModal = false;
+
+    public bool $deactivatePackModal = false;
+
+    public ?int $deactivatingPackId = null;
 
     public string $cancelNote = '';
 
@@ -53,6 +61,8 @@ new class extends Component
     // Step 3 — Price (in euros)
     public float $formPrice = 90;
 
+    public bool $formAllowDiscount = true;
+
     // Step 2 — Planning
     public string $formRecurrenceType = 'weekly'; // 'weekly' | 'specific_days'
 
@@ -79,6 +89,13 @@ new class extends Component
 
     // ── View filter ───────────────────────────────────────────────────────────
     public int $viewSeasonId = 0;
+
+    // ── Event post modal ──────────────────────────────────────────────────────
+    public ?int $eventPostPackId = null;
+
+    public bool $eventPostPackHasDate = true;
+
+    public bool $showEventPostModal = false;
 
     // ── Wizard state ──────────────────────────────────────────────────────────
     public bool $wizardOpen = false;
@@ -139,11 +156,26 @@ new class extends Component
         ];
     }
 
+    public function openDeactivatePack(int $packId): void
+    {
+        $this->deactivatingPackId    = $packId;
+        $this->deactivatePackModal   = true;
+    }
+
     public function deactivatePack(int $packId): void
     {
         TrainingPack::findOrFail($packId)->update(['is_active' => false]);
         unset($this->packs);
+        $this->deactivatePackModal = false;
+        $this->deactivatingPackId  = null;
         $this->warning(__('Pack deactivated.'));
+    }
+
+    public function confirmDeactivatePack(): void
+    {
+        if ($this->deactivatingPackId) {
+            $this->deactivatePack($this->deactivatingPackId);
+        }
     }
 
     #[Computed]
@@ -155,6 +187,13 @@ new class extends Component
     }
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__('Trainings'));
+    }
 
     public function mount(): void
     {
@@ -241,7 +280,8 @@ new class extends Component
         $this->formPackStartDate = $pack->pack_start_date?->toDateString() ?? '';
         $this->formPackEndDate = $pack->pack_end_date?->toDateString() ?? '';
         $this->formExcludedDates = $pack->excluded_dates ?? [];
-        $this->formPrice = round($pack->price / 100, 2);
+        $this->formPrice = (float) $pack->price;
+        $this->formAllowDiscount = $pack->allow_discount;
 
         $this->wizardOpen = true;
         $this->step = '1';
@@ -255,7 +295,7 @@ new class extends Component
             return new Collection;
         }
 
-        return TrainingPack::with(['room', 'trainer'])
+        return TrainingPack::with(['room', 'trainer', 'eventPost'])
             ->where('season_id', $this->viewSeason->id)
             ->where('is_active', true)
             ->orderBy('level')
@@ -394,7 +434,8 @@ new class extends Component
             'pack_end_date' => $this->formPackEndDate ?: null,
             'excluded_dates' => ! empty($this->formExcludedDates) ? array_values($this->formExcludedDates) : null,
             'is_active' => true,
-            'price' => (int) ($this->formPrice * 100),
+            'price' => $this->formPrice,
+            'allow_discount' => $this->formAllowDiscount,
         ];
 
         $pack = $this->packId
@@ -412,6 +453,9 @@ new class extends Component
                 icon: 'o-calendar',
             );
         } else {
+            // Propagate trainer change to all linked sessions
+            $pack->trainings()->update(['trainer_id' => $pack->trainer_id]);
+
             $this->success(__('Pack updated!'), icon: 'o-check-circle');
         }
 
@@ -471,7 +515,7 @@ new class extends Component
     public function trainerOptions(): array
     {
         return User::where('is_active', true)
-            ->where(fn ($q) => $q->where('is_coach', true)->orWhere('is_admin', true))
+            ->where(fn ($q) => $q->where('is_coach', true))
             ->orderBy('first_name')
             ->get()
             ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->full_name])
@@ -517,11 +561,7 @@ new class extends Component
             'trainerOptions' => $this->trainerOptions,
             'roomOptions' => $this->roomOptions,
             'dayOptions' => $this->dayOptions,
-            'breadcrumbs' => Breadcrumb::make()
-                ->home()
-                ->trainings()
-                ->current(__('Trainings'))
-                ->toArray(),
+            'breadcrumbs' => $this->getBreadcrumbs(),
         ];
     }
 
@@ -529,6 +569,58 @@ new class extends Component
     public function wizardSeason(): ?Season
     {
         return $this->formSeasonId ? Season::find($this->formSeasonId) : null;
+    }
+
+    // ── Event post management ─────────────────────────────────────────────────
+
+    public function openEventPost(int $packId): void
+    {
+        $pack = TrainingPack::with(['eventPost', 'room'])->findOrFail($packId);
+
+        $this->eventPostPackId      = $packId;
+        $this->eventPostPackHasDate = $pack->pack_start_date !== null;
+
+        $this->initEventPost($pack->eventPost, $pack->name);
+
+        // Pre-fill location from the pack's room when no existing event post sets it
+        if ($this->eventLocation === '' && $pack->room) {
+            $this->eventLocation = implode(', ', array_filter([
+                $pack->room->street,
+                $pack->room->city_name,
+            ]));
+        }
+
+        $this->showEventPostModal = true;
+    }
+
+    protected function onEventPostSaved(): void
+    {
+        $this->showEventPostModal = false;
+        unset($this->packs);
+    }
+
+    protected function resolveEventPostData(): array
+    {
+        $pack = TrainingPack::findOrFail($this->eventPostPackId);
+
+        $startTime = $pack->start_time
+            ? Carbon::parse($pack->start_time)
+            : null;
+
+        $endTime = $startTime && $pack->duration_minutes
+            ? $startTime->copy()->addMinutes($pack->duration_minutes)
+            : null;
+
+        return [
+            'model'            => $pack,
+            'type'             => ClubEventTypeEnum::TRAINING,
+            'icon'             => '🎯',
+            'event_date'       => $pack->pack_start_date?->toDateString() ?? now()->toDateString(),
+            'start_time'       => $startTime?->format('H:i:s') ?? '00:00:00',
+            'end_time'         => $endTime?->format('H:i:s'),
+            'price'            => (string) $pack->price,
+            'max_participants' => $pack->max_participants,
+        ];
     }
 
     private function resetWizardFields(): void
@@ -551,5 +643,6 @@ new class extends Component
         $this->formPackEndDate = '';
         $this->formExcludedDates = [];
         $this->formPrice = 90;
+        $this->formAllowDiscount = true;
     }
 };

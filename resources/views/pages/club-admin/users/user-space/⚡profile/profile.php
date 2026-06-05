@@ -1,10 +1,21 @@
 <?php
 
-use App\Models\ClubAdmin\Users\User;
+declare(strict_types=1);
+
+use App\Actions\User\UpdateUserAction;
+use App\Data\User\UpdateUserData;
+use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\Gender;
+use App\Livewire\Concerns\HasBreadcrumbs;
+use App\Livewire\Concerns\HasPhotoUpload;
 use App\Support\Breadcrumb;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule as ValidationRule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Livewire\Attributes\Computed;
 use Livewire\Attributes\Rule;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -12,120 +23,200 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast, WithFileUploads;
+    use Toast, WithFileUploads, HasBreadcrumbs, HasPhotoUpload;
 
     public User $user;
 
     public bool $drawer = false;
 
-    public bool $deleteModal = false;
+    public string $activeTeamTab = '';
 
-    public string $activeTeamTab;
+    // Identity
+    #[Rule('required|string|max:255')]
+    public string $first_name = '';
 
-    public int $imageKey = 0; // pour g\C3\A9rer l'\C3\A9tat de la photo et son delete en JS
+    #[Rule('required|string|max:255')]
+    public string $last_name = '';
 
-    #[Rule('required|email')]
-    public string $email;
+    #[Rule('required')]
+    public ?Gender $gender = Gender::MEN;
 
-    #[Rule('required|string')]
-    public string $street;
+    #[Rule('nullable|date')]
+    public ?string $birthdate = null;
 
-    #[Rule('required|integer|between:1000,9999')]
-    public string $city_code;
+    // Contact
+    public string $email = '';
 
-    #[Rule('required|string')]
-    public string $city_name;
+    #[Rule('nullable|string|max:20')]
+    public ?string $phone_number = null;
 
-    #[Rule('required|string')]
-    public string $phone_number;
+    #[Rule('nullable|string|max:255')]
+    public ?string $street = null;
 
-    #[Rule('string|nullable')]
-    public ?string $guardian_phone_number = null;
+    #[Rule('nullable|integer|between:1000,9999')]
+    public ?string $city_code = null;
 
-    #[Rule(['nullable', new \App\Rules\ValidIban])]
+    #[Rule('nullable|string|max:100')]
+    public ?string $city_name = null;
+
+    #[Rule(['nullable', new \App\Domains\Shared\Rules\ValidIban])]
     public ?string $iban = null;
 
-    public $photo = null;          // upload Livewire uniquement
+    // Documents (uploaded by the member)
+    public $medicalCertificate = null;
 
-    public ?string $currentPhoto = null; // photo persist\C3\A9e
-
-    /**
-     * Effacer la photo
-     */
-    public function deletePhoto(): void
-    {
-        if (! $this->user || ! $this->user->photo) {
-            return;
-        }
-
-        $oldPath = str_replace('/storage/', '', $this->user->photo);
-        Storage::disk('public')->delete($oldPath);
-
-        $this->user->update(['photo' => null]);
-
-        $this->currentPhoto = null;
-        $this->photo = null;
-        $this->imageKey++;
-
-        $this->deleteModal = false;
-
-        $this->success(__('Photo deleted'));
-    }
-
-    /**
-     * G\C3\A8re l'upload et la suppression de l'ancienne image
-     */
-    protected function handlePhotoUpload(User $user): void
-    {
-        if (! $this->photo instanceof \Livewire\Features\SupportFileUploads\TemporaryUploadedFile) {
-            return;
-        }
-
-        // supprimer ancienne
-        if ($user->photo) {
-            $oldPath = str_replace('/storage/', '', $user->photo);
-            Storage::disk('public')->delete($oldPath);
-        }
-
-        // stocker nouvelle
-        $path = $this->photo->store('users', 'public');
-
-        $user->update([
-            'photo' => "/storage/$path",
-        ]);
-
-        $this->currentPhoto = "/storage/$path";
-        $this->photo = null;
-    }
+    public $parentalConsent = null;
 
     public function mount(User $user): void
     {
         $this->user = $user;
+        $this->first_name = $user->first_name ?? '';
+        $this->last_name = $user->last_name ?? '';
+        $this->gender = $user->gender ?? Gender::MEN;
+        $this->birthdate = $user->birthdate?->format('Y-m-d');
         $this->email = $user->email;
+        $this->phone_number = $user->phone_number;
         $this->street = $user->street;
         $this->city_code = $user->city_code;
         $this->city_name = $user->city_name;
-        $this->phone_number = $user->phone_number;
-        $this->guardian_phone_number = $user->guardian_phone_number;
         $this->iban = $user->iban;
         $this->currentPhoto = $user->photo;
         $this->activeTeamTab = 'team-' . $this->user->teams->first()?->id;
-        
     }
 
     /**
-     * Complex rules
+     * Whether the member is a minor (< 18y) based on the entered birthdate.
+     * Drives whether the parental consent document is relevant.
      */
+    #[Computed()]
+    public function isMinor(): bool
+    {
+        return $this->birthdate !== null
+            && $this->birthdate !== ''
+            && Carbon::parse($this->birthdate)->age < 18;
+    }
+
     public function rules(): array
     {
         return [
+            'email' => [
+                'required',
+                'email',
+                ValidationRule::unique('users', 'email')->ignore($this->user->id),
+            ],
             'photo' => [
                 'nullable',
                 'image',
                 'mimes:jpg,jpeg,png,webp',
                 'max:2024',
             ],
+            'medicalCertificate' => [
+                'nullable',
+                'file',
+                'mimes:jpg,jpeg,png,pdf',
+                'max:4096',
+            ],
+            'parentalConsent' => [
+                'nullable',
+                'file',
+                'mimes:jpg,jpeg,png,pdf',
+                'max:4096',
+            ],
         ];
+    }
+
+    public function save(): void
+    {
+        $actor = Auth::user();
+
+        if (! ($actor->is($this->user) || $actor->is_admin || $actor->is_committee_member)) {
+            $this->error(__('Unauthorized.'));
+
+            return;
+        }
+
+        try {
+            $this->validate();
+        } catch (ValidationException $e) {
+            $this->error(__('Please check the form fields.'));
+            throw $e;
+        }
+
+        $this->handlePhotoUpload($this->user);
+        $this->handleDocumentUploads($this->user);
+
+        UpdateUserAction::handle(
+            $this->user,
+            new UpdateUserData(
+                first_name: $this->first_name,
+                last_name: $this->last_name,
+                email: $this->email,
+                gender: $this->gender,
+                phone_number: $this->phone_number,
+                street: $this->street,
+                city_code: $this->city_code,
+                city_name: $this->city_name,
+                birthdate: $this->birthdate,
+                // Legacy free-text guardian phone is now managed via the Guardian system
+                // (admin side); preserve any existing value, not editable here.
+                guardian_phone_number: $this->user->guardian_phone_number,
+                iban: $this->iban,
+                // Admin-only fields are preserved from the current model (not self-editable).
+                is_active: $this->user->is_active,
+                is_competitor: $this->user->is_competitor,
+                is_committee_member: $this->user->is_committee_member,
+                is_admin: $this->user->is_admin,
+                is_coach: $this->user->is_coach,
+                licence: $this->user->licence,
+                ranking: $this->user->ranking,
+                committee_role: $this->user->committee_role,
+                guardianIds: $this->user->guardians()->pluck('guardians.id')->all(),
+            ),
+            $actor,
+        );
+
+        $this->drawer = false;
+
+        $this->success(__('Profile updated.'));
+    }
+
+    /**
+     * Store any newly uploaded member documents (medical certificate, parental consent).
+     */
+    protected function handleDocumentUploads(User $user): void
+    {
+        if ($this->medicalCertificate !== null) {
+            if ($user->medical_certificate_path) {
+                Storage::disk('public')->delete(str_replace('/storage/', '', $user->medical_certificate_path));
+            }
+
+            $extension = $this->medicalCertificate->getClientOriginalExtension();
+            $path = $this->medicalCertificate->storeAs("documents/{$user->id}", "medical.{$extension}", 'public');
+
+            $user->update(['medical_certificate_path' => "/storage/{$path}"]);
+            $this->medicalCertificate = null;
+        }
+
+        if ($this->parentalConsent !== null) {
+            if ($user->parental_consent_path) {
+                Storage::disk('public')->delete(str_replace('/storage/', '', $user->parental_consent_path));
+            }
+
+            $extension = $this->parentalConsent->getClientOriginalExtension();
+            $path = $this->parentalConsent->storeAs("documents/{$user->id}", "parental_consent.{$extension}", 'public');
+
+            $user->update(['parental_consent_path' => "/storage/{$path}"]);
+            $this->parentalConsent = null;
+        }
+    }
+
+    public function requestErasure(): void
+    {
+        abort_unless(Auth::user()->is($this->user), 403);
+
+        $this->user->update(['gdpr_erasure_requested_at' => now()]);
+
+        $this->success(__('Erasure request sent. The admin will process it shortly.'));
     }
 
     public function with(): array
@@ -133,48 +224,20 @@ new class extends Component
         $this->user->loadMissing('teams.league', 'teams.users', 'teams.club', 'teams.season');
 
         return [
-            'breadcrumbs' => Breadcrumb::make()->home()->add(__('My profile'), null, null)->toArray(),
+            'genders' => Gender::options(),
+            'breadcrumbs' => $this->getBreadcrumbs(),
         ];
+    }
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->add(__('My profile'), null, null);
     }
 
     public function render(): View
     {
-        return view('pages.club-admin.users.user-space.⚡profile.profile', $this->user);
-    }
-
-    public function save(): void
-    {
-        try {
-            $validated = $this->validate();
-
-            // logique normale...
-
-        } catch (ValidationException $e) {
-
-            $this->error(
-                'Une erreur est survenue. Veuillez v\C3\A9rifier les champs du formulaire.'
-            );
-
-            throw $e; // important pour conserver l'affichage des erreurs sous les champs
-        } catch (Throwable $e) {
-
-            report($e);
-
-            $this->error(
-                'Une erreur inattendue est survenue. Veuillez r\C3\A9essayer.'
-            );
-        }
-
-        if ($this->user) {
-            unset($validated['photo']);
-
-            $this->handlePhotoUpload($this->user);
-
-            $this->user->update($validated);
-
-            $this->drawer = false;
-
-            $this->success('User '.$this->user->first_name.' created with success');
-        }
+        return $this->view();
     }
 };

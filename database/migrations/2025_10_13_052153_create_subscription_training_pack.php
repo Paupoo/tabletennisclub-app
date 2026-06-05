@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Models\ClubAdmin\Subscription\Subscription;
-use App\Models\ClubEvents\Training\TrainingPack;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\Trainings\Models\TrainingPack;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;

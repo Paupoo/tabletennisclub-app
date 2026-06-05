@@ -23,5 +23,5 @@ Une fois cette étape complétée, vous pourrez :
 Sportivement,  
 **Le comité du {{ config('app.name') }}**
 
-<small>Cet email vous est adressé automatiquement, merci de ne pas y répondre.</small>
+<small>{{ __('This email was sent automatically, please do not reply.') }}</small>
 </x-mail::message>

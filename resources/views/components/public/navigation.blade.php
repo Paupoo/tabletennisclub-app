@@ -64,8 +64,8 @@
     <div x-show="mobileMenuOpen" x-transition @click.away="closeMobileMenu()" class="md:hidden bg-white dark:bg-gray-900/95 border-t">
         <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
             <a href="{{ route('home') }}" @click="closeMobileMenu()" class="block text-gray-900 dark:text-white hover:text-club-blue dark:hover:text-club-yellow px-3 py-2 rounded-md text-base font-medium">Accueil</a>
-            <a href="{{ route('results') }}" @click="closeMobileMenu()" class="block text-gray-900 dark:text-white hover:text-club-blue dark:hover:text-club-yellow px-3 py-2 rounded-md text-base font-medium">Résultats</a>
-            <a href="{{ route('eventPosts') }}" @click="closeMobileMenu()" class="block text-gray-900 dark:text-white hover:text-club-blue dark:hover:text-club-yellow px-3 py-2 rounded-md text-base font-medium">Événements</a>
+            <a href="{{ route('results') }}" @click="closeMobileMenu()" class="block text-gray-900 dark:text-white hover:text-club-blue dark:hover:text-club-yellow px-3 py-2 rounded-md text-base font-medium">{{ __('Results') }}</a>
+            <a href="{{ route('eventPosts') }}" @click="closeMobileMenu()" class="block text-gray-900 dark:text-white hover:text-club-blue dark:hover:text-club-yellow px-3 py-2 rounded-md text-base font-medium">{{ __('Events') }}</a>
             <a href="{{ route('public.clubPosts.index') }}" @click="closeMobileMenu()" class="block text-gray-900 dark:text-white hover:text-club-blue dark:hover:text-club-yellow px-3 py-2 rounded-md text-base font-medium">Nouvelles</a>
             <a href="{{ route('home') }}#contact" @click="closeMobileMenu()" class="block text-gray-900 dark:text-white hover:text-club-blue dark:hover:text-club-yellow px-3 py-2 rounded-md text-base font-medium">Contact</a>
             @guest

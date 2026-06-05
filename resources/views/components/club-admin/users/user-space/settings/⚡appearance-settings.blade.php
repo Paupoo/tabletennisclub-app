@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\ClubAdmin\Users\User;
+use App\Domains\ClubAdmin\Users\Models\User;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Rule;
 use Livewire\Component;

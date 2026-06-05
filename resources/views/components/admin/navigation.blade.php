@@ -1,3 +1,5 @@
+@php $unreadNotificationsCount = auth()->user()->unreadNotifications()->count(); @endphp
+
 <x-menu activate-by-route class="mt-10">
     <x-menu-sub icon="o-user" title="{{ $user->first_name }}">
         {{-- L'avatar et l'email s'affichent mieux ici dans un menu-item spécial ou le titre du sub-menu --}}
@@ -11,73 +13,95 @@
         </x-slot:title>
 
         <x-menu-item icon="o-user" link="{{ route('admin.user.profile', $user) }}"
-            title="{{ __('My profile') }}" />
-        <x-menu-item icon="o-users" link="{{ route('admin.user.teams', $user) }}" title="{{ __('My team(s)') }}" />
-        <x-menu-item icon="o-star" link="{{ route('admin.user.event-subscription', $user) }}" title="{{ __('My registrations') }}" />
-        <x-menu-item icon="o-calendar-days" link="{{ route('admin.user.calendar', $user) }}" title="{{ __('Calendar') }}" />
+            :title="__('My profile')" />
+        <x-menu-item icon="o-users" link="{{ route('admin.user.teams', $user) }}" :title="__('My team(s)')" />
+        <x-menu-item icon="o-star" link="{{ route('admin.user.event-subscription', $user) }}" :title="__('My registrations')" />
+        <x-menu-item icon="o-calendar-days" link="{{ route('admin.user.calendar', $user) }}" :title="__('My Calendar')" />
         <x-menu-item icon="o-academic-cap" link="{{ route('admin.user.registration-management', $user) }}" :title="__('Affiliation & Trainings')" />
-        <x-menu-item icon="o-cog-8-tooth" :link="route('admin.user.settings', $user)" title="{{ __('Settings') }}" />
+        <x-menu-item icon="o-cog-8-tooth" :link="route('admin.user.settings', $user)" :title="__('Settings')" />
         <x-menu-separator />
         <livewire:actions.logout />
     </x-menu-sub>
 
     <x-menu-separator />
-    @if(Auth()->user()->is_admin || Auth()->user()->is_committee_member )
-    <x-menu-sub icon="o-building-office" title="{{ __('Club Settings') }}">
-        <x-menu-item icon="o-identification" link="{{ route('admin.club-info') }}" title="{{ __('Informations') }}" />
-        <x-menu-item icon="o-calendar" link="{{ route('admin.seasons.index') }}" title="{{ __('Seasons') }}" />
-        <x-menu-item icon="o-building-office-2" link="{{ route('admin.rooms.index') }}" title="{{ __('Rooms') }}" />
-        <x-menu-item icon="o-squares-2x2" link="{{ route('admin.tables.index') }}" title="{{ __('Tables') }}" />
-    </x-menu-sub>
+
+    <x-menu-item
+        icon="o-bell"
+        link="{{ route('notifications.index') }}"
+        :title="__('Notifications')"
+        :badge="$unreadNotificationsCount > 0 ? (string) $unreadNotificationsCount : null"
+        badge-classes="badge-error"
+    />
 
     <x-menu-separator />
-
+    @if(Auth()->user()->is_admin || Auth()->user()->is_committee_member )
+    <x-menu-sub icon="o-building-office" :title="__('Club Settings')">
+        <x-menu-item icon="o-identification" link="{{ route('admin.club-info') }}" :title="__('Informations')" />
+        <x-menu-item icon="o-calendar" link="{{ route('admin.seasons.index') }}" :title="__('Seasons')" />
+        <x-menu-item icon="o-building-office-2" link="{{ route('admin.rooms.index') }}" :title="__('Rooms')" />
+        <x-menu-item icon="o-squares-2x2" link="{{ route('admin.tables.index') }}" :title="__('Tables')" />
+    </x-menu-sub>
                     
-    <x-menu-sub icon="o-inbox-stack" title="{{ __('Members Admin') }}">
-        <x-menu-item icon="o-users" link="{{ route('admin.users.index') }}" title="{{ __('Users') }}" />
-        <x-menu-item icon="o-credit-card" link="{{ route('admin.users.registrations') }}" title="{{ __('Registrations') }}" />
+    <x-menu-sub icon="o-inbox-stack" :title="__('Members Admin')">
+        <x-menu-item icon="o-users" link="{{ route('admin.users.index') }}" :title="__('Users')" />
+        <x-menu-item icon="o-credit-card" link="{{ route('admin.users.registrations') }}" :title="__('Registrations')" />
     </x-menu-sub>
 
-    <x-menu-sub icon="o-banknotes" title="{{ __('Treasury') }}">
-        <x-menu-item icon="o-credit-card" link="{{ route('admin.treasury.payments') }}" title="{{ __('Payments') }}" />
-        <x-menu-item icon="o-building-library" link="{{ route('admin.treasury.transactions') }}" title="{{ __('Bank Transactions') }}" />
-        <x-menu-item icon="o-currency-euro" link="{{ route('admin.treasury.cash') }}" title="{{ __('Cash Register') }}" />
+    <x-menu-sub icon="o-banknotes" :title="__('Treasury')">
+        <x-menu-item icon="o-credit-card" link="{{ route('admin.treasury.payments') }}" :title="__('Payments')" />
+        <x-menu-item icon="o-building-library" link="{{ route('admin.treasury.transactions') }}" :title="__('Bank Transactions')" />
+        <x-menu-item icon="o-currency-euro" link="{{ route('admin.treasury.cash') }}" :title="__('Cash Register')" />
     </x-menu-sub>
-    <x-menu-sub icon="o-cog-6-tooth" link="#" title="{{ __('Club') }}">
+    <x-menu-sub icon="o-cog-6-tooth" link="#" :title="__('Club')">
     </x-menu-sub>
 
     <x-menu-separator />
     @endif
 
-    <x-menu-sub icon="o-academic-cap" title="{{ __('Trainings') }}">
+    <x-menu-sub icon="o-academic-cap" :title="__('Trainings')">
         @if($user->is_committee_member || $user->is_admin)
-        <x-menu-item icon="o-cog-6-tooth" link="{{ route('admin.trainings.index') }}" title="{{ __('Settings') }}" />
+        <x-menu-item icon="o-tag" link="{{ route('admin.trainings.index') }}" :title="__('Training Packs')" />
         @endif
         @if($user->is_coach)
-        <x-menu-item icon="o-calendar-days" link="{{ route('coach.trainings') }}" title="{{ __('My sessions') }}" />
+        <x-menu-item icon="o-calendar-days" link="{{ route('coach.trainings') }}" :title="__('My sessions')" />
         @endif
     </x-menu-sub>
 
-    <x-menu-sub icon="o-calendar-days" link="#" title="{{ __('Interclubs') }}">
-        <x-menu-item icon="o-identification" link="{{ route('admin.interclubs.teams') }}" title="{{ __('Teams') }}" />
-        <x-menu-item icon="o-user-group" link="{{ route('admin.interclubs.captain-selection') }}" title="{{ __('Selections') }}" />
-        <x-menu-item icon="o-eye" link="{{ route('admin.interclubs.control-center') }}" title="{{ __('Control Center') }}" />
-        <x-menu-item icon="o-squares-2x2" link="{{ route('admin.interclubs.results') }}" title="{{ __('Results') }}" />
-        {{-- <x-menu-item title="Archives" icon="o-archive-box" link="####" /> --}}
+    <x-menu-sub icon="o-calendar-days" link="#" :title="__('Interclubs')">
+        @if($user->is_competitor)
+        <x-menu-item icon="o-calendar" link="{{ route('admin.interclubs.my-matches') }}" :title="__('My matches')" />
+        @endif
+        @if($user->is_admin || $user->is_committee_member || $user->captainOf)
+        <x-menu-item icon="o-user-group" link="{{ route('admin.interclubs.captain-selection') }}" :title="__('Selections')" />
+        <x-menu-item icon="o-squares-2x2" link="{{ route('admin.interclubs.results') }}" :title="__('Results')" />
+        @endif
+        @if($user->is_admin || $user->is_committee_member)
+        <x-menu-item icon="o-calendar-days" link="{{ route('admin.interclubs.interclubs') }}" :title="__('Planning')" />
+        <x-menu-sub icon="o-cog-6-tooth" :title="__('Configuration saison')">
+            <x-menu-item icon="o-identification" link="{{ route('admin.interclubs.teams') }}" :title="__('Nos équipes')" />
+            <x-menu-item icon="o-table-cells" link="{{ route('admin.interclubs.division-setup') }}" :title="__('Adversaires')" />
+            <x-menu-item icon="o-building-office-2" link="{{ route('admin.interclubs.clubs') }}" :title="__('Clubs')" />
+        </x-menu-sub>
+        @endif
     </x-menu-sub>
 
-    <x-menu-sub icon="o-star" title="{{ __('Events') }}">
-        <x-menu-item icon="o-trophy" link="{{ route('admin.tournaments.index') }}" title="{{ __('Tournaments') }}">
-        </x-menu-item>
+    @if($user->is_committee_member || $user->is_admin)
+    <x-menu-sub icon="o-star" :title="__('Events')">
+        <x-menu-item icon="o-calendar-days" link="{{ route('admin.meetings.index') }}" :title="__('Meetings')" />
+        <x-menu-item icon="o-trophy" link="{{ route('admin.tournaments.index') }}" :title="__('Tournaments')" />
     </x-menu-sub>
-
+    
     <x-menu-separator />
+    @endif
 
-    <x-menu-sub icon="o-globe-alt" title="{{ __('Website') }}">
-        <x-menu-item icon="o-newspaper" link="{{ route('admin.website.articles.index') }}" title="{{ __('Articles') }}" />
-        <x-menu-item icon="o-envelope-open" link="{{ route('admin.website.contacts.index') }}" title="{{ __('Contacts') }}" />
-        <x-menu-item icon="o-shield-exclamation" link="{{ route('admin.website.spams.index') }}" title="{{ __('Spam') }}" />
+    @if($user->is_admin || $user->is_committee_member)
+    <x-menu-sub icon="o-globe-alt" :title="__('Website')">
+        <x-menu-item icon="o-newspaper" link="{{ route('admin.website.articles.index') }}" :title="__('Articles')" />
+        <x-menu-item icon="o-envelope-open" link="{{ route('admin.website.contacts.index') }}" :title="__('Contacts')" />
+        <x-menu-item icon="o-shield-exclamation" link="{{ route('admin.website.spams.index') }}" :title="__('Spam')" />
+        <x-menu-item icon="o-calendar-days" link="{{ route('admin.website.events.index') }}" :title="__('Events')" />
     </x-menu-sub>
+    @endif
 
     <x-menu-separator />
 

@@ -1,4 +1,4 @@
-<x-drawer wire:model="closeTournamentDrawer" title="{{ __('Close tournament') }}" right separator with-close-button class="w-11/12 md:w-[500px]">
+<x-drawer wire:model="closeTournamentDrawer" :title="__('Close tournament')" right separator with-close-button class="w-11/12 md:w-[500px]">
 
     <div class="space-y-6">
 
@@ -26,12 +26,12 @@
             @if ($sendThankYou)
                 <div class="space-y-3">
                     <x-input wire:model="thankYouSubject"
-                        label="{{ __('Subject') }}"
-                        placeholder="{{ __('Results — Tournament name') }}" />
+                        :label="__('Subject')"
+                        :placeholder="__('Results — Tournament name')" />
 
                     <x-textarea wire:model="thankYouBody"
-                        label="{{ __('Message') }}"
-                        placeholder="{{ __('Dear participants…') }}"
+                        :label="__('Message')"
+                        :placeholder="__('Dear participants…')"
                         rows="7" />
 
                     <p class="text-[10px] opacity-40">
@@ -55,12 +55,12 @@
             @if ($createNewsPost)
                 <div class="space-y-3">
                     <x-input wire:model="newsPostTitle"
-                        label="{{ __('Title') }}"
-                        placeholder="{{ __('Results — Tournament name') }}" />
+                        :label="__('Title')"
+                        :placeholder="__('Results — Tournament name')" />
 
                     <x-textarea wire:model="newsPostContent"
-                        label="{{ __('Content') }}"
-                        placeholder="{{ __('Markdown supported…') }}"
+                        :label="__('Content')"
+                        :placeholder="__('Markdown supported…')"
                         rows="6" />
 
                     <p class="text-[10px] opacity-40">
@@ -110,8 +110,8 @@
     </div>
 
     <x-slot:actions>
-        <x-button label="{{ __('Cancel') }}" @click="$wire.closeTournamentDrawer = false" />
-        <x-button label="{{ __('Close tournament') }}" icon="o-lock-closed"
+        <x-button :label="__('Cancel')" @click="$wire.closeTournamentDrawer = false" />
+        <x-button :label="__('Close tournament')" icon="o-lock-closed"
             class="btn-error"
             wire:click="closeTournament"
             spinner="closeTournament"

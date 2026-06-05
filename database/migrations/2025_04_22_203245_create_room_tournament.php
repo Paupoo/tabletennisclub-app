@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Models\ClubAdmin\Club\Room;
-use App\Models\ClubEvents\Tournament\Tournament;
+use App\Domains\ClubAdmin\Club\Models\Room;
+use App\Domains\Competitions\Tournament\Models\Tournament;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;

@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Resources\views\Pages\ClubEvents\Interclubs\Teams\Show;
 
-use App\Enums\LeagueLevel;
-use App\Models\ClubEvents\Interclub\Interclub;
-use App\Models\ClubEvents\Interclub\Team;
+use App\Domains\Shared\Enums\LeagueLevel;
+use App\Domains\Competitions\Interclub\Models\Interclub;
+use App\Domains\Competitions\Interclub\Models\Team;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
@@ -15,7 +16,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast;
+    use Toast, HasBreadcrumbs;
 
     #[Locked]
     public int $teamId;
@@ -25,7 +26,15 @@ new class extends Component
         $this->teamId = $team->id;
     }
 
-    public function render(): View
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__("Team Details"));
+    }
+
+        public function render(): View
     {
         return $this->view();
     }

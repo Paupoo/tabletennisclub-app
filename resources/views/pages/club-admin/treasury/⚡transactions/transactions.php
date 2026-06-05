@@ -2,7 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Models\ClubAdmin\Payment\Transaction;
+use App\Domains\ClubAdmin\Payment\Models\Transaction;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -17,7 +18,7 @@ use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 
 new class extends Component
 {
-    use Toast, WithFileUploads, WithPagination;
+    use Toast, WithFileUploads, WithPagination, HasBreadcrumbs;
 
     public $importFile;
     public bool $importModal = false;
@@ -119,15 +120,20 @@ new class extends Component
         return $query->paginate(25);
     }
 
-    public function render(): View
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__("Treasury — Transactions"));
+    }
+
+        public function render(): View
     {
         return $this->view([
             'headers'      => $this->headers(),
             'transactions' => $this->transactions(),
-            'breadcrumbs'  => Breadcrumb::make()
-                ->home()
-                ->current(__('Treasury — Transactions'))
-                ->toArray(),
+            'breadcrumbs' => $this->getBreadcrumbs(),
         ]);
     }
 

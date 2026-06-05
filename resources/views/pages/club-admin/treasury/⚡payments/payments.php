@@ -2,11 +2,14 @@
 
 declare(strict_types=1);
 
+use App\Contracts\DescribesPayment;
 use App\Mail\PaymentInvitationEmail;
-use App\Models\ClubAdmin\Payment\Payment;
-use App\Models\ClubAdmin\Payment\Transaction;
-use App\Models\ClubAdmin\Subscription\Subscription;
-use App\Models\ClubEvents\Tournament\TournamentRegistration;
+use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\ClubAdmin\Payment\Models\Transaction;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\Meetings\Models\MeetingUser;
+use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -25,7 +28,7 @@ use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 
 new class extends Component
 {
-    use Toast, WithFileUploads, WithPagination;
+    use Toast, WithFileUploads, WithPagination, HasBreadcrumbs;
 
     public $importFile;
     public bool $importModal             = false;
@@ -186,15 +189,26 @@ new class extends Component
         return $headers;
     }
 
+    /**
+     * Eager-load map so every payable type resolves its payer + event in one query.
+     *
+     * @return array<class-string, array<int, string>>
+     */
+    private function payableEagerLoads(): array
+    {
+        return [
+            TournamentRegistration::class => ['user', 'tournament'],
+            MeetingUser::class            => ['user', 'meeting'],
+            Subscription::class           => ['user', 'season'],
+        ];
+    }
+
     public function payments(): LengthAwarePaginator
     {
         $col = $this->sortBy['column'];
         $dir = $this->sortBy['direction'];
 
-        $rows = Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith([
-            TournamentRegistration::class => ['user', 'tournament'],
-            Subscription::class           => ['user'],
-        ])])
+        $rows = Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])
             ->where('status', $this->statusFilter)
             ->when($this->search, fn ($q) => $q
                 ->where('reference', 'like', "%{$this->search}%")
@@ -204,21 +218,23 @@ new class extends Component
                 )
             )
             ->get()
-            ->map(fn (Payment $p) => (object) [
-                'id'                 => $p->id,
-                'reference'          => $p->reference,
-                'member'             => $p->payable?->user
-                    ? $p->payable->user->first_name . ' ' . $p->payable->user->last_name
-                    : '—',
-                'amount_due'         => $p->amount_due,
-                'amount_paid'        => $p->amount_paid,
-                'status'             => $p->status,
-                'created_at'         => $p->created_at,
-                'invitation_counter' => $p->invitation_counter,
-                'iban'               => $p->payable?->user?->iban,
-                'event_name'         => $p->payable?->tournament?->name,
-                'event_type'         => $p->payable?->tournament ? __('Tournament') : null,
-            ]);
+            ->map(function (Payment $p) {
+                $label = $p->payable instanceof DescribesPayment ? $p->payable->getPaymentLabel() : null;
+
+                return (object) [
+                    'id'                 => $p->id,
+                    'reference'          => $p->reference,
+                    'member'             => $p->payable instanceof DescribesPayment ? $p->payable->getPayerName() : '—',
+                    'amount_due'         => $p->amount_due,
+                    'amount_paid'        => $p->amount_paid,
+                    'status'             => $p->status,
+                    'created_at'         => $p->created_at,
+                    'invitation_counter' => $p->invitation_counter,
+                    'iban'               => $p->payable?->user?->iban,
+                    'event_name'         => $label['name'] ?? null,
+                    'event_type'         => $label['type'] ?? null,
+                ];
+            });
 
         $sorted = $dir === 'asc' ? $rows->sortBy($col)->values() : $rows->sortByDesc($col)->values();
 
@@ -273,7 +289,7 @@ new class extends Component
 
     public function previewBatchMatch(): void
     {
-        $pendingPayments = Payment::with(['payable.user'])
+        $pendingPayments = Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])
             ->where('status', 'pending')
             ->whereNull('transaction_id')
             ->get();
@@ -294,13 +310,15 @@ new class extends Component
             $transaction = $unreconciledTransactions->get($normalizedRef);
 
             if ($transaction && abs($transaction->amount - $payment->amount_due) < 0.01) {
+                $label = $payment->payable instanceof DescribesPayment ? $payment->payable->getPaymentLabel() : null;
+
                 $this->batchMatches[] = [
                     'payment_id'       => $payment->id,
                     'transaction_id'   => $transaction->id,
                     'reference'        => $payment->reference,
-                    'member'           => $payment->payable?->user
-                        ? $payment->payable->user->first_name . ' ' . $payment->payable->user->last_name
-                        : '—',
+                    'member'           => $payment->payable instanceof DescribesPayment ? $payment->payable->getPayerName() : '—',
+                    'event_type'       => $label['type'] ?? null,
+                    'event_name'       => $label['name'] ?? null,
                     'amount'           => $payment->amount_due,
                     'transaction_date' => $transaction->date,
                     'counterparty'     => $transaction->counterparty_name ?? '—',
@@ -385,7 +403,7 @@ new class extends Component
 
     public function previewBatchRefundMatch(): void
     {
-        $toRefundPayments = Payment::with(['payable.user'])
+        $toRefundPayments = Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])
             ->where('status', 'to_refund')
             ->whereNull('refund_transaction_id')
             ->get();
@@ -409,11 +427,15 @@ new class extends Component
                 $amountMatch = abs(abs($transaction->amount) - $payment->amount_paid) < 0.01;
 
                 if ($ibanMatch && $amountMatch) {
+                    $label = $payment->payable instanceof DescribesPayment ? $payment->payable->getPaymentLabel() : null;
+
                     $this->refundBatchMatches[] = [
                         'payment_id'       => $payment->id,
                         'transaction_id'   => $transaction->id,
                         'reference'        => $payment->reference,
                         'member'           => $user->full_name,
+                        'event_type'       => $label['type'] ?? null,
+                        'event_name'       => $label['name'] ?? null,
                         'iban'             => $user->iban,
                         'amount'           => $payment->amount_paid,
                         'transaction_date' => $transaction->date,
@@ -501,7 +523,7 @@ new class extends Component
             ->values();
     }
 
-    private function reconcileSubscription(Subscription $subscription, int $amount): void
+    private function reconcileSubscription(Subscription $subscription, float $amount): void
     {
         $subscription->update(['amount_paid' => $amount]);
 
@@ -518,29 +540,28 @@ new class extends Component
         $subscription->markAsPaid();
     }
 
-    public function render(): View
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__("Treasury — Payments"));
+    }
+
+        public function render(): View
     {
         return $this->view([
             'headers'              => $this->headers(),
             'payments'             => $this->payments(),
             'pendingTransactions'  => $this->reconcileModal ? $this->pendingTransactions() : collect(),
             'currentPayment'       => $this->reconcilePaymentId
-                ? Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith([
-                    TournamentRegistration::class => ['user', 'tournament'],
-                    Subscription::class           => ['user'],
-                ])])->find($this->reconcilePaymentId)
+                ? Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])->find($this->reconcilePaymentId)
                 : null,
             'refundTransactions'   => $this->refundModal ? $this->refundTransactions : collect(),
             'currentRefundPayment' => $this->refundPaymentId
-                ? Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith([
-                    TournamentRegistration::class => ['user', 'tournament'],
-                    Subscription::class           => ['user'],
-                ])])->find($this->refundPaymentId)
+                ? Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])->find($this->refundPaymentId)
                 : null,
-            'breadcrumbs'          => Breadcrumb::make()
-                ->home()
-                ->current(__('Treasury — Payments'))
-                ->toArray(),
+            'breadcrumbs' => $this->getBreadcrumbs(),
         ]);
     }
 

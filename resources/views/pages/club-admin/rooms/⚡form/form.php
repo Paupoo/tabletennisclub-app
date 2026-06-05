@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Models\ClubAdmin\Club\Room;
-use App\Models\ClubAdmin\Club\Table;
+use App\Domains\ClubAdmin\Club\Models\Room;
+use App\Domains\ClubAdmin\Club\Models\Table;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
 use Illuminate\View\View;
@@ -13,7 +14,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast;
+    use Toast, HasBreadcrumbs;
 
     #[Validate('string|max:255')]
     public string $access_description = '';
@@ -126,7 +127,7 @@ new class extends Component
                 : $this->selectedTables = [];
 
         $this->allTables = Table::query()
-            ->where(function ($query) use ($room) {
+            ->where(function ($query) use ($room): void {
                 $query->doesntHave('room')
                     ->orWhere('room_id', $room->id ?? null);
             })
@@ -153,7 +154,16 @@ new class extends Component
         $this->filteredTables = $this->allTables;
     }
 
-    public function render(): View
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->rooms()
+            ->current($this->room->exists ? __("Edit") : __("Create"));
+    }
+
+        public function render(): View
     {
         return $this->view();
     }
@@ -238,11 +248,7 @@ new class extends Component
     public function with(): array
     {
         return [
-            'breadcrumbs' => Breadcrumb::make()
-                ->home()
-                ->rooms()
-                ->current($this->room->exists ? __('Edit') : __('Create'))
-                ->toArray(),
+            'breadcrumbs' => $this->getBreadcrumbs(),
         ];
     }
 };

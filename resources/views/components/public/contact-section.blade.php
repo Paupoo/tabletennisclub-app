@@ -9,7 +9,7 @@
                 </p>
 
                 <div class="space-y-6">
-                    @if (($club->latitude && $club->longitude) || ($club->street && $club->city_code && $club->city_name))
+                    @if (($club?->latitude && $club?->longitude) || ($club?->street && $club?->city_code && $club?->city_name))
                     <div class="flex items-start">
                         <div class="shrink-0 w-12 h-12 bg-club-blue rounded-lg flex items-center justify-center">
                             <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -39,7 +39,7 @@
                     </div>
                     @endif
 
-                    @if ($club->phone_contact)
+                    @if ($club?->phone_contact)
                         <div class="flex items-start">
                             <div class="shrink-0 w-12 h-12 bg-club-blue rounded-lg flex items-center justify-center">
                                 <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor"
@@ -50,14 +50,14 @@
                                 </svg>
                             </div>
                             <div class="ml-4">
-                                <h3 class="text-lg font-semibold text-gray-900">Téléphone</h3>
+                                <h3 class="text-lg font-semibold text-gray-900">{{ __('Phone') }}</h3>
                                 <p inert class="text-gray-600">{{ $club->phone_contact ?? __('Not documented') }}</p>
                                 <p class="text-sm text-gray-500">Lun-Ven: 16h-20h</p>
                             </div>
                         </div>
                     @endif
 
-                    @if ($club->email_contact)
+                    @if ($club?->email_contact)
                         <div class="flex items-start">
                             <div class="shrink-0 w-12 h-12 bg-club-yellow rounded-lg flex items-center justify-center">
                                 <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor"
@@ -70,7 +70,7 @@
                             <div class="ml-4">
                                 <h3 class="text-lg font-semibold text-gray-900">Email</h3>
                                 <p inertclass="text-gray-600">{{ $club->email_contact }}</p>
-                                <p class="text-sm text-gray-500">Réponse en général dans les 48h</p>
+                                <p class="text-sm text-gray-500">{{ __('Usually responds within 48 hours') }}</p>
                             </div>
                         </div>
                     @endif

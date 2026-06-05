@@ -12,7 +12,7 @@
     ];
 
     $s            = $statusConfig[$tournament->status->value] ?? $statusConfig['draft'];
-    $isLive       = $tournament->status === \App\Enums\TournamentStatusEnum::PENDING;
+    $isLive       = $tournament->status === \App\Domains\Shared\Enums\TournamentStatusEnum::PENDING;
     $activeCount  = $tournament->active_registrations_count ?? $tournament->activeRegistrationsCount();
     $waitingCount = $tournament->waiting_count ?? 0;
     $maxUsers     = $tournament->max_users;
@@ -131,17 +131,17 @@
                     <a
                         class="btn btn-ghost btn-sm btn-square text-base-content/60 hover:text-primary"
                         href="{{ route('admin.tournaments.wizard.edit', $tournament) }}"
-                        title="{{ __('Settings') }}"
+                        :title="__('Settings')"
                     >
                         <x-heroicon-o-cog-6-tooth class="h-4 w-4" />
                     </a>
                 @endif
 
-                @if ($tournament->status !== \App\Enums\TournamentStatusEnum::CLOSED)
+                @if ($tournament->status !== \App\Domains\Shared\Enums\TournamentStatusEnum::CLOSED)
                     <a
                         class="btn btn-ghost btn-sm btn-square {{ $isLive ? 'text-primary hover:bg-primary/10' : 'text-base-content/60 hover:text-primary' }}"
                         href="{{ route('admin.tournaments.live-center', $tournament->id) }}"
-                        title="{{ __('Live Center') }}"
+                        :title="__('Live Center')"
                     >
                         <x-heroicon-o-rocket-launch class="h-4 w-4" />
                     </a>

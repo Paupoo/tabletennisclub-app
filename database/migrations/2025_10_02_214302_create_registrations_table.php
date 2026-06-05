@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubPosts\EventPost;
+use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\ClubPosts\Models\EventPost;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;

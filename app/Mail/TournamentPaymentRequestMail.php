@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Mail;
 
 use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
-use App\Models\ClubAdmin\Payment\Payment;
-use App\Models\ClubEvents\Tournament\Tournament;
+use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\Competitions\Tournament\Models\Tournament;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
@@ -37,7 +37,7 @@ class TournamentPaymentRequestMail extends Mailable
 
     public function content(): Content
     {
-        return new Content(view: 'mail.tournament-payment-request');
+        return new Content(markdown: 'mail.tournament-payment-request');
     }
 
     public function envelope(): Envelope

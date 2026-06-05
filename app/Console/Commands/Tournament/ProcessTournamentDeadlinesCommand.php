@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands\Tournament;
 
-use App\Services\TournamentService;
+use App\Domains\Competitions\Tournament\Services\TournamentService;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;

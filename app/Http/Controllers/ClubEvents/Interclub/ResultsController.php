@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\ClubEvents\Interclub;
 
-use App\Enums\InterclubResult;
-use App\Enums\LeagueCategory;
+use App\Domains\Competitions\Interclub\Models\InterclubResult;
+use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Competitions\Interclub\Models\Team;
+use App\Domains\Shared\Enums\InterclubResultEnum;
+use App\Domains\Shared\Enums\LeagueCategory;
 use App\Http\Controllers\Controller;
-use App\Models\ClubEvents\Interclub\MatchResult;
-use App\Models\ClubEvents\Interclub\Season;
-use App\Models\ClubEvents\Interclub\Team;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -20,11 +20,23 @@ class ResultsController extends Controller
     {
         $selectedSeason = $request->input('season', '');
 
-        $seasons = Season::orderByDesc('start_at')->pluck('name')->toArray();
+        $currentSeason = Season::current();
+
+        $seasons = Season::orderByDesc('start_at')
+            ->when(
+                $currentSeason,
+                fn ($q) => $q->where('start_at', '<', $currentSeason->start_at),
+                fn ($q) => $q->where('start_at', '<', now())
+            )
+            ->limit(5)
+            ->get()
+            ->when($currentSeason, fn ($coll) => $coll->prepend($currentSeason));
 
         $season = $selectedSeason
-            ? Season::where('name', 'like', "%{$selectedSeason}%")->first()
-            : Season::current();
+            ? $seasons->firstWhere('name', $selectedSeason) ?? $currentSeason
+            : $currentSeason;
+
+        $effectiveSeasonName = $season?->name ?? '';
 
         $categoryOrder = [
             LeagueCategory::MEN->name => 0,
@@ -43,7 +55,7 @@ class ResultsController extends Controller
         if ($season) {
             $grouped = Team::with([
                 'league',
-                'matchResults' => fn ($q) => $q->where('season_id', $season->id)->orderBy('match_date'),
+                'interclubResults' => fn ($q) => $q->where('season_id', $season->id)->orderBy('match_date'),
             ])
                 ->inClub()
                 ->where('season_id', $season->id)
@@ -59,32 +71,32 @@ class ResultsController extends Controller
                         'name' => 'Équipe ' . $team->name . ($team->league ? ' - Division ' . $team->league->division : ''),
                         'position' => $team->final_position ?? '—',
                         'position_class' => $this->positionClass($team->final_position),
-                        'matches' => $team->matchResults->map(fn (MatchResult $mr) => [
+                        'matches' => $team->interclubResults->map(fn (InterclubResult $mr) => [
                             'date' => $mr->is_bye ? 'Bye' : $mr->match_date?->format('d M Y'),
                             'opponent' => $mr->opponent_name ?? 'Bye',
                             'venue' => $mr->is_home ? 'Domicile' : 'Extérieur',
                             'score' => $mr->score ?? ($mr->is_bye ? 'Bye' : '—'),
                             'result' => $this->frenchResult($mr),
                         ])->toArray(),
-                        'stats' => $this->buildStats($team->matchResults),
+                        'stats' => $this->buildStats($team->interclubResults),
                     ])->toArray(),
                 ];
             }
         }
 
-        return View('public.results', compact('teamsByCategory', 'seasons', 'selectedSeason'));
+        return view('public.results', compact('teamsByCategory', 'seasons', 'effectiveSeasonName'));
     }
 
     /**
-     * @param  Collection<int, MatchResult>  $matchResults
+     * @param  Collection<int, InterclubResult>  $interclubResults
      * @return array{played: int, wins: int, losses: int, win_rate: int}
      */
-    private function buildStats(Collection $matchResults): array
+    private function buildStats(Collection $interclubResults): array
     {
-        $real = $matchResults->where('is_bye', false)->filter(fn ($mr) => $mr->result !== null);
+        $real = $interclubResults->where('is_bye', false)->filter(fn ($mr) => $mr->result !== null);
         $played = $real->count();
-        $wins = $real->filter(fn ($mr) => in_array($mr->result, [InterclubResult::WIN, InterclubResult::FORFEIT_WIN]))->count();
-        $losses = $real->filter(fn ($mr) => in_array($mr->result, [InterclubResult::LOSS, InterclubResult::FORFEIT_LOSS]))->count();
+        $wins = $real->filter(fn ($mr) => in_array($mr->result, [InterclubResultEnum::WIN, InterclubResultEnum::FORFEIT_WIN]))->count();
+        $losses = $real->filter(fn ($mr) => in_array($mr->result, [InterclubResultEnum::LOSS, InterclubResultEnum::FORFEIT_LOSS]))->count();
 
         return [
             'played' => $played,
@@ -94,7 +106,7 @@ class ResultsController extends Controller
         ];
     }
 
-    private function frenchResult(MatchResult $mr): string
+    private function frenchResult(InterclubResult $mr): string
     {
         if ($mr->is_bye) {
             return 'Bye';
@@ -105,13 +117,13 @@ class ResultsController extends Controller
         }
 
         return match ($mr->result) {
-            InterclubResult::WIN => 'Victoire',
-            InterclubResult::LOSS => 'Défaite',
-            InterclubResult::DRAW => 'Nul',
-            InterclubResult::FORFEIT_WIN => 'Forfait Adverse',
-            InterclubResult::FORFEIT_LOSS => 'Forfait',
-            InterclubResult::WITHDRAWAL => 'Forfait Général',
-            InterclubResult::WITHDRAWAL_OPPONENT => 'Forfait Général Adverse',
+            InterclubResultEnum::WIN => 'Victoire',
+            InterclubResultEnum::LOSS => 'Défaite',
+            InterclubResultEnum::DRAW => 'Nul',
+            InterclubResultEnum::FORFEIT_WIN => 'Forfait Adverse',
+            InterclubResultEnum::FORFEIT_LOSS => 'Forfait',
+            InterclubResultEnum::WITHDRAWAL => 'Forfait Général',
+            InterclubResultEnum::WITHDRAWAL_OPPONENT => 'Forfait Général Adverse',
         };
     }
 

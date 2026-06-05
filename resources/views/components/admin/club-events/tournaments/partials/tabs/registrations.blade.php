@@ -1,7 +1,7 @@
-<x-tab name="3" label="{{ __('Registrations') }}" icon="o-users">
+<x-tab name="3" :label="__('Registrations')" icon="o-users">
     <div class="mt-8 space-y-6 animate-in fade-in duration-500">
 
-        <x-card title="{{ __('Registrated people') }}" shadow>
+        <x-card :title="__('Registrated people')" shadow>
             <x-slot:menu>
                 <div class="flex gap-2">
                     <x-button
@@ -75,14 +75,14 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <x-stat title="Inscrits" :value="$registrationCount . ($maxUsers > 0 ? ' / ' . $maxUsers : '')" icon="o-user-group" />
             <x-stat title="Places restantes" :value="$maxUsers > 0 ? max(0, $maxUsers - $registrationCount) : '∞'" icon="o-receipt-percent" />
-            <x-stat title="Confirmés"
+            <x-stat :title="__('Confirmed')"
                 :value="$this->registrations->filter(fn ($r) => $r['status'] === 'confirmed')->count()"
                 icon="o-check-badge" />
         </div>
 
         {{-- Waiting list --}}
         @if ($waitlistCount > 0)
-            <x-card title="{{ __('Waiting list') }}" shadow class="mt-6">
+            <x-card :title="__('Waiting list')" shadow class="mt-6">
                 <x-slot:menu>
                     <x-badge value="{{ $waitlistCount }} {{ __('waiting') }}" class="badge-warning" />
                 </x-slot:menu>
@@ -106,11 +106,11 @@
                             </span>
                             <div class="w-20 flex justify-end gap-1">
                                 <x-button icon="o-arrow-up-circle" class="btn-ghost btn-xs text-success"
-                                    tooltip="{{ __('Promote to registered') }}"
+                                    :tooltip="__('Promote to registered')"
                                     wire:click="promoteFromWaitlist({{ $entry['id'] }})"
                                     :disabled="$maxUsers > 0 && $this->registrations->count() >= $maxUsers" />
                                 <x-button icon="o-x-mark" class="btn-ghost btn-xs text-error"
-                                    tooltip="{{ __('Remove from waitlist') }}"
+                                    :tooltip="__('Remove from waitlist')"
                                     wire:click="removeFromWaitlist({{ $entry['id'] }})" />
                             </div>
                         </div>
@@ -121,7 +121,7 @@
     </div>
 
     {{-- ── Close registrations modal ─────────────────────────────── --}}
-    <x-modal wire:model="showCloseRegistrationsModal" title="{{ __('Close registrations?') }}" class="backdrop-blur">
+    <x-modal wire:model="showCloseRegistrationsModal" :title="__('Close registrations?')" class="backdrop-blur">
         <div class="space-y-4">
             <div class="flex items-start gap-3 p-4 bg-error/10 border border-error/20 rounded-xl text-sm text-error">
                 <x-icon name="o-exclamation-triangle" class="w-5 h-5 shrink-0 mt-0.5" />
@@ -142,22 +142,22 @@
         </div>
 
         <x-slot:actions>
-            <x-button label="{{ __('Cancel') }}" wire:click="$set('showCloseRegistrationsModal', false)" />
-            <x-button label="{{ __('Close registrations') }}" icon="o-lock-closed" class="btn-error"
+            <x-button :label="__('Cancel')" wire:click="$set('showCloseRegistrationsModal', false)" />
+            <x-button :label="__('Close registrations')" icon="o-lock-closed" class="btn-error"
                 wire:click="confirmCloseRegistrations" />
         </x-slot:actions>
     </x-modal>
 
     {{-- ── Open registrations modal ──────────────────────────────── --}}
-    <x-modal wire:model="showOpenRegistrationsModal" title="{{ __('Reopen registrations?') }}" class="backdrop-blur">
+    <x-modal wire:model="showOpenRegistrationsModal" :title="__('Reopen registrations?')" class="backdrop-blur">
         <div class="p-4 bg-warning/10 border border-warning/20 rounded-xl flex items-start gap-3 text-sm">
             <x-icon name="o-information-circle" class="w-5 h-5 shrink-0 mt-0.5 text-warning" />
             <p>{{ __('Reopening registrations will set the tournament back to "published" status. The tournament cannot be started until registrations are closed again.') }}</p>
         </div>
 
         <x-slot:actions>
-            <x-button label="{{ __('Cancel') }}" wire:click="$set('showOpenRegistrationsModal', false)" />
-            <x-button label="{{ __('Reopen registrations') }}" icon="o-lock-open" class="btn-warning"
+            <x-button :label="__('Cancel')" wire:click="$set('showOpenRegistrationsModal', false)" />
+            <x-button :label="__('Reopen registrations')" icon="o-lock-open" class="btn-warning"
                 wire:click="confirmOpenRegistrations" />
         </x-slot:actions>
     </x-modal>

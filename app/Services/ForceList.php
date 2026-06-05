@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Models\ClubAdmin\Users\User;
+use App\Domains\ClubAdmin\Users\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use stdClass;

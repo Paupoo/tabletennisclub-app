@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use App\Enums\CommitteeRolesEnum;
-use App\Models\ClubAdmin\Users\User;
+use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\ClubAdmin\Users\Models\User;
 use Illuminate\Validation\Rules\Enum;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Validate;
@@ -97,17 +97,17 @@ new class extends Component
 ?>
 
 <div>
-    <x-modal wire:model="isOpen" title="{{ __('Add Committee Member') }}" separator>
+    <x-modal wire:model="isOpen" :title="__('Add Committee Member')" separator>
         <div class="grid gap-4">
             <x-choices
-                label="{{ __('Search Member') }}"
+                :label="__('Search Member')"
                 wire:model="selectedMemberId"
                 :options="$membersSearchList"
                 no-result-text="{{ __('Oops, nothing found here.') }}"
                 debounce="250"
                 min-chars="2"
                 icon="o-magnifying-glass"
-                hint="{{ __('Search by name or license number') }}"
+                :hint="__('Search by name or license number')"
                 single
                 searchable
                 clearable
@@ -119,18 +119,18 @@ new class extends Component
             </x-choices>
 
             <x-select 
-                label="{{ __('Committee Role') }}" 
+                :label="__('Committee Role')" 
                 icon="o-briefcase" 
-                placeholder="{{ __('Select a role') }}"
+                :placeholder="__('Select a role')"
                 :options="$this->roleOptions" 
                 wire:model="selectedRoleId" 
             />
         </div>
 
         <x-slot:actions>
-            <x-button label="{{ __('Cancel') }}" wire:click="close" />
+            <x-button :label="__('Cancel')" wire:click="close" />
             <x-button 
-                label="{{ __('Add to Committee') }}" 
+                :label="__('Add to Committee')" 
                 class="btn-primary" 
                 icon="o-check" 
                 wire:click="addMember" 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Support;
 
-use App\Models\ClubEvents\Tournament\Tournament;
+use App\Domains\Competitions\Tournament\Models\Tournament;
 
 class Breadcrumb
 {
@@ -39,7 +39,7 @@ class Breadcrumb
 
     public function events(?string $url = null): Breadcrumb
     {
-        return $this->add('Events', $url ?: route('clubPosts.eventPosts.index'), 's-home');
+        return $this->add('Events', $url ?: route('eventPosts'), 's-home');
     }
 
     public function home(?string $url = null): Breadcrumb
@@ -49,7 +49,12 @@ class Breadcrumb
 
     public function matches(?string $url = null): Breadcrumb
     {
-        return $this->add('Matches', $url ?: route('interclubs.index'), 's-home');
+        return $this->add('Matches', $url ?: route('admin.interclubs.interclubs'), 's-home');
+    }
+
+    public function meetings(?string $url = null): Breadcrumb
+    {
+        return $this->add(__('Meetings'), $url ?: route('admin.meetings.index'), 'o-calendar-days');
     }
 
     public function profile(?string $url = null): Breadcrumb
@@ -84,7 +89,7 @@ class Breadcrumb
 
     public function teams(?string $url = null): Breadcrumb
     {
-        return $this->add('Teams', $url ?: route('teams.index'));
+        return $this->add('Teams', $url ?: route('admin.interclubs.teams'));
     }
 
     public function toArray(): array
@@ -125,6 +130,11 @@ class Breadcrumb
     public function websiteContacts(?string $url = null): Breadcrumb
     {
         return $this->add(__('Contacts'), $url ?: route('admin.website.contacts.index'));
+    }
+
+    public function websiteEvents(?string $url = null): Breadcrumb
+    {
+        return $this->add(__('Events'), $url ?: route('admin.website.events.index'));
     }
 
     public function websiteSpams(?string $url = null): Breadcrumb

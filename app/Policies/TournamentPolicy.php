@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
-use App\Enums\TournamentStatusEnum;
-use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubEvents\Tournament\Tournament;
+use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Shared\Enums\TournamentStatusEnum;
 
 class TournamentPolicy
 {

@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace App\Livewire\Admin\NewsPosts;
 
-use App\Models\ClubPosts\NewsPost;
+use App\Livewire\Concerns\HasBreadcrumbs;
+use App\Domains\ClubPosts\Models\NewsPost;
 use App\Support\Breadcrumb;
 use Illuminate\Contracts\Database\Query\Builder;
 use Livewire\Component;
@@ -12,7 +13,7 @@ use Livewire\WithPagination;
 
 class Index extends Component
 {
-    use WithPagination;
+    use WithPagination, HasBreadcrumbs;
 
     public string $category = '';
 
@@ -45,6 +46,14 @@ class Index extends Component
 
     public function mount(): void {}
 
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->articles()
+            ->current(__('Articles'));
+    }
+
     public function render()
     {
         $articles = NewsPost::search($this->search)
@@ -62,10 +71,7 @@ class Index extends Component
             })
             ->paginate($this->perPage);
 
-        $breadcrumbs = Breadcrumb::make()
-            ->make()
-            ->articles()
-            ->toArray();
+        $breadcrumbs = $this->getBreadcrumbs();
 
         $stats = collect([
             'totalPublished' => 0,

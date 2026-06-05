@@ -25,19 +25,18 @@ class Captcha
         if (!isset($captcha['a'], $captcha['b'], $captcha['operation'])) {
             return false;
         }
-        
-        if(!is_int($captcha['a']) || !is_int($captcha['b'])) {
+
+        if (!is_int($captcha['a']) || !is_int($captcha['b'])) {
             throw new \TypeError('Captcha values must be integers');
         }
 
-        if($captcha['a'] < 0 || $captcha['a'] > 10 || $captcha['b'] < 0 || $captcha['b'] > 10) {
+        if ($captcha['a'] < 0 || $captcha['a'] > 10 || $captcha['b'] < 0 || $captcha['b'] > 10) {
             throw new \InvalidArgumentException('Captcha values must be between 0 and 10');
         }
 
-        if(!in_array($captcha['operation'], ['+', '*'])) {
+        if (!in_array($captcha['operation'], ['+', '*'])) {
             throw new \InvalidArgumentException('Invalid captcha operation');
         }
-
 
         $a = $captcha['a'];
         $b = $captcha['b'];

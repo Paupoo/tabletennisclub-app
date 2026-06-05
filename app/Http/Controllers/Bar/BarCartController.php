@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Bar;
 
+use App\Domains\Bar\Models\BarOrder;
+use App\Domains\Bar\Models\BarOrderItem;
+use App\Domains\Bar\Models\BarProduct;
+use App\Domains\Bar\Services\StockService;
 use App\Http\Controllers\Controller;
-use App\Models\Bar\BarProduct;
-use App\Models\Bar\BarOrder;
-use App\Models\Bar\BarOrderItem;
-use App\Services\Bar\StockService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -32,6 +32,12 @@ class BarCartController extends Controller
 
     public function add(Request $request)
     {
+        // Validation des données entrantes.
+        $validated = $request->validate([
+            'product_id' => 'required|integer|exists:bar_products,id',
+        ]);
+
+        $productId = $validated['product_id'];
         // Validation des données entrantes.
         $validated = $request->validate([
             'product_id' => 'required|integer|exists:bar_products,id',
@@ -141,9 +147,13 @@ class BarCartController extends Controller
 
         $action = $request->input('action', 'validate');
         $userId = auth()->id(); // Garanti non-null grâce au middleware auth.
+        $userId = auth()->id(); // Garanti non-null grâce au middleware auth.
 
         $products = BarProduct::whereIn('id', array_keys($cart))->get();
 
+        // $totalPrice = $products->sum(function ($product) use ($cart) {
+        //     return $product->sale_price * ($cart[$product->id] ?? 0);
+        // });
         // $totalPrice = $products->sum(function ($product) use ($cart) {
         //     return $product->sale_price * ($cart[$product->id] ?? 0);
         // });
@@ -211,6 +221,7 @@ class BarCartController extends Controller
                     }
 
                     $availableStock = (int) $product->stock;
+                    $availableStock = (int) $product->stock;
 
                     if ($qty > $availableStock) {
                         throw new \RuntimeException("Stock insuffisant pour {$product->name}.");
@@ -261,3 +272,4 @@ class BarCartController extends Controller
             ->with('success', 'Commande validée');
     }
 }
+

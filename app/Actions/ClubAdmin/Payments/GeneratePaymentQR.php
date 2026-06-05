@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\ClubAdmin\Payments;
 
-use const App\Actions\Payments\bancontact_qr;
-use const App\Actions\Payments\png;
-
-use App\Models\ClubAdmin\Payment\Payment;
+use App\Domains\ClubAdmin\Payment\Models\Payment;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Encoding\Encoding;
 use Endroid\QrCode\ErrorCorrectionLevel;

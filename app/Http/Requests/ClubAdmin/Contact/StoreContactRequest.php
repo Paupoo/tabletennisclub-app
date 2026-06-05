@@ -63,7 +63,7 @@ class StoreContactRequest extends FormRequest
 
     public function withValidator($validator): void
     {
-        $validator->after(function ($validator) {
+        $validator->after(function ($validator): void {
 
             $captcha = session('captcha');
 

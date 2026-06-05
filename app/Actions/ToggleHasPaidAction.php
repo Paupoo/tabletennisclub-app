@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Actions;
 
 use App\Contracts\ToggleHasPaidInterface;
-use App\Models\ClubAdmin\Users\User;
+use App\Domains\ClubAdmin\Users\Models\User;
 
 abstract class ToggleHasPaidAction implements ToggleHasPaidInterface
 {

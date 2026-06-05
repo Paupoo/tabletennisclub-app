@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Enums\NewsPostCategoryEnum;
-use App\Enums\NewsPostStatusEnum;
-use App\Models\ClubAdmin\Users\User;
-use App\Models\ClubPosts\NewsPost;
+use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\ClubPosts\Models\NewsPost;
+use App\Domains\Shared\Enums\NewsPostCategoryEnum;
+use App\Domains\Shared\Enums\NewsPostStatusEnum;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;

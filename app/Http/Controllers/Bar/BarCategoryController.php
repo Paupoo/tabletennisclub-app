@@ -4,13 +4,26 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Bar;
 
-use App\Http\Controllers\Controller;
 use App\Domains\Bar\Models\BarCategory;
+use App\Http\Controllers\Controller;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class BarCategoryController extends Controller
 {
-    public function index(Request $request)
+    public function destroy(BarCategory $category): RedirectResponse
+    {
+        if ($category->products()->exists()) {
+            return back()->with('error', 'Cannot delete: category is used by products');
+        }
+
+        $category->delete();
+
+        return back()->with('success', 'Category deleted');
+    }
+
+    public function index(Request $request): View
     {
         $categories = BarCategory::withCount('products')  // ← nécessaire pour $category->products_count dans le Blade
             ->orderBy('name')
@@ -19,10 +32,10 @@ class BarCategoryController extends Controller
         return view('bar.categories.index', compact('categories'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'category_name' => 'required|string|max:150|unique:bar_categories,name'
+            'category_name' => 'required|string|max:150|unique:bar_categories,name',
         ]);
 
         $name = trim(preg_replace('/\s+/', ' ', $validated['category_name']));
@@ -37,7 +50,7 @@ class BarCategoryController extends Controller
             ->with('open_product_panel', true);
     }
 
-    public function update(Request $request, BarCategory $category)
+    public function update(Request $request, BarCategory $category): RedirectResponse
     {
         $validated = $request->validate([
             'category_name' => 'required|string|max:150|unique:bar_categories,name,' . $category->id,
@@ -50,16 +63,5 @@ class BarCategoryController extends Controller
         ]);
 
         return back()->with('success', 'Category updated');
-    }
-
-    public function destroy(BarCategory $category)
-    {
-        if ($category->products()->exists()) {
-            return back()->with('error', 'Cannot delete: category is used by products');
-        }
-
-        $category->delete();
-
-        return back()->with('success', 'Category deleted');
     }
 }

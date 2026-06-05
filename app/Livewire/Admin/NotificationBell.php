@@ -4,10 +4,20 @@ declare(strict_types=1);
 
 namespace App\Livewire\Admin;
 
+use Illuminate\View\View;
 use Livewire\Component;
 
 class NotificationBell extends Component
 {
+    public function markAllAsRead(): void
+    {
+        auth()->user()->notifications()
+            ->whereNull('read_at')
+            ->update(['read_at' => now()]);
+
+        $this->dispatch('notifications-updated');
+    }
+
     public function markAsRead(string $id): void
     {
         $notification = auth()->user()->notifications()
@@ -22,16 +32,7 @@ class NotificationBell extends Component
         }
     }
 
-    public function markAllAsRead(): void
-    {
-        auth()->user()->notifications()
-            ->whereNull('read_at')
-            ->update(['read_at' => now()]);
-
-        $this->dispatch('notifications-updated');
-    }
-
-    public function render()
+    public function render(): View
     {
         $unreadCount = auth()->user()->notifications()
             ->whereNull('read_at')

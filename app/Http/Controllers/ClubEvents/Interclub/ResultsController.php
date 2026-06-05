@@ -11,6 +11,8 @@ use App\Domains\Shared\Enums\InterclubResultEnum;
 use App\Domains\Shared\Enums\LeagueCategory;
 use App\Http\Controllers\Controller;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 
@@ -25,12 +27,12 @@ class ResultsController extends Controller
         $seasons = Season::orderByDesc('start_at')
             ->when(
                 $currentSeason,
-                fn ($q) => $q->where('start_at', '<', $currentSeason->start_at),
-                fn ($q) => $q->where('start_at', '<', now())
+                fn (Builder $q) => $q->where('start_at', '<', $currentSeason->start_at),
+                fn (Builder $q) => $q->where('start_at', '<', now())
             )
             ->limit(5)
             ->get()
-            ->when($currentSeason, fn ($coll) => $coll->prepend($currentSeason));
+            ->when($currentSeason, fn (Collection $coll) => $coll->prepend($currentSeason));
 
         $season = $selectedSeason
             ? $seasons->firstWhere('name', $selectedSeason) ?? $currentSeason
@@ -55,7 +57,7 @@ class ResultsController extends Controller
         if ($season) {
             $grouped = Team::with([
                 'league',
-                'interclubResults' => fn ($q) => $q->where('season_id', $season->id)->orderBy('match_date'),
+                'interclubResults' => fn (Relation $q) => $q->where('season_id', $season->id)->orderBy('match_date'),
             ])
                 ->inClub()
                 ->where('season_id', $season->id)
@@ -93,10 +95,10 @@ class ResultsController extends Controller
      */
     private function buildStats(Collection $interclubResults): array
     {
-        $real = $interclubResults->where('is_bye', false)->filter(fn ($mr) => $mr->result !== null);
+        $real = $interclubResults->where('is_bye', false)->filter(fn (InterclubResult $mr) => $mr->result !== null);
         $played = $real->count();
-        $wins = $real->filter(fn ($mr) => in_array($mr->result, [InterclubResultEnum::WIN, InterclubResultEnum::FORFEIT_WIN]))->count();
-        $losses = $real->filter(fn ($mr) => in_array($mr->result, [InterclubResultEnum::LOSS, InterclubResultEnum::FORFEIT_LOSS]))->count();
+        $wins = $real->filter(fn (InterclubResult $mr) => in_array($mr->result, [InterclubResultEnum::WIN, InterclubResultEnum::FORFEIT_WIN]))->count();
+        $losses = $real->filter(fn (InterclubResult $mr) => in_array($mr->result, [InterclubResultEnum::LOSS, InterclubResultEnum::FORFEIT_LOSS]))->count();
 
         return [
             'played' => $played,

@@ -21,6 +21,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * @property int $id
@@ -46,6 +47,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read int|null $users_count
  * @property-read Team|null $visitedTeam
  * @property-read Team|null $visitingTeam
+ *
  * @method static InterclubFactory factory($count = null, $state = [])
  * @method static Builder<static>|Interclub newModelQuery()
  * @method static Builder<static>|Interclub newQuery()
@@ -64,6 +66,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static Builder<static>|Interclub whereVisitedTeamId($value)
  * @method static Builder<static>|Interclub whereVisitingTeamId($value)
  * @method static Builder<static>|Interclub whereWeekNumber($value)
+ *
  * @mixin Eloquent
  */
 #[ObservedBy(InterclubObserver::class)]
@@ -74,7 +77,7 @@ class Interclub extends Model
 
     protected $casts = [
         'start_date_time' => 'datetime',
-        'is_bye'          => 'boolean',
+        'is_bye' => 'boolean',
     ];
 
     protected $fillable = [
@@ -101,8 +104,13 @@ class Interclub extends Model
             ->unique()
             ->values()
             ->flip()
-            ->map(fn ($i) => $i + 1)
+            ->map(fn (int $i) => $i + 1)
             ->toArray();
+    }
+
+    public function interclubResult(): HasOne
+    {
+        return $this->hasOne(InterclubResult::class);
     }
 
     public function isHome(): bool
@@ -110,11 +118,6 @@ class Interclub extends Model
         $this->loadMissing('visitedTeam.club');
 
         return $this->visitedTeam?->club?->licence === config('app.club_licence');
-    }
-
-    public function interclubResult(): \Illuminate\Database\Eloquent\Relations\HasOne
-    {
-        return $this->hasOne(InterclubResult::class);
     }
 
     public function league(): BelongsTo

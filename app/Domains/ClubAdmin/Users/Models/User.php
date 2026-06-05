@@ -82,6 +82,7 @@ use Laravel\Sanctum\PersonalAccessToken;
  * @property-read int|null $tournaments_count
  * @property-read Collection<int, Training> $trainings
  * @property-read int|null $trainings_count
+ *
  * @method static UserFactory factory($count = null, $state = [])
  * @method static EloquentBuilder<static>|User newModelQuery()
  * @method static EloquentBuilder<static>|User newQuery()
@@ -112,6 +113,7 @@ use Laravel\Sanctum\PersonalAccessToken;
  * @method static EloquentBuilder<static>|User whereSex($value)
  * @method static EloquentBuilder<static>|User whereStreet($value)
  * @method static EloquentBuilder<static>|User whereUpdatedAt($value)
+ *
  * @property string|null $avatar_url
  * @property Gender $gender
  * @property int $emails_notifications
@@ -137,6 +139,7 @@ use Laravel\Sanctum\PersonalAccessToken;
  * @property-read int|null $seasons_count
  * @property-read Collection<int, Subscription> $subscriptions
  * @property-read int|null $subscriptions_count
+ *
  * @method static EloquentBuilder<static>|User affiliatedForCurrentSeason()
  * @method static EloquentBuilder<static>|User hasPaid()
  * @method static EloquentBuilder<static>|User isActive()
@@ -156,6 +159,7 @@ use Laravel\Sanctum\PersonalAccessToken;
  * @method static EloquentBuilder<static>|User whereParentalConsentPath($value)
  * @method static EloquentBuilder<static>|User wherePhoto($value)
  * @method static EloquentBuilder<static>|User whereTheme($value)
+ *
  * @mixin Eloquent
  */
 #[ObservedBy(UserObserver::class)]
@@ -382,16 +386,16 @@ class User extends Authenticatable implements MustVerifyEmail
             ->filter();
 
         foreach ($terms as $term) {
-            $query->where(function ($subQuery) use ($term): void {
+            $query->where(function (EloquentBuilder $subQuery) use ($term): void {
                 $subQuery->whereRaw('LOWER(first_name) LIKE ?', ["%{$term}%"])
                     ->orWhereRaw('LOWER(last_name) LIKE ?', ["%{$term}%"]);
             });
         }
     }
 
-    public function scopeUnregisteredUsers(Builder $query, Tournament $tournament)
+    public function scopeUnregisteredUsers(Builder $query, Tournament $tournament): Builder
     {
-        return $query->whereDoesntHave('tournaments', function ($query) use ($tournament): void {
+        return $query->whereDoesntHave('tournaments', function (Builder $query) use ($tournament): void {
             $query->where('tournaments.id', $tournament->id);
         })->orderBy('last_name')->orderBy('first_name');
     }

@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Carbon;
 
 /**
@@ -52,7 +53,7 @@ use Illuminate\Support\Carbon;
  * @property-read Collection<int, MeetingActionItem> $actionItems
  * @property-read int|null $action_items_count
  * @property-read int|null $agenda_items_count
- * @property-read \App\Domains\Meetings\Models\MeetingUser|null $registration
+ * @property-read MeetingUser|null $registration
  * @property-read Collection<int, User> $attendedUsers
  * @property-read int|null $attended_users_count
  * @property-read Collection<int, User> $confirmedUsers
@@ -60,6 +61,7 @@ use Illuminate\Support\Carbon;
  * @property-read int|null $date_proposals_count
  * @property-read float|null $meal_price
  * @property-read int|null $users_count
+ *
  * @method static \Database\Factories\Domains\Meetings\Models\MeetingFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting newQuery()
@@ -86,6 +88,7 @@ use Illuminate\Support\Carbon;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereTitle($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereType($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereUpdatedAt($value)
+ *
  * @mixin \Eloquent
  */
 #[UseFactory(MeetingFactory::class)]
@@ -205,7 +208,7 @@ class Meeting extends Model
     {
         return (int) Payment::query()
             ->where('payable_type', (new MeetingUser)->getMorphClass())
-            ->whereIn('payable_id', function ($query): void {
+            ->whereIn('payable_id', function (Builder $query): void {
                 $query->select('id')
                     ->from('meeting_user')
                     ->where('meeting_id', $this->id)

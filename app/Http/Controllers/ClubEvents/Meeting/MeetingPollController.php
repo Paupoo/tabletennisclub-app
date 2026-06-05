@@ -9,6 +9,7 @@ use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Meetings\Models\MeetingDateVote;
 use App\Domains\Shared\Enums\MeetingDateVoteEnum;
 use App\Http\Controllers\Controller;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -19,7 +20,7 @@ class MeetingPollController extends Controller
     {
         abort_unless($request->hasValidSignature(), 403);
 
-        $meeting->loadMissing(['dateProposals.votes' => fn ($q) => $q->where('user_id', $user->id)]);
+        $meeting->loadMissing(['dateProposals.votes' => fn (Relation $q) => $q->where('user_id', $user->id)]);
 
         return view('meetings.poll', compact('meeting', 'user'));
     }

@@ -5,18 +5,19 @@ declare(strict_types=1);
 namespace App\Livewire\Admin\NewsPosts;
 
 use App\Domains\ClubPosts\Models\NewsPost;
+use Illuminate\View\View;
 use Livewire\Component;
 
 class Create extends Component
 {
     public NewsPost $article;
 
-    public function mount()
+    public function mount(): void
     {
         $this->article = new NewsPost;
     }
 
-    public function render()
+    public function render(): View
     {
         return view('livewire.admin.articles.create', [
             'article' => $this->article,

@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Carbon;
 
 /**
  * @property EventPostStatusEnum $status
@@ -19,18 +20,18 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * @property int $eventable_id
  * @property string $title
  * @property string $description
- * @property \Illuminate\Support\Carbon $event_date
- * @property \Illuminate\Support\Carbon $start_time
- * @property \Illuminate\Support\Carbon|null $end_time
+ * @property Carbon $event_date
+ * @property Carbon $start_time
+ * @property Carbon|null $end_time
  * @property string $location
  * @property string|null $price
  * @property string $icon
  * @property int|null $max_participants
  * @property string|null $notes
  * @property bool $featured
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property \Illuminate\Support\Carbon|null $featured_until
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $featured_until
  * @property-read Model|\Eloquent $eventable
  * @property-read string $category_label
  * @property-read string $formatted_date
@@ -40,6 +41,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * @property-read bool $is_upcoming
  * @property-read string $public_url
  * @property-read string $status_label
+ *
  * @method static Builder<static>|EventPost byCategory(string $category)
  * @method static \Database\Factories\Domains\ClubPosts\Models\EventPostFactory factory($count = null, $state = [])
  * @method static Builder<static>|EventPost featured()
@@ -68,25 +70,26 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * @method static Builder<static>|EventPost whereTitle($value)
  * @method static Builder<static>|EventPost whereType($value)
  * @method static Builder<static>|EventPost whereUpdatedAt($value)
+ *
  * @mixin \Eloquent
  */
 class EventPost extends Model
 {
     use HasFactory;
 
-    public const CATEGORIES = [
+    public const array CATEGORIES = [
         'club-life' => 'Vie du club',
         'tournament' => 'Tournoi',
         'training' => 'Entraînement',
     ];
 
-    public const ICONS = [
+    public const array ICONS = [
         'club-life' => '🎉',
         'tournament' => '🏆',
         'training' => '🎯',
     ];
 
-    public const STATUSES = [
+    public const array STATUSES = [
         'draft' => 'Brouillon',
         'published' => 'Publié',
         'archived' => 'Archivé',
@@ -259,7 +262,7 @@ class EventPost extends Model
     public function scopeFeatured(Builder $query): Builder
     {
         return $query->where('featured', true)
-            ->where(fn ($q) => $q
+            ->where(fn (Builder $q) => $q
                 ->whereNull('featured_until')
                 ->orWhereDate('featured_until', '>=', today())
             );

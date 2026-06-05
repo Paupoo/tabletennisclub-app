@@ -8,11 +8,13 @@ use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
 use App\Domains\Bar\Models\BarOrder;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class BarPaymentController extends Controller
 {
-    public function pay(Request $request, BarOrder $order)
+    public function pay(Request $request, BarOrder $order): RedirectResponse
     {
         $validated = $request->validate([
             'method' => 'required|in:cash,offered,qr',
@@ -41,7 +43,7 @@ class BarPaymentController extends Controller
             ->with('success', 'Paiement enregistré.');
     }
 
-    public function show(Request $request, BarOrder $order, GeneratePaymentQR $generatePaymentQR)
+    public function show(Request $request, BarOrder $order, GeneratePaymentQR $generatePaymentQR): View
     {
         // load items + product for display
         $order->load('items.product');

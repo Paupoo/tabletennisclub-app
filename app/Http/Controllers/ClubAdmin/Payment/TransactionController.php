@@ -10,6 +10,7 @@ use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Http\Controllers\Controller;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -29,7 +30,7 @@ class TransactionController extends Controller
         $query = Transaction::query()->orderBy('date', 'desc');
 
         if ($search = $request->get('search')) {
-            $query->where(function ($q) use ($search): void {
+            $query->where(function (Builder $q) use ($search): void {
                 $q->where('description', 'LIKE', "%{$search}%")
                     ->orWhere('counterparty_name', 'LIKE', "%{$search}%")
                     ->orWhere('counterparty_bank_account', 'LIKE', "%{$search}%");
@@ -112,7 +113,7 @@ class TransactionController extends Controller
             $headerRow = array_shift($rows);
 
             // Normaliser l'en-tête : trim + lowercase + supprimer accents
-            $header = array_map(function ($h) {
+            $header = array_map(function (mixed $h): string {
                 $h = strtolower(trim($h ?? ''));
                 // Supprimer les accents
                 $h = $this->removeAccents($h);
@@ -129,7 +130,7 @@ class TransactionController extends Controller
                 $lineNumber++;
 
                 // Nettoyer les valeurs
-                $row = array_map(function ($v) {
+                $row = array_map(function (mixed $v): mixed {
                     if ($v === null) {
                         return null;
                     }

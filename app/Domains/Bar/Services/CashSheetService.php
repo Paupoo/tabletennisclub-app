@@ -7,6 +7,9 @@ namespace App\Domains\Bar\Services;
 use App\Domains\Bar\Models\BarOrder;
 use App\Domains\Bar\Models\BarOrderItem;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Mail\Message;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
@@ -44,7 +47,7 @@ class CashSheetService
 
         // --- Total quantity sold ---
         $itemsTotal = (int) BarOrderItem::query()
-            ->whereHas('order', function ($q) use ($date) {
+            ->whereHas('order', function (Builder $q) use ($date): void {
                 $q->whereDate('created_at', $date);
             })
             ->sum('quantity');
@@ -71,13 +74,13 @@ class CashSheetService
                 SUM(total_price) as total_revenue
             ')
             ->with('product:id,name')
-            ->whereHas('order', function ($q) use ($date) {
+            ->whereHas('order', function (Builder $q) use ($date): void {
                 $q->whereDate('created_at', $date);
             })
             ->groupBy('product_id')
             ->orderByDesc('total_quantity')
             ->get()
-            ->map(function ($item) {
+            ->map(function (BarOrderItem $item): array {
                 return [
                     'product_id' => (int) $item->product_id,
                     'product_name' => $item->product->name ?? 'Produit supprimé',
@@ -157,7 +160,7 @@ class CashSheetService
         string $csv
     ): bool {
         try {
-            Mail::raw($body, function ($message) use ($to, $subject, $date, $csv) {
+            Mail::raw($body, function (Message $message) use ($to, $subject, $date, $csv): void {
                 $message->to($to)
                     ->subject($subject)
                     ->attachData(
@@ -178,7 +181,7 @@ class CashSheetService
     /**
      * Build a CSV export from the sold products rows.
      */
-    private function buildCsv($rows): string
+    private function buildCsv(Collection $rows): string
     {
         $handle = fopen('php://temp', 'r+');
 

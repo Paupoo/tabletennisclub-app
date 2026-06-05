@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Bar;
 
 use App\Domains\Bar\Models\BarOrder;
+use App\Domains\Bar\Models\BarOrderItem;
 use App\Domains\Bar\Services\StockService;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class BarOrderController extends Controller
 {
@@ -20,7 +23,7 @@ class BarOrderController extends Controller
         $this->stockService = $stockService;
     }
 
-    public function cancelEdit()
+    public function cancelEdit(): RedirectResponse
     {
         session()->forget('cart');
         session()->forget('editing_order_id');
@@ -29,7 +32,7 @@ class BarOrderController extends Controller
             ->with('success', 'Modification annulée.');
     }
 
-    public function destroy(BarOrder $order)
+    public function destroy(BarOrder $order): RedirectResponse
     {
         if ((int) $order->created_by !== (int) auth()->id()) {
             return back()->with('error', "Vous n'êtes pas autorisé à modifier cette commande.");
@@ -58,7 +61,7 @@ class BarOrderController extends Controller
     /**
      * Order history with filters and KPIs.
      */
-    public function history(Request $request)
+    public function history(Request $request): View
     {
         $period = $request->input('period', 'today');
         $status = $request->input('status', 'all');
@@ -131,7 +134,7 @@ class BarOrderController extends Controller
     /**
      * List open (unpaid) orders.
      */
-    public function index()
+    public function index(): View
     {
         $orders = BarOrder::with('items.product')
             ->where('is_paid', 0)
@@ -147,7 +150,7 @@ class BarOrderController extends Controller
      * - remember which order is being edited
      * - redirect back to the main menu page
      */
-    public function modify(BarOrder $order)
+    public function modify(BarOrder $order): RedirectResponse
     {
         if ((int) $order->created_by !== (int) auth()->id()) {
             return back()->with('error', "Vous n'êtes pas autorisé à modifier cette commande.");
@@ -160,7 +163,7 @@ class BarOrderController extends Controller
         $order->load('items');
 
         $cart = $order->items
-            ->mapWithKeys(fn ($item) => [$item->product_id => (int) $item->quantity])
+            ->mapWithKeys(fn (BarOrderItem $item) => [$item->product_id => (int) $item->quantity])
             ->toArray();
 
         session()->put('cart', $cart);

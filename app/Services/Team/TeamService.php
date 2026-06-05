@@ -15,60 +15,60 @@ class TeamService
 {
     public function __construct(protected Team $team) {}
 
-    public function addPlayersToTeam(array $players) {}
+    public function addPlayersToTeam(array $players): void {}
 
-    public function addPlayerToTeam(User $player) {}
+    public function addPlayerToTeam(User $player): void {}
 
     // Status filtering
-    public function getActiveTeams() {}
+    public function getActiveTeams(): void {}
 
-    public function getInactiveTeams() {}
+    public function getInactiveTeams(): void {}
 
-    public function getTeamsCurrentSeason() {}
+    public function getTeamsCurrentSeason(): void {}
 
-    public function getTeamsFromClub(Club $club) {}
+    public function getTeamsFromClub(Club $club): void {}
 
-    public function getTeamsInCategory(LeagueCategory $category) {}
+    public function getTeamsInCategory(LeagueCategory $category): void {}
 
-    public function getTeamsInDivision(string $division) {}
+    public function getTeamsInDivision(string $division): void {}
 
     // League filtering
-    public function getTeamsInLevel(LeagueLevel $level) {}
+    public function getTeamsInLevel(LeagueLevel $level): void {}
 
     // Season based filtering
-    public function getTeamsInSeason(Season $season) {}
+    public function getTeamsInSeason(Season $season): void {}
 
-    public function getTeamsInSeasonsRange(Season $start, Season $end) {}
+    public function getTeamsInSeasonsRange(Season $start, Season $end): void {}
 
-    public function getTeamsNextSeason() {}
+    public function getTeamsNextSeason(): void {}
 
-    public function getTeamsNotInClub() {}
+    public function getTeamsNotInClub(): void {}
 
-    public function getTeamsPreviousSeason() {}
+    public function getTeamsPreviousSeason(): void {}
 
     // Captain filtering
-    public function getTeamsWithCaptain(User $captain) {}
+    public function getTeamsWithCaptain(User $captain): void {}
 
-    public function getTeamsWithoutCaptain(User $captain) {}
+    public function getTeamsWithoutCaptain(User $captain): void {}
 
-    public function getTeamsWithoutPlayers() {}
+    public function getTeamsWithoutPlayers(): void {}
 
     // Players fitlering
-    public function getTeamsWithPlayers() {}
+    public function getTeamsWithPlayers(): void {}
 
-    public function removePlayerFromTeam(User $player) {}
+    public function removePlayerFromTeam(User $player): void {}
 
-    public function removePlayersFromTeam(array $players) {}
+    public function removePlayersFromTeam(array $players): void {}
 
-    public function setTeamActive() {}
+    public function setTeamActive(): void {}
 
-    public function setTeamCaptain() {}
+    public function setTeamCaptain(): void {}
 
-    public function setTeamClub() {}
+    public function setTeamClub(): void {}
 
-    public function setTeamInactive() {}
+    public function setTeamInactive(): void {}
 
-    public function setTeamLeague(LeagueLevel $level, LeagueCategory $category, string $division) {}
+    public function setTeamLeague(LeagueLevel $level, LeagueCategory $category, string $division): void {}
 
-    public function setTeamSeason() {}
+    public function setTeamSeason(): void {}
 }

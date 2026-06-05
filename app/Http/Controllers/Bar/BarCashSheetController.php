@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Bar;
 use App\Domains\Bar\Services\CashSheetService;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class BarCashSheetController extends Controller
 {
@@ -18,7 +19,7 @@ class BarCashSheetController extends Controller
         $this->cashSheetService = $cashSheetService;
     }
 
-    public function index(Request $request)
+    public function index(Request $request): View
     {
         // 1. Get selected date (default = today)
         $validated = $request->validate([
@@ -36,7 +37,7 @@ class BarCashSheetController extends Controller
         ]);
     }
 
-    public function send(Request $request)
+    public function send(Request $request): void
     {
         $validated = $request->validate([
             'date' => 'required|date',

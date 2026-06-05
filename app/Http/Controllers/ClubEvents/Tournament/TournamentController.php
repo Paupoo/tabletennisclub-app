@@ -26,6 +26,7 @@ use App\Support\Breadcrumb;
 use Carbon\Carbon;
 use Event;
 use Exception;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -258,7 +259,7 @@ class TournamentController extends Controller
         ]);
     }
 
-    public function getPlayersForFinalBracket(int $firstRound, Tournament $tournament)
+    public function getPlayersForFinalBracket(int $firstRound, Tournament $tournament): void
     {
         // TODO: finish to implement this function!
         /** On récupère le nombre de joueurs à sélectionner par poule pour se rapprocher
@@ -347,7 +348,7 @@ class TournamentController extends Controller
             ->with('registration_status', 'left_waitlist');
     }
 
-    public function managePools()
+    public function managePools(): void
     {
         // TODO: implement
     }
@@ -678,10 +679,10 @@ class TournamentController extends Controller
     public function showPools(string $id): View
     {
         $tournament = Tournament::with([
-            'pools' => function ($query): void {
+            'pools' => function (Relation $query): void {
                 $query->orderBy('name'); // Optionnel : ordonner les pools
             },
-            'pools.users' => function ($query): void {
+            'pools.users' => function (Relation $query): void {
                 // Charger les users de chaque pool, déjà triés par ranking
                 $query->orderBy('ranking');
             },
@@ -853,7 +854,7 @@ class TournamentController extends Controller
         $validated = $request->validate($rules);
 
         // Vérifier qu'il y a au moins 3 sets avec des résultats valides
-        $setsWithResults = array_filter($validated['sets'], function ($set) {
+        $setsWithResults = array_filter($validated['sets'], function (array $set): bool {
             return isset($set['player1_score']) && isset($set['player2_score']) &&
                 ($set['player1_score'] > 0 || $set['player2_score'] > 0);
         });

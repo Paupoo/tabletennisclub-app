@@ -16,7 +16,7 @@ class TournamentSimulator
      *
      * @var array<int, int>
      */
-    private const MATCH_DURATIONS = [
+    private const array MATCH_DURATIONS = [
         1 => 6,
         3 => 12,
         5 => 20,

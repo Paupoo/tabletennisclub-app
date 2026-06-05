@@ -4,16 +4,18 @@ declare(strict_types=1);
 
 namespace App\Livewire\Admin\NewsPosts;
 
-use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Domains\ClubPosts\Models\NewsPost;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Contracts\Database\Query\Builder;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class Index extends Component
 {
-    use WithPagination, HasBreadcrumbs;
+    use HasBreadcrumbs, WithPagination;
 
     public string $category = '';
 
@@ -31,7 +33,7 @@ class Index extends Component
 
     public string $visibility = '';
 
-    public function deleteArticle()
+    public function deleteArticle(): RedirectResponse
     {
 
         $this->authorize('delete', Auth()->user());
@@ -46,15 +48,7 @@ class Index extends Component
 
     public function mount(): void {}
 
-    protected function breadcrumbChain(): Breadcrumb
-    {
-        return Breadcrumb::make()
-            ->home()
-            ->articles()
-            ->current(__('Articles'));
-    }
-
-    public function render()
+    public function render(): View
     {
         $articles = NewsPost::search($this->search)
             ->when($this->visibility !== '', function (Builder $query): void {
@@ -90,5 +84,13 @@ class Index extends Component
         }
 
         $this->sortByField = $field;
+    }
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->articles()
+            ->current(__('Articles'));
     }
 }

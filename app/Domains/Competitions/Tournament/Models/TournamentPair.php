@@ -54,7 +54,7 @@ class TournamentPair extends Model
     {
         $rankings = collect([$this->player1->ranking, $this->player2->ranking])
             ->filter()
-            ->map(fn ($r) => (int) $r);
+            ->map(fn (string $r) => (int) $r);
 
         if ($rankings->isEmpty()) {
             return 'NC';

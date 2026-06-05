@@ -7,6 +7,7 @@ namespace App\Http\Requests;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\Ranking;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -67,10 +68,10 @@ class UpdateUserRequest extends FormRequest
         ];
     }
 
-    public function withValidator($validator): void
+    public function withValidator(Validator $validator): void
     {
-        $validator->after(function ($validator): void {
-            $validator->after(function ($validator): void {
+        $validator->after(function (Validator $validator): void {
+            $validator->after(function (Validator $validator): void {
                 if ($this->boolean('is_competitor') && ! $this->boolean('is_active')) {
                     $validator->errors()->add('is_active', __('The user must be active in order to compete.'));
                 }

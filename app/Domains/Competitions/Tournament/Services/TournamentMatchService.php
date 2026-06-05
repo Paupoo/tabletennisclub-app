@@ -11,6 +11,7 @@ use App\Domains\Competitions\Tournament\Models\TournamentMatch;
 use App\Domains\Competitions\Tournament\Models\TournamentPair;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Shared\Enums\Ranking;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Collection;
 use InvalidArgumentException;
 
@@ -404,7 +405,7 @@ class TournamentMatchService
         if ($isDoubles) {
             // Build candidate list from all individual players in the pool's pairs
             $allPlayerIds = $pool->pairs->flatMap(
-                fn ($pair) => array_filter([$pair->player1_id, $pair->player2_id])
+                fn (TournamentPair $pair) => array_filter([$pair->player1_id, $pair->player2_id])
             )->unique()->values()->toArray();
         } else {
             $allPlayerIds = $pool->users->pluck('id')->toArray();
@@ -434,7 +435,7 @@ class TournamentMatchService
 
             $eligible = array_keys(array_filter(
                 $refereeCount,
-                fn ($count, $id) => ! in_array($id, $playing, true),
+                fn (int $count, int $id) => ! in_array($id, $playing, true),
                 ARRAY_FILTER_USE_BOTH
             ));
 
@@ -442,8 +443,8 @@ class TournamentMatchService
                 continue;
             }
 
-            $minCount = min(array_map(fn ($id) => $refereeCount[$id], $eligible));
-            $candidates = array_values(array_filter($eligible, fn ($id) => $refereeCount[$id] === $minCount));
+            $minCount = min(array_map(fn (int $id) => $refereeCount[$id], $eligible));
+            $candidates = array_values(array_filter($eligible, fn (int $id) => $refereeCount[$id] === $minCount));
             $refereeId = (int) $candidates[random_int(0, count($candidates) - 1)];
 
             $match->update(['referee_id' => $refereeId]);
@@ -533,8 +534,8 @@ class TournamentMatchService
             ->pluck('user_id')
             ->flip();
 
-        $standings = $players->map(function ($player) use ($matches, $noShowIds) {
-            $playerMatches = $matches->filter(function ($match) use ($player) {
+        $standings = $players->map(function (User $player) use ($matches, $noShowIds) {
+            $playerMatches = $matches->filter(function (TournamentMatch $match) use ($player) {
                 return $match->player1_id === $player->id || $match->player2_id === $player->id;
             });
 
@@ -561,7 +562,7 @@ class TournamentMatchService
         });
 
         // Sort standings: no-show players always last, then by wins/sets/points
-        return $standings->sortByDesc(function ($item) {
+        return $standings->sortByDesc(function (array $item) {
             $noShowPenalty = $item['no_show'] ? -1000000 : 0;
 
             return $noShowPenalty + (int) sprintf('%06d%06d%06d', $item['matches_won'], $item['sets_won'], $item['total_points']);
@@ -580,8 +581,8 @@ class TournamentMatchService
         $players = $tournament->users;
         $matches = TournamentMatch::where('tournament_id', $tournament->id)->get();
 
-        $standings = $players->map(function ($player) use ($matches) {
-            $playerMatches = $matches->filter(function ($match) use ($player) {
+        $standings = $players->map(function (User $player) use ($matches) {
+            $playerMatches = $matches->filter(function (TournamentMatch $match) use ($player) {
                 return $match->player1_id === $player->id || $match->player2_id === $player->id;
             });
 
@@ -623,7 +624,7 @@ class TournamentMatchService
     {
         $activeMatches = TournamentMatch::where('tournament_id', $tournament->id)
             ->where('status', 'in_progress')
-            ->whereExists(fn ($q) => $q
+            ->whereExists(fn (Builder $q) => $q
                 ->from('table_tournament')
                 ->whereColumn('table_tournament.tournament_match_id', 'tournament_matches.id')
                 ->where('table_tournament.is_table_free', false)
@@ -663,7 +664,7 @@ class TournamentMatchService
             return null;
         }
 
-        $names = $conflicts->map(fn ($id) => User::find($id)?->full_name ?? "#{$id}")->join(', ');
+        $names = $conflicts->map(fn (int $id) => User::find($id)?->full_name ?? "#{$id}")->join(', ');
 
         return __('Conflict: :names already in an active match.', ['names' => $names]);
     }
@@ -676,7 +677,7 @@ class TournamentMatchService
     {
         $matches = TournamentMatch::where('tournament_id', $tournament->id)
             ->whereNotNull('pool_id')
-            ->where(function ($q) use ($user): void {
+            ->where(function (\Illuminate\Database\Eloquent\Builder $q) use ($user): void {
                 $q->where('player1_id', $user->id)
                     ->orWhere('player2_id', $user->id);
             })
@@ -794,10 +795,10 @@ class TournamentMatchService
         $pairs = $pool->pairs;
         $matches = TournamentMatch::where('pool_id', $pool->id)->with('sets')->get();
 
-        $standings = $pairs->map(function ($pair) use ($matches) {
+        $standings = $pairs->map(function (TournamentPair $pair) use ($matches) {
             $proxyId = $pair->player1_id;
             $pairMatches = $matches->filter(
-                fn ($m) => $m->pair1_id === $pair->id || $m->pair2_id === $pair->id
+                fn (TournamentMatch $m) => $m->pair1_id === $pair->id || $m->pair2_id === $pair->id
             );
 
             $matchesWon = $pairMatches->where('winner_id', $proxyId)->count();
@@ -821,7 +822,7 @@ class TournamentMatchService
             ];
         });
 
-        return $standings->sortByDesc(function ($item) {
+        return $standings->sortByDesc(function (array $item) {
             return sprintf('%06d%06d%06d', $item['matches_won'], $item['sets_won'], $item['total_points']);
         })->values();
     }

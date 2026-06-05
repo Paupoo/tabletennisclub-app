@@ -8,6 +8,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Services\ForceList;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -50,14 +51,14 @@ class UsersTable extends Component
     protected string $paginationTheme = 'tailwind';
 
     // Injection de dépendances via boot
-    public function boot(ForceList $forceList)
+    public function boot(ForceList $forceList): void
     {
         $this->forceList = $forceList;
     }
 
     // --- Actions Groupées (Bulk Actions) ---
 
-    public function bulkActivate()
+    public function bulkActivate(): void
     {
         $this->authorize('update', Auth::user());
 
@@ -67,7 +68,7 @@ class UsersTable extends Component
         $this->resetSelection();
     }
 
-    public function bulkDeactivate()
+    public function bulkDeactivate(): void
     {
         $this->authorize('update', Auth::user());
 
@@ -77,7 +78,7 @@ class UsersTable extends Component
         $this->resetSelection();
     }
 
-    public function bulkDelete()
+    public function bulkDelete(): void
     {
         $this->authorize('delete', Auth::user());
 
@@ -87,7 +88,7 @@ class UsersTable extends Component
         $this->resetSelection();
     }
 
-    public function render()
+    public function render(): View
     {
         return view('livewire.admin.users.users-table', [
             'users' => $this->getUsers()->paginate($this->perPage),
@@ -95,7 +96,7 @@ class UsersTable extends Component
         ]);
     }
 
-    public function sortBy($field)
+    public function sortBy(string $field): void
     {
         if ($this->sortByField === $field) {
             $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
@@ -129,14 +130,14 @@ class UsersTable extends Component
 
     // --- Gestion de la sélection ---
 
-    public function updatedSelectAll($value): void
+    public function updatedSelectAll(bool $value): void
     {
         if ($value) {
             // Sélectionne uniquement les IDs de la page actuelle (convertis en string pour les checkboxes)
             $this->selectedItems = $this->getUsers()
                 ->paginate($this->perPage)
                 ->pluck('id')
-                ->map(fn ($id) => (string) $id)
+                ->map(fn (int $id) => (string) $id)
                 ->toArray();
         } else {
             $this->selectedItems = [];

@@ -5,21 +5,24 @@ declare(strict_types=1);
 namespace App\Domains\Bar\Models;
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
  * @property string $name
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * @property int|null $created_by
  * @property int|null $modified_by
  * @property-read User|null $createdBy
  * @property-read User|null $modifiedBy
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Domains\Bar\Models\BarProduct> $products
+ * @property-read Collection<int, BarProduct> $products
  * @property-read int|null $products_count
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BarCategory newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BarCategory newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BarCategory query()
@@ -29,6 +32,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BarCategory whereModifiedBy($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BarCategory whereName($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BarCategory whereUpdatedAt($value)
+ *
  * @mixin \Eloquent
  */
 class BarCategory extends Model
@@ -55,11 +59,11 @@ class BarCategory extends Model
 
     protected static function booted(): void
     {
-        static::creating(function ($model) {
+        static::creating(function (self $model): void {
             $model->created_by = auth()->id();
         });
 
-        static::updating(function ($model) {
+        static::updating(function (self $model): void {
             $model->modified_by = auth()->id();
         });
     }

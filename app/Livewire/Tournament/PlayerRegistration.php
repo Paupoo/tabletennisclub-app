@@ -7,39 +7,42 @@ namespace App\Livewire\Tournament;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Services\TournamentService;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
+use Illuminate\View\View;
 use Livewire\Component;
 
 class PlayerRegistration extends Component
 {
-    public $highlightedIndex = -1;
+    public int $highlightedIndex = -1;
 
-    public $searchQuery = '';
+    public string $searchQuery = '';
 
-    public $selectedPlayerId = null;
+    public ?int $selectedPlayerId = null;
 
-    public $showDropdown = false;
+    public bool $showDropdown = false;
 
-    public $showModal = false;
+    public bool $showModal = false;
 
     public Tournament $tournament;
 
-    protected $messages = [
+    protected array $messages = [
         'selectedPlayerId.required' => 'Vous devez sélectionner un joueur.',
         'selectedPlayerId.exists' => 'Le joueur sélectionné n\'existe pas.',
     ];
 
-    protected $rules = [
+    protected array $rules = [
         'selectedPlayerId' => 'required|exists:users,id',
     ];
 
     private TournamentService $tournamentService;
 
-    public function boot(TournamentService $tournamentService)
+    public function boot(TournamentService $tournamentService): void
     {
         $this->tournamentService = $tournamentService;
     }
 
-    public function clearSelection()
+    public function clearSelection(): void
     {
         $this->selectedPlayerId = null;
         $this->searchQuery = '';
@@ -47,13 +50,13 @@ class PlayerRegistration extends Component
         $this->highlightedIndex = -1;
     }
 
-    public function closeModal()
+    public function closeModal(): void
     {
         $this->showModal = false;
         $this->resetForm();
     }
 
-    public function getFilteredPlayers()
+    public function getFilteredPlayers(): Collection
     {
         $query = trim($this->searchQuery);
         if (empty($query)) {
@@ -61,7 +64,7 @@ class PlayerRegistration extends Component
         }
 
         return User::unregisteredUsers($this->tournament)
-            ->where(function ($queryBuilder) use ($query): void {
+            ->where(function (Builder $queryBuilder) use ($query): void {
                 // Utilise le scope search + email
                 $queryBuilder->search($query)
                     ->orWhere('email', 'like', '%' . $query . '%');
@@ -70,7 +73,7 @@ class PlayerRegistration extends Component
             ->get();
     }
 
-    public function getSelectedPlayer()
+    public function getSelectedPlayer(): ?User
     {
         if (! $this->selectedPlayerId) {
             return null;
@@ -79,18 +82,18 @@ class PlayerRegistration extends Component
         return User::find($this->selectedPlayerId);
     }
 
-    public function mount(Tournament $tournament)
+    public function mount(Tournament $tournament): void
     {
         $this->tournament = $tournament;
     }
 
-    public function openModal()
+    public function openModal(): void
     {
         $this->showModal = true;
         $this->resetForm();
     }
 
-    public function registerPlayer()
+    public function registerPlayer(): void
     {
         // $this->validate();
 
@@ -122,7 +125,7 @@ class PlayerRegistration extends Component
         $this->dispatch('playerRegistered');
     }
 
-    public function render()
+    public function render(): View
     {
         return view('livewire.tournament.player-registration', [
             'filteredPlayers' => $this->getFilteredPlayers(),
@@ -130,7 +133,7 @@ class PlayerRegistration extends Component
         ]);
     }
 
-    public function resetForm()
+    public function resetForm(): void
     {
         $this->searchQuery = '';
         $this->selectedPlayerId = null;
@@ -139,7 +142,7 @@ class PlayerRegistration extends Component
         $this->resetErrorBag();
     }
 
-    public function selectPlayer($playerId)
+    public function selectPlayer(int $playerId): void
     {
         $player = $this->getFilteredPlayers()->firstWhere('id', $playerId);
 
@@ -151,7 +154,7 @@ class PlayerRegistration extends Component
         }
     }
 
-    public function updatedSearchQuery()
+    public function updatedSearchQuery(): void
     {
         $this->showDropdown = ! empty(trim($this->searchQuery));
         $this->highlightedIndex = -1;

@@ -5,21 +5,24 @@ declare(strict_types=1);
 namespace App\Livewire\Public;
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Services\TournamentService;
 use Auth;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 use Livewire\Component;
 
 class TournamentCard extends Component
 {
-    public $isRegistered = false;
+    public bool $isRegistered = false;
 
-    public $showDetails = false;
+    public bool $showDetails = false;
 
-    public $tournament;
+    public Tournament $tournament;
 
     protected User $user;
 
-    public function mount($tournament)
+    public function mount(Tournament $tournament): void
     {
         $this->tournament = $tournament;
 
@@ -33,7 +36,7 @@ class TournamentCard extends Component
 
     }
 
-    public function register()
+    public function register(): void
     {
         $this->user = Auth::user();
         try {
@@ -48,17 +51,17 @@ class TournamentCard extends Component
         session()->flash('message', 'Successfully registered for ' . $this->tournament['name']);
     }
 
-    public function render()
+    public function render(): View
     {
         return view('livewire.public.tournament-card');
     }
 
-    public function toggleDetails()
+    public function toggleDetails(): void
     {
         $this->showDetails = ! $this->showDetails;
     }
 
-    public function viewDetails()
+    public function viewDetails(): RedirectResponse
     {
         return redirect()->route('tournaments.show', $this->tournament);
     }

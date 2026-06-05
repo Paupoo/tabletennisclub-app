@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Livewire\Public\Articles;
 
+use App\Domains\ClubPosts\Models\NewsPost;
 use App\Domains\Shared\Enums\NewsPostCategoryEnum;
 use App\Domains\Shared\Enums\NewsPostStatusEnum;
-use App\Domains\ClubPosts\Models\NewsPost;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\View\View;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -31,7 +33,7 @@ class ArticleList extends Component
 
     public Collection $years;
 
-    protected $queryString = [
+    protected array $queryString = [
         'category' => ['except' => ''],
         'year' => ['except' => ''],
         'month' => ['except' => ''],
@@ -83,7 +85,7 @@ class ArticleList extends Component
             ->pluck('value');
     }
 
-    public function render()
+    public function render(): View
     {
         return view('livewire.public.articles.articles-list', [
             'articles' => $this->articles,
@@ -95,24 +97,7 @@ class ArticleList extends Component
         ]);
     }
 
-    public function updated($name, $value): void
-    {
-        \Log::info('=== UPDATED ===');
-        \Log::info("Property: {$name}");
-        \Log::info('New value: ' . ($value ?: 'empty'));
-        \Log::info('Category: ' . ($this->category ?: 'empty'));
-        \Log::info('Year: ' . ($this->year ?: 'empty'));
-        \Log::info('Month: ' . ($this->month ?: 'empty'));
-
-        // Test direct de la requête
-        $testQuery = NewsPost::query()->where('status', 'published');
-        $this->applyFilters($testQuery);
-        \Log::info('SQL Query: ' . $testQuery->toSql());
-        \Log::info('Bindings: ' . json_encode($testQuery->getBindings()));
-        \Log::info('Count: ' . $testQuery->count());
-    }
-
-    public function updating($name): void
+    public function updating(string $name): void
     {
         if (in_array($name, ['category', 'year', 'month', 'sort'], true)) {
             $this->resetPage();
@@ -159,7 +144,7 @@ class ArticleList extends Component
             ->whereNotNull('created_at')
             ->get(['created_at'])
             ->pluck('created_at')
-            ->map(fn ($date) => $date->year)
+            ->map(fn (Carbon $date) => $date->year)
             ->unique()
             ->sortDesc()
             ->values();

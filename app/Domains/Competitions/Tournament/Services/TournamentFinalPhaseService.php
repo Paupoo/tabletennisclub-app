@@ -96,11 +96,11 @@ class TournamentFinalPhaseService
             }
 
             $ranked = $eligible
-                ->map(fn ($id) => ['id' => $id, 'count' => $refereeCounts[$id] ?? 0])
+                ->map(fn (int $id) => ['id' => $id, 'count' => $refereeCounts[$id] ?? 0])
                 ->sortBy('count');
 
             $minCount = $ranked->first()['count'];
-            $pool = $ranked->filter(fn ($c) => $c['count'] === $minCount)->values()->all();
+            $pool = $ranked->filter(fn (array $c) => $c['count'] === $minCount)->values()->all();
             $chosen = $pool[random_int(0, count($pool) - 1)]['id'];
             $match->update(['referee_id' => $chosen]);
             $refereeCounts[$chosen]++;
@@ -310,7 +310,7 @@ class TournamentFinalPhaseService
         ];
 
         // Sort the collection using the defined order
-        $sortedMatches = $matches->sort(function ($a, $b) use ($roundOrder) {
+        $sortedMatches = $matches->sort(function (TournamentMatch $a, TournamentMatch $b) use ($roundOrder) {
             // First sort by round
             if ($roundOrder[$a->round] !== $roundOrder[$b->round]) {
                 return $roundOrder[$a->round] <=> $roundOrder[$b->round];
@@ -365,7 +365,7 @@ class TournamentFinalPhaseService
             }
 
             // Sort by matches won, sets won, and points
-            $sortedCandidates = $repechageCandidates->sortByDesc(function ($item) {
+            $sortedCandidates = $repechageCandidates->sortByDesc(function (array $item) {
                 return sprintf('%06d%06d%06d',
                     $item['stats']['matches_won'],
                     $item['stats']['sets_won'],
@@ -504,7 +504,7 @@ class TournamentFinalPhaseService
 
         // Append any repêchage or overflow players not yet placed
         foreach ($qualifiedPlayers as $player) {
-            if (! $seededPlayers->contains(fn ($v) => $v['player']->id === $player['player']->id)) {
+            if (! $seededPlayers->contains(fn (array $v) => $v['player']->id === $player['player']->id)) {
                 $seededPlayers->push($player);
             }
         }
@@ -574,11 +574,11 @@ class TournamentFinalPhaseService
             ->toArray();
 
         $ranked = $candidates
-            ->map(fn ($id) => ['id' => $id, 'count' => $refereeCounts[$id] ?? 0])
+            ->map(fn (int $id) => ['id' => $id, 'count' => $refereeCounts[$id] ?? 0])
             ->sortBy('count');
 
         $minCount = $ranked->first()['count'];
-        $pool = $ranked->filter(fn ($c) => $c['count'] === $minCount)->values()->all();
+        $pool = $ranked->filter(fn (array $c) => $c['count'] === $minCount)->values()->all();
         $target->update(['referee_id' => $pool[random_int(0, count($pool) - 1)]['id']]);
     }
 }

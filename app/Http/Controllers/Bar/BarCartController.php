@@ -9,8 +9,10 @@ use App\Domains\Bar\Models\BarOrderItem;
 use App\Domains\Bar\Models\BarProduct;
 use App\Domains\Bar\Services\StockService;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class BarCartController extends Controller
 {
@@ -18,7 +20,7 @@ class BarCartController extends Controller
      * Quantité maximale autorisée par produit dans le panier.
      * Valeur fixée arbitrairement - à discuter
      */
-    private const MAX_QTY_PER_PRODUCT = 20;
+    private const int MAX_QTY_PER_PRODUCT = 20;
 
     private StockService $stockService;
 
@@ -31,7 +33,7 @@ class BarCartController extends Controller
         $this->stockService = $stockService;
     }
 
-    public function add(Request $request)
+    public function add(Request $request): RedirectResponse
     {
         // Validation des données entrantes.
         $validated = $request->validate([
@@ -59,14 +61,14 @@ class BarCartController extends Controller
         return back();
     }
 
-    public function clear()
+    public function clear(): RedirectResponse
     {
         session()->forget('cart');
 
         return back()->with('success', 'Panier vidé avec succès.');
     }
 
-    public function remove(Request $request)
+    public function remove(Request $request): RedirectResponse
     {
         // Validation des données entrantes.
         $validated = $request->validate([
@@ -89,7 +91,7 @@ class BarCartController extends Controller
         return back();
     }
 
-    public function show()
+    public function show(): View
     {
         $cart = session()->get('cart', []);
 
@@ -123,7 +125,7 @@ class BarCartController extends Controller
         ]);
     }
 
-    public function validateOrder(Request $request)
+    public function validateOrder(Request $request): RedirectResponse
     {
         $request->validate([
             'action' => 'required|in:validate,pay_now',

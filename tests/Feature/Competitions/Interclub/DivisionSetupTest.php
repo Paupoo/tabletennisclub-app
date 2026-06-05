@@ -148,7 +148,7 @@ it('validates that team letter is a single alpha character', function (): void {
 // ── deleteParticipant ──────────────────────────────────────────────────────────
 
 it('deletes a participant that has no matches', function (): void {
-    $oppClub = Club::factory()->create(['licence' => 'OPP-TTTEST1']);
+    $oppClub = Club::factory()->create(['licence' => 'OPP-TEST01']);
     $oppTeam = Team::factory()->create([
         'name' => 'B',
         'season_id' => $this->season->id,
@@ -167,7 +167,7 @@ it('deletes a participant that has no matches', function (): void {
 });
 
 it('blocks deletion of a team that has matches', function (): void {
-    $oppClub = Club::factory()->create(['licence' => 'OPP-TTTEST2']);
+    $oppClub = Club::factory()->create(['licence' => 'OPP-TEST02']);
     $oppTeam = Team::factory()->create([
         'name' => 'C',
         'season_id' => $this->season->id,

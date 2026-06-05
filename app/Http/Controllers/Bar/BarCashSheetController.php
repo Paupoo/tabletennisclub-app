@@ -72,12 +72,11 @@ class BarCashSheetController extends Controller
 
         $ok = $this->cashSheetService->sendCsv($to, $subject, $body, $date, $csv);
 
-        // return redirect()
-        //     ->route('bar.cashSheet.index', ['date' => $date])
-        //     ->with(
-        //         $ok ? 'success' : 'warning',
-        //         $ok ? 'Email envoyé avec succès.' : 'Échec de l’envoi email.'
-        //     );
-        dd('controller reached');
+        return redirect()
+            ->route('bar.cashSheet.index', ['date' => $date])
+            ->with(
+                $ok ? 'success' : 'warning',
+                $ok ? 'Email envoyé avec succès.' : 'Échec de l’envoi email.'
+            );
     }
 }

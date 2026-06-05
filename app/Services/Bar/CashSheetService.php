@@ -6,6 +6,7 @@ namespace App\Services\Bar;
 
 use App\Models\Bar\BarOrder;
 use App\Models\Bar\BarOrderItem;
+use App\Models\Bar\BarSetting;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -35,7 +36,7 @@ class CashSheetService
         $soldTotalCents = (int) (clone $ordersQuery)->sum('total_price');
 
         $receivedTotalCents = (int) (clone $ordersQuery)
-            ->where('is_paid', 1)
+            ->where('payment_method', 'cash')
             ->sum('total_price');
 
         $unpaidTotalCents = (int) (clone $ordersQuery)
@@ -142,18 +143,34 @@ class CashSheetService
      */
     public function saveDefaultEmail(string $email): void
     {
-        if (! Schema::hasTable('settings')) {
+        if (! Schema::hasTable('bar_settings')) {
             return;
         }
 
-        DB::table('settings')->updateOrInsert(
-            ['key' => 'treasurer_email'],
-            [
-                'value' => $email,
+        $userId = auth()->id();
+        
+        $existing = DB::table('bar_settings')
+        ->where('k', 'treasurer_email')
+        ->first();
+        
+        if (! $existing) {
+        DB::table('bar_settings')->insert([
+            'k' => 'treasurer_email',
+            'v' => $email,
+            'created_at' => now(),
+            'created_by' => $userId,
+        ]);
+        return;
+        }
+        if ($existing->v !== $email) {
+            DB::table('bar_settings')
+            ->where('k', 'treasurer_email')
+            ->update([
+                'v' => $email,
                 'updated_at' => now(),
-                'created_at' => now(),
-            ]
-        );
+                'modified_by' => $userId,
+            ]);
+        }
     }
 
     /**
@@ -161,16 +178,15 @@ class CashSheetService
      */
     public function getDefaultEmail(): ?string
     {
-        if (Schema::hasTable('settings')) {
-            $value = DB::table('settings')
-                ->where('key', 'treasurer_email')
-                ->value('value');
+        if (Schema::hasTable('bar_settings')) {
+            $value = DB::table('bar_settings')
+                ->where('k', 'treasurer_email')
+                ->value('v');
 
             if (is_string($value) && $value !== '') {
                 return $value;
             }
         }
-
         return config('bar.treasurer_email_default');
     }
 

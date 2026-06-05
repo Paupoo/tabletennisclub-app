@@ -10,36 +10,25 @@
                 wire:model.live.debounce.300ms="search" />
         </x-slot:middle>
         <x-slot:actions>
-            <x-button class="btn-ghost {{ $this->activeFiltersCount > 0 ? 'btn-active' : '' }}"
-                wire:click="$toggle('showFilters')">
-                <x-icon name="o-funnel" class="h-5 w-5" />
-                {{ __('Filters') }}
-                @if ($this->activeFiltersCount > 0)
-                    <x-badge class="badge-sm badge-primary" value="{{ $this->activeFiltersCount }}" />
+            <x-button class="btn-ghost {{ count($filterChips) > 0 ? 'btn-active' : '' }}"
+                icon="o-funnel"
+                :label="__('Filters')"
+                wire:click="$set('filterDrawer', true)">
+                @if (count($filterChips) > 0)
+                    <x-badge class="badge-sm badge-primary" value="{{ count($filterChips) }}" />
                 @endif
             </x-button>
+            {{-- Mobile selection toggle --}}
+            <x-button
+                class="btn-ghost btn-sm lg:hidden {{ $selectionModeActive ? 'btn-active' : '' }}"
+                icon="{{ $selectionModeActive ? 'o-x-mark' : 'o-check-circle' }}"
+                :label="$selectionModeActive ? __('Cancel') : __('Select')"
+                wire:click="toggleSelectionMode" />
         </x-slot:actions>
     </x-header>
 
-    {{-- ── Filtres ────────────────────────────────────────────────────── --}}
-    <x-admin.shared.filter-bar :active-filters-count="$this->activeFiltersCount" :show="$showFilters">
-        <x-slot:filters>
-            <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
-                    {{ __('Status') }}
-                </p>
-                <x-select :options="$statusOptions" :placeholder="__('All statuses')"
-                    wire:model.live="status" class="w-full" />
-            </div>
-            <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
-                    {{ __('Type') }}
-                </p>
-                <x-select :options="$typeOptions" :placeholder="__('All types')"
-                    wire:model.live="type" class="w-full" />
-            </div>
-        </x-slot:filters>
-    </x-admin.shared.filter-bar>
+    {{-- ── Active filter chips ──────────────────────────────────────────────── --}}
+    <x-admin.shared.filter-chips :chips="$filterChips" />
 
     {{-- ── Cartes stats ──────────────────────────────────────────────── --}}
     <div class="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -78,6 +67,14 @@
             @endphp
             <x-list-item :item="$event" class="bg-base-100 rounded-lg border"
                 wire:key="mobile-event-{{ $event->id }}">
+                <x-slot:avatar>
+                    @if ($selectionModeActive)
+                        <input type="checkbox"
+                            class="checkbox checkbox-primary checkbox-sm"
+                            value="{{ $event->id }}"
+                            wire:model.live="selected" />
+                    @endif
+                </x-slot:avatar>
                 <x-slot:value>
                     <span class="font-medium">{{ $event->title }}</span>
                 </x-slot:value>
@@ -93,25 +90,27 @@
                     </div>
                 </x-slot:sub-value>
                 <x-slot:actions>
-                    <x-admin.shared.row-actions>
-                        @if ($event->status === \App\Domains\Shared\Enums\EventPostStatusEnum::DRAFT)
-                            <x-button class="btn-ghost btn-sm btn-circle text-success" icon="o-check-circle"
-                                :tooltip="__('Publish')"
-                                wire:click="publish({{ $event->id }})" spinner />
-                        @elseif ($event->status === \App\Domains\Shared\Enums\EventPostStatusEnum::PUBLISHED)
-                            <x-button class="btn-ghost btn-sm btn-circle text-base-content/40" icon="o-archive-box"
-                                :tooltip="__('Archive')"
-                                wire:click="archive({{ $event->id }})" spinner />
-                        @endif
-                        <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
-                            :tooltip="__('Edit')"
-                            wire:click="openEdit({{ $event->id }})" />
-                        @if ($event->canBeDeleted())
-                            <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
-                                :tooltip="__('Delete')"
-                                wire:click="confirmDelete({{ $event->id }})" />
-                        @endif
-                    </x-admin.shared.row-actions>
+                    @if (! $selectionModeActive)
+                        <x-admin.shared.row-actions>
+                            @if ($event->status === \App\Domains\Shared\Enums\EventPostStatusEnum::DRAFT)
+                                <x-button class="btn-ghost btn-sm btn-circle text-success" icon="o-check-circle"
+                                    :tooltip="__('Publish')"
+                                    wire:click="publish({{ $event->id }})" spinner />
+                            @elseif ($event->status === \App\Domains\Shared\Enums\EventPostStatusEnum::PUBLISHED)
+                                <x-button class="btn-ghost btn-sm btn-circle text-base-content/40" icon="o-archive-box"
+                                    :tooltip="__('Archive')"
+                                    wire:click="archive({{ $event->id }})" spinner />
+                            @endif
+                            <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
+                                :tooltip="__('Edit')"
+                                wire:click="openEdit({{ $event->id }})" />
+                            @if ($event->canBeDeleted())
+                                <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
+                                    :tooltip="__('Delete')"
+                                    wire:click="confirmDelete({{ $event->id }})" />
+                            @endif
+                        </x-admin.shared.row-actions>
+                    @endif
                 </x-slot:actions>
             </x-list-item>
         @empty
@@ -131,7 +130,8 @@
                     :heading="__('No events found')"
                     :message="__('Try adjusting your search or filters.')" />
             @else
-                <x-table :headers="$headers" :rows="$events" :sort-by="$sortBy">
+                <x-table :headers="$headers" :rows="$events" :sort-by="$sortBy"
+                    selectable wire:model.live="selected">
                     @scope('cell_type', $event)
                         <span class="inline-flex items-center gap-1.5 text-sm">
                             <span>{{ $event->type->getIcon() }}</span>
@@ -218,6 +218,41 @@
         </x-card>
     </div>
 
+    {{-- ── Floating Pill — bulk actions ───────────────────────────────── --}}
+    <x-admin.shared.selection-pill
+        :selected="$selected"
+        :total="$this->getTotalMatchingCount()"
+        :selecting-all-results="$selectingAllResults"
+        :select-all="$selectAll">
+        <x-slot:actions>
+            <x-button class="btn-ghost btn-sm" icon="o-check-circle" :label="__('Publish')"
+                wire:click="bulkPublish" spinner="bulkPublish" />
+            <span class="text-base-content/20">|</span>
+            <x-button class="btn-ghost btn-sm text-warning" icon="o-archive-box" :label="__('Archive')"
+                wire:click="confirmBulkArchive" />
+        </x-slot:actions>
+    </x-admin.shared.selection-pill>
+
+    {{-- ── Filter drawer ────────────────────────────────────────────────────── --}}
+    <x-admin.shared.filter-drawer :title="__('Filters')">
+        <x-slot:filters>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    {{ __('Status') }}
+                </p>
+                <x-select :options="$statusOptions" :placeholder="__('All statuses')"
+                    wire:model.live="status" class="w-full" />
+            </div>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    {{ __('Type') }}
+                </p>
+                <x-select :options="$typeOptions" :placeholder="__('All types')"
+                    wire:model.live="type" class="w-full" />
+            </div>
+        </x-slot:filters>
+    </x-admin.shared.filter-drawer>
+
     {{-- ── Drawer édition ───────────────────────────────────────────────── --}}
     <x-drawer wire:model="editDrawer" :title="__('Edit event')" right with-close-button class="w-full max-w-lg">
         @if ($selectedEvent)
@@ -294,9 +329,18 @@
         </x-slot:actions>
     </x-drawer>
 
-    {{-- ── Modal suppression ────────────────────────────────────────────── --}}
+    {{-- ── Modal suppression unitaire ───────────────────────────────── --}}
     <x-confirm-modal model="deleteModal" :title="__('Delete this event?')"
         :confirmLabel="__('Delete')" confirmAction="delete">
         <p>{{ __('This action is irreversible.') }}</p>
+    </x-confirm-modal>
+
+    {{-- ── Modal archivage bulk ──────────────────────────────────────── --}}
+    <x-confirm-modal model="confirmBulkArchiveModal" :title="__('Archive selected events?')"
+        :confirmLabel="__('Archive')" confirmAction="bulkArchive">
+        <p>
+            {{ trans_choice('selectedCount', count($selected), ['count' => count($selected)]) }}
+            {{ __('will be archived.') }}
+        </p>
     </x-confirm-modal>
 </div>

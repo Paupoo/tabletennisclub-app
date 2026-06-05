@@ -8,6 +8,7 @@ use App\Actions\ClubAdmin\Subscriptions\ApproveTrainingPacksAction;
 use App\Actions\ClubAdmin\Subscriptions\CalculatePriceAction;
 use App\Actions\ClubAdmin\Subscriptions\CreateSubscriptionAction;
 use App\Livewire\Concerns\HasBreadcrumbs;
+use App\Livewire\Concerns\HasFilterDrawer;
 use App\Mail\PaymentInvitationEmail;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
@@ -26,7 +27,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast, HasBreadcrumbs;
+    use Toast, HasBreadcrumbs, HasFilterDrawer;
 
     public array $familyBasket = [];
     public bool $memberDrawer = false;
@@ -38,7 +39,6 @@ new class extends Component
     public string $searchMember = '';
     public string $statusFilter = '';
     public ?int $selectedSeasonId = null;
-    public bool $showFilters = false;
     public ?int $currentRequestId = null;
     public ?int $currentTrainingRequestId = null;
 
@@ -57,15 +57,37 @@ new class extends Component
         $this->selectedSeasonId = Season::current()?->id;
     }
 
-    #[Computed]
-    public function activeFiltersCount(): int
+    // ── HasFilterDrawer ───────────────────────────────────────────────────────
+
+    /** @return array<int, array{key: string, label: string}> */
+    public function getFilterChips(): array
     {
-        return filled($this->statusFilter) ? 1 : 0;
+        $chips = [];
+
+        if (filled($this->statusFilter)) {
+            $label = match ($this->statusFilter) {
+                'pending'   => __('To process'),
+                'confirmed' => __('Confirmed'),
+                'paid'      => __('Paid'),
+                'cancelled' => __('Cancelled'),
+                default     => $this->statusFilter,
+            };
+            $chips[] = ['key' => 'statusFilter', 'label' => __('Status') . ': ' . $label];
+        }
+
+        return $chips;
     }
 
-    public function resetFilters(): void
+    public function clearFilters(): void
     {
-        $this->reset(['statusFilter']);
+        $this->statusFilter = '';
+    }
+
+    /** @return array<int, array{key: string, label: string}> */
+    #[Computed]
+    public function filterChips(): array
+    {
+        return $this->getFilterChips();
     }
 
     #[Computed]
@@ -700,7 +722,8 @@ new class extends Component
     public function with(): array
     {
         return [
-            'breadcrumbs' => $this->getBreadcrumbs(),
+            'breadcrumbs'  => $this->getBreadcrumbs(),
+            'filterChips'  => $this->filterChips,
             'currentRequest' => $this->currentRequestId
                 ? $this->registrations()->firstWhere('id', $this->currentRequestId)
                 : null,

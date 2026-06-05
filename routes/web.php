@@ -309,6 +309,7 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     // (eventPosts admin routes moved earlier to match newsPosts routing structure)
 });
 
+
 /**
  * => obsolete, to clean and remove related code
  */

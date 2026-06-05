@@ -15,12 +15,12 @@
             <x-input class="input-sm w-48" clearable icon="o-magnifying-glass"
                 :placeholder="__('Search a member...')"
                 wire:model.live.debounce.300ms="search" />
-            <x-button class="btn-ghost {{ $this->activeFiltersCount > 0 ? 'btn-active' : '' }}"
-                wire:click="$toggle('showFilters')">
-                <x-icon name="o-funnel" class="h-5 w-5" />
-                {{ __('Filters') }}
-                @if ($this->activeFiltersCount > 0)
-                    <x-badge class="badge-sm badge-primary" value="{{ $this->activeFiltersCount }}" />
+            <x-button class="btn-ghost {{ count($filterChips) > 0 ? 'btn-active' : '' }}"
+                icon="o-funnel"
+                :label="__('Filters')"
+                wire:click="$set('filterDrawer', true)">
+                @if (count($filterChips) > 0)
+                    <x-badge class="badge-sm badge-primary" value="{{ count($filterChips) }}" />
                 @endif
             </x-button>
             @if (! $this->registrationClosed)
@@ -36,18 +36,8 @@
         </x-slot:actions>
     </x-header>
 
-    {{-- ── Filtres ────────────────────────────────────────────────────── --}}
-    <x-admin.shared.filter-bar :active-filters-count="$this->activeFiltersCount" :show="$showFilters">
-        <x-slot:filters>
-            <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
-                    {{ __('Status') }}
-                </p>
-                <x-select :options="$statusOptions" :placeholder="__('All statuses')"
-                    wire:model.live="statusFilter" class="w-full" />
-            </div>
-        </x-slot:filters>
-    </x-admin.shared.filter-bar>
+    {{-- ── Active filter chips ──────────────────────────────────────────────── --}}
+    <x-admin.shared.filter-chips :chips="$filterChips" />
 
     {{-- ── Cartes stats ──────────────────────────────────────────────── --}}
     <div class="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -654,6 +644,19 @@
             @endif
         </x-slot:actions>
     </x-drawer>
+
+    {{-- ── Filter drawer ────────────────────────────────────────────────────── --}}
+    <x-admin.shared.filter-drawer :title="__('Filters')">
+        <x-slot:filters>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    {{ __('Status') }}
+                </p>
+                <x-select :options="$statusOptions" :placeholder="__('All statuses')"
+                    wire:model.live="statusFilter" class="w-full" />
+            </div>
+        </x-slot:filters>
+    </x-admin.shared.filter-drawer>
 
     {{-- ── Modal remboursement ───────────────────────────────────────── --}}
     @php

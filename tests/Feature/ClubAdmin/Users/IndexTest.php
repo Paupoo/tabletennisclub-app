@@ -294,25 +294,25 @@ describe('filter combination', function (): void {
 describe('active filters count', function (): void {
     it('counts zero active filters by default', function (): void {
         Livewire::test(USER_INDEX_COMPONENT)
-            ->assertSet('activeFiltersCount', 0);
+            ->assertCount('filterChips', 0);
     });
 
     it('counts licence type filter', function (): void {
         Livewire::test(USER_INDEX_COMPONENT)
             ->set('selectedLicenceType', 'competitive')
-            ->assertSet('activeFiltersCount', 1);
+            ->assertCount('filterChips', 1);
     });
 
     it('counts category filters', function (): void {
         Livewire::test(USER_INDEX_COMPONENT)
-            ->set('categories', ['male', 'female'])
-            ->assertSet('activeFiltersCount', 2);
+            ->set('categories', ['MEN', 'WOMEN'])
+            ->assertCount('filterChips', 2);
     });
 
     it('counts onlyActive filter', function (): void {
         Livewire::test(USER_INDEX_COMPONENT)
             ->set('showInactiveUsers', true)
-            ->assertSet('activeFiltersCount', 1);
+            ->assertCount('filterChips', 1);
     });
 
     it('counts all active filters combined', function (): void {
@@ -320,7 +320,7 @@ describe('active filters count', function (): void {
             ->set('selectedLicenceType', 'competitive')
             ->set('categories', ['MEN', 'WOMEN'])
             ->set('showInactiveUsers', true)
-            ->assertSet('activeFiltersCount', 4); // 1 + 2 + 1
+            ->assertCount('filterChips', 4); // 1 + 2 + 1
     });
 });
 
@@ -330,7 +330,7 @@ describe('filter reset', function (): void {
             ->set('selectedLicenceType', 'competitive')
             ->set('categories', ['MEN'])
             ->set('showInactiveUsers', true)
-            ->call('resetFilters')
+            ->call('clearFilters')
             ->assertSet('selectedLicenceType', 'both')
             ->assertSet('categories', [])
             ->assertSet('showInactiveUsers', false);
@@ -341,7 +341,7 @@ describe('filter reset', function (): void {
 
         Livewire::test(USER_INDEX_COMPONENT)
             ->call('setPage', 2)
-            ->call('resetFilters')
+            ->call('clearFilters')
             ->assertSet('paginators.page', 1);
     });
 });
@@ -384,12 +384,12 @@ describe('user selection', function (): void {
             ->assertCount('selected', 3);
     });
 
-    it('shows bulk action bar when users are selected', function (): void {
+    it('shows bulk action pill when users are selected', function (): void {
         $user = User::factory()->create();
 
         Livewire::test(USER_INDEX_COMPONENT)
             ->set('selected', [$user->id])
-            ->assertSee(__('Add to a team...'));
+            ->assertSee(__('Add to team'));
     });
 });
 
@@ -435,24 +435,24 @@ describe('single user deletion', function (): void {
     });
 });
 
-describe('bulk deletion', function (): void {
-    it('opens bulk delete confirmation modal', function (): void {
+describe('bulk archive', function (): void {
+    it('opens bulk archive confirmation modal', function (): void {
         $users = User::factory()->count(3)->create();
 
         Livewire::test(USER_INDEX_COMPONENT)
             ->set('selected', $users->pluck('id')->toArray())
-            ->call('confirmBulkDelete')
-            ->assertSet('deleteSelectedModal', true);
+            ->call('confirmBulkArchive')
+            ->assertSet('confirmArchiveModal', true);
     });
 
-    it('deletes multiple users successfully', function (): void {
+    it('archives multiple users successfully', function (): void {
         $users = User::factory()->count(3)->create();
         $userIds = $users->pluck('id')->toArray();
 
         Livewire::test(USER_INDEX_COMPONENT)
             ->set('selected', $userIds)
-            ->call('deleteSelected')
-            ->assertSet('deleteSelectedModal', false)
+            ->call('bulkArchive')
+            ->assertSet('confirmArchiveModal', false)
             ->assertSet('selected', []);
 
         foreach ($userIds as $id) {
@@ -460,22 +460,22 @@ describe('bulk deletion', function (): void {
         }
     });
 
-    it('shows success message after bulk deletion', function (): void {
+    it('shows success message after bulk archive', function (): void {
         $users = User::factory()->count(3)->create();
 
         Livewire::test(USER_INDEX_COMPONENT)
             ->set('selected', $users->pluck('id')->toArray())
-            ->call('deleteSelected')
+            ->call('bulkArchive')
             ->assertDispatched('mary-toast');
     })->skip('not able to test toasts');
 
     it('keeps non-selected users intact', function (): void {
-        $toDelete = User::factory()->count(2)->create();
+        $toArchive = User::factory()->count(2)->create();
         $toKeep = User::factory()->create();
 
         Livewire::test(USER_INDEX_COMPONENT)
-            ->set('selected', $toDelete->pluck('id')->toArray())
-            ->call('deleteSelected');
+            ->set('selected', $toArchive->pluck('id')->toArray())
+            ->call('bulkArchive');
 
         expect(User::find($toKeep->id))->not->toBeNull();
     });

@@ -8,7 +8,10 @@ use App\Domains\Shared\Enums\NewsPostCategoryEnum;
 use App\Domains\Shared\Enums\NewsPostStatusEnum;
 use App\Domains\ClubPosts\Models\NewsPost;
 use App\Livewire\Concerns\HasBreadcrumbs;
+use App\Livewire\Concerns\HasBulkActions;
+use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
@@ -19,6 +22,7 @@ use Mary\Traits\Toast;
 new class extends Component
 {
     use Toast, WithPagination, HasBreadcrumbs;
+    use HasBulkActions, HasFilterDrawer;
 
     #[Url]
     public string $search = '';
@@ -29,42 +33,93 @@ new class extends Component
     #[Url]
     public string $category = '';
 
-    public bool $showFilters = false;
-
+    /** @var array{column: string, direction: string} */
     public array $sortBy = ['column' => 'created_at', 'direction' => 'desc'];
 
     public bool $deleteModal = false;
 
     public ?int $deletingId = null;
 
-    public function updatedSearch(): void
+    public bool $confirmBulkArchiveModal = false;
+
+    // ── HasBulkActions ────────────────────────────────────────────────────────
+
+    /** @return array<int, string> */
+    protected function getPageIds(): array
     {
+        return $this->articles
+            ->pluck('id')
+            ->map(fn (int $id) => (string) $id)
+            ->toArray();
+    }
+
+    public function getTotalMatchingCount(): int
+    {
+        return $this->articles->total();
+    }
+
+    // ── HasFilterDrawer ───────────────────────────────────────────────────────
+
+    /** @return array<int, array{key: string, label: string}> */
+    public function getFilterChips(): array
+    {
+        $chips = [];
+
+        if (filled($this->status)) {
+            $label = collect(NewsPostStatusEnum::cases())
+                ->first(fn ($s) => $s->value === $this->status)?->getLabel() ?? $this->status;
+            $chips[] = ['key' => 'status', 'label' => __('Status') . ': ' . $label];
+        }
+
+        if (filled($this->category)) {
+            $label = collect(NewsPostCategoryEnum::cases())
+                ->first(fn ($c) => $c->value === $this->category)?->getLabel() ?? $this->category;
+            $chips[] = ['key' => 'category', 'label' => __('Category') . ': ' . $label];
+        }
+
+        return $chips;
+    }
+
+    public function clearFilters(): void
+    {
+        $this->status   = '';
+        $this->category = '';
         $this->resetPage();
     }
 
-    public function updatedStatus(): void
+    // ── Bulk actions ──────────────────────────────────────────────────────────
+
+    public function bulkPublish(): void
     {
-        $this->resetPage();
+        $count = count($this->selected);
+        NewsPost::whereIn('id', $this->selected)->update(['status' => NewsPostStatusEnum::PUBLISHED]);
+        $this->clearSelection();
+        $this->success(trans_choice('{1} Article published.|[2,*] :count articles published.', $count, ['count' => $count]));
     }
 
-    public function updatedCategory(): void
+    public function confirmBulkArchive(): void
     {
-        $this->resetPage();
+        $this->confirmBulkArchiveModal = true;
     }
 
-    public function resetFilters(): void
+    public function bulkArchive(): void
     {
-        $this->reset(['search', 'status', 'category']);
-        $this->resetPage();
+        $count = count($this->selected);
+        NewsPost::whereIn('id', $this->selected)->update(['status' => NewsPostStatusEnum::ARCHIVED]);
+        $this->confirmBulkArchiveModal = false;
+        $this->clearSelection();
+        $this->warning(trans_choice('{1} Article archived.|[2,*] :count articles archived.', $count, ['count' => $count]));
     }
 
-    #[Computed]
-    public function activeFiltersCount(): int
-    {
-        return collect([$this->status, $this->category])
-            ->filter(fn ($v) => filled($v))
-            ->count();
-    }
+    // ── Filter hooks ──────────────────────────────────────────────────────────
+
+    public function updatedSearch(): void   { $this->resetPage(); }
+
+    public function updatedStatus(): void   { $this->resetPage(); }
+
+    public function updatedCategory(): void { $this->resetPage(); }
+
+    // ── Single-record actions ─────────────────────────────────────────────────
 
     public function publish(int $id): void
     {
@@ -92,28 +147,41 @@ new class extends Component
         $this->error(__('Article deleted.'));
     }
 
+    // ── Computed ──────────────────────────────────────────────────────────────
 
-    protected function breadcrumbChain(): Breadcrumb
+    #[Computed]
+    public function articles(): LengthAwarePaginator
     {
-        return Breadcrumb::make()
-            ->home()
-            ->current(__("Articles"));
-    }
-
-        public function render(): View
-    {
-        return $this->view();
-    }
-
-    public function with(): array
-    {
-        $articles = NewsPost::with('user')
+        return NewsPost::with('user')
             ->when($this->search, fn ($q) => $q->search($this->search))
             ->when($this->status, fn ($q) => $q->where('status', $this->status))
             ->when($this->category, fn ($q) => $q->where('category', $this->category))
             ->orderBy($this->sortBy['column'], $this->sortBy['direction'])
             ->paginate(15);
+    }
 
+    /** @return array<int, array{key: string, label: string}> */
+    #[Computed]
+    public function filterChips(): array
+    {
+        return $this->getFilterChips();
+    }
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__('Articles'));
+    }
+
+    public function render(): View
+    {
+        return $this->view();
+    }
+
+    /** @return array<string, mixed> */
+    public function with(): array
+    {
         $stats = NewsPost::selectRaw("
             COUNT(*) as total,
             SUM(status = 'published') as published,
@@ -128,20 +196,21 @@ new class extends Component
             ->map(fn ($c) => ['id' => $c->value, 'name' => $c->getLabel()]);
 
         $headers = [
-            ['key' => 'title', 'label' => __('Title'), 'sortable' => false],
-            ['key' => 'category_label', 'label' => __('Category'), 'class' => 'hidden md:table-cell', 'sortable' => false],
-            ['key' => 'author_name', 'label' => __('Author'), 'class' => 'hidden lg:table-cell', 'sortable' => false],
-            ['key' => 'status', 'label' => __('Status'), 'sortable' => false],
-            ['key' => 'created_at', 'label' => __('Date'), 'class' => 'hidden sm:table-cell'],
+            ['key' => 'title',        'label' => __('Title'),    'sortable' => false],
+            ['key' => 'category_label','label' => __('Category'), 'class' => 'hidden md:table-cell', 'sortable' => false],
+            ['key' => 'author_name',  'label' => __('Author'),   'class' => 'hidden lg:table-cell', 'sortable' => false],
+            ['key' => 'status',       'label' => __('Status'),   'sortable' => false],
+            ['key' => 'created_at',   'label' => __('Date'),     'class' => 'hidden sm:table-cell'],
         ];
 
         return [
-            'breadcrumbs'    => Breadcrumb::make()->home()->add('Website', '#')->current('Articles')->toArray(),
-            'articles'       => $articles,
-            'stats'          => $stats,
-            'statusOptions'  => $statusOptions,
+            'breadcrumbs'     => $this->getBreadcrumbs(),
+            'articles'        => $this->articles,
+            'stats'           => $stats,
+            'statusOptions'   => $statusOptions,
             'categoryOptions' => $categoryOptions,
-            'headers'        => $headers,
+            'headers'         => $headers,
+            'filterChips'     => $this->filterChips,
         ];
     }
 };

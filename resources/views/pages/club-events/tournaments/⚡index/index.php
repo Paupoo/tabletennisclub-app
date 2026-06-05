@@ -7,7 +7,11 @@ use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Livewire\Concerns\HasBreadcrumbs;
+use App\Livewire\Concerns\HasBulkActions;
+use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
@@ -18,6 +22,7 @@ use Mary\Traits\Toast;
 new class extends Component
 {
     use Toast, WithPagination, HasBreadcrumbs;
+    use HasBulkActions, HasFilterDrawer;
 
     #[Url]
     public string $search = '';
@@ -34,73 +39,123 @@ new class extends Component
     #[Url]
     public string $hasEvent = '';
 
-    public bool $showFilters = false;
-
+    /** @var array{column: string, direction: string} */
     public array $sortBy = ['column' => 'start_date', 'direction' => 'desc'];
 
-    public function updatedSearch(): void
+    public bool $confirmBulkCancelModal = false;
+
+    // ── HasBulkActions ────────────────────────────────────────────────────────
+
+    /** @return array<int, string> */
+    protected function getPageIds(): array
     {
+        return $this->tournaments
+            ->pluck('id')
+            ->map(fn (int $id) => (string) $id)
+            ->toArray();
+    }
+
+    public function getTotalMatchingCount(): int
+    {
+        return $this->tournaments->total();
+    }
+
+    // ── HasFilterDrawer ───────────────────────────────────────────────────────
+
+    /** @return array<int, array{key: string, label: string}> */
+    public function getFilterChips(): array
+    {
+        $chips = [];
+
+        if (filled($this->status)) {
+            $label = match ($this->status) {
+                'pending'   => __('Live'),
+                'published' => __('Published'),
+                'setup'     => __('Setup'),
+                'locked'    => __('Locked'),
+                'closed'    => __('Closed'),
+                'cancelled' => __('Cancelled'),
+                'draft'     => __('Draft'),
+                default     => $this->status,
+            };
+            $chips[] = ['key' => 'status', 'label' => __('Status') . ': ' . $label];
+        }
+
+        if (filled($this->matchType)) {
+            $chips[] = [
+                'key'   => 'matchType',
+                'label' => __('Type') . ': ' . ($this->matchType === 'single' ? __('Singles') : __('Doubles')),
+            ];
+        }
+
+        if (filled($this->isFull)) {
+            $chips[] = [
+                'key'   => 'isFull',
+                'label' => __('Spots') . ': ' . ($this->isFull === 'full' ? __('Full') : __('Available spots')),
+            ];
+        }
+
+        if (filled($this->hasEvent)) {
+            $chips[] = [
+                'key'   => 'hasEvent',
+                'label' => __('Website') . ': ' . ($this->hasEvent === 'yes' ? __('Published') : __('Not published')),
+            ];
+        }
+
+        return $chips;
+    }
+
+    public function clearFilters(): void
+    {
+        $this->status    = '';
+        $this->matchType = '';
+        $this->isFull    = '';
+        $this->hasEvent  = '';
         $this->resetPage();
     }
 
-    public function updatedStatus(): void
+    // ── Bulk actions ──────────────────────────────────────────────────────────
+
+    public function confirmBulkCancel(): void
     {
-        $this->resetPage();
+        $this->confirmBulkCancelModal = true;
     }
 
-    public function updatedMatchType(): void
+    public function bulkCancel(): void
     {
-        $this->resetPage();
+        $count = count($this->selected);
+        Tournament::whereIn('id', $this->selected)->update(['status' => TournamentStatusEnum::CANCELLED]);
+        $this->confirmBulkCancelModal = false;
+        $this->clearSelection();
+        $this->warning(trans_choice('{1} Tournament cancelled.|[2,*] :count tournaments cancelled.', $count, ['count' => $count]));
     }
 
-    public function updatedIsFull(): void
-    {
-        $this->resetPage();
-    }
+    // ── Filter hooks ──────────────────────────────────────────────────────────
 
-    public function updatedHasEvent(): void
-    {
-        $this->resetPage();
-    }
+    public function updatedSearch(): void    { $this->resetPage(); }
 
-    public function resetFilters(): void
-    {
-        $this->reset(['search', 'status', 'matchType', 'isFull', 'hasEvent']);
-        $this->resetPage();
-    }
+    public function updatedStatus(): void    { $this->resetPage(); }
 
-    #[Computed]
-    public function activeFiltersCount(): int
-    {
-        return collect([$this->status, $this->matchType, $this->isFull, $this->hasEvent])
-            ->filter(fn ($v) => filled($v))
-            ->count();
-    }
+    public function updatedMatchType(): void { $this->resetPage(); }
+
+    public function updatedIsFull(): void    { $this->resetPage(); }
+
+    public function updatedHasEvent(): void  { $this->resetPage(); }
+
+    // ── Computed ──────────────────────────────────────────────────────────────
 
     #[Computed]
     public function canManage(): bool
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         return $user instanceof User && ($user->is_admin || $user->is_committee_member);
     }
 
-
-    protected function breadcrumbChain(): Breadcrumb
+    #[Computed]
+    public function tournaments(): LengthAwarePaginator
     {
-        return Breadcrumb::make()
-            ->home()
-            ->current(__("Tournaments"));
-    }
-
-        public function render(): View
-    {
-        return $this->view();
-    }
-
-    public function with(): array
-    {
-        $tournaments = Tournament::withCount([
+        return Tournament::withCount([
             'users AS active_registrations_count' => fn ($q) => $q->whereIn('tournament_user.registration_status', ['registered', 'confirmed', 'spot_offered']),
             'users AS waiting_count'              => fn ($q) => $q->where('tournament_user.registration_status', 'waiting'),
         ])
@@ -121,7 +176,30 @@ new class extends Component
             ->when($this->hasEvent === 'no', fn ($q) => $q->whereDoesntHave('eventPost', fn ($eq) => $eq->where('status', EventPostStatusEnum::PUBLISHED)))
             ->orderBy($this->sortBy['column'], $this->sortBy['direction'])
             ->paginate(20);
+    }
 
+    /** @return array<int, array{key: string, label: string}> */
+    #[Computed]
+    public function filterChips(): array
+    {
+        return $this->getFilterChips();
+    }
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__('Tournaments'));
+    }
+
+    public function render(): View
+    {
+        return $this->view();
+    }
+
+    /** @return array<string, mixed> */
+    public function with(): array
+    {
         $statsBase = $this->canManage
             ? Tournament::query()
             : Tournament::whereNotIn('status', [TournamentStatusEnum::DRAFT->value]);
@@ -147,10 +225,10 @@ new class extends Component
         }
 
         return [
-            'breadcrumbs' => $this->getBreadcrumbs(),
-            'tournaments'     => $tournaments,
-            'stats'           => $stats,
-            'statusOptions'   => $statusOptions,
+            'breadcrumbs'      => $this->getBreadcrumbs(),
+            'tournaments'      => $this->tournaments,
+            'stats'            => $stats,
+            'statusOptions'    => $statusOptions,
             'matchTypeOptions' => [
                 ['id' => 'single', 'name' => __('Singles')],
                 ['id' => 'double', 'name' => __('Doubles')],
@@ -171,6 +249,7 @@ new class extends Component
                 ['key' => 'status',     'label' => __('Status'),       'sortable' => false],
                 ['key' => 'event',      'label' => __('Website'),      'class' => 'hidden lg:table-cell', 'sortable' => false],
             ],
+            'filterChips' => $this->filterChips,
         ];
     }
 };

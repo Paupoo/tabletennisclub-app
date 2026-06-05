@@ -14,7 +14,10 @@ use App\Domains\Shared\Enums\Gender;
 use Illuminate\Validation\Rule as ValidationRule;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Livewire\Concerns\HasBreadcrumbs;
+use App\Livewire\Concerns\HasBulkActions;
+use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
@@ -24,8 +27,8 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast, HasBreadcrumbs;
-    use WithPagination;
+    use Toast, HasBreadcrumbs, WithPagination;
+    use HasBulkActions, HasFilterDrawer;
 
     public array $categories = [];
 
@@ -45,70 +48,129 @@ new class extends Component
 
     public string $inviteEmail = '';
 
-    // ── Modales ──────────────────────────────────────────────────────────────
+    // ── Modals ───────────────────────────────────────────────────────────────
     public bool $deleteModal = false;
 
-    public bool $deleteSelectedModal = false;
+    public bool $confirmArchiveModal = false;
 
-    public ?int $event_id = null;
+    public bool $addToTeamModal = false;
 
-    public array $licenceTypes = [];   // ex: ['competitive', 'recreational']
+    public bool $subscribeModal = false;
 
     public bool $showArchived = false;
 
     public bool $showInactiveUsers = false;
 
-    // ── Recherche & tri ──────────────────────────────────────────────────────
+    // ── Filters & sort ───────────────────────────────────────────────────────
     public string $search = '';
-
-    // ── Sélection bulk ───────────────────────────────────────────────────────
-    public array $selected = [];
 
     public string $selectedLicenceType = 'both';
 
-    // ── Filtres ──────────────────────────────────────────────────────────────
-    public bool $showFilters = false;
-
+    /** @var array{column: string, direction: string} */
     public array $sortBy = ['column' => 'last_name', 'direction' => 'asc'];
 
     public ?string $subscription_id = null;
 
     public ?int $team_id = null;
 
+    /** @var array<int, int> */
     public array $team_ids = [];
-
-    public ?int $training_id = null;
 
     public ?int $userToDelete = null;
 
-    // ────────────────────────────────────────────────────────────────────────
-    // Computed
-    // ────────────────────────────────────────────────────────────────────────
+    // ── HasBulkActions ────────────────────────────────────────────────────────
 
-    /**
-     * Nombre de filtres actifs — utilisé pour le badge sur le bouton.
-     */
-    #[Computed]
-    public function activeFiltersCount(): int
+    /** @return array<int, string> */
+    protected function getPageIds(): array
     {
-        return ($this->selectedLicenceType !== 'both' ? 1 : 0)
-            + count($this->categories)
-            + ($this->showInactiveUsers ? 1 : 0);
+        return $this->users
+            ->pluck('id')
+            ->map(fn (int $id) => (string) $id)
+            ->toArray();
     }
 
-    // ────────────────────────────────────────────────────────────────────────
-    // Bulk — activation
-    // ────────────────────────────────────────────────────────────────────────
+    public function getTotalMatchingCount(): int
+    {
+        return $this->users->total();
+    }
+
+    // ── HasFilterDrawer ───────────────────────────────────────────────────────
+
+    /** @return array<int, array{key: string, label: string}> */
+    public function getFilterChips(): array
+    {
+        $chips = [];
+
+        if ($this->selectedLicenceType !== 'both') {
+            $chips[] = [
+                'key'   => 'selectedLicenceType',
+                'label' => $this->selectedLicenceType === 'competitive' ? __('Competitive') : __('Recreational'),
+            ];
+        }
+
+        foreach (Gender::cases() as $gender) {
+            if (in_array($gender->value, $this->categories, true)) {
+                $chips[] = [
+                    'key'   => "categories_{$gender->value}",
+                    'label' => $gender->getLabel(),
+                ];
+            }
+        }
+
+        if ($this->showInactiveUsers) {
+            $chips[] = ['key' => 'showInactiveUsers', 'label' => __('Show inactive')];
+        }
+
+        if (! empty($this->team_ids)) {
+            $chips[] = [
+                'key'   => 'team_ids',
+                'label' => trans_choice('{1} 1 team|[2,*] :count teams', count($this->team_ids), ['count' => count($this->team_ids)]),
+            ];
+        }
+
+        return $chips;
+    }
+
+    public function clearFilters(): void
+    {
+        $this->selectedLicenceType = 'both';
+        $this->categories          = [];
+        $this->showInactiveUsers   = false;
+        $this->team_ids            = [];
+        $this->resetPage();
+    }
+
+    public function removeFilter(string $key): void
+    {
+        if (str_starts_with($key, 'categories_')) {
+            $value            = substr($key, strlen('categories_'));
+            $this->categories = array_values(
+                array_filter($this->categories, fn (string $v) => $v !== $value)
+            );
+        } else {
+            $this->reset([$key]);
+        }
+
+        $this->resetPage();
+    }
+
+    // ── Bulk actions ──────────────────────────────────────────────────────────
 
     public function bulkActivate(): void
     {
+        $count = count($this->selected);
         User::whereIn('id', $this->selected)->update(['is_active' => true]);
-        $this->success(__('Users activated.'));
+        $this->clearSelection();
+        $this->success(trans_choice('{1} User activated.|[2,*] :count users activated.', $count, ['count' => $count]));
     }
 
-    // ────────────────────────────────────────────────────────────────────────
-    // Bulk — équipe
-    // ────────────────────────────────────────────────────────────────────────
+    public function bulkDeactivate(): void
+    {
+        $count = count($this->selected);
+        User::whereIn('id', $this->selected)->update(['is_active' => false]);
+        $this->clearSelection();
+        $this->success(trans_choice('{1} User deactivated.|[2,*] :count users deactivated.', $count, ['count' => $count]));
+    }
 
     public function bulkAddToTeam(): void
     {
@@ -116,15 +178,11 @@ new class extends Component
             return;
         }
 
-        // TODO: logique réelle quand le modèle Team existera
-        $this->team_id = null;
+        // TODO: real logic when Team model is complete
+        $this->team_id        = null;
+        $this->addToTeamModal = false;
+        $this->clearSelection();
         $this->success(__('Users added to the team.'));
-    }
-
-    public function bulkDeactivate(): void
-    {
-        User::whereIn('id', $this->selected)->update(['is_active' => false]);
-        $this->success(__('Users deactivated.'));
     }
 
     public function bulkSubscribe(): void
@@ -133,23 +191,39 @@ new class extends Component
             return;
         }
 
-        // TODO: logique réelle quand les modèles Event/Training existeront
+        // TODO: real logic when Event/Training models are complete
         $this->subscription_id = null;
+        $this->subscribeModal  = false;
+        $this->clearSelection();
         $this->success(__('Users subscribed.'));
     }
 
-    // ────────────────────────────────────────────────────────────────────────
-    // Bulk — suppression
-    // ────────────────────────────────────────────────────────────────────────
-
-    public function confirmBulkDelete(): void
+    public function confirmBulkArchive(): void
     {
-        $this->deleteSelectedModal = true;
+        $this->confirmArchiveModal = true;
     }
 
-    // ────────────────────────────────────────────────────────────────────────
-    // Suppression simple
-    // ────────────────────────────────────────────────────────────────────────
+    public function bulkArchive(): void
+    {
+        abort_unless(Auth::user()->is_admin, 403);
+
+        $selfIncluded = in_array((string) Auth::id(), array_map('strval', $this->selected));
+
+        User::whereIn('id', $this->selected)
+            ->where('id', '!=', Auth::id())
+            ->each(fn (User $user) => SoftDeleteUserAction::handle($user));
+
+        $this->confirmArchiveModal = false;
+        $this->clearSelection();
+
+        if ($selfIncluded) {
+            $this->warning(__('Users archived. Your own account was excluded from the selection.'));
+        } else {
+            $this->success(__('Selected users archived.'));
+        }
+    }
+
+    // ── Single-record actions ─────────────────────────────────────────────────
 
     public function recalculateForceList(): void
     {
@@ -173,9 +247,9 @@ new class extends Component
         CreateUserAction::handle(
             new CreateUserData(
                 first_name: $this->inviteFirstName,
-                last_name: $this->inviteLastName,
-                email: $email,
-                gender: Gender::MEN,
+                last_name:  $this->inviteLastName,
+                email:      $email,
+                gender:     Gender::MEN,
             ),
             Auth::user()
         );
@@ -200,9 +274,9 @@ new class extends Component
         $user = User::findOrFail($userId);
         $this->authorize('anonymize', $user);
 
-        $this->anonymizeUserId = $userId;
+        $this->anonymizeUserId      = $userId;
         $this->anonymizeConfirmText = '';
-        $this->anonymizeModal = true;
+        $this->anonymizeModal       = true;
     }
 
     public function confirmAnonymize(): void
@@ -218,8 +292,8 @@ new class extends Component
 
         AnonymizeUserAction::handle($user);
 
-        $this->anonymizeModal = false;
-        $this->anonymizeUserId = null;
+        $this->anonymizeModal       = false;
+        $this->anonymizeUserId      = null;
         $this->anonymizeConfirmText = '';
 
         $this->success(__('User anonymized (GDPR). All personal data has been erased.'));
@@ -228,7 +302,7 @@ new class extends Component
     public function confirmDelete(int $userId): void
     {
         $this->userToDelete = $userId;
-        $this->deleteModal = true;
+        $this->deleteModal  = true;
     }
 
     public function delete(): void
@@ -236,7 +310,7 @@ new class extends Component
         $user = User::findOrFail($this->userToDelete);
 
         $this->userToDelete = null;
-        $this->deleteModal = false;
+        $this->deleteModal  = false;
 
         if (Auth::user()->is($user)) {
             $this->error(__('You cannot archive your own account.'));
@@ -251,26 +325,6 @@ new class extends Component
         $this->success(__('User archived.'));
     }
 
-    public function deleteSelected(): void
-    {
-        abort_unless(Auth::user()->is_admin, 403);
-
-        $selfIncluded = in_array((string) Auth::id(), array_map('strval', $this->selected));
-
-        User::whereIn('id', $this->selected)
-            ->where('id', '!=', Auth::id())
-            ->each(fn (User $user) => SoftDeleteUserAction::handle($user));
-
-        $this->selected = [];
-        $this->deleteSelectedModal = false;
-
-        if ($selfIncluded) {
-            $this->warning(__('Users archived. Your own account was excluded from the selection.'));
-        } else {
-            $this->success(__('Selected users archived.'));
-        }
-    }
-
     public function restoreUser(int $userId): void
     {
         $user = User::withTrashed()->findOrFail($userId);
@@ -281,129 +335,21 @@ new class extends Component
         $this->success(__('User restored.'));
     }
 
-    /**
-     * En-têtes de la table.
-     */
-    #[Computed]
-    public function headers(): array
-    {
-        return [
-            ['key' => 'photo',      'label' => '',              'sortable' => false],
-            ['key' => 'name',  'label' => __('Name'),      'sortable' => true],
-            ['key' => 'email',      'label' => __('Email'),     'sortable' => true],
-            ['key' => 'is_competitive', 'label' => __('Licence'),  'sortable' => true],
-            ['key' => 'ranking',    'label' => __('Ranking'),   'sortable' => true],
-        ];
-    }
+    // ── Pagination hooks ──────────────────────────────────────────────────────
 
-    public function mount(): void
-    {
-        $this->licenceTypes = [
-            [
-                'id' => 'both',
-                'name' => __('Both'),
-            ],
-            [
-                'id' => 'competitive',
-                'name' => __('Competitive'),
-            ],
-            [
-                'id' => 'recreative',
-                'name' => __('Recreative'),
-            ],
-        ];
-    }
+    public function updatedCategories(): void         { $this->resetPage(); }
 
-    // ────────────────────────────────────────────────────────────────────────
-    // Render
-    // ────────────────────────────────────────────────────────────────────────
+    public function updatedShowArchived(): void       { $this->resetPage(); }
 
-    protected function breadcrumbChain(): Breadcrumb
-    {
-        return Breadcrumb::make()
-            ->home()
-            ->users()
-            ->current(__('List'));
-    }
+    public function updatedShowInactiveUsers(): void  { $this->resetPage(); }
 
-    public function render()
-    {
-        return $this->view([
-            'users' => $this->users,
-            'headers' => $this->headers,
-            'teams' => $this->teams,
-            'subscriptions' => $this->subscriptions,
-            'breadcrumbs' => $this->getBreadcrumbs(),
-            'activeFiltersCount' => $this->activeFiltersCount,
-            'stats'              => $this->stats,
-        ]);
-    }
+    public function updatedSearch(): void             { $this->resetPage(); }
 
-    // ────────────────────────────────────────────────────────────────────────
-    // Filtres
-    // ────────────────────────────────────────────────────────────────────────
+    public function updatedSelectedLicenceType(): void { $this->resetPage(); }
 
-    public function resetFilters(): void
-    {
-        $this->selectedLicenceType = 'both';
-        $this->categories = [];
-        $this->showInactiveUsers = false;
-        $this->resetPage();
-    }
+    // ── Computed ──────────────────────────────────────────────────────────────
 
-    #[Computed]
-    public function subscriptions(): Collection
-    {
-        return collect([
-            ['id' => 'event-1',    'name' => 'Tournoi printemps',   'group' => __('Events')],
-            ['id' => 'event-2',    'name' => 'Coupe régionale',     'group' => __('Events')],
-            ['id' => 'event-3',    'name' => 'Championnat été',     'group' => __('Events')],
-            ['id' => 'training-1', 'name' => 'Entraînement lundi',  'group' => __('Trainings')],
-            ['id' => 'training-2', 'name' => 'Entraînement mercredi', 'group' => __('Trainings')],
-        ]);
-    }
-
-    /**
-     * Liste des équipes pour le select bulk.
-     */
-    #[Computed]
-    public function teams(): Collection
-    {
-        return Team::with('captain')
-            ->orderBy('name')
-            ->get()
-            ->map(fn (Team $team) => [
-                'id' => $team->id,
-                'name' => __('Team') . ' ' . $team->name,
-                'avatar' => $team->captain->photo ?? '/images/empty-user.jpg',
-            ]);
-    }
-
-    public function updatedCategories(): void
-    {
-        $this->resetPage();
-    }
-
-    public function updatedShowArchived(): void
-    {
-        $this->resetPage();
-    }
-
-    public function updatedShowInactiveUsers(): void
-    {
-        $this->resetPage();
-    }
-
-    public function updatedSearch(): void
-    {
-        $this->resetPage();
-    }
-
-    public function updatedSelectedLicenceType(): void
-    {
-        $this->resetPage();
-    }
-
+    /** @return array<string, int> */
     #[Computed]
     public function stats(): array
     {
@@ -415,11 +361,66 @@ new class extends Component
         ];
     }
 
-    /**
-     * Données de la table avec filtres appliqués.
-     */
+    /** @return Collection<int, array<string, mixed>> */
     #[Computed]
-    public function users()
+    public function subscriptions(): Collection
+    {
+        return collect([
+            ['id' => 'event-1',    'name' => 'Tournoi printemps',     'group' => __('Events')],
+            ['id' => 'event-2',    'name' => 'Coupe régionale',       'group' => __('Events')],
+            ['id' => 'event-3',    'name' => 'Championnat été',       'group' => __('Events')],
+            ['id' => 'training-1', 'name' => 'Entraînement lundi',    'group' => __('Trainings')],
+            ['id' => 'training-2', 'name' => 'Entraînement mercredi', 'group' => __('Trainings')],
+        ]);
+    }
+
+    /** @return Collection<int, array<string, mixed>> */
+    #[Computed]
+    public function teams(): Collection
+    {
+        return Team::with('captain')
+            ->orderBy('name')
+            ->get()
+            ->map(fn (Team $team) => [
+                'id'     => $team->id,
+                'name'   => __('Team') . ' ' . $team->name,
+                'avatar' => $team->captain->photo ?? '/images/empty-user.jpg',
+            ]);
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    #[Computed]
+    public function headers(): array
+    {
+        return [
+            ['key' => 'photo',          'label' => '',            'sortable' => false],
+            ['key' => 'name',           'label' => __('Name'),    'sortable' => true],
+            ['key' => 'email',          'label' => __('Email'),   'sortable' => true],
+            ['key' => 'is_competitive', 'label' => __('Licence'), 'sortable' => true],
+            ['key' => 'ranking',        'label' => __('Ranking'), 'sortable' => true],
+        ];
+    }
+
+    /** @return array<int, array{id: string, name: string}> */
+    #[Computed]
+    public function licenceTypes(): array
+    {
+        return [
+            ['id' => 'both',        'name' => __('Both')],
+            ['id' => 'competitive', 'name' => __('Competitive')],
+            ['id' => 'recreative',  'name' => __('Recreative')],
+        ];
+    }
+
+    /** @return array<int, array{key: string, label: string}> */
+    #[Computed]
+    public function filterChips(): array
+    {
+        return $this->getFilterChips();
+    }
+
+    #[Computed]
+    public function users(): LengthAwarePaginator
     {
         $query = $this->showArchived
             ? User::onlyTrashed()
@@ -456,5 +457,27 @@ new class extends Component
             )
             ->orderBy($this->sortBy['column'], $this->sortBy['direction'])
             ->paginate(15);
+    }
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->users()
+            ->current(__('List'));
+    }
+
+    public function render()
+    {
+        return $this->view([
+            'users'         => $this->users,
+            'headers'       => $this->headers,
+            'teams'         => $this->teams,
+            'subscriptions' => $this->subscriptions,
+            'breadcrumbs'   => $this->getBreadcrumbs(),
+            'filterChips'   => $this->filterChips,
+            'licenceTypes'  => $this->licenceTypes,
+            'stats'         => $this->stats,
+        ]);
     }
 };

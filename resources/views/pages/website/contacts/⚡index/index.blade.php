@@ -10,36 +10,25 @@
                 wire:model.live.debounce.300ms="search" />
         </x-slot:middle>
         <x-slot:actions>
-            <x-button class="btn-ghost {{ $this->activeFiltersCount > 0 ? 'btn-active' : '' }}"
-                wire:click="$toggle('showFilters')">
-                <x-icon name="o-funnel" class="h-5 w-5" />
-                {{ __('Filters') }}
-                @if ($this->activeFiltersCount > 0)
-                    <x-badge class="badge-sm badge-primary" value="{{ $this->activeFiltersCount }}" />
+            <x-button class="btn-ghost {{ count($filterChips) > 0 ? 'btn-active' : '' }}"
+                icon="o-funnel"
+                :label="__('Filters')"
+                wire:click="$set('filterDrawer', true)">
+                @if (count($filterChips) > 0)
+                    <x-badge class="badge-sm badge-primary" value="{{ count($filterChips) }}" />
                 @endif
             </x-button>
+            {{-- Mobile selection toggle --}}
+            <x-button
+                class="btn-ghost btn-sm lg:hidden {{ $selectionModeActive ? 'btn-active' : '' }}"
+                icon="{{ $selectionModeActive ? 'o-x-mark' : 'o-check-circle' }}"
+                :label="$selectionModeActive ? __('Cancel') : __('Select')"
+                wire:click="toggleSelectionMode" />
         </x-slot:actions>
     </x-header>
 
-    {{-- ── Filtres ────────────────────────────────────────────────────── --}}
-    <x-admin.shared.filter-bar :active-filters-count="$this->activeFiltersCount" :show="$showFilters">
-        <x-slot:filters>
-            <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
-                    {{ __('Interest') }}
-                </p>
-                <x-select :options="$interestOptions" :placeholder="__('All interests')"
-                    wire:model.live="interest" class="w-full" />
-            </div>
-            <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
-                    {{ __('Status') }}
-                </p>
-                <x-select :options="$statusOptions" :placeholder="__('All statuses')"
-                    wire:model.live="status" class="w-full" />
-            </div>
-        </x-slot:filters>
-    </x-admin.shared.filter-bar>
+    {{-- ── Active filter chips ──────────────────────────────────────────────── --}}
+    <x-admin.shared.filter-chips :chips="$filterChips" />
 
     {{-- ── Cartes stats ──────────────────────────────────────────────── --}}
     <div class="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -66,7 +55,7 @@
         @endforeach
     </div>
 
-    {{-- ── Vue mobile (cards) ─────────────────────────────────────────── --}}
+    {{-- ── Vue mobile ───────────────────────────────────────────────── --}}
     <div class="grid grid-cols-1 gap-3 lg:hidden">
         @forelse ($contacts as $contact)
             @php
@@ -85,9 +74,17 @@
                     default     => $contact->status,
                 };
             @endphp
-            <x-list-item :item="$contact" class="bg-base-100 cursor-pointer rounded-lg border"
+            <x-list-item :item="$contact" class="bg-base-100 rounded-lg border"
                 wire:key="mobile-contact-{{ $contact->id }}"
-                wire:click="openDetail({{ $contact->id }})">
+                @click.prevent="$wire.selectionModeActive || $wire.openDetail({{ $contact->id }})">
+                <x-slot:avatar>
+                    @if ($selectionModeActive)
+                        <input type="checkbox"
+                            class="checkbox checkbox-primary checkbox-sm"
+                            value="{{ $contact->id }}"
+                            wire:model.live="selected" />
+                    @endif
+                </x-slot:avatar>
                 <x-slot:value>
                     <span class="font-medium">{{ $contact->first_name }} {{ $contact->last_name }}</span>
                 </x-slot:value>
@@ -98,9 +95,11 @@
                     </div>
                 </x-slot:sub-value>
                 <x-slot:actions>
-                    <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
-                        :tooltip="__('Delete')"
-                        wire:click.stop="confirmDelete({{ $contact->id }})" />
+                    @if (! $selectionModeActive)
+                        <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
+                            :tooltip="__('Delete')"
+                            wire:click.stop="confirmDelete({{ $contact->id }})" />
+                    @endif
                 </x-slot:actions>
             </x-list-item>
         @empty
@@ -111,7 +110,7 @@
         @endforelse
     </div>
 
-    {{-- ── Vue desktop (table) ────────────────────────────────────────── --}}
+    {{-- ── Vue desktop ────────────────────────────────────────────────── --}}
     <div class="hidden lg:block">
         <x-card>
             @if ($contacts->isEmpty())
@@ -120,7 +119,8 @@
                     :heading="__('No contacts found')"
                     :message="__('Try adjusting your search or filters.')" />
             @else
-                <x-table :headers="$headers" :rows="$contacts" :sort-by="$sortBy">
+                <x-table :headers="$headers" :rows="$contacts" :sort-by="$sortBy"
+                    selectable wire:model.live="selected">
                     @scope('cell_full_name', $contact)
                         <span class="font-medium">
                             {{ $contact->first_name }} {{ $contact->last_name }}
@@ -176,12 +176,43 @@
         </x-card>
     </div>
 
+    {{-- ── Floating Pill — bulk actions ───────────────────────────────── --}}
+    <x-admin.shared.selection-pill
+        :selected="$selected"
+        :total="$this->getTotalMatchingCount()"
+        :selecting-all-results="$selectingAllResults"
+        :select-all="$selectAll">
+        <x-slot:actions>
+            <x-button class="btn-ghost btn-sm text-error" icon="o-trash" :label="__('Delete')"
+                wire:click="confirmBulkDelete" />
+        </x-slot:actions>
+    </x-admin.shared.selection-pill>
+
+    {{-- ── Filter drawer ────────────────────────────────────────────────────── --}}
+    <x-admin.shared.filter-drawer :title="__('Filters')">
+        <x-slot:filters>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    {{ __('Interest') }}
+                </p>
+                <x-select :options="$interestOptions" :placeholder="__('All interests')"
+                    wire:model.live="interest" class="w-full" />
+            </div>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    {{ __('Status') }}
+                </p>
+                <x-select :options="$statusOptions" :placeholder="__('All statuses')"
+                    wire:model.live="status" class="w-full" />
+            </div>
+        </x-slot:filters>
+    </x-admin.shared.filter-drawer>
+
     {{-- ── Drawer détail contact ─────────────────────────────────────── --}}
     <x-drawer wire:model="detailOpen" :title="__('Contact detail')" right class="w-full max-w-md">
         @if ($selectedContact)
             <div class="space-y-5 p-1">
 
-                {{-- Infos principales --}}
                 <div class="bg-base-200 space-y-2 rounded-lg p-4">
                     <p class="text-lg font-bold">
                         {{ $selectedContact->first_name }} {{ $selectedContact->last_name }}
@@ -195,7 +226,6 @@
                     @endif
                 </div>
 
-                {{-- Message --}}
                 @if ($selectedContact->message)
                     <div>
                         <p class="mb-1 text-xs font-semibold uppercase tracking-widest opacity-50">
@@ -205,7 +235,6 @@
                     </div>
                 @endif
 
-                {{-- Adhésion --}}
                 @if ($selectedContact->membership_total_cost)
                     <div class="border-info/30 bg-info/5 space-y-1 rounded-lg border p-3">
                         <p class="text-info text-xs font-semibold uppercase tracking-widest">
@@ -218,7 +247,6 @@
                     </div>
                 @endif
 
-                {{-- Statut --}}
                 <div>
                     <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
                         {{ __('Status') }}
@@ -232,7 +260,6 @@
                     </div>
                 </div>
 
-                {{-- Emails templates --}}
                 <div>
                     <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
                         {{ __('Send an email') }}
@@ -252,7 +279,6 @@
                         wire:click="$set('emailModal', true)" />
                 </div>
 
-                {{-- Intégrer comme membre --}}
                 @if (in_array($selectedContact->interest?->value, ['JOIN_US', 'TRIAL']) && $selectedContact->status !== 'processed')
                     <div class="border-base-200 border-t pt-3">
                         <x-button class="btn-primary btn-sm w-full" icon="o-user-plus"
@@ -262,7 +288,6 @@
                     </div>
                 @endif
 
-                {{-- Supprimer --}}
                 <div class="border-base-200 border-t pt-2">
                     <x-button class="btn-ghost btn-sm w-full text-error" icon="o-trash"
                         :label="__('Delete this contact')"
@@ -289,9 +314,18 @@
         </x-slot:actions>
     </x-modal>
 
-    {{-- ── Modal suppression ─────────────────────────────────────────── --}}
+    {{-- ── Modal suppression unitaire ───────────────────────────────── --}}
     <x-confirm-modal model="deleteModal" :title="__('Delete this contact?')"
         :confirmLabel="__('Delete')" confirmAction="delete">
         <p>{{ __('This action is irreversible.') }}</p>
+    </x-confirm-modal>
+
+    {{-- ── Modal suppression bulk ───────────────────────────────────── --}}
+    <x-confirm-modal model="confirmBulkDeleteModal" :title="__('Delete selected contacts?')"
+        :confirmLabel="__('Delete')" confirmAction="bulkDelete">
+        <p>
+            {{ trans_choice('selectedCount', count($selected), ['count' => count($selected)]) }}
+            {{ __('will be permanently deleted.') }}
+        </p>
     </x-confirm-modal>
 </div>

@@ -88,13 +88,13 @@ test('admin cannot delete themselves via single delete', function (): void {
     expect(User::find($this->admin->id))->not->toBeNull();
 });
 
-test('admin is excluded from bulk delete even when selected', function (): void {
+test('admin is excluded from bulk archive even when selected', function (): void {
     $other = User::factory()->create();
 
     Livewire::actingAs($this->admin)
         ->test('pages::club-admin.users.index')
         ->set('selected', [(string) $this->admin->id, (string) $other->id])
-        ->call('deleteSelected');
+        ->call('bulkArchive');
 
     expect(User::find($this->admin->id))->not->toBeNull()
         ->and(User::find($other->id))->toBeNull();

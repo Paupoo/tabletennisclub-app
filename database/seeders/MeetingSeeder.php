@@ -5,17 +5,17 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Meetings\Models\Meeting;
+use App\Domains\Meetings\Models\MeetingActionItem;
+use App\Domains\Meetings\Models\MeetingAgendaItem;
+use App\Domains\Meetings\Models\MeetingDateProposal;
+use App\Domains\Meetings\Models\MeetingDateVote;
+use App\Domains\Meetings\Models\MeetingMinutes;
 use App\Domains\Shared\Enums\MeetingDateVoteEnum;
 use App\Domains\Shared\Enums\MeetingFormatEnum;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\MeetingTypeEnum;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
-use App\Models\ClubEvents\Meeting\Meeting;
-use App\Models\ClubEvents\Meeting\MeetingActionItem;
-use App\Models\ClubEvents\Meeting\MeetingAgendaItem;
-use App\Models\ClubEvents\Meeting\MeetingDateProposal;
-use App\Models\ClubEvents\Meeting\MeetingDateVote;
-use App\Models\ClubEvents\Meeting\MeetingMinutes;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 

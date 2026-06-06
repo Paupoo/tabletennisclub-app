@@ -188,15 +188,20 @@
                                                 wire:click="viewSessions({{ $pack->id }})" />
                                             <x-button class="btn-ghost btn-sm text-xs" icon="o-pencil"
                                                 wire:click="openEdit({{ $pack->id }})" />
-                                            <x-button
-                                                @class([
-                                                    'btn-ghost btn-sm text-xs',
-                                                    'text-success' => $pack->eventPost?->status->value === 'PUBLISHED',
-                                                    'text-warning' => $pack->eventPost && $pack->eventPost->status->value !== 'PUBLISHED',
-                                                ])
-                                                icon="o-globe-alt"
-                                                :tooltip="__('Publish on website')"
-                                                wire:click="openEventPost({{ $pack->id }})" />
+                                            <livewire:admin.shared.event-post-button
+                                                :model-class="\App\Domains\Trainings\Models\TrainingPack::class"
+                                                :model-id="$pack->id"
+                                                event-type="TRAINING"
+                                                icon="🎯"
+                                                :event-date="$pack->pack_start_date?->toDateString()"
+                                                :start-time="$pack->start_time ? \Carbon\Carbon::parse($pack->start_time)->format('H:i:s') : null"
+                                                :end-time="$pack->start_time && $pack->duration_minutes ? \Carbon\Carbon::parse($pack->start_time)->addMinutes($pack->duration_minutes)->format('H:i:s') : null"
+                                                :price="(string) $pack->price"
+                                                :max-participants="$pack->max_participants"
+                                                :default-title="$pack->name"
+                                                :can-publish="true"
+                                                wire:key="ep-training-{{ $pack->id }}"
+                                                @event-post-saved.window="$wire.refreshPacks()" />
                                             <x-button class="btn-ghost btn-sm text-error text-xs" icon="o-trash"
                                                 wire:click="openDeactivatePack({{ $pack->id }})" />
                                         </div>
@@ -464,43 +469,6 @@
                     label="{{ $packId ? __('Update') : __('Create pack') }}" wire:click="save" />
             @endif
         </x-slot:actions>
-    </x-modal>
-
-    {{-- ================================================================
-         EVENT POST MODAL
-    ================================================================ --}}
-    <x-modal :title="__('Publish on website')" wire:model="showEventPostModal" separator>
-
-        @if (!$eventPostPackHasDate)
-            <x-alert class="alert-warning mb-4" icon="o-exclamation-triangle"
-                :title="__('No fixed date configured for this pack.')"
-                :description="__('Set a custom date range in the pack settings to publish it as a web event. Today\'s date will be used as a fallback.')" />
-        @endif
-
-        <x-admin.shared.event-post-form
-            :event-post-id="$eventPostId"
-            :event-status="$eventStatus"
-            :sync-note="__('Date, time, price and capacity are synced automatically from the pack settings.')"
-        />
-
-        <x-slot:actions>
-            <x-button :label="__('Cancel')" wire:click="$toggle('showEventPostModal')" />
-            <x-button
-                class="btn-ghost"
-                icon="o-document-text"
-                :label="__('Save as draft')"
-                spinner="saveEventPost"
-                wire:click="saveEventPost('draft')"
-            />
-            <x-button
-                class="btn-primary"
-                icon="o-globe-alt"
-                :label="__('Publish')"
-                spinner="saveEventPost"
-                wire:click="saveEventPost('published')"
-            />
-        </x-slot:actions>
-
     </x-modal>
 
     {{-- ================================================================

@@ -95,6 +95,7 @@ new class extends Component
         return Meeting::with([
             'agendaItems',
             'dateProposals.votes.user',
+            'eventPost',
             'users',
             'minutes',
             'actionItems.assignedTo',

@@ -130,6 +130,11 @@ new class extends Component
         $this->warning(trans_choice('{1} Tournament cancelled.|[2,*] :count tournaments cancelled.', $count, ['count' => $count]));
     }
 
+    public function refreshTournaments(): void
+    {
+        unset($this->tournaments);
+    }
+
     // ── Filter hooks ──────────────────────────────────────────────────────────
 
     public function updatedSearch(): void    { $this->resetPage(); }

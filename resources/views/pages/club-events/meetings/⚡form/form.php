@@ -351,7 +351,6 @@ new class extends Component
             'title'            => $this->title,
             'type'             => $this->type,
             'format'           => $this->format,
-            'is_public'        => MeetingTypeEnum::from($this->type)->isPublic(),
             'description'      => filled($this->description) ? $this->description : null,
             'location'         => $this->format === 'physical' && filled($this->location) ? $this->location : null,
             'meeting_link'     => $this->format === 'virtual' && filled($this->meetingLink) ? $this->meetingLink : null,

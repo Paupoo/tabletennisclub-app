@@ -108,6 +108,19 @@
                                 <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil-square"
                                     :tooltip="__('Edit')"
                                     link="{{ route('admin.meetings.edit', $meeting) }}" />
+                                <livewire:admin.shared.event-post-button
+                                    :model-class="\App\Domains\Meetings\Models\Meeting::class"
+                                    :model-id="$meeting->id"
+                                    event-type="MEETING"
+                                    icon="📋"
+                                    :event-date="$meeting->scheduled_at?->toDateString()"
+                                    :start-time="$meeting->scheduled_at?->format('H:i:s')"
+                                    :end-time="$meeting->ends_at?->format('H:i:s')"
+                                    :default-title="$meeting->title"
+                                    :can-publish="$meeting->scheduled_at !== null"
+                                    :cannot-publish-reason="__('Set a confirmed date before publishing')"
+                                    wire:key="ep-mob-meeting-{{ $meeting->id }}"
+                                    @event-post-saved.window="$wire.refreshMeetings()" />
                             @endif
                         </x-admin.shared.row-actions>
                     @endif
@@ -174,6 +187,24 @@
                     @scope('cell_status', $meeting)
                         <x-badge :value="$meeting->status->getLabel()"
                             class="{{ $meeting->status->getBadgeClass() }}" />
+                    @endscope
+
+                    @scope('cell_event', $meeting)
+                        @if ($this->canManage)
+                            <livewire:admin.shared.event-post-button
+                                :model-class="\App\Domains\Meetings\Models\Meeting::class"
+                                :model-id="$meeting->id"
+                                event-type="MEETING"
+                                icon="📋"
+                                :event-date="$meeting->scheduled_at?->toDateString()"
+                                :start-time="$meeting->scheduled_at?->format('H:i:s')"
+                                :end-time="$meeting->ends_at?->format('H:i:s')"
+                                :default-title="$meeting->title"
+                                :can-publish="$meeting->scheduled_at !== null"
+                                :cannot-publish-reason="__('Set a confirmed date before publishing')"
+                                wire:key="ep-desk-meeting-{{ $meeting->id }}"
+                                @event-post-saved.window="$wire.refreshMeetings()" />
+                        @endif
                     @endscope
 
                     @scope('actions', $meeting)

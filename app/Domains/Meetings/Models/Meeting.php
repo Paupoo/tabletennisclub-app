@@ -6,6 +6,7 @@ namespace App\Domains\Meetings\Models;
 
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\ClubPosts\Models\EventPost;
 use App\Domains\Shared\Enums\MeetingFormatEnum;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\MeetingTypeEnum;
@@ -19,6 +20,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Carbon;
 
@@ -28,7 +30,6 @@ use Illuminate\Support\Carbon;
  * @property MeetingTypeEnum $type
  * @property MeetingStatusEnum $status
  * @property MeetingFormatEnum $format
- * @property bool $is_public
  * @property string|null $description
  * @property Carbon|null $scheduled_at
  * @property Carbon|null $ends_at
@@ -46,6 +47,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read User $creator
+ * @property-read EventPost|null $eventPost
  * @property-read Collection<int, User> $users
  * @property-read Collection<int, MeetingDateProposal> $dateProposals
  * @property-read Collection<int, MeetingAgendaItem> $agendaItems
@@ -74,7 +76,6 @@ use Illuminate\Support\Carbon;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereFormat($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereHasMeal($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereIsPublic($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereLocation($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereMealDescription($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereMealPriceCents($value)
@@ -100,7 +101,6 @@ class Meeting extends Model
         'type' => MeetingTypeEnum::class,
         'status' => MeetingStatusEnum::class,
         'format' => MeetingFormatEnum::class,
-        'is_public' => 'boolean',
         'scheduled_at' => 'datetime',
         'ends_at' => 'datetime',
         'rsvp_deadline' => 'date',
@@ -113,7 +113,6 @@ class Meeting extends Model
         'type',
         'status',
         'format',
-        'is_public',
         'description',
         'scheduled_at',
         'ends_at',
@@ -175,6 +174,11 @@ class Meeting extends Model
     public function dateProposals(): HasMany
     {
         return $this->hasMany(MeetingDateProposal::class)->orderBy('proposed_at');
+    }
+
+    public function eventPost(): MorphOne
+    {
+        return $this->morphOne(EventPost::class, 'eventable');
     }
 
     /** @return float|null Meal price in euros */

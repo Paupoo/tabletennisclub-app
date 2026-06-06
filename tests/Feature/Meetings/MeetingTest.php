@@ -88,10 +88,6 @@ describe('Meeting model', function (): void {
         expect($meeting->meal_price)->toBe(12.0);
     });
 
-    test('general assembly type isPublic returns true', function (): void {
-        expect(MeetingTypeEnum::GENERAL_ASSEMBLY->isPublic())->toBeTrue()
-            ->and(MeetingTypeEnum::COMMITTEE->isPublic())->toBeFalse();
-    });
 });
 
 // ── Index page ────────────────────────────────────────────────────────────────

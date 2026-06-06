@@ -110,6 +110,22 @@
                                     :tooltip="__('Live Center')"
                                     link="{{ route('admin.tournaments.live-center', $tournament->id) }}" />
                             @endif
+                            @if ($this->canManage)
+                                <livewire:admin.shared.event-post-button
+                                    :model-class="\App\Domains\Competitions\Tournament\Models\Tournament::class"
+                                    :model-id="$tournament->id"
+                                    event-type="TOURNAMENT"
+                                    icon="🏆"
+                                    :event-date="$tournament->start_date->toDateString()"
+                                    :start-time="$tournament->start_time ? \Carbon\Carbon::parse($tournament->start_time)->format('H:i:s') : '00:00:00'"
+                                    :end-time="null"
+                                    :price="(string) $tournament->price"
+                                    :max-participants="$tournament->max_users ?: null"
+                                    :default-title="$tournament->name"
+                                    :can-publish="true"
+                                    wire:key="ep-mob-tournament-{{ $tournament->id }}"
+                                    @event-post-saved.window="$wire.refreshTournaments()" />
+                            @endif
                         </x-admin.shared.row-actions>
                     @endif
                 </x-slot:actions>
@@ -190,7 +206,22 @@
                     @endscope
 
                     @scope('cell_event', $tournament)
-                        @if ($tournament->eventPost?->status === \App\Domains\Shared\Enums\EventPostStatusEnum::PUBLISHED)
+                        @if ($this->canManage)
+                            <livewire:admin.shared.event-post-button
+                                :model-class="\App\Domains\Competitions\Tournament\Models\Tournament::class"
+                                :model-id="$tournament->id"
+                                event-type="TOURNAMENT"
+                                icon="🏆"
+                                :event-date="$tournament->start_date->toDateString()"
+                                :start-time="$tournament->start_time ? \Carbon\Carbon::parse($tournament->start_time)->format('H:i:s') : '00:00:00'"
+                                :end-time="null"
+                                :price="(string) $tournament->price"
+                                :max-participants="$tournament->max_users ?: null"
+                                :default-title="$tournament->name"
+                                :can-publish="true"
+                                wire:key="ep-desk-tournament-{{ $tournament->id }}"
+                                @event-post-saved.window="$wire.refreshTournaments()" />
+                        @elseif ($tournament->eventPost?->status === \App\Domains\Shared\Enums\EventPostStatusEnum::PUBLISHED)
                             <x-icon name="o-check-circle" class="h-4 w-4 text-success" />
                         @else
                             <span class="text-base-content/30">—</span>

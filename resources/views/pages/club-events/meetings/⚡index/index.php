@@ -130,12 +130,18 @@ new class extends Component
         return $user instanceof User && ($user->is_admin || $user->is_committee_member);
     }
 
+    public function refreshMeetings(): void
+    {
+        unset($this->meetings);
+    }
+
     #[Computed]
     public function meetings(): LengthAwarePaginator
     {
-        return Meeting::withCount([
-            'users AS confirmed_count' => fn ($q) => $q->whereIn('meeting_user.status', ['confirmed', 'attended']),
-        ])
+        return Meeting::with('eventPost')
+            ->withCount([
+                'users AS confirmed_count' => fn ($q) => $q->whereIn('meeting_user.status', ['confirmed', 'attended']),
+            ])
             ->when($this->search, fn ($q) => $q->where('title', 'like', "%{$this->search}%"))
             ->when($this->type, fn ($q) => $q->where('type', $this->type))
             ->when($this->status, fn ($q) => $q->where('status', $this->status))
@@ -188,6 +194,7 @@ new class extends Component
                 ['key' => 'format',       'label' => __('Format'),  'class' => 'hidden md:table-cell', 'sortable' => false],
                 ['key' => 'participants', 'label' => __('RSVPs'),   'class' => 'hidden lg:table-cell', 'sortable' => false],
                 ['key' => 'status',       'label' => __('Status'),  'sortable' => false],
+                ['key' => 'event',        'label' => __('Web'),     'sortable' => false, 'class' => 'w-8'],
             ],
             'filterChips' => $this->filterChips,
         ];

@@ -344,5 +344,7 @@ class DatabaseSeeder extends Seeder
         $this->call(TournamentSeeder::class);
 
         $this->call(TrainingPackSeeder::class);
+
+        $this->call(NewsPostSeeder::class);
     }
 }

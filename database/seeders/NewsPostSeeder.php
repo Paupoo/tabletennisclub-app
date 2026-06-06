@@ -10,6 +10,8 @@ use App\Domains\Shared\Enums\NewsPostCategoryEnum;
 use App\Domains\Shared\Enums\NewsPostStatusEnum;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class NewsPostSeeder extends Seeder
@@ -128,60 +130,216 @@ class NewsPostSeeder extends Seeder
             ],
         ];
 
-        $images = [
-            '01JYSRDBJEQY3RCNC7QBMXFRK9.png',
-            '01JYSTDP26TJW0JBD46FDR6JY1.png',
-            '01JYSTG4288SMPV4F2S7FQZQ78.png',
-            '01JYSTK3Q30QKFC6ZS8PDMPSAV.png',
-            '01JYSTPA7QMG4MS2FJX1WVMHFA.png',
-            '01JYSTT5A2AXH3CN2PFVYF7SNR.png',
-            '01JYZQJGE27KQ2CH4CA3ZCPFFW.jpg',
-            '01JZ6G5NYEHDFQW20XW282Y68Y.png',
-            '01JZ6HWJA1T5P01JZTHN9T5ZM0.png',
-            '01JZE7JSAE4NTJX2RCDMDPFK53.png',
-        ];
-
-        // Génération de dates variées sur 2 années (2023-2024)
-        $createdDates = $this->generateVariedDates(count($articles));
+        $createdDates = $this->generateVariedDates(count($articles), Carbon::create(2023, 1, 1), Carbon::create(2024, 12, 31));
 
         foreach ($articles as $index => $articleData) {
             $createdAt = $createdDates[$index];
 
-            NewsPost::create([
-                'title' => $articleData['title'],
-                'slug' => Str::slug($articleData['title']),
-                'content' => $articleData['content'],
-                'category' => $articleData['category'],
-                'image' => 'public/articles/images/' . fake()->randomElement($images),
-                'status' => NewsPostStatusEnum::PUBLISHED,
-                'is_public' => true,
-                'user_id' => $user->id,
-                'created_at' => $createdAt,
-                'updated_at' => $createdAt->copy()->addMinutes(rand(0, 30)), // Légère différence entre création et modification
-            ]);
+            NewsPost::updateOrCreate(
+                ['slug' => Str::slug($articleData['title'])],
+                [
+                    'title' => $articleData['title'],
+                    'content' => $articleData['content'],
+                    'category' => $articleData['category'],
+                    'image' => $this->downloadPicsumImage($index + 1),
+                    'status' => NewsPostStatusEnum::PUBLISHED,
+                    'is_public' => true,
+                    'user_id' => $user->id,
+                    'created_at' => $createdAt,
+                    'updated_at' => $createdAt->copy()->addMinutes(rand(0, 30)),
+                ]
+            );
         }
 
-        $this->command->info('20 articles créés avec succès pour le CTT Ottignies-Blocry avec des dates variées !');
+        // === Articles saison 2026-2027 ===
+        $articles2627 = [
+            [
+                'title' => 'Coup d\'envoi de la saison 2026-2027 !',
+                'content' => 'La nouvelle saison démarre avec de belles ambitions pour le CTT Ottignies-Blocry ! Après une saison 2025-2026 riche en émotions, le club revient avec une équipe renforcée et des objectifs ambitieux. Les entraînements reprennent dès le 8 septembre avec de nouveaux créneaux horaires adaptés à toutes les catégories. Bienvenue à nos 12 nouveaux membres et bonne saison à tous !',
+                'category' => NewsPostCategoryEnum::NEWS,
+                'status' => NewsPostStatusEnum::PUBLISHED,
+                'is_public' => true,
+            ],
+            [
+                'title' => 'Compte-rendu de l\'assemblée générale de début de saison',
+                'content' => 'L\'assemblée générale annuelle s\'est tenue le 15 septembre en présence de 38 membres. Le président Olivier Pauwels a présenté le bilan de la saison écoulée et les objectifs 2026-2027. Le budget prévisionnel de 22 000 euros a été approuvé à l\'unanimité. Parmi les décisions : acquisition de 2 nouvelles tables Tibhar, réfection des vestiaires et lancement d\'une section jeunes renforcée. Gilles Herpigny est reconduit à la trésorerie.',
+                'category' => NewsPostCategoryEnum::NEWS,
+                'status' => NewsPostStatusEnum::PUBLISHED,
+                'is_public' => false,
+            ],
+            [
+                'title' => 'Nouveau partenariat avec l\'Optique Lemmens d\'Ottignies',
+                'content' => 'Le CTT est heureux d\'accueillir l\'Optique Lemmens comme nouveau partenaire officiel du club. Dès octobre 2026, tous les membres en règle de cotisation bénéficieront de 20% de réduction sur les verres correcteurs et les montures. En retour, le logo Lemmens figurera sur nos maillots d\'entraînement. "Nous voulions soutenir une association sportive locale active", explique Marion Lemmens, gérante du magasin.',
+                'category' => NewsPostCategoryEnum::PARTNERSHIP,
+                'status' => NewsPostStatusEnum::PUBLISHED,
+                'is_public' => true,
+            ],
+            [
+                'title' => 'Portrait : Thomas Willems, la belle progression',
+                'content' => 'À 17 ans, Thomas Willems s\'est imposé comme l\'un des espoirs les plus sérieux du club. Pratiquant le tennis de table depuis l\'âge de 9 ans au CTT, il a franchi un cap décisif cette année en intégrant l\'équipe première. Son coup droit dévastateur et sa lecture du jeu font l\'admiration de ses coéquipiers. "Thomas a la mentalité du champion, il travaille deux fois plus que les autres", confie son entraîneur. Objectif de la saison : décrocher un classement national D.',
+                'category' => NewsPostCategoryEnum::PORTRAIT,
+                'status' => NewsPostStatusEnum::PUBLISHED,
+                'is_public' => true,
+            ],
+            [
+                'title' => 'Stage de la Toussaint : 30 jeunes au programme',
+                'content' => 'Du 26 au 28 octobre, 30 jeunes joueurs entre 8 et 17 ans ont participé au stage de la Toussaint. Réparti en trois groupes selon le niveau, le stage a mis l\'accent sur les services variés, les placements tactiques et le mental compétitif. Une séance vidéo d\'analyse de matchs professionnels a particulièrement enthousiasmé les participants. "J\'ai surtout travaillé mon revers, qui était mon point faible", témoigne Léa, 13 ans.',
+                'category' => NewsPostCategoryEnum::TRAINING,
+                'status' => NewsPostStatusEnum::PUBLISHED,
+                'is_public' => true,
+            ],
+            [
+                'title' => 'Solide entrée en matière pour nos équipes interclubs',
+                'content' => 'Premier week-end de compétition interclubs et nos équipes ont répondu présent ! L\'équipe première s\'est imposée 14-4 face à PP Witterzee, portée par un Arnaud Ghysens en grande forme (3 victoires en simple). L\'équipe B a partagé les points face à CTT Hamme-Mille (10-10) dans un match très disputé. Les vétérans ont eux remporté une nette victoire 16-2. Une belle entrée en matière qui augure bien pour la suite de la saison.',
+                'category' => NewsPostCategoryEnum::COMPETITION,
+                'status' => NewsPostStatusEnum::PUBLISHED,
+                'is_public' => true,
+            ],
+            [
+                'title' => 'Journées portes ouvertes : le club fait salle comble',
+                'content' => 'Les portes ouvertes organisées les 8 et 9 novembre ont dépassé toutes les espérances : plus de 110 visiteurs ont découvert notre club sur deux journées. Les initiations gratuites pour les enfants ont rencontré un vif succès, tout comme les démonstrations de nos joueurs de haut niveau. Au total, 23 nouvelles inscriptions ont été enregistrées dont 15 jeunes. Un beau renouvellement pour le club !',
+                'category' => NewsPostCategoryEnum::EVENT,
+                'status' => NewsPostStatusEnum::PUBLISHED,
+                'is_public' => true,
+            ],
+            [
+                'title' => 'Défaite courageuse face au CTT Limal-Wavre (8-16)',
+                'content' => 'Malgré une résistance acharnée, notre équipe première s\'est inclinée à domicile face au CTT Limal-Wavre, l\'une des équipes favorites du championnat. Le score (8-16) est sévère mais ne reflète pas la qualité des échanges. Xavier Coenen a livré deux magnifiques sets pour s\'imposer en simple, et le double Ghysens/Tilmans a arraché une victoire au 5e set. La rencontre a mis en évidence notre axe de progression : la régularité sous pression.',
+                'category' => NewsPostCategoryEnum::COMPETITION,
+                'status' => NewsPostStatusEnum::PUBLISHED,
+                'is_public' => true,
+            ],
+            [
+                'title' => 'Tournoi de Noël 2026 : une édition mémorable',
+                'content' => 'Le traditionnel tournoi de Noël a rassemblé 64 participants cette année, un record pour l\'événement ! Cinq catégories étaient au programme, des poussins aux vétérans. La finale messieurs a opposé deux membres du club dans un match d\'anthologie remporté en 5 sets. Le père Noël a distribué des cadeaux aux plus jeunes et la tombola a permis de récolter 1 200 euros pour le renouvellement des filets. Rendez-vous en décembre 2027 !',
+                'category' => NewsPostCategoryEnum::EVENT,
+                'status' => NewsPostStatusEnum::PUBLISHED,
+                'is_public' => true,
+            ],
+            [
+                'title' => 'Bilan financier du premier trimestre — réservé aux membres',
+                'content' => 'À mi-parcours du premier trimestre, les finances du club sont saines. Les recettes s\'élèvent à 8 450 euros (cotisations, tournoi de Noël, partenariats) pour des dépenses de 6 200 euros (location salle, matériel, déplacements). La réserve de trésorerie est de 14 300 euros. Le comité propose d\'affecter 2 000 euros à l\'achat de revêtements de raquettes pour les jeunes en formation. Vote lors de la prochaine réunion de comité.',
+                'category' => NewsPostCategoryEnum::NEWS,
+                'status' => NewsPostStatusEnum::PUBLISHED,
+                'is_public' => false,
+            ],
+            [
+                'title' => 'Présentation du nouveau bureau et des ambitions 2027',
+                'content' => 'Suite aux élections de janvier, le bureau du CTT Ottignies-Blocry se renouvelle partiellement. Olivier Pauwels reste président, Manon Patigny est reconduite au secrétariat. Julie Renard rejoint le comité comme responsable communication, et Simon Beaumont prend en charge la coordination des entraînements jeunes. Les nouveaux membres du bureau ont présenté leurs projets pour le second semestre, notamment la refonte du site internet et le développement de la section féminine.',
+                'category' => NewsPostCategoryEnum::NEWS,
+                'status' => NewsPostStatusEnum::DRAFT,
+                'is_public' => false,
+            ],
+            [
+                'title' => 'Un nouveau créneau d\'entraînement le vendredi soir',
+                'content' => 'Face aux demandes répétées de nos compétiteurs, le club ouvre un nouveau créneau d\'entraînement le vendredi de 20h à 22h30. Encadré par Arnaud Ghysens et réservé aux joueurs classés E2 et plus, ce créneau sera axé sur la préparation aux matchs et l\'analyse vidéo. Six tables seront disponibles. Capacité limitée à 15 joueurs, inscription obligatoire via l\'application du club.',
+                'category' => NewsPostCategoryEnum::TRAINING,
+                'status' => NewsPostStatusEnum::PUBLISHED,
+                'is_public' => true,
+            ],
+            [
+                'title' => 'Emma Delforge : cinq ans de dévouement au CTT',
+                'content' => 'Emma Delforge fête cette année ses cinq ans au CTT Ottignies-Blocry, et quelle progression ! Arrivée à 14 ans avec un niveau débutant, elle est aujourd\'hui classée D6 et s\'apprête à intégrer l\'équipe dames en interclubs. Mais Emma, c\'est aussi une bénévole précieuse : co-organisatrice du tournoi de Noël, présente à chaque journée portes ouvertes, elle incarne les valeurs de solidarité et d\'engagement du club.',
+                'category' => NewsPostCategoryEnum::PORTRAIT,
+                'status' => NewsPostStatusEnum::PUBLISHED,
+                'is_public' => true,
+            ],
+            [
+                'title' => 'Soirée quiz inter-générations : un vrai succès !',
+                'content' => 'La soirée quiz organisée le 14 février a mélangé les générations dans une ambiance festive. Dix équipes de quatre joueurs ont concouru sur des thèmes variés : tennis de table, histoire du club, actualités sportives et culture générale. L\'équipe "Les Vétérans Invincibles" (moyenne d\'âge 58 ans) a créé la surprise en l\'emportant face aux favoris. La soirée s\'est terminée autour d\'un buffet convivial préparé par les bénévoles.',
+                'category' => NewsPostCategoryEnum::EVENT,
+                'status' => NewsPostStatusEnum::PUBLISHED,
+                'is_public' => true,
+            ],
+            [
+                'title' => 'Victoire nette face au TT Perwez (16-6)',
+                'content' => 'Notre équipe première a signé l\'une de ses meilleures performances de la saison en dominant largement TT Perwez (16-6). Dariusz Sekula a été impérial avec trois victoires en simple, dont une contre leur meilleur joueur en 3 sets secs. Les deux doubles ont été remportés sans trembler. Cette victoire nous propulse à la 2e place du classement avec deux matchs d\'avance sur notre dauphin. L\'esprit de groupe et la communication sur le terrain ont fait la différence.',
+                'category' => NewsPostCategoryEnum::COMPETITION,
+                'status' => NewsPostStatusEnum::PUBLISHED,
+                'is_public' => true,
+            ],
+            [
+                'title' => 'Stage de Pâques avec Julien Sauvé, entraîneur national',
+                'content' => 'Les vacances de Pâques ont été marquées par un stage d\'exception avec Julien Sauvé, entraîneur fédéral et ancien joueur de ligue nationale. Pendant deux jours, 20 joueurs ont travaillé la technique de pointe, le jeu court et la préparation mentale. "Julien nous a montré des exercices qu\'on ne pratique jamais en entraînement habituel", explique Sébastien Vandevyver. Le stage s\'est conclu par un match exhibition très applaudi.',
+                'category' => NewsPostCategoryEnum::TRAINING,
+                'status' => NewsPostStatusEnum::PUBLISHED,
+                'is_public' => true,
+            ],
+            [
+                'title' => 'Le CTT rejoint le réseau Sport & Santé Brabant wallon',
+                'content' => 'Le CTT Ottignies-Blocry est désormais membre du réseau Sport & Santé Brabant wallon, une initiative provinciale promouvant l\'activité physique pour tous. Ce partenariat nous permettra d\'accueillir des personnes en réinsertion et des seniors via des séances adaptées, financées en partie par la Province. "C\'est une belle façon de rendre le tennis de table accessible au plus grand nombre", commente Manon Patigny, secrétaire du club.',
+                'category' => NewsPostCategoryEnum::PARTNERSHIP,
+                'status' => NewsPostStatusEnum::PUBLISHED,
+                'is_public' => true,
+            ],
+            [
+                'title' => 'Montée historique : le CTT accède à la provinciale 3 !',
+                'content' => 'C\'est officiel : notre équipe première est promue en provinciale 3 ! Après une saison quasi parfaite (13 victoires, 2 nuls, 1 défaite), nos joueurs ont validé leur montée lors de l\'avant-dernière journée. Les félicitations ont fusé dans le vestiaire : "C\'est l\'aboutissement de trois ans de travail", s\'est ému le capitaine Olivier Tilmans. Une montée qui récompense l\'investissement de tout le groupe et du staff technique.',
+                'category' => NewsPostCategoryEnum::COMPETITION,
+                'status' => NewsPostStatusEnum::PUBLISHED,
+                'is_public' => true,
+            ],
+            [
+                'title' => 'Projet de partenariat avec Decathlon Louvain-la-Neuve',
+                'content' => 'Le club est en discussion avancée avec le Decathlon de Louvain-la-Neuve pour établir un partenariat matériel sur la saison 2027-2028. Le projet prévoit une remise de 20% sur les achats de raquettes, balles et équipements pour tous les membres, ainsi que la mise à disposition de matériel de démonstration lors des journées portes ouvertes. Finalisation du contrat prévue d\'ici fin juin 2027.',
+                'category' => NewsPostCategoryEnum::PARTNERSHIP,
+                'status' => NewsPostStatusEnum::DRAFT,
+                'is_public' => false,
+            ],
+            [
+                'title' => 'Convocation à l\'assemblée générale de fin de saison',
+                'content' => 'Les membres du CTT Ottignies-Blocry sont convoqués à l\'assemblée générale de fin de saison le jeudi 12 juin 2027 à 19h30, salle polyvalente du Centre Sportif Jean Demeester. Ordre du jour : bilan sportif et financier de la saison 2026-2027, rapport du trésorier, montée en provinciale 3 et implications budgétaires, renouvellement partiel du comité, divers. La présence de chaque membre est vivement souhaitée. Un verre de l\'amitié clôturera la soirée.',
+                'category' => NewsPostCategoryEnum::NEWS,
+                'status' => NewsPostStatusEnum::PUBLISHED,
+                'is_public' => false,
+            ],
+        ];
+
+        $createdDates2627 = $this->generateVariedDates(count($articles2627), Carbon::create(2026, 9, 1), Carbon::create(2027, 6, 30));
+
+        foreach ($articles2627 as $index => $articleData) {
+            $createdAt = $createdDates2627[$index];
+
+            NewsPost::updateOrCreate(
+                ['slug' => Str::slug($articleData['title'])],
+                [
+                    'title' => $articleData['title'],
+                    'content' => $articleData['content'],
+                    'category' => $articleData['category'],
+                    'image' => $this->downloadPicsumImage($index + 21),
+                    'status' => $articleData['status'],
+                    'is_public' => $articleData['is_public'],
+                    'user_id' => $user->id,
+                    'created_at' => $createdAt,
+                    'updated_at' => $createdAt->copy()->addMinutes(rand(0, 30)),
+                ]
+            );
+        }
+
+        $this->command->info('40 articles créés avec succès pour le CTT Ottignies-Blocry (20 × 2023-2024 + 20 × 2026-2027) !');
     }
 
-    /**
-     * Génère des dates de création variées simulant une publication humaine
-     */
-    private function generateVariedDates(int $count): array
+    private function downloadPicsumImage(int $seed): string
+    {
+        $path = "public/articles/images/picsum-{$seed}.jpg";
+
+        if (! Storage::exists($path)) {
+            $response = Http::get("https://picsum.photos/seed/{$seed}/1200/630");
+            Storage::put($path, $response->body());
+        }
+
+        return $path;
+    }
+
+    private function generateVariedDates(int $count, Carbon $start, Carbon $end): array
     {
         $dates = [];
 
-        // Définir la plage de dates (janvier 2023 à décembre 2024)
-        $startDate = Carbon::create(2023, 1, 1);
-        $endDate = Carbon::create(2024, 12, 31);
-
         for ($i = 0; $i < $count; $i++) {
-            // Générer une date aléatoire dans la plage
             $randomDate = Carbon::createFromTimestamp(
-                rand($startDate->timestamp, $endDate->timestamp)
+                rand($start->timestamp, $end->timestamp)
             );
 
-            // Ajuster l'heure pour simuler une publication humaine
             $hour = $this->getRealisticPublicationHour();
             $minute = rand(0, 59);
 
@@ -190,7 +348,6 @@ class NewsPostSeeder extends Seeder
             $dates[] = $randomDate;
         }
 
-        // Trier les dates par ordre chronologique
         usort($dates, function ($a, $b) {
             return $a->timestamp - $b->timestamp;
         });
@@ -198,12 +355,8 @@ class NewsPostSeeder extends Seeder
         return $dates;
     }
 
-    /**
-     * Retourne une heure réaliste de publication (simulation humaine)
-     */
     private function getRealisticPublicationHour(): int
     {
-        // Pondération des heures pour simuler un comportement humain
         $hourWeights = [
             6 => 1,   // 6h - rare
             7 => 2,   // 7h - peu fréquent
@@ -225,7 +378,6 @@ class NewsPostSeeder extends Seeder
             23 => 1,  // 23h - très tard
         ];
 
-        // Créer un tableau avec répétition selon les poids
         $weightedHours = [];
         foreach ($hourWeights as $hour => $weight) {
             for ($i = 0; $i < $weight; $i++) {

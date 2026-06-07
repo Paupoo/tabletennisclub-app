@@ -9,6 +9,8 @@ use App\Http\Controllers\Bar\BarController;
 use App\Http\Controllers\Bar\BarOrderController;
 use App\Http\Controllers\Bar\BarProductController;
 use App\Http\Controllers\Bar\BarPaymentController;
+use App\Http\Controllers\ClubAdmin\Users\Auth\AuthenticatedSessionController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -118,3 +120,11 @@ Route::prefix('cashsheet')->name('cashSheet.')->group(function () {
     Route::post('/bar/cashSheet/send', [BarCashSheetController::class, 'send'])
         ->name('send');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Logout
+|--------------------------------------------------------------------------
+*/
+Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
+    ->name('logout');

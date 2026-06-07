@@ -54,17 +54,6 @@
 
             <div style="display:flex; gap:10px; flex-wrap:wrap;">
                 {{-- Offered --}}
-                <!-- <form method="POST" action="{{ route('bar.payment.pay', $order) }}">
-                    @csrf
-                    <input type="hidden" name="method" value="offered">
-                    <div class="form-field">
-                        <label class="form-label">Raison *</label>
-                        <input type="text" name="reason" class="form-input" required>
-                    </div>
-                    <button class="btn btn-clear btn-block">
-                        🎁 Offert
-                    </button>
-                </form> -->
                 <button class="btn btn-clear" onclick="toggleOfferedForm()">🎁 Offert</button>
                 <form id="offered-form" style="display:none;" method="POST" action="{{ route('bar.payment.pay', $order) }}">
                     @csrf

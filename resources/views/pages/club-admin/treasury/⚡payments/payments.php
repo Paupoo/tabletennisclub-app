@@ -54,11 +54,13 @@ new class extends Component
     public string $statusFilter          = 'pending';
 
     // Drawer filters
-    public string $paymentMethod = '';
-    public string $dateFrom      = '';
-    public string $dateTo        = '';
-    public ?int   $userId        = null;
+    public string $paymentMethod   = '';
+    public string $dateFrom        = '';
+    public string $dateTo          = '';
+    public ?int   $userId          = null;
     public array  $usersSearchList = [];
+    public string $eventType       = '';
+    public string $eventName       = '';
 
     public function updatedSearch(): void { $this->resetPage(); }
     public function updatedStatusFilter(): void { $this->resetPage(); }
@@ -67,6 +69,8 @@ new class extends Component
     public function updatedDateFrom(): void { $this->resetPage(); }
     public function updatedDateTo(): void { $this->resetPage(); }
     public function updatedUserId(): void { $this->resetPage(); }
+    public function updatedEventType(): void { $this->resetPage(); }
+    public function updatedEventName(): void { $this->resetPage(); }
 
     // ==================== HasBulkActions ====================
 
@@ -106,13 +110,46 @@ new class extends Component
             $chips[] = ['key' => 'userId', 'label' => $user?->full_name ?? __('Member')];
         }
 
+        if ($this->eventType) {
+            $chips[] = ['key' => 'eventType', 'label' => $this->eventTypeLabel($this->eventType)];
+        }
+
+        if ($this->eventName) {
+            $chips[] = ['key' => 'eventName', 'label' => $this->eventName];
+        }
+
         return $chips;
     }
 
     public function clearFilters(): void
     {
-        $this->reset(['paymentMethod', 'dateFrom', 'dateTo', 'userId', 'usersSearchList']);
+        $this->reset(['paymentMethod', 'dateFrom', 'dateTo', 'userId', 'usersSearchList', 'eventType', 'eventName']);
         $this->resetPage();
+    }
+
+    private function eventTypeLabel(string $type): string
+    {
+        return match ($type) {
+            Subscription::class           => __('Subscription'),
+            TournamentRegistration::class => __('Tournament'),
+            MeetingUser::class            => __('Meeting'),
+            default                       => $type,
+        };
+    }
+
+    private function applyEventNameFilter(\Illuminate\Database\Eloquent\Builder $q, string $name): \Illuminate\Database\Eloquent\Builder
+    {
+        return $q->where(function ($q) use ($name): void {
+            $q->whereHasMorph('payable', [Subscription::class], fn ($sub) => $sub
+                ->whereHas('season', fn ($s) => $s->where('name', 'like', "%{$name}%"))
+            )
+            ->orWhereHasMorph('payable', [TournamentRegistration::class], fn ($reg) => $reg
+                ->whereHas('tournament', fn ($t) => $t->where('name', 'like', "%{$name}%"))
+            )
+            ->orWhereHasMorph('payable', [MeetingUser::class], fn ($mu) => $mu
+                ->whereHas('meeting', fn ($m) => $m->where('title', 'like', "%{$name}%"))
+            );
+        });
     }
 
     // ==================== User autocomplete for filter ====================
@@ -216,6 +253,8 @@ new class extends Component
                 [Subscription::class, TournamentRegistration::class, MeetingUser::class],
                 fn ($q) => $q->where('user_id', $this->userId)
             ))
+            ->when($this->eventType, fn ($q) => $q->where('payable_type', $this->eventType))
+            ->when($this->eventName, fn ($q) => $this->applyEventNameFilter($q, $this->eventName))
             ->pluck('id')
             ->toArray();
     }
@@ -395,6 +434,8 @@ new class extends Component
                 [Subscription::class, TournamentRegistration::class, MeetingUser::class],
                 fn ($q) => $q->where('user_id', $this->userId)
             ))
+            ->when($this->eventType, fn ($q) => $q->where('payable_type', $this->eventType))
+            ->when($this->eventName, fn ($q) => $this->applyEventNameFilter($q, $this->eventName))
             ->get()
             ->map(function (Payment $p) {
                 $label = $p->payable instanceof DescribesPayment ? $p->payable->getPaymentLabel() : null;
@@ -737,6 +778,11 @@ new class extends Component
                 ['id' => 'Wire',    'name' => 'Wire'],
                 ['id' => 'QRCode',  'name' => 'QRCode'],
                 ['id' => 'Offered', 'name' => 'Offered'],
+            ],
+            'eventTypeOptions' => [
+                ['id' => Subscription::class,           'name' => __('Subscription')],
+                ['id' => TournamentRegistration::class, 'name' => __('Tournament')],
+                ['id' => MeetingUser::class,            'name' => __('Meeting')],
             ],
             'pendingTransactions'  => $this->reconcileModal ? $this->pendingTransactions() : collect(),
             'currentPayment'       => $this->reconcilePaymentId

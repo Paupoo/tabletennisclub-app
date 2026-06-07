@@ -286,6 +286,22 @@
                 single
                 searchable
                 clearable />
+
+            <x-select
+                :label="__('Event type')"
+                wire:model.live="eventType"
+                :options="$eventTypeOptions"
+                option-value="id"
+                option-label="name"
+                :placeholder="__('All types')"
+                clearable />
+
+            <x-input
+                :label="__('Event name')"
+                wire:model.live.debounce.300ms="eventName"
+                :placeholder="__('Search event name...')"
+                icon="o-magnifying-glass"
+                clearable />
         </x-slot:filters>
     </x-admin.shared.filter-drawer>
 

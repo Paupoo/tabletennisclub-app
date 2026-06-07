@@ -2,7 +2,10 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 
 describe('DashboardController', function (): void {
@@ -67,7 +70,7 @@ describe('DashboardController', function (): void {
     });
 
     it('shows unpaid members alert when there are unpaid active members', function (): void {
-        $admin = User::factory()->isAdmin()->create();
+        $admin = User::factory()->isAdmin()->create(['has_paid' => true]);
         User::factory()->create(['has_paid' => false, 'is_active' => true]);
 
         $this->actingAs($admin)
@@ -76,13 +79,74 @@ describe('DashboardController', function (): void {
             ->assertSee('cotisation');
     });
 
-    it('shows no alerts when everything is fine', function (): void {
+    it('shows incomplete profile alert when active members have missing mandatory fields', function (): void {
         $admin = User::factory()->isAdmin()->create(['has_paid' => true]);
+        User::factory()->create(['is_active' => true, 'phone_number' => null]);
 
         $this->actingAs($admin)
             ->get(route('dashboard'))
             ->assertOk()
-            ->assertViewHas('alerts', []);
+            ->assertSee('profil');
+    });
+
+    it('shows personal incomplete profile alert when own profile is missing fields', function (): void {
+        $user = User::factory()->create([
+            'phone_number' => null,
+            'street' => null,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('incomplet');
+    });
+
+    it('shows personal affiliation alert when user has no subscription for current season', function (): void {
+        Season::factory()->create(['is_active' => true]);
+
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('affilié');
+    });
+
+    it('shows personal payment alert when user has pending payments', function (): void {
+        $user = User::factory()->isAdmin()->create(['has_paid' => true]);
+
+        $subscription = Subscription::factory()->create(['user_id' => $user->id]);
+        Payment::factory()->create([
+            'status' => 'pending',
+            'payable_type' => Subscription::class,
+            'payable_id' => $subscription->id,
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('votre nom');
+    });
+
+    it('shows member tiles for all users', function (): void {
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk();
+
+        expect($response->viewData('memberTiles'))->toBeArray()->not->toBeEmpty();
+    });
+
+    it('adds interclub tiles for competitors', function (): void {
+        $user = User::factory()->isCompetitor()->create();
+
+        $response = $this->actingAs($user)
+            ->get(route('dashboard'))
+            ->assertOk();
+
+        $labels = array_column($response->viewData('memberTiles'), 'label');
+        expect($labels)->toContain('Disponibilités')->toContain('Mes matchs');
     });
 
     it('returns recent activity feed', function (): void {

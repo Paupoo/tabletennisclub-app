@@ -61,6 +61,10 @@ new class extends Component
 
     public bool $showInactiveUsers = false;
 
+    public bool $incompleteProfile = false;
+
+    public bool $unpaidSubscription = false;
+
     // ── Filters & sort ───────────────────────────────────────────────────────
     public string $search = '';
 
@@ -121,6 +125,14 @@ new class extends Component
             $chips[] = ['key' => 'showInactiveUsers', 'label' => __('Show inactive')];
         }
 
+        if ($this->incompleteProfile) {
+            $chips[] = ['key' => 'incompleteProfile', 'label' => __('Incomplete profile')];
+        }
+
+        if ($this->unpaidSubscription) {
+            $chips[] = ['key' => 'unpaidSubscription', 'label' => __('Unpaid subscription')];
+        }
+
         if (! empty($this->team_ids)) {
             $chips[] = [
                 'key'   => 'team_ids',
@@ -136,6 +148,8 @@ new class extends Component
         $this->selectedLicenceType = 'both';
         $this->categories          = [];
         $this->showInactiveUsers   = false;
+        $this->incompleteProfile   = false;
+        $this->unpaidSubscription  = false;
         $this->team_ids            = [];
         $this->resetPage();
     }
@@ -337,13 +351,17 @@ new class extends Component
 
     // ── Pagination hooks ──────────────────────────────────────────────────────
 
-    public function updatedCategories(): void         { $this->resetPage(); }
+    public function updatedCategories(): void          { $this->resetPage(); }
 
-    public function updatedShowArchived(): void       { $this->resetPage(); }
+    public function updatedShowArchived(): void        { $this->resetPage(); }
 
-    public function updatedShowInactiveUsers(): void  { $this->resetPage(); }
+    public function updatedShowInactiveUsers(): void   { $this->resetPage(); }
 
-    public function updatedSearch(): void             { $this->resetPage(); }
+    public function updatedIncompleteProfile(): void   { $this->resetPage(); }
+
+    public function updatedUnpaidSubscription(): void  { $this->resetPage(); }
+
+    public function updatedSearch(): void              { $this->resetPage(); }
 
     public function updatedSelectedLicenceType(): void { $this->resetPage(); }
 
@@ -455,6 +473,8 @@ new class extends Component
                     fn ($teamQuery) => $teamQuery->whereIn('teams.id', $this->team_ids)
                 )
             )
+            ->when($this->incompleteProfile, fn ($q) => $q->withIncompleteProfile())
+            ->when($this->unpaidSubscription, fn ($q) => $q->unpaid())
             ->orderBy($this->sortBy['column'], $this->sortBy['direction'])
             ->paginate(15);
     }

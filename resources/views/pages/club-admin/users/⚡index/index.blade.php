@@ -273,6 +273,18 @@
             </div>
             <div>
                 <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    {{ __('Profile') }}
+                </p>
+                <x-toggle :label="__('Incomplete profile')" wire:model.live="incompleteProfile" />
+            </div>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    {{ __('Subscription') }}
+                </p>
+                <x-toggle :label="__('Unpaid subscription')" wire:model.live="unpaidSubscription" />
+            </div>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
                     {{ __('Teams') }}
                 </p>
                 <x-choices :options="$teams" class="w-full" clearable :placeholder="__('Select a team...')"

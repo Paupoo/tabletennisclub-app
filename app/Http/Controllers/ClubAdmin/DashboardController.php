@@ -6,8 +6,10 @@ namespace App\Http\Controllers\ClubAdmin;
 
 use App\Domains\ClubAdmin\Contact\Models\Contact;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Interclub;
+use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Http\Controllers\Controller;
@@ -37,8 +39,9 @@ class DashboardController extends Controller
             CommitteeRolesEnum::ADMINISTRATOR,
         ]);
 
-        $alerts = $this->buildAlerts($isAdmin, $showSecretary, $showTreasurer, $showCaptain);
+        $alerts = $this->buildAlerts($user, $isAdmin, $showSecretary, $showTreasurer, $showCaptain);
         $recentActivity = $this->buildActivityFeed();
+        $memberTiles = $this->buildMemberTiles($user);
 
         return view('clubAdmin.dashboard', compact(
             'showSecretary',
@@ -47,6 +50,7 @@ class DashboardController extends Controller
             'showCommittee',
             'alerts',
             'recentActivity',
+            'memberTiles',
         ));
     }
 
@@ -104,12 +108,53 @@ class DashboardController extends Controller
     /**
      * @return array<int, array{type: string, icon: string, label: string, route: string}>
      */
-    private function buildAlerts(bool $isAdmin, bool $showSecretary, bool $showTreasurer, bool $showCaptain): array
+    private function buildAlerts(User $user, bool $isAdmin, bool $showSecretary, bool $showTreasurer, bool $showCaptain): array
     {
         $alerts = [];
+        $currentSeason = Season::current();
+
+        // Personal alert: own pending payments (all users)
+        $myPendingPayments = Payment::where('status', 'pending')
+            ->whereHasMorph('payable', [Subscription::class], fn ($q) => $q->where('user_id', $user->id))
+            ->count();
+        if ($myPendingPayments > 0) {
+            $alerts[] = [
+                'type' => 'warning',
+                'icon' => 'o-banknotes',
+                'label' => $myPendingPayments === 1 ? '1 paiement ouvert à votre nom' : "{$myPendingPayments} paiements ouverts à votre nom",
+                'route' => route('admin.user.registration-management', $user),
+            ];
+        }
+
+        // Personal alert: incomplete own profile (all users)
+        if (! $user->phone_number || ! $user->street || ! $user->city_code || ! $user->city_name || ! $user->birthdate) {
+            $alerts[] = [
+                'type' => 'warning',
+                'icon' => 'o-user-circle',
+                'label' => 'Votre profil est incomplet — merci de le compléter',
+                'route' => route('admin.user.profile', $user),
+            ];
+        }
+
+        // Personal alert: not affiliated for current season (all users)
+        if ($currentSeason) {
+            $isAffiliated = $user->subscriptions()
+                ->where('season_id', $currentSeason->id)
+                ->whereIn('status', ['pending', 'confirmed', 'paid'])
+                ->exists();
+
+            if (! $isAffiliated) {
+                $alerts[] = [
+                    'type' => 'warning',
+                    'icon' => 'o-exclamation-circle',
+                    'label' => "Vous n'êtes pas affilié pour la saison {$currentSeason->name}",
+                    'route' => route('admin.user.registration-management', $user),
+                ];
+            }
+        }
 
         if ($showSecretary || $isAdmin) {
-            $unpaidCount = User::where('has_paid', false)->where('is_active', true)->count();
+            $unpaidCount = User::isActive()->unpaid()->count();
             if ($unpaidCount > 0) {
                 $alerts[] = [
                     'type' => 'warning',
@@ -117,6 +162,33 @@ class DashboardController extends Controller
                     'label' => $unpaidCount === 1 ? '1 cotisation impayée' : "{$unpaidCount} cotisations impayées",
                     'route' => route('admin.users.index'),
                 ];
+            }
+
+            $incompleteProfiles = User::isActive()->withIncompleteProfile()->count();
+            if ($incompleteProfiles > 0) {
+                $alerts[] = [
+                    'type' => 'info',
+                    'icon' => 'o-user-circle',
+                    'label' => $incompleteProfiles === 1 ? '1 profil membre incomplet' : "{$incompleteProfiles} profils membres incomplets",
+                    'route' => route('admin.users.index'),
+                ];
+            }
+
+            if ($currentSeason) {
+                $nonAffiliatedCount = User::isActive()
+                    ->whereDoesntHave('subscriptions', fn ($q) => $q
+                        ->where('season_id', $currentSeason->id)
+                        ->whereIn('status', ['pending', 'confirmed', 'paid'])
+                    )
+                    ->count();
+                if ($nonAffiliatedCount > 0) {
+                    $alerts[] = [
+                        'type' => 'info',
+                        'icon' => 'o-user-minus',
+                        'label' => $nonAffiliatedCount === 1 ? '1 membre actif non affilié' : "{$nonAffiliatedCount} membres actifs non affiliés",
+                        'route' => route('admin.users.index'),
+                    ];
+                }
             }
 
             $pendingContacts = Contact::byStatus('pending')->count();
@@ -157,5 +229,25 @@ class DashboardController extends Controller
         }
 
         return $alerts;
+    }
+
+    /**
+     * @return array<int, array{icon: string, label: string, sub: string, href: string, color: string}>
+     */
+    private function buildMemberTiles(User $user): array
+    {
+        $tiles = [
+            ['icon' => 'o-user',                     'label' => 'Mon profil',     'sub' => 'Données personnelles',   'href' => route('admin.user.profile', $user),              'color' => 'primary'],
+            ['icon' => 'o-clipboard-document-list',  'label' => 'Cotisations',    'sub' => 'Gérer ma cotisation et mes entraînements', 'href' => route('admin.user.registration-management', $user), 'color' => 'primary'],
+            ['icon' => 'o-banknotes',                'label' => 'Mes paiements',  'sub' => 'Suivi & historique',                        'href' => route('admin.user.registration-management', $user), 'color' => 'primary'],
+            ['icon' => 'o-calendar',                 'label' => 'Événements',     'sub' => 'Agenda du club',                            'href' => route('admin.user.calendar', $user),               'color' => 'primary'],
+        ];
+
+        if ($user->is_competitor) {
+            $tiles[] = ['icon' => 'o-calendar-days', 'label' => 'Disponibilités', 'sub' => 'Interclubs',           'href' => route('admin.user.calendar', $user),             'color' => 'primary'];
+            $tiles[] = ['icon' => 'o-globe-alt',     'label' => 'Mes matchs',     'sub' => 'Interclubs',           'href' => route('admin.interclubs.my-matches'),             'color' => 'primary'];
+        }
+
+        return $tiles;
     }
 }

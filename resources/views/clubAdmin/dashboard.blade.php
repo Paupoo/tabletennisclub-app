@@ -43,6 +43,18 @@
             {{-- LEFT: Navigation accordions (role-filtered) --}}
             <div class="lg:col-span-2 space-y-4">
 
+                {{-- MON ESPACE (all users) --}}
+                <x-section-accordion
+                    label="Mon espace"
+                    :count="count($memberTiles) . ' accès'"
+                    color="emerald">
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 pb-2">
+                        @foreach($memberTiles as $tile)
+                            @include('clubAdmin._dashboard_tile', $tile)
+                        @endforeach
+                    </div>
+                </x-section-accordion>
+
                 @if($showSecretary)
                 @php
                     $secretaryTiles = [

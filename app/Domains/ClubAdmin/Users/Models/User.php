@@ -393,11 +393,27 @@ class User extends Authenticatable implements MustVerifyEmail
         }
     }
 
+    public function scopeUnpaid(Builder $query): Builder
+    {
+        return $query->where('has_paid', false);
+    }
+
     public function scopeUnregisteredUsers(Builder $query, Tournament $tournament): Builder
     {
         return $query->whereDoesntHave('tournaments', function (Builder $query) use ($tournament): void {
             $query->where('tournaments.id', $tournament->id);
         })->orderBy('last_name')->orderBy('first_name');
+    }
+
+    public function scopeWithIncompleteProfile(Builder $query): Builder
+    {
+        return $query->where(fn (Builder $q) => $q
+            ->whereNull('phone_number')
+            ->orWhereNull('street')
+            ->orWhereNull('city_code')
+            ->orWhereNull('city_name')
+            ->orWhereNull('birthdate')
+        );
     }
 
     public function seasons(): BelongsToMany

@@ -25,8 +25,9 @@ use Illuminate\Support\Carbon;
  * @property-read Payment|null $payment
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
- * @property-read \App\Domains\Meetings\Models\Meeting $meeting
+ * @property-read Meeting $meeting
  * @property-read User $user
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingUser newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingUser newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingUser query()
@@ -40,6 +41,7 @@ use Illuminate\Support\Carbon;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingUser whereStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingUser whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingUser whereUserId($value)
+ *
  * @mixin \Eloquent
  */
 class MeetingUser extends Pivot implements DescribesPayment
@@ -53,6 +55,8 @@ class MeetingUser extends Pivot implements DescribesPayment
         'meal_reserved' => 'boolean',
         'meal_responded_at' => 'datetime',
     ];
+
+    protected $table = 'meeting_user';
 
     public function getPayerName(): string
     {

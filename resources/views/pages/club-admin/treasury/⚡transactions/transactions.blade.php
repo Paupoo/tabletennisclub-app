@@ -13,12 +13,27 @@
         </x-slot:middle>
         <x-slot:actions>
             <x-button
+                icon="o-funnel"
+                class="btn-outline btn-sm"
+                wire:click="$set('filterDrawer', true)">
+                @if (count($filterChips) > 0)
+                    <x-badge value="{{ count($filterChips) }}" class="badge-primary badge-sm" />
+                @endif
+            </x-button>
+            <x-button
+                class="btn-outline btn-sm lg:hidden"
+                wire:click="toggleSelectionMode"
+                icon="{{ $selectionModeActive ? 'o-x-mark' : 'o-check-circle' }}" />
+            <x-button
                 :label="__('Import CSV')"
                 icon="o-arrow-up-tray"
                 class="btn-primary btn-sm"
                 wire:click="$set('importModal', true)" />
         </x-slot:actions>
     </x-header>
+
+    {{-- Active filter chips --}}
+    <x-admin.shared.filter-chips :chips="$filterChips" />
 
     {{-- Stats --}}
     <div class="grid grid-cols-3 gap-4 mb-6">
@@ -57,7 +72,7 @@
     </div>
 
     <x-card class="bg-base-100 border-none shadow-sm">
-        <x-table :headers="$headers" :rows="$transactions" :sort-by="$sortBy" hover>
+        <x-table :headers="$headers" :rows="$transactions" :sort-by="$sortBy" wire:model.live="selected" selectable hover>
 
             @scope('cell_date', $transaction)
             <span class="text-sm tabular-nums">{{ \Carbon\Carbon::parse($transaction->date)->format('d/m/Y') }}</span>
@@ -116,7 +131,97 @@
         </div>
     </x-card>
 
-    {{-- Modal : Import --}}
+
+    {{-- ========================================== --}}
+    {{-- Floating selection pill                     --}}
+    {{-- ========================================== --}}
+    <x-admin.shared.selection-pill
+        :selected="$selected"
+        :total="$this->getTotalMatchingCount()"
+        :selecting-all-results="$selectingAllResults"
+        :select-all="$selectAll">
+        <x-slot:actions>
+            <x-button
+                wire:click="openConfirmDeleteModal"
+                icon="o-trash"
+                :label="__('Delete')"
+                class="btn-ghost btn-sm text-error" />
+        </x-slot:actions>
+    </x-admin.shared.selection-pill>
+
+
+    {{-- ========================================== --}}
+    {{-- Modal : Confirm bulk delete                 --}}
+    {{-- ========================================== --}}
+    <x-confirm-modal
+        model="confirmDeleteModal"
+        :title="__('Delete transactions')"
+        :confirm-label="__('Delete')"
+        confirmClass="btn-error"
+        confirmAction="bulkDelete">
+        <div class="space-y-3">
+            <p class="text-sm">
+                {{ trans_choice(
+                    '{1} Delete :count transaction?|[2,*] Delete :count transactions?',
+                    $selectingAllResults ? $this->getTotalMatchingCount() : count($selected),
+                    ['count' => $selectingAllResults ? $this->getTotalMatchingCount() : count($selected)]
+                ) }}
+            </p>
+            @if ($reconciledInSelection > 0)
+            <div class="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm">
+                <x-icon name="o-exclamation-triangle" class="w-4 h-4 text-warning shrink-0 mt-0.5" />
+                <span>
+                    {{ trans_choice(
+                        '{1} :count of the selected transactions is already reconciled with a payment and will be unlinked.|[2,*] :count of the selected transactions are already reconciled with payments and will be unlinked.',
+                        $reconciledInSelection,
+                        ['count' => $reconciledInSelection]
+                    ) }}
+                </span>
+            </div>
+            @endif
+        </div>
+    </x-confirm-modal>
+
+
+    {{-- ========================================== --}}
+    {{-- Filter drawer                              --}}
+    {{-- ========================================== --}}
+    <x-admin.shared.filter-drawer :title="__('Filters')">
+        <x-slot:filters>
+            <x-input
+                :label="__('From')"
+                wire:model.live="dateFrom"
+                type="date" />
+
+            <x-input
+                :label="__('To')"
+                wire:model.live="dateTo"
+                type="date" />
+
+            <x-select
+                :label="__('Reconciliation')"
+                wire:model.live="reconciledFilter"
+                :options="$reconciledOptions"
+                option-value="id"
+                option-label="name"
+                :placeholder="__('All')"
+                clearable />
+
+            <x-select
+                :label="__('Direction')"
+                wire:model.live="amountDirection"
+                :options="$amountDirectionOptions"
+                option-value="id"
+                option-label="name"
+                :placeholder="__('All')"
+                clearable />
+        </x-slot:filters>
+    </x-admin.shared.filter-drawer>
+
+
+    {{-- ========================================== --}}
+    {{-- Modal : Import                             --}}
+    {{-- ========================================== --}}
     <x-modal wire:model="importModal" :title="__('Import Bank Statement')" separator>
         <div class="space-y-4">
             <p class="text-sm opacity-70">

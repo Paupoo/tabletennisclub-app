@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Livewire\Concerns\HasBreadcrumbs;
+use App\Livewire\Concerns\HasBulkActions;
+use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -19,14 +21,118 @@ use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 new class extends Component
 {
     use Toast, WithFileUploads, WithPagination, HasBreadcrumbs;
+    use HasBulkActions, HasFilterDrawer;
 
     public $importFile;
-    public bool $importModal = false;
-    public string $search = '';
-    public array $sortBy = ['column' => 'date', 'direction' => 'desc'];
+    public bool $importModal           = false;
+    public bool $confirmDeleteModal    = false;
+    public int  $reconciledInSelection = 0;
+    public string $search  = '';
+    public array  $sortBy  = ['column' => 'date', 'direction' => 'desc'];
+
+    // Drawer filters
+    public string $dateFrom          = '';
+    public string $dateTo            = '';
+    public string $reconciledFilter  = '';
+    public string $amountDirection   = '';
 
     public function updatedSearch(): void { $this->resetPage(); }
     public function updatedSortBy(): void { $this->resetPage(); }
+    public function updatedDateFrom(): void { $this->resetPage(); }
+    public function updatedDateTo(): void { $this->resetPage(); }
+    public function updatedReconciledFilter(): void { $this->resetPage(); }
+    public function updatedAmountDirection(): void { $this->resetPage(); }
+
+    // ==================== HasBulkActions ====================
+
+    protected function getPageIds(): array
+    {
+        return $this->transactions()->pluck('id')->map(fn ($id) => (string) $id)->toArray();
+    }
+
+    public function getTotalMatchingCount(): int
+    {
+        return $this->transactions()->total();
+    }
+
+    // ==================== HasFilterDrawer ====================
+
+    public function getFilterChips(): array
+    {
+        $chips = [];
+
+        if ($this->dateFrom) {
+            $chips[] = ['key' => 'dateFrom', 'label' => __('From: :date', ['date' => $this->dateFrom])];
+        }
+
+        if ($this->dateTo) {
+            $chips[] = ['key' => 'dateTo', 'label' => __('To: :date', ['date' => $this->dateTo])];
+        }
+
+        if ($this->reconciledFilter) {
+            $label   = $this->reconciledFilter === 'reconciled' ? __('Reconciled') : __('Unreconciled');
+            $chips[] = ['key' => 'reconciledFilter', 'label' => $label];
+        }
+
+        if ($this->amountDirection) {
+            $label   = $this->amountDirection === 'credit' ? __('Credit') : __('Debit');
+            $chips[] = ['key' => 'amountDirection', 'label' => $label];
+        }
+
+        return $chips;
+    }
+
+    public function clearFilters(): void
+    {
+        $this->reset(['dateFrom', 'dateTo', 'reconciledFilter', 'amountDirection']);
+        $this->resetPage();
+    }
+
+    // ==================== Bulk actions ====================
+
+    public function openConfirmDeleteModal(): void
+    {
+        $ids = array_map('intval', $this->selected);
+
+        $this->reconciledInSelection = Transaction::whereIn('id', $ids)->has('payment')->count();
+        $this->confirmDeleteModal    = true;
+    }
+
+    public function bulkDelete(): void
+    {
+        $ids = array_map('intval', $this->selected);
+
+        if ($this->selectingAllResults) {
+            $ids = $this->allMatchingTransactionIds();
+        }
+
+        Transaction::whereIn('id', $ids)->delete();
+
+        $this->confirmDeleteModal    = false;
+        $this->reconciledInSelection = 0;
+        $this->clearSelection();
+        $this->success(__(':count transaction(s) deleted.', ['count' => count($ids)]));
+    }
+
+    private function allMatchingTransactionIds(): array
+    {
+        return Transaction::when($this->search, fn ($q) => $q
+            ->where('counterparty_name', 'like', "%{$this->search}%")
+            ->orWhere('structured_reference', 'like', "%{$this->search}%")
+            ->orWhere('free_reference', 'like', "%{$this->search}%")
+            ->orWhere('description', 'like', "%{$this->search}%")
+        )
+            ->when($this->dateFrom, fn ($q) => $q->whereDate('date', '>=', $this->dateFrom))
+            ->when($this->dateTo, fn ($q) => $q->whereDate('date', '<=', $this->dateTo))
+            ->when($this->reconciledFilter === 'reconciled', fn ($q) => $q->has('payment'))
+            ->when($this->reconciledFilter === 'unreconciled', fn ($q) => $q->doesntHave('payment'))
+            ->when($this->amountDirection === 'credit', fn ($q) => $q->where('amount', '>', 0))
+            ->when($this->amountDirection === 'debit', fn ($q) => $q->where('amount', '<', 0))
+            ->pluck('id')
+            ->toArray();
+    }
+
+    // ==================== Actions ====================
 
     public function processImport(): void
     {
@@ -82,24 +188,26 @@ new class extends Component
         }
     }
 
+    // ==================== Data ====================
+
     #[Computed]
     public function stats(): array
     {
         return [
-            'total'          => Transaction::count(),
-            'reconciled'     => Transaction::has('payment')->count(),
-            'unreconciled'   => Transaction::doesntHave('payment')->where('amount', '>', 0)->count(),
+            'total'        => Transaction::count(),
+            'reconciled'   => Transaction::has('payment')->count(),
+            'unreconciled' => Transaction::doesntHave('payment')->where('amount', '>', 0)->count(),
         ];
     }
 
     public function headers(): array
     {
         return [
-            ['key' => 'date',              'label' => __('Date'),        'sortable' => true],
-            ['key' => 'counterparty_name', 'label' => __('Counterparty'),'sortable' => true],
-            ['key' => 'structured_reference', 'label' => __('Reference'), 'sortable' => false],
-            ['key' => 'amount',            'label' => __('Amount'),       'sortable' => true],
-            ['key' => 'status',            'label' => __('Status'),       'sortable' => false],
+            ['key' => 'date',                 'label' => __('Date'),        'sortable' => true],
+            ['key' => 'counterparty_name',    'label' => __('Counterparty'), 'sortable' => true],
+            ['key' => 'structured_reference', 'label' => __('Reference'),   'sortable' => false],
+            ['key' => 'amount',               'label' => __('Amount'),      'sortable' => true],
+            ['key' => 'status',               'label' => __('Status'),      'sortable' => false],
         ];
     }
 
@@ -108,31 +216,44 @@ new class extends Component
         $col = $this->sortBy['column'];
         $dir = $this->sortBy['direction'];
 
-        $query = Transaction::with('payment')
+        return Transaction::with('payment')
             ->when($this->search, fn ($q) => $q
                 ->where('counterparty_name', 'like', "%{$this->search}%")
                 ->orWhere('structured_reference', 'like', "%{$this->search}%")
                 ->orWhere('free_reference', 'like', "%{$this->search}%")
                 ->orWhere('description', 'like', "%{$this->search}%")
             )
-            ->orderBy($col, $dir);
-
-        return $query->paginate(25);
+            ->when($this->dateFrom, fn ($q) => $q->whereDate('date', '>=', $this->dateFrom))
+            ->when($this->dateTo, fn ($q) => $q->whereDate('date', '<=', $this->dateTo))
+            ->when($this->reconciledFilter === 'reconciled', fn ($q) => $q->has('payment'))
+            ->when($this->reconciledFilter === 'unreconciled', fn ($q) => $q->doesntHave('payment'))
+            ->when($this->amountDirection === 'credit', fn ($q) => $q->where('amount', '>', 0))
+            ->when($this->amountDirection === 'debit', fn ($q) => $q->where('amount', '<', 0))
+            ->orderBy($col, $dir)
+            ->paginate(25);
     }
-
 
     protected function breadcrumbChain(): Breadcrumb
     {
         return Breadcrumb::make()
             ->home()
-            ->current(__("Treasury — Transactions"));
+            ->current(__('Treasury — Transactions'));
     }
 
-        public function render(): View
+    public function render(): View
     {
         return $this->view([
             'headers'      => $this->headers(),
             'transactions' => $this->transactions(),
+            'filterChips'  => $this->getFilterChips(),
+            'reconciledOptions' => [
+                ['id' => 'reconciled',   'name' => __('Reconciled')],
+                ['id' => 'unreconciled', 'name' => __('Unreconciled')],
+            ],
+            'amountDirectionOptions' => [
+                ['id' => 'credit', 'name' => __('Credit (incoming)')],
+                ['id' => 'debit',  'name' => __('Debit (outgoing)')],
+            ],
             'breadcrumbs' => $this->getBreadcrumbs(),
         ]);
     }

@@ -28,12 +28,27 @@
                 spinner />
             @endif
             <x-button
+                icon="o-funnel"
+                class="btn-outline btn-sm"
+                wire:click="$set('filterDrawer', true)">
+                @if (count($filterChips) > 0)
+                    <x-badge value="{{ count($filterChips) }}" class="badge-primary badge-sm" />
+                @endif
+            </x-button>
+            <x-button
+                class="btn-outline btn-sm lg:hidden"
+                wire:click="toggleSelectionMode"
+                icon="{{ $selectionModeActive ? 'o-x-mark' : 'o-check-circle' }}" />
+            <x-button
                 :label="__('Import CSV')"
                 icon="o-arrow-up-tray"
                 class="btn-outline btn-sm"
                 wire:click="$set('importModal', true)" />
         </x-slot:actions>
     </x-header>
+
+    {{-- Active filter chips --}}
+    <x-admin.shared.filter-chips :chips="$filterChips" />
 
     {{-- Stats --}}
     <div class="grid grid-cols-3 gap-4 mb-6">
@@ -93,7 +108,7 @@
     </x-tabs>
 
     <x-card class="bg-base-100 border-none shadow-sm rounded-t-none">
-        <x-table :headers="$headers" :rows="$payments" :sort-by="$sortBy" hover>
+        <x-table :headers="$headers" :rows="$payments" :sort-by="$sortBy" wire:model.live="selected" selectable hover>
 
             @scope('cell_reference', $payment)
             <span class="font-mono text-sm tracking-tight text-primary">{{ $payment->reference }}</span>
@@ -176,13 +191,112 @@
 
 
     {{-- ========================================== --}}
+    {{-- Floating selection pill                     --}}
+    {{-- ========================================== --}}
+    <x-admin.shared.selection-pill
+        :selected="$selected"
+        :total="$this->getTotalMatchingCount()"
+        :selecting-all-results="$selectingAllResults"
+        :select-all="$selectAll">
+        <x-slot:actions>
+            @if ($statusFilter === 'pending')
+            <x-button
+                wire:click="openBulkReminderModal"
+                icon="o-paper-airplane"
+                :label="__('Send reminders')"
+                class="btn-ghost btn-sm" />
+            @elseif ($statusFilter === 'to_refund')
+            <x-button
+                wire:click="openBulkCancelRefundModal"
+                icon="o-x-circle"
+                :label="__('Cancel refunds')"
+                class="btn-ghost btn-sm" />
+            @endif
+        </x-slot:actions>
+    </x-admin.shared.selection-pill>
+
+
+    {{-- ========================================== --}}
+    {{-- Modal : Bulk reminder confirmation          --}}
+    {{-- ========================================== --}}
+    <x-confirm-modal
+        model="bulkReminderModal"
+        :title="__('Send reminders')"
+        :subtitle="__('Queue a payment reminder for each selected member.')"
+        :confirm-label="__('Send')"
+        confirmClass="btn-primary"
+        confirmAction="bulkSendReminder">
+        <p class="text-sm">
+            {{ trans_choice('{1} Send :count reminder?|[2,*] Send :count reminders?', count($selected), ['count' => $selectingAllResults ? $this->getTotalMatchingCount() : count($selected)]) }}
+        </p>
+    </x-confirm-modal>
+
+
+    {{-- ========================================== --}}
+    {{-- Modal : Bulk cancel refund confirmation    --}}
+    {{-- ========================================== --}}
+    <x-confirm-modal
+        model="bulkCancelRefundModal"
+        :title="__('Cancel refunds')"
+        :subtitle="__('Selected payments will be moved back to paid status. Payments already linked to a bank transaction will be skipped.')"
+        :confirm-label="__('Confirm')"
+        confirmClass="btn-warning"
+        confirmAction="bulkCancelRefund">
+        <p class="text-sm">
+            {{ trans_choice('{1} Cancel :count refund?|[2,*] Cancel :count refunds?', count($selected), ['count' => $selectingAllResults ? $this->getTotalMatchingCount() : count($selected)]) }}
+        </p>
+    </x-confirm-modal>
+
+
+    {{-- ========================================== --}}
+    {{-- Filter drawer                              --}}
+    {{-- ========================================== --}}
+    <x-admin.shared.filter-drawer :title="__('Filters')">
+        <x-slot:filters>
+            <x-select
+                :label="__('Payment method')"
+                wire:model.live="paymentMethod"
+                :options="$paymentMethodOptions"
+                option-value="id"
+                option-label="name"
+                :placeholder="__('All methods')"
+                clearable />
+
+            <x-input
+                :label="__('From')"
+                wire:model.live="dateFrom"
+                type="date" />
+
+            <x-input
+                :label="__('To')"
+                wire:model.live="dateTo"
+                type="date" />
+
+            <x-choices
+                :label="__('Member')"
+                wire:model.live="userId"
+                :options="$usersSearchList"
+                option-value="id"
+                option-label="name"
+                search-function="searchUsers"
+                :no-result-text="__('No members found.')"
+                debounce="300"
+                min-chars="2"
+                icon="o-magnifying-glass"
+                single
+                searchable
+                clearable />
+        </x-slot:filters>
+    </x-admin.shared.filter-drawer>
+
+
+    {{-- ========================================== --}}
     {{-- Modal : Réconciliation                     --}}
     {{-- ========================================== --}}
     <x-modal wire:model="reconcileModal" :title="__('Reconcile Payment')" separator box-class="max-w-2xl">
 
         @if($currentPayment)
 
-        {{-- Résumé du paiement à réconcilier --}}
         <div class="flex items-center gap-4 p-4 rounded-xl bg-base-200/60 border border-base-300 mb-6">
             <x-icon name="o-document-text" class="w-8 h-8 text-primary shrink-0" />
             <div class="flex-1 min-w-0">
@@ -201,7 +315,6 @@
             </div>
         </div>
 
-        {{-- Liste des transactions non réconciliées --}}
         <div class="space-y-2 max-h-96 overflow-y-auto pr-1">
             <div class="text-xs font-bold uppercase tracking-widest opacity-50 mb-3">
                 {{ __('Unreconciled bank transactions') }}
@@ -221,7 +334,6 @@
                     'border-base-200 hover:border-base-300 bg-base-100' => $selectedTransactionId !== $transaction->id && !$isPerfect,
                 ])>
 
-                {{-- Sélecteur visuel --}}
                 <div @class([
                     'w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center',
                     'border-primary bg-primary' => $selectedTransactionId === $transaction->id,
@@ -232,7 +344,6 @@
                     @endif
                 </div>
 
-                {{-- Infos transaction --}}
                 <div class="flex-1 min-w-0">
                     <div class="flex items-center gap-2">
                         <span class="font-medium text-sm truncate">{{ $transaction->counterparty_name ?? '—' }}</span>
@@ -251,7 +362,6 @@
                     @endif
                 </div>
 
-                {{-- Date + Montant --}}
                 <div class="text-right shrink-0">
                     <div class="font-bold tabular-nums">{{ number_format($transaction->amount, 2, ',', ' ') }} €</div>
                     <div class="text-xs opacity-50">{{ \Carbon\Carbon::parse($transaction->date)->format('d/m/Y') }}</div>

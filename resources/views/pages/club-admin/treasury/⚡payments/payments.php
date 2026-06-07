@@ -3,20 +3,24 @@
 declare(strict_types=1);
 
 use App\Contracts\DescribesPayment;
-use App\Mail\PaymentInvitationEmail;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
-use App\Domains\Meetings\Models\MeetingUser;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
+use App\Domains\Meetings\Models\MeetingUser;
+use App\Jobs\SendPaymentReminderJob;
 use App\Livewire\Concerns\HasBreadcrumbs;
+use App\Livewire\Concerns\HasBulkActions;
+use App\Livewire\Concerns\HasFilterDrawer;
+use App\Mail\PaymentInvitationEmail;
 use App\Support\Breadcrumb;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
-use Carbon\Carbon;
-use Illuminate\Support\Collection;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -29,6 +33,7 @@ use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 new class extends Component
 {
     use Toast, WithFileUploads, WithPagination, HasBreadcrumbs;
+    use HasBulkActions, HasFilterDrawer;
 
     public $importFile;
     public bool $importModal             = false;
@@ -36,6 +41,8 @@ new class extends Component
     public bool $batchModal              = false;
     public bool $refundModal             = false;
     public bool $refundBatchModal        = false;
+    public bool $bulkReminderModal       = false;
+    public bool $bulkCancelRefundModal   = false;
     public ?int $reconcilePaymentId      = null;
     public ?int $selectedTransactionId   = null;
     public ?int $refundPaymentId         = null;
@@ -46,9 +53,172 @@ new class extends Component
     public array  $sortBy                = ['column' => 'created_at', 'direction' => 'desc'];
     public string $statusFilter          = 'pending';
 
+    // Drawer filters
+    public string $paymentMethod = '';
+    public string $dateFrom      = '';
+    public string $dateTo        = '';
+    public ?int   $userId        = null;
+    public array  $usersSearchList = [];
+
     public function updatedSearch(): void { $this->resetPage(); }
     public function updatedStatusFilter(): void { $this->resetPage(); }
     public function updatedSortBy(): void { $this->resetPage(); }
+    public function updatedPaymentMethod(): void { $this->resetPage(); }
+    public function updatedDateFrom(): void { $this->resetPage(); }
+    public function updatedDateTo(): void { $this->resetPage(); }
+    public function updatedUserId(): void { $this->resetPage(); }
+
+    // ==================== HasBulkActions ====================
+
+    protected function getPageIds(): array
+    {
+        return collect($this->payments()->items())
+            ->pluck('id')
+            ->map(fn ($id) => (string) $id)
+            ->toArray();
+    }
+
+    public function getTotalMatchingCount(): int
+    {
+        return $this->payments()->total();
+    }
+
+    // ==================== HasFilterDrawer ====================
+
+    public function getFilterChips(): array
+    {
+        $chips = [];
+
+        if ($this->paymentMethod) {
+            $chips[] = ['key' => 'paymentMethod', 'label' => $this->paymentMethod];
+        }
+
+        if ($this->dateFrom) {
+            $chips[] = ['key' => 'dateFrom', 'label' => __('From: :date', ['date' => $this->dateFrom])];
+        }
+
+        if ($this->dateTo) {
+            $chips[] = ['key' => 'dateTo', 'label' => __('To: :date', ['date' => $this->dateTo])];
+        }
+
+        if ($this->userId) {
+            $user    = User::find($this->userId);
+            $chips[] = ['key' => 'userId', 'label' => $user?->full_name ?? __('Member')];
+        }
+
+        return $chips;
+    }
+
+    public function clearFilters(): void
+    {
+        $this->reset(['paymentMethod', 'dateFrom', 'dateTo', 'userId', 'usersSearchList']);
+        $this->resetPage();
+    }
+
+    // ==================== User autocomplete for filter ====================
+
+    public function searchUsers(string $value = ''): void
+    {
+        if (strlen($value) < 2) {
+            $this->usersSearchList = $this->userId
+                ? User::where('id', $this->userId)
+                    ->get(['id', 'first_name', 'last_name'])
+                    ->map(fn ($u) => ['id' => $u->id, 'name' => $u->full_name])
+                    ->toArray()
+                : [];
+
+            return;
+        }
+
+        $this->usersSearchList = User::where(fn ($q) => $q
+            ->where('first_name', 'like', "%{$value}%")
+            ->orWhere('last_name', 'like', "%{$value}%")
+        )
+            ->orderBy('last_name')
+            ->limit(10)
+            ->get(['id', 'first_name', 'last_name'])
+            ->map(fn ($u) => ['id' => $u->id, 'name' => $u->full_name])
+            ->toArray();
+    }
+
+    // ==================== Bulk actions ====================
+
+    public function openBulkReminderModal(): void
+    {
+        $this->bulkReminderModal = true;
+    }
+
+    public function openBulkCancelRefundModal(): void
+    {
+        $this->bulkCancelRefundModal = true;
+    }
+
+    public function bulkCancelRefund(): void
+    {
+        $ids = $this->selectingAllResults
+            ? $this->allMatchingPaymentIds()
+            : array_map('intval', $this->selected);
+
+        $payments = Payment::whereIn('id', $ids)->where('status', 'to_refund')->get();
+
+        $blocked  = $payments->filter(fn (Payment $p) => $p->refund_transaction_id !== null);
+        $toCancel = $payments->filter(fn (Payment $p) => $p->refund_transaction_id === null);
+
+        foreach ($toCancel as $payment) {
+            $payment->update(['status' => 'paid']);
+        }
+
+        $this->bulkCancelRefundModal = false;
+        $this->clearSelection();
+
+        if ($blocked->isNotEmpty() && $toCancel->isEmpty()) {
+            $this->error(__(':count payment(s) already linked to a bank transaction — cannot cancel refund.', ['count' => $blocked->count()]));
+        } elseif ($blocked->isNotEmpty()) {
+            $this->warning(__(':cancelled refund(s) cancelled. :blocked skipped (already linked to a transaction).', [
+                'cancelled' => $toCancel->count(),
+                'blocked'   => $blocked->count(),
+            ]));
+        } else {
+            $this->success(__(':count refund(s) cancelled — payments moved back to paid.', ['count' => $toCancel->count()]));
+        }
+    }
+
+    public function bulkSendReminder(): void
+    {
+        $ids = $this->selectingAllResults
+            ? $this->allMatchingPaymentIds()
+            : array_map('intval', $this->selected);
+
+        foreach ($ids as $id) {
+            SendPaymentReminderJob::dispatch($id);
+        }
+
+        $this->bulkReminderModal = false;
+        $this->clearSelection();
+        $this->success(__(':count reminder(s) queued.', ['count' => count($ids)]));
+    }
+
+    private function allMatchingPaymentIds(): array
+    {
+        return Payment::where('status', $this->statusFilter)
+            ->when($this->search, fn ($q) => $q
+                ->where('reference', 'like', "%{$this->search}%")
+                ->orWhereHas('payable.user', fn ($u) => $u
+                    ->where('first_name', 'like', "%{$this->search}%")
+                    ->orWhere('last_name', 'like', "%{$this->search}%")
+                )
+            )
+            ->when($this->paymentMethod, fn ($q) => $q->where('payment_method', $this->paymentMethod))
+            ->when($this->dateFrom, fn ($q) => $q->whereDate('created_at', '>=', $this->dateFrom))
+            ->when($this->dateTo, fn ($q) => $q->whereDate('created_at', '<=', $this->dateTo))
+            ->when($this->userId, fn ($q) => $q->whereHasMorph(
+                'payable',
+                [Subscription::class, TournamentRegistration::class, MeetingUser::class],
+                fn ($q) => $q->where('user_id', $this->userId)
+            ))
+            ->pluck('id')
+            ->toArray();
+    }
 
     // ==================== Actions ====================
 
@@ -190,8 +360,6 @@ new class extends Component
     }
 
     /**
-     * Eager-load map so every payable type resolves its payer + event in one query.
-     *
      * @return array<class-string, array<int, string>>
      */
     private function payableEagerLoads(): array
@@ -217,6 +385,14 @@ new class extends Component
                     ->orWhere('last_name', 'like', "%{$this->search}%")
                 )
             )
+            ->when($this->paymentMethod, fn ($q) => $q->where('payment_method', $this->paymentMethod))
+            ->when($this->dateFrom, fn ($q) => $q->whereDate('created_at', '>=', $this->dateFrom))
+            ->when($this->dateTo, fn ($q) => $q->whereDate('created_at', '<=', $this->dateTo))
+            ->when($this->userId, fn ($q) => $q->whereHasMorph(
+                'payable',
+                [Subscription::class, TournamentRegistration::class, MeetingUser::class],
+                fn ($q) => $q->where('user_id', $this->userId)
+            ))
             ->get()
             ->map(function (Payment $p) {
                 $label = $p->payable instanceof DescribesPayment ? $p->payable->getPaymentLabel() : null;
@@ -252,7 +428,7 @@ new class extends Component
 
     public function pendingTransactions(): Collection
     {
-        $payment = $this->reconcilePaymentId ? Payment::find($this->reconcilePaymentId) : null;
+        $payment          = $this->reconcilePaymentId ? Payment::find($this->reconcilePaymentId) : null;
         $normalizedPayRef = $payment ? $this->normalizeReference($payment->reference) : null;
 
         return Transaction::whereDoesntHave('payment')
@@ -323,7 +499,6 @@ new class extends Component
                     'transaction_date' => $transaction->date,
                     'counterparty'     => $transaction->counterparty_name ?? '—',
                 ];
-                // On retire la transaction du pool pour éviter les doublons
                 $unreconciledTransactions->forget($normalizedRef);
             }
         }
@@ -540,19 +715,27 @@ new class extends Component
         $subscription->markAsPaid();
     }
 
-
     protected function breadcrumbChain(): Breadcrumb
     {
         return Breadcrumb::make()
             ->home()
-            ->current(__("Treasury — Payments"));
+            ->current(__('Treasury — Payments'));
     }
 
-        public function render(): View
+    public function render(): View
     {
+        $payments = $this->payments();
+
         return $this->view([
             'headers'              => $this->headers(),
-            'payments'             => $this->payments(),
+            'payments'             => $payments,
+            'filterChips'          => $this->getFilterChips(),
+            'paymentMethodOptions' => [
+                ['id' => 'Cash',    'name' => 'Cash'],
+                ['id' => 'Wire',    'name' => 'Wire'],
+                ['id' => 'QRCode',  'name' => 'QRCode'],
+                ['id' => 'Offered', 'name' => 'Offered'],
+            ],
             'pendingTransactions'  => $this->reconcileModal ? $this->pendingTransactions() : collect(),
             'currentPayment'       => $this->reconcilePaymentId
                 ? Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])->find($this->reconcilePaymentId)
@@ -574,8 +757,6 @@ new class extends Component
     {
         return strtoupper(str_replace([' ', '-'], '', $iban));
     }
-
-    // ==================== Helpers ====================
 
     private function normalizeHeader(string $h): string
     {

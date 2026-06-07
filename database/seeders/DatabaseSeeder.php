@@ -331,8 +331,6 @@ class DatabaseSeeder extends Seeder
 
         $this->call(SubscriptionSeeder::class);
 
-        $this->call(PaymentSeeder::class);
-
         // 1-3: teams, divisions, opponents, Interclub fixtures (observer creates empty results)
         $this->call(InterclubScheduleSeeder::class);
 
@@ -342,6 +340,10 @@ class DatabaseSeeder extends Seeder
         $this->call(InterclubSeeder::class);
 
         $this->call(TournamentSeeder::class);
+
+        $this->call(MeetingSeeder::class);
+
+        $this->call(TreasurySeeder::class);
 
         $this->call(TrainingPackSeeder::class);
 

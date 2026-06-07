@@ -54,7 +54,8 @@ class TournamentPaymentReminderNotification extends Notification
             ->line(__('Structured reference: :ref', ['ref' => $this->payment->reference]))
             ->line(__('payment.iban_bic_line', ['iban' => $club->bank_account, 'bic' => $club->bic]))
             ->line('---')
-            ->line(__('After the deadline, your registration will be cancelled automatically.'));
+            ->line(__('After the deadline, your registration will be cancelled automatically.'))
+            ->line(__('If you have already paid by the time you receive this message, please ignore this reminder.'));
     }
 
     /** @return array<int, string> */

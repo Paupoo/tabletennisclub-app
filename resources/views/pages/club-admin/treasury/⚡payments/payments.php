@@ -265,16 +265,15 @@ new class extends Component
     {
         $payment = Payment::with(['payable.user'])->find($paymentId);
 
-        if ($payment?->payable instanceof Subscription) {
-            $payment->load('payable.season');
-        }
-
         if (! $payment?->payable?->user) {
             $this->error(__('Could not find user for this payment.'));
+
             return;
         }
 
-        Mail::to($payment->payable->user)->send(new PaymentInvitationEmail($payment));
+        Mail::to($payment->payable->user)->send(
+            new PaymentInvitationEmail($payment, __('Please settle your payment as soon as possible.'))
+        );
         $payment->increment('invitation_counter');
 
         $this->success(__('Reminder sent to :email.', ['email' => $payment->payable->user->email]));

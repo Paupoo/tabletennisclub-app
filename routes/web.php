@@ -14,6 +14,7 @@ use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Http\Controllers\ClubAdmin\Contact\ContactController;
 use App\Http\Controllers\ClubAdmin\Contact\InvitationController;
+use App\Http\Controllers\ClubAdmin\DashboardController;
 use App\Http\Controllers\ClubAdmin\Payment\PaymentController;
 use App\Http\Controllers\ClubAdmin\Payment\TransactionController;
 use App\Http\Controllers\ClubAdmin\Subscription\RegistrationController;
@@ -240,35 +241,9 @@ Route::post('/invitation/accept/{user}', [InvitationController::class, 'store'])
 |
 */
 
-/**
- * Dashboard with sample of most data (to implement, it's a mock (active) for now)
- */
-Route::get('/admin/dashboard', function () {
-    return view('clubAdmin.dashboard_v4_personas', [
-        'members_total' => 42,
-        'members_active' => 38,
-        'members_inactive' => 4,
-        'members_competitors' => 24,
-        'members_unpaid' => 3,
-        'rooms_count' => 3,
-        'teams_count' => 4,
-        'trainings_count' => 6,
-        'interclubs_pending' => 2,
-        'payments_pending' => 18,
-        'affiliations_pending' => 5,
-        'events_count' => 1,
-        'recent_activity' => [
-            ['type' => 'member',    'label' => 'Jean Dupont a rejoint le club',        'time' => '1h'],
-            ['type' => 'contact',   'label' => 'Nouveau message de Pierre V.',         'time' => '3h'],
-            ['type' => 'match',     'label' => 'Match BBW114 vs BBW210 planifié',      'time' => '5h'],
-            ['type' => 'payment',   'label' => 'Cotisation payée par Marie L.',        'time' => '1j'],
-            ['type' => 'news',      'label' => 'Article "Résultats printemps" publié', 'time' => '1j'],
-            ['type' => 'selection', 'label' => 'Sélection équipe A envoyée',           'time' => '2j'],
-            ['type' => 'meeting',   'label' => 'CR réunion comité du 22 mai ajouté',  'time' => '3j'],
-            ['type' => 'member',    'label' => 'Sophie Martin inscrite',               'time' => '4j'],
-        ],
-    ]);
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/admin/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
 // Tournament email registration / waitlist actions (signed URLs, no auth required)
 Route::get('/tournament/{tournament}/join/{user}', [TournamentController::class, 'registerViaEmail'])

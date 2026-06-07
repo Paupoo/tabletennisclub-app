@@ -7,6 +7,9 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>{{ $title ?? 'CTT Ottignies-Blocry' }}</title>
+    @if(!empty($description ?? null))
+        <meta name="description" content="{{ $description }}">
+    @endif
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
     @if(app()->environment('production'))

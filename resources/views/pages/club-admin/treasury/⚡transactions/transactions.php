@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Payment\Models\BankImport;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasBulkActions;
@@ -9,6 +10,8 @@ use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -23,7 +26,7 @@ new class extends Component
     use Toast, WithFileUploads, WithPagination, HasBreadcrumbs;
     use HasBulkActions, HasFilterDrawer;
 
-    public $importFile;
+    public mixed $importFile = null;
     public bool $importModal           = false;
     public bool $confirmDeleteModal    = false;
     public int  $reconciledInSelection = 0;
@@ -147,42 +150,104 @@ new class extends Component
 
             if (empty($rows)) {
                 $this->error(__('Empty or invalid file.'));
+
                 return;
             }
 
             $headerRow = array_shift($rows);
             $header    = array_map(fn ($h) => $this->normalizeHeader($h ?? ''), $headerRow);
 
-            $importedCount = 0;
+            $newCount       = 0;
+            $duplicateCount = 0;
+            $errorCount     = 0;
+            $failedRows     = [];
+            $lineNumber     = 1;
 
-            foreach ($rows as $row) {
-                $row      = array_map(fn ($v) => ($v === null || trim((string) $v) === '') ? null : trim((string) $v), $row);
-                $row      = array_pad(array_slice($row, 0, count($header)), count($header), null);
-                $rowAssoc = array_combine($header, $row);
+            DB::transaction(function () use ($rows, $header, &$newCount, &$duplicateCount, &$errorCount, &$failedRows, &$lineNumber): void {
+                $bankImport = BankImport::create([
+                    'user_id'        => Auth::id(),
+                    'new_count'      => 0,
+                    'duplicate_count' => 0,
+                    'error_count'    => 0,
+                ]);
 
-                if ($rowAssoc === false) {
-                    continue;
+                foreach ($rows as $row) {
+                    $lineNumber++;
+
+                    $row      = array_map(fn ($v) => ($v === null || trim((string) $v) === '') ? null : trim((string) $v), $row);
+                    $row      = array_pad(array_slice($row, 0, count($header)), count($header), null);
+                    $rowAssoc = array_combine($header, $row);
+
+                    if ($rowAssoc === false) {
+                        continue;
+                    }
+
+                    // Raw strings for fingerprinting (before any type conversion)
+                    $rawDate               = $rowAssoc['date'] ?? '';
+                    $rawAmount             = $rowAssoc['montant'] ?? $rowAssoc['amount'] ?? '';
+                    $rawCounterpartyIban   = $rowAssoc['numero de compte contrepartie'] ?? '';
+                    $rawStructuredRef      = $rowAssoc['communication structuree'] ?? '';
+                    $rawFreeRef            = $rowAssoc['communication libre'] ?? '';
+                    $rawDescription        = $rowAssoc['description'] ?? '';
+
+                    $fingerprint = hash('sha256', implode('|', [
+                        $rawDate,
+                        $rawAmount,
+                        $rawCounterpartyIban,
+                        $rawStructuredRef,
+                        $rawFreeRef,
+                        $rawDescription,
+                    ]));
+
+                    if (Transaction::where('import_fingerprint', $fingerprint)->exists()) {
+                        $duplicateCount++;
+                        continue;
+                    }
+
+                    try {
+                        Transaction::create([
+                            'date'                      => $this->parseDate($rawDate),
+                            'description'               => $rawDescription ?: null,
+                            'amount'                    => $this->parseAmount($rawAmount),
+                            'counterparty_name'         => $rowAssoc['nom contrepartie'] ?? null,
+                            'counterparty_bank_account' => $rawCounterpartyIban ?: null,
+                            'structured_reference'      => $rawStructuredRef ?: null,
+                            'free_reference'            => $rawFreeRef ?: null,
+                            'import_fingerprint'        => $fingerprint,
+                            'bank_import_id'            => $bankImport->id,
+                        ]);
+                        $newCount++;
+                    } catch (\Exception $e) {
+                        $errorCount++;
+                        $failedRows[] = [
+                            'line'    => $lineNumber,
+                            'data'    => $rowAssoc,
+                            'reason'  => $e->getMessage(),
+                        ];
+                    }
                 }
 
-                try {
-                    Transaction::create([
-                        'date'                      => $this->parseDate($rowAssoc['date'] ?? null),
-                        'description'               => $rowAssoc['description'] ?? null,
-                        'amount'                    => $this->parseAmount($rowAssoc['montant'] ?? $rowAssoc['amount'] ?? null),
-                        'counterparty_name'         => $rowAssoc['nom contrepartie'] ?? null,
-                        'counterparty_bank_account' => $rowAssoc['numero de compte contrepartie'] ?? null,
-                        'structured_reference'      => $rowAssoc['communication structuree'] ?? null,
-                        'free_reference'            => $rowAssoc['communication libre'] ?? null,
-                    ]);
-                    $importedCount++;
-                } catch (\Exception) {
-                    continue;
-                }
-            }
+                $bankImport->update([
+                    'new_count'       => $newCount,
+                    'duplicate_count' => $duplicateCount,
+                    'error_count'     => $errorCount,
+                    'failed_rows'     => $failedRows ?: null,
+                ]);
+            });
 
             $this->importModal = false;
             $this->importFile  = null;
-            $this->success(__(':count transactions imported successfully.', ['count' => $importedCount]));
+
+            $message = __(':count new transaction(s) imported.', ['count' => $newCount]);
+            if ($duplicateCount > 0) {
+                $message .= ' ' . __(':count duplicate(s) skipped.', ['count' => $duplicateCount]);
+            }
+
+            if ($errorCount > 0) {
+                $this->warning($message . ' ' . __(':count error(s) — see import history.', ['count' => $errorCount]));
+            } else {
+                $this->success($message);
+            }
         } catch (\Exception $e) {
             $this->error(__('Error reading file: :message', ['message' => $e->getMessage()]));
         }
@@ -254,7 +319,8 @@ new class extends Component
                 ['id' => 'credit', 'name' => __('Credit (incoming)')],
                 ['id' => 'debit',  'name' => __('Debit (outgoing)')],
             ],
-            'breadcrumbs' => $this->getBreadcrumbs(),
+            'recentImports' => BankImport::with('user')->latest()->limit(10)->get(),
+            'breadcrumbs'   => $this->getBreadcrumbs(),
         ]);
     }
 

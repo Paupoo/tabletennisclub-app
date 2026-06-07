@@ -133,6 +133,63 @@
 
 
     {{-- ========================================== --}}
+    {{-- Import history                              --}}
+    {{-- ========================================== --}}
+    @if($recentImports->isNotEmpty())
+    <x-collapse class="mt-6 border border-base-200 rounded-xl bg-base-100">
+        <x-slot:heading>
+            <div class="flex items-center gap-2 text-sm font-semibold">
+                <x-icon name="o-arrow-up-tray" class="w-4 h-4 opacity-50" />
+                {{ __('Import history') }}
+                <x-badge value="{{ $recentImports->count() }}" class="badge-ghost badge-sm" />
+            </div>
+        </x-slot:heading>
+        <x-slot:content class="p-0">
+            <table class="table table-sm w-full">
+                <thead>
+                    <tr class="text-xs opacity-50 uppercase tracking-widest">
+                        <th>{{ __('Date') }}</th>
+                        <th>{{ __('By') }}</th>
+                        <th class="text-right text-success">{{ __('New') }}</th>
+                        <th class="text-right text-base-content/40">{{ __('Duplicates') }}</th>
+                        <th class="text-right text-error">{{ __('Errors') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($recentImports as $import)
+                    <tr @class(['hover', 'text-error/60' => $import->error_count > 0])>
+                        <td class="tabular-nums text-xs">{{ $import->created_at->format('d/m/Y H:i') }}</td>
+                        <td class="text-xs">{{ $import->user->name ?? '—' }}</td>
+                        <td class="text-right font-bold text-success">+{{ $import->new_count }}</td>
+                        <td class="text-right opacity-40">{{ $import->duplicate_count }}</td>
+                        <td class="text-right">
+                            @if($import->error_count > 0)
+                            <span class="text-error font-semibold">{{ $import->error_count }}</span>
+                            @else
+                            <span class="opacity-30">0</span>
+                            @endif
+                        </td>
+                    </tr>
+                    @if($import->error_count > 0 && $import->failed_rows)
+                    <tr>
+                        <td colspan="5" class="bg-error/5 text-xs p-3">
+                            <div class="font-semibold text-error mb-1">{{ __('Failed rows:') }}</div>
+                            @foreach($import->failed_rows as $failed)
+                            <div class="opacity-70">
+                                {{ __('Line :n', ['n' => $failed['line']]) }} — {{ $failed['reason'] }}
+                            </div>
+                            @endforeach
+                        </td>
+                    </tr>
+                    @endif
+                    @endforeach
+                </tbody>
+            </table>
+        </x-slot:content>
+    </x-collapse>
+    @endif
+
+    {{-- ========================================== --}}
     {{-- Floating selection pill                     --}}
     {{-- ========================================== --}}
     <x-admin.shared.selection-pill

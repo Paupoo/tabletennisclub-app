@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -19,13 +20,14 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * @property string $status
  * @property string $payable_type
  * @property int $payable_id
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * @property int $invitation_counter
  * @property int|null $refund_transaction_id
  * @property string $payment_method
  * @property-read Model|\Eloquent $payable
- * @property-read \App\Domains\ClubAdmin\Payment\Models\Transaction|null $refundTransaction
+ * @property-read Transaction|null $refundTransaction
+ *
  * @method static \Database\Factories\Domains\ClubAdmin\Payment\Models\PaymentFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Payment newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Payment newQuery()
@@ -43,6 +45,7 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Payment whereStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Payment whereTransactionId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Payment whereUpdatedAt($value)
+ *
  * @mixin \Eloquent
  */
 class Payment extends Model
@@ -64,12 +67,11 @@ class Payment extends Model
         'refund_transaction_id',
     ];
 
-    // Accessor pour les prix
     public function amountDue(): Attribute
     {
         return Attribute::make(
             get: fn (int $value): float => round($value / 100, 2),
-            set: fn (int|float $value): int => (int) $value * 100,
+            set: fn (int|float $value): int => (int) round($value * 100),
         );
     }
 
@@ -77,7 +79,7 @@ class Payment extends Model
     {
         return Attribute::make(
             get: fn (int $value): float => round($value / 100, 2),
-            set: fn (int|float $value): int => (int) $value * 100,
+            set: fn (int|float $value): int => (int) round($value * 100),
         );
     }
 

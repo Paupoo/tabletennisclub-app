@@ -16,7 +16,6 @@ use App\Http\Controllers\ClubAdmin\Contact\ContactController;
 use App\Http\Controllers\ClubAdmin\Contact\InvitationController;
 use App\Http\Controllers\ClubAdmin\DashboardController;
 use App\Http\Controllers\ClubAdmin\Payment\PaymentController;
-use App\Http\Controllers\ClubAdmin\Payment\TransactionController;
 use App\Http\Controllers\ClubAdmin\Subscription\RegistrationController;
 use App\Http\Controllers\ClubAdmin\Subscription\SubscriptionController;
 use App\Http\Controllers\ClubEvents\Interclub\ResultsController;
@@ -304,14 +303,6 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::post('subscription/{subscription}/addTrainingPack', [SubscriptionController::class, 'syncTrainingPacks'])->name('clubAdmin.subscriptions.addTrainingPack');
     Route::get('/admin/subscriptions/{subscription}', [SubscriptionController::class, 'show'])
         ->name('clubAdmin.subscriptions.show');
-});
-
-Route::prefix('admin/transactions')->middleware(['auth', 'verified'])->group(function (): void {
-    Route::get('add', [TransactionController::class, 'add'])->name('admin.transactions.add ');
-    Route::post('upload', [TransactionController::class, 'upload'])->name('admin.transactions.upload');
-    Route::get('/', [TransactionController::class, 'index'])->name('admin.transactions.index');
-    Route::get('/reconcile', [TransactionController::class, 'reconcile'])->name('admin.transactions.reconcile');
-    Route::post('/reconcile', [TransactionController::class, 'reconcileStore'])->name('admin.transactions.reconcile.store');
 });
 
 require __DIR__ . '/auth.php';

@@ -266,6 +266,8 @@ new class extends Component
 
         if ($payment->payable instanceof Subscription) {
             $this->reconcileSubscription($payment->payable, $transaction->amount);
+        } elseif ($payment->payable instanceof TournamentRegistration) {
+            $payment->payable->update(['has_paid' => true]);
         }
 
         $this->reconcileModal        = false;

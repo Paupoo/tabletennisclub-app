@@ -30,6 +30,7 @@ use Illuminate\Support\Carbon;
  * @property-read int|null $teams_count
  * @property-read Collection<int, User> $users
  * @property-read int|null $users_count
+ *
  * @method static \Database\Factories\Domains\Competitions\Interclub\Models\ClubFactory factory($count = null, $state = [])
  * @method static Builder<static>|Club newModelQuery()
  * @method static Builder<static>|Club newQuery()
@@ -45,6 +46,7 @@ use Illuminate\Support\Carbon;
  * @method static Builder<static>|Club whereName($value)
  * @method static Builder<static>|Club whereStreet($value)
  * @method static Builder<static>|Club whereUpdatedAt($value)
+ *
  * @property string|null $building_name
  * @property float|null $latitude
  * @property float|null $longitude
@@ -53,6 +55,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $bank_account
  * @property string|null $website_url
  * @property string|null $enterprise_number
+ *
  * @method static Builder<static>|Club whereBankAccount($value)
  * @method static Builder<static>|Club whereBuildingName($value)
  * @method static Builder<static>|Club whereEmailContact($value)
@@ -61,6 +64,7 @@ use Illuminate\Support\Carbon;
  * @method static Builder<static>|Club whereLongitude($value)
  * @method static Builder<static>|Club wherePhoneContact($value)
  * @method static Builder<static>|Club whereWebsiteUrl($value)
+ *
  * @mixin \Eloquent
  */
 class Club extends Model
@@ -78,6 +82,7 @@ class Club extends Model
         'longitude' => 'float',
         'email_contact' => 'string',
         'phone_contact' => 'string',
+        'bic' => 'string',
         'bank_account' => 'string',
         'website_url' => 'string',
         'enterprise_number' => 'string',
@@ -94,6 +99,7 @@ class Club extends Model
         'longitude',
         'phone_contact',
         'email_contact',
+        'bic',
         'bank_account',
         'website_url',
         'enterprise_number',

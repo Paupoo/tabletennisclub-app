@@ -1045,8 +1045,8 @@
     "IBAN": "IBAN",
     "IBAN account number": "Numéro de compte IBAN",
     "IBAN match": "IBAN correspondant",
-    "IBAN: BE23 7323 3320 8791 — BIC: CREGBEBB": "IBAN : BE23 7323 3320 8791 — BIC : CREGBEBB",
-    "IBAN: BE23 7323 3320 8791 — BIC: CREGBEBB — Beneficiary: CTT Ottignies-Blocry ASBL": "IBAN : BE23 7323 3320 8791 — BIC : CREGBEBB — Bénéficiaire : CTT Ottignies-Blocry ASBL",
+    "payment.iban_bic_line": "IBAN : :iban — BIC : :bic",
+    "payment.iban_bic_beneficiary_line": "IBAN : :iban — BIC : :bic — Bénéficiaire : :name",
     "Icon": "Icône",
     "Identity": "Identité",
     "If a spot opens up, you will receive an email to confirm your participation. You will have 48 hours to respond — after that, the spot will be offered to the next person on the list.": "Si une place se libère, vous recevrez un email pour confirmer votre participation. Vous aurez 48 heures pour répondre — après quoi, la place sera proposée à la prochaine personne sur la liste.",
@@ -2728,7 +2728,7 @@
     "Upon request or should you leave us, we commit to delete fully your data.": "Sur demande ou si vous nous quittez, nous nous engageons à supprimer complètement vos données.",
     "Use a positive amount for cash in, negative for cash out.": "Utilisez un montant positif pour une entrée de caisse, négatif pour une sortie.",
     "Use bulk creation for recurring weekly sessions": "Utilisez la création en lot pour les séances hebdomadaires récurrentes",
-    "Used for refunds. Format: BE23 7323 3320 8791": "Utilisé pour les remboursements. Format : BE23 7323 3320 8791",
+    "payment.iban_format_hint": "Utilisé pour les remboursements. Format : BE68 5390 0754 7034",
     "Used for refunds. Leave empty if unknown.": "Utilisé pour les remboursements. Laissez vide si inconnu.",
     "User": "Utilisateur",
     "User Agent": "Agent utilisateur",
@@ -3063,5 +3063,10 @@
     "💾 Create": "💾 Créer",
     "🔒 Closed": "🔒 Fermé",
     "🔒 Locked — invitations sent or article published": "🔒 Verrouillé — invitations envoyées ou article publié",
-    "🔒 Locked — tournament validated": "🔒 Verrouillé — tournoi validé"
+    "🔒 Locked — tournament validated": "🔒 Verrouillé — tournoi validé",
+    "BIC Code": "Code BIC",
+    "Bank Account (IBAN)": "Compte bancaire (IBAN)",
+    "Search event name...": "Rechercher un événement",
+    "Event type": "Type d'événement",
+    "Event name": "Nom de l'événement"
 }

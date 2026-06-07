@@ -13,6 +13,7 @@ use App\Mail\PaymentInvitationEmail;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Subscriptions\Notifications\SubscriptionRejectedNotification;
@@ -149,8 +150,8 @@ new class extends Component
             'amount_due'         => $payment->amount_due,
             'member_name'        => $subscription->user->first_name . ' ' . $subscription->user->last_name,
             'member_email'       => $subscription->user->email,
-            'iban'               => 'BE23 7323 3320 8791',
-            'bic'                => 'CREGBEBB',
+            'iban'               => Club::ourClub()->first()->bank_account,
+            'bic'                => Club::ourClub()->first()->bic,
             'beneficiary'        => 'CTT Ottignies-Blocry ASBL',
             'qr_code'            => (new GeneratePaymentQR)($payment),
             'invitation_counter' => $payment->invitation_counter,
@@ -345,8 +346,8 @@ new class extends Component
                 'amount_due'         => $payment->amount_due,
                 'member_name'        => $subscription->user->first_name . ' ' . $subscription->user->last_name,
                 'member_email'       => $subscription->user->email,
-                'iban'               => 'BE23 7323 3320 8791',
-                'bic'                => 'CREGBEBB',
+                'iban'               => Club::ourClub()->first()->bank_account,
+                'bic'                => Club::ourClub()->first()->bic,
                 'beneficiary'        => 'CTT Ottignies-Blocry ASBL',
                 'qr_code'            => (new GeneratePaymentQR)($payment),
                 'invitation_counter' => 0,

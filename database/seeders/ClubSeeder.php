@@ -21,6 +21,8 @@ class ClubSeeder extends Seeder
             'street' => "Rue de l'Invasion 80",
             'city_code' => '1340',
             'city_name' => 'Ottignies',
+            'bic' => 'CREGBEBB',
+            'bank_account' => 'BE23732333208791',
         ]);
     }
 }

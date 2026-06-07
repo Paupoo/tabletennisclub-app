@@ -14,6 +14,7 @@ use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Domains\ClubAdmin\Payment\Models\CashRegister;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Tournament\Models\Pool;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentPair;
@@ -580,8 +581,8 @@ new class extends Component
             'name'        => $user->full_name,
             'reference'   => $payment->reference,
             'amount_due'  => $payment->amount_due,
-            'iban'        => 'BE23 7323 3320 8791',
-            'bic'         => 'CREGBEBB',
+            'iban'        => Club::ourClub()->first()->bank_account,
+            'bic'         => Club::ourClub()->first()->bic,
             'beneficiary' => 'CTT Ottignies-Blocry ASBL',
         ];
         $this->qrCodeData = (new GeneratePaymentQR)($payment);

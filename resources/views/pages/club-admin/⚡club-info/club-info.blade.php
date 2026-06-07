@@ -40,7 +40,8 @@
 
         {{-- Accounting --}}
         <x-admin.shared.form-section :separator="true" :subtitle="__('Banking and accounting data')" :title="__('Accounting')">
-            <x-input icon="o-currency-euro" :label="__('Bank Account')" wire:model="bank_account" />
+            <x-input icon="o-finger-print" :label="__('BIC Code')" wire:model="bic" />
+            <x-input icon="o-currency-euro" :label="__('Bank Account (IBAN)')" wire:model="bank_account" />
             <x-input icon="o-identification" :label="__('Enterprise Number (Optional)')" wire:model="enterprise_number" />
         </x-admin.shared.form-section>
                 

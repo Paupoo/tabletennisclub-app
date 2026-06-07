@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
 use App\Actions\Meetings\RespondToMeetingRsvp;
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
@@ -57,6 +58,12 @@ new class extends Component
     public string $rsvpAttendance = 'confirmed';
 
     public string $rsvpMeal = 'skip';
+
+    #[Computed]
+    public function ourClub(): Club
+    {
+        return Club::ourClub()->first();
+    }
 
     #[Computed]
     public function upcomingTournaments(): Collection

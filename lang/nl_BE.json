@@ -1045,8 +1045,8 @@
     "IBAN": "IBAN",
     "IBAN account number": "IBAN-rekeningnummer",
     "IBAN match": "IBAN-overeenkomst",
-    "IBAN: BE23 7323 3320 8791 — BIC: CREGBEBB": "IBAN: BE23 7323 3320 8791 — BIC: CREGBEBB",
-    "IBAN: BE23 7323 3320 8791 — BIC: CREGBEBB — Beneficiary: CTT Ottignies-Blocry ASBL": "IBAN: BE23 7323 3320 8791 — BIC: CREGBEBB — Begunstigde: CTT Ottignies-Blocry ASBL",
+    "payment.iban_bic_line": "IBAN: :iban — BIC: :bic",
+    "payment.iban_bic_beneficiary_line": "IBAN: :iban — BIC: :bic — Begunstigde: :name",
     "Icon": "Icoon",
     "Identity": "Identiteit",
     "If a spot opens up, you will receive an email to confirm your participation. You will have 48 hours to respond — after that, the spot will be offered to the next person on the list.": "Als er een plek vrijkomt, ontvangt u een e-mail om uw deelname te bevestigen. U heeft 48 uur om te antwoorden — daarna wordt de plek aangeboden aan de volgende persoon op de lijst.",
@@ -2728,7 +2728,7 @@
     "Upon request or should you leave us, we commit to delete fully your data.": "Op verzoek of als u ons verlaat, verbinden wij ons ertoe uw gegevens volledig te verwijderen.",
     "Use a positive amount for cash in, negative for cash out.": "Gebruik een positief bedrag voor inkomst, negatief voor uitgave.",
     "Use bulk creation for recurring weekly sessions": "Gebruik bulkaanmaak voor wekelijks terugkerende sessies",
-    "Used for refunds. Format: BE23 7323 3320 8791": "Gebruikt voor terugbetalingen. Formaat: BE23 7323 3320 8791",
+    "payment.iban_format_hint": "Gebruikt voor terugbetalingen. Formaat: BE68 5390 0754 7034",
     "Used for refunds. Leave empty if unknown.": "Gebruikt voor terugbetalingen. Laat leeg indien onbekend.",
     "User": "Gebruiker",
     "User Agent": "User Agent",
@@ -3063,5 +3063,10 @@
     "💾 Create": "💾 Aanmaken",
     "🔒 Closed": "🔒 Gesloten",
     "🔒 Locked — invitations sent or article published": "🔒 Vergrendeld — uitnodigingen verzonden of artikel gepubliceerd",
-    "🔒 Locked — tournament validated": "🔒 Vergrendeld — toernooi gevalideerd"
+    "🔒 Locked — tournament validated": "🔒 Vergrendeld — toernooi gevalideerd",
+    "BIC Code": "BIC code",
+    "Bank Account (IBAN)": "Bankrekening (IBAN)",
+    "Search event name...": "Zoek een evenement...",
+    "Event type": "Soort evenement",
+    "Event name": "Naam van het evenement"
 }

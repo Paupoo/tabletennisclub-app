@@ -22,7 +22,10 @@ new class extends Component
 
     public bool $addCommitteeMemberModal = false;
 
-    #[Validate('nullable|string|max:50')]
+    #[Validate('string|max:20')]
+    public ?string $bic;
+
+    #[Validate('string|max:50')]
     public ?string $bank_account;
 
     #[Validate('nullable|string|max:100')]
@@ -75,6 +78,7 @@ new class extends Component
         $this->phone_contact = $club->phone_contact ?? '';
         $this->website_url = $club->website_url ?? '';
         $this->bank_account = $club->bank_account ?? '';
+        $this->bic = $club->bic ?? '';
         $this->enterprise_number = $club->enterprise_number ?? '';
     }
 

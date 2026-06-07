@@ -8,10 +8,15 @@ use App\Actions\ClubAdmin\Payments\ProcessPaymentAction;
 use App\Actions\ClubAdmin\Payments\SendPayementInvite;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Mail\PaymentInvitationEmail;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Mail;
+
+beforeEach(function (): void {
+    Club::factory()->ourClub()->create();
+});
 
 // ============================================================
 // GeneratePaymentQR

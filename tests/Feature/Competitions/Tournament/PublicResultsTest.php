@@ -3,13 +3,15 @@
 declare(strict_types=1);
 
 use App\Domains\Competitions\Interclub\Models\Club;
-use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\InterclubResult;
+use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\InterclubResultEnum;
+use App\Livewire\Public\Results\ResultList;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
@@ -100,14 +102,14 @@ test('future seasons do not appear in the dropdown', function (): void {
         ->assertDontSee('2025-2026');
 });
 
-test('season query param switches the displayed season', function (): void {
-    makeSeasonWithTeamAndResults('2024-2025', true, '2024-09-01');
+test('livewire season filter switches the displayed season', function (): void {
+    ['season' => $current] = makeSeasonWithTeamAndResults('2024-2025', true, '2024-09-01');
 
     $past = Season::factory()->create([
         'name' => '2023-2024',
         'is_active' => false,
         'start_at' => '2023-09-01',
-        'end_at' => '2024-06-30',
+        'end_at' => Carbon::parse('2023-09-01')->addMonths(10),
     ]);
 
     $ourClub = Club::firstWhere('licence', config('app.club_licence'));
@@ -119,17 +121,9 @@ test('season query param switches the displayed season', function (): void {
         'club_id' => $ourClub->id,
     ]);
 
-    $this->get(route('results', ['season' => '2023-2024']))
-        ->assertOk()
-        ->assertSee('2023-2024');
-});
-
-test('unknown season query param falls back to current season', function (): void {
-    ['season' => $currentSeason] = makeSeasonWithTeamAndResults('2025-2026', true, '2025-09-01');
-
-    $this->get(route('results', ['season' => 'does-not-exist']))
-        ->assertOk()
-        ->assertSee($currentSeason->name);
+    Livewire::test(ResultList::class)
+        ->set('seasonId', $past->id)
+        ->assertSee($past->name);
 });
 
 test('shows no results message when season has no team data', function (): void {
@@ -160,4 +154,60 @@ test('shows match results for the active season', function (): void {
         ->assertOk()
         ->assertSee('Adversaire Test A')
         ->assertSee('Victoire');
+});
+
+test('can filter results by category', function (): void {
+    ['season' => $season] = makeSeasonWithTeamAndResults('2025-2026', true, '2025-09-01');
+
+    $ourClub = Club::firstWhere('licence', config('app.club_licence'));
+    $womenLeague = League::factory()->create(['season_id' => $season->id, 'category' => 'WOMEN', 'division' => '1D']);
+    Team::factory()->create([
+        'name' => 'F1',
+        'season_id' => $season->id,
+        'league_id' => $womenLeague->id,
+        'club_id' => $ourClub->id,
+    ]);
+
+    Livewire::test(ResultList::class)
+        ->set('category', 'WOMEN')
+        ->assertSee('Dames')
+        ->assertSee('F1')
+        ->assertDontSee('Division 1A');
+});
+
+test('can filter results by team', function (): void {
+    ['season' => $season, 'team' => $team] = makeSeasonWithTeamAndResults('2025-2026', true, '2025-09-01');
+
+    $ourClub = Club::firstWhere('licence', config('app.club_licence'));
+    $league2 = League::factory()->create(['season_id' => $season->id, 'category' => 'MEN', 'division' => '2A']);
+    $team2 = Team::factory()->create([
+        'name' => 'B',
+        'season_id' => $season->id,
+        'league_id' => $league2->id,
+        'club_id' => $ourClub->id,
+    ]);
+
+    InterclubResult::factory()->create([
+        'team_id' => $team2->id,
+        'season_id' => $season->id,
+        'opponent_name' => 'Opponent of Team B',
+        'result' => InterclubResultEnum::WIN,
+        'match_date' => '2025-10-15',
+    ]);
+
+    Livewire::test(ResultList::class)
+        ->set('teamId', $team2->id)
+        ->assertSee('Opponent of Team B')
+        ->assertDontSee('Équipe A');
+});
+
+test('clears dependent filters when season changes', function (): void {
+    ['season' => $season] = makeSeasonWithTeamAndResults('2025-2026', true, '2025-09-01');
+
+    Livewire::test(ResultList::class)
+        ->set('category', 'MEN')
+        ->set('division', '1A')
+        ->set('seasonId', $season->id)
+        ->assertSet('category', '')
+        ->assertSet('division', '');
 });

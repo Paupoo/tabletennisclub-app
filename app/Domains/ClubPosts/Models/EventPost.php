@@ -16,8 +16,8 @@ use Illuminate\Support\Carbon;
  * @property EventPostStatusEnum $status
  * @property ClubEventTypeEnum $type
  * @property int $id
- * @property string $eventable_type
- * @property int $eventable_id
+ * @property string|null $eventable_type
+ * @property int|null $eventable_id
  * @property string $title
  * @property string $description
  * @property Carbon $event_date

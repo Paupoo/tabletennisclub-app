@@ -8,6 +8,7 @@ use App\Domains\ClubPosts\Models\EventPost;
 use App\Domains\ClubPosts\Models\NewsPost;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Shared\Models\AppSetting;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Support\Captcha;
 use Carbon\Carbon;
@@ -79,20 +80,25 @@ class HomeController extends Controller
                 });
         }
 
-        // Interclubs (vendredi soir) — événement récurrent, pas un training pack
-        $schedules[] = [
-            'day' => 'Vendredi',
-            'time' => '19h00 – 23h30',
-            'activity' => 'Interclubs',
-            'location' => 'Demeester (0 et -1)',
-            'level' => null,
-            'coach' => null,
-            'capacity' => null,
-            'description' => 'Matches de compétition à domicile. Venez nous supporter !',
-            'price' => null,
-            'is_open_enrollment' => true,
-            'type' => 'match',
-        ];
+        if ($season !== null && AppSetting::get('interclub_schedule_enabled', '1') === '1') {
+            $day = AppSetting::get('interclub_schedule_day', 'Vendredi');
+            $timeStart = AppSetting::get('interclub_schedule_time_start', '19:00');
+            $timeEnd = AppSetting::get('interclub_schedule_time_end', '23:30');
+
+            $schedules[] = [
+                'day' => $day,
+                'time' => $timeStart . ' – ' . $timeEnd,
+                'activity' => 'Interclubs',
+                'location' => AppSetting::get('interclub_schedule_location', 'Demeester (0 et -1)'),
+                'level' => null,
+                'coach' => null,
+                'capacity' => null,
+                'description' => AppSetting::get('interclub_schedule_description', 'Matches de compétition à domicile. Venez nous supporter !'),
+                'price' => null,
+                'is_open_enrollment' => true,
+                'type' => 'match',
+            ];
+        }
 
         usort($schedules, fn (array $a, array $b): int => $dayOrder[$a['day']] <=> $dayOrder[$b['day']]);
 

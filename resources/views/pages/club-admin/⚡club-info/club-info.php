@@ -7,6 +7,7 @@ namespace Resources\views\Pages\ClubEvents\Interclubs\Teams;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
+use App\Domains\Shared\Models\AppSetting;
 use App\Support\Breadcrumb;
 use Illuminate\Validation\Rule as ValidationRule;
 use Illuminate\Validation\ValidationException;
@@ -62,6 +63,26 @@ new class extends Component
     #[Validate('nullable|string')]
     public ?string $website_url;
 
+    // ── Interclub schedule settings ───────────────────────────────────────────
+
+    #[Validate('boolean')]
+    public bool $interclubEnabled = true;
+
+    #[Validate('nullable|string|max:100')]
+    public ?string $interclubDay = 'Vendredi';
+
+    #[Validate('nullable|string|max:100')]
+    public ?string $interclubTimeStart = '19:00';
+
+    #[Validate('nullable|string|max:100')]
+    public ?string $interclubTimeEnd = '23:30';
+
+    #[Validate('nullable|string|max:100')]
+    public ?string $interclubLocation = 'Demeester (0 et -1)';
+
+    #[Validate('nullable|string|max:255')]
+    public ?string $interclubDescription = 'Matches de compétition à domicile. Venez nous supporter !';
+
     public function mount(): void
     {
         $club = Club::own();
@@ -80,6 +101,13 @@ new class extends Component
         $this->bank_account = $club->bank_account ?? '';
         $this->bic = $club->bic ?? '';
         $this->enterprise_number = $club->enterprise_number ?? '';
+
+        $this->interclubEnabled = AppSetting::get('interclub_schedule_enabled', '1') === '1';
+        $this->interclubDay = AppSetting::get('interclub_schedule_day', 'Vendredi');
+        $this->interclubTimeStart = AppSetting::get('interclub_schedule_time_start', '19:00');
+        $this->interclubTimeEnd = AppSetting::get('interclub_schedule_time_end', '23:30');
+        $this->interclubLocation = AppSetting::get('interclub_schedule_location', 'Demeester (0 et -1)');
+        $this->interclubDescription = AppSetting::get('interclub_schedule_description', 'Matches de compétition à domicile. Venez nous supporter !');
     }
 
     #[On('member-added')] // 👈 Écoute l'événement du modal
@@ -144,6 +172,13 @@ new class extends Component
         $club = Club::ourClub()->first();
 
         $club->update($validated);
+
+        AppSetting::set('interclub_schedule_enabled', $this->interclubEnabled ? '1' : '0');
+        AppSetting::set('interclub_schedule_day', $this->interclubDay ?? 'Vendredi');
+        AppSetting::set('interclub_schedule_time_start', $this->interclubTimeStart ?? '19:00');
+        AppSetting::set('interclub_schedule_time_end', $this->interclubTimeEnd ?? '23:30');
+        AppSetting::set('interclub_schedule_location', $this->interclubLocation ?? 'Demeester (0 et -1)');
+        AppSetting::set('interclub_schedule_description', $this->interclubDescription ?? 'Matches de compétition à domicile. Venez nous supporter !');
 
         $this->success(__('Club information updated.'));
     }

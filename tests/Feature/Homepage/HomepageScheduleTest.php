@@ -8,7 +8,7 @@ use App\Domains\Trainings\Models\TrainingPack;
 
 // ── Setup : la homepage nécessite un Club correspondant à ourClub() ───────────
 beforeEach(function (): void {
-    Club::factory()->create(['licence' => config('app.club_licence')]);
+    Club::factory()->ownClub()->create();
 });
 
 // ── Helper ────────────────────────────────────────────────────────────────────

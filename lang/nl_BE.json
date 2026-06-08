@@ -3071,5 +3071,10 @@
     "Bank Account (IBAN)": "Bankrekening (IBAN)",
     "Search event name...": "Zoek een evenement...",
     "Event type": "Soort evenement",
-    "Event name": "Naam van het evenement"
+    "Event name": "Naam van het evenement",
+    "Interclub Schedule": "Interclub Speelschema",
+    "Configure the interclub match entry displayed on the public schedule.": "Configureer de interclubwedstrijd die in het publieke speelschema wordt weergegeven.",
+    "Show interclub matches in the public schedule": "Interclubwedstrijden weergeven in het publieke speelschema",
+    "Start time (HH:MM)": "Beginuur (UU:MM)",
+    "End time (HH:MM)": "Einduur (UU:MM)"
 }

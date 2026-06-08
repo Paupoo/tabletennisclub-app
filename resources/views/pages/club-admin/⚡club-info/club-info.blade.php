@@ -95,6 +95,31 @@
             </div>
         </x-admin.shared.form-section>
 
+        {{-- Interclub Schedule --}}
+        <x-admin.shared.form-section :separator="true" :subtitle="__('Configure the interclub match entry displayed on the public schedule.')" :title="__('Interclub Schedule')">
+            <x-toggle :label="__('Show interclub matches in the public schedule')" wire:model="interclubEnabled" />
+            <x-select
+                :label="__('Day of week')"
+                icon="o-calendar"
+                wire:model="interclubDay"
+                :options="[
+                    ['id' => 'Lundi',     'name' => __('Monday')],
+                    ['id' => 'Mardi',     'name' => __('Tuesday')],
+                    ['id' => 'Mercredi',  'name' => __('Wednesday')],
+                    ['id' => 'Jeudi',     'name' => __('Thursday')],
+                    ['id' => 'Vendredi',  'name' => __('Friday')],
+                    ['id' => 'Samedi',    'name' => __('Saturday')],
+                    ['id' => 'Dimanche',  'name' => __('Sunday')],
+                ]"
+            />
+            <div class="col-span-6 grid grid-cols-1 gap-4 md:col-span-4 md:grid-cols-2">
+                <x-input icon="o-clock" :label="__('Start time (HH:MM)')" wire:model="interclubTimeStart" placeholder="19:00" />
+                <x-input icon="o-clock" :label="__('End time (HH:MM)')" wire:model="interclubTimeEnd" placeholder="23:30" />
+            </div>
+            <x-input icon="o-map-pin" :label="__('Location')" wire:model="interclubLocation" />
+            <x-input icon="o-information-circle" :label="__('Description')" wire:model="interclubDescription" />
+        </x-admin.shared.form-section>
+
         <div class="col-span-6 mt-6 flex justify-end gap-3">
             <x-button :label="__('Cancel')" />
             <x-button class="btn-primary" :label="__('Save Changes')" spinner="save" type="submit" />

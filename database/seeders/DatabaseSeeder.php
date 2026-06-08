@@ -349,5 +349,7 @@ class DatabaseSeeder extends Seeder
         $this->call(TrainingPackSeeder::class);
 
         $this->call(NewsPostSeeder::class);
+
+        $this->call(InterclubSettingsSeeder::class);
     }
 }

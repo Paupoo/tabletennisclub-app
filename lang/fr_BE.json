@@ -3071,5 +3071,10 @@
     "Bank Account (IBAN)": "Compte bancaire (IBAN)",
     "Search event name...": "Rechercher un événement",
     "Event type": "Type d'événement",
-    "Event name": "Nom de l'événement"
+    "Event name": "Nom de l'événement",
+    "Interclub Schedule": "Horaire Interclubs",
+    "Configure the interclub match entry displayed on the public schedule.": "Configurez l'entrée des matches Interclubs affichée dans le calendrier public.",
+    "Show interclub matches in the public schedule": "Afficher les matches Interclubs dans le calendrier public",
+    "Start time (HH:MM)": "Heure de début (HH:MM)",
+    "End time (HH:MM)": "Heure de fin (HH:MM)"
 }

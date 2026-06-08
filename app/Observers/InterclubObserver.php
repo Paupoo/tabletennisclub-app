@@ -14,14 +14,14 @@ class InterclubObserver
         $this->syncInterclubResult($interclub);
     }
 
-    public function updated(Interclub $interclub): void
-    {
-        $this->syncInterclubResult($interclub);
-    }
-
     public function deleted(Interclub $interclub): void
     {
         InterclubResult::where('interclub_id', $interclub->id)->delete();
+    }
+
+    public function updated(Interclub $interclub): void
+    {
+        $this->syncInterclubResult($interclub);
     }
 
     /**
@@ -35,8 +35,8 @@ class InterclubObserver
     {
         $interclub->loadMissing(['visitedTeam.club', 'visitingTeam.club']);
 
-        $isHome       = $interclub->visitedTeam?->club?->licence === config('app.club_licence');
-        $ourTeam      = $isHome ? $interclub->visitedTeam : $interclub->visitingTeam;
+        $isHome = $interclub->visitedTeam?->club?->is_own_club;
+        $ourTeam = $isHome ? $interclub->visitedTeam : $interclub->visitingTeam;
         $opponentTeam = $isHome ? $interclub->visitingTeam : $interclub->visitedTeam;
 
         if (! $ourTeam) {
@@ -52,13 +52,13 @@ class InterclubObserver
         InterclubResult::updateOrCreate(
             ['interclub_id' => $interclub->id],
             [
-                'team_id'       => $ourTeam->id,
-                'season_id'     => $interclub->season_id,
-                'match_date'    => $interclub->start_date_time?->toDateString(),
-                'week_number'   => $interclub->week_number,
-                'is_home'       => $isHome,
+                'team_id' => $ourTeam->id,
+                'season_id' => $interclub->season_id,
+                'match_date' => $interclub->start_date_time?->toDateString(),
+                'week_number' => $interclub->week_number,
+                'is_home' => $isHome,
                 'opponent_name' => $opponentName,
-                'is_bye'        => $isBye,
+                'is_bye' => $isBye,
             ]
         );
     }

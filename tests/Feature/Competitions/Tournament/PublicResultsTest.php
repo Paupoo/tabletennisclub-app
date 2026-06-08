@@ -26,7 +26,7 @@ function makeSeasonWithTeamAndResults(string $name, bool $isActive, string $star
 
     $league = League::factory()->create(['season_id' => $season->id, 'category' => 'MEN', 'division' => '1A']);
 
-    $ourClub = Club::factory()->create(['licence' => config('app.club_licence')]);
+    $ourClub = Club::factory()->ownClub()->create();
     $team = Team::factory()->create([
         'name' => 'A',
         'season_id' => $season->id,
@@ -112,7 +112,7 @@ test('livewire season filter switches the displayed season', function (): void {
         'end_at' => Carbon::parse('2023-09-01')->addMonths(10),
     ]);
 
-    $ourClub = Club::firstWhere('licence', config('app.club_licence'));
+    $ourClub = Club::own();
     $leaguePast = League::factory()->create(['season_id' => $past->id, 'category' => 'MEN', 'division' => '2A']);
     Team::factory()->create([
         'name' => 'B',
@@ -159,7 +159,7 @@ test('shows match results for the active season', function (): void {
 test('can filter results by category', function (): void {
     ['season' => $season] = makeSeasonWithTeamAndResults('2025-2026', true, '2025-09-01');
 
-    $ourClub = Club::firstWhere('licence', config('app.club_licence'));
+    $ourClub = Club::own();
     $womenLeague = League::factory()->create(['season_id' => $season->id, 'category' => 'WOMEN', 'division' => '1D']);
     Team::factory()->create([
         'name' => 'F1',
@@ -178,7 +178,7 @@ test('can filter results by category', function (): void {
 test('can filter results by team', function (): void {
     ['season' => $season, 'team' => $team] = makeSeasonWithTeamAndResults('2025-2026', true, '2025-09-01');
 
-    $ourClub = Club::firstWhere('licence', config('app.club_licence'));
+    $ourClub = Club::own();
     $league2 = League::factory()->create(['season_id' => $season->id, 'category' => 'MEN', 'division' => '2A']);
     $team2 = Team::factory()->create([
         'name' => 'B',

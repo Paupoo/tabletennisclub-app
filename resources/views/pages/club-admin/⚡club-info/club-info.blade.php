@@ -13,8 +13,8 @@
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <x-input icon="o-trophy" :label="__('Club Name')" placeholder="E.g. CTT Ottignies"
                         wire:model="name" required />
-                    <x-input icon="o-identification" :label="__('Club ID / Licence')" placeholder="E.g. BBW042"
-                        wire:model="licence" required />
+                    <x-input icon="o-identification" :label="__('Club ID / Licence')"
+                        wire:model="licence" readonly disabled />
                 </div>
 
             </div>

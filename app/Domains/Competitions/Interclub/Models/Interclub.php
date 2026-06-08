@@ -117,7 +117,7 @@ class Interclub extends Model
     {
         $this->loadMissing('visitedTeam.club');
 
-        return $this->visitedTeam?->club?->licence === config('app.club_licence');
+        return (bool) $this->visitedTeam?->club?->is_own_club;
     }
 
     public function league(): BelongsTo

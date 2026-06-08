@@ -64,10 +64,10 @@ new class extends Component
 
     public function mount(): void
     {
-        $club = Club::ourClub()->first();
+        $club = Club::own();
 
         $this->name = $club->name ?? '';
-        $this->licence = env('APP_CLUB_LICENCE', '');
+        $this->licence = $club->licence ?? '';
         $this->street = $club->street ?? '';
         $this->city_code = $club->city_code ?? '';
         $this->city_name = $club->city_name ?? '';

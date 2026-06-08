@@ -33,10 +33,9 @@
                     // Belgian hierarchy: National (top) → Regional → Provincial
                     $levelOrder     = ['NATIONAL' => 1, 'REGIONAL' => 2, 'PROVINCIAL_BW' => 3];
                     $levelLabels    = ['NATIONAL' => 'National', 'REGIONAL' => __('Regional'), 'PROVINCIAL_BW' => 'Provincial BW'];
-                    $ourClubLicence = config('app.club_licence');
                     // Within a level, sort by our team's letter (A first)
                     $leagueSortKey  = fn ($league) => $league->teams
-                        ->filter(fn ($t) => $t->club?->licence === $ourClubLicence)
+                        ->filter(fn ($t) => $t->club?->is_own_club)
                         ->pluck('name')
                         ->sort()
                         ->first() ?? 'ZZZ';
@@ -74,10 +73,10 @@
 
                                         @foreach ($levelLeagues->sortBy($leagueSortKey) as $league)
                                             @php
-                                                $count          = $league->teams->filter(fn ($t) => $t->club?->licence !== config('app.club_licence'))->count();
+                                                $count          = $league->teams->filter(fn ($t) => ! $t->club?->is_own_club)->count();
                                                 $active         = $selectedLeagueId === $league->id;
                                                 $ourTeamLetters = $league->teams
-                                                    ->filter(fn ($t) => $t->club?->licence === config('app.club_licence'))
+                                                    ->filter(fn ($t) => $t->club?->is_own_club)
                                                     ->pluck('name')
                                                     ->sort()
                                                     ->implode(', ');

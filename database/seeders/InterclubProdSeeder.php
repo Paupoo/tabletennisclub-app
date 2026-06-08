@@ -76,10 +76,10 @@ class InterclubProdSeeder extends Seeder
             ]
         );
 
-        $this->club = Club::firstWhere('licence', config('app.club_licence'));
+        $this->club = Club::own();
 
         if (! $this->club) {
-            $this->command->warn('No club found with licence ' . config('app.club_licence') . '. Skipping InterclubProdSeeder.');
+            $this->command->warn('No own club found. Skipping InterclubProdSeeder.');
 
             return;
         }
@@ -104,7 +104,7 @@ class InterclubProdSeeder extends Seeder
 
         InterclubResult::where('season_id', $seasonId)->delete();
 
-        $ourTeamIds = Team::whereHas('club', fn ($q) => $q->where('licence', config('app.club_licence')))
+        $ourTeamIds = Team::whereHas('club', fn ($q) => $q->where('is_own_club', true))
             ->where('season_id', $seasonId)
             ->pluck('id');
 

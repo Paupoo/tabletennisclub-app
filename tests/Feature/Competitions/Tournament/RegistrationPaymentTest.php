@@ -176,7 +176,7 @@ describe('recordDebt', function (): void {
 
 describe('openQrModal', function (): void {
     beforeEach(function (): void {
-        Club::factory()->ourClub()->create();
+        Club::factory()->ownClub()->create();
     });
     it('creates a Payment on-the-fly and opens the QR modal for a registration without payment_id', function (): void {
         $admin = User::factory()->isAdmin()->create();

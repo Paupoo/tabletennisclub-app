@@ -31,11 +31,11 @@ class ClubFactory extends Factory
         ];
     }
 
-    public function ourClub(): static
+    public function ownClub(): static
     {
         return $this->state(fn (array $attributes) => [
             'name' => 'C.T.T Ottignies-Blocry',
-            'licence' => config('app.club_licence'),
+            'is_own_club' => true,
             'bic' => 'CREGBEBB',
             'bank_account' => 'BE23732333208791',
         ]);

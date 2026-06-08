@@ -86,7 +86,7 @@ describe('pendingPayments', function (): void {
 
 describe('openPaymentModal', function (): void {
     beforeEach(function (): void {
-        Club::factory()->ourClub()->create();
+        Club::factory()->ownClub()->create();
     });
     it('opens the modal and stores the payment id', function (): void {
         $user = User::factory()->create();

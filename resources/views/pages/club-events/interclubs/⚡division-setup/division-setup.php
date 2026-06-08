@@ -145,7 +145,7 @@ new class extends Component
 
     public function with(): array
     {
-        $leagues = League::whereHas('teams', fn ($q) => $q->whereHas('club', fn ($q) => $q->where('licence', config('app.club_licence')))
+        $leagues = League::whereHas('teams', fn ($q) => $q->whereHas('club', fn ($q) => $q->where('is_own_club', true))
             ->where('season_id', $this->seasonId)
         )
             ->where('season_id', $this->seasonId)

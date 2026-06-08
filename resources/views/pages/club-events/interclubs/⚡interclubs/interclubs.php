@@ -177,7 +177,7 @@ new class extends Component
 
     private function ourClubAddress(): ?string
     {
-        return Club::where('licence', config('app.club_licence'))->value('street');
+        return Club::own()?->street;
     }
 
     public function with(): array

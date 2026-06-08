@@ -42,7 +42,8 @@ class DatabaseSeeder extends Seeder
         // ── Our club ──────────────────────────────────────────────────────────
         Club::create([
             'name' => 'C.T.T Ottignies-Blocry',
-            'licence' => config('app.club_licence'),
+            'licence' => 'BBW214',
+            'is_own_club' => true,
             'building_name' => 'Centre Sportif J. Demeester',
             'street' => "Rue de l'Invasion 80",
             'city_code' => '1340',
@@ -136,7 +137,7 @@ class DatabaseSeeder extends Seeder
             'licence' => '114399',
             'is_committee_member' => true,
             'committee_role' => CommitteeRolesEnum::ADMINISTRATOR,
-        ])->club()->associate(Club::firstWhere('licence', config('app.club_licence')));
+        ])->club()->associate(Club::own());
         $admin->save();
 
         // Create test dream team
@@ -172,7 +173,7 @@ class DatabaseSeeder extends Seeder
                 'city_name' => fake()->city(),
                 'ranking' => $player[2],
                 'licence' => $player[3],
-            ])->club()->associate(Club::firstWhere('licence', config('app.club_licence')));
+            ])->club()->associate(Club::own());
             $player->save();
         }
 
@@ -197,7 +198,7 @@ class DatabaseSeeder extends Seeder
             'ranking' => Ranking::D6->name,
             'licence' => '154856',
             'committee_role' => CommitteeRolesEnum::ADMINISTRATOR,
-        ])->club()->associate(Club::firstWhere('licence', config('app.club_licence')))->save();
+        ])->club()->associate(Club::own())->save();
 
         User::make([
             'is_active' => true,

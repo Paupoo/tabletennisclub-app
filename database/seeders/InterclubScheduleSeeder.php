@@ -46,63 +46,10 @@ class InterclubScheduleSeeder extends Seeder
             ]
         );
 
-        $this->ourClub = Club::firstWhere('licence', config('app.club_licence'));
+        $this->ourClub = Club::own();
 
         foreach (InterclubSeasonData::teams() as $teamData) {
             $this->seedTeam($teamData);
-        }
-    }
-
-    /**
-     * @param  array{category: LeagueCategory, team: string, division: string, position: string, matches: array<int, array<string, mixed>>}  $teamData
-     */
-    private function seedTeam(array $teamData): void
-    {
-        $league  = $this->league($teamData['division'], $teamData['category']);
-        $ourTeam = $this->ourTeam($teamData['team'], $league, $teamData['position']);
-        $players = $teamData['category'] === LeagueCategory::MEN ? 4 : 3;
-
-        foreach ($teamData['matches'] as $match) {
-            $startDateTime = $match['date'] . ' ' . self::MATCH_TIME;
-            $weekNumber    = Carbon::parse($match['date'])->isoWeek();
-
-            if ($match['bye'] ?? false) {
-                Interclub::updateOrCreate(
-                    [
-                        'visited_team_id'  => $ourTeam->id,
-                        'visiting_team_id' => null,
-                        'season_id'        => $this->season->id,
-                        'league_id'        => $league->id,
-                        'start_date_time'  => $startDateTime,
-                    ],
-                    [
-                        'week_number'   => $weekNumber,
-                        'total_players' => $players,
-                        'is_bye'        => true,
-                        'address'       => '',
-                    ]
-                );
-
-                continue;
-            }
-
-            $opponentTeam = $this->opponentTeam($match['opponent'], $league);
-
-            Interclub::updateOrCreate(
-                [
-                    'visited_team_id'  => $match['home'] ? $ourTeam->id : $opponentTeam->id,
-                    'visiting_team_id' => $match['home'] ? $opponentTeam->id : $ourTeam->id,
-                    'season_id'        => $this->season->id,
-                    'league_id'        => $league->id,
-                ],
-                [
-                    'start_date_time' => $startDateTime,
-                    'week_number'     => $weekNumber,
-                    'total_players'   => $players,
-                    'is_bye'          => false,
-                    'address'         => '',
-                ]
-            );
         }
     }
 
@@ -112,6 +59,35 @@ class InterclubScheduleSeeder extends Seeder
             ['division' => $division, 'season_id' => $this->season->id, 'category' => $category->name],
             ['level' => LeagueLevel::PROVINCIAL_BW->name]
         );
+    }
+
+    private function opponentClub(string $clubName): Club
+    {
+        return Club::firstOrCreate(
+            ['name' => $clubName],
+            [
+                'licence' => 'S-' . substr(md5($clubName), 0, 6),
+                'is_active' => true,
+            ]
+        );
+    }
+
+    private function opponentTeam(string $opponentFullName, League $league): Team
+    {
+        // "Arc En Ciel F" → clubName="Arc En Ciel", letter="F"
+        // "Logis Auderghem 2" → clubName="Logis Auderghem", letter="2"
+        $parts = explode(' ', $opponentFullName);
+        $teamLetter = array_pop($parts);
+        $clubName = implode(' ', $parts);
+
+        $club = $this->opponentClub($clubName);
+
+        return Team::firstOrCreate([
+            'name' => $teamLetter,
+            'league_id' => $league->id,
+            'season_id' => $this->season->id,
+            'club_id' => $club->id,
+        ]);
     }
 
     private function ourTeam(string $name, League $league, string $position): Team
@@ -126,32 +102,56 @@ class InterclubScheduleSeeder extends Seeder
         return $team;
     }
 
-    private function opponentClub(string $clubName): Club
+    /**
+     * @param  array{category: LeagueCategory, team: string, division: string, position: string, matches: array<int, array<string, mixed>>}  $teamData
+     */
+    private function seedTeam(array $teamData): void
     {
-        return Club::firstOrCreate(
-            ['name' => $clubName],
-            [
-                'licence'   => 'S-' . substr(md5($clubName), 0, 6),
-                'is_active' => true,
-            ]
-        );
-    }
+        $league = $this->league($teamData['division'], $teamData['category']);
+        $ourTeam = $this->ourTeam($teamData['team'], $league, $teamData['position']);
+        $players = $teamData['category'] === LeagueCategory::MEN ? 4 : 3;
 
-    private function opponentTeam(string $opponentFullName, League $league): Team
-    {
-        // "Arc En Ciel F" → clubName="Arc En Ciel", letter="F"
-        // "Logis Auderghem 2" → clubName="Logis Auderghem", letter="2"
-        $parts      = explode(' ', $opponentFullName);
-        $teamLetter = array_pop($parts);
-        $clubName   = implode(' ', $parts);
+        foreach ($teamData['matches'] as $match) {
+            $startDateTime = $match['date'] . ' ' . self::MATCH_TIME;
+            $weekNumber = Carbon::parse($match['date'])->isoWeek();
 
-        $club = $this->opponentClub($clubName);
+            if ($match['bye'] ?? false) {
+                Interclub::updateOrCreate(
+                    [
+                        'visited_team_id' => $ourTeam->id,
+                        'visiting_team_id' => null,
+                        'season_id' => $this->season->id,
+                        'league_id' => $league->id,
+                        'start_date_time' => $startDateTime,
+                    ],
+                    [
+                        'week_number' => $weekNumber,
+                        'total_players' => $players,
+                        'is_bye' => true,
+                        'address' => '',
+                    ]
+                );
 
-        return Team::firstOrCreate([
-            'name'      => $teamLetter,
-            'league_id' => $league->id,
-            'season_id' => $this->season->id,
-            'club_id'   => $club->id,
-        ]);
+                continue;
+            }
+
+            $opponentTeam = $this->opponentTeam($match['opponent'], $league);
+
+            Interclub::updateOrCreate(
+                [
+                    'visited_team_id' => $match['home'] ? $ourTeam->id : $opponentTeam->id,
+                    'visiting_team_id' => $match['home'] ? $opponentTeam->id : $ourTeam->id,
+                    'season_id' => $this->season->id,
+                    'league_id' => $league->id,
+                ],
+                [
+                    'start_date_time' => $startDateTime,
+                    'week_number' => $weekNumber,
+                    'total_players' => $players,
+                    'is_bye' => false,
+                    'address' => '',
+                ]
+            );
+        }
     }
 }

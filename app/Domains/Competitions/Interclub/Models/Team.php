@@ -34,6 +34,7 @@ use Illuminate\Support\Carbon;
  * @property-read Season $season
  * @property-read Collection<int, User> $users
  * @property-read int|null $users_count
+ *
  * @method static \Database\Factories\Domains\Competitions\Interclub\Models\TeamFactory factory($count = null, $state = [])
  * @method static Builder<static>|Team inClub()
  * @method static Builder<static>|Team newModelQuery()
@@ -49,6 +50,7 @@ use Illuminate\Support\Carbon;
  * @method static Builder<static>|Team whereSeasonId($value)
  * @method static Builder<static>|Team whereUpdatedAt($value)
  * @method static Builder<static>|Team whereFinalPosition($value)
+ *
  * @mixin \Eloquent
  */
 class Team extends Model
@@ -83,6 +85,11 @@ class Team extends Model
         return trim(($this->club?->name ?? '') . ' ' . $this->name) ?: $this->name;
     }
 
+    public function interclubResults(): HasMany
+    {
+        return $this->hasMany(InterclubResult::class);
+    }
+
     public function interclubs(): HasMany
     {
         return $this->hasMany(Interclub::class);
@@ -93,19 +100,14 @@ class Team extends Model
         return $this->belongsTo(League::class);
     }
 
-    public function interclubResults(): HasMany
-    {
-        return $this->hasMany(InterclubResult::class);
-    }
-
     public function scopeInClub(Builder $query): void
     {
-        $query->whereHas('club', fn (Builder $subquery) => $subquery->where('licence', '=', config('app.club_licence')));
+        $query->whereHas('club', fn (Builder $subquery) => $subquery->where('is_own_club', true));
     }
 
     public function scopeNotInClub(Builder $query): void
     {
-        $query->whereHas('club', fn (Builder $subquery) => $subquery->where('licence', '!=', config('app.club_licence')));
+        $query->whereHas('club', fn (Builder $subquery) => $subquery->where('is_own_club', false));
     }
 
     public function season(): BelongsTo

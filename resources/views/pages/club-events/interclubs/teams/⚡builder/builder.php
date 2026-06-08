@@ -238,7 +238,7 @@ new class extends Component
             'proposedTeams.*.division.required' => __('Set the division for each team.'),
         ]);
 
-        $ourClub = Club::where('licence', config('app.club_licence'))->first();
+        $ourClub = Club::own();
 
         foreach ($this->proposedTeams as $data) {
             $league = League::firstOrCreate([

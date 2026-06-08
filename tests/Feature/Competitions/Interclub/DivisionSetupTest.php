@@ -21,7 +21,7 @@ beforeEach(function (): void {
         'division' => 'P2A',
     ]);
 
-    $this->ourClub = Club::factory()->create(['licence' => config('app.club_licence')]);
+    $this->ourClub = Club::factory()->ownClub()->create();
     $this->ourTeam = Team::factory()->create([
         'name' => 'A',
         'season_id' => $this->season->id,

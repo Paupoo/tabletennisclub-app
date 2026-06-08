@@ -1043,6 +1043,7 @@
     "I will skip the meal": "Je ne prends pas le repas",
     "I'll skip the meal": "Je ne prends pas le repas",
     "IBAN": "IBAN",
+    "BIC / SWIFT code": "Code BIC / SWIFT",
     "IBAN account number": "Numéro de compte IBAN",
     "IBAN match": "IBAN correspondant",
     "payment.iban_bic_line": "IBAN : :iban — BIC : :bic",

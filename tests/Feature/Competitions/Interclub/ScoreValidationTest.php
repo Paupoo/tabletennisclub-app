@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
-use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\InterclubResult;
+use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\InterclubResultEnum;
@@ -17,7 +17,7 @@ uses(RefreshDatabase::class);
 beforeEach(function (): void {
     $this->season = Season::factory()->create(['is_active' => true]);
     $this->admin = User::factory()->isAdmin()->create();
-    $this->ourClub = Club::factory()->create(['licence' => config('app.club_licence')]);
+    $this->ourClub = Club::factory()->ownClub()->create();
 });
 
 function makeTeamWithInterclubResult(Season $season, Club $ourClub, string $category): array

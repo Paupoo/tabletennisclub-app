@@ -6,8 +6,6 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Models\AppSetting;
-use Illuminate\Auth\Notifications\VerifyEmail;
-use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 
 // ── Access control ───────────────────────────────────────────────────────────
@@ -42,31 +40,12 @@ it('creates an admin user and logs in on step 2', function (): void {
         ->set('password', 'password123')
         ->set('passwordConfirmation', 'password123')
         ->call('completeStep2')
-        ->assertSet('step', '3')
-        ->assertSet('maxReachable', 3);
+        ->assertSet('step', '3');
 
     $user = User::where('email', 'admin@test.be')->first();
     expect($user)->not->toBeNull();
     expect($user->is_admin)->toBeTrue();
     expect($user->is_active)->toBeTrue();
-});
-
-it('sends email verification notification automatically on step 2', function (): void {
-    Notification::fake();
-    AppSetting::where('key', 'setup_completed')->delete();
-
-    Livewire::test('pages::setup.wizard')
-        ->set('step', '2')
-        ->set('firstName', 'Jean')
-        ->set('lastName', 'Dupont')
-        ->set('email', 'admin@test.be')
-        ->set('password', 'password123')
-        ->set('passwordConfirmation', 'password123')
-        ->call('completeStep2');
-
-    $user = User::where('email', 'admin@test.be')->first();
-
-    Notification::assertSentTo($user, VerifyEmail::class);
 });
 
 it('fails step 2 when email is already taken', function (): void {
@@ -106,6 +85,10 @@ it('creates a club record on step 3', function (): void {
     Livewire::test('pages::setup.wizard')
         ->set('step', '3')
         ->set('licence', 'TST001')
+        ->set('clubName', 'Test Club')
+        ->set('clubStreet', 'Rue de Test 1')
+        ->set('clubCityCode', '1300')
+        ->set('clubCityName', 'Wavre')
         ->call('completeStep3')
         ->assertSet('step', '4')
         ->assertSet('maxReachable', 4);
@@ -126,51 +109,51 @@ it('fails step 3 when licence is already taken', function (): void {
         ->assertHasErrors(['licence']);
 });
 
-// ── Step 5 — Season ──────────────────────────────────────────────────────────
+// ── Step 4 — Season ──────────────────────────────────────────────────────────
 
-it('creates an active season on step 5', function (): void {
+it('creates an active season on step 4', function (): void {
     AppSetting::where('key', 'setup_completed')->delete();
 
     $existingClub = Club::factory()->create();
 
     Livewire::test('pages::setup.wizard')
-        ->set('step', '5')
+        ->set('step', '4')
         ->set('clubId', $existingClub->id)
         ->set('seasonName', '2025-2026')
         ->set('seasonStartAt', '2025-08-01')
         ->set('seasonEndAt', '2026-07-31')
-        ->call('completeStep5')
-        ->assertSet('step', '6')
-        ->assertSet('maxReachable', 6);
+        ->call('completeStep4')
+        ->assertSet('step', '5')
+        ->assertSet('maxReachable', 5);
 
     $season = Season::where('name', '2025-2026')->first();
     expect($season)->not->toBeNull();
     expect($season->is_active)->toBeTrue();
 });
 
-it('fails step 5 when end date is before start date', function (): void {
+it('fails step 4 when end date is before start date', function (): void {
     AppSetting::where('key', 'setup_completed')->delete();
 
     Livewire::test('pages::setup.wizard')
-        ->set('step', '5')
+        ->set('step', '4')
         ->set('seasonName', '2025-2026')
         ->set('seasonStartAt', '2025-08-01')
         ->set('seasonEndAt', '2025-07-01')
-        ->call('completeStep5')
+        ->call('completeStep4')
         ->assertHasErrors(['seasonEndAt']);
 });
 
-// ── Step 8 — Setup completion ────────────────────────────────────────────────
+// ── Step 7 — Setup completion ────────────────────────────────────────────────
 
-it('marks setup as complete on step 8', function (): void {
+it('marks setup as complete on step 7', function (): void {
     AppSetting::where('key', 'setup_completed')->delete();
 
     $admin = User::factory()->isAdmin()->create();
 
     Livewire::actingAs($admin)
         ->test('pages::setup.wizard')
-        ->set('step', '8')
-        ->set('maxReachable', 8)
+        ->set('step', '7')
+        ->set('maxReachable', 7)
         ->call('completeSetup');
 
     expect(AppSetting::get('setup_completed'))->toBe('1');

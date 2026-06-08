@@ -13,11 +13,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * @property int $id
  * @property string $name
  * @property int $is_active
+ * @property bool $is_own_club
  * @property string $licence
  * @property string|null $street
  * @property string|null $city_code
@@ -74,6 +76,7 @@ class Club extends Model
     protected $casts = [
         'name' => 'string',
         'licence' => 'string',
+        'is_own_club' => 'boolean',
         'street' => 'string',
         'city_code' => 'string',
         'city_name' => 'string',
@@ -91,6 +94,7 @@ class Club extends Model
     protected $fillable = [
         'name',
         'licence',
+        'is_own_club',
         'street',
         'city_code',
         'city_name',
@@ -105,6 +109,16 @@ class Club extends Model
         'enterprise_number',
     ];
 
+    public static function forgetOwnClub(): void
+    {
+        Cache::forget('own_club');
+    }
+
+    public static function own(): ?self
+    {
+        return Cache::rememberForever('own_club', fn () => self::where('is_own_club', true)->first());
+    }
+
     public function rooms(): BelongsToMany
     {
         return $this->belongsToMany(Room::class);
@@ -112,12 +126,12 @@ class Club extends Model
 
     public function scopeOtherClubs(Builder $query): void
     {
-        $query->whereNot('licence', '=', config('app.club_licence'));
+        $query->where('is_own_club', false);
     }
 
     public function scopeOurClub(Builder $query): void
     {
-        $query->where('licence', '=', config('app.club_licence'));
+        $query->where('is_own_club', true);
     }
 
     public function teams(): HasMany

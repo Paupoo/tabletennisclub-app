@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Notification;
 
 beforeEach(function (): void {
-    Club::factory()->ourClub()->create();
+    Club::factory()->ownClub()->create();
 });
 
 // ============================================================

@@ -29,7 +29,7 @@ beforeEach(function (): void {
     $this->player2 = User::factory()->isCompetitor()->create();
     $this->player3 = User::factory()->isCompetitor()->create();
 
-    $club = Club::factory()->create(['licence' => config('app.club_licence')]);
+    $club = Club::factory()->ownClub()->create();
 
     $this->team = Team::factory()->create([
         'season_id' => $this->season->id,

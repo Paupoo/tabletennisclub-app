@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
@@ -27,6 +28,10 @@ uses(
     TestCase::class,
     RefreshDatabase::class,
 )->in('Feature', 'Unit', 'Browser', '../resources/views');
+
+beforeEach(function () {
+    Club::forgetOwnClub();
+});
 
 /*
 |--------------------------------------------------------------------------

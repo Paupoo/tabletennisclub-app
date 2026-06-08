@@ -260,7 +260,7 @@ new class extends Component
 
         $drawerInterclub = $this->drawerInterclubId ? Interclub::with(['visitedTeam.users', 'visitingTeam.users'])->find($this->drawerInterclubId) : null;
         $drawerTeam = $drawerInterclub
-            ? ($drawerInterclub->visitedTeam?->club?->licence === config('app.club_licence')
+            ? ($drawerInterclub->visitedTeam?->club?->is_own_club
                 ? $drawerInterclub->visitedTeam
                 : $drawerInterclub->visitingTeam)
             : null;

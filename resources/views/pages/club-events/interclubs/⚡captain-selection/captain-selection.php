@@ -296,7 +296,6 @@ new class extends Component
     /** @return array<string, mixed> */
     private function buildTeamData(Team $team, ?Season $season): array
     {
-        $ourClubLicence = config('app.club_licence');
         $teamUserIds = $team->users->pluck('id');
         $teamMemberCount = $teamUserIds->count();
 
@@ -311,8 +310,8 @@ new class extends Component
             ->orderBy('start_date_time')
             ->get();
 
-        $matches = $interclubs->map(function (Interclub $ic) use ($team, $teamMemberCount, $ourClubLicence) {
-            $ourTeam = $ic->visitedTeam?->club?->licence === $ourClubLicence
+        $matches = $interclubs->map(function (Interclub $ic) use ($team, $teamMemberCount) {
+            $ourTeam = $ic->visitedTeam?->club?->is_own_club
                 ? $ic->visitedTeam
                 : $ic->visitingTeam;
 

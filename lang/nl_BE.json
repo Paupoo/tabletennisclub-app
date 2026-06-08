@@ -1043,6 +1043,7 @@
     "I will skip the meal": "Ik sla de maaltijd over",
     "I'll skip the meal": "Ik sla de maaltijd over",
     "IBAN": "IBAN",
+    "BIC / SWIFT code": "BIC / SWIFT-code",
     "IBAN account number": "IBAN-rekeningnummer",
     "IBAN match": "IBAN-overeenkomst",
     "payment.iban_bic_line": "IBAN: :iban — BIC: :bic",

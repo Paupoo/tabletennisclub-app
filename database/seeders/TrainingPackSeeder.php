@@ -26,7 +26,7 @@ class TrainingPackSeeder extends Seeder
     public function run(): void
     {
         $password = Hash::make('password');
-        $ourClub = Club::firstWhere('licence', config('app.club_licence'));
+        $ourClub = Club::own();
         $season = Season::where('is_active', true)->first();
 
         if (! $season) {

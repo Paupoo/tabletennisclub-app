@@ -80,7 +80,7 @@ new class extends Component
             return;
         }
 
-        $ourClub = Club::where('licence', config('app.club_licence'))->first();
+        $ourClub = Club::own();
 
         $league = League::firstOrCreate([
             'category'  => $this->newCategory,

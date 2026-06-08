@@ -51,7 +51,7 @@ class HomeController extends Controller
                 ->orderBy('start_time')
                 ->get()
                 ->each(function (TrainingPack $pack) use (&$schedules, $dayNames, $levelLabels): void {
-                    $start = Carbon::createFromFormat('H:i:s', $pack->start_time);
+                    $start = Carbon::parse($pack->start_time);
                     $end = $start->copy()->addMinutes($pack->duration_minutes);
 
                     // Strip day prefix ("Lundi — ") from pack name for display

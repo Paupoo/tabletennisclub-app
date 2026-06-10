@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Resources\views\Pages\ClubEvents\Interclubs\CaptainSelection;
 
+use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\InterclubAvailability;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Interclub;
@@ -11,17 +12,19 @@ use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Competitions\Interclub\Services\InterclubAvailabilityService;
 use App\Livewire\Concerns\HasBreadcrumbs;
+use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast, HasBreadcrumbs;
+    use Toast, HasBreadcrumbs, HasFilterDrawer;
 
     public string $captainMeetupInfo = '';
 
@@ -40,6 +43,9 @@ new class extends Component
     /** @var array<int, int> */
     public array $selectedPlayerIds = [];
 
+    #[Url]
+    public ?int $zoomedTeamId = null;
+
     #[Locked]
     public ?int $currentUserId = null;
 
@@ -53,7 +59,7 @@ new class extends Component
         $this->selectedSeasonId = Season::current()?->id;
 
         $user = Auth::user();
-        if (! $user->is_admin && ! $user->is_committee_member) {
+        if (! $user->is_admin && ! $user->is_committee_member && ! $user->is_selector) {
             $isCaptain = Team::where('captain_id', $user->id)->exists();
             abort_unless($isCaptain, 403);
         }
@@ -158,6 +164,19 @@ new class extends Component
 
         abort_if($interclub->start_date_time < now(), 403);
 
+        // Safety re-check: block if any selected player double-booked this week
+        foreach ($this->selectedPlayerIds as $selectedId) {
+            if ($this->isPlayerDoubleBooked($selectedId, $interclub)) {
+                $this->error(
+                    __('Selection blocked'),
+                    __('One or more players are already selected in another team for week :n.', ['n' => $interclub->week_number]),
+                    position: 'toast-bottom toast-end'
+                );
+
+                return;
+            }
+        }
+
         $existingIds = $interclub->users()->pluck('users.id')->toArray();
         $maxPlayers = $interclub->total_players;
 
@@ -195,24 +214,86 @@ new class extends Component
 
         if (in_array($userId, $this->selectedPlayerIds)) {
             $this->selectedPlayerIds = array_values(array_diff($this->selectedPlayerIds, [$userId]));
-        } else {
-            if (count($this->selectedPlayerIds) >= $maxPlayers) {
-                $this->warning(
-                    __('Team full'),
-                    __('Maximum :n players.', ['n' => $maxPlayers]),
-                    position: 'toast-bottom toast-end'
-                );
 
-                return;
-            }
-            $this->selectedPlayerIds[] = $userId;
+            return;
         }
+
+        if ($interclub && $this->isPlayerDoubleBooked($userId, $interclub)) {
+            $this->warning(
+                __('Player already aligned'),
+                __('This player is already selected in another team for week :n.', ['n' => $interclub->week_number]),
+                position: 'toast-bottom toast-end'
+            );
+
+            return;
+        }
+
+        if (count($this->selectedPlayerIds) >= $maxPlayers) {
+            $this->warning(
+                __('Team full'),
+                __('Maximum :n players.', ['n' => $maxPlayers]),
+                position: 'toast-bottom toast-end'
+            );
+
+            return;
+        }
+
+        $this->selectedPlayerIds[] = $userId;
+    }
+
+    /** @return array<int, array{key: string, label: string}> */
+    public function getFilterChips(): array
+    {
+        $user = Auth::user();
+        $season = $this->selectedSeasonId ? Season::find($this->selectedSeasonId) : Season::current();
+        $teams = $this->loadAccessibleTeams($user, $season);
+
+        if ($teams->count() <= 1 || ! $this->selectedTeamId) {
+            return [];
+        }
+
+        if ($this->selectedTeamId === $teams->first()?->id) {
+            return [];
+        }
+
+        $team = $teams->firstWhere('id', $this->selectedTeamId);
+
+        if (! $team) {
+            return [];
+        }
+
+        $label = $team->name . ($team->league?->category ? ' · ' . $this->categoryLabel($team->league->category) : '');
+
+        return [['key' => 'selectedTeamId', 'label' => $label]];
+    }
+
+    public function clearFilters(): void
+    {
+        $user = Auth::user();
+        $season = $this->selectedSeasonId ? Season::find($this->selectedSeasonId) : Season::current();
+        $this->selectedTeamId = $this->loadAccessibleTeams($user, $season)->first()?->id;
+    }
+
+    public function removeFilter(string $_key): void
+    {
+        $this->clearFilters();
+    }
+
+    private function categoryLabel(string $category): string
+    {
+        return match($category) {
+            'MEN' => __('Men'),
+            'WOMEN' => __('Women'),
+            'VETERANS' => __('Veterans'),
+            default => $category,
+        };
     }
 
     public function with(): array
     {
         $user = Auth::user();
         $isAdminOrCommittee = $user->is_admin || $user->is_committee_member;
+        $canSearchSubstitute = $user->is_admin || $user->is_committee_member || $user->is_selector;
 
         $seasons = Season::orderBy('start_at')->get();
         $season = $this->selectedSeasonId
@@ -223,6 +304,10 @@ new class extends Component
 
         $teamsData = $teams->map(fn (Team $team) => $this->buildTeamData($team, $season));
 
+        if ($this->selectedTeamId && ! $teamsData->firstWhere('id', $this->selectedTeamId)) {
+            $this->selectedTeamId = $teamsData->first()['id'] ?? null;
+        }
+
         $alertMatches = $teamsData
             ->flatMap(fn ($t) => collect($t['matches'])->map(fn ($m) => array_merge($m, ['team_name' => $t['name'], 'team_id' => $t['id']])))
             ->filter(fn ($m) => $m['alert'])
@@ -232,6 +317,7 @@ new class extends Component
         $drawerInterclub = null;
         $roster = collect();
         $maxPlayers = 4;
+        $blockedPlayerIds = [];
 
         if ($this->selectedInterclubId && $this->drawerSelection) {
             $drawerInterclub = Interclub::find($this->selectedInterclubId);
@@ -245,23 +331,61 @@ new class extends Component
                     ->keyBy('id')
                     ->map(fn ($u) => $u->registration);
 
+                // Players selected in another team same week -> blocked
+                $blockedPlayerData = [];
+                $sameWeekMatches = Interclub::where('season_id', $drawerInterclub->season_id)
+                    ->where('week_number', $drawerInterclub->week_number)
+                    ->where('id', '!=', $drawerInterclub->id)
+                    ->with(['visitedTeam.club', 'visitingTeam.club'])
+                    ->get();
+
+                foreach ($sameWeekMatches as $swMatch) {
+                    $swTeam = $swMatch->visitedTeam?->club?->is_own_club
+                        ? $swMatch->visitedTeam
+                        : $swMatch->visitingTeam;
+
+                    foreach ($swMatch->users()->wherePivot('is_selected', true)->pluck('users.id') as $uid) {
+                        $blockedPlayerData[$uid] = $swTeam?->name ?? '?';
+                    }
+                }
+
+                $blockedPlayerIds = array_keys($blockedPlayerData);
+
+                // Roster from team members
                 $roster = ($selectedTeam?->users ?? collect())->map(
-                    fn (User $player) => $this->buildPlayerData($player, $pivotMap, $selectedTeam, $season)
+                    fn (User $player) => $this->buildPlayerData($player, $pivotMap, $selectedTeam, $season, $blockedPlayerData)
                 )->sortBy([
                     ['rank_sort', 'asc'],
                     ['last_name', 'asc'],
                     ['first_name', 'asc'],
                 ])->values();
+
+                // Add substitutes: selected players not on the team
+                $teamUserIds = $selectedTeam?->users->pluck('id')->toArray() ?? [];
+                $substituteIds = array_diff($this->selectedPlayerIds, $teamUserIds);
+
+                if (! empty($substituteIds)) {
+                    $substitutes = User::whereIn('id', $substituteIds)->get()->map(
+                        fn (User $player) => $this->buildPlayerData($player, $pivotMap, $selectedTeam, $season, $blockedPlayerData)
+                    )->values();
+                    $roster = $roster->concat($substitutes)->values();
+                }
             }
         }
 
         $searchResults = collect();
-        if (strlen($this->search) >= 2) {
+        if ($canSearchSubstitute && strlen($this->search) >= 2) {
+            $selectedTeam = $teams->firstWhere('id', $this->selectedTeamId);
+            $teamCategory = $selectedTeam?->league?->category;
+
             $searchResults = User::where('is_competitor', true)
                 ->where(fn ($q) => $q
                     ->where('first_name', 'like', '%' . $this->search . '%')
                     ->orWhere('last_name', 'like', '%' . $this->search . '%'))
-                ->whereNotIn('id', $this->selectedPlayerIds)
+                ->whereNotIn('id', array_merge($this->selectedPlayerIds, $blockedPlayerIds))
+                ->when($teamCategory === 'MEN', fn ($q) => $q->where('gender', Gender::MEN))
+                ->when($teamCategory === 'WOMEN', fn ($q) => $q->where('gender', Gender::WOMEN))
+                ->when($teamCategory === 'VETERANS' && $season, fn ($q) => $q->whereDate('birthdate', '<=', $season->end_at->copy()->subYears(40)))
                 ->limit(8)
                 ->get()
                 ->map(fn (User $u) => [
@@ -275,12 +399,20 @@ new class extends Component
             ? Team::with(['league'])->inClub()->when($season, fn ($q) => $q->where('season_id', $season->id))->get()
             : collect();
 
-        $matchDayMap = $season ? Interclub::matchDayMap($season->id) : [];
+        $matchDayMap = $season ? Interclub::matchDayMap($season->id, $teams->pluck('id')->toArray()) : [];
 
         return [
             'breadcrumbs' => $this->getBreadcrumbs(),
             'seasons_list' => $seasons->map(fn ($s) => ['id' => $s->id, 'name' => $s->name]),
             'teams_list' => $teams->map(fn ($t) => ['id' => $t->id, 'name' => ($t->club?->name ?? '?') . ' ' . $t->name]),
+            'teams_for_filter' => $teams->count() > 1
+                ? $teams
+                    ->sortBy(fn (Team $t) => sprintf('%d_%s', ['MEN' => 0, 'WOMEN' => 1, 'VETERANS' => 2][$t->league?->category] ?? 99, $t->name))
+                    ->map(fn (Team $t) => [
+                        'id' => $t->id,
+                        'name' => $t->name . ($t->league?->category ? ' · ' . $this->categoryLabel($t->league->category) : ''),
+                    ])->values()->all()
+                : [],
             'teamsData' => $teamsData,
             'alertMatches' => $alertMatches,
             'roster' => $roster,
@@ -288,8 +420,11 @@ new class extends Component
             'searchResults' => $searchResults,
             'drawerInterclub' => $drawerInterclub,
             'isAdminOrCommittee' => $isAdminOrCommittee,
-            'weekSummary' => $isAdminOrCommittee ? $this->buildWeekSummary($allTeamsForSummary) : null,
+            'canSearchSubstitute' => $canSearchSubstitute,
+            'weekSummary' => $isAdminOrCommittee ? $this->buildWeekSummary($allTeamsForSummary, $this->zoomedTeamId) : null,
             'matchDayMap' => $matchDayMap,
+            'zoomedTeamId' => $this->zoomedTeamId,
+            'filterChips' => $this->getFilterChips(),
         ];
     }
 
@@ -383,20 +518,21 @@ new class extends Component
 
     /**
      * @param  \Illuminate\Support\Collection<int, mixed>  $pivotMap
+     * @param  array<int, string>  $blockedPlayerData  user_id => team_name already selected this week
      * @return array<string, mixed>
      */
-    private function buildPlayerData(User $player, Collection $pivotMap, Team $team, ?Season $season): array
+    private function buildPlayerData(User $player, Collection $pivotMap, ?Team $team, ?Season $season, array $blockedPlayerData = []): array
     {
         $pivot = $pivotMap->get($player->id);
         $avail = $pivot?->availability
             ? InterclubAvailability::from($pivot->availability)
             : null;
 
-        $matchesPlayed = $season
+        $matchesPlayed = $season && $team
             ? $this->matchesPlayedCount($player->id, $team->id, $season)
             : 0;
 
-        $matchesSelected = $season
+        $matchesSelected = $season && $team
             ? $this->matchesSelectedCount($player->id, $team->id, $season)
             : 0;
 
@@ -411,6 +547,8 @@ new class extends Component
             'availability_note' => $pivot?->availability_note,
             'matches_played' => $matchesPlayed,
             'matches_selected' => $matchesSelected,
+            'is_blocked' => isset($blockedPlayerData[$player->id]),
+            'blocked_team' => $blockedPlayerData[$player->id] ?? null,
         ];
     }
 
@@ -447,16 +585,20 @@ new class extends Component
             $query->where('season_id', $season->id);
         }
 
-        if (! $user->is_admin && ! $user->is_committee_member) {
+        if (! $user->is_admin && ! $user->is_committee_member && ! $user->is_selector) {
             $query->where('captain_id', $user->id);
         }
 
-        return $query->get();
+        return $query->orderBy('name')->get();
     }
 
     /** @param \Illuminate\Database\Eloquent\Collection<int, Team> $teams */
-    private function buildWeekSummary(\Illuminate\Database\Eloquent\Collection $teams): array
+    private function buildWeekSummary(\Illuminate\Database\Eloquent\Collection $teams, ?int $zoomedTeamId = null): array
     {
+        if ($zoomedTeamId) {
+            $teams = $teams->filter(fn (Team $t) => $t->id === $zoomedTeamId)->values();
+        }
+
         $weekNumbers = $this->weekNumbers($teams);
 
         $weeks = $weekNumbers->map(fn (int $wk) => [
@@ -472,7 +614,31 @@ new class extends Component
             'preparation_score' => $total > 0 ? (int) round($ok / $total * 100) : 0,
             'total' => $total,
             'ok' => $ok,
+            'matrix' => $this->teamWeekMatrix($teams, $weekNumbers),
+            'teams' => $teams->map(fn (Team $t) => ['id' => $t->id, 'name' => $t->name])->values()->all(),
         ];
+    }
+
+    /**
+     * @param  \Illuminate\Database\Eloquent\Collection<int, Team>  $teams
+     * @return array<int, array<int, string|null>>
+     */
+    private function teamWeekMatrix(\Illuminate\Database\Eloquent\Collection $teams, Collection $weekNumbers): array
+    {
+        $matrix = [];
+        foreach ($teams as $team) {
+            $matrix[$team->id] = [];
+            foreach ($weekNumbers as $wk) {
+                $interclub = Interclub::where('week_number', $wk)
+                    ->where(fn ($q) => $q
+                        ->where('visited_team_id', $team->id)
+                        ->orWhere('visiting_team_id', $team->id))
+                    ->first();
+                $matrix[$team->id][$wk] = $interclub ? $this->weekStatus($wk, Team::newModelInstance()->newCollection([$team])) : null;
+            }
+        }
+
+        return $matrix;
     }
 
     /** @param \Illuminate\Database\Eloquent\Collection<int, Team> $teams */
@@ -483,9 +649,9 @@ new class extends Component
         return Interclub::whereIn('visited_team_id', $teamIds)
             ->orWhereIn('visiting_team_id', $teamIds)
             ->whereNotNull('week_number')
+            ->orderBy('start_date_time')
             ->pluck('week_number')
             ->unique()
-            ->sort()
             ->values();
     }
 
@@ -527,5 +693,16 @@ new class extends Component
         }
 
         return Interclub::find($this->selectedInterclubId);
+    }
+
+    private function isPlayerDoubleBooked(int $userId, Interclub $interclub): bool
+    {
+        return Interclub::where('season_id', $interclub->season_id)
+            ->where('week_number', $interclub->week_number)
+            ->where('id', '!=', $interclub->id)
+            ->whereHas('users', fn ($q) => $q
+                ->where('users.id', $userId)
+                ->where('interclub_user.is_selected', 1))
+            ->exists();
     }
 };

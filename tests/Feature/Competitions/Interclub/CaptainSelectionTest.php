@@ -124,6 +124,47 @@ it('openSelection silently ignores past interclubs', function (): void {
         ->assertSet('selectedInterclubId', null);
 });
 
+it('is_selector user can access the captain selection page and sees all teams', function (): void {
+    $selector = User::factory()->create(['is_selector' => true]);
+
+    $this->actingAs($selector)
+        ->get(route('admin.interclubs.captain-selection'))
+        ->assertOk();
+});
+
+it('matchDayMap scopes week numbers to own club teams only', function (): void {
+    $otherTeam = Team::factory()->create([
+        'season_id' => $this->season->id,
+        'league_id' => $this->league->id,
+    ]);
+
+    // Interclub for own team — week 10
+    Interclub::factory()->create([
+        'season_id' => $this->season->id,
+        'league_id' => $this->league->id,
+        'visited_team_id' => $this->team->id,
+        'week_number' => 10,
+        'start_date_time' => now()->addDays(7),
+    ]);
+
+    // Interclub for other team only — week 20
+    Interclub::factory()->create([
+        'season_id' => $this->season->id,
+        'league_id' => $this->league->id,
+        'visited_team_id' => $otherTeam->id,
+        'week_number' => 20,
+        'start_date_time' => now()->addDays(14),
+    ]);
+
+    $map = Interclub::matchDayMap(
+        $this->season->id,
+        [$this->team->id]
+    );
+
+    expect($map)->toHaveKey(10)
+        ->and($map)->not->toHaveKey(20);
+});
+
 it('has_played flag counts as a played match in matchesPlayedCount', function (): void {
     $past = Interclub::factory()->create([
         'season_id' => $this->season->id,

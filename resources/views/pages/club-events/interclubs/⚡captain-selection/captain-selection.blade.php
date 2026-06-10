@@ -3,48 +3,34 @@
 </x-slot:breadcrumbs>
 
 <div>
-    <x-header separator :subtitle="__('Manage team selections')" :title="__('Sélections')">
+    <x-header separator :subtitle="__('Manage team selections')" :title="__('Selections')">
         <x-slot:actions>
             <x-select
                 class="select-sm border-none bg-base-200/50 font-bold"
                 :options="$seasons_list"
                 wire:model.live="selectedSeasonId" />
-            <x-button class="btn-ghost btn-sm" icon="o-arrow-right" :label="__('Mes matchs')"
+            @if ($teamsData->count() > 1)
+                <x-button
+                    class="btn-ghost {{ count($filterChips) > 0 ? 'btn-active' : '' }}"
+                    icon="o-funnel"
+                    :label="__('Filters')"
+                    wire:click="$set('filterDrawer', true)">
+                    @if (count($filterChips) > 0)
+                        <x-badge class="badge-sm badge-primary" value="{{ count($filterChips) }}" />
+                    @endif
+                </x-button>
+            @endif
+            <x-button class="btn-ghost btn-sm" icon="o-arrow-right" :label="__('My Matches')"
                 :link="route('admin.interclubs.my-matches')" />
         </x-slot:actions>
     </x-header>
 
-    {{-- Admin preparation score --}}
-    @if ($isAdminOrCommittee && $weekSummary && $weekSummary['total'] > 0)
-        <div class="mb-6 flex flex-wrap items-center gap-6 rounded-xl border border-base-200 bg-base-50 px-5 py-4">
-            <div class="flex items-center gap-3">
-                <div class="radial-progress text-[11px] font-black text-primary"
-                    style="--value:{{ $weekSummary['preparation_score'] }}; --size:2.8rem; --thickness:3px;">
-                    {{ $weekSummary['preparation_score'] }}%
-                </div>
-                <div>
-                    <div class="text-[10px] font-black uppercase tracking-widest opacity-40">{{ __('Préparation') }}</div>
-                    <div class="text-xs font-bold">{{ $weekSummary['ok'] }}/{{ $weekSummary['total'] }} {{ __('semaines prêtes') }}</div>
-                </div>
-            </div>
-            <div class="flex flex-wrap items-end gap-1.5">
-                @foreach ($weekSummary['weeks'] as $wk)
-                    @php
-                        $dot = match ($wk['status']) {
-                            'ok'      => 'bg-success',
-                            'warning' => 'bg-warning',
-                            'nok'     => 'bg-error animate-pulse',
-                            default   => 'bg-base-300',
-                        };
-                    @endphp
-                    <div class="flex flex-col items-center gap-0.5">
-                        <div class="{{ $dot }} h-2 w-2 rounded-full"></div>
-                        <span class="text-[8px] font-black opacity-30">{{ $matchDayMap[$wk['wk']] ?? $wk['wk'] }}</span>
-                    </div>
-                @endforeach
-            </div>
-        </div>
-    @endif
+    @include('pages::club-events.interclubs.⚡captain-selection._prep-score-widget', [
+        'weekSummary' => $weekSummary,
+        'matchDayMap' => $matchDayMap,
+        'zoomedTeamId' => $zoomedTeamId,
+        'isAdminOrCommittee' => $isAdminOrCommittee,
+    ])
 
     @if ($teamsData->isEmpty())
         <x-empty-state icon="o-user-group" :title="__('No team assigned')"
@@ -82,32 +68,11 @@
             </div>
         @endif
 
-        {{-- ── TEAM TABS ──────────────────────────────────────────────── --}}
-        @if ($teamsData->count() > 1)
-            <div class="mb-6 flex flex-wrap gap-2 border-b border-base-200 pb-0">
-                @foreach ($teamsData as $td)
-                    <button
-                        wire:click="$set('selectedTeamId', {{ $td['id'] }})"
-                        @class([
-                            'relative flex items-center gap-2 rounded-t-xl border border-b-0 px-4 py-2 text-sm font-bold transition-all',
-                            'border-base-200 bg-base-100 text-base-content -mb-px' => $selectedTeamId === $td['id'],
-                            'border-transparent text-base-content/40 hover:text-base-content/70' => $selectedTeamId !== $td['id'],
-                        ])>
-                        {{ $td['name'] }}
-                        @if ($td['has_alert'])
-                            <span class="h-2 w-2 animate-pulse rounded-full bg-error"></span>
-                        @endif
-                    </button>
-                @endforeach
-            </div>
-        @endif
+        <x-admin.shared.filter-chips :chips="$filterChips" />
 
         {{-- ── TEAM CONTENT ────────────────────────────────────────────── --}}
         @foreach ($teamsData as $td)
-            @if ($selectedTeamId !== $td['id'])
-                @continue
-            @endif
-
+            @if ($selectedTeamId === $td['id'])
             <div class="space-y-1">
                 {{-- Team info bar --}}
                 <div class="mb-4 flex flex-wrap items-center gap-3 text-xs text-base-content/40">
@@ -176,9 +141,9 @@
                                     <div class="min-w-0 flex-1">
                                         <div class="flex flex-wrap items-center gap-1">
                                             @if ($ic['is_home'])
-                                                <x-badge class="badge-neutral badge-xs font-bold" value="{{ __('Dom.') }}" />
+                                                <x-badge class="badge-neutral badge-xs font-bold" value="{{ __('Home') }}" />
                                             @else
-                                                <x-badge class="badge-ghost badge-xs border border-base-300 font-bold" value="{{ __('Ext.') }}" />
+                                                <x-badge class="badge-ghost badge-xs border border-base-300 font-bold" value="{{ __('Away') }}" />
                                             @endif
                                             <span class="text-sm font-bold">{{ $ic['opponent'] }}</span>
                                         </div>
@@ -202,11 +167,11 @@
                                                 <span class="text-[11px] font-bold">{{ $availLabel }}</span>
                                             </div>
                                             @if ($ic['status'] === 'confirmed')
-                                                <x-badge class="badge-success badge-xs font-bold" value="{{ __('Envoyé') }}" />
+                                                <x-badge class="badge-success badge-xs font-bold" value="{{ __('Sent') }}" />
                                             @elseif ($selCount >= $maxP)
-                                                <x-badge class="badge-success badge-soft badge-xs font-bold" value="{{ __('Prêt') }} · {{ $selCount }}/{{ $maxP }}" />
+                                                <x-badge class="badge-success badge-soft badge-xs font-bold" value="{{ __('Ready') }} · {{ $selCount }}/{{ $maxP }}" />
                                             @elseif ($selCount > 0)
-                                                <x-badge class="badge-warning badge-soft badge-xs font-bold" value="{{ $selCount }}/{{ $maxP }} {{ __('sél.') }}" />
+                                                <x-badge class="badge-warning badge-soft badge-xs font-bold" value="{{ $selCount }}/{{ $maxP }} {{ __('sel.') }}" />
                                             @endif
                                         </div>
                                     @endif
@@ -217,12 +182,12 @@
                                             <x-button
                                                 class="btn-primary btn-sm"
                                                 icon="o-pencil-square"
-                                                :label="__('Sélectionner')"
+                                                :label="__('Select')"
                                                 wire:click="openSelection({{ $ic['id'] }})" />
                                             <x-button
                                                 class="btn-ghost btn-xs text-base-content/40"
                                                 icon="o-envelope"
-                                                :tooltip="__('Demander les dispos')"
+                                                :tooltip="__('Request availability')"
                                                 wire:click="requestAvailability({{ $ic['id'] }})" />
                                         </div>
                                     @endif
@@ -232,8 +197,24 @@
                     </div>
                 @endif
             </div>
+            @endif
         @endforeach
     @endif
+
+    {{-- ── FILTER DRAWER ÉQUIPES ──────────────────────────────────────── --}}
+    {{-- Never wrap x-drawer in @if — x-teleport moves DOM to body, @if breaks Livewire morph --}}
+    <x-admin.shared.filter-drawer :title="__('Teams')">
+        <x-slot:filters>
+            @if (! empty($teams_for_filter))
+                <div>
+                    <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                        {{ __('Team') }}
+                    </p>
+                    <x-radio wire:model.live="selectedTeamId" :options="$teams_for_filter" />
+                </div>
+            @endif
+        </x-slot:filters>
+    </x-admin.shared.filter-drawer>
 
     {{-- ── DRAWER SÉLECTION ───────────────────────────────────────────── --}}
     <x-drawer class="w-11/12 lg:w-2/5" right separator
@@ -267,16 +248,21 @@
                 <div class="space-y-1.5">
                     @foreach ($roster as $player)
                         @php
-                            $isSelected = in_array($player['id'], $selectedPlayerIds);
-                            $avail      = $player['availability'];
-                            $isUnavail  = $avail === \App\Domains\Shared\Enums\InterclubAvailability::UNAVAILABLE;
+                            $isSelected  = in_array($player['id'], $selectedPlayerIds);
+                            $avail       = $player['availability'];
+                            $isUnavail   = $avail === \App\Domains\Shared\Enums\InterclubAvailability::UNAVAILABLE;
+                            $isBlocked   = $player['is_blocked'] ?? false;
+                            $blockedTeam = $player['blocked_team'] ?? null;
                         @endphp
                         <div
-                            wire:click="togglePlayer({{ $player['id'] }})"
+                            @if (! $isBlocked) wire:click="togglePlayer({{ $player['id'] }})" @endif
                             @class([
-                                'flex cursor-pointer items-center gap-3 rounded-xl border p-3 transition-all',
-                                'border-primary bg-primary/5 ring-1 ring-primary/40' => $isSelected,
-                                'border-base-200 hover:border-primary/40 bg-base-100' => ! $isSelected,
+                                'flex items-center gap-3 rounded-xl border p-3 transition-all',
+                                'cursor-pointer' => ! $isBlocked,
+                                'cursor-not-allowed' => $isBlocked,
+                                'border-primary bg-primary/5 ring-1 ring-primary/40' => $isSelected && ! $isBlocked,
+                                'border-base-200 bg-base-50 opacity-60' => $isBlocked,
+                                'border-base-200 hover:border-primary/40 bg-base-100' => ! $isSelected && ! $isBlocked,
                             ])>
 
                             {{-- Rank chip --}}
@@ -291,10 +277,18 @@
                             <div class="min-w-0 flex-1">
                                 <div class="text-xs font-black">{{ $player['name'] }}</div>
                                 <div class="mt-0.5 flex items-center gap-1">
-                                    @if ($avail)
+                                    @if ($isBlocked)
+                                        <x-icon name="o-no-symbol" class="h-3 w-3 text-error" />
+                                        <span class="text-[9px] font-bold text-error">
+                                            {{ __('Already in lineup – W:n', ['n' => $drawerInterclub?->week_number]) }}
+                                            @if ($canSearchSubstitute && $blockedTeam)
+                                                · {{ __('Team') }}&nbsp;{{ $blockedTeam }}
+                                            @endif
+                                        </span>
+                                    @elseif ($avail)
                                         <span class="{{ $avail->color() }} badge badge-xs">{{ $avail->label() }}</span>
                                     @else
-                                        <span class="text-[9px] opacity-40">{{ __('Pas de réponse') }}</span>
+                                        <span class="text-[9px] opacity-40">{{ __('No response') }}</span>
                                     @endif
                                 </div>
                                 @if (! empty($player['availability_note']))
@@ -306,63 +300,69 @@
                             <div class="flex shrink-0 overflow-hidden rounded-lg border border-base-200 text-center">
                                 <div class="flex flex-col items-center px-3 py-1.5">
                                     <span class="text-sm font-black tabular-nums leading-none">{{ $player['matches_played'] }}</span>
-                                    <span class="mt-0.5 text-[7px] font-black uppercase opacity-30">{{ __('joués') }}</span>
+                                    <span class="mt-0.5 text-[7px] font-black uppercase opacity-30">{{ __('played') }}</span>
                                 </div>
                                 <div class="self-stretch w-px bg-base-200"></div>
                                 <div class="flex flex-col items-center px-3 py-1.5">
                                     <span class="text-sm font-black tabular-nums leading-none">{{ $player['matches_selected'] }}</span>
-                                    <span class="mt-0.5 text-[7px] font-black uppercase opacity-30">{{ __('sél.') }}</span>
+                                    <span class="mt-0.5 text-[7px] font-black uppercase opacity-30">{{ __('sel.') }}</span>
                                 </div>
                             </div>
 
-                            {{-- Checkbox --}}
-                            <div @class([
-                                'flex h-5 w-5 shrink-0 items-center justify-center rounded border',
-                                'bg-primary border-primary text-primary-content' => $isSelected,
-                                'border-base-300 bg-white' => ! $isSelected,
-                            ])>
-                                @if ($isSelected)
-                                    <x-icon class="h-3 w-3" name="o-check" />
-                                @endif
-                            </div>
+                            {{-- Checkbox / lock --}}
+                            @if ($isBlocked)
+                                <x-icon name="o-lock-closed" class="h-4 w-4 shrink-0 text-error/50" />
+                            @else
+                                <div @class([
+                                    'flex h-5 w-5 shrink-0 items-center justify-center rounded border',
+                                    'bg-primary border-primary text-primary-content' => $isSelected,
+                                    'border-base-300 bg-white' => ! $isSelected,
+                                ])>
+                                    @if ($isSelected)
+                                        <x-icon class="h-3 w-3" name="o-check" />
+                                    @endif
+                                </div>
+                            @endif
                         </div>
                     @endforeach
                 </div>
             </div>
 
-            {{-- Search substitute --}}
-            <div class="border-t border-dashed border-base-300 pt-4">
-                <div class="mb-3 text-[10px] font-black uppercase tracking-widest opacity-40">
-                    {{ __('Search a substitute') }}
-                </div>
-                <x-input class="input-sm rounded-lg border-none bg-base-200/50" icon="o-magnifying-glass"
-                    :placeholder="__('Player name...')" wire:model.live.debounce.300ms="search" />
-                @if (strlen($search) >= 2)
-                    <div class="animate-in fade-in slide-in-from-top-2 mt-4 space-y-2">
-                        @forelse($searchResults as $res)
-                            @php $isSelected = in_array($res['id'], $selectedPlayerIds); @endphp
-                            <div @class([
-                                'flex cursor-pointer items-center justify-between rounded-lg border border-dashed p-2 transition-all',
-                                'border-primary bg-primary/5' => $isSelected,
-                                'border-base-300 hover:border-primary' => ! $isSelected,
-                            ]) wire:click="togglePlayer({{ $res['id'] }})">
-                                <div class="flex items-center gap-2">
-                                    <x-icon class="h-4 w-4 opacity-40" name="o-user-plus" />
-                                    <div class="flex flex-col">
-                                        <span class="text-[11px] font-bold">{{ $res['name'] }}</span>
-                                        <span class="text-[9px] uppercase opacity-50">{{ $res['rank'] }}</span>
-                                    </div>
-                                </div>
-                                @if ($isSelected)
-                                    <x-icon class="h-5 w-5 text-primary" name="o-check-circle" />
-                                @endif
-                            </div>
-                        @empty
-                            <div class="p-4 text-center text-xs opacity-40">{{ __('No player found.') }}</div>
-                        @endforelse
+            {{-- Search substitute (admin / selector only) --}}
+            @if ($canSearchSubstitute)
+                <div class="border-t border-dashed border-base-300 pt-4">
+                    <div class="mb-3 text-[10px] font-black uppercase tracking-widest opacity-40">
+                        {{ __('Search a substitute') }}
                     </div>
-                @endif
-            </div>
+                    <x-input class="input-sm rounded-lg border-none bg-base-200/50" icon="o-magnifying-glass"
+                        :placeholder="__('Player name...')" wire:model.live.debounce.300ms="search" />
+                    @if (strlen($search) >= 2)
+                        <div class="animate-in fade-in slide-in-from-top-2 mt-4 space-y-2">
+                            @forelse($searchResults as $res)
+                                @php $isSelected = in_array($res['id'], $selectedPlayerIds); @endphp
+                                <div @class([
+                                    'flex cursor-pointer items-center justify-between rounded-lg border border-dashed p-2 transition-all',
+                                    'border-primary bg-primary/5' => $isSelected,
+                                    'border-base-300 hover:border-primary' => ! $isSelected,
+                                ]) wire:click="togglePlayer({{ $res['id'] }})">
+                                    <div class="flex items-center gap-2">
+                                        <x-icon class="h-4 w-4 opacity-40" name="o-user-plus" />
+                                        <div class="flex flex-col">
+                                            <span class="text-[11px] font-bold">{{ $res['name'] }}</span>
+                                            <span class="text-[9px] uppercase opacity-50">{{ $res['rank'] }}</span>
+                                        </div>
+                                    </div>
+                                    @if ($isSelected)
+                                        <x-icon class="h-5 w-5 text-primary" name="o-check-circle" />
+                                    @endif
+                                </div>
+                            @empty
+                                <div class="p-4 text-center text-xs opacity-40">{{ __('No player found.') }}</div>
+                            @endforelse
+                        </div>
+                    @endif
+                </div>
+            @endif
         </div>
 
         <x-slot:actions>

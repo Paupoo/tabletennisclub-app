@@ -47,6 +47,7 @@ use Laravel\Sanctum\PersonalAccessToken;
  * @property bool $is_active
  * @property bool $is_admin
  * @property bool $is_committee_member
+ * @property bool $is_selector
  * @property bool $is_competitor
  * @property bool $has_paid
  * @property string $email
@@ -176,6 +177,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'is_active' => 'boolean',
         'is_admin' => 'boolean',
         'is_committee_member' => 'boolean',
+        'is_selector' => 'boolean',
         'is_competitor' => 'boolean',
         'has_paid' => 'boolean',
         'is_coach' => 'boolean',
@@ -218,6 +220,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'is_active',
         'is_admin',
         'is_committee_member',
+        'is_selector',
         'is_competitor',
         'last_name',
         'licence',

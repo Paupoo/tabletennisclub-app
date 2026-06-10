@@ -66,7 +66,6 @@ new class extends Component
     #[Rule('required|boolean')]
     public bool $is_coach = false;
 
-    #[Rule('required|boolean')]
     public bool $is_admin = false;
 
     #[Rule('required|boolean')]
@@ -385,6 +384,28 @@ new class extends Component
                     ? 'nullable'
                     : 'required',
             ],
+            'is_admin' => [
+                'required',
+                'boolean',
+                function ($attribute, $value, $fail): void {
+                    $actor = Auth::user();
+                    $targetIsAdmin = $this->user?->is_admin ?? false;
+
+                    if ((bool) $value !== $targetIsAdmin && ! $actor?->is_admin) {
+                        $fail(__('Only an administrator can change the administrator status.'));
+
+                        return;
+                    }
+
+                    if ($this->user?->is_admin && ! $value) {
+                        $remainingAdmins = User::where('is_admin', true)->whereKeyNot($this->user->id)->count();
+
+                        if ($remainingAdmins === 0) {
+                            $fail(__('Cannot remove the last administrator. Promote another user first.'));
+                        }
+                    }
+                },
+            ],
             'photo' => [
                 'nullable',
                 'image',
@@ -458,9 +479,8 @@ new class extends Component
                 'Une erreur est survenue. Veuillez vérifier les champs du formulaire.'
             );
 
-            throw $e; // important pour conserver l'affichage des erreurs sous les champs
+            throw $e;
         } catch (Throwable $e) {
-
             report($e);
 
             $this->error(

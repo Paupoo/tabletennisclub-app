@@ -11,7 +11,7 @@
                 <button
                     wire:click="removeFilter('{{ $chip['key'] }}')"
                     class="rounded-full p-0.5 transition-colors hover:bg-primary/20"
-                    :title="__('Remove filter')">
+                    title="{{ __('Remove filter') }}">
                     <x-icon name="o-x-mark" class="h-3 w-3" />
                 </button>
             </span>

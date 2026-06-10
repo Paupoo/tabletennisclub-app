@@ -94,12 +94,21 @@ class Interclub extends Model
         'week_number',
     ];
 
-    /** @return array<int, int> week_number => match_day (1-based) */
-    public static function matchDayMap(int $seasonId): array
+    /**
+     * @param  array<int, int>  $teamIds
+     * @return array<int, int> week_number => match_day (1-based)
+     */
+    public static function matchDayMap(int $seasonId, array $teamIds = []): array
     {
-        return self::where('season_id', $seasonId)
-            ->whereNotNull('week_number')
-            ->orderBy('start_date_time')
+        $query = self::where('season_id', $seasonId)->whereNotNull('week_number');
+
+        if ($teamIds) {
+            $query->where(fn ($q) => $q
+                ->whereIn('visited_team_id', $teamIds)
+                ->orWhereIn('visiting_team_id', $teamIds));
+        }
+
+        return $query->orderBy('start_date_time')
             ->pluck('week_number')
             ->unique()
             ->values()

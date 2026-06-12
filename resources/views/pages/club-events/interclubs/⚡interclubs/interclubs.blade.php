@@ -1,4 +1,4 @@
-<div>
+<div x-data="{ mobileActionsOpen: false }">
     <x-slot:breadcrumbs>
         <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
     </x-slot:breadcrumbs>
@@ -13,15 +13,22 @@
                 :placeholder="__('Select a season')" />
         </x-slot:middle>
         <x-slot:actions>
-            <x-select
-                :options="[['id' => null, 'name' => __('All teams')], ...$ourTeamOptions]"
-                option-label="name"
-                option-value="id"
-                wire:model.live="selectedTeamId"
-                :placeholder="__('Filter by team')"
-                class="max-w-xs border-none" />
-            <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('New match')"
-                wire:click="openCreateModal" />
+            {{-- Mobile: ☰ --}}
+            <button class="btn btn-primary btn-circle btn-sm lg:hidden" @click="mobileActionsOpen = true">
+                <x-icon name="o-bars-3" class="h-5 w-5" />
+            </button>
+            {{-- Desktop: team filter + New match --}}
+            <div class="hidden items-center gap-2 lg:flex">
+                <x-select
+                    :options="[['id' => null, 'name' => __('All teams')], ...$ourTeamOptions]"
+                    option-label="name"
+                    option-value="id"
+                    wire:model.live="selectedTeamId"
+                    :placeholder="__('Filter by team')"
+                    class="max-w-xs border-none" />
+                <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('New match')"
+                    wire:click="openCreateModal" />
+            </div>
         </x-slot:actions>
     </x-header>
 
@@ -178,4 +185,26 @@
         :confirmLabel="__('Delete')" confirmAction="delete">
         <p>{{ __('Are you sure you want to delete this match? This action is irreversible.') }}</p>
     </x-confirm-modal>
+
+    {{-- ── Mobile action sheet ─────────────────────────────────────────── --}}
+    <x-admin.shared.mobile-actions>
+        <x-admin.shared.mobile-action-item
+            icon="o-plus" color="primary"
+            :label="__('New match')"
+            :description="__('Add a match to the schedule')"
+            @click="mobileActionsOpen = false; $wire.call('openCreateModal')" />
+        <div class="my-1 h-px bg-base-200"></div>
+        <div class="px-1 py-2">
+            <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-base-content/40">
+                {{ __('Filter by team') }}
+            </p>
+            <x-select
+                :options="[['id' => null, 'name' => __('All teams')], ...$ourTeamOptions]"
+                option-label="name"
+                option-value="id"
+                wire:model.live="selectedTeamId"
+                :placeholder="__('All teams')"
+                class="w-full" />
+        </div>
+    </x-admin.shared.mobile-actions>
 </div>

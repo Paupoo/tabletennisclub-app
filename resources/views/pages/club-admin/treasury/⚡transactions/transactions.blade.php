@@ -2,35 +2,71 @@
     <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
 </x-slot:breadcrumbs>
 
-<div>
+<div x-data="{ mobileSearchOpen: false, mobileActionsOpen: false }">
     <x-header :title="__('Bank Transactions')" :subtitle="__('Imported bank statements')" separator progress-indicator>
         <x-slot:middle class="!justify-end">
-            <x-input
-                :placeholder="__('Search counterparty, reference...')"
-                wire:model.live.debounce.300ms="search"
-                icon="o-magnifying-glass"
-                class="border-none bg-base-200 w-64" />
+            <div class="hidden lg:block">
+                <x-input
+                    :placeholder="__('Search counterparty, reference...')"
+                    wire:model.live.debounce.300ms="search"
+                    icon="o-magnifying-glass"
+                    class="border-none bg-base-200 w-64" />
+            </div>
         </x-slot:middle>
         <x-slot:actions>
-            <x-button
-                icon="o-funnel"
-                class="btn-outline btn-sm"
-                wire:click="$set('filterDrawer', true)">
-                @if (count($filterChips) > 0)
-                    <x-badge value="{{ count($filterChips) }}" class="badge-primary badge-sm" />
-                @endif
-            </x-button>
-            <x-button
-                class="btn-outline btn-sm lg:hidden"
-                wire:click="toggleSelectionMode"
-                icon="{{ $selectionModeActive ? 'o-x-mark' : 'o-check-circle' }}" />
-            <x-button
-                :label="__('Import CSV')"
-                icon="o-arrow-up-tray"
-                class="btn-primary btn-sm"
-                wire:click="$set('importModal', true)" />
+            {{-- Mobile: 🔍 · filter · ☰ --}}
+            <div class="flex items-center gap-1 lg:hidden">
+                <button class="btn btn-ghost btn-circle btn-sm" @click="mobileSearchOpen = true">
+                    <x-icon name="o-magnifying-glass" class="h-5 w-5" />
+                </button>
+                <button class="btn btn-ghost btn-circle btn-sm relative {{ count($filterChips) > 0 ? 'btn-active' : '' }}"
+                    wire:click="$set('filterDrawer', true)">
+                    <x-icon name="o-funnel" class="h-5 w-5" />
+                    @if (count($filterChips) > 0)
+                        <span class="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-bold leading-none text-primary-content">{{ count($filterChips) }}</span>
+                    @endif
+                </button>
+                <button class="btn btn-primary btn-circle btn-sm" @click="mobileActionsOpen = true">
+                    <x-icon name="o-bars-3" class="h-5 w-5" />
+                </button>
+            </div>
+            {{-- Desktop: full buttons --}}
+            <div class="hidden items-center gap-2 lg:flex">
+                <x-button
+                    icon="o-funnel"
+                    class="btn-outline btn-sm {{ count($filterChips) > 0 ? 'btn-active' : '' }}"
+                    wire:click="$set('filterDrawer', true)">
+                    @if (count($filterChips) > 0)
+                        <x-badge value="{{ count($filterChips) }}" class="badge-primary badge-sm" />
+                    @endif
+                </x-button>
+                <x-button
+                    :label="__('Import CSV')"
+                    icon="o-arrow-up-tray"
+                    class="btn-primary btn-sm"
+                    wire:click="$set('importModal', true)" />
+            </div>
         </x-slot:actions>
     </x-header>
+
+    {{-- Mobile search bar --}}
+    <div class="border-b border-base-200 lg:hidden" x-show="mobileSearchOpen"
+        x-transition:enter="transition ease-out duration-150"
+        x-transition:enter-start="opacity-0 -translate-y-1"
+        x-transition:enter-end="opacity-100 translate-y-0"
+        style="display:none">
+        <div class="flex items-center gap-2 px-4 py-2.5">
+            <div class="flex flex-1 items-center gap-2 rounded-xl bg-base-200 px-3 py-2">
+                <x-icon name="o-magnifying-glass" class="h-4 w-4 shrink-0 text-base-content/40" />
+                <input wire:model.live.debounce.300ms="search"
+                    class="flex-1 bg-transparent text-sm outline-none placeholder:text-base-content/40"
+                    placeholder="{{ __('Search counterparty, reference...') }}" />
+            </div>
+            <button @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm">
+                <x-icon name="o-x-mark" class="h-5 w-5" />
+            </button>
+        </div>
+    </div>
 
     {{-- Active filter chips --}}
     <x-admin.shared.filter-chips :chips="$filterChips" />
@@ -305,4 +341,19 @@
                 spinner />
         </x-slot:actions>
     </x-modal>
+
+    {{-- ── Mobile action sheet ─────────────────────────────────────────── --}}
+    <x-admin.shared.mobile-actions>
+        <x-admin.shared.mobile-action-item
+            icon="o-arrow-up-tray" color="primary"
+            :label="__('Import CSV')"
+            :description="__('Upload a bank statement')"
+            @click="mobileActionsOpen = false; $wire.set('importModal', true)" />
+        <div class="my-1 h-px bg-base-200"></div>
+        <x-admin.shared.mobile-action-item
+            icon="o-check-circle" color="base"
+            :label="__('Select')"
+            :description="__('Bulk actions on multiple transactions')"
+            @click="mobileActionsOpen = false; $wire.call('toggleSelectionMode')" />
+    </x-admin.shared.mobile-actions>
 </div>

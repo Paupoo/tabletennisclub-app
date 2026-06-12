@@ -10,8 +10,15 @@
                 :options="$seasons_list"
                 wire:model.live="selectedSeasonId" />
             @if ($teamsData->count() > 1)
+                <button class="btn btn-ghost btn-circle btn-sm relative {{ count($filterChips) > 0 ? 'btn-active' : '' }} lg:hidden"
+                    wire:click="$set('filterDrawer', true)">
+                    <x-icon name="o-funnel" class="h-5 w-5" />
+                    @if (count($filterChips) > 0)
+                        <span class="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-bold leading-none text-primary-content">{{ count($filterChips) }}</span>
+                    @endif
+                </button>
                 <x-button
-                    class="btn-ghost {{ count($filterChips) > 0 ? 'btn-active' : '' }}"
+                    class="btn-ghost hidden {{ count($filterChips) > 0 ? 'btn-active' : '' }} lg:flex"
                     icon="o-funnel"
                     :label="__('Filters')"
                     wire:click="$set('filterDrawer', true)">

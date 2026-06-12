@@ -1,6 +1,6 @@
 @props(['title' => __('Filters')])
 
-<x-drawer wire:model="filterDrawer" :title="$title" right class="w-full max-w-xs">
+<x-drawer wire:model="filterDrawer" :title="$title" right with-close-button class="w-full max-w-sm">
     <div class="space-y-5 p-1">
         {{ $filters }}
     </div>

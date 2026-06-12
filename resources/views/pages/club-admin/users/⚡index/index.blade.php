@@ -1,39 +1,72 @@
-<div>
+<div x-data="{ mobileSearchOpen: false, mobileActionsOpen: false }">
     <x-slot:breadcrumbs>
         <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
     </x-slot:breadcrumbs>
 
     <x-header progress-indicator separator :title="__('Users')">
         <x-slot:middle>
-            <x-input class="w-full" clearable icon="o-magnifying-glass" :placeholder="__('Search...')"
-                wire:model.live.debounce.300ms="search" />
+            <div class="hidden w-full lg:block">
+                <x-input class="w-full" clearable icon="o-magnifying-glass" :placeholder="__('Search...')"
+                    wire:model.live.debounce.300ms="search" />
+            </div>
         </x-slot:middle>
         <x-slot:actions>
-            <x-button class="btn-ghost {{ count($filterChips) > 0 ? 'btn-active' : '' }}"
-                icon="o-funnel"
-                :label="__('Filters')"
-                wire:click="$set('filterDrawer', true)">
-                @if (count($filterChips) > 0)
-                    <x-badge class="badge-sm badge-primary" value="{{ count($filterChips) }}" />
+            {{-- Mobile: 🔍 · filter · ☰ --}}
+            <div class="flex items-center gap-1 lg:hidden">
+                <button class="btn btn-ghost btn-circle btn-sm" @click="mobileSearchOpen = true">
+                    <x-icon name="o-magnifying-glass" class="h-5 w-5" />
+                </button>
+                <button class="btn btn-ghost btn-circle btn-sm relative {{ count($filterChips) > 0 ? 'btn-active' : '' }}"
+                    wire:click="$set('filterDrawer', true)">
+                    <x-icon name="o-funnel" class="h-5 w-5" />
+                    @if (count($filterChips) > 0)
+                        <span class="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-bold leading-none text-primary-content">{{ count($filterChips) }}</span>
+                    @endif
+                </button>
+                <button class="btn btn-primary btn-circle btn-sm" @click="mobileActionsOpen = true">
+                    <x-icon name="o-bars-3" class="h-5 w-5" />
+                </button>
+            </div>
+            {{-- Desktop: full buttons --}}
+            <div class="hidden items-center gap-2 lg:flex">
+                <x-button class="btn-ghost {{ count($filterChips) > 0 ? 'btn-active' : '' }}"
+                    icon="o-funnel" :label="__('Filters')"
+                    wire:click="$set('filterDrawer', true)">
+                    @if (count($filterChips) > 0)
+                        <x-badge class="badge-sm badge-primary" value="{{ count($filterChips) }}" />
+                    @endif
+                </x-button>
+                @if (Auth::user()->is_admin || Auth::user()->is_committee_member)
+                    <x-button class="btn-ghost btn-sm btn-circle" icon="o-arrow-path"
+                        :tooltip="__('Recalculate force list')"
+                        wire:click="recalculateForceList" spinner="recalculateForceList" />
                 @endif
-            </x-button>
-            @if (Auth::user()->is_admin || Auth::user()->is_committee_member)
-                <x-button class="btn-ghost btn-sm btn-circle" icon="o-arrow-path"
-                    :tooltip="__('Recalculate force list')"
-                    wire:click="recalculateForceList" spinner="recalculateForceList" />
-            @endif
-            {{-- Mobile selection toggle --}}
-            <x-button
-                class="btn-ghost btn-sm lg:hidden {{ $selectionModeActive ? 'btn-active' : '' }}"
-                icon="{{ $selectionModeActive ? 'o-x-mark' : 'o-check-circle' }}"
-                :label="$selectionModeActive ? __('Cancel') : __('Select')"
-                wire:click="toggleSelectionMode" />
-            <x-button class="btn-ghost" icon="o-envelope" :label="__('Quick invite')"
-                wire:click="$set('quickInviteDrawer', true)" responsive />
-            <x-button class="btn-primary" icon="o-plus" :label="__('Create')"
-                link="{{ route('admin.users.create') }}" responsive />
+                <x-button class="btn-ghost" icon="o-envelope" :label="__('Quick invite')"
+                    wire:click="$set('quickInviteDrawer', true)" />
+                <x-button class="btn-primary" icon="o-plus" :label="__('Create')"
+                    link="{{ route('admin.users.create') }}" />
+            </div>
         </x-slot:actions>
     </x-header>
+
+    {{-- Mobile search bar --}}
+    <div class="lg:hidden border-b border-base-200" x-show="mobileSearchOpen"
+        x-transition:enter="transition ease-out duration-150"
+        x-transition:enter-start="opacity-0 -translate-y-1"
+        x-transition:enter-end="opacity-100 translate-y-0"
+        style="display:none">
+        <div class="flex items-center gap-2 px-4 py-2.5">
+            <div class="flex flex-1 items-center gap-2 rounded-xl bg-base-200 px-3 py-2">
+                <x-icon name="o-magnifying-glass" class="h-4 w-4 shrink-0 text-base-content/40" />
+                <input wire:model.live.debounce.300ms="search"
+                    class="flex-1 bg-transparent text-sm outline-none placeholder:text-base-content/40"
+                    :placeholder="__('Search...')" />
+            </div>
+            <button @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm">
+                <x-icon name="o-x-mark" class="h-5 w-5" />
+            </button>
+        </div>
+    </div>
 
     {{-- ── Active filter chips ──────────────────────────────────────────────── --}}
     <x-admin.shared.filter-chips :chips="$filterChips" />
@@ -370,6 +403,26 @@
                 :disabled="strtoupper($anonymizeConfirmText) !== 'ANONYMIZE'" />
         </x-slot:actions>
     </x-modal>
+
+    {{-- ── Mobile action sheet ─────────────────────────────────────────── --}}
+    <x-admin.shared.mobile-actions>
+        <x-admin.shared.mobile-action-item
+            icon="o-plus" color="primary"
+            :label="__('Create a member')"
+            :description="__('Add a new member to the club')"
+            @click="mobileActionsOpen = false; window.location.href = '{{ route('admin.users.create') }}'" />
+        <x-admin.shared.mobile-action-item
+            icon="o-envelope" color="info"
+            :label="__('Quick invite')"
+            :description="__('Send an invitation by email')"
+            @click="mobileActionsOpen = false; $wire.set('quickInviteDrawer', true)" />
+        <div class="my-1 h-px bg-base-200"></div>
+        <x-admin.shared.mobile-action-item
+            icon="o-check-circle" color="base"
+            :label="__('Select')"
+            :description="__('Bulk actions on multiple members')"
+            @click="mobileActionsOpen = false; $wire.call('toggleSelectionMode')" />
+    </x-admin.shared.mobile-actions>
 
     {{-- ── Quick invite ──────────────────────────────────────────────── --}}
     <x-drawer wire:model="quickInviteDrawer" :title="__('Quick invite')" right class="w-full max-w-sm">

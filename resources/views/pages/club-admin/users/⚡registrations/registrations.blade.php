@@ -1,4 +1,4 @@
-<div>
+<div x-data="{ mobileSearchOpen: false, mobileActionsOpen: false }">
      <x-slot:breadcrumbs>
         <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
     </x-slot:breadcrumbs>
@@ -12,29 +12,66 @@
                 class="w-full" />
         </x-slot:middle>
         <x-slot:actions>
-            <x-input class="input-sm w-48" clearable icon="o-magnifying-glass"
-                :placeholder="__('Search a member...')"
-                wire:model.live.debounce.300ms="search" />
-            <x-button class="btn-ghost {{ count($filterChips) > 0 ? 'btn-active' : '' }}"
-                icon="o-funnel"
-                :label="__('Filters')"
-                wire:click="$set('filterDrawer', true)">
-                @if (count($filterChips) > 0)
-                    <x-badge class="badge-sm badge-primary" value="{{ count($filterChips) }}" />
+            {{-- Mobile: 🔍 · filter · ☰ --}}
+            <div class="flex items-center gap-1 lg:hidden">
+                <button class="btn btn-ghost btn-circle btn-sm" @click="mobileSearchOpen = true">
+                    <x-icon name="o-magnifying-glass" class="h-5 w-5" />
+                </button>
+                <button class="btn btn-ghost btn-circle btn-sm relative {{ count($filterChips) > 0 ? 'btn-active' : '' }}"
+                    wire:click="$set('filterDrawer', true)">
+                    <x-icon name="o-funnel" class="h-5 w-5" />
+                    @if (count($filterChips) > 0)
+                        <span class="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-bold leading-none text-primary-content">{{ count($filterChips) }}</span>
+                    @endif
+                </button>
+                <button class="btn btn-primary btn-circle btn-sm" @click="mobileActionsOpen = true">
+                    <x-icon name="o-bars-3" class="h-5 w-5" />
+                </button>
+            </div>
+            {{-- Desktop: full buttons --}}
+            <div class="hidden items-center gap-2 lg:flex">
+                <x-input class="input-sm w-48" clearable icon="o-magnifying-glass"
+                    :placeholder="__('Search a member...')"
+                    wire:model.live.debounce.300ms="search" />
+                <x-button class="btn-ghost {{ count($filterChips) > 0 ? 'btn-active' : '' }}"
+                    icon="o-funnel" :label="__('Filters')"
+                    wire:click="$set('filterDrawer', true)">
+                    @if (count($filterChips) > 0)
+                        <x-badge class="badge-sm badge-primary" value="{{ count($filterChips) }}" />
+                    @endif
+                </x-button>
+                @if (! $this->registrationClosed)
+                    <x-button :label="__('Register a member')" icon="o-user-plus"
+                        class="btn-primary btn-sm"
+                        @click="$wire.memberDrawer = true" />
                 @endif
-            </x-button>
-            @if (! $this->registrationClosed)
-                <x-button :label="__('Register a member')" icon="o-user-plus"
-                    class="btn-primary btn-sm"
-                    @click="$wire.memberDrawer = true" />
-            @endif
-            <x-button
-                :label="$this->registrationClosed ? __('Open Registrations') : __('Close Registrations')"
-                :icon="$this->registrationClosed ? 'o-lock-open' : 'o-lock-closed'"
-                class="btn-outline btn-sm"
-                wire:click="toggleRegistrations" />
+                <x-button
+                    :label="$this->registrationClosed ? __('Open Registrations') : __('Close Registrations')"
+                    :icon="$this->registrationClosed ? 'o-lock-open' : 'o-lock-closed'"
+                    class="btn-outline btn-sm"
+                    wire:click="toggleRegistrations" />
+            </div>
         </x-slot:actions>
     </x-header>
+
+    {{-- Mobile search bar --}}
+    <div class="lg:hidden border-b border-base-200" x-show="mobileSearchOpen"
+        x-transition:enter="transition ease-out duration-150"
+        x-transition:enter-start="opacity-0 -translate-y-1"
+        x-transition:enter-end="opacity-100 translate-y-0"
+        style="display:none">
+        <div class="flex items-center gap-2 px-4 py-2.5">
+            <div class="flex flex-1 items-center gap-2 rounded-xl bg-base-200 px-3 py-2">
+                <x-icon name="o-magnifying-glass" class="h-4 w-4 shrink-0 text-base-content/40" />
+                <input wire:model.live.debounce.300ms="search"
+                    class="flex-1 bg-transparent text-sm outline-none placeholder:text-base-content/40"
+                    placeholder="{{ __('Search a member...') }}" />
+            </div>
+            <button @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm">
+                <x-icon name="o-x-mark" class="h-5 w-5" />
+            </button>
+        </div>
+    </div>
 
     {{-- ── Active filter chips ──────────────────────────────────────────────── --}}
     <x-admin.shared.filter-chips :chips="$filterChips" />
@@ -695,4 +732,21 @@
             <x-button :label="__('Confirm refund')" icon="o-arrow-uturn-left" class="btn-error" wire:click="confirmRefund" spinner />
         </x-slot:actions>
     </x-modal>
+
+    {{-- ── Mobile action sheet ─────────────────────────────────────────── --}}
+    <x-admin.shared.mobile-actions>
+        @if (! $this->registrationClosed)
+            <x-admin.shared.mobile-action-item
+                icon="o-user-plus" color="primary"
+                :label="__('Register a member')"
+                :description="__('Add a member to the current season')"
+                @click="mobileActionsOpen = false; $wire.set('memberDrawer', true)" />
+        @endif
+        <x-admin.shared.mobile-action-item
+            :icon="$this->registrationClosed ? 'o-lock-open' : 'o-lock-closed'"
+            color="base"
+            :label="$this->registrationClosed ? __('Open Registrations') : __('Close Registrations')"
+            wire:click="toggleRegistrations"
+            @click="mobileActionsOpen = false" />
+    </x-admin.shared.mobile-actions>
 </div>

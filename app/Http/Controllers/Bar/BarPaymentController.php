@@ -51,7 +51,7 @@ class BarPaymentController extends Controller
         $qrCode = null;
         if ($method === 'qr') {
             $payment = new Payment([
-                'amount_due' => ($order->total_price)/100,
+                'amount_due' => $order->total_price/100,
                 'reference' => "Bar order #{$order->id}",
             ]);
             $qrCode = $generatePaymentQR($payment);

@@ -6,6 +6,7 @@ namespace App\Domains\ClubAdmin\Users\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
+use App\Domains\ClubAdmin\Payment\Models\CashRegister;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubPosts\Models\NewsPost;
 use App\Domains\Competitions\Interclub\Models\Club;
@@ -181,6 +182,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'is_competitor' => 'boolean',
         'has_paid' => 'boolean',
         'is_coach' => 'boolean',
+        'has_key' => 'boolean',
         'email' => 'string',
         'password' => 'hashed',
         'first_name' => 'string',
@@ -237,6 +239,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'committee_role',
         'force_list',
         'is_coach',
+        'has_key',
         'medical_certificate_path',
         'parental_consent_path',
         'updated_by',
@@ -282,6 +285,11 @@ class User extends Authenticatable implements MustVerifyEmail
     public function hasGuardian(): bool
     {
         return $this->guardians()->exists();
+    }
+
+    public function heldCashRegisters(): HasMany
+    {
+        return $this->hasMany(CashRegister::class, 'held_by_user_id');
     }
 
     public function interclubs(): BelongsToMany

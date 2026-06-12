@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Resources\views\Pages\ClubEvents\Interclubs\Teams;
 
 use App\Livewire\Concerns\HasBreadcrumbs;
+use App\Domains\ClubAdmin\Payment\Models\CashRegister;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Shared\Models\AppSetting;
@@ -198,6 +199,12 @@ new class extends Component
                 ")
                 ->orderBy('last_name')
                 ->get(['id', 'first_name', 'last_name', 'committee_role']),
+            'keyHolders' => User::where('has_key', true)
+                ->orderBy('last_name')
+                ->get(['id', 'first_name', 'last_name']),
+            'cashRegisterHolders' => CashRegister::with('heldBy')
+                ->orderBy('name')
+                ->get(),
         ];
     }
 };

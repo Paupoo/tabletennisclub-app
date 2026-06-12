@@ -31,6 +31,7 @@ class UpdateUserAction
             'is_committee_member' => $data->is_committee_member,
             'is_admin' => $data->is_admin,
             'is_coach' => $data->is_coach,
+            'has_key' => $data->has_key,
             'licence' => $data->licence,
             'ranking' => $data->ranking ?? 'NA',
             'committee_role' => $data->committee_role,

@@ -285,6 +285,13 @@
             </div>
             <div>
                 <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    {{ __('Equipment') }}
+                </p>
+                <x-toggle :label="__('Has a key')" wire:model.live="hasKey" />
+                <x-toggle :label="__('Has a cash register')" wire:model.live="hasCashRegister" class="mt-2" />
+            </div>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
                     {{ __('Teams') }}
                 </p>
                 <x-choices :options="$teams" class="w-full" clearable :placeholder="__('Select a team...')"

@@ -42,9 +42,9 @@
         <x-menu-item icon="o-squares-2x2" link="{{ route('admin.tables.index') }}" :title="__('Tables')" />
     </x-menu-sub>
                     
-    <x-menu-sub icon="o-inbox-stack" :title="__('Members Admin')">
+    <x-menu-sub icon="o-user-group" :title="__('Members Admin')">
         <x-menu-item icon="o-users" link="{{ route('admin.users.index') }}" :title="__('Users')" />
-        <x-menu-item icon="o-credit-card" link="{{ route('admin.users.registrations') }}" :title="__('Registrations')" />
+        <x-menu-item icon="o-list-bullet" link="{{ route('admin.users.registrations') }}" :title="__('Registrations')" />
     </x-menu-sub>
 
     <x-menu-sub icon="o-banknotes" :title="__('Treasury')">

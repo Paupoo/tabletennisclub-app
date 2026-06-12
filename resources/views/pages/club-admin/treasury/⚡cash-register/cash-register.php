@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Payment\Models\CashRegister;
 use App\Domains\ClubAdmin\Payment\Models\CashRegisterEntry;
+use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Facades\Auth;
@@ -19,6 +21,7 @@ new class extends Component
 
     public bool $manualEntryModal = false;
     public bool $createRegisterModal = false;
+    public bool $changeHolderModal = false;
 
     #[Rule('required|integer|not_in:0')]
     public int $entryAmount = 0;
@@ -32,6 +35,12 @@ new class extends Component
     #[Rule('required|string|max:100')]
     public string $newRegisterName = 'Caisse principale';
 
+    #[Rule('nullable|exists:users,id')]
+    public ?int $newRegisterHolderUserId = null;
+
+    #[Rule('nullable|exists:users,id')]
+    public ?int $newHolderUserId = null;
+
     public ?int $selectedRegisterId = null;
 
     public function mount(): void
@@ -43,12 +52,56 @@ new class extends Component
     public function createRegister(): void
     {
         $this->validateOnly('newRegisterName');
+        $this->validateOnly('newRegisterHolderUserId');
 
-        CashRegister::create(['name' => $this->newRegisterName]);
+        /** @var User $auth */
+        $auth = Auth::user();
 
-        $this->reset(['newRegisterName', 'createRegisterModal']);
-        unset($this->register);
+        if (! $auth->is_admin && $auth->committee_role !== CommitteeRolesEnum::TREASURER) {
+            abort(403);
+        }
+
+        $register = CashRegister::create([
+            'name'             => $this->newRegisterName,
+            'held_by_user_id'  => $this->newRegisterHolderUserId,
+        ]);
+
+        $this->selectedRegisterId = $register->id;
+        $this->reset(['newRegisterName', 'newRegisterHolderUserId', 'createRegisterModal']);
+        unset($this->register, $this->registers);
         $this->success(__('Cash register created.'));
+    }
+
+    public function openChangeHolder(): void
+    {
+        /** @var User $auth */
+        $auth = Auth::user();
+
+        if (! $auth->is_admin && $auth->committee_role !== CommitteeRolesEnum::TREASURER) {
+            abort(403);
+        }
+
+        $this->newHolderUserId  = $this->register?->held_by_user_id;
+        $this->changeHolderModal = true;
+    }
+
+    public function confirmChangeHolder(): void
+    {
+        /** @var User $auth */
+        $auth = Auth::user();
+
+        if (! $auth->is_admin && $auth->committee_role !== CommitteeRolesEnum::TREASURER) {
+            abort(403);
+        }
+
+        $this->validateOnly('newHolderUserId');
+
+        $register = CashRegister::findOrFail($this->selectedRegisterId);
+        $register->update(['held_by_user_id' => $this->newHolderUserId]);
+
+        $this->changeHolderModal = false;
+        unset($this->register);
+        $this->success(__('Holder updated.'));
     }
 
     public function openManualEntry(): void
@@ -92,13 +145,23 @@ new class extends Component
             return null;
         }
 
-        return CashRegister::with(['entries.recordedBy'])->find($this->selectedRegisterId);
+        return CashRegister::with(['entries.recordedBy', 'heldBy'])->find($this->selectedRegisterId);
     }
 
     #[Computed]
     public function registers(): \Illuminate\Database\Eloquent\Collection
     {
         return CashRegister::orderBy('name')->get();
+    }
+
+    #[Computed]
+    public function users(): \Illuminate\Support\Collection
+    {
+        return User::where('is_active', true)
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->get(['id', 'first_name', 'last_name'])
+            ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->first_name . ' ' . $u->last_name]);
     }
 
     #[Computed]
@@ -127,8 +190,9 @@ new class extends Component
         public function render(): View
     {
         return $this->view([
-            'breadcrumbs' => $this->getBreadcrumbs(),
+            'breadcrumbs'   => $this->getBreadcrumbs(),
             'reasonOptions' => $this->reasonOptions(),
+            'users'         => $this->users,
         ]);
     }
 };

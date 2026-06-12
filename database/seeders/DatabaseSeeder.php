@@ -8,6 +8,7 @@ namespace Database\Seeders;
 
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
+use App\Domains\ClubAdmin\Payment\Models\CashRegister;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\League;
@@ -197,6 +198,7 @@ class DatabaseSeeder extends Seeder
             'city_name' => fake()->city(),
             'ranking' => Ranking::D6->name,
             'licence' => '154856',
+            'has_key' => true,
             'committee_role' => CommitteeRolesEnum::ADMINISTRATOR,
         ])->club()->associate(Club::own())->save();
 
@@ -218,6 +220,7 @@ class DatabaseSeeder extends Seeder
             'city_name' => fake()->city(),
             'ranking' => Ranking::D4->name,
             'licence' => '852364',
+            'has_key' => true,
             'committee_role' => CommitteeRolesEnum::SECRETARY,
         ])->club()->associate(Club::first())->save();
 
@@ -239,6 +242,7 @@ class DatabaseSeeder extends Seeder
             'city_name' => fake()->city(),
             'ranking' => Ranking::B6->name,
             'licence' => '852398',
+            'has_key' => true,
             'committee_role' => CommitteeRolesEnum::PRESIDENT,
         ])->club()->associate(Club::first())->save();
 
@@ -260,8 +264,15 @@ class DatabaseSeeder extends Seeder
             'city_name' => fake()->city(),
             'ranking' => Ranking::D2->name,
             'licence' => '768398',
+            'has_key' => true,
             'committee_role' => CommitteeRolesEnum::TREASURER,
         ])->club()->associate(Club::first())->save();
+
+        $gilles = User::where('email', 'gilles.herpigny@test.com')->first();
+        CashRegister::create([
+            'name' => 'Caisse du club',
+            'held_by_user_id' => $gilles?->id,
+        ]);
 
         User::factory()->isNotCompetitor()->count(5)->create();
 

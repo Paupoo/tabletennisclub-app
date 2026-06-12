@@ -65,6 +65,10 @@ new class extends Component
 
     public bool $unpaidSubscription = false;
 
+    public bool $hasKey = false;
+
+    public bool $hasCashRegister = false;
+
     // ── Filters & sort ───────────────────────────────────────────────────────
     public string $search = '';
 
@@ -133,6 +137,14 @@ new class extends Component
             $chips[] = ['key' => 'unpaidSubscription', 'label' => __('Unpaid subscription')];
         }
 
+        if ($this->hasKey) {
+            $chips[] = ['key' => 'hasKey', 'label' => __('Has a key')];
+        }
+
+        if ($this->hasCashRegister) {
+            $chips[] = ['key' => 'hasCashRegister', 'label' => __('Has a cash register')];
+        }
+
         if (! empty($this->team_ids)) {
             $chips[] = [
                 'key'   => 'team_ids',
@@ -150,6 +162,8 @@ new class extends Component
         $this->showInactiveUsers   = false;
         $this->incompleteProfile   = false;
         $this->unpaidSubscription  = false;
+        $this->hasKey              = false;
+        $this->hasCashRegister     = false;
         $this->team_ids            = [];
         $this->resetPage();
     }
@@ -361,6 +375,10 @@ new class extends Component
 
     public function updatedUnpaidSubscription(): void  { $this->resetPage(); }
 
+    public function updatedHasKey(): void              { $this->resetPage(); }
+
+    public function updatedHasCashRegister(): void     { $this->resetPage(); }
+
     public function updatedSearch(): void              { $this->resetPage(); }
 
     public function updatedSelectedLicenceType(): void { $this->resetPage(); }
@@ -475,6 +493,8 @@ new class extends Component
             )
             ->when($this->incompleteProfile, fn ($q) => $q->withIncompleteProfile())
             ->when($this->unpaidSubscription, fn ($q) => $q->unpaid())
+            ->when($this->hasKey, fn ($q) => $q->where('has_key', true))
+            ->when($this->hasCashRegister, fn ($q) => $q->whereHas('heldCashRegisters'))
             ->orderBy($this->sortBy['column'], $this->sortBy['direction'])
             ->paginate(15);
     }

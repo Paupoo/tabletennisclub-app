@@ -68,6 +68,11 @@ new class extends Component
 
     public bool $is_admin = false;
 
+    // Club equipment
+
+    #[Rule('required|boolean')]
+    public bool $has_key = false;
+
     #[Rule('required|boolean')]
     public bool $is_committee_member = false;
 
@@ -324,6 +329,7 @@ new class extends Component
             $this->is_committee_member = $user->is_committee_member;
             $this->is_coach = $user->is_coach;
             $this->is_admin = $user->is_admin;
+            $this->has_key = (bool) ($user->has_key ?? false);
             $this->committee_role = $user->committee_role?->value;
         }
     }
@@ -529,6 +535,7 @@ new class extends Component
                     is_committee_member: $this->is_committee_member,
                     is_admin: $this->is_admin,
                     is_coach: $this->is_coach,
+                    has_key: $this->has_key,
                     licence: $licence,
                     ranking: $ranking,
                     committee_role: $committeeRole,
@@ -562,6 +569,7 @@ new class extends Component
                     is_committee_member: $this->is_committee_member,
                     is_admin: $this->is_admin,
                     is_coach: $this->is_coach,
+                    has_key: $this->has_key,
                     licence: $licence,
                     ranking: $ranking,
                     committee_role: $committeeRole,

@@ -120,6 +120,46 @@
             <x-input icon="o-information-circle" :label="__('Description')" wire:model="interclubDescription" />
         </x-admin.shared.form-section>
 
+        <x-admin.shared.form-section :separator="true" :subtitle="__('Members who hold club equipment')" :title="__('Equipment holders')">
+            <div class="col-span-6 md:col-span-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+                {{-- Key holders --}}
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-widest opacity-50 mb-3">
+                        {{ __('Key holders') }}
+                    </p>
+                    @forelse($keyHolders as $holder)
+                        <div class="flex items-center gap-2 py-1">
+                            <x-icon name="o-key" class="w-4 h-4 text-base-content/40 shrink-0" />
+                            <span class="text-sm">{{ $holder->first_name }} {{ $holder->last_name }}</span>
+                        </div>
+                    @empty
+                        <p class="text-sm italic text-base-content/40">{{ __('None') }}</p>
+                    @endforelse
+                </div>
+
+                {{-- Cash register holders --}}
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-widest opacity-50 mb-3">
+                        {{ __('Cash register holders') }}
+                    </p>
+                    @forelse($cashRegisterHolders as $register)
+                        <div class="flex items-center gap-2 py-1">
+                            <x-icon name="o-banknotes" class="w-4 h-4 text-base-content/40 shrink-0" />
+                            <span class="text-sm font-medium">{{ $register->name }}</span>
+                            <span class="text-sm text-base-content/50">→</span>
+                            @if($register->heldBy)
+                                <span class="text-sm">{{ $register->heldBy->first_name }} {{ $register->heldBy->last_name }}</span>
+                            @else
+                                <span class="text-sm italic text-base-content/40">{{ __('None') }}</span>
+                            @endif
+                        </div>
+                    @empty
+                        <p class="text-sm italic text-base-content/40">{{ __('None') }}</p>
+                    @endforelse
+                </div>
+            </div>
+        </x-admin.shared.form-section>
+
         <div class="col-span-6 mt-6 flex justify-end gap-3">
             <x-button :label="__('Cancel')" />
             <x-button class="btn-primary" :label="__('Save Changes')" spinner="save" type="submit" />

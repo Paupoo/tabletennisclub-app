@@ -9,9 +9,10 @@
             </div>
             {{-- Légende compacte --}}
             <div class="hidden items-center gap-3 text-[9px] font-bold opacity-50 sm:flex">
-                <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-sm bg-success"></span>{{ __('Ready') }}</span>
-                <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-sm bg-warning"></span>{{ __('Incomplete') }}</span>
-                <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-sm bg-error"></span>{{ __('Empty') }}</span>
+                <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-sm bg-success"></span>{{ __('Confirmed') }}</span>
+                <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-sm bg-warning"></span>{{ __('Actionable') }}</span>
+                <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-sm bg-error"></span>{{ __('Urgent') }}</span>
+                <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-sm bg-base-300"></span>{{ __('Upcoming') }}</span>
             </div>
         </div>
 
@@ -64,12 +65,14 @@
                                 <td class="px-1 py-1 text-center">
                                     @if ($cellStatus === null)
                                         <span class="text-base-content/15 leading-none">·</span>
-                                    @elseif ($cellStatus === 'ok')
+                                    @elseif ($cellStatus === 'confirmed')
                                         <span class="inline-block h-2.5 w-2.5 rounded-sm bg-success"></span>
-                                    @elseif ($cellStatus === 'warning')
+                                    @elseif ($cellStatus === 'actionable')
                                         <span class="inline-block h-2.5 w-2.5 rounded-sm bg-warning"></span>
-                                    @else
+                                    @elseif ($cellStatus === 'urgent')
                                         <span class="inline-block h-2.5 w-2.5 animate-pulse rounded-sm bg-error"></span>
+                                    @else
+                                        <span class="inline-block h-2.5 w-2.5 rounded-sm bg-base-300"></span>
                                     @endif
                                 </td>
                             @endforeach
@@ -81,10 +84,10 @@
 
         {{-- Légende mobile --}}
         <div class="flex items-center gap-3 text-[9px] font-bold opacity-40 sm:hidden">
-            <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-sm bg-success"></span>{{ __('Ready') }}</span>
-            <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-sm bg-warning"></span>{{ __('Incomplete') }}</span>
-            <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-sm bg-error"></span>{{ __('Empty') }}</span>
-            <span class="flex items-center gap-1"><span class="font-mono text-base-content/40">·</span>{{ __('No match') }}</span>
+            <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-sm bg-success"></span>{{ __('Confirmed') }}</span>
+            <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-sm bg-warning"></span>{{ __('Actionable') }}</span>
+            <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-sm bg-error"></span>{{ __('Urgent') }}</span>
+            <span class="flex items-center gap-1"><span class="inline-block h-2 w-2 rounded-sm bg-base-300"></span>{{ __('Upcoming') }}</span>
         </div>
 
     </div>

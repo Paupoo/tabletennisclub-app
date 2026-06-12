@@ -20,8 +20,7 @@
                     @endif
                 </x-button>
             @endif
-            <x-button class="btn-ghost btn-sm" icon="o-arrow-right" :label="__('My Matches')"
-                :link="route('admin.interclubs.my-matches')" />
+            
         </x-slot:actions>
     </x-header>
 
@@ -90,40 +89,21 @@
                         @foreach ($td['matches'] as $ic)
                             @php
                                 $isPast   = $ic['is_past'];
-                                $isUrgent = $ic['alert'];
-                                $selCount = $ic['selected_count'];
                                 $maxP     = $ic['max_players'];
                                 $avCount  = $ic['available_count'];
-                                $mbCount  = $ic['maybe_count'];
 
                                 $statusBarColor = match ($ic['status']) {
-                                    'confirmed', 'ready' => 'bg-success',
-                                    'pending'            => 'bg-warning',
-                                    'past'               => 'bg-base-200',
-                                    default              => 'bg-base-300',
+                                    'confirmed'  => 'bg-success',
+                                    'actionable' => 'bg-warning',
+                                    'urgent'     => 'bg-error',
+                                    'past'       => 'bg-base-200',
+                                    default      => 'bg-base-300',
                                 };
-
-                                if ($avCount >= $maxP) {
-                                    $availDot   = 'bg-success';
-                                    $availText  = 'text-success';
-                                    $availLabel = $avCount . ' dispo';
-                                    $availPulse = false;
-                                } elseif ($avCount + $mbCount >= $maxP) {
-                                    $availDot   = 'bg-warning';
-                                    $availText  = 'text-warning';
-                                    $availLabel = $avCount . '+' . $mbCount . ' peut-être';
-                                    $availPulse = false;
-                                } else {
-                                    $availDot   = 'bg-error';
-                                    $availText  = 'text-error';
-                                    $availLabel = $avCount . '/' . $maxP . ' dispo';
-                                    $availPulse = $isUrgent;
-                                }
                             @endphp
                             <div @class([
                                 'px-4 py-3 bg-base-100 transition-colors',
                                 'opacity-60 bg-base-50' => $isPast,
-                                'bg-error/3' => $isUrgent && ! $isPast,
+                                'bg-error/3' => $ic['status'] === 'urgent',
                             ])>
                                 <div class="flex flex-wrap items-center gap-3 sm:flex-nowrap">
 
@@ -158,20 +138,11 @@
                                     {{-- Availability indicator + selection badge --}}
                                     @if (! $isPast)
                                         <div class="flex shrink-0 flex-col items-end gap-1">
-                                            <div class="flex items-center gap-1.5 {{ $availText }}">
-                                                <span @class([
-                                                    'h-2 w-2 rounded-full',
-                                                    $availDot,
-                                                    'animate-pulse' => $availPulse,
-                                                ])></span>
-                                                <span class="text-[11px] font-bold">{{ $availLabel }}</span>
-                                            </div>
+                                            <span class="text-[11px] text-base-content/50">{{ $avCount }}/{{ $maxP }} {{ __('avail.') }}</span>
                                             @if ($ic['status'] === 'confirmed')
                                                 <x-badge class="badge-success badge-xs font-bold" value="{{ __('Sent') }}" />
-                                            @elseif ($selCount >= $maxP)
-                                                <x-badge class="badge-success badge-soft badge-xs font-bold" value="{{ __('Ready') }} · {{ $selCount }}/{{ $maxP }}" />
-                                            @elseif ($selCount > 0)
-                                                <x-badge class="badge-warning badge-soft badge-xs font-bold" value="{{ $selCount }}/{{ $maxP }} {{ __('sel.') }}" />
+                                            @elseif ($ic['selected_count'] > 0)
+                                                <x-badge class="badge-ghost badge-xs border border-base-300 font-bold" value="{{ $ic['selected_count'] }}/{{ $maxP }} {{ __('sel.') }}" />
                                             @endif
                                         </div>
                                     @endif

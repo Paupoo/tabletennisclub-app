@@ -310,7 +310,7 @@ new class extends Component
 
         $alertMatches = $teamsData
             ->flatMap(fn ($t) => collect($t['matches'])->map(fn ($m) => array_merge($m, ['team_name' => $t['name'], 'team_id' => $t['id']])))
-            ->filter(fn ($m) => $m['alert'])
+            ->filter(fn ($m) => $m['status'] === 'urgent')
             ->values();
 
         // Drawer data: roster for the selected match
@@ -471,12 +471,11 @@ new class extends Component
             $status = match (true) {
                 $isPast => 'past',
                 $confirmedAtCount > 0 => 'confirmed',
-                $selectedCount >= $ic->total_players => 'ready',
-                $selectedCount > 0 => 'pending',
+                $selectedCount >= $ic->total_players => 'actionable',
+                $availableCount >= $ic->total_players => 'actionable',
+                $daysUntil <= 14 => 'urgent',
                 default => 'future',
             };
-
-            $alert = ! $isPast && $daysUntil <= 14 && $availableCount < $ic->total_players;
 
             $selectedPlayerNames = $isPast
                 ? $icUsers->filter(fn ($u) => $u->registration?->is_selected)
@@ -501,7 +500,6 @@ new class extends Component
                 'pending_count' => $pendingCount,
                 'selected_count' => $selectedCount,
                 'max_players' => $ic->total_players,
-                'alert' => $alert,
                 'selected_player_names' => $selectedPlayerNames,
             ];
         });
@@ -512,7 +510,7 @@ new class extends Component
             'division' => $team->league?->division ?? '—',
             'captain_name' => trim(($team->captain?->last_name ?? '') . ' ' . ($team->captain?->first_name ?? '')),
             'matches' => $matches->values()->toArray(),
-            'has_alert' => $matches->where('alert', true)->isNotEmpty(),
+            'has_alert' => $matches->where('status', 'urgent')->isNotEmpty(),
         ];
     }
 
@@ -607,7 +605,7 @@ new class extends Component
         ])->values()->all();
 
         $total = $weekNumbers->count();
-        $ok = collect($weeks)->where('status', 'ok')->count();
+        $ok = collect($weeks)->where('status', 'confirmed')->count();
 
         return [
             'weeks' => $weeks,
@@ -658,10 +656,10 @@ new class extends Component
     /** @param \Illuminate\Database\Eloquent\Collection<int, Team> $teams */
     private function weekStatus(int $weekNumber, \Illuminate\Database\Eloquent\Collection $teams): string
     {
-        $worstStatus = 'ok';
+        $worstStatus = 'confirmed';
 
         foreach ($teams as $team) {
-            $interclub = Interclub::where('week_number', $weekNumber)
+            $interclub = Interclub::with('users')->where('week_number', $weekNumber)
                 ->where(fn ($q) => $q
                     ->where('visited_team_id', $team->id)
                     ->orWhere('visiting_team_id', $team->id))
@@ -671,19 +669,37 @@ new class extends Component
                 continue;
             }
 
-            $maxPlayers = $team->league?->category === 'MEN' ? 4 : 3;
-            $selectedCount = $interclub->users()->wherePivot('is_selected', true)->count();
-
-            if ($selectedCount === 0) {
-                return 'nok';
+            if ($interclub->start_date_time < now()) {
+                continue;
             }
 
-            if ($selectedCount < $maxPlayers) {
-                $worstStatus = 'warning';
-            }
+            $users = $interclub->users;
+            $maxPlayers = $interclub->total_players;
+            $daysUntil = (int) now()->diffInDays($interclub->start_date_time, false);
+
+            $confirmedAtCount = $users->filter(fn ($u) => $u->registration?->is_selected && $u->registration?->selection_confirmed_at)->count();
+            $selectedCount = $users->filter(fn ($u) => $u->registration?->is_selected)->count();
+            $availableCount = $users->filter(fn ($u) => $u->registration?->availability === 'available')->count();
+
+            $matchStatus = match (true) {
+                $confirmedAtCount > 0 => 'confirmed',
+                $selectedCount >= $maxPlayers => 'actionable',
+                $availableCount >= $maxPlayers => 'actionable',
+                $daysUntil <= 14 => 'urgent',
+                default => 'future',
+            };
+
+            $worstStatus = $this->worstOf($worstStatus, $matchStatus);
         }
 
         return $worstStatus;
+    }
+
+    private function worstOf(string $a, string $b): string
+    {
+        $rank = ['confirmed' => 0, 'actionable' => 1, 'future' => 2, 'urgent' => 3];
+
+        return ($rank[$b] ?? 0) > ($rank[$a] ?? 0) ? $b : $a;
     }
 
     private function selectedInterclub(): ?Interclub

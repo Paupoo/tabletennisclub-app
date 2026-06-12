@@ -12,11 +12,10 @@ use Illuminate\Http\Request;
 
 class BarCashSheetController extends Controller
 {
-    private CashSheetService $cashSheetService;
-
-    public function __construct(CashSheetService $cashSheetService)
+    public function __construct(private readonly CashSheetService $cashSheetService)
     {
         $this->middleware('auth');
+        $this->middleware('throttle:10,1')->only(['send']);
         $this->cashSheetService = $cashSheetService;
     }
 
@@ -41,7 +40,7 @@ class BarCashSheetController extends Controller
     public function send(Request $request)
     {
         $validated = $request->validate([
-            'date' => 'required|date',
+            'date' => 'required|date|before_or_equal:today',
             'to' => 'required|email',
             'save_default' => 'nullable|boolean',
         ]);
@@ -69,6 +68,10 @@ class BarCashSheetController extends Controller
         $body .= "- Autre: " . euros((int) ($summary['by_method_cents']['other'] ?? 0)) . "\n";
         $body .= "- Offert: " . euros((int) ($summary['by_method_cents']['offered'] ?? 0)) . "\n\n";
         $body .= "Cordialement.\n";
+        
+        if (empty($csv)) {
+            return back()->with('warning', 'Aucune donnée à envoyer.');
+            }
 
         $ok = $this->cashSheetService->sendCsv($to, $subject, $body, $date, $csv);
 

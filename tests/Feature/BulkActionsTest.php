@@ -11,14 +11,14 @@ uses(RefreshDatabase::class);
 const USERS_COMPONENT = 'pages::club-admin.users.index';
 
 beforeEach(function (): void {
-    $this->admin = User::factory()->create(['is_admin' => true, 'is_active' => true]);
+    $this->admin = User::factory()->create(['is_admin' => true]);
 });
 
 // ── HasBulkActions — tested via real users component ─────────────────────────
 
 describe('HasBulkActions', function (): void {
     it('selecting all on a page sets selected to current page IDs', function (): void {
-        User::factory()->count(3)->create(['is_active' => true]);
+        User::factory()->count(3)->create();
 
         $component = Livewire::actingAs($this->admin)
             ->test(USERS_COMPONENT);
@@ -31,7 +31,7 @@ describe('HasBulkActions', function (): void {
     });
 
     it('deselecting selectAll clears the selection', function (): void {
-        User::factory()->count(2)->create(['is_active' => true]);
+        User::factory()->count(2)->create();
 
         Livewire::actingAs($this->admin)
             ->test(USERS_COMPONENT)
@@ -42,7 +42,7 @@ describe('HasBulkActions', function (): void {
     });
 
     it('selectAllResults sets selectingAllResults to true', function (): void {
-        User::factory()->count(3)->create(['is_active' => true]);
+        User::factory()->count(3)->create();
 
         Livewire::actingAs($this->admin)
             ->test(USERS_COMPONENT)
@@ -52,7 +52,7 @@ describe('HasBulkActions', function (): void {
     });
 
     it('clearSelection resets selected, selectAll, and selectingAllResults', function (): void {
-        User::factory()->count(2)->create(['is_active' => true]);
+        User::factory()->count(2)->create();
 
         Livewire::actingAs($this->admin)
             ->test(USERS_COMPONENT)
@@ -73,7 +73,7 @@ describe('HasBulkActions', function (): void {
     });
 
     it('toggleSelectionMode clears selection when disabling', function (): void {
-        User::factory()->count(2)->create(['is_active' => true]);
+        User::factory()->count(2)->create();
 
         Livewire::actingAs($this->admin)
             ->test(USERS_COMPONENT)
@@ -109,11 +109,9 @@ describe('HasFilterDrawer', function (): void {
             ->test(USERS_COMPONENT)
             ->set('selectedLicenceType', 'competitive')
             ->set('categories', ['MEN'])
-            ->set('showInactiveUsers', true)
             ->call('clearFilters')
             ->assertSet('selectedLicenceType', 'both')
-            ->assertSet('categories', [])
-            ->assertSet('showInactiveUsers', false);
+            ->assertSet('categories', []);
     });
 
     it('filterChips is empty when no filters are active', function (): void {
@@ -144,38 +142,6 @@ describe('HasFilterDrawer', function (): void {
 // ── Bulk actions — tested via real users component ────────────────────────────
 
 describe('Bulk actions', function (): void {
-    it('bulkActivate activates selected users', function (): void {
-        $user = User::factory()->create(['is_active' => false]);
-
-        Livewire::actingAs($this->admin)
-            ->test(USERS_COMPONENT)
-            ->set('selected', [(string) $user->id])
-            ->call('bulkActivate');
-
-        expect($user->fresh()->is_active)->toBeTrue();
-    });
-
-    it('bulkActivate clears the selection after action', function (): void {
-        $user = User::factory()->create(['is_active' => false]);
-
-        Livewire::actingAs($this->admin)
-            ->test(USERS_COMPONENT)
-            ->set('selected', [(string) $user->id])
-            ->call('bulkActivate')
-            ->assertSet('selected', []);
-    });
-
-    it('bulkDeactivate deactivates selected users', function (): void {
-        $user = User::factory()->create(['is_active' => true]);
-
-        Livewire::actingAs($this->admin)
-            ->test(USERS_COMPONENT)
-            ->set('selected', [(string) $user->id])
-            ->call('bulkDeactivate');
-
-        expect($user->fresh()->is_active)->toBeFalse();
-    });
-
     it('confirmBulkArchive opens the confirm modal', function (): void {
         Livewire::actingAs($this->admin)
             ->test(USERS_COMPONENT)
@@ -184,7 +150,7 @@ describe('Bulk actions', function (): void {
     });
 
     it('bulkArchive soft-deletes the selected users', function (): void {
-        $user = User::factory()->create(['is_active' => true]);
+        $user = User::factory()->create();
 
         Livewire::actingAs($this->admin)
             ->test(USERS_COMPONENT)

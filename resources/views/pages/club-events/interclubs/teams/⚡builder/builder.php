@@ -277,7 +277,7 @@ new class extends Component
 
     private function buildEligibleQuery(): Builder
     {
-        $query = User::where('is_competitor', true)
+        $query = User::competitor()
             // force_list (admin override) en premier quand défini, sinon tri par classement
             ->orderByRaw('CASE WHEN force_list IS NULL THEN 1 ELSE 0 END')
             ->orderBy('force_list')
@@ -303,7 +303,7 @@ new class extends Component
 
     public function with(): array
     {
-        $allCompetitors = User::where('is_competitor', true)
+        $allCompetitors = User::competitor()
             ->orderBy('force_list')
             ->orderBy('last_name')
             ->orderBy('first_name')
@@ -321,7 +321,7 @@ new class extends Component
             'competitors'       => $allCompetitors,
             'eligibleCount'          => $this->buildEligibleQuery()->count(),
             'missingBirthdateCount'  => $this->teamCategory === 'VETERANS'
-                ? User::where('is_competitor', true)->whereNull('birthdate')->count()
+                ? User::competitor()->whereNull('birthdate')->count()
                 : 0,
             'categoryOptions'   => collect(LeagueCategory::cases())->map(fn ($c) => ['id' => $c->name, 'name' => $c->value]),
             'levelOptions'      => collect(LeagueLevel::cases())->map(fn ($l) => ['id' => $l->name, 'name' => $l->value]),

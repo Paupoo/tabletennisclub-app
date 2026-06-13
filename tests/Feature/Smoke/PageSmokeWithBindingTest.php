@@ -30,7 +30,7 @@ beforeEach(function (): void {
     $this->admin = User::factory()
         ->isAdmin()
         ->isCommitteeMember()
-        ->create(['is_active' => true]);
+        ->create([]);
 
     $this->season = makeActiveSeason();
 });

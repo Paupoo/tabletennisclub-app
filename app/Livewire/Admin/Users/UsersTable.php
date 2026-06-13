@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Admin\Users;
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Season;
 use App\Services\ForceList;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
@@ -57,26 +58,6 @@ class UsersTable extends Component
     }
 
     // --- Actions Groupées (Bulk Actions) ---
-
-    public function bulkActivate(): void
-    {
-        $this->authorize('update', Auth::user());
-
-        User::whereIn('id', $this->selectedItems)->update(['is_active' => true]);
-
-        session()->flash('success', count($this->selectedItems) . ' membre(s) activé(s).');
-        $this->resetSelection();
-    }
-
-    public function bulkDeactivate(): void
-    {
-        $this->authorize('update', Auth::user());
-
-        User::whereIn('id', $this->selectedItems)->update(['is_active' => false]);
-
-        session()->flash('warning', count($this->selectedItems) . ' membre(s) désactivé(s).');
-        $this->resetSelection();
-    }
 
     public function bulkDelete(): void
     {
@@ -173,7 +154,15 @@ class UsersTable extends Component
         }
 
         if ($this->competitor !== '' && $this->competitor !== 'all') {
-            $query->where('is_competitor', $this->competitor === '1');
+            if ($this->competitor === '1') {
+                $query->competitor();
+            } else {
+                $seasonId = Season::current()?->id;
+                $query->whereDoesntHave('subscriptions', fn ($s) => $s
+                    ->where('season_id', $seasonId)
+                    ->where('is_competitive', true)
+                );
+            }
         }
 
         if (! empty($this->sex) && $this->sex !== 'all') {
@@ -181,23 +170,16 @@ class UsersTable extends Component
         }
 
         switch ($this->status) {
-            case 'active':
-                $query->where('is_active', true);
-                break;
-            case 'inactive':
-                $query->where('is_active', false);
-                break;
             case 'paid':
-                $query->where('has_paid', true);
+                $query->paid();
                 break;
             case 'unpaid':
-                $query->where('has_paid', false);
+                $query->unpaid();
                 break;
         }
 
         if (empty($this->sortByField)) {
-            $query->orderBy('is_competitor', 'desc')
-                ->orderBy('force_list')
+            $query->orderBy('force_list')
                 ->orderBy('ranking')
                 ->orderBy('last_name')
                 ->orderBy('first_name');

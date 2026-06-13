@@ -686,10 +686,10 @@ new class extends Component
     #[Computed]
     public function members(): array
     {
-        $query = User::where('is_active', true)->orderBy('last_name');
+        $query = User::active()->orderBy('last_name');
 
         if ($this->selectedObjective === TournamentObjectiveEnum::Competitive->value) {
-            $query->where('is_competitor', true);
+            $query->competitor();
         }
 
         if ($this->tournamentId) {

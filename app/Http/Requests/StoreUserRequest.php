@@ -23,7 +23,6 @@ class StoreUserRequest extends FormRequest
     public function prepareForValidation(): void
     {
         $this->merge([
-            'is_active' => $this->input('is_active') !== null,
             'is_admin' => $this->input('is_admin') !== null,
             'is_committee_member' => $this->input('is_committee_member') !== null,
             'is_competitor' => $this->input('is_competitor') !== null,
@@ -45,7 +44,6 @@ class StoreUserRequest extends FormRequest
             'city_name' => ['nullable', 'string'],
             'email' => ['required', 'email:rfc,dns,spoof,filter_unicode', 'unique:users,email'],
             'first_name' => ['required', 'string', 'max:255'],
-            'is_active' => ['boolean'],
             'is_admin' => ['boolean'],
             'is_committee_member' => ['boolean'],
             'is_competitor' => ['boolean'],

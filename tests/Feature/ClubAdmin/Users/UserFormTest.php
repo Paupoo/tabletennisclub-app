@@ -22,7 +22,7 @@ beforeEach(function (): void {
 
 describe('ranking — recreational users', function (): void {
     it('does not require ranking for recreational users', function (): void {
-        $user = User::factory()->create(['is_competitor' => false, 'is_coach' => false]);
+        $user = User::factory()->create(['is_coach' => false]);
 
         Livewire::test(USER_FORM_COMPONENT, ['user' => $user])
             ->set('licence_type', 'recreative')
@@ -34,7 +34,7 @@ describe('ranking — recreational users', function (): void {
 
     it('saves NA when updating a recreational user', function (): void {
         $user = User::factory()->create([
-            'is_competitor' => false,
+
             'is_coach' => false,
             'ranking' => 'NA',
         ]);
@@ -49,7 +49,7 @@ describe('ranking — recreational users', function (): void {
 
     it('does not throw a QueryException (no DB truncation) when saving a recreational user', function (): void {
         $user = User::factory()->create([
-            'is_competitor' => false,
+
             'is_coach' => false,
         ]);
 
@@ -62,7 +62,7 @@ describe('ranking — recreational users', function (): void {
 
     it('initialises ranking to a valid enum value (never N/A with slash) when mounting', function (): void {
         $user = User::factory()->create([
-            'is_competitor' => false,
+
             'is_coach' => false,
             'ranking' => 'NA',
         ]);

@@ -40,12 +40,12 @@ class ForceList
         foreach ($users as $user) {
             if ($user->ranking !== 'E6-NC') {
                 User::where('ranking', $user->ranking)
-                    ->where('is_competitor', true)
+                    ->competitor()
                     ->update(['force_list' => $user->total + $i]);
                 $i += $user->total;
             } else {
                 User::whereIn('ranking', ['E6', 'NC'])
-                    ->where('is_competitor', true)
+                    ->competitor()
                     ->update(['force_list' => $user->total + $i]);
             }
         }
@@ -60,7 +60,7 @@ class ForceList
     {
         $users = User::select(['ranking', DB::raw('count(1) as total')])
             ->whereNotIn('ranking', ['NA', 'NC', 'E6'])
-            ->where('is_competitor', true)
+            ->competitor()
             ->groupby('ranking')
             ->orderBy('ranking')
             ->get();
@@ -68,7 +68,7 @@ class ForceList
         $totalE6Nc = new stdClass;
         $totalE6Nc->ranking = 'E6-NC';
         $totalE6Nc->total = User::whereIn('ranking', ['E6', 'NC'])
-            ->where('is_competitor', true)
+            ->competitor()
             ->count();
         $this->users = $users->push($totalE6Nc);
 

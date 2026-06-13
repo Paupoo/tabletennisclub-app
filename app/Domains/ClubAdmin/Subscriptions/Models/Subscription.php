@@ -16,15 +16,19 @@ use App\Domains\Shared\States\Payments\PendingState;
 use App\Domains\Shared\States\Payments\RefundedState;
 use App\Domains\Shared\States\Payments\ValidatedState;
 use App\Domains\Trainings\Models\TrainingPack;
+use App\Observers\SubscriptionObserver;
 use Database\Factories\Domains\ClubAdmin\Subscriptions\Models\SubscriptionFactory;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -38,15 +42,16 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property float $training_unit_price
  * @property float $amount_due
  * @property float $amount_paid
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, Payment> $payments
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Collection<int, Payment> $payments
  * @property-read int|null $payments_count
  * @property-read Season $season
- * @property-read \Illuminate\Database\Eloquent\Collection<int, TrainingPack> $trainingPacks
+ * @property-read Collection<int, TrainingPack> $trainingPacks
  * @property-read int|null $training_packs_count
  * @property-read User $user
+ *
  * @method static Builder<static>|Subscription active()
  * @method static \Database\Factories\Domains\ClubAdmin\Subscriptions\Models\SubscriptionFactory factory($count = null, $state = [])
  * @method static Builder<static>|Subscription forSeason(\App\Domains\Competitions\Interclub\Models\Season|int $season)
@@ -71,8 +76,10 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @method static Builder<static>|Subscription whereUserId($value)
  * @method static Builder<static>|Subscription withTrashed(bool $withTrashed = true)
  * @method static Builder<static>|Subscription withoutTrashed()
+ *
  * @mixin \Eloquent
  */
+#[ObservedBy(SubscriptionObserver::class)]
 class Subscription extends Model implements DescribesPayment, PayableInterface
 {
     /** @use HasFactory<SubscriptionFactory> */

@@ -30,7 +30,7 @@ class MeetingSeeder extends Seeder
         $committeeMembers = User::where(fn ($q) => $q->where('is_admin', true)->orWhere('is_committee_member', true))
             ->get();
 
-        $allActiveMembers = User::where('is_active', true)->take(30)->get();
+        $allActiveMembers = User::inRandomOrder()->take(30)->get();
 
         // ── 1. Completed past AG — season closing ─────────────────────────
         $agPast = Meeting::create([

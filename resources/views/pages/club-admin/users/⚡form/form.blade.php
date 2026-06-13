@@ -230,9 +230,6 @@
             </div>
             <div class="col-span-6 md:col-span-4">
                 <x-checkbox
-                    :hint="__('An active member is up to date with his or her membership fees and is authorized to participate in all club activities')"
-                    :label="__('Is Active')" wire:model="is_active" />
-                <x-checkbox
                     :hint="__('Committee Members are granted most accesses like creating, updating and deleting objects (Users, teams, tournaments...)')"
                     :label="__('Is a committee member')" wire:model.live="is_committee_member" />
                 @if ($is_committee_member)

@@ -116,7 +116,7 @@ new class extends Component
             ->get();
 
         // Liste complète des candidats, filtrée selon la catégorie de l'équipe
-        $competitors = User::where('is_competitor', true)
+        $competitors = User::competitor()
             ->when($category === Gender::WOMEN->value, fn ($q) => $q->where('gender', Gender::WOMEN->value))
             ->when($category === 'VETERANS' && $season?->end_at, function ($q) use ($season): void {
                 $cutoff = $season->end_at->copy()->subYears(40);

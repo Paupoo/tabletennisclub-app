@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Database\Factories\Domains\ClubAdmin\Users\Models;
 
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\Ranking;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -30,11 +32,8 @@ class UserFactory extends Factory
         $uniqueEmail = $this->uniqueEmail();
 
         return [
-            'is_active' => true,
             'is_admin' => false,
             'is_committee_member' => false,
-            'is_competitor' => fake()->randomElement([true, false]),
-            'has_paid' => false,
             'is_coach' => false,
             'is_selector' => false,
             'has_key' => false,
@@ -71,8 +70,7 @@ class UserFactory extends Factory
 
     public function isCompetitor(): static
     {
-
-        return $this->state(function (array $attributes) {
+        return $this->state(function (array $attributes): array {
             $unusedLicence = fake()->numberBetween(95000, 170000);
 
             while (User::where('licence', $unusedLicence)->exists()) {
@@ -80,17 +78,24 @@ class UserFactory extends Factory
             }
 
             return [
-                'is_competitor' => true,
                 'licence' => $unusedLicence,
                 'ranking' => fake()->randomElement(array_column(Ranking::cases(), 'name')),
             ];
+        })->afterCreating(function (User $user): void {
+            $season = Season::current() ?? Season::inRandomOrder()->first();
+
+            if ($season !== null) {
+                Subscription::firstOrCreate(
+                    ['user_id' => $user->id, 'season_id' => $season->id],
+                    ['is_competitive' => true, 'amount_due' => 125, 'amount_paid' => 0],
+                );
+            }
         });
     }
 
     public function isNotCompetitor(): static
     {
         return $this->state(fn (array $attributes): array => [
-            'is_competitor' => false,
             'licence' => null,
         ]);
     }

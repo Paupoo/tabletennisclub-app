@@ -61,9 +61,6 @@ new class extends Component
     // Permissions
 
     #[Rule('required|boolean')]
-    public bool $is_active = false;
-
-    #[Rule('required|boolean')]
     public bool $is_coach = false;
 
     public bool $is_admin = false;
@@ -325,7 +322,6 @@ new class extends Component
             $this->licence = $user->licence;
             $this->ranking = $user->ranking ?? 'NA';
             $this->is_competitor = $user->is_competitor;
-            $this->is_active = $user->is_active;
             $this->is_committee_member = $user->is_committee_member;
             $this->is_coach = $user->is_coach;
             $this->is_admin = $user->is_admin;
@@ -494,17 +490,7 @@ new class extends Component
             );
         }
 
-        // Règles « membre mineur » (droit belge, < 18 ans).
-        // Hard block : un mineur sans tuteur légal ne peut pas être affilié (actif).
-        // Warn : sinon on enregistre mais on avertit qu'un tuteur manque.
         $minorWithoutGuardian = $this->isMinor && $this->guardianIds === [];
-
-        if ($minorWithoutGuardian && $this->is_active) {
-            $this->addError('is_active', __('A minor cannot be set as an active member without a legal guardian. Please add a guardian first.'));
-            $this->error(__('A minor cannot be affiliated without a legal guardian.'));
-
-            return;
-        }
 
         $actor = Auth::user();
         $licence = $this->licence_type === 'recreative' ? null : $this->licence;
@@ -530,7 +516,6 @@ new class extends Component
                     birthdate: $this->birthdate,
                     guardian_phone_number: $this->user->guardian_phone_number,
                     iban: $this->iban,
-                    is_active: $this->is_active,
                     is_competitor: $this->is_competitor,
                     is_committee_member: $this->is_committee_member,
                     is_admin: $this->is_admin,
@@ -564,8 +549,6 @@ new class extends Component
                     city_code: $this->city_code,
                     city_name: $this->city_name,
                     birthdate: $this->birthdate,
-                    is_active: $this->is_active,
-                    is_competitor: $this->is_competitor,
                     is_committee_member: $this->is_committee_member,
                     is_admin: $this->is_admin,
                     is_coach: $this->is_coach,

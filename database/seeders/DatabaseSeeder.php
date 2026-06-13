@@ -121,9 +121,7 @@ class DatabaseSeeder extends Seeder
 
         // Create 1 admin
         $admin = User::make([
-            'is_active' => true,
             'is_admin' => true,
-            'is_competitor' => true,
             'email' => 'aurelien.paulus@gmail.com',
             'password' => Hash::make('test1234'),
             'first_name' => 'Aurélien',
@@ -157,9 +155,7 @@ class DatabaseSeeder extends Seeder
         foreach ($players as $player) {
 
             $player = User::make([
-                'is_active' => true,
                 'is_admin' => false,
-                'is_competitor' => true,
                 'email' => $player[4],
                 'email_verified_at' => now(),
                 'password' => $password,
@@ -181,10 +177,8 @@ class DatabaseSeeder extends Seeder
         // Add some random users
 
         User::make([
-            'is_active' => true,
             'is_admin' => false,
             'is_committee_member' => true,
-            'is_competitor' => true,
             'email' => 'thierry.regnier@test.com',
             'email_verified_at' => now(),
             'password' => $password,
@@ -203,10 +197,8 @@ class DatabaseSeeder extends Seeder
         ])->club()->associate(Club::own())->save();
 
         User::make([
-            'is_active' => true,
             'is_admin' => false,
             'is_committee_member' => true,
-            'is_competitor' => true,
             'email' => 'manon.patigny@test.com',
             'email_verified_at' => now(),
             'password' => $password,
@@ -225,10 +217,8 @@ class DatabaseSeeder extends Seeder
         ])->club()->associate(Club::first())->save();
 
         User::make([
-            'is_active' => true,
             'is_admin' => false,
             'is_committee_member' => true,
-            'is_competitor' => true,
             'email' => 'olivier.pauwels@test.com',
             'email_verified_at' => now(),
             'password' => $password,
@@ -247,10 +237,8 @@ class DatabaseSeeder extends Seeder
         ])->club()->associate(Club::first())->save();
 
         User::make([
-            'is_active' => true,
             'is_admin' => false,
             'is_committee_member' => true,
-            'is_competitor' => true,
             'email' => 'gilles.herpigny@test.com',
             'email_verified_at' => now(),
             'password' => $password,

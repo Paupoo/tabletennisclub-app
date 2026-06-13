@@ -70,8 +70,11 @@ describe('DashboardController', function (): void {
     });
 
     it('shows unpaid members alert when there are unpaid active members', function (): void {
-        $admin = User::factory()->isAdmin()->create(['has_paid' => true]);
-        User::factory()->create(['has_paid' => false, 'is_active' => true]);
+        $season = Season::factory()->create(['is_active' => true]);
+        $admin = User::factory()->isAdmin()->create();
+        Subscription::factory()->create(['user_id' => $admin->id, 'season_id' => $season->id, 'status' => 'paid']);
+        $user = User::factory()->create();
+        Subscription::factory()->create(['user_id' => $user->id, 'season_id' => $season->id, 'status' => 'confirmed']);
 
         $this->actingAs($admin)
             ->get(route('dashboard'))
@@ -80,8 +83,8 @@ describe('DashboardController', function (): void {
     });
 
     it('shows incomplete profile alert when active members have missing mandatory fields', function (): void {
-        $admin = User::factory()->isAdmin()->create(['has_paid' => true]);
-        User::factory()->create(['is_active' => true, 'phone_number' => null]);
+        $admin = User::factory()->isAdmin()->create();
+        User::factory()->create(['phone_number' => null]);
 
         $this->actingAs($admin)
             ->get(route('dashboard'))
@@ -113,7 +116,7 @@ describe('DashboardController', function (): void {
     });
 
     it('shows personal payment alert when user has pending payments', function (): void {
-        $user = User::factory()->isAdmin()->create(['has_paid' => true]);
+        $user = User::factory()->isAdmin()->create();
 
         $subscription = Subscription::factory()->create(['user_id' => $user->id]);
         Payment::factory()->create([
@@ -139,6 +142,7 @@ describe('DashboardController', function (): void {
     });
 
     it('adds interclub tiles for competitors', function (): void {
+        Season::factory()->create(['is_active' => true]);
         $user = User::factory()->isCompetitor()->create();
 
         $response = $this->actingAs($user)

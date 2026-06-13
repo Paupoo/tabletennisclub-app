@@ -22,7 +22,7 @@ describe('Date poll via Livewire', function (): void {
         Notification::fake();
 
         $admin = User::factory()->create(['is_admin' => true, 'is_committee_member' => true]);
-        $member = User::factory()->create(['is_committee_member' => true, 'is_active' => true]);
+        $member = User::factory()->create(['is_committee_member' => true]);
 
         $meeting = Meeting::factory()->committee()->planning()->create(['created_by' => $admin->id]);
         $meeting->dateProposals()->create(['proposed_at' => now()->addWeek()]);

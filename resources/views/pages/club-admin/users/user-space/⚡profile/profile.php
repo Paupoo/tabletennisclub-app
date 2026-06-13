@@ -162,7 +162,6 @@ new class extends Component
                 guardian_phone_number: $this->user->guardian_phone_number,
                 iban: $this->iban,
                 // Admin-only fields are preserved from the current model (not self-editable).
-                is_active: $this->user->is_active,
                 is_competitor: $this->user->is_competitor,
                 is_committee_member: $this->user->is_committee_member,
                 is_admin: $this->user->is_admin,

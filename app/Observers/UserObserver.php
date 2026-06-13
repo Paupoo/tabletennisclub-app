@@ -18,10 +18,7 @@ class UserObserver
 
     public function saved(User $user): void
     {
-        $competitorStatusChanged = $user->wasChanged('is_competitor');
-        $rankingChangedForCompetitor = $user->is_competitor && $user->wasChanged('ranking');
-
-        if ($competitorStatusChanged || $rankingChangedForCompetitor) {
+        if ($user->is_competitor && $user->wasChanged('ranking')) {
             RecalculateForceListAction::handle();
         }
     }

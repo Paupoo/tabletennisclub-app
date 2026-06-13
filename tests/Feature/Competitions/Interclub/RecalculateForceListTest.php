@@ -3,17 +3,37 @@
 declare(strict_types=1);
 
 use App\Actions\User\RecalculateForceListAction;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Season;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
+// Helper: create a competitor user without triggering observers mid-setup.
+function makeCompetitor(string $ranking, array $attrs = []): User
+{
+    $season = Season::current();
+    $user = User::withoutEvents(fn () => User::factory()->create(array_merge(['ranking' => $ranking], $attrs)));
+    if ($season !== null) {
+        Subscription::withoutEvents(fn () => Subscription::factory()->for($user)->create([
+            'season_id' => $season->id, 'is_competitive' => true,
+        ]));
+    }
+
+    return $user;
+}
+
+beforeEach(function (): void {
+    Season::factory()->create(['is_active' => true]);
+});
+
 it('assigns force_list ordered by ranking', function (): void {
-    $b2 = User::factory()->create(['is_competitor' => true, 'ranking' => 'B2', 'force_list' => null]);
-    $c4 = User::factory()->create(['is_competitor' => true, 'ranking' => 'C4', 'force_list' => null]);
-    $e6 = User::factory()->create(['is_competitor' => true, 'ranking' => 'E6', 'force_list' => null]);
-    $nc = User::factory()->create(['is_competitor' => true, 'ranking' => 'NC', 'force_list' => null]);
+    $b2 = makeCompetitor('B2', ['force_list' => null]);
+    $c4 = makeCompetitor('C4', ['force_list' => null]);
+    $e6 = makeCompetitor('E6', ['force_list' => null]);
+    $nc = makeCompetitor('NC', ['force_list' => null]);
 
     RecalculateForceListAction::handle();
 
@@ -23,8 +43,8 @@ it('assigns force_list ordered by ranking', function (): void {
 });
 
 it('excludes non-competitors from force_list calculation', function (): void {
-    User::factory()->create(['is_competitor' => true,  'ranking' => 'C4', 'force_list' => null]);
-    $nonComp = User::factory()->create(['is_competitor' => false, 'ranking' => 'B2', 'force_list' => null]);
+    makeCompetitor('C4', ['force_list' => null]);
+    $nonComp = User::withoutEvents(fn () => User::factory()->create(['ranking' => 'B2', 'force_list' => null]));
 
     RecalculateForceListAction::handle();
 
@@ -32,10 +52,14 @@ it('excludes non-competitors from force_list calculation', function (): void {
 });
 
 it('recalculates when a user becomes a competitor', function (): void {
-    $strong = User::factory()->create(['is_competitor' => true,  'ranking' => 'B2', 'force_list' => null]);
-    $new = User::factory()->create(['is_competitor' => false, 'ranking' => 'C4', 'force_list' => null]);
+    $season = Season::current();
+    $strong = makeCompetitor('B2', ['force_list' => null]);
+    $new = User::withoutEvents(fn () => User::factory()->create(['ranking' => 'C4', 'force_list' => null]));
 
-    $new->update(['is_competitor' => true]);
+    // Becoming a competitor: create a competitive subscription (triggers SubscriptionObserver)
+    Subscription::factory()->for($new)->create([
+        'season_id' => $season->id, 'is_competitive' => true,
+    ]);
 
     expect($strong->fresh()->force_list)->not->toBeNull();
     expect($new->fresh()->force_list)->not->toBeNull();
@@ -43,8 +67,8 @@ it('recalculates when a user becomes a competitor', function (): void {
 });
 
 it('recalculates when a competitor ranking changes', function (): void {
-    $a = User::factory()->create(['is_competitor' => true, 'ranking' => 'D2', 'force_list' => null]);
-    $b = User::factory()->create(['is_competitor' => true, 'ranking' => 'C4', 'force_list' => null]);
+    $a = makeCompetitor('D2', ['force_list' => null]);
+    $b = makeCompetitor('C4', ['force_list' => null]);
 
     $a->update(['ranking' => 'B0']);
 
@@ -52,7 +76,7 @@ it('recalculates when a competitor ranking changes', function (): void {
 });
 
 it('does not recalculate when an unrelated field changes', function (): void {
-    $user = User::factory()->create(['is_competitor' => true, 'ranking' => 'B2', 'force_list' => 1]);
+    $user = makeCompetitor('B2', ['force_list' => 1]);
     $initialForceList = $user->force_list;
 
     $user->update(['first_name' => 'Nouveau']);
@@ -61,23 +85,23 @@ it('does not recalculate when an unrelated field changes', function (): void {
 });
 
 it('recalculates when a competitor is deleted', function (): void {
-    $strong = User::factory()->create(['is_competitor' => true, 'ranking' => 'B2', 'force_list' => null]);
-    $weak = User::factory()->create(['is_competitor' => true, 'ranking' => 'D4', 'force_list' => null]);
-    $mid = User::factory()->create(['is_competitor' => true, 'ranking' => 'C0', 'force_list' => null]);
+    $strong = makeCompetitor('B2', ['force_list' => null]);
+    $weak = makeCompetitor('D4', ['force_list' => null]);
+    $mid = makeCompetitor('C0', ['force_list' => null]);
 
     RecalculateForceListAction::handle();
 
     $strong->delete();
 
-    expect(User::where('is_competitor', true)->whereNotNull('force_list')->count())
+    expect(User::competitor()->whereNotNull('force_list')->count())
         ->toBe(2);
 
     expect($mid->fresh()->force_list)->toBeLessThan($weak->fresh()->force_list);
 });
 
 it('does not recalculate when a non-competitor is deleted', function (): void {
-    $comp = User::factory()->create(['is_competitor' => true, 'ranking' => 'C0', 'force_list' => 1]);
-    $nonComp = User::factory()->create(['is_competitor' => false, 'force_list' => null]);
+    $comp = makeCompetitor('C0', ['force_list' => 1]);
+    $nonComp = User::withoutEvents(fn () => User::factory()->create(['force_list' => null]));
 
     $nonComp->delete();
 
@@ -86,14 +110,14 @@ it('does not recalculate when a non-competitor is deleted', function (): void {
 
 it('admin can recalculate force list via the users page', function (): void {
     $admin = User::factory()->isAdmin()->create();
-    User::factory()->create(['is_competitor' => true, 'ranking' => 'B2', 'force_list' => null]);
-    User::factory()->create(['is_competitor' => true, 'ranking' => 'D4', 'force_list' => null]);
+    makeCompetitor('B2', ['force_list' => null]);
+    makeCompetitor('D4', ['force_list' => null]);
 
     Livewire::actingAs($admin)
         ->test('pages::club-admin.users.index')
         ->call('recalculateForceList');
 
-    expect(User::where('is_competitor', true)->whereNull('force_list')->count())->toBe(0);
+    expect(User::competitor()->whereNull('force_list')->count())->toBe(0);
 });
 
 it('regular user cannot call recalculateForceList', function (): void {

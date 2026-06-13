@@ -15,9 +15,7 @@ class SendTeamCreatedNotification
     {
         $team = $event->team;
 
-        $admins = User::where('is_admin', true)
-            ->where('is_active', true)
-            ->get();
+        $admins = User::where('is_admin', true)->get();
 
         if ($admins->isNotEmpty()) {
             Notification::send(

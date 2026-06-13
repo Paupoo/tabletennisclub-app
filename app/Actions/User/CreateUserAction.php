@@ -24,8 +24,6 @@ class CreateUserAction
             'city_code' => $data->city_code,
             'city_name' => $data->city_name,
             'birthdate' => $data->birthdate,
-            'is_active' => $data->is_active,
-            'is_competitor' => $data->is_competitor,
             'is_committee_member' => $data->is_committee_member,
             'is_admin' => $data->is_admin,
             'is_coach' => $data->is_coach,

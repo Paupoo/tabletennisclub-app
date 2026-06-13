@@ -24,8 +24,6 @@ readonly class CreateUserData
         public ?string $city_code = null,
         public ?string $city_name = null,
         public ?string $birthdate = null,
-        public bool $is_active = true,
-        public bool $is_competitor = false,
         public bool $is_committee_member = false,
         public bool $is_admin = false,
         public bool $is_coach = false,

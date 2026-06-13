@@ -25,9 +25,9 @@ readonly class UpdateUserData
         public ?string $birthdate = null,
         public ?string $guardian_phone_number = null,
         public ?string $iban = null,
-        public bool $is_active = false,
         public bool $is_competitor = false,
         public bool $is_committee_member = false,
+
         public bool $is_admin = false,
         public bool $is_coach = false,
         public bool $has_key = false,

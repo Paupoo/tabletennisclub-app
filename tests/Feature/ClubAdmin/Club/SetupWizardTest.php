@@ -45,7 +45,6 @@ it('creates an admin user and logs in on step 2', function (): void {
     $user = User::where('email', 'admin@test.be')->first();
     expect($user)->not->toBeNull();
     expect($user->is_admin)->toBeTrue();
-    expect($user->is_active)->toBeTrue();
 });
 
 it('fails step 2 when email is already taken', function (): void {

@@ -8,7 +8,6 @@ use App\Actions\User\OnboardFromContactAction;
 use App\Actions\User\RestoreUserAction;
 use App\Actions\User\SendInvitationAction;
 use App\Actions\User\SoftDeleteUserAction;
-use App\Actions\User\ToggleActiveAction;
 use App\Actions\User\UpdateUserAction;
 use App\Data\User\CreateUserData;
 use App\Data\User\UpdateUserData;
@@ -274,29 +273,6 @@ describe('AnonymizeUserAction', function (): void {
         AnonymizeUserAction::handle($user);
 
         expect($user->fresh()->email)->toBe("deleted-{$user->id}@anonymous.local");
-    });
-});
-
-// ── ToggleActiveAction ─────────────────────────────────────────────────────────
-
-describe('ToggleActiveAction', function (): void {
-    it('activates an inactive user', function (): void {
-        $actor = $this->createFakeAdmin();
-        $user = User::factory()->create(['is_active' => false]);
-
-        ToggleActiveAction::handle($user, true, $actor);
-
-        expect($user->fresh()->is_active)->toBeTrue()
-            ->and($user->fresh()->updated_by)->toBe($actor->id);
-    });
-
-    it('deactivates an active user', function (): void {
-        $actor = $this->createFakeAdmin();
-        $user = User::factory()->create(['is_active' => true]);
-
-        ToggleActiveAction::handle($user, false, $actor);
-
-        expect($user->fresh()->is_active)->toBeFalse();
     });
 });
 

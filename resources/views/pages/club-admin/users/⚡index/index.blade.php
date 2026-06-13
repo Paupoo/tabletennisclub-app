@@ -75,10 +75,10 @@
     <div class="mb-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
         @php
             $statCards = [
-                ['label' => __('Total'),       'key' => 'total',       'icon' => 'o-users',        'bg' => 'bg-base-200',    'color' => 'text-base-content/60'],
-                ['label' => __('Active'),      'key' => 'active',      'icon' => 'o-check-circle', 'bg' => 'bg-success/10',  'color' => 'text-success'],
-                ['label' => __('Competitive'), 'key' => 'competitive', 'icon' => 'o-trophy',       'bg' => 'bg-primary/10',  'color' => 'text-primary'],
-                ['label' => __('Inactive'),    'key' => 'inactive',    'icon' => 'o-x-circle',     'bg' => 'bg-base-200',    'color' => 'text-base-content/30'],
+                ['label' => __('Total'),        'key' => 'total',        'icon' => 'o-users',        'bg' => 'bg-base-200',    'color' => 'text-base-content/60'],
+                ['label' => __('Registered'),   'key' => 'registered',   'icon' => 'o-check-circle', 'bg' => 'bg-success/10',  'color' => 'text-success'],
+                ['label' => __('Competitive'),  'key' => 'competitive',  'icon' => 'o-trophy',       'bg' => 'bg-primary/10',  'color' => 'text-primary'],
+                ['label' => __('Unregistered'), 'key' => 'unregistered', 'icon' => 'o-x-circle',     'bg' => 'bg-base-200',    'color' => 'text-base-content/30'],
             ];
         @endphp
         @foreach ($statCards as $card)
@@ -265,11 +265,6 @@
         :selecting-all-results="$selectingAllResults"
         :select-all="$selectAll">
         <x-slot:actions>
-            <x-button class="btn-ghost btn-sm" icon="o-check-circle" :label="__('Activate')"
-                wire:click="bulkActivate" spinner="bulkActivate" />
-            <x-button class="btn-ghost btn-sm" icon="o-x-circle" :label="__('Deactivate')"
-                wire:click="bulkDeactivate" spinner="bulkDeactivate" />
-            <span class="text-base-content/20">|</span>
             <x-button class="btn-ghost btn-sm" icon="o-user-group" :label="__('Add to team')"
                 wire:click="$set('addToTeamModal', true)" />
             <x-button class="btn-ghost btn-sm" icon="o-calendar" :label="__('Subscribe')"
@@ -300,9 +295,6 @@
                         <x-checkbox :label="$gender['name']" :value="$gender['id']" wire:model.live="categories" />
                     @endforeach
                 </div>
-            </div>
-            <div>
-                <x-toggle :label="__('Show inactive users')" wire:model.live="showInactiveUsers" />
             </div>
             <div>
                 <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">

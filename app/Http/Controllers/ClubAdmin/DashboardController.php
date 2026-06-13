@@ -154,7 +154,7 @@ class DashboardController extends Controller
         }
 
         if ($showSecretary || $isAdmin) {
-            $unpaidCount = User::isActive()->unpaid()->count();
+            $unpaidCount = User::active()->unpaid()->count();
             if ($unpaidCount > 0) {
                 $alerts[] = [
                     'type' => 'warning',
@@ -164,7 +164,7 @@ class DashboardController extends Controller
                 ];
             }
 
-            $incompleteProfiles = User::isActive()->withIncompleteProfile()->count();
+            $incompleteProfiles = User::active()->withIncompleteProfile()->count();
             if ($incompleteProfiles > 0) {
                 $alerts[] = [
                     'type' => 'info',
@@ -175,7 +175,7 @@ class DashboardController extends Controller
             }
 
             if ($currentSeason) {
-                $nonAffiliatedCount = User::isActive()
+                $nonAffiliatedCount = User::active()
                     ->whereDoesntHave('subscriptions', fn ($q) => $q
                         ->where('season_id', $currentSeason->id)
                         ->whereIn('status', ['pending', 'confirmed', 'paid'])

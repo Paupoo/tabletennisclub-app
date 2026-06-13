@@ -378,7 +378,7 @@ new class extends Component
             $selectedTeam = $teams->firstWhere('id', $this->selectedTeamId);
             $teamCategory = $selectedTeam?->league?->category;
 
-            $searchResults = User::where('is_competitor', true)
+            $searchResults = User::competitor()
                 ->where(fn ($q) => $q
                     ->where('first_name', 'like', '%' . $this->search . '%')
                     ->orWhere('last_name', 'like', '%' . $this->search . '%'))

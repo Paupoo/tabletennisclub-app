@@ -30,8 +30,6 @@ function refereeTournament(array $overrides = []): Tournament
 function refereeUsers(int $count): Collection
 {
     return User::factory($count)->create([
-        'is_active' => true,
-        'is_competitor' => true,
         'ranking' => 'C4',
     ]);
 }

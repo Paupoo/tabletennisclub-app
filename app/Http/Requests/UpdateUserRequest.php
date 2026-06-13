@@ -7,7 +7,6 @@ namespace App\Http\Requests;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\Ranking;
 use Illuminate\Contracts\Validation\ValidationRule;
-use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -48,7 +47,6 @@ class UpdateUserRequest extends FormRequest
             'city_name' => ['nullable', 'string'],
             'email' => ['required', 'email:rfc,dns,spoof,filter_unicode', 'unique:users,email,' . $this->route()->user->id],
             'first_name' => ['required', 'string', 'max:255'],
-            'is_active' => ['required', 'boolean'],
             'is_admin' => ['required', 'boolean'],
             'is_committee_member' => ['required', 'boolean'],
             'is_competitor' => ['required', 'boolean'],
@@ -68,22 +66,9 @@ class UpdateUserRequest extends FormRequest
         ];
     }
 
-    public function withValidator(Validator $validator): void
-    {
-        $validator->after(function (Validator $validator): void {
-            $validator->after(function (Validator $validator): void {
-                if ($this->boolean('is_competitor') && ! $this->boolean('is_active')) {
-                    $validator->errors()->add('is_active', __('The user must be active in order to compete.'));
-                }
-            });
-
-        });
-    }
-
     protected function prepareForValidation(): void
     {
         $this->merge([
-            'is_active' => $this->input('is_active') !== null,
             'is_admin' => $this->input('is_admin') !== null,
             'is_committee_member' => $this->input('is_committee_member') !== null,
             'is_competitor' => $this->input('is_competitor') !== null,

@@ -264,7 +264,7 @@ class TreasurySeeder extends Seeder
     private function seedSubscriptionPayments(Season $season, User $treasurer, CashRegister $cashRegister): void
     {
         $fee = 120; // €120
-        $users = User::where('is_active', true)->inRandomOrder()->take(22)->get();
+        $users = User::inRandomOrder()->take(22)->get();
 
         foreach ($users as $i => $user) {
             $ref = $this->generateRef();
@@ -274,7 +274,7 @@ class TreasurySeeder extends Seeder
                 'user_id' => $user->id,
                 'season_id' => $season->id,
                 'status' => 'pending',
-                'is_competitive' => $user->is_competitor,
+                'is_competitive' => ! empty($user->licence),
                 'has_other_family_members' => false,
                 'trainings_count' => 0,
                 'subscription_price' => $fee,

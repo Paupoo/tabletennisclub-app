@@ -59,8 +59,6 @@ new class extends Component
 
     public bool $showArchived = false;
 
-    public bool $showInactiveUsers = false;
-
     public bool $incompleteProfile = false;
 
     public bool $unpaidSubscription = false;
@@ -125,10 +123,6 @@ new class extends Component
             }
         }
 
-        if ($this->showInactiveUsers) {
-            $chips[] = ['key' => 'showInactiveUsers', 'label' => __('Show inactive')];
-        }
-
         if ($this->incompleteProfile) {
             $chips[] = ['key' => 'incompleteProfile', 'label' => __('Incomplete profile')];
         }
@@ -159,7 +153,6 @@ new class extends Component
     {
         $this->selectedLicenceType = 'both';
         $this->categories          = [];
-        $this->showInactiveUsers   = false;
         $this->incompleteProfile   = false;
         $this->unpaidSubscription  = false;
         $this->hasKey              = false;
@@ -183,22 +176,6 @@ new class extends Component
     }
 
     // ── Bulk actions ──────────────────────────────────────────────────────────
-
-    public function bulkActivate(): void
-    {
-        $count = count($this->selected);
-        User::whereIn('id', $this->selected)->update(['is_active' => true]);
-        $this->clearSelection();
-        $this->success(trans_choice('{1} User activated.|[2,*] :count users activated.', $count, ['count' => $count]));
-    }
-
-    public function bulkDeactivate(): void
-    {
-        $count = count($this->selected);
-        User::whereIn('id', $this->selected)->update(['is_active' => false]);
-        $this->clearSelection();
-        $this->success(trans_choice('{1} User deactivated.|[2,*] :count users deactivated.', $count, ['count' => $count]));
-    }
 
     public function bulkAddToTeam(): void
     {
@@ -369,8 +346,6 @@ new class extends Component
 
     public function updatedShowArchived(): void        { $this->resetPage(); }
 
-    public function updatedShowInactiveUsers(): void   { $this->resetPage(); }
-
     public function updatedIncompleteProfile(): void   { $this->resetPage(); }
 
     public function updatedUnpaidSubscription(): void  { $this->resetPage(); }
@@ -390,10 +365,10 @@ new class extends Component
     public function stats(): array
     {
         return [
-            'total'       => User::count(),
-            'active'      => User::where('is_active', true)->count(),
-            'competitive' => User::where('is_competitor', true)->count(),
-            'inactive'    => User::where('is_active', false)->count(),
+            'total'        => User::count(),
+            'registered'   => User::affiliatedForCurrentSeason()->count(),
+            'competitive'  => User::competitor()->count(),
+            'unregistered' => User::count() - User::affiliatedForCurrentSeason()->count(),
         ];
     }
 
@@ -470,19 +445,18 @@ new class extends Component
             ))
             ->when(
                 ! $this->showArchived && $this->selectedLicenceType === 'competitive',
-                fn ($q) => $q->where('is_competitor', true)
+                fn ($q) => $q->competitor()
             )
             ->when(
                 ! $this->showArchived && $this->selectedLicenceType === 'recreative',
-                fn ($q) => $q->where('is_competitor', false)
+                fn ($q) => $q->whereDoesntHave('subscriptions', fn ($s) => $s
+                    ->where('season_id', \App\Domains\Competitions\Interclub\Models\Season::current()?->id)
+                    ->where('is_competitive', true)
+                )
             )
             ->when(
                 $this->categories,
                 fn ($q) => $q->whereIn('gender', $this->categories)
-            )
-            ->when(
-                ! $this->showArchived && ! $this->showInactiveUsers,
-                fn ($q) => $q->where('is_active', true)
             )
             ->when(
                 count($this->team_ids) > 0,

@@ -29,6 +29,8 @@ uses(
     RefreshDatabase::class,
 )->in('Feature', 'Unit', 'Browser', '../resources/views');
 
+pest()->browser()->timeout(15_000);
+
 beforeEach(function () {
     Club::forgetOwnClub();
 });

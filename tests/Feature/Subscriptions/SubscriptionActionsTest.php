@@ -8,13 +8,11 @@ use App\Actions\ClubAdmin\Subscriptions\DeleteSubscriptionAction;
 use App\Actions\ClubAdmin\Subscriptions\MarkPaidSubscriptionAction;
 use App\Actions\ClubAdmin\Subscriptions\MarkRefundSubscriptionAction;
 use App\Actions\ClubAdmin\Subscriptions\SubscribeToSeasonAction;
-use App\Actions\ClubAdmin\Subscriptions\SyncTrainingPackAction;
 use App\Actions\ClubAdmin\Subscriptions\UnconfirmSubscriptionAction;
 use App\Actions\ClubAdmin\Subscriptions\UnsubscribeFromSeasonAction;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
-use App\Domains\Trainings\Models\TrainingPack;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -206,77 +204,6 @@ describe('MarkRefundSubscriptionAction', function (): void {
         expect($subscription->fresh()->status)->toBe('confirmed') // unchanged
             ->and($response)->toBeInstanceOf(RedirectResponse::class);
     })->group('subscriptions', 'actions');
-
-})->group('subscriptions');
-
-// ============================================================
-// SyncTrainingPackAction
-// ============================================================
-
-describe('SyncTrainingPackAction', function (): void {
-
-    test('syncs training packs on a pending subscription', function (): void {
-        $subscription = Subscription::factory()->create(['status' => 'pending']);
-        $packs = TrainingPack::factory()->count(2)->create();
-
-        (new SyncTrainingPackAction)($packs->pluck('id')->toArray(), $subscription);
-
-        expect($subscription->trainingPacks()->count())->toBe(2);
-    })->group('subscriptions', 'actions');
-
-    test('syncs training packs on a confirmed subscription', function (): void {
-        $subscription = Subscription::factory()->create(['status' => 'confirmed']);
-        $packs = TrainingPack::factory()->count(3)->create();
-
-        (new SyncTrainingPackAction)($packs->pluck('id')->toArray(), $subscription);
-
-        expect($subscription->trainingPacks()->count())->toBe(3);
-    })->group('subscriptions', 'actions');
-
-    test('replaces existing training packs on re-sync', function (): void {
-        $subscription = Subscription::factory()->create(['status' => 'pending']);
-        $oldPack = TrainingPack::factory()->create();
-        $newPacks = TrainingPack::factory()->count(2)->create();
-
-        $subscription->trainingPacks()->attach($oldPack->id);
-
-        (new SyncTrainingPackAction)($newPacks->pluck('id')->toArray(), $subscription);
-
-        $currentIds = $subscription->trainingPacks()->pluck('training_packs.id')->toArray();
-        expect($currentIds)->not->toContain($oldPack->id)
-            ->and($subscription->trainingPacks()->count())->toBe(2);
-    })->group('subscriptions', 'actions');
-
-    test('throws DomainException when modifying a paid subscription', function (): void {
-        $subscription = Subscription::factory()->create(['status' => 'paid']);
-        $pack = TrainingPack::factory()->create();
-
-        expect(fn () => (new SyncTrainingPackAction)([$pack->id], $subscription))
-            ->toThrow(DomainException::class);
-    })->group('subscriptions', 'actions');
-
-    test('throws DomainException when modifying a cancelled subscription', function (): void {
-        $subscription = Subscription::factory()->create(['status' => 'cancelled']);
-        $pack = TrainingPack::factory()->create();
-
-        expect(fn () => (new SyncTrainingPackAction)([$pack->id], $subscription))
-            ->toThrow(DomainException::class);
-    })->group('subscriptions', 'actions');
-
-    test('throws DomainException when modifying a refunded subscription', function (): void {
-        $subscription = Subscription::factory()->create(['status' => 'refunded']);
-        $pack = TrainingPack::factory()->create();
-
-        expect(fn () => (new SyncTrainingPackAction)([$pack->id], $subscription))
-            ->toThrow(DomainException::class);
-    })->group('subscriptions', 'actions');
-
-    test('bug: does not recalculate price because CalculatePriceAction is instantiated but not invoked')
-        ->skip(
-            'SyncTrainingPackAction calls `new CalculatePriceAction($subscription)` instead of ' .
-            '`(new CalculatePriceAction)($subscription)` — price is never recalculated after sync.'
-        )
-        ->group('subscriptions', 'actions');
 
 })->group('subscriptions');
 

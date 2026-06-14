@@ -21,6 +21,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Mary\Traits\Toast;
@@ -29,8 +30,6 @@ new class extends Component
 {
     use Toast, HasBreadcrumbs, WithPagination;
     use HasBulkActions, HasFilterDrawer;
-
-    public array $categories = [];
 
     // ── Quick invite ─────────────────────────────────────────────────────────
     public bool $quickInviteDrawer = false;
@@ -57,30 +56,43 @@ new class extends Component
 
     public bool $subscribeModal = false;
 
-    public bool $showArchived = false;
-
-    public bool $incompleteProfile = false;
-
-    public bool $unpaidSubscription = false;
-
-    public bool $hasKey = false;
-
-    public bool $hasCashRegister = false;
-
     // ── Filters & sort ───────────────────────────────────────────────────────
+    #[Url]
     public string $search = '';
 
+    #[Url]
     public string $selectedLicenceType = 'both';
 
+    #[Url]
+    public bool $showArchived = false;
+
+    #[Url]
+    public bool $incompleteProfile = false;
+
+    #[Url]
+    public bool $unpaidSubscription = false;
+
+    #[Url]
+    public bool $hasKey = false;
+
+    #[Url]
+    public bool $hasCashRegister = false;
+
+    /** @var array<int, string> */
+    #[Url]
+    public array $categories = [];
+
+    /** @var array<int, int> */
+    #[Url]
+    public array $team_ids = [];
+
     /** @var array{column: string, direction: string} */
+    #[Url]
     public array $sortBy = ['column' => 'last_name', 'direction' => 'asc'];
 
     public ?string $subscription_id = null;
 
     public ?int $team_id = null;
-
-    /** @var array<int, int> */
-    public array $team_ids = [];
 
     public ?int $userToDelete = null;
 

@@ -60,7 +60,7 @@
                 <x-icon name="o-magnifying-glass" class="h-4 w-4 shrink-0 text-base-content/40" />
                 <input wire:model.live.debounce.300ms="search"
                     class="flex-1 bg-transparent text-sm outline-none placeholder:text-base-content/40"
-                    :placeholder="__('Search...')" />
+                    placeholder="{{ __('Search...') }}" />
             </div>
             <button @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm">
                 <x-icon name="o-x-mark" class="h-5 w-5" />

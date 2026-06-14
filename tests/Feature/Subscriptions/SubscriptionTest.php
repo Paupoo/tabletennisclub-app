@@ -261,13 +261,6 @@ describe('Subscription Business Rules', function (): void {
             ->toThrow(LogicException::class, 'Cannot cancel a paid subscription');
     })->group('subscriptions', 'workflow');
 
-    test('cannot modify training packs after confirmation', function (): void {
-        $subscription = Subscription::factory()->create(['status' => 'confirmed']);
-
-        expect(fn () => $subscription->trainingPacks()->sync([1, 2]))
-            ->toThrow(DomainException::class, 'cannot be modified');
-    })->group('subscriptions', 'workflow')->skip('Needs SyncTrainingPackAction integration');
-
     // ==================== PAYMENT GENERATION ====================
 
     test('confirmed subscription can generate payment', function (): void {

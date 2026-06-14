@@ -129,7 +129,6 @@ function smokeSkippedRouteNames(): array
         'clubEvents.interclubs.seasons.index' => 'TODO legacy: missing view, superseded by admin.seasons.index',
         'clubEvents.interclubs.seasons.create' => 'TODO legacy: missing view',
         'clubAdmin.registrations.index' => 'TODO legacy: missing view, superseded by admin.users.registrations',
-        'clubAdmin.subscriptions.index' => 'TODO legacy: missing view',
         'admin.payments.index' => 'TODO legacy: missing view, superseded by admin.treasury.payments',
         'admin.transactions.add ' => 'TODO legacy: missing view (note: route name has a trailing space)',
         'admin.transactions.index' => 'TODO legacy: missing view, superseded by admin.treasury.transactions',

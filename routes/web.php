@@ -2,13 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Actions\ClubAdmin\Payments\GeneratePayment;
-use App\Actions\ClubAdmin\Subscriptions\CancelSubscriptionAction;
-use App\Actions\ClubAdmin\Subscriptions\ConfirmSubscriptionAction;
-use App\Actions\ClubAdmin\Subscriptions\MarkPaidSubscriptionAction;
-use App\Actions\ClubAdmin\Subscriptions\MarkRefundSubscriptionAction;
 use App\Actions\ClubAdmin\Subscriptions\SubscribeToSeasonAction;
-use App\Actions\ClubAdmin\Subscriptions\UnconfirmSubscriptionAction;
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Domains\ClubAdmin\Users\Models\User;
@@ -17,7 +11,6 @@ use App\Http\Controllers\ClubAdmin\Contact\InvitationController;
 use App\Http\Controllers\ClubAdmin\DashboardController;
 use App\Http\Controllers\ClubAdmin\Payment\PaymentController;
 use App\Http\Controllers\ClubAdmin\Subscription\RegistrationController;
-use App\Http\Controllers\ClubAdmin\Subscription\SubscriptionController;
 use App\Http\Controllers\ClubEvents\Interclub\ResultsController;
 use App\Http\Controllers\ClubEvents\Interclub\SeasonController;
 use App\Http\Controllers\ClubEvents\Meeting\MeetingPollController;
@@ -289,20 +282,8 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
 Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::resource('seasons', SeasonController::class)->names('clubEvents.interclubs.seasons');
     Route::resource('registrations', RegistrationController::class)->names('clubAdmin.registrations');
-    Route::resource('subscriptions', SubscriptionController::class)->names('clubAdmin.subscriptions')->except(['show']);
     Route::resource('payments', PaymentController::class)->names('admin.payments');
     Route::post('seasons/{season}/subscribe/', SubscribeToSeasonAction::class)->name('clubEvents.interclubs.seasons.subscribe');
-    Route::post('seasons/{season}/unsubscribe', [SubscriptionController::class, 'unsubscribe'])->name('clubAdmin.subscriptions.unsubscribe');
-    Route::post('subscriptions/sendPaymentInvite/', [PaymentController::class, 'sendInvite'])->name('clubAdmin.subscriptions.sendPaymentInvite');
-    Route::post('subscriptions/{subscription}/confirm', ConfirmSubscriptionAction::class)->name('clubAdmin.subscriptions.confirm');
-    Route::post('subscriptions/{subscription}/unconfirm', UnconfirmSubscriptionAction::class)->name('clubAdmin.subscriptions.unconfirm');
-    Route::post('subscriptions/{subscription}/cancel', CancelSubscriptionAction::class)->name('clubAdmin.subscriptions.cancel');
-    Route::post('subscriptions/{subscription}/markPaid', MarkPaidSubscriptionAction::class)->name('clubAdmin.subscriptions.markPaid');
-    Route::post('subscriptions/{subscription}/markRefunded', MarkRefundSubscriptionAction::class)->name('clubAdmin.subscriptions.markRefunded');
-    Route::post('payments/{subscription}/generate', GeneratePayment::class)->name('admin.subscription.generatePayment');
-    Route::post('subscription/{subscription}/addTrainingPack', [SubscriptionController::class, 'syncTrainingPacks'])->name('clubAdmin.subscriptions.addTrainingPack');
-    Route::get('/admin/subscriptions/{subscription}', [SubscriptionController::class, 'show'])
-        ->name('clubAdmin.subscriptions.show');
 });
 
 require __DIR__ . '/auth.php';

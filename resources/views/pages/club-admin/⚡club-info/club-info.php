@@ -39,7 +39,7 @@ new class extends Component
     #[Validate('required|string|max:100')]
     public ?string $city_name;
 
-    #[Validate('nullable|email|max:100 ')]
+    #[Validate('required|email|max:100')]
     public ?string $email_contact;
 
     #[Validate('nullable|string|max:13')]

@@ -88,6 +88,7 @@ it('creates a club record on step 3', function (): void {
         ->set('clubStreet', 'Rue de Test 1')
         ->set('clubCityCode', '1300')
         ->set('clubCityName', 'Wavre')
+        ->set('clubEmailContact', 'contact@testclub.com')
         ->call('completeStep3')
         ->assertSet('step', '4')
         ->assertSet('maxReachable', 4);

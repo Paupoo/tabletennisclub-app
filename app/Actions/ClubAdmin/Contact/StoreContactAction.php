@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Actions\ClubAdmin\Contact;
 
+use App\Domains\ClubAdmin\Contact\Models\Contact;
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Mail\ContactFormConfirmationEmail;
 use App\Mail\ContactFormNotificationEmail;
-use App\Domains\ClubAdmin\Contact\Models\Contact;
 use Exception;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use RuntimeException;
 
 class StoreContactAction
 {
@@ -27,14 +29,14 @@ class StoreContactAction
         $contact = Contact::create($validated);
 
         try {
-            // Send confirmation email to contact
             Mail::to($contact->email)->send(new ContactFormConfirmationEmail($contact));
 
-            // Send notification email to club admin
-            Mail::to(config('app.club_email'))
-                ->send(new ContactFormNotificationEmail($contact));
+            $clubEmail = Club::own()?->email_contact
+                ?? throw new RuntimeException('Club has no contact email configured.');
 
-            Log::info(__('Contact created and emails sent'), [
+            Mail::to($clubEmail)->send(new ContactFormNotificationEmail($contact));
+
+            Log::info('Contact created and emails sent', [
                 'contact_id' => $contact->id,
                 'email' => $contact->email,
             ]);

@@ -11,7 +11,7 @@ use Livewire\Livewire;
 // ── Setup ────────────────────────────────────────────────────────────────────
 
 beforeEach(function (): void {
-    Club::factory()->ownClub()->create();
+    Club::factory()->ownClub()->create(['email_contact' => 'club@test.com']);
 });
 
 // ── Helper ────────────────────────────────────────────────────────────────────

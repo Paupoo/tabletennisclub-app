@@ -232,7 +232,7 @@ new class extends Component
             'clubCityCode' => 'required|integer|between:1000,9999',
             'clubCityName' => 'required|string|max:100',
             'clubBuildingName' => 'nullable|string|max:100',
-            'clubEmailContact' => 'nullable|email:rfc|max:100',
+            'clubEmailContact' => 'required|email:rfc|max:100',
             'clubPhoneContact' => 'nullable|string|max:50',
             'clubBic' => ['nullable', 'string', 'regex:/^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/'],
             'clubBankAccount' => ['nullable', 'string', new ValidIban],

@@ -65,6 +65,8 @@ return [
 
     'asset_url' => env('ASSET_URL'),
 
+    'club_licence' => env('APP_CLUB_LICENCE'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

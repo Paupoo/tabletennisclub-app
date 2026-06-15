@@ -49,6 +49,12 @@
         <!-- Environment -->
         <ini name="memory_limit" value="1G"/>
         <env name="APP_ENV" value="testing" />
+        <!-- Force an in-memory sqlite database for tests. Without this the suite
+             falls back to .env (DB_DATABASE=laravel, the dev file DB): every run
+             would migrate/refresh the developer's database, and parallel workers
+             hammering one file can corrupt it ("database disk image is malformed"). -->
+        <env name="DB_CONNECTION" value="sqlite" force="true" />
+        <env name="DB_DATABASE" value=":memory:" force="true" />
         <!-- Array cache is per-process and reset with the app each test: no file-cache
              directory races under parallel testing, and no cross-test cache leakage. -->
         <env name="CACHE_DRIVER" value="array" />

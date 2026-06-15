@@ -3181,6 +3181,7 @@
     "Seats available (incl. driver)": "Places disponibles (conducteur compris)",
     "I would like to be a team captain": "J'aimerais être capitaine d'équipe",
     "I am willing to help as a volunteer": "Je suis prêt(e) à aider comme bénévole",
+    "I would like directed training (with a coach)": "Je souhaite un entraînement dirigé (avec coach)",
     "Season roster": "Effectif de la saison",
     "Search by name…": "Rechercher par nom…",
     "No members found": "Aucun membre trouvé",
@@ -3226,5 +3227,10 @@
     "Remove this group?": "Retirer ce groupe ?",
     "Starts a draft from the active season — packs and current enrolments are copied.": "Crée un brouillon depuis la saison active — les packs et les inscriptions actuelles sont copiés.",
     "The plan is hidden from the active list. You can still delete it later.": "Le plan est masqué de la liste active. Vous pourrez toujours le supprimer plus tard.",
-    "This permanently deletes the plan and its layout. This action is irreversible.": "Cela supprime définitivement le plan et sa répartition. Cette action est irréversible."
+    "This permanently deletes the plan and its layout. This action is irreversible.": "Cela supprime définitivement le plan et sa répartition. Cette action est irréversible.",
+    "All ages": "Tous les âges",
+    "All series": "Toutes les séries",
+    "Unranked": "Non classé",
+    "Suggest a layout": "Suggérer une répartition",
+    ":assigned members placed, :left left in the pool.": ":assigned membres répartis, :left restés au Pool."
 }

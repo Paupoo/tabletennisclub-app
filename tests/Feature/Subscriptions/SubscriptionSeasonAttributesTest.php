@@ -15,7 +15,8 @@ describe('Subscription season attributes', function (): void {
             ->can_drive->toBeFalse()
             ->seats_available->toBeNull()
             ->wants_to_be_captain->toBeFalse()
-            ->volunteer_help->toBeFalse();
+            ->volunteer_help->toBeFalse()
+            ->wants_directed_training->toBeFalse();
     })->group('subscriptions', 'season-attributes');
 
     // ==================== CASTS ====================
@@ -26,6 +27,7 @@ describe('Subscription season attributes', function (): void {
             'seats_available' => '4',
             'wants_to_be_captain' => 1,
             'volunteer_help' => 0,
+            'wants_directed_training' => 1,
         ]);
 
         $fresh = $subscription->fresh();
@@ -33,7 +35,8 @@ describe('Subscription season attributes', function (): void {
         expect($fresh->can_drive)->toBeBool()->toBeTrue()
             ->and($fresh->seats_available)->toBeInt()->toBe(4)
             ->and($fresh->wants_to_be_captain)->toBeBool()->toBeTrue()
-            ->and($fresh->volunteer_help)->toBeBool()->toBeFalse();
+            ->and($fresh->volunteer_help)->toBeBool()->toBeFalse()
+            ->and($fresh->wants_directed_training)->toBeBool()->toBeTrue();
     })->group('subscriptions', 'season-attributes');
 
     // ==================== FACTORY STATES ====================
@@ -66,6 +69,12 @@ describe('Subscription season attributes', function (): void {
         expect($subscription->fresh()->volunteer_help)->toBeTrue();
     })->group('subscriptions', 'season-attributes');
 
+    test('wantsDirectedTraining state sets wants_directed_training', function (): void {
+        $subscription = Subscription::factory()->wantsDirectedTraining()->create();
+
+        expect($subscription->fresh()->wants_directed_training)->toBeTrue();
+    })->group('subscriptions', 'season-attributes');
+
     // ==================== SCOPES ====================
 
     test('drivers scope returns only subscriptions that can drive', function (): void {
@@ -85,6 +94,16 @@ describe('Subscription season attributes', function (): void {
         $results = Subscription::captainVolunteers()->pluck('id');
 
         expect($results)->toContain($captain->id)
+            ->not->toContain($other->id);
+    })->group('subscriptions', 'season-attributes');
+
+    test('wantsDirectedTraining scope returns only interested members', function (): void {
+        $interested = Subscription::factory()->wantsDirectedTraining()->create();
+        $other = Subscription::factory()->create();
+
+        $results = Subscription::wantsDirectedTraining()->pluck('id');
+
+        expect($results)->toContain($interested->id)
             ->not->toContain($other->id);
     })->group('subscriptions', 'season-attributes');
 

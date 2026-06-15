@@ -3181,6 +3181,7 @@
     "Seats available (incl. driver)": "Beschikbare plaatsen (incl. bestuurder)",
     "I would like to be a team captain": "Ik wil graag teamkapitein zijn",
     "I am willing to help as a volunteer": "Ik wil graag helpen als vrijwilliger",
+    "I would like directed training (with a coach)": "Ik wil begeleide training (met een coach)",
     "Season roster": "Ledenlijst seizoen",
     "Search by name…": "Zoeken op naam…",
     "No members found": "Geen leden gevonden",
@@ -3226,5 +3227,10 @@
     "Remove this group?": "Deze groep verwijderen?",
     "Starts a draft from the active season — packs and current enrolments are copied.": "Maakt een concept vanuit het actieve seizoen — packs en huidige inschrijvingen worden gekopieerd.",
     "The plan is hidden from the active list. You can still delete it later.": "Het plan wordt verborgen uit de actieve lijst. U kunt het later nog verwijderen.",
-    "This permanently deletes the plan and its layout. This action is irreversible.": "Dit verwijdert het plan en de indeling definitief. Deze actie is onomkeerbaar."
+    "This permanently deletes the plan and its layout. This action is irreversible.": "Dit verwijdert het plan en de indeling definitief. Deze actie is onomkeerbaar.",
+    "All ages": "Alle leeftijden",
+    "All series": "Alle reeksen",
+    "Unranked": "Niet geklasseerd",
+    "Suggest a layout": "Een indeling voorstellen",
+    ":assigned members placed, :left left in the pool.": ":assigned leden ingedeeld, :left in de pool gebleven."
 }

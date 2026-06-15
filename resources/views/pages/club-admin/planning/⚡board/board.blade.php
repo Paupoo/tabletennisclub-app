@@ -94,6 +94,9 @@
                             :value="$overCapacityCount . ' ' . __('over capacity')" />
                     @endif
                     @if ($canManage)
+                        <x-button class="btn-secondary btn-sm" icon="o-sparkles"
+                            :label="__('Suggest a layout')" wire:click="optimize"
+                            spinner="optimize" />
                         <x-button class="btn-primary btn-sm" icon="o-plus"
                             :label="__('Add a group')" wire:click="openAddPack" />
                     @endif
@@ -125,7 +128,10 @@
                         <span class="truncate text-sm font-semibold">{{ $column['name'] }}</span>
                         <div class="flex shrink-0 items-center gap-1">
                             @if ($column['is_pool'])
-                                <x-badge :value="(string) $column['current_count']" class="badge-ghost badge-sm" />
+                                @php($poolFiltered = $poolAgeFilter !== '' || $poolSeriesFilter !== '')
+                                <x-badge
+                                    :value="$poolFiltered ? $column['current_count'] . ' / ' . ($column['total_count'] ?? $column['current_count']) : (string) $column['current_count']"
+                                    class="badge-ghost badge-sm" />
                             @elseif ($column['max_participants'] === null)
                                 <x-badge :value="$column['current_count'] . ' / ∞'" class="badge-ghost badge-sm" />
                             @else
@@ -142,6 +148,21 @@
                             @endif
                         </div>
                     </div>
+
+                    {{-- Pool-only quick filters (age category + ranking series).
+                         Visible to everyone; drag-drop still works on shown cards. --}}
+                    @if ($column['is_pool'])
+                        <div class="flex shrink-0 items-center gap-2 border-b border-base-200 px-2 py-1.5">
+                            <x-select wire:model.live="poolAgeFilter"
+                                :options="$poolAgeOptions"
+                                :placeholder="__('All ages')" placeholder-value=""
+                                class="select-xs" :label="null" />
+                            <x-select wire:model.live="poolSeriesFilter"
+                                :options="$poolSeriesOptions"
+                                :placeholder="__('All series')" placeholder-value=""
+                                class="select-xs" :label="null" />
+                        </div>
+                    @endif
 
                     {{-- Scrollable member list (drag-drop group) --}}
                     <ul class="min-h-16 flex-1 space-y-1.5 overflow-y-auto p-2"

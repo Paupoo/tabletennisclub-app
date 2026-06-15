@@ -117,6 +117,12 @@
                         :checked="$row->volunteer_help" :disabled="! $canManage"
                         wire:change="updateAttribute({{ $row->id }}, 'volunteer_help', $event.target.checked)" />
                 @endscope
+
+                @scope('cell_wants_directed_training', $row, $canManage)
+                    <x-toggle wire:key="directed-{{ $row->id }}"
+                        :checked="$row->wants_directed_training" :disabled="! $canManage"
+                        wire:change="updateAttribute({{ $row->id }}, 'wants_directed_training', $event.target.checked)" />
+                @endscope
             </x-table>
 
             <div class="mt-4">
@@ -155,6 +161,13 @@
                 </p>
                 <x-select :options="$triStateOptions" :placeholder="__('Any')"
                     wire:model.live="volunteerHelp" class="w-full" />
+            </div>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    {{ __('Directed') }}
+                </p>
+                <x-select :options="$triStateOptions" :placeholder="__('Any')"
+                    wire:model.live="wantsDirectedTraining" class="w-full" />
             </div>
             <div>
                 <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">

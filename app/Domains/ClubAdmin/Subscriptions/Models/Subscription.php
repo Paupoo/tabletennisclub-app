@@ -42,6 +42,7 @@ use Illuminate\Support\Carbon;
  * @property int|null $seats_available
  * @property bool $wants_to_be_captain
  * @property bool $volunteer_help
+ * @property bool $wants_directed_training
  * @property float $subscription_price
  * @property float $training_unit_price
  * @property float $amount_due
@@ -59,6 +60,7 @@ use Illuminate\Support\Carbon;
  * @method static Builder<static>|Subscription active()
  * @method static Builder<static>|Subscription captainVolunteers()
  * @method static Builder<static>|Subscription drivers()
+ * @method static Builder<static>|Subscription wantsDirectedTraining()
  * @method static \Database\Factories\Domains\ClubAdmin\Subscriptions\Models\SubscriptionFactory factory($count = null, $state = [])
  * @method static Builder<static>|Subscription forSeason(\App\Domains\Competitions\Interclub\Models\Season|int $season)
  * @method static Builder<static>|Subscription newModelQuery()
@@ -83,6 +85,7 @@ use Illuminate\Support\Carbon;
  * @method static Builder<static>|Subscription whereUpdatedAt($value)
  * @method static Builder<static>|Subscription whereUserId($value)
  * @method static Builder<static>|Subscription whereVolunteerHelp($value)
+ * @method static Builder<static>|Subscription whereWantsDirectedTraining($value)
  * @method static Builder<static>|Subscription whereWantsToBeCaptain($value)
  * @method static Builder<static>|Subscription withTrashed(bool $withTrashed = true)
  * @method static Builder<static>|Subscription withoutTrashed()
@@ -103,6 +106,7 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
         'seats_available' => 'integer',
         'wants_to_be_captain' => 'boolean',
         'volunteer_help' => 'boolean',
+        'wants_directed_training' => 'boolean',
     ];
 
     protected $fillable = [
@@ -115,6 +119,7 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
         'seats_available',
         'wants_to_be_captain',
         'volunteer_help',
+        'wants_directed_training',
         'amount_due',
         'amount_paid',
         'subscription_price',
@@ -283,6 +288,14 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
     public function scopePendingPayment(Builder $query): Builder
     {
         return $query->whereIn('status', ['pending', 'confirmed']);
+    }
+
+    /**
+     * Scope pour récupérer les inscriptions dont le membre souhaite un entraînement dirigé (avec coach).
+     */
+    public function scopeWantsDirectedTraining(Builder $query): Builder
+    {
+        return $query->where('wants_directed_training', true);
     }
 
     // ==================== Relations ====================

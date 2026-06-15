@@ -15,6 +15,7 @@ use App\Domains\Trainings\Models\TrainingPlanPack;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Services\ClubAdmin\Planning\ExportTrainingPlanService;
 use App\Services\ClubAdmin\Planning\ImportTrainingPlanService;
+use App\Services\ClubAdmin\Planning\OptimizeTrainingPlanService;
 use App\Services\ClubAdmin\Planning\SeedTrainingPlanService;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Facades\Gate;
@@ -67,6 +68,12 @@ new class extends Component
     /** Currently opened plan; null = plan management view. */
     #[Url]
     public ?int $selectedPlanId = null;
+
+    /** Pool-only filter: age category value (AgeCategoryEnum) or '' for all. */
+    public string $poolAgeFilter = '';
+
+    /** Pool-only filter: ranking series (A–E or NG) or '' for all. */
+    public string $poolSeriesFilter = '';
 
     /** Confirm-modal visibility for destructive actions. */
     public bool $confirmArchiveModal = false;
@@ -201,6 +208,29 @@ new class extends Component
             'updated' => $summary['updated'],
             'unmatched' => count($summary['unmatched']),
             'skipped' => count($summary['skipped']),
+        ]));
+    }
+
+    /**
+     * Suggest a homogeneous layout: fill the pool into the existing packs
+     * (level first, then age, capacity respected). Non-destructive — already
+     * placed members never move (decision #18: management only).
+     */
+    public function optimize(OptimizeTrainingPlanService $optimizer): void
+    {
+        Gate::authorize('manage-season');
+
+        $plan = $this->currentPlan();
+
+        if ($plan === null) {
+            return;
+        }
+
+        $summary = $optimizer->optimize($plan);
+
+        $this->success(__(':assigned members placed, :left left in the pool.', [
+            'assigned' => $summary['assigned'],
+            'left' => $summary['left_in_pool'],
         ]));
     }
 
@@ -429,6 +459,17 @@ new class extends Component
         $columns = $plan !== null ? $this->buildColumns($plan) : [];
         $this->overCapacityCount = collect($columns)->where('over_capacity', true)->count();
 
+        // Explicit child → teen → adult order (Pint sorts enum cases alphabetically).
+        $poolAgeOptions = collect([
+            AgeCategoryEnum::CHILD,
+            AgeCategoryEnum::TEEN,
+            AgeCategoryEnum::ADULT,
+        ])->map(fn (AgeCategoryEnum $c): array => ['id' => $c->value, 'name' => $c->getLabel()]);
+
+        $poolSeriesOptions = collect(['A', 'B', 'C', 'D', 'E'])
+            ->map(fn (string $s): array => ['id' => $s, 'name' => $s])
+            ->push(['id' => 'NG', 'name' => __('Unranked')]);
+
         return [
             'breadcrumbs' => $this->getBreadcrumbs(),
             'season' => $season,
@@ -436,6 +477,8 @@ new class extends Component
             'plans' => $season !== null ? $this->plansForSeason($season) : collect(),
             'columns' => $columns,
             'canManage' => $this->canManage,
+            'poolAgeOptions' => $poolAgeOptions,
+            'poolSeriesOptions' => $poolSeriesOptions,
         ];
     }
 
@@ -458,7 +501,7 @@ new class extends Component
      * @return array<int, array{
      *   id: string, pack_id: int|null, name: string, is_pool: bool,
      *   level: ?string, day_of_week: ?int, max_participants: ?int,
-     *   current_count: int, over_capacity: bool,
+     *   current_count: int, total_count?: int, over_capacity: bool,
      *   cards: array<int, array<string, mixed>>
      * }>
      */
@@ -496,8 +539,14 @@ new class extends Component
             ];
         }
 
-        // Pool column always last.
+        // Pool column always last. Filters (age category + ranking series) apply
+        // to the pool only (decision: fast manual composition), never to groups.
         $poolAssignments = $byPack->get('pool', collect());
+        $poolCards = $poolAssignments
+            ->map(fn (TrainingPlanAssignment $a): array => $this->toCard($a))
+            ->filter(fn (array $card): bool => $this->cardMatchesPoolFilters($card))
+            ->values();
+
         $columns[] = [
             'id' => 'pool',
             'pack_id' => null,
@@ -506,12 +555,46 @@ new class extends Component
             'level' => null,
             'day_of_week' => null,
             'max_participants' => null,
-            'current_count' => $poolAssignments->count(),
+            // `current_count` reflects the displayed subset; `total_count` keeps the
+            // full pool size so the header can show "shown / total" when filtering.
+            'current_count' => $poolCards->count(),
+            'total_count' => $poolAssignments->count(),
             'over_capacity' => false,
-            'cards' => $poolAssignments->map(fn (TrainingPlanAssignment $a): array => $this->toCard($a))->values()->all(),
+            'cards' => $poolCards->all(),
         ];
 
         return $columns;
+    }
+
+    /**
+     * Whether a pool card passes the active age-category and ranking-series filters.
+     * An empty filter matches everything.
+     *
+     * @param  array<string, mixed>  $card
+     */
+    private function cardMatchesPoolFilters(array $card): bool
+    {
+        if ($this->poolAgeFilter !== '' && $card['age_category'] !== $this->poolAgeFilter) {
+            return false;
+        }
+
+        if ($this->poolSeriesFilter !== '' && $this->rankingSeries((string) $card['ranking']) !== $this->poolSeriesFilter) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Derive the ranking series from a raw ranking string. A leading letter A–E
+     * (e.g. "B2", "e6") maps to that uppercase letter; anything else (empty,
+     * "NG", "D0" still gives "D") falls back to "NG" for non-classified members.
+     */
+    public function rankingSeries(?string $ranking): string
+    {
+        $first = strtoupper(substr(trim((string) $ranking), 0, 1));
+
+        return in_array($first, ['A', 'B', 'C', 'D', 'E'], true) ? $first : 'NG';
     }
 
     /**
@@ -520,8 +603,9 @@ new class extends Component
      *
      * @return array{
      *   id: int, user_id: int, name: string, ranking: ?string,
-     *   age_label: ?string, is_competitive: bool, can_drive: bool,
-     *   seats_available: ?int, wants_to_be_captain: bool, volunteer_help: bool
+     *   age_category: ?string, age_label: ?string, is_competitive: bool,
+     *   can_drive: bool, seats_available: ?int, wants_to_be_captain: bool,
+     *   volunteer_help: bool
      * }
      */
     protected function toCard(TrainingPlanAssignment $assignment): array
@@ -538,6 +622,7 @@ new class extends Component
             'user_id' => $user->id,
             'name' => $user->first_name . ' ' . $user->last_name,
             'ranking' => $user->ranking,
+            'age_category' => $category?->value,
             'age_label' => $category?->getLabel(),
             'is_competitive' => (bool) $sub?->is_competitive,
             'can_drive' => (bool) $sub?->can_drive,

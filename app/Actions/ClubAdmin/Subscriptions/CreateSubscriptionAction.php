@@ -18,7 +18,8 @@ class CreateSubscriptionAction
      *     can_drive?: bool,
      *     seats_available?: ?int,
      *     wants_to_be_captain?: bool,
-     *     volunteer_help?: bool
+     *     volunteer_help?: bool,
+     *     wants_directed_training?: bool
      * }  $options
      */
     public function execute(User $user, Season $season, array $options = []): Subscription
@@ -55,6 +56,7 @@ class CreateSubscriptionAction
             'seats_available' => $options['seats_available'] ?? null,
             'wants_to_be_captain' => $options['wants_to_be_captain'] ?? false,
             'volunteer_help' => $options['volunteer_help'] ?? false,
+            'wants_directed_training' => $options['wants_directed_training'] ?? false,
             'subscription_price' => $season->base_price ?? 0, // Prix de base de la saison
             'training_unit_price' => $season->training_price ?? 0,
             'amount_due' => 0, // Sera calculé lors de la confirmation

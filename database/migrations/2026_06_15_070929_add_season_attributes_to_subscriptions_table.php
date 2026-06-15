@@ -19,6 +19,7 @@ return new class extends Migration
                 'seats_available',
                 'wants_to_be_captain',
                 'volunteer_help',
+                'wants_directed_training',
             ]);
         });
     }
@@ -33,6 +34,7 @@ return new class extends Migration
             $table->unsignedTinyInteger('seats_available')->nullable()->after('can_drive');
             $table->boolean('wants_to_be_captain')->default(false)->after('seats_available');
             $table->boolean('volunteer_help')->default(false)->after('wants_to_be_captain');
+            $table->boolean('wants_directed_training')->default(false)->after('volunteer_help');
         });
     }
 };

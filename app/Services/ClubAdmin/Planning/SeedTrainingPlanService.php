@@ -126,7 +126,11 @@ class SeedTrainingPlanService
     }
 
     /**
-     * Put every remaining season member (not yet assigned to a pack) into the pool.
+     * Put every remaining season member into the pool, but only those who opted in
+     * to directed training (`wants_directed_training = true`). Members who are not
+     * interested are ignored — they never reach the planning board (decision #11).
+     *
+     * Members already assigned to a real pack are copied as-is upstream and skipped here.
      *
      * @param  array<int, int>  $assignedUserIds
      */
@@ -134,6 +138,7 @@ class SeedTrainingPlanService
     {
         $poolUserIds = Subscription::query()
             ->where('season_id', $season->id)
+            ->wantsDirectedTraining()
             ->whereNotIn('user_id', array_values($assignedUserIds))
             ->distinct()
             ->pluck('user_id');

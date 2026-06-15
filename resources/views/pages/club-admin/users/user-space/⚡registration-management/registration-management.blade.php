@@ -286,6 +286,10 @@
                                             <x-toggle
                                                 wire:model="registrations.{{ $userId }}.volunteer_help"
                                                 :label="__('I am willing to help as a volunteer')" />
+
+                                            <x-toggle
+                                                wire:model="registrations.{{ $userId }}.wants_directed_training"
+                                                :label="__('I would like directed training (with a coach)')" />
                                         </div>
 
                                         <x-button

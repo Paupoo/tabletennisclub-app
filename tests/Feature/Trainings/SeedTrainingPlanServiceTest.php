@@ -65,7 +65,7 @@ describe('SeedTrainingPlanService', function (): void {
         $enrolled = Subscription::factory()->create(['season_id' => $season->id, 'user_id' => User::factory()]);
         $enrolled->trainingPacks()->attach($pack->id, ['status' => 'enrolled']);
 
-        $pending = Subscription::factory()->create(['season_id' => $season->id, 'user_id' => User::factory()]);
+        $pending = Subscription::factory()->wantsDirectedTraining()->create(['season_id' => $season->id, 'user_id' => User::factory()]);
         $pending->trainingPacks()->attach($pack->id, ['status' => 'pending']);
 
         $plan = seedService()->seedFromSeason($season, 'Scenario', null);
@@ -79,16 +79,52 @@ describe('SeedTrainingPlanService', function (): void {
         expect($pool)->toContain($pending->user_id);
     })->group('trainings', 'planning');
 
-    test('season members without an enrolled pack land in the pool', function (): void {
+    test('season members who want directed training but have no pack land in the pool', function (): void {
         $season = Season::factory()->create();
         TrainingPack::factory()->create(['season_id' => $season->id, 'is_active' => true]);
 
-        $withoutPack = Subscription::factory()->create(['season_id' => $season->id, 'user_id' => User::factory()]);
+        $withoutPack = Subscription::factory()->wantsDirectedTraining()->create(['season_id' => $season->id, 'user_id' => User::factory()]);
 
         $plan = seedService()->seedFromSeason($season, 'Scenario', null);
 
         $pool = $plan->assignments()->whereNull('training_plan_pack_id')->pluck('user_id');
         expect($pool)->toContain($withoutPack->user_id);
+    })->group('trainings', 'planning');
+
+    test('members who do not want directed training are excluded from the pool', function (): void {
+        $season = Season::factory()->create();
+        TrainingPack::factory()->create(['season_id' => $season->id, 'is_active' => true]);
+
+        // Opted in → appears in the pool.
+        $interested = Subscription::factory()->wantsDirectedTraining()->create(['season_id' => $season->id, 'user_id' => User::factory()]);
+
+        // Default opt-out → ignored entirely by the planning board.
+        $notInterested = Subscription::factory()->create(['season_id' => $season->id, 'user_id' => User::factory()]);
+
+        $plan = seedService()->seedFromSeason($season, 'Scenario', null);
+
+        $pool = $plan->assignments()->whereNull('training_plan_pack_id')->pluck('user_id');
+        expect($pool)->toContain($interested->user_id)
+            ->and($pool)->not->toContain($notInterested->user_id);
+
+        // The non-interested member must not appear anywhere in the plan.
+        $allUserIds = $plan->assignments()->pluck('user_id');
+        expect($allUserIds)->not->toContain($notInterested->user_id);
+    })->group('trainings', 'planning');
+
+    test('members enrolled in a real pack are copied even without directed training opt-in', function (): void {
+        $season = Season::factory()->create();
+        $pack = TrainingPack::factory()->create(['season_id' => $season->id, 'is_active' => true]);
+
+        // Enrolled in a real pack but did NOT opt into directed training.
+        $enrolled = Subscription::factory()->create(['season_id' => $season->id, 'user_id' => User::factory()]);
+        $enrolled->trainingPacks()->attach($pack->id, ['status' => 'enrolled']);
+
+        $plan = seedService()->seedFromSeason($season, 'Scenario', null);
+
+        $allUserIds = $plan->assignments()->pluck('user_id');
+        expect($allUserIds)->toContain($enrolled->user_id)
+            ->and($plan->packs->first()->currentCount())->toBe(1);
     })->group('trainings', 'planning');
 
     test('a member enrolled in two packs is assigned only once', function (): void {
@@ -112,11 +148,11 @@ describe('SeedTrainingPlanService', function (): void {
 
         $enrolled = Subscription::factory()->create(['season_id' => $season->id, 'user_id' => User::factory()]);
         $enrolled->trainingPacks()->attach($pack->id, ['status' => 'enrolled']);
-        $poolMember = Subscription::factory()->create(['season_id' => $season->id, 'user_id' => User::factory()]);
+        $poolMember = Subscription::factory()->wantsDirectedTraining()->create(['season_id' => $season->id, 'user_id' => User::factory()]);
 
         // A subscription from another season must be ignored.
         $otherSeason = Season::factory()->create();
-        Subscription::factory()->create(['season_id' => $otherSeason->id, 'user_id' => User::factory()]);
+        Subscription::factory()->wantsDirectedTraining()->create(['season_id' => $otherSeason->id, 'user_id' => User::factory()]);
 
         $plan = seedService()->seedFromSeason($season, 'Scenario', null);
 

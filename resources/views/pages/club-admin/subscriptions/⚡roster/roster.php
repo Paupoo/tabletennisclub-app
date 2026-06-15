@@ -48,6 +48,10 @@ new class extends Component
 
     /** Tri-state filter: '1' yes, '0' no, '' any. */
     #[Url]
+    public string $wantsDirectedTraining = '';
+
+    /** Tri-state filter: '1' yes, '0' no, '' any. */
+    #[Url]
     public string $wantsToBeCaptain = '';
 
     public function clearFilters(): void
@@ -56,6 +60,7 @@ new class extends Component
         $this->canDrive = '';
         $this->wantsToBeCaptain = '';
         $this->volunteerHelp = '';
+        $this->wantsDirectedTraining = '';
         $this->ageCategory = '';
         $this->resetPage();
     }
@@ -88,6 +93,10 @@ new class extends Component
 
         if (filled($this->volunteerHelp)) {
             $chips[] = ['key' => 'volunteerHelp', 'label' => __('Volunteer') . ': ' . $yesNo($this->volunteerHelp)];
+        }
+
+        if (filled($this->wantsDirectedTraining)) {
+            $chips[] = ['key' => 'wantsDirectedTraining', 'label' => __('Directed') . ': ' . $yesNo($this->wantsDirectedTraining)];
         }
 
         if (filled($this->ageCategory)) {
@@ -128,6 +137,11 @@ new class extends Component
         $this->resetPage();
     }
 
+    public function updatedWantsDirectedTraining(): void
+    {
+        $this->resetPage();
+    }
+
     public function updatedWantsToBeCaptain(): void
     {
         $this->resetPage();
@@ -141,7 +155,7 @@ new class extends Component
     {
         $this->authorizeManagement();
 
-        if (! in_array($attribute, ['can_drive', 'wants_to_be_captain', 'volunteer_help'], true)) {
+        if (! in_array($attribute, ['can_drive', 'wants_to_be_captain', 'volunteer_help', 'wants_directed_training'], true)) {
             return;
         }
 
@@ -200,6 +214,7 @@ new class extends Component
             ['key' => 'can_drive', 'label' => __('Can drive'), 'sortable' => false],
             ['key' => 'wants_to_be_captain', 'label' => __('Captain'), 'sortable' => false, 'class' => 'hidden lg:table-cell'],
             ['key' => 'volunteer_help', 'label' => __('Volunteer'), 'sortable' => false, 'class' => 'hidden lg:table-cell'],
+            ['key' => 'wants_directed_training', 'label' => __('Directed'), 'sortable' => false, 'class' => 'hidden lg:table-cell'],
         ];
 
         return [
@@ -247,7 +262,8 @@ new class extends Component
             ->when($this->competitive !== '', fn ($q) => $q->where('is_competitive', $this->competitive === '1'))
             ->when($this->canDrive !== '', fn ($q) => $q->where('can_drive', $this->canDrive === '1'))
             ->when($this->wantsToBeCaptain !== '', fn ($q) => $q->where('wants_to_be_captain', $this->wantsToBeCaptain === '1'))
-            ->when($this->volunteerHelp !== '', fn ($q) => $q->where('volunteer_help', $this->volunteerHelp === '1'));
+            ->when($this->volunteerHelp !== '', fn ($q) => $q->where('volunteer_help', $this->volunteerHelp === '1'))
+            ->when($this->wantsDirectedTraining !== '', fn ($q) => $q->where('wants_directed_training', $this->wantsDirectedTraining === '1'));
 
         if ($this->sortBy['column'] === 'ranking') {
             $query->join('users', 'users.id', '=', 'subscriptions.user_id')
@@ -282,7 +298,8 @@ new class extends Component
      * @return object{
      *   id: int, name: string, ranking: ?string, age_category: ?string,
      *   age_label: ?string, is_competitive: bool, can_drive: bool,
-     *   seats_available: ?int, wants_to_be_captain: bool, volunteer_help: bool
+     *   seats_available: ?int, wants_to_be_captain: bool, volunteer_help: bool,
+     *   wants_directed_training: bool
      * }
      */
     protected function toRow(Subscription $sub): object
@@ -301,6 +318,7 @@ new class extends Component
             'seats_available' => $sub->seats_available,
             'wants_to_be_captain' => $sub->wants_to_be_captain,
             'volunteer_help' => $sub->volunteer_help,
+            'wants_directed_training' => $sub->wants_directed_training,
         ];
     }
 

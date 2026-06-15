@@ -42,6 +42,7 @@ class SubscriptionFactory extends Factory
             'seats_available' => null,
             'wants_to_be_captain' => false,
             'volunteer_help' => false,
+            'wants_directed_training' => false,
             'amount_due' => $amountDue,
             'amount_paid' => 0,
             'created_at' => $this->faker->dateTimeBetween('-30 days', 'now'),
@@ -77,6 +78,16 @@ class SubscriptionFactory extends Factory
     {
         return $this->state(fn (array $attributes): array => [
             'wants_to_be_captain' => true,
+        ]);
+    }
+
+    /**
+     * Le membre souhaite un entraînement dirigé (avec coach).
+     */
+    public function wantsDirectedTraining(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'wants_directed_training' => true,
         ]);
     }
 }

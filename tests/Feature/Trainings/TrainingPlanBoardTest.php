@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Shared\Enums\AgeCategoryEnum;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\TrainingPlanStatusEnum;
 use App\Domains\Trainings\Models\TrainingPack;
@@ -59,6 +60,7 @@ describe('plan management', function (): void {
             'user_id' => $member->id,
             'season_id' => $this->season->id,
             'status' => 'paid',
+            'wants_directed_training' => true,
         ]);
 
         Livewire::actingAs($this->manager)
@@ -176,6 +178,132 @@ describe('board rendering', function (): void {
             ->assertSee('Assigned Member')
             ->assertSee('Pooled Person')
             ->assertSee('B0');
+    });
+});
+
+describe('pool ranking series derivation', function (): void {
+    it('maps a ranking to its series letter or NG when unranked', function (string $ranking, string $expected): void {
+        $component = Livewire::actingAs($this->manager)->test(BOARD);
+
+        expect($component->instance()->rankingSeries($ranking))->toBe($expected);
+    })->with([
+        'B series' => ['B2', 'B'],
+        'D series' => ['D0', 'D'],
+        'explicit NG' => ['NG', 'NG'],
+        'empty is unranked' => ['', 'NG'],
+        'lowercase e is normalised' => ['e6', 'E'],
+        'uppercase E' => ['E6', 'E'],
+        'A series' => ['A1', 'A'],
+        'C series' => ['C4', 'C'],
+    ]);
+});
+
+describe('pool filtering', function (): void {
+    /**
+     * Helper: create a pooled member with the given ranking/birthdate.
+     */
+    $makePooled = function (TrainingPlan $plan, Season $season, string $first, ?string $ranking, $birthdate): void {
+        $user = User::factory()->create([
+            'first_name' => $first,
+            'last_name' => 'Pool',
+            'ranking' => $ranking,
+            'birthdate' => $birthdate,
+        ]);
+        Subscription::factory()->create([
+            'user_id' => $user->id,
+            'season_id' => $season->id,
+            'status' => 'paid',
+        ]);
+        TrainingPlanAssignment::factory()->for($plan, 'plan')->inPool()->create([
+            'user_id' => $user->id,
+        ]);
+    };
+
+    it('shows the whole pool when no filter is active', function () use ($makePooled): void {
+        $plan = TrainingPlan::factory()->create(['season_id' => $this->season->id]);
+        $makePooled($plan, $this->season, 'Childish', 'B2', now()->subYears(10));
+        $makePooled($plan, $this->season, 'Grownup', 'D0', now()->subYears(40));
+
+        $component = Livewire::actingAs($this->manager)
+            ->test(BOARD, ['selectedPlanId' => $plan->id]);
+
+        $pool = collect($component->viewData('columns'))->firstWhere('is_pool', true);
+
+        expect($pool['cards'])->toHaveCount(2);
+    });
+
+    it('filters the pool by age category without touching the groups', function () use ($makePooled): void {
+        $plan = TrainingPlan::factory()->create(['season_id' => $this->season->id]);
+        $pack = TrainingPlanPack::factory()->for($plan, 'plan')->create(['name' => 'Group A']);
+
+        // A group member (adult) — must stay regardless of the pool filter.
+        $grouped = User::factory()->create(['first_name' => 'Grouped', 'birthdate' => now()->subYears(35)]);
+        TrainingPlanAssignment::factory()->for($plan, 'plan')->for($pack, 'pack')->create([
+            'user_id' => $grouped->id,
+        ]);
+
+        $makePooled($plan, $this->season, 'Kiddo', 'B2', now()->subYears(10));
+        $makePooled($plan, $this->season, 'Adultish', 'B2', now()->subYears(40));
+
+        $component = Livewire::actingAs($this->manager)
+            ->test(BOARD, ['selectedPlanId' => $plan->id])
+            ->set('poolAgeFilter', AgeCategoryEnum::CHILD->value);
+
+        $columns = collect($component->viewData('columns'));
+        $pool = $columns->firstWhere('is_pool', true);
+        $group = $columns->firstWhere('id', 'pack-' . $pack->id);
+
+        expect($pool['cards'])->toHaveCount(1)
+            ->and($pool['cards'][0]['name'])->toBe('Kiddo Pool')
+            ->and($group['cards'])->toHaveCount(1);
+    });
+
+    it('filters the pool by ranking series', function () use ($makePooled): void {
+        $plan = TrainingPlan::factory()->create(['season_id' => $this->season->id]);
+        $makePooled($plan, $this->season, 'BeeOne', 'B2', now()->subYears(30));
+        $makePooled($plan, $this->season, 'DeeOne', 'D0', now()->subYears(30));
+        $makePooled($plan, $this->season, 'NoRank', '', now()->subYears(30));
+
+        $component = Livewire::actingAs($this->manager)
+            ->test(BOARD, ['selectedPlanId' => $plan->id])
+            ->set('poolSeriesFilter', 'D');
+
+        $pool = collect($component->viewData('columns'))->firstWhere('is_pool', true);
+
+        expect($pool['cards'])->toHaveCount(1)
+            ->and($pool['cards'][0]['name'])->toBe('Deeone Pool');
+    });
+
+    it('filters the pool to unranked members with the NG series', function () use ($makePooled): void {
+        $plan = TrainingPlan::factory()->create(['season_id' => $this->season->id]);
+        $makePooled($plan, $this->season, 'BeeOne', 'B2', now()->subYears(30));
+        $makePooled($plan, $this->season, 'NoRank', '', now()->subYears(30));
+
+        $component = Livewire::actingAs($this->manager)
+            ->test(BOARD, ['selectedPlanId' => $plan->id])
+            ->set('poolSeriesFilter', 'NG');
+
+        $pool = collect($component->viewData('columns'))->firstWhere('is_pool', true);
+
+        expect($pool['cards'])->toHaveCount(1)
+            ->and($pool['cards'][0]['name'])->toBe('Norank Pool');
+    });
+
+    it('combines age and series filters on the pool', function () use ($makePooled): void {
+        $plan = TrainingPlan::factory()->create(['season_id' => $this->season->id]);
+        $makePooled($plan, $this->season, 'ChildB', 'B2', now()->subYears(10));
+        $makePooled($plan, $this->season, 'AdultB', 'B2', now()->subYears(40));
+        $makePooled($plan, $this->season, 'ChildD', 'D0', now()->subYears(10));
+
+        $component = Livewire::actingAs($this->manager)
+            ->test(BOARD, ['selectedPlanId' => $plan->id])
+            ->set('poolAgeFilter', AgeCategoryEnum::CHILD->value)
+            ->set('poolSeriesFilter', 'B');
+
+        $pool = collect($component->viewData('columns'))->firstWhere('is_pool', true);
+
+        expect($pool['cards'])->toHaveCount(1)
+            ->and($pool['cards'][0]['name'])->toBe('Childb Pool');
     });
 });
 
@@ -469,6 +597,35 @@ describe('export and import actions', function (): void {
     });
 });
 
+describe('optimize action', function (): void {
+    it('lets a manager suggest a layout, assigning the pool members', function (): void {
+        $plan = TrainingPlan::factory()->create(['season_id' => $this->season->id]);
+        TrainingPlanPack::factory()->for($plan, 'plan')->create(['max_participants' => 5]);
+
+        $member = User::factory()->create(['ranking' => 'C0', 'birthdate' => now()->subYears(30)]);
+        Subscription::factory()->create(['user_id' => $member->id, 'season_id' => $this->season->id, 'status' => 'paid']);
+        $assignment = TrainingPlanAssignment::factory()->for($plan, 'plan')->inPool()->create([
+            'user_id' => $member->id,
+        ]);
+
+        Livewire::actingAs($this->manager)
+            ->test(BOARD, ['selectedPlanId' => $plan->id])
+            ->call('optimize')
+            ->assertHasNoErrors();
+
+        expect($assignment->fresh()->training_plan_pack_id)->not->toBeNull();
+    });
+
+    it('forbids a viewer from optimizing', function (): void {
+        $plan = TrainingPlan::factory()->create(['season_id' => $this->season->id]);
+
+        Livewire::actingAs($this->viewer)
+            ->test(BOARD, ['selectedPlanId' => $plan->id])
+            ->call('optimize')
+            ->assertForbidden();
+    });
+});
+
 describe('authorization', function (): void {
     it('lets a committee viewer see the board but not mutate', function (): void {
         $plan = TrainingPlan::factory()->create(['season_id' => $this->season->id]);
@@ -517,6 +674,11 @@ describe('authorization', function (): void {
         Livewire::actingAs($this->viewer)
             ->test(BOARD, ['selectedPlanId' => $plan->id])
             ->call('removePack', $pack->id)
+            ->assertForbidden();
+
+        Livewire::actingAs($this->viewer)
+            ->test(BOARD, ['selectedPlanId' => $plan->id])
+            ->call('optimize')
             ->assertForbidden();
     });
 });

@@ -57,13 +57,15 @@ it('persists the season attributes passed in options', function (): void {
         'seats_available' => 3,
         'wants_to_be_captain' => true,
         'volunteer_help' => true,
+        'wants_directed_training' => true,
     ]);
 
     expect($subscription->fresh())
         ->can_drive->toBeTrue()
         ->seats_available->toBe(3)
         ->wants_to_be_captain->toBeTrue()
-        ->volunteer_help->toBeTrue();
+        ->volunteer_help->toBeTrue()
+        ->wants_directed_training->toBeTrue();
 })->group('subscriptions');
 
 it('defaults the season attributes when options are absent', function (): void {
@@ -76,5 +78,6 @@ it('defaults the season attributes when options are absent', function (): void {
         ->can_drive->toBeFalse()
         ->seats_available->toBeNull()
         ->wants_to_be_captain->toBeFalse()
-        ->volunteer_help->toBeFalse();
+        ->volunteer_help->toBeFalse()
+        ->wants_directed_training->toBeFalse();
 })->group('subscriptions');

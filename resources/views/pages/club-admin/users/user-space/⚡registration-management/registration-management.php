@@ -162,6 +162,7 @@ new class extends Component
             'seats_available'          => null,
             'wants_to_be_captain'      => false,
             'volunteer_help'           => false,
+            'wants_directed_training'  => false,
             'is_minor'                 => $user->birthdate && $user->birthdate->age < 18,
             'medical_certificate_path' => $user->medical_certificate_path,
             'parental_consent_path'    => $user->parental_consent_path,
@@ -241,8 +242,9 @@ new class extends Component
             'is_competitive'      => ($reg['formula'] ?? 'recreative') === 'competitive',
             'can_drive'           => $canDrive,
             'seats_available'     => $seatsAvailable !== null ? (int) $seatsAvailable : null,
-            'wants_to_be_captain' => (bool) ($reg['wants_to_be_captain'] ?? false),
-            'volunteer_help'      => (bool) ($reg['volunteer_help'] ?? false),
+            'wants_to_be_captain'     => (bool) ($reg['wants_to_be_captain'] ?? false),
+            'volunteer_help'          => (bool) ($reg['volunteer_help'] ?? false),
+            'wants_directed_training' => (bool) ($reg['wants_directed_training'] ?? false),
         ]);
 
         $selectedPackIds = $this->pendingPackIds[$userId] ?? [];

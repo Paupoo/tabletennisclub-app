@@ -131,6 +131,17 @@ describe('filters', function (): void {
             ->assertDontSee('NoHelper');
     });
 
+    it('filters by directed training', function (): void {
+        rosterMember($this->season, ['first_name' => 'Directed'], ['wants_directed_training' => true]);
+        rosterMember($this->season, ['first_name' => 'NoDirected'], ['wants_directed_training' => false]);
+
+        Livewire::actingAs($this->manager)
+            ->test(ROSTER)
+            ->set('wantsDirectedTraining', '1')
+            ->assertSee('Directed')
+            ->assertDontSee('NoDirected');
+    });
+
     it('filters by age category', function (): void {
         rosterMember($this->season, ['first_name' => 'Childone', 'birthdate' => now()->subYears(9)]);
         rosterMember($this->season, ['first_name' => 'Adultone', 'birthdate' => now()->subYears(40)]);
@@ -166,12 +177,14 @@ describe('inline edition', function (): void {
             ->call('updateAttribute', $subscription->id, 'can_drive', true)
             ->call('updateAttribute', $subscription->id, 'wants_to_be_captain', true)
             ->call('updateAttribute', $subscription->id, 'volunteer_help', true)
+            ->call('updateAttribute', $subscription->id, 'wants_directed_training', true)
             ->call('updateSeats', $subscription->id, 3);
 
         $subscription->refresh();
         expect($subscription->can_drive)->toBeTrue();
         expect($subscription->wants_to_be_captain)->toBeTrue();
         expect($subscription->volunteer_help)->toBeTrue();
+        expect($subscription->wants_directed_training)->toBeTrue();
         expect($subscription->seats_available)->toBe(3);
     });
 

@@ -31,6 +31,7 @@ describe('Registration management — season attributes', function (): void {
             ->set("registrations.{$user->id}.seats_available", 3)
             ->set("registrations.{$user->id}.wants_to_be_captain", true)
             ->set("registrations.{$user->id}.volunteer_help", true)
+            ->set("registrations.{$user->id}.wants_directed_training", true)
             ->call('confirmAffiliation', $user->id);
 
         $subscription = Subscription::where('user_id', $user->id)
@@ -43,7 +44,8 @@ describe('Registration management — season attributes', function (): void {
             ->can_drive->toBeTrue()
             ->seats_available->toBe(3)
             ->wants_to_be_captain->toBeTrue()
-            ->volunteer_help->toBeTrue();
+            ->volunteer_help->toBeTrue()
+            ->wants_directed_training->toBeTrue();
     });
 
     it('defaults the season attributes when the member leaves them untouched', function (): void {
@@ -63,7 +65,8 @@ describe('Registration management — season attributes', function (): void {
             ->can_drive->toBeFalse()
             ->seats_available->toBeNull()
             ->wants_to_be_captain->toBeFalse()
-            ->volunteer_help->toBeFalse();
+            ->volunteer_help->toBeFalse()
+            ->wants_directed_training->toBeFalse();
     });
 
     it('clears seats_available when can_drive is turned off', function (): void {

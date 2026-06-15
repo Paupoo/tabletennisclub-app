@@ -23,6 +23,8 @@ This manual covers everything a committee member (and administrator) can do in t
 | Manage website content | ✅ | ✅ |
 | Manage treasury | ✅ | ✅ |
 
+> **Managing group**: some recent features — managing contacts (qualify, reply, onboard) and email templates, **editing** the season roster, **composing/importing** in the planning board — are restricted to administrators and committee members with the **secretary, president or vice-president** role. Other committee members keep **read** access (view and export).
+
 ---
 
 ## 1. User Management
@@ -112,12 +114,28 @@ One guardian can cover multiple siblings. A guardian who is also a club member c
 
 Go to **Website → Contacts**. Contacts submitted via the public club website form appear here.
 
+> **Who can manage?** Viewing contacts is open to the whole committee. **Managing** a contact (qualifying the profile, sending an email, onboarding, deleting) is restricted to the **managing group**: administrators and committee members with the **secretary, president or vice-president** role. Other committee members see contacts but have no action buttons.
+
 ### Contact statuses
 
 - **New** — just arrived, not yet processed
 - **Pending** — being handled (follow-up in progress)
 - **Processed** — dealt with
 - **Rejected** — declined
+
+### Qualifying a contact (profile)
+
+The goal is to **note things gradually** as you learn them through the exchange, without forcing anything. Open a contact's detail panel: the **Profile** block offers **fully optional** fields, filled in as information arrives:
+
+- **Age category** — child / teenager / adult
+- **Experience** — never played / a few months / a few years / ranked player
+- **Wants competition** — yes / no / not provided
+- **Family can drive** — useful for interclub carpooling
+- **Preferred days** — envisaged training slots
+
+Each field saves as you go. These qualifications help **triage the inbox** (filters by age, experience, competition interest) and **find the right profiles** to compose homogeneous groups. When the contact becomes a member (onboarding), this information is **carried over** to their first registration — no double entry.
+
+> **Tip**: some email templates are *questionnaires* designed precisely to **gather** that missing information (see "Email templates" below).
 
 ### Onboarding a contact as a member
 
@@ -134,9 +152,24 @@ This eliminates double-encoding — the secretary only reviews and confirms, not
 
 ### Sending emails to contacts
 
-From the contact detail panel:
-- **Template emails**: choose a pre-written template (info, welcome, decline, etc.) — sent immediately
-- **Custom email**: write a subject and body; optionally send yourself a copy
+From the contact detail panel, **Send an email** block:
+
+- **Choose a template** from the dropdown → the editor opens **automatically, pre-filled** with the template's subject and body, variables already resolved (first name, interest, club name…). You **review/adjust** the text, then send. You can send yourself a copy.
+- **Custom email…** → opens a **blank** editor to write freely.
+
+Some templates **automatically apply a status** to the contact when sent (e.g. the decline template sets the contact to *Rejected*, a welcome template to *Processed*).
+
+### Email templates
+
+Go to **Website → Email templates** (managing group only). Create and edit your reply templates freely, without depending on a developer:
+
+- **Name**, **key**, **subject**, **body**
+- **Variables** to insert in subject/body: `{{first_name}}`, `{{last_name}}`, `{{full_name}}`, `{{interest}}`, `{{club_name}}`
+- **Applied status** (optional): status given to the contact when the template is sent
+- **Information questionnaire**: marks templates meant to *gather* missing information
+- **Active/inactive**: an inactive template no longer appears in the send list
+
+A few "system" starter templates exist (welcome, membership info, info request, polite decline, questionnaire, trial invite); their **key** is locked but their text remains fully editable.
 
 ### Updating contact status
 
@@ -263,6 +296,20 @@ When a member requests enrollment in a training pack, a notification appears. Go
 
 If a training pack is full, members join the waitlist. When a spot opens (cancellation), the first waitlisted member is automatically offered the spot via email.
 
+### Planning board
+
+Go to **Planning → Planning board**. It is a **decision-support tool** to compose the season's training groups and **visualise tension** (headcount vs capacity) — without touching real enrolments.
+
+**Important: a plan is a thinking draft.** Nothing you do there is applied to the real packs or to members' enrolments. Once the committee has decided, you create/adjust the real packs via the trainings screen.
+
+- **Create a plan**: give it a name and click **Create from season**. The plan is seeded from the active season: it copies the active packs and places enrolled members in their pack (or in the **Pool** column if they have none).
+- **Compose by drag-and-drop**: move member cards between columns (packs), or to/from the **Pool**. Each card shows the **ranking**, **age category**, and *competitive / drives / captain / volunteer* badges — to aim for homogeneous groups.
+- **Tension**: each column header shows headcount over capacity; a column **over capacity** is flagged — spot at a glance which slots are under pressure and whether the offer is too broad or too tight.
+- **Model the offer**: add a **hypothetical group** ("+ Add a group"), change its name/level/day/capacity, or remove it. Removing a group **sends its members back to the Pool** (no one is lost). This lets you test "what if we opened a 2nd teen slot?".
+- **Export / Import**: export a plan to **CSV, ODS or XLSX** to share with the committee or rework in a spreadsheet, then **re-import a CSV** (matched by licence, otherwise by email) to feed the layout back. Import only changes the plan.
+
+**Permissions**: the whole committee can **view** a plan and export it; **composing, modelling the offer and importing** are restricted to the **managing group** (admin, secretary, president, vice-president).
+
 ---
 
 ## 7. Website Content
@@ -348,6 +395,26 @@ Go to **Treasury → Cash register**. Manage bar orders, cash sheet, and stock m
 ## 11. Registrations
 
 Go to **Club admin → Registrations**. View and manage all pending affiliation requests for the current season. Approve or reject affiliations. Filter by status.
+
+### Member's season involvement
+
+When registering, each member (or the secretary on their behalf) can indicate, **for the season**:
+
+- **Competitive** — wants to play interclubs/competition
+- **Can drive** (+ number of seats) — to organise carpooling
+- **Wants to be captain** — volunteers to lead a team
+- **Volunteer help** — available to help (tournaments, bar, refereeing…)
+
+If the member comes from an onboarded contact, these fields are **pre-filled** from what was noted on the contact.
+
+### Season roster
+
+Go to **Club admin → Season roster**. This is the overview of the active season's members, one row per member, with: **ranking**, **age category** (derived from the birth date), **competitive**, **drives** (+ seats), **captain**, **volunteer**.
+
+- **Filter and sort** (by ranking, age category, competitive, drives, captain, volunteer) to prepare group and team composition.
+- **Quick edit**: toggle drives / captain / volunteer directly and adjust the number of seats, without opening each profile.
+
+The whole committee can **view** the roster; **editing** is restricted to the managing group (admin, secretary, president, vice-president).
 
 ---
 

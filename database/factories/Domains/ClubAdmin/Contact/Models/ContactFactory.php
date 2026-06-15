@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Database\Factories\Domains\ClubAdmin\Contact\Models;
 
-use App\Domains\Shared\Enums\ContactReasonEnum;
 use App\Domains\ClubAdmin\Contact\Models\Contact;
+use App\Domains\Shared\Enums\AgeCategoryEnum;
+use App\Domains\Shared\Enums\ContactReasonEnum;
+use App\Domains\Shared\Enums\PlayerExperienceEnum;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -33,5 +35,22 @@ class ContactFactory extends Factory
             'membership_total_cost' => $this->faker->numberBetween(60, 800),
             'message' => $this->faker->paragraph(),
         ];
+    }
+
+    /**
+     * Fill the optional triage profile fields captured incrementally.
+     */
+    public function withProfile(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'age_category' => $this->faker->randomElement(AgeCategoryEnum::cases()),
+            'experience' => $this->faker->randomElement(PlayerExperienceEnum::cases()),
+            'wants_competition' => $this->faker->boolean(),
+            'preferred_days' => $this->faker->randomElements(
+                ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
+                $this->faker->numberBetween(1, 3),
+            ),
+            'family_can_drive' => $this->faker->boolean(),
+        ]);
     }
 }

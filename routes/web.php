@@ -266,6 +266,9 @@ Route::prefix('admin/website')->middleware(['auth', 'verified', 'committee'])->g
     Route::livewire('/articles/create', 'pages::website.articles.edit')->name('admin.website.articles.create');
     Route::livewire('/articles/{newsPost}/edit', 'pages::website.articles.edit')->name('admin.website.articles.edit');
     Route::livewire('/contacts', 'pages::website.contacts.index')->name('admin.website.contacts.index');
+    Route::livewire('/contacts/email-templates', 'pages::website.contacts.email-templates')
+        ->middleware('can:manage-contacts')
+        ->name('admin.website.contacts.email-templates');
     Route::livewire('/spams', 'pages::website.spams.index')->name('admin.website.spams.index');
     Route::livewire('/events', 'pages::website.events.index')->name('admin.website.events.index');
 });

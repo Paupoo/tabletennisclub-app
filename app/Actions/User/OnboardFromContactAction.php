@@ -23,7 +23,7 @@ class OnboardFromContactAction
 
         $user = CreateUserAction::handle($data, $actor);
 
-        $contact->update(['status' => 'processed']);
+        $contact->update(['status' => 'processed', 'user_id' => $user->id]);
 
         return $user;
     }

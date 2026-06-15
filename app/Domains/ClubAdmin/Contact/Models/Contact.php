@@ -4,10 +4,15 @@ declare(strict_types=1);
 
 namespace App\Domains\ClubAdmin\Contact\Models;
 
+use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\AgeCategoryEnum;
 use App\Domains\Shared\Enums\ContactReasonEnum;
+use App\Domains\Shared\Enums\PlayerExperienceEnum;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -23,8 +28,16 @@ use Illuminate\Database\Eloquent\Model;
  * @property int|null $membership_total_cost
  * @property string $status
  * @property int|null $owner_id
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property AgeCategoryEnum|null $age_category
+ * @property PlayerExperienceEnum|null $experience
+ * @property bool|null $wants_competition
+ * @property array<int, string>|null $preferred_days
+ * @property bool|null $family_can_drive
+ * @property int|null $user_id
+ * @property-read User|null $user
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ *
  * @method static Builder<static>|Contact byStatus(string $status)
  * @method static \Database\Factories\Domains\ClubAdmin\Contact\Models\ContactFactory factory($count = null, $state = [])
  * @method static Builder<static>|Contact newModelQuery()
@@ -46,6 +59,7 @@ use Illuminate\Database\Eloquent\Model;
  * @method static Builder<static>|Contact wherePhone($value)
  * @method static Builder<static>|Contact whereStatus($value)
  * @method static Builder<static>|Contact whereUpdatedAt($value)
+ *
  * @mixin \Eloquent
  */
 class Contact extends Model
@@ -54,6 +68,11 @@ class Contact extends Model
 
     protected $casts = [
         'interest' => ContactReasonEnum::class,
+        'age_category' => AgeCategoryEnum::class,
+        'experience' => PlayerExperienceEnum::class,
+        'wants_competition' => 'boolean',
+        'preferred_days' => 'array',
+        'family_can_drive' => 'boolean',
     ];
 
     protected $fillable = [
@@ -68,6 +87,12 @@ class Contact extends Model
         'membership_training_sessions',
         'membership_total_cost',
         'status',
+        'age_category',
+        'experience',
+        'wants_competition',
+        'preferred_days',
+        'family_can_drive',
+        'user_id',
     ];
 
     public static function getStatusStats(): array
@@ -90,5 +115,53 @@ class Contact extends Model
             ->orWhere('last_name', 'like', '%' . $value . '%')
             ->orWhere('email', 'like', '%' . $value . '%')
             ->orWhere('message', 'like', '%' . $value . '%');
+    }
+
+    /**
+     * Build the carry-over seed mapping the triage profile fields to the
+     * target season subscription attribute names, for Phase 2 consumption
+     * (pre-filling a member's first subscription).
+     *
+     * Only filled-in values are returned. The `is_competitive` and `can_drive`
+     * keys are the destination subscription column names, not yet created.
+     *
+     * @return array{
+     *     is_competitive?: bool,
+     *     can_drive?: bool,
+     *     experience?: string,
+     *     age_category?: string,
+     *     preferred_days?: array<int, string>
+     * }
+     */
+    public function subscriptionSeed(): array
+    {
+        $seed = [];
+
+        if ($this->wants_competition !== null) {
+            $seed['is_competitive'] = $this->wants_competition;
+        }
+
+        if ($this->family_can_drive !== null) {
+            $seed['can_drive'] = $this->family_can_drive;
+        }
+
+        if ($this->experience !== null) {
+            $seed['experience'] = $this->experience->value;
+        }
+
+        if ($this->age_category !== null) {
+            $seed['age_category'] = $this->age_category->value;
+        }
+
+        if ($this->preferred_days !== null) {
+            $seed['preferred_days'] = $this->preferred_days;
+        }
+
+        return $seed;
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 }

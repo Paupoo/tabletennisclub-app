@@ -6,6 +6,7 @@ namespace App\Domains\ClubAdmin\Users\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
+use App\Domains\ClubAdmin\Contact\Models\Contact;
 use App\Domains\ClubAdmin\Payment\Models\CashRegister;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubPosts\Models\NewsPost;
@@ -19,6 +20,7 @@ use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Trainings\Models\Training;
+use App\Http\Controllers\ClubAdmin\DashboardController;
 use App\Observers\UserObserver;
 use Carbon\Carbon;
 use Database\Factories\Domains\ClubAdmin\Users\Models\UserFactory;
@@ -251,6 +253,23 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(NewsPost::class);
     }
 
+    /**
+     * Whether the user belongs to the club-admin management group.
+     *
+     * Mirrors the `showSecretary` rule used in {@see DashboardController}:
+     * full admins plus the secretary/president/vice-president committee roles may
+     * manage club-admin operations (contact triage, templates, …). Other committee
+     * members can only view.
+     */
+    public function canManageClubAdmin(): bool
+    {
+        return $this->is_admin || in_array($this->committee_role, [
+            CommitteeRolesEnum::SECRETARY,
+            CommitteeRolesEnum::PRESIDENT,
+            CommitteeRolesEnum::VICE_PRESIDENT,
+        ], true);
+    }
+
     public function captainOf(): HasOne
     {
         return $this->hasOne(Team::class, 'captain_id');
@@ -370,6 +389,17 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsToMany(Meeting::class)
             ->withPivot(['status', 'invitation_sent_at', 'response_at'])
             ->withTimestamps();
+    }
+
+    /**
+     * Retrieve the contact this user was onboarded from, if any.
+     *
+     * Phase 2 uses this to recover the carry-over seed via
+     * {@see Contact::subscriptionSeed()} when pre-filling the first subscription.
+     */
+    public function originatingContact(): ?Contact
+    {
+        return Contact::where('user_id', $this->id)->latest()->first();
     }
 
     public function pools(): BelongsToMany

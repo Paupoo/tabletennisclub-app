@@ -321,15 +321,16 @@ describe('OnboardFromContactAction', function (): void {
             ->and($user->email)->toBe('sophie.bernard@example.com');
     });
 
-    it('marks contact as processed', function (): void {
+    it('marks contact as processed and links it to the created user', function (): void {
         Mail::fake();
 
         $actor = $this->createFakeAdmin();
         $contact = Contact::factory()->create(['interest' => ContactReasonEnum::JOIN_US]);
 
-        OnboardFromContactAction::handle($contact, $actor);
+        $user = OnboardFromContactAction::handle($contact, $actor);
 
-        expect($contact->fresh()->status)->toBe('processed');
+        expect($contact->fresh()->status)->toBe('processed')
+            ->and($contact->fresh()->user_id)->toBe($user->id);
     });
 
     it('sends invitation email to new user', function (): void {

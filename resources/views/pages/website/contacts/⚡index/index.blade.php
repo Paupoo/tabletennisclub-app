@@ -238,6 +238,27 @@
                 <x-select :options="$statusOptions" :placeholder="__('All statuses')"
                     wire:model.live="status" class="w-full" />
             </div>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    {{ __('Age category') }}
+                </p>
+                <x-select :options="$ageCategoryOptions" :placeholder="__('All age categories')"
+                    wire:model.live="ageCategory" class="w-full" />
+            </div>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    {{ __('Experience') }}
+                </p>
+                <x-select :options="$experienceOptions" :placeholder="__('All levels')"
+                    wire:model.live="experience" class="w-full" />
+            </div>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    {{ __('Competition') }}
+                </p>
+                <x-select :options="$triStateOptions" :placeholder="__('Any')"
+                    wire:model.live="wantsCompetition" class="w-full" />
+            </div>
         </x-slot:filters>
     </x-admin.shared.filter-drawer>
 
@@ -287,45 +308,61 @@
                     <div class="flex flex-wrap gap-2">
                         @foreach ([['new', __('New'), 'btn-info'], ['pending', __('Pending'), 'btn-warning'], ['processed', __('Processed'), 'btn-success'], ['rejected', __('Rejected'), 'btn-error']] as [$val, $label, $cls])
                             <x-button class="btn-sm btn-soft {{ $cls }} {{ $selectedContact->status === $val ? 'opacity-100' : 'opacity-40' }}"
-                                :label="$label"
+                                :label="$label" :disabled="! $canManage"
                                 wire:click="updateStatus({{ $selectedContact->id }}, '{{ $val }}')" />
                         @endforeach
                     </div>
                 </div>
 
-                <div>
-                    <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
-                        {{ __('Send an email') }}
-                    </p>
-                    <div class="flex flex-wrap gap-2">
-                        <x-button class="btn-sm btn-outline" :label="__('Welcome')"
-                            wire:click="sendTemplateEmail('welcome')" />
-                        <x-button class="btn-sm btn-outline" :label="__('Membership info')"
-                            wire:click="sendTemplateEmail('membership_info')" />
-                        <x-button class="btn-sm btn-outline" :label="__('Info request')"
-                            wire:click="sendTemplateEmail('request_info')" />
-                        <x-button class="btn-sm btn-outline btn-error" :label="__('Polite decline')"
-                            wire:click="sendTemplateEmail('polite_decline')" />
+                @if ($canManage)
+                    {{-- ── Profil (capture incrémentale, tout optionnel) ─────────── --}}
+                    <div class="border-base-200 space-y-3 rounded-lg border p-4">
+                        <p class="text-xs font-semibold uppercase tracking-widest opacity-50">
+                            {{ __('Profile') }}
+                        </p>
+                        <x-select :label="__('Age category')" :options="$ageCategoryOptions"
+                            :placeholder="__('Not provided')" wire:model="profileAgeCategory" />
+                        <x-select :label="__('Experience')" :options="$experienceOptions"
+                            :placeholder="__('Not provided')" wire:model="profileExperience" />
+                        <x-select :label="__('Wants competition')" :options="$triStateOptions"
+                            :placeholder="__('Not provided')" wire:model="profileWantsCompetition" />
+                        <x-select :label="__('Family can drive')" :options="$triStateOptions"
+                            :placeholder="__('Not provided')" wire:model="profileFamilyCanDrive" />
+                        <x-choices-offline :label="__('Preferred days')" :options="$dayOptions"
+                            wire:model="profilePreferredDays" multiple :placeholder="__('Not provided')" />
+                        <x-button class="btn-primary btn-sm w-full" icon="o-check"
+                            :label="__('Save profile')"
+                            wire:click="updateContactProfile" spinner />
                     </div>
-                    <x-button class="btn-ghost btn-sm mt-2 w-full" icon="o-pencil-square"
-                        :label="__('Custom email…')"
-                        wire:click="$set('emailModal', true)" />
-                </div>
 
-                @if (in_array($selectedContact->interest?->value, ['JOIN_US', 'TRIAL']) && $selectedContact->status !== 'processed')
-                    <div class="border-base-200 border-t pt-3">
-                        <x-button class="btn-primary btn-sm w-full" icon="o-user-plus"
-                            :label="__('Onboard as member')"
-                            wire:click="onboardContact({{ $selectedContact->id }})"
-                            spinner />
+                    <div>
+                        <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                            {{ __('Send an email') }}
+                        </p>
+                        <x-select :options="$templateOptions"
+                            :placeholder="__('Choose a template…')"
+                            hint="{{ __('Pick a template to open the editor pre-filled.') }}"
+                            wire:model.live="selectedTemplateKey" class="w-full" />
+                        <x-button class="btn-ghost btn-sm mt-2 w-full" icon="o-pencil-square"
+                            :label="__('Custom email…')"
+                            wire:click="openCustomEmail" spinner />
+                    </div>
+
+                    @if (in_array($selectedContact->interest?->value, ['JOIN_US', 'TRIAL']) && $selectedContact->status !== 'processed')
+                        <div class="border-base-200 border-t pt-3">
+                            <x-button class="btn-primary btn-sm w-full" icon="o-user-plus"
+                                :label="__('Onboard as member')"
+                                wire:click="onboardContact({{ $selectedContact->id }})"
+                                spinner />
+                        </div>
+                    @endif
+
+                    <div class="border-base-200 border-t pt-2">
+                        <x-button class="btn-ghost btn-sm w-full text-error" icon="o-trash"
+                            :label="__('Delete this contact')"
+                            wire:click="confirmDelete({{ $selectedContact->id }})" />
                     </div>
                 @endif
-
-                <div class="border-base-200 border-t pt-2">
-                    <x-button class="btn-ghost btn-sm w-full text-error" icon="o-trash"
-                        :label="__('Delete this contact')"
-                        wire:click="confirmDelete({{ $selectedContact->id }})" />
-                </div>
             </div>
         @endif
     </x-drawer>
@@ -341,7 +378,7 @@
             </div>
         </div>
         <x-slot:actions>
-            <x-button :label="__('Cancel')" wire:click="$set('emailModal', false)" />
+            <x-button :label="__('Cancel')" wire:click="closeEmailModal" />
             <x-button class="btn-primary" icon="o-paper-airplane" :label="__('Send')"
                 wire:click="sendCustomEmail" spinner />
         </x-slot:actions>

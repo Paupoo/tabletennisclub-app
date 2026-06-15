@@ -6,28 +6,40 @@ namespace App\Services\ClubAdmin\Contact;
 
 use App\Domains\ClubAdmin\Contact\Models\Contact;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Mail\CustomEmail;
-use App\Mail\MembershipInfoDetailEmail;
-use App\Mail\PoliteDeclineEmail;
-use App\Mail\RequestInfoEmail;
-use App\Mail\WelcomeEmail;
-use Illuminate\Contracts\Mail\Mailable;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
-use InvalidArgumentException;
 
 class ContactEmailService
 {
     /**
+     * Contact statuses that an email template is allowed to apply on send.
+     *
+     * @var list<string>
+     */
+    private const ALLOWED_STATUSES = ['new', 'pending', 'processed', 'rejected'];
+
+    public function __construct(
+        private readonly EmailTemplateRenderer $renderer = new EmailTemplateRenderer,
+    ) {}
+
+    /**
      * Will send Custom Email with or without copy for the club
+     *
+     * @param  array{subject: string, body: string}  $mailData
      */
     public function sendCustom(Contact $contact, array $mailData, User $user, bool $sendCopy = false): void
     {
+        $senderName = trim($user->first_name . ' ' . $user->last_name) ?: $this->clubName();
+
+        $payload = $this->buildMailData($contact, $mailData['subject'], $mailData['body'], $senderName);
+
         if ($sendCopy) {
-            Mail::to($user->email)->send(new CustomEmail($mailData, true));
+            Mail::to($user->email)->send(new CustomEmail($payload, true));
         }
 
-        Mail::to($contact->email)->send(new CustomEmail($mailData));
+        Mail::to($contact->email)->send(new CustomEmail($payload));
 
         Log::info(__('Personalized email was sent successfully'), [
             'contact_id' => $contact->id,
@@ -37,34 +49,73 @@ class ContactEmailService
     }
 
     /**
-     * Will send the correct email matching the template
+     * Render a database template, e-mail it to the contact through the generic
+     * {@see CustomEmail} mailable, then apply the template's status if valid.
+     *
+     * @throws \InvalidArgumentException when the template key is unknown/inactive
      */
     public function sendTemplate(Contact $contact, string $template): string
     {
-        return match ($template) {
-            'welcome' => $this->send($contact, new WelcomeEmail($contact), 'welcome'),
-            'membership_info' => $this->send($contact, new MembershipInfoDetailEmail($contact), 'membership_info'),
-            'request_info' => $this->send($contact, new RequestInfoEmail($contact), 'request_info'),
-            'polite_decline' => $this->sendAndReject($contact, new PoliteDeclineEmail($contact)),
-            default => throw new InvalidArgumentException(__("'Template not managed' : {$template}"))
-        };
-    }
+        $rendered = $this->renderer->render($template, $contact);
 
-    private function send(Contact $contact, Mailable $mail, string $template): string
-    {
-        Mail::to($contact->email)->send($mail);
-        Log::info('Email envoyé', ['contact_id' => $contact->id, 'template' => $template]);
+        $clubName = $this->clubName();
+        $payload = $this->buildMailData($contact, $rendered['subject'], $rendered['body'], $clubName);
 
-        return __("Email {$template} successfully sent");
+        Mail::to($contact->email)->send(new CustomEmail($payload));
+
+        $this->applyStatus($contact, $rendered['apply_status']);
+
+        Log::info('Template email sent', [
+            'contact_id' => $contact->id,
+            'template' => $template,
+        ]);
+
+        return __('Email :template successfully sent', ['template' => $template]);
     }
 
     /**
-     * Send an e-mail with template polite reject and update contact status
+     * Apply the template's status to the contact when it is one of the allowed
+     * contact statuses; otherwise log a warning and leave the contact untouched.
      */
-    private function sendAndReject(Contact $contact, Mailable $mail): string
+    private function applyStatus(Contact $contact, ?string $status): void
     {
-        $contact->update(['status' => 'rejected']);
+        if ($status === null) {
+            return;
+        }
 
-        return $this->send($contact, $mail, 'polite_decline');
+        if (! in_array($status, self::ALLOWED_STATUSES, true)) {
+            Log::warning('Ignored invalid apply_status on email template', [
+                'contact_id' => $contact->id,
+                'apply_status' => $status,
+            ]);
+
+            return;
+        }
+
+        $contact->update(['status' => $status]);
+    }
+
+    /**
+     * Shape an e-mail into the payload expected by {@see CustomEmail}.
+     *
+     * @return array{contact: Contact, message: string, sender_name: string, club_name: string, subject: string}
+     */
+    private function buildMailData(Contact $contact, string $subject, string $message, string $senderName): array
+    {
+        return [
+            'contact' => $contact,
+            'message' => $message,
+            'sender_name' => $senderName,
+            'club_name' => $this->clubName(),
+            'subject' => $subject,
+        ];
+    }
+
+    /**
+     * Resolve the club's display name from the database, falling back to config.
+     */
+    private function clubName(): string
+    {
+        return Club::own()?->name ?? (string) config('app.name');
     }
 }

@@ -3,12 +3,10 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Contact\Models\Contact;
+use App\Domains\ClubAdmin\Contact\Models\EmailTemplate;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\ContactReasonEnum;
 use App\Mail\CustomEmail;
-use App\Mail\MembershipInfoDetailEmail;
-use App\Mail\PoliteDeclineEmail;
-use App\Mail\RequestInfoEmail;
-use App\Mail\WelcomeEmail;
 use App\Services\ClubAdmin\Contact\ContactEmailService;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -86,7 +84,7 @@ describe('sendCustom()', function (): void {
 })->group('contact');
 
 // ─────────────────────────────────────────────────────────────
-// Suite : sendTemplate()
+// Suite : sendTemplate()  — now resolves templates from the DB
 // ─────────────────────────────────────────────────────────────
 
 describe('sendTemplate()', function (): void {
@@ -96,60 +94,147 @@ describe('sendTemplate()', function (): void {
         Log::spy();
 
         $this->service = new ContactEmailService;
-        $this->contact = makeContact();
     });
 
-    // ── Templates ────────────────────────────────────
+    it('sends a CustomEmail with the resolved subject and body to the contact', function (): void {
+        config()->set('app.name', 'Mon Club TT');
 
-    it("Sends the welcome Email when template 'welcome' is called", function (): void {
-        $result = $this->service->sendTemplate($this->contact, 'welcome');
-        Mail::assertSent(WelcomeEmail::class, fn ($mail) => $mail->hasTo($this->contact->email));
-        expect($result)->toContain('welcome');
+        EmailTemplate::factory()->create([
+            'key' => 'welcome',
+            'subject' => 'Bienvenue {{first_name}}',
+            'body' => 'Bonjour {{first_name}}, bienvenue chez {{club_name}} ({{interest}}).',
+            'apply_status' => 'processed',
+        ]);
+
+        $contact = Contact::factory()->create([
+            'first_name' => 'Alice',
+            'status' => 'new',
+            'interest' => ContactReasonEnum::JOIN_US,
+        ]);
+
+        $this->service->sendTemplate($contact, 'welcome');
+
+        Mail::assertSent(CustomEmail::class, function (CustomEmail $mail) use ($contact): bool {
+            return $mail->hasTo($contact->email)
+                && $mail->emailData['subject'] === 'Bienvenue Alice'
+                && str_contains($mail->emailData['message'], 'bienvenue chez Mon Club TT')
+                && str_contains($mail->emailData['message'], ContactReasonEnum::JOIN_US->getLabel());
+        });
     });
 
-    it("Sends the MembershipInfoDetailEmail Email when template 'membership_info' is called", function (): void {
-        $result = $this->service->sendTemplate($this->contact, 'membership_info');
-        Mail::assertSent(MembershipInfoDetailEmail::class, fn ($mail) => $mail->hasTo($this->contact->email));
-        expect($result)->toContain('membership_info');
+    it('returns a success message string', function (): void {
+        EmailTemplate::factory()->create(['key' => 'welcome']);
+        $contact = Contact::factory()->create();
+
+        expect($this->service->sendTemplate($contact, 'welcome'))->toBeString()->toContain('welcome');
     });
 
-    it("Sends the RequestInfoEmail Email when template 'request_info' is called", function (): void {
-        $result = $this->service->sendTemplate($this->contact, 'request_info');
-        Mail::assertSent(RequestInfoEmail::class, fn ($mail) => $mail->hasTo($this->contact->email));
-        expect($result)->toContain('request_info');
+    it('applies the template apply_status to the contact (processed)', function (): void {
+        EmailTemplate::factory()->appliesStatus('processed')->create(['key' => 'welcome']);
+        $contact = Contact::factory()->create(['status' => 'new']);
+
+        $this->service->sendTemplate($contact, 'welcome');
+
+        expect($contact->fresh()->status)->toBe('processed');
     });
 
-    it("Sends PoliteDeclineEmail and update the contact status to reject when 'polite_decline' is called", function (): void {
-        // We need a true mock to check if update instruction received
-        $contact = makeContact();
-        $contact->shouldReceive('update')
-            ->once()
-            ->with(['status' => 'rejected']);
+    it('applies the template apply_status to the contact (rejected)', function (): void {
+        EmailTemplate::factory()->appliesStatus('rejected')->create(['key' => 'polite_decline']);
+        $contact = Contact::factory()->create(['status' => 'pending']);
 
-        $result = $this->service->sendTemplate($contact, 'polite_decline');
-        Mail::assertSent(PoliteDeclineEmail::class, fn ($mail) => $mail->hasTo($contact->email));
-        expect($result)->toContain('polite_decline');
+        $this->service->sendTemplate($contact, 'polite_decline');
+
+        expect($contact->fresh()->status)->toBe('rejected');
     });
 
-    // ── Unknown template ─────────────────────────────────────
+    it('does not change the status when the template carries no apply_status', function (): void {
+        EmailTemplate::factory()->create(['key' => 'request_info', 'apply_status' => null]);
+        $contact = Contact::factory()->create(['status' => 'pending']);
 
-    it('Raises InvalidArgumentException for an unknown template', function (): void {
-        expect(fn () => $this->service->sendTemplate($this->contact, 'unknown_template'))
-            ->toThrow(InvalidArgumentException::class);
+        $this->service->sendTemplate($contact, 'request_info');
+
+        expect($contact->fresh()->status)->toBe('pending');
     });
 
-    it('Includes the template\'s name in the error message', function (): void {
-        expect(fn () => $this->service->sendTemplate($this->contact, 'bad_template'))
-            ->toThrow(InvalidArgumentException::class, 'bad_template');
+    it('ignores an invalid apply_status and logs a warning', function (): void {
+        Log::shouldReceive('warning')->once();
+        Log::shouldReceive('info')->zeroOrMoreTimes();
+
+        EmailTemplate::factory()->appliesStatus('bogus_status')->create(['key' => 'weird']);
+        $contact = Contact::factory()->create(['status' => 'pending']);
+
+        $this->service->sendTemplate($contact, 'weird');
+
+        expect($contact->fresh()->status)->toBe('pending');
     });
 
-    // ── Log ──────────────────────────────────────────────────
+    it('throws InvalidArgumentException for an unknown template key', function (): void {
+        $contact = Contact::factory()->create();
 
-    it('Writes an info log after each template sending', function (): void {
+        expect(fn () => $this->service->sendTemplate($contact, 'unknown_template'))
+            ->toThrow(InvalidArgumentException::class, 'unknown_template');
+    });
+
+    it('writes an info log after sending', function (): void {
         Log::shouldReceive('info')->once()->withArgs(function ($message, $context) {
             return isset($context['contact_id']) && isset($context['template']);
         });
-        $this->service->sendTemplate($this->contact, 'welcome');
 
+        EmailTemplate::factory()->create(['key' => 'welcome']);
+        $contact = Contact::factory()->create();
+
+        $this->service->sendTemplate($contact, 'welcome');
+    });
+})->group('contact');
+
+// ─────────────────────────────────────────────────────────────
+// Rendering — guards against payloads missing keys CustomEmail needs.
+// Mail::fake() does NOT render the mailable, so these call ->render()
+// explicitly to exercise CustomEmail::content().
+// ─────────────────────────────────────────────────────────────
+
+describe('CustomEmail rendering', function (): void {
+    beforeEach(function (): void {
+        $this->service = new ContactEmailService;
+        Mail::fake();
+    });
+
+    it('renders the free custom email without missing-key errors', function (): void {
+        $contact = Contact::factory()->create(['first_name' => 'Zoé']);
+        $user = User::factory()->create(['first_name' => 'Marie', 'last_name' => 'Secrétaire']);
+
+        $this->service->sendCustom($contact, ['subject' => 'Bonjour', 'body' => 'Salut Zoé !'], $user);
+
+        Mail::assertSent(CustomEmail::class, function (CustomEmail $mail) {
+            expect($mail->render())->toContain('Salut Zoé !');
+
+            return true;
+        });
+    });
+
+    it('renders a custom email with a club copy without errors', function (): void {
+        $contact = Contact::factory()->create();
+        $user = User::factory()->create();
+
+        $this->service->sendCustom($contact, ['subject' => 'Sujet', 'body' => 'Corps du message'], $user, sendCopy: true);
+
+        Mail::assertSent(CustomEmail::class, fn (CustomEmail $mail) => is_string($mail->render()));
+    });
+
+    it('renders a database template email', function (): void {
+        EmailTemplate::factory()->create([
+            'key' => 'welcome',
+            'subject' => 'Bienvenue',
+            'body' => 'Bonjour {{first_name}}',
+        ]);
+        $contact = Contact::factory()->create(['first_name' => 'Lou']);
+
+        $this->service->sendTemplate($contact, 'welcome');
+
+        Mail::assertSent(CustomEmail::class, function (CustomEmail $mail) {
+            expect($mail->render())->toContain('Bonjour Lou');
+
+            return true;
+        });
     });
 })->group('contact');

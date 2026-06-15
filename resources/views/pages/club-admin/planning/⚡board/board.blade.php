@@ -112,14 +112,17 @@
             </x-slot:actions>
         </x-header>
 
-        <div class="flex min-h-[60vh] snap-x snap-mandatory gap-4 overflow-x-auto pb-4 sm:snap-none">
+        {{-- Responsive grid of columns: wraps instead of scrolling horizontally,
+             each column is capped and scrolls vertically inside (no endless columns). --}}
+        <div class="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             @foreach ($columns as $column)
                 <div wire:key="col-{{ $column['id'] }}"
-                    class="flex w-[85vw] max-w-xs shrink-0 snap-start flex-col rounded-xl border border-base-200 bg-base-100 sm:w-72">
-                    {{-- Column header with capacity tension --}}
-                    <div class="flex items-center justify-between gap-2 border-b border-base-200 px-3 py-2
-                        {{ $column['over_capacity'] ? 'bg-error/10' : '' }}">
-                        <span class="truncate font-semibold">{{ $column['name'] }}</span>
+                    class="flex max-h-[28rem] flex-col rounded-xl border bg-base-100
+                        {{ $column['over_capacity'] ? 'border-error/40' : 'border-base-200' }}">
+                    {{-- Column header (stays visible above the scroll) with capacity tension --}}
+                    <div class="flex shrink-0 items-center justify-between gap-2 rounded-t-xl border-b border-base-200 px-3 py-2
+                        {{ $column['over_capacity'] ? 'bg-error/10' : 'bg-base-200/40' }}">
+                        <span class="truncate text-sm font-semibold">{{ $column['name'] }}</span>
                         <div class="flex shrink-0 items-center gap-1">
                             @if ($column['is_pool'])
                                 <x-badge :value="(string) $column['current_count']" class="badge-ghost badge-sm" />
@@ -140,8 +143,8 @@
                         </div>
                     </div>
 
-                    {{-- Member cards (drag-drop group) --}}
-                    <ul class="flex min-h-32 grow flex-col gap-2 p-2"
+                    {{-- Scrollable member list (drag-drop group) --}}
+                    <ul class="min-h-16 flex-1 space-y-1.5 overflow-y-auto p-2"
                         @if ($canManage)
                             wire:sort="moveAssignment"
                             wire:sort:group="board"
@@ -150,31 +153,36 @@
                         @foreach ($column['cards'] as $card)
                             <li wire:key="card-{{ $card['id'] }}"
                                 wire:sort:item="{{ $card['id'] }}"
-                                class="rounded-lg border border-base-200 bg-base-200/40 p-2 {{ $canManage ? 'cursor-grab' : '' }}">
-                                <div class="flex items-center justify-between gap-2">
-                                    <span class="truncate text-sm font-medium">{{ $card['name'] }}</span>
-                                    @if ($card['ranking'])
-                                        <span class="shrink-0 text-xs text-base-content/60">{{ $card['ranking'] }}</span>
-                                    @endif
-                                </div>
-                                <div class="mt-1 flex flex-wrap items-center gap-1">
+                                class="rounded-md border border-base-200 bg-base-100 px-2 py-1.5 shadow-sm {{ $canManage ? 'cursor-grab active:cursor-grabbing' : '' }}">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="grow truncate text-sm font-medium">{{ $card['name'] }}</span>
                                     @if ($card['age_label'])
-                                        <x-badge :value="$card['age_label']" class="badge-ghost badge-xs" />
+                                        <span class="shrink-0 text-[10px] font-medium uppercase tracking-wide text-base-content/40">
+                                            {{ \Illuminate\Support\Str::substr($card['age_label'], 0, 3) }}</span>
                                     @endif
-                                    @if ($card['is_competitive'])
-                                        <x-badge :value="__('Competitive')" class="badge-success badge-soft badge-xs" />
-                                    @endif
-                                    @if ($card['can_drive'])
-                                        <x-badge class="badge-info badge-soft badge-xs"
-                                            :value="__('Drives') . ($card['seats_available'] !== null ? ' ' . $card['seats_available'] : '')" />
-                                    @endif
-                                    @if ($card['wants_to_be_captain'])
-                                        <x-badge :value="__('Captain')" class="badge-warning badge-soft badge-xs" />
-                                    @endif
-                                    @if ($card['volunteer_help'])
-                                        <x-badge :value="__('Volunteer')" class="badge-neutral badge-soft badge-xs" />
+                                    @if ($card['ranking'])
+                                        <span class="shrink-0 rounded bg-base-200 px-1 text-[11px] font-bold text-base-content/70">{{ $card['ranking'] }}</span>
                                     @endif
                                 </div>
+                                @if ($card['is_competitive'] || $card['can_drive'] || $card['wants_to_be_captain'] || $card['volunteer_help'])
+                                    <div class="mt-1 flex items-center gap-2 text-base-content/45">
+                                        @if ($card['is_competitive'])
+                                            <span title="{{ __('Competitive') }}"><x-icon name="o-trophy" class="h-3.5 w-3.5 text-success" /></span>
+                                        @endif
+                                        @if ($card['can_drive'])
+                                            <span class="inline-flex items-center gap-0.5 text-info" title="{{ __('Drives') }}">
+                                                <x-icon name="o-truck" class="h-3.5 w-3.5" />
+                                                @if ($card['seats_available'] !== null)<span class="text-[10px] font-semibold">{{ $card['seats_available'] }}</span>@endif
+                                            </span>
+                                        @endif
+                                        @if ($card['wants_to_be_captain'])
+                                            <span title="{{ __('Captain') }}"><x-icon name="o-megaphone" class="h-3.5 w-3.5 text-warning" /></span>
+                                        @endif
+                                        @if ($card['volunteer_help'])
+                                            <span title="{{ __('Volunteer') }}"><x-icon name="o-hand-raised" class="h-3.5 w-3.5" /></span>
+                                        @endif
+                                    </div>
+                                @endif
                             </li>
                         @endforeach
                     </ul>

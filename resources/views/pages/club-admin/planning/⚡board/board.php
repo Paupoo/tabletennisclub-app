@@ -68,17 +68,56 @@ new class extends Component
     #[Url]
     public ?int $selectedPlanId = null;
 
+    /** Confirm-modal visibility for destructive actions. */
+    public bool $confirmArchiveModal = false;
+
+    public bool $confirmDeleteModal = false;
+
+    public bool $confirmRemovePackModal = false;
+
+    /** Target ids stored while a confirm modal is open. */
+    public ?int $pendingPlanId = null;
+
+    public ?int $pendingPackId = null;
+
     public function mount(): void
     {
         $this->canManage = Gate::allows('manage-season');
     }
 
+    /** Open the confirm modal before archiving a plan. */
+    public function confirmArchivePlan(int $planId): void
+    {
+        $this->pendingPlanId = $planId;
+        $this->confirmArchiveModal = true;
+    }
+
+    /** Open the confirm modal before deleting a plan. */
+    public function confirmDeletePlan(int $planId): void
+    {
+        $this->pendingPlanId = $planId;
+        $this->confirmDeleteModal = true;
+    }
+
+    /** Open the confirm modal before removing a plan pack. */
+    public function confirmRemovePack(int $packId): void
+    {
+        $this->pendingPackId = $packId;
+        $this->confirmRemovePackModal = true;
+    }
+
     /**
      * Archive a plan (decision #18: management only).
      */
-    public function archivePlan(int $planId): void
+    public function archivePlan(?int $planId = null): void
     {
         Gate::authorize('manage-season');
+
+        $planId ??= $this->pendingPlanId;
+
+        if ($planId === null) {
+            return;
+        }
 
         $plan = $this->seasonPlan($planId);
         $plan->update(['status' => TrainingPlanStatusEnum::ARCHIVED->value]);
@@ -86,6 +125,9 @@ new class extends Component
         if ($this->selectedPlanId === $planId) {
             $this->selectedPlanId = null;
         }
+
+        $this->confirmArchiveModal = false;
+        $this->pendingPlanId = null;
 
         $this->success(__('Plan archived.'));
     }
@@ -263,9 +305,15 @@ new class extends Component
      * Delete a plan pack, returning its members to the pool (assignments kept,
      * `training_plan_pack_id` nulled) so no member disappears.
      */
-    public function removePack(int $packId): void
+    public function removePack(?int $packId = null): void
     {
         Gate::authorize('manage-season');
+
+        $packId ??= $this->pendingPackId;
+
+        if ($packId === null) {
+            return;
+        }
 
         $pack = $this->planPack($packId);
 
@@ -275,6 +323,9 @@ new class extends Component
 
         $pack->assignments()->update(['training_plan_pack_id' => null]);
         $pack->delete();
+
+        $this->confirmRemovePackModal = false;
+        $this->pendingPackId = null;
 
         $this->success(__('Group removed; members moved to the pool.'));
     }
@@ -312,9 +363,15 @@ new class extends Component
     /**
      * Delete a plan entirely (decision #18: management only).
      */
-    public function deletePlan(int $planId): void
+    public function deletePlan(?int $planId = null): void
     {
         Gate::authorize('manage-season');
+
+        $planId ??= $this->pendingPlanId;
+
+        if ($planId === null) {
+            return;
+        }
 
         $plan = $this->seasonPlan($planId);
         $plan->delete();
@@ -322,6 +379,9 @@ new class extends Component
         if ($this->selectedPlanId === $planId) {
             $this->selectedPlanId = null;
         }
+
+        $this->confirmDeleteModal = false;
+        $this->pendingPlanId = null;
 
         $this->success(__('Plan deleted.'));
     }

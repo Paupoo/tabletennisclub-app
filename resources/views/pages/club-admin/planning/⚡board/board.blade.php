@@ -8,66 +8,81 @@
         <x-header progress-indicator separator :title="__('Planning board')"
             :subtitle="$season?->name" />
 
-        @if ($canManage)
-            <x-card class="mb-4">
-                <form wire:submit="createPlan" class="flex flex-col gap-3 md:flex-row md:items-end">
-                    <div class="flex-1">
-                        <x-input :label="__('New plan name')"
+        <div class="mx-auto w-full max-w-3xl space-y-6">
+            @if ($season === null)
+                <x-alert icon="o-exclamation-triangle" class="alert-warning">
+                    {{ __('No active season.') }}
+                </x-alert>
+            @elseif ($canManage)
+                <x-card :title="__('Create a new plan')"
+                    :subtitle="__('Starts a draft from the active season — packs and current enrolments are copied.')"
+                    separator>
+                    <form wire:submit="createPlan" class="flex flex-col gap-3 sm:flex-row sm:items-end">
+                        <x-input class="flex-1" :label="__('New plan name')"
                             wire:model="newPlanName"
                             :placeholder="__('e.g. Scenario A')" />
-                    </div>
-                    <x-button type="submit" class="btn-primary" icon="o-plus"
-                        :label="__('Create from season')" spinner="createPlan" />
-                </form>
-            </x-card>
-        @endif
+                        <x-button type="submit" class="btn-primary w-full sm:w-auto" icon="o-plus"
+                            :label="__('Create from season')" spinner="createPlan" />
+                    </form>
+                </x-card>
+            @endif
 
-        <x-card>
-            @if ($plans->isEmpty())
-                <x-empty-state icon="o-rectangle-stack"
-                    :heading="__('No plans yet')"
-                    :message="__('Create a plan to start composing training groups.')" />
-            @else
-                <div class="flex flex-col divide-y divide-base-200">
-                    @foreach ($plans as $p)
-                        <div wire:key="plan-{{ $p->id }}"
-                            class="flex items-center justify-between gap-3 py-3">
-                            <div class="min-w-0">
-                                <div class="flex items-center gap-2">
-                                    <span class="truncate font-medium">{{ $p->name }}</span>
-                                    @if ($p->status->value === 'archived')
-                                        <x-badge :value="$p->status->getLabel()" class="badge-ghost badge-sm" />
-                                    @else
-                                        <x-badge :value="$p->status->getLabel()" class="badge-primary badge-soft badge-sm" />
+            <x-card>
+                @if ($plans->isEmpty())
+                    <x-empty-state icon="o-rectangle-stack"
+                        :heading="__('No plans yet')"
+                        :message="__('Create a plan to start composing training groups.')" />
+                @else
+                    <div class="flex flex-col divide-y divide-base-200">
+                        @foreach ($plans as $p)
+                            <div wire:key="plan-{{ $p->id }}"
+                                class="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div class="min-w-0">
+                                    <div class="flex items-center gap-2">
+                                        <span class="truncate font-medium">{{ $p->name }}</span>
+                                        @if ($p->status->value === 'archived')
+                                            <x-badge :value="$p->status->getLabel()" class="badge-ghost badge-sm" />
+                                        @else
+                                            <x-badge :value="$p->status->getLabel()" class="badge-primary badge-soft badge-sm" />
+                                        @endif
+                                    </div>
+                                    <p class="text-xs text-base-content/60">
+                                        {{ $p->packs_count }} {{ __('packs') }} ·
+                                        {{ $p->assignments_count }} {{ __('members') }}
+                                    </p>
+                                </div>
+                                <div class="flex shrink-0 flex-wrap items-center gap-1">
+                                    <x-button class="btn-sm btn-primary btn-soft" icon="o-arrow-right"
+                                        :label="__('Open')"
+                                        wire:click="selectPlan({{ $p->id }})" />
+                                    @if ($canManage && $p->status->value !== 'archived')
+                                        <x-button class="btn-sm btn-ghost" icon="o-archive-box"
+                                            :tooltip="__('Archive')"
+                                            wire:click="confirmArchivePlan({{ $p->id }})" />
+                                    @endif
+                                    @if ($canManage)
+                                        <x-button class="btn-sm btn-ghost text-error" icon="o-trash"
+                                            :tooltip="__('Delete')"
+                                            wire:click="confirmDeletePlan({{ $p->id }})" />
                                     @endif
                                 </div>
-                                <p class="text-xs text-base-content/60">
-                                    {{ $p->packs_count }} {{ __('packs') }} ·
-                                    {{ $p->assignments_count }} {{ __('members') }}
-                                </p>
                             </div>
-                            <div class="flex shrink-0 items-center gap-1">
-                                <x-button class="btn-sm btn-ghost" icon="o-arrow-right"
-                                    :label="__('Open')"
-                                    wire:click="selectPlan({{ $p->id }})" />
-                                @if ($canManage && $p->status->value !== 'archived')
-                                    <x-button class="btn-sm btn-ghost" icon="o-archive-box"
-                                        :tooltip="__('Archive')"
-                                        wire:click="archivePlan({{ $p->id }})"
-                                        wire:confirm="{{ __('Archive this plan?') }}" />
-                                @endif
-                                @if ($canManage)
-                                    <x-button class="btn-sm btn-ghost text-error" icon="o-trash"
-                                        :tooltip="__('Delete')"
-                                        wire:click="deletePlan({{ $p->id }})"
-                                        wire:confirm="{{ __('Delete this plan permanently?') }}" />
-                                @endif
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            @endif
-        </x-card>
+                        @endforeach
+                    </div>
+                @endif
+            </x-card>
+        </div>
+
+        {{-- Confirm modals (project modals, no native JS confirm) --}}
+        <x-confirm-modal model="confirmArchiveModal" :title="__('Archive this plan?')"
+            :confirmLabel="__('Archive')" confirmClass="btn-warning" confirmAction="archivePlan">
+            <p>{{ __('The plan is hidden from the active list. You can still delete it later.') }}</p>
+        </x-confirm-modal>
+
+        <x-confirm-modal model="confirmDeleteModal" :title="__('Delete this plan permanently?')"
+            :subtitle="__('Warning!')" :confirmLabel="__('Delete')" confirmAction="deletePlan">
+            <p>{{ __('This permanently deletes the plan and its layout. This action is irreversible.') }}</p>
+        </x-confirm-modal>
     @else
         {{-- ── Board ───────────────────────────────────────────────────── --}}
         <x-header progress-indicator separator :title="$plan->name"
@@ -118,8 +133,7 @@
                                     wire:click="editPack({{ $column['pack_id'] }})" />
                                 <x-button class="btn-ghost btn-xs btn-circle text-error" icon="o-trash"
                                     :tooltip="__('Remove group')"
-                                    wire:click="removePack({{ $column['pack_id'] }})"
-                                    wire:confirm="{{ __('Remove this group? Its members will return to the pool.') }}" />
+                                    wire:click="confirmRemovePack({{ $column['pack_id'] }})" />
                             @endif
                         </div>
                     </div>
@@ -212,5 +226,11 @@
                     wire:click="import" spinner="import" />
             </x-slot:actions>
         </x-modal>
+
+        {{-- Remove group confirm modal (project modal, no native JS confirm) --}}
+        <x-confirm-modal model="confirmRemovePackModal" :title="__('Remove this group?')"
+            :confirmLabel="__('Remove')" confirmAction="removePack">
+            <p>{{ __('Its members will return to the pool.') }}</p>
+        </x-confirm-modal>
     @endif
 </div>

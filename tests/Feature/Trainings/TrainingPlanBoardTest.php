@@ -99,6 +99,35 @@ describe('plan management', function (): void {
 
         expect(TrainingPlan::query()->whereKey($plan->id)->exists())->toBeFalse();
     });
+
+    it('opens a confirm modal and archives via the stored id (no native confirm)', function (): void {
+        $plan = TrainingPlan::factory()->create(['season_id' => $this->season->id]);
+
+        Livewire::actingAs($this->manager)
+            ->test(BOARD)
+            ->call('confirmArchivePlan', $plan->id)
+            ->assertSet('confirmArchiveModal', true)
+            ->assertSet('pendingPlanId', $plan->id)
+            ->call('archivePlan') // no argument: uses the stored id
+            ->assertSet('confirmArchiveModal', false)
+            ->assertSet('pendingPlanId', null);
+
+        expect($plan->fresh()->status)->toBe(TrainingPlanStatusEnum::ARCHIVED);
+    });
+
+    it('opens a confirm modal and deletes via the stored id', function (): void {
+        $plan = TrainingPlan::factory()->create(['season_id' => $this->season->id]);
+
+        Livewire::actingAs($this->manager)
+            ->test(BOARD)
+            ->call('confirmDeletePlan', $plan->id)
+            ->assertSet('confirmDeleteModal', true)
+            ->assertSet('pendingPlanId', $plan->id)
+            ->call('deletePlan')
+            ->assertSet('confirmDeleteModal', false);
+
+        expect(TrainingPlan::query()->whereKey($plan->id)->exists())->toBeFalse();
+    });
 });
 
 describe('board rendering', function (): void {
@@ -331,6 +360,22 @@ describe('pack management', function (): void {
         expect($plan->assignments()->count())->toBe(2)
             ->and($a->fresh()->training_plan_pack_id)->toBeNull()
             ->and($b->fresh()->training_plan_pack_id)->toBeNull();
+    });
+
+    it('opens a confirm modal and removes the pack via the stored id', function (): void {
+        $plan = TrainingPlan::factory()->create(['season_id' => $this->season->id]);
+        $pack = TrainingPlanPack::factory()->for($plan, 'plan')->create();
+
+        Livewire::actingAs($this->manager)
+            ->test(BOARD, ['selectedPlanId' => $plan->id])
+            ->call('confirmRemovePack', $pack->id)
+            ->assertSet('confirmRemovePackModal', true)
+            ->assertSet('pendingPackId', $pack->id)
+            ->call('removePack') // no argument: uses the stored id
+            ->assertSet('confirmRemovePackModal', false)
+            ->assertSet('pendingPackId', null);
+
+        expect(TrainingPlanPack::query()->whereKey($pack->id)->exists())->toBeFalse();
     });
 
     it('reflects an edited capacity in the tension flag', function (): void {

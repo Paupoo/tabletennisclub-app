@@ -3220,5 +3220,11 @@
     "XLSX": "XLSX",
     "Upload a CSV exported from this board. Members are matched by licence, then by email.": "Importez un CSV exporté depuis ce tableau. Les membres sont identifiés par licence, puis par e-mail.",
     "CSV file": "Fichier CSV",
-    ":updated updated, :unmatched not found, :skipped skipped.": ":updated mis à jour, :unmatched non trouvés, :skipped ignorés."
+    ":updated updated, :unmatched not found, :skipped skipped.": ":updated mis à jour, :unmatched non trouvés, :skipped ignorés.",
+    "Create a new plan": "Créer un nouveau plan",
+    "Its members will return to the pool.": "Ses membres retournent au pool.",
+    "Remove this group?": "Retirer ce groupe ?",
+    "Starts a draft from the active season — packs and current enrolments are copied.": "Crée un brouillon depuis la saison active — les packs et les inscriptions actuelles sont copiés.",
+    "The plan is hidden from the active list. You can still delete it later.": "Le plan est masqué de la liste active. Vous pourrez toujours le supprimer plus tard.",
+    "This permanently deletes the plan and its layout. This action is irreversible.": "Cela supprime définitivement le plan et sa répartition. Cette action est irréversible."
 }

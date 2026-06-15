@@ -96,7 +96,7 @@ new class extends Component
         $this->building_name = $club->building_name ?? '';
         $this->latitude = $club?->latitude;
         $this->longitude = $club?->longitude;
-        $this->email_contact = $club->email_contact ?? '';
+        $this->email_contact = $club->email_contact ;
         $this->phone_contact = $club->phone_contact ?? '';
         $this->website_url = $club->website_url ?? '';
         $this->bank_account = $club->bank_account ?? '';
@@ -173,6 +173,8 @@ new class extends Component
         $club = Club::ourClub()->first();
 
         $club->update($validated);
+
+        Club::forgetOwnClub();
 
         AppSetting::set('interclub_schedule_enabled', $this->interclubEnabled ? '1' : '0');
         AppSetting::set('interclub_schedule_day', $this->interclubDay ?? 'Vendredi');

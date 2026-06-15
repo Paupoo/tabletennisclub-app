@@ -34,7 +34,7 @@
         {{-- Contact --}}
         <x-admin.shared.form-section :separator="true" :subtitle="__('Information to facilitate people to contact us.')" :title="__('Contact Details')">
                     <x-input icon="o-phone" :label="__('Phone Contact')" wire:model="phone_contact" />
-                    <x-input icon="o-envelope-open" :label="__('Email Contact')" wire:model="email_contact" />
+                    <x-input icon="o-envelope-open" :label="__('Email Contact')" wire:model="email_contact" required/>
                     <x-input :label="__('Website URL')" prefix="https://" wire:model="website_url" />
         </x-admin.shared.form-section>
 

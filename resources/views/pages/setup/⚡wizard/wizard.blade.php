@@ -231,6 +231,7 @@
                             wire:model="clubEmailContact"
                             type="email"
                             placeholder="contact@myclub.be"
+                            required
                         />
                         <x-input
                             :label="__('Phone')"

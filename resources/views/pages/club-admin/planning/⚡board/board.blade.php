@@ -88,32 +88,34 @@
         <x-header progress-indicator separator :title="$plan->name"
             :subtitle="$season?->name">
             <x-slot:actions>
-                @if ($overCapacityCount > 0)
-                    <x-badge class="badge-error gap-1"
-                        :value="$overCapacityCount . ' ' . __('over capacity')" />
-                @endif
-                @if ($canManage)
-                    <x-button class="btn-primary btn-sm" icon="o-plus"
-                        :label="__('Add a group')" wire:click="openAddPack" />
-                @endif
-                <x-dropdown :label="__('Export')" icon="o-arrow-down-tray" class="btn-ghost btn-sm">
-                    <x-menu-item :title="__('CSV')" wire:click="export('csv')" />
-                    <x-menu-item :title="__('ODS')" wire:click="export('ods')" />
-                    <x-menu-item :title="__('XLSX')" wire:click="export('xlsx')" />
-                </x-dropdown>
-                @if ($canManage)
-                    <x-button class="btn-ghost btn-sm" icon="o-arrow-up-tray"
-                        :label="__('Import CSV')" wire:click="openImport" />
-                @endif
-                <x-button class="btn-ghost btn-sm" icon="o-arrow-left"
-                    :label="__('Back to plans')" wire:click="closePlan" />
+                <div class="flex w-full flex-wrap items-center justify-end gap-2">
+                    @if ($overCapacityCount > 0)
+                        <x-badge class="badge-error gap-1"
+                            :value="$overCapacityCount . ' ' . __('over capacity')" />
+                    @endif
+                    @if ($canManage)
+                        <x-button class="btn-primary btn-sm" icon="o-plus"
+                            :label="__('Add a group')" wire:click="openAddPack" />
+                    @endif
+                    <x-dropdown :label="__('Export')" icon="o-arrow-down-tray" class="btn-ghost btn-sm">
+                        <x-menu-item :title="__('CSV')" wire:click="export('csv')" />
+                        <x-menu-item :title="__('ODS')" wire:click="export('ods')" />
+                        <x-menu-item :title="__('XLSX')" wire:click="export('xlsx')" />
+                    </x-dropdown>
+                    @if ($canManage)
+                        <x-button class="btn-ghost btn-sm" icon="o-arrow-up-tray"
+                            :label="__('Import CSV')" wire:click="openImport" />
+                    @endif
+                    <x-button class="btn-ghost btn-sm" icon="o-arrow-left"
+                        :label="__('Back to plans')" wire:click="closePlan" />
+                </div>
             </x-slot:actions>
         </x-header>
 
-        <div class="flex gap-4 overflow-x-auto pb-4">
+        <div class="flex min-h-[60vh] snap-x snap-mandatory gap-4 overflow-x-auto pb-4 sm:snap-none">
             @foreach ($columns as $column)
                 <div wire:key="col-{{ $column['id'] }}"
-                    class="flex w-72 shrink-0 flex-col rounded-xl border border-base-200 bg-base-100">
+                    class="flex w-[85vw] max-w-xs shrink-0 snap-start flex-col rounded-xl border border-base-200 bg-base-100 sm:w-72">
                     {{-- Column header with capacity tension --}}
                     <div class="flex items-center justify-between gap-2 border-b border-base-200 px-3 py-2
                         {{ $column['over_capacity'] ? 'bg-error/10' : '' }}">
@@ -139,7 +141,7 @@
                     </div>
 
                     {{-- Member cards (drag-drop group) --}}
-                    <ul class="flex min-h-24 flex-col gap-2 p-2"
+                    <ul class="flex min-h-32 grow flex-col gap-2 p-2"
                         @if ($canManage)
                             wire:sort="moveAssignment"
                             wire:sort:group="board"

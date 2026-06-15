@@ -25,5 +25,6 @@ class AuthServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::define('manage-contacts', fn (User $user): bool => $user->canManageClubAdmin());
+        Gate::define('manage-season', fn (User $user): bool => $user->canManageClubAdmin());
     }
 }

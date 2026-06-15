@@ -91,6 +91,11 @@ Route::prefix('admin/club-admin/users/')
         Route::livewire('registrations', 'pages::club-admin.users.registrations')->name('admin.users.registrations');
         // Legacy redirect — kept for backward compatibility
         Route::get('payments', fn () => redirect()->route('admin.treasury.payments'))->name('admin.users.payments');
+
+        // Season roster — visible to the whole committee, editing reserved to managers (decision #18).
+        Route::middleware('committee')->group(function (): void {
+            Route::livewire('roster', 'pages::club-admin.subscriptions.roster')->name('admin.subscriptions.roster');
+        });
     });
 Route::prefix('admin/treasury/')
     ->middleware(['auth', 'verified'])

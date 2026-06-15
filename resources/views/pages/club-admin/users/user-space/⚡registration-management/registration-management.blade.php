@@ -259,6 +259,35 @@
                                             <div class="text-xs opacity-40 italic">{{ __('Indicative — the club may adjust training prices upon validation.') }}</div>
                                         </div>
 
+                                        {{-- Season involvement --}}
+                                        <div class="rounded-xl border border-base-200 bg-base-50 p-4 space-y-4">
+                                            <div class="text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Getting involved this season') }}</div>
+                                            <p class="text-xs opacity-60 -mt-2">{{ __('Optional — help us organise the season. You can update these anytime.') }}</p>
+
+                                            <x-toggle
+                                                wire:model.live="registrations.{{ $userId }}.can_drive"
+                                                :label="__('I can drive to away matches')"
+                                                :hint="__('Carpooling helps the whole club.')" />
+
+                                            @if($reg['can_drive'] ?? false)
+                                                <x-input
+                                                    type="number"
+                                                    min="1"
+                                                    max="8"
+                                                    wire:model="registrations.{{ $userId }}.seats_available"
+                                                    :label="__('Seats available (incl. driver)')"
+                                                    icon="o-user-group" />
+                                            @endif
+
+                                            <x-toggle
+                                                wire:model="registrations.{{ $userId }}.wants_to_be_captain"
+                                                :label="__('I would like to be a team captain')" />
+
+                                            <x-toggle
+                                                wire:model="registrations.{{ $userId }}.volunteer_help"
+                                                :label="__('I am willing to help as a volunteer')" />
+                                        </div>
+
                                         <x-button
                                             :label="__('Submit my registration')"
                                             icon="o-paper-airplane"

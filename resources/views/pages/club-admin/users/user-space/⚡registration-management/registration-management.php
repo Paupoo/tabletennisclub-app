@@ -142,10 +142,26 @@ new class extends Component
             ];
         }
 
+        // Carry-over seed: when the member has no subscription yet for the
+        // current season, pre-fill the form defaults from the contact they were
+        // onboarded from. Mapping (only applied when the seed provides the key):
+        //   seed['is_competitive'] => formula (true → competitive, else recreative)
+        //   seed['can_drive']      => can_drive toggle
+        // Otherwise neutral defaults (recreative / false).
+        $seed = $existing ? [] : ($user->originatingContact()?->subscriptionSeed() ?? []);
+
+        $formula = $existing?->is_competitive
+            ? 'competitive'
+            : (($seed['is_competitive'] ?? false) ? 'competitive' : 'recreative');
+
         $this->registrations[$user->id] = [
             'user_id'                  => $user->id,
             'name'                     => $user->first_name . ' ' . $user->last_name,
-            'formula'                  => $existing?->is_competitive ? 'competitive' : 'recreative',
+            'formula'                  => $formula,
+            'can_drive'                => $seed['can_drive'] ?? false,
+            'seats_available'          => null,
+            'wants_to_be_captain'      => false,
+            'volunteer_help'           => false,
             'is_minor'                 => $user->birthdate && $user->birthdate->age < 18,
             'medical_certificate_path' => $user->medical_certificate_path,
             'parental_consent_path'    => $user->parental_consent_path,
@@ -218,8 +234,15 @@ new class extends Component
             return;
         }
 
+        $canDrive = (bool) ($reg['can_drive'] ?? false);
+        $seatsAvailable = $canDrive ? ($reg['seats_available'] ?? null) : null;
+
         $subscription = (new CreateSubscriptionAction)->execute($user, $season, [
-            'is_competitive' => ($reg['formula'] ?? 'recreative') === 'competitive',
+            'is_competitive'      => ($reg['formula'] ?? 'recreative') === 'competitive',
+            'can_drive'           => $canDrive,
+            'seats_available'     => $seatsAvailable !== null ? (int) $seatsAvailable : null,
+            'wants_to_be_captain' => (bool) ($reg['wants_to_be_captain'] ?? false),
+            'volunteer_help'      => (bool) ($reg['volunteer_help'] ?? false),
         ]);
 
         $selectedPackIds = $this->pendingPackIds[$userId] ?? [];

@@ -38,10 +38,45 @@ class SubscriptionFactory extends Factory
             'user_id' => $user->id,
             'season_id' => $season->id,
             'is_competitive' => $competitor,
+            'can_drive' => false,
+            'seats_available' => null,
+            'wants_to_be_captain' => false,
+            'volunteer_help' => false,
             'amount_due' => $amountDue,
             'amount_paid' => 0,
             'created_at' => $this->faker->dateTimeBetween('-30 days', 'now'),
             'updated_at' => now(),
         ];
+    }
+
+    /**
+     * Le membre peut conduire (covoiturage) avec un nombre de places donné.
+     */
+    public function driver(int $seats = 4): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'can_drive' => true,
+            'seats_available' => $seats,
+        ]);
+    }
+
+    /**
+     * Le membre se porte volontaire pour aider bénévolement.
+     */
+    public function volunteer(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'volunteer_help' => true,
+        ]);
+    }
+
+    /**
+     * Le membre souhaite être capitaine d'équipe.
+     */
+    public function wantsCaptain(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'wants_to_be_captain' => true,
+        ]);
     }
 }

@@ -38,6 +38,10 @@ use Illuminate\Support\Carbon;
  * @property bool $is_competitive
  * @property bool $has_other_family_members
  * @property int $trainings_count
+ * @property bool $can_drive
+ * @property int|null $seats_available
+ * @property bool $wants_to_be_captain
+ * @property bool $volunteer_help
  * @property float $subscription_price
  * @property float $training_unit_price
  * @property float $amount_due
@@ -53,6 +57,8 @@ use Illuminate\Support\Carbon;
  * @property-read User $user
  *
  * @method static Builder<static>|Subscription active()
+ * @method static Builder<static>|Subscription captainVolunteers()
+ * @method static Builder<static>|Subscription drivers()
  * @method static \Database\Factories\Domains\ClubAdmin\Subscriptions\Models\SubscriptionFactory factory($count = null, $state = [])
  * @method static Builder<static>|Subscription forSeason(\App\Domains\Competitions\Interclub\Models\Season|int $season)
  * @method static Builder<static>|Subscription newModelQuery()
@@ -62,18 +68,22 @@ use Illuminate\Support\Carbon;
  * @method static Builder<static>|Subscription query()
  * @method static Builder<static>|Subscription whereAmountDue($value)
  * @method static Builder<static>|Subscription whereAmountPaid($value)
+ * @method static Builder<static>|Subscription whereCanDrive($value)
  * @method static Builder<static>|Subscription whereCreatedAt($value)
  * @method static Builder<static>|Subscription whereDeletedAt($value)
  * @method static Builder<static>|Subscription whereHasOtherFamilyMembers($value)
  * @method static Builder<static>|Subscription whereId($value)
  * @method static Builder<static>|Subscription whereIsCompetitive($value)
  * @method static Builder<static>|Subscription whereSeasonId($value)
+ * @method static Builder<static>|Subscription whereSeatsAvailable($value)
  * @method static Builder<static>|Subscription whereStatus($value)
  * @method static Builder<static>|Subscription whereSubscriptionPrice($value)
  * @method static Builder<static>|Subscription whereTrainingUnitPrice($value)
  * @method static Builder<static>|Subscription whereTrainingsCount($value)
  * @method static Builder<static>|Subscription whereUpdatedAt($value)
  * @method static Builder<static>|Subscription whereUserId($value)
+ * @method static Builder<static>|Subscription whereVolunteerHelp($value)
+ * @method static Builder<static>|Subscription whereWantsToBeCaptain($value)
  * @method static Builder<static>|Subscription withTrashed(bool $withTrashed = true)
  * @method static Builder<static>|Subscription withoutTrashed()
  *
@@ -89,6 +99,10 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
         'is_competitive' => 'boolean',
         'has_other_family_members' => 'boolean',
         'trainings_count' => 'integer',
+        'can_drive' => 'boolean',
+        'seats_available' => 'integer',
+        'wants_to_be_captain' => 'boolean',
+        'volunteer_help' => 'boolean',
     ];
 
     protected $fillable = [
@@ -97,6 +111,10 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
         'is_competitive',
         'has_other_family_members',
         'trainings_count',
+        'can_drive',
+        'seats_available',
+        'wants_to_be_captain',
+        'volunteer_help',
         'amount_due',
         'amount_paid',
         'subscription_price',
@@ -232,6 +250,22 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
     }
 
     // ==================== Scopes ====================
+
+    /**
+     * Scope pour récupérer les inscriptions dont le membre se porte volontaire comme capitaine d'équipe.
+     */
+    public function scopeCaptainVolunteers(Builder $query): Builder
+    {
+        return $query->where('wants_to_be_captain', true);
+    }
+
+    /**
+     * Scope pour récupérer les inscriptions dont le membre peut conduire (covoiturage).
+     */
+    public function scopeDrivers(Builder $query): Builder
+    {
+        return $query->where('can_drive', true);
+    }
 
     /**
      * Scope pour récupérer les subscriptions d'une saison

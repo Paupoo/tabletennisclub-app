@@ -5,7 +5,9 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Domains\ClubAdmin\Contact\Models\Contact;
 use App\Domains\ClubAdmin\Contact\Models\EmailTemplate;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 
 /*
@@ -67,6 +69,23 @@ it('loads the contact email templates manager without JS errors', function (): v
     EmailTemplate::factory()->create();
 
     visit(route('admin.website.contacts.email-templates'))
+        ->assertNoJavaScriptErrors()
+        ->assertNoConsoleLogs();
+});
+
+it('loads the season roster without JS errors', function (): void {
+    $this->actingAs($this->admin);
+
+    $member = User::factory()->create(['birthdate' => now()->subYears(12)]);
+    Subscription::factory()->create([
+        'user_id' => $member->id,
+        'season_id' => Season::current()?->id,
+        'status' => 'paid',
+        'can_drive' => true,
+        'seats_available' => 4,
+    ]);
+
+    visit(route('admin.subscriptions.roster'))
         ->assertNoJavaScriptErrors()
         ->assertNoConsoleLogs();
 });

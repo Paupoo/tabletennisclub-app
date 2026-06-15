@@ -97,6 +97,13 @@ Route::prefix('admin/club-admin/users/')
             Route::livewire('roster', 'pages::club-admin.subscriptions.roster')->name('admin.subscriptions.roster');
         });
     });
+// Season planning board — visible to the whole committee, mutations reserved to managers (decision #18).
+Route::prefix('admin/club-admin/planning/')
+    ->middleware(['auth', 'verified', 'committee'])
+    ->group(function (): void {
+        Route::livewire('board', 'pages::club-admin.planning.board')->name('admin.planning.board');
+    });
+
 Route::prefix('admin/treasury/')
     ->middleware(['auth', 'verified'])
     ->group(function (): void {

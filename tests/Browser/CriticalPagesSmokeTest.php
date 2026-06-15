@@ -90,6 +90,14 @@ it('loads the season roster without JS errors', function (): void {
         ->assertNoConsoleLogs();
 });
 
+it('loads the planning board without JS errors', function (): void {
+    $this->actingAs($this->admin);
+
+    visit(route('admin.planning.board'))
+        ->assertNoJavaScriptErrors()
+        ->assertNoConsoleLogs();
+});
+
 it('loads the tournament wizard without JS errors', function (): void {
     $this->actingAs($this->admin);
 

@@ -25,7 +25,8 @@ class GeneratePaymentQR
     {
         $IBAN = 'BE23732333208791';
         $BIC = 'CREGBEBB';
-        $amount = $payment->amount_due;
+        // $amount = $payment->amount_due;
+        $amount = $amount = number_format((float) $payment->amount_due, 2, '.', '');
         $currency = 'EUR';
         $beneficiary = 'CTT Ottignies-Blocry ASBL';
         $reference = $payment->reference; // votre référence / communication

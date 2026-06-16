@@ -63,7 +63,7 @@ class BarOrderController extends Controller
         $period = $request->input('period', 'today');
         $status = $request->input('status', 'all');
 
-        $query = BarOrder::query()->with(['items.product']);
+        $query = BarOrder::query()->with(['items.product', 'createdBy']);
 
         switch ($period) {
             case 'today':
@@ -133,7 +133,7 @@ class BarOrderController extends Controller
      */
     public function index()
     {
-        $orders = BarOrder::with('items.product')
+        $orders = BarOrder::with('items.product', 'createdBy')
             ->where('is_paid', 0)
             ->orderByDesc('id')
             ->get();

@@ -69,7 +69,8 @@ class Payment extends Model
     {
         return Attribute::make(
             get: fn (int $value): float => round($value / 100, 2),
-            set: fn (int|float $value): int => (int) $value * 100,
+            // set: fn (int|float $value): int => (int) $value * 100,
+            set: fn (int|float $value): int => (int) round(((float) $value) * 100),
         );
     }
 
@@ -77,7 +78,8 @@ class Payment extends Model
     {
         return Attribute::make(
             get: fn (int $value): float => round($value / 100, 2),
-            set: fn (int|float $value): int => (int) $value * 100,
+            // set: fn (int|float $value): int => (int) $value * 100,
+            set: fn (int|float $value): int => (int) round(((float) $value) * 100),
         );
     }
 

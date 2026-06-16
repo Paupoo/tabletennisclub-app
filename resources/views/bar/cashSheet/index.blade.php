@@ -80,6 +80,7 @@
 
     <form class="cashsheet__send" method="POST" action="{{ route('bar.cashSheet.send') }}">
         @csrf
+        <input type="hidden" name="date" value="{{ $date }}">
         <div class="form-field">
             <label class="form-label">Adresse Email *</label>
             <input class="form-input" type="email" name="to" placeholder="cttottigniesblocry@gmail.com" required />

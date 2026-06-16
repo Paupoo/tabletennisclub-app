@@ -6,7 +6,6 @@ namespace App\Services\Bar;
 
 use App\Models\Bar\BarOrder;
 use App\Models\Bar\BarOrderItem;
-use App\Models\Bar\BarSetting;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -110,70 +109,6 @@ class CashSheetService
     }
 
     /**
-     * Build a CSV export from the sold products rows.
-     */
-    private function buildCsv($rows): string
-    {
-        $handle = fopen('php://temp', 'r+');
-
-        fputcsv($handle, [
-            'Produit',
-            'Quantité vendue',
-            'Total (cents)',
-        ], ';');
-
-        foreach ($rows as $row) {
-            fputcsv($handle, [
-                $row['product_name'],
-                $row['quantity'],
-                $row['revenue_cents'],
-            ], ';');
-        }
-
-        rewind($handle);
-        $csv = stream_get_contents($handle);
-        fclose($handle);
-
-        return $csv ?: '';
-    }
-
-    /**
-     * Save a default treasurer email in a simple settings table if it exists.
-     * Safe fallback: do nothing if the table does not exist.
-     */
-    public function saveDefaultEmail(string $email): void
-    {
-        if (! Schema::hasTable('bar_settings')) {
-            return;
-        }
-
-        $userId = auth()->id();
-        
-        $existing = DB::table('bar_settings')
-        ->where('k', 'treasurer_email')
-        ->first();
-        
-        if (! $existing) {
-        DB::table('bar_settings')->insert([
-            'k' => 'treasurer_email',
-            'v' => $email,
-            'created_at' => now(),
-            'created_by' => $userId,
-        ]);
-        return;
-        }
-        if ($existing->v !== $email) {
-            DB::table('bar_settings')
-            ->where('k', 'treasurer_email')
-            ->update([
-                'v' => $email,
-                'updated_at' => now(),
-                'modified_by' => $userId,
-            ]);
-        }
-    }
-
-    /**
      * Get the default treasurer email, from DB or config fallback.
      */
     public function getDefaultEmail(): ?string
@@ -187,7 +122,45 @@ class CashSheetService
                 return $value;
             }
         }
+
         return config('bar.treasurer_email_default');
+    }
+
+    /**
+     * Save a default treasurer email in a simple settings table if it exists.
+     * Safe fallback: do nothing if the table does not exist.
+     */
+    public function saveDefaultEmail(string $email): void
+    {
+        if (! Schema::hasTable('bar_settings')) {
+            return;
+        }
+
+        $userId = auth()->id();
+
+        $existing = DB::table('bar_settings')
+            ->where('k', 'treasurer_email')
+            ->first();
+
+        if (! $existing) {
+            DB::table('bar_settings')->insert([
+                'k' => 'treasurer_email',
+                'v' => $email,
+                'created_at' => now(),
+                'created_by' => $userId,
+            ]);
+
+            return;
+        }
+        if ($existing->v !== $email) {
+            DB::table('bar_settings')
+                ->where('k', 'treasurer_email')
+                ->update([
+                    'v' => $email,
+                    'updated_at' => now(),
+                    'modified_by' => $userId,
+                ]);
+        }
     }
 
     /**
@@ -217,5 +190,33 @@ class CashSheetService
 
             return false;
         }
+    }
+
+    /**
+     * Build a CSV export from the sold products rows.
+     */
+    private function buildCsv($rows): string
+    {
+        $handle = fopen('php://temp', 'r+');
+
+        fputcsv($handle, [
+            'Produit',
+            'Quantité vendue',
+            'Total (cents)',
+        ], ';');
+
+        foreach ($rows as $row) {
+            fputcsv($handle, [
+                $row['product_name'],
+                $row['quantity'],
+                $row['revenue_cents'],
+            ], ';');
+        }
+
+        rewind($handle);
+        $csv = stream_get_contents($handle);
+        fclose($handle);
+
+        return $csv ?: '';
     }
 }

@@ -12,13 +12,13 @@ use Illuminate\Support\Facades\DB;
 
 class BarCartService
 {
-    private const MAX_QTY_PER_PRODUCT = 20;
-    private const ACTION_VALIDATE = 'validate';
     private const ACTION_PAY_NOW = 'pay_now';
 
-    public function __construct(private readonly StockService $stockService)
-    {
-    }
+    private const ACTION_VALIDATE = 'validate';
+
+    private const MAX_QTY_PER_PRODUCT = 20;
+
+    public function __construct(private readonly StockService $stockService) {}
 
     /**
      * @return array{status:string,message:string}
@@ -59,58 +59,6 @@ class BarCartService
             'status' => 'success',
             'message' => sprintf('%s ajouté au panier.', $product->name),
         ];
-    }
-
-    public function removeProductFromSessionCart(int $productId): void
-    {
-        $cart = $this->getSanitizedCart();
-
-        if (! isset($cart[$productId])) {
-            return;
-        }
-
-        $cart[$productId] = max(0, (int) $cart[$productId] - 1);
-
-        if ($cart[$productId] <= 0) {
-            unset($cart[$productId]);
-        }
-
-        session()->put('cart', $cart);
-    }
-
-    /**
-     * @return array{items:Collection,totalPrice:int,cartCount:int}
-     */
-    public function getCartViewData(): array
-    {
-        $cart = $this->getSanitizedCart();
-
-        $products = BarProduct::query()
-            ->whereIn('id', array_keys($cart))
-            ->orderBy('name')
-            ->get();
-
-        $items = $products->map(function (BarProduct $product) use ($cart): array {
-            $qty = (int) ($cart[$product->id] ?? 0);
-
-            return [
-                'product' => $product,
-                'quantity' => $qty,
-                'total_price' => $qty * (int) $product->sale_price,
-            ];
-        });
-
-        return [
-            'items' => $items,
-            'totalPrice' => (int) $items->sum('total_price'),
-            'cartCount' => (int) array_sum($cart),
-        ];
-    }
-
-    public function clearSessionCart(): void
-    {
-        session()->forget('cart');
-        session()->forget('editing_order_id');
     }
 
     public function checkoutFromSessionCart(string $action): BarOrder
@@ -203,8 +151,73 @@ class BarCartService
         return $order;
     }
 
+    public function clearSessionCart(): void
+    {
+        session()->forget('cart');
+        session()->forget('editing_order_id');
+    }
+
     /**
-     * @param int|string|null $orderId
+     * @return array{items:Collection,totalPrice:int,cartCount:int}
+     */
+    public function getCartViewData(): array
+    {
+        $cart = $this->getSanitizedCart();
+
+        $products = BarProduct::query()
+            ->whereIn('id', array_keys($cart))
+            ->orderBy('name')
+            ->get();
+
+        $items = $products->map(function (BarProduct $product) use ($cart): array {
+            $qty = (int) ($cart[$product->id] ?? 0);
+
+            return [
+                'product' => $product,
+                'quantity' => $qty,
+                'total_price' => $qty * (int) $product->sale_price,
+            ];
+        });
+
+        return [
+            'items' => $items,
+            'totalPrice' => (int) $items->sum('total_price'),
+            'cartCount' => (int) array_sum($cart),
+        ];
+    }
+
+    public function removeProductFromSessionCart(int $productId): void
+    {
+        $cart = $this->getSanitizedCart();
+
+        if (! isset($cart[$productId])) {
+            return;
+        }
+
+        $cart[$productId] = max(0, (int) $cart[$productId] - 1);
+
+        if ($cart[$productId] <= 0) {
+            unset($cart[$productId]);
+        }
+
+        session()->put('cart', $cart);
+    }
+
+    /**
+     * @return array<int, int>
+     */
+    private function getSanitizedCart(): array
+    {
+        return collect(session()->get('cart', []))
+            ->mapWithKeys(function ($qty, $id): array {
+                return [(int) $id => (int) $qty];
+            })
+            ->filter(fn (int $qty): bool => $qty > 0)
+            ->toArray();
+    }
+
+    /**
+     * @param  int|string|null  $orderId
      */
     private function loadOrCreateDraftOrder($orderId, int $userId): BarOrder
     {
@@ -240,18 +253,5 @@ class BarCartService
         $order->items()->delete();
 
         return $order;
-    }
-
-    /**
-     * @return array<int, int>
-     */
-    private function getSanitizedCart(): array
-    {
-        return collect(session()->get('cart', []))
-            ->mapWithKeys(function ($qty, $id): array {
-                return [(int) $id => (int) $qty];
-            })
-            ->filter(fn (int $qty): bool => $qty > 0)
-            ->toArray();
     }
 }

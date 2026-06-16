@@ -8,7 +8,7 @@ use App\Domains\Bar\Models\BarCategory;
 use App\Domains\Bar\Models\BarProduct;
 use App\Domains\Bar\Services\StockService;
 use App\Http\Controllers\Controller;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -37,7 +37,7 @@ class BarProductController extends Controller
 
     public function index(): View
     {
-        $categories = BarCategory::with(['products' => function (Builder $q): void {
+        $categories = BarCategory::with(['products' => function (HasMany $q): void {
             $q->orderBy('name');
         }])
             ->orderBy('name')

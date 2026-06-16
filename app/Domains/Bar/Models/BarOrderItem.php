@@ -6,6 +6,7 @@ namespace App\Domains\Bar\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -16,10 +17,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $total_price
  * @property int|null $created_by
  * @property int|null $modified_by
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Domains\Bar\Models\BarOrder $order
- * @property-read \App\Domains\Bar\Models\BarProduct $product
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read BarOrder $order
+ * @property-read BarProduct $product
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BarOrderItem newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BarOrderItem newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BarOrderItem query()
@@ -33,12 +35,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BarOrderItem whereTotalPrice($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BarOrderItem whereUnitPrice($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BarOrderItem whereUpdatedAt($value)
+ *
  * @mixin \Eloquent
  */
 class BarOrderItem extends Model
 {
-    protected $table = 'bar_order_items';
-
     protected $fillable = [
         'order_id',
         'product_id',
@@ -46,6 +47,8 @@ class BarOrderItem extends Model
         'unit_price',
         'total_price',
     ];
+
+    protected $table = 'bar_order_items';
 
     /**
      * ✅ Relationship: item belongs to an order

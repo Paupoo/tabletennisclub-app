@@ -7,6 +7,7 @@ namespace App\Domains\Competitions\Interclub\Models;
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\LeagueCategory;
+use App\Domains\Shared\Traits\HasAuditLog;
 use App\Domains\Shared\Traits\HasAvailability;
 use App\Observers\InterclubObserver;
 use Carbon\Carbon;
@@ -72,6 +73,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 #[ObservedBy(InterclubObserver::class)]
 class Interclub extends Model
 {
+    use HasAuditLog;
     use HasAvailability;
     use HasFactory;
 

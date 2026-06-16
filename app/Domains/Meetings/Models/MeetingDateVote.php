@@ -6,6 +6,7 @@ namespace App\Domains\Meetings\Models;
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\MeetingDateVoteEnum;
+use App\Domains\Shared\Traits\HasAuditLog;
 use Database\Factories\Domains\Meetings\Models\MeetingDateVoteFactory;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -39,6 +40,7 @@ use Illuminate\Support\Carbon;
 #[UseFactory(MeetingDateVoteFactory::class)]
 class MeetingDateVote extends Model
 {
+    use HasAuditLog;
     use HasFactory;
 
     protected $casts = [

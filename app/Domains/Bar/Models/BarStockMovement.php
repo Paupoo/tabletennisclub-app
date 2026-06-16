@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Bar\Models;
 
+use App\Domains\Shared\Traits\HasAuditLog;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
@@ -43,6 +44,8 @@ use Illuminate\Support\Carbon;
  */
 class BarStockMovement extends Model
 {
+    use HasAuditLog;
+
     public const string TYPE_IN = 'IN';
 
     public const string TYPE_OUT = 'OUT';

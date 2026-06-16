@@ -112,6 +112,13 @@ Route::prefix('admin/treasury/')
         Route::livewire('cash-register', 'pages::club-admin.treasury.cash-register')->name('admin.treasury.cash');
     });
 
+// Audit log — readable by platform admins and the management committee (decision: audit access).
+Route::prefix('admin/club-admin/audit/')
+    ->middleware(['auth', 'verified', 'can:view-audit-log'])
+    ->group(function (): void {
+        Route::livewire('list', 'pages::club-admin.audit.index')->name('admin.audit.index');
+    });
+
 Route::prefix('admin/club-admin/')
     ->middleware(['auth', 'verified', 'can:update,App\Models\ClubEvents\Interclub\Club'])
     ->group(function (): void {

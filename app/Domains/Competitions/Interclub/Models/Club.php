@@ -6,6 +6,7 @@ namespace App\Domains\Competitions\Interclub\Models;
 
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Traits\HasAuditLog;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -71,6 +72,7 @@ use Illuminate\Support\Facades\Cache;
  */
 class Club extends Model
 {
+    use HasAuditLog;
     use HasFactory;
 
     protected $casts = [

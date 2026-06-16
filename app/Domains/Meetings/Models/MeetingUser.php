@@ -8,6 +8,7 @@ use App\Contracts\DescribesPayment;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
+use App\Domains\Shared\Traits\HasAuditLog;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\Relations\Pivot;
@@ -46,6 +47,8 @@ use Illuminate\Support\Carbon;
  */
 class MeetingUser extends Pivot implements DescribesPayment
 {
+    use HasAuditLog;
+
     public $incrementing = true;
 
     protected $casts = [

@@ -15,6 +15,7 @@ use App\Domains\Shared\States\Payments\PaidState;
 use App\Domains\Shared\States\Payments\PendingState;
 use App\Domains\Shared\States\Payments\RefundedState;
 use App\Domains\Shared\States\Payments\ValidatedState;
+use App\Domains\Shared\Traits\HasAuditLog;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Observers\SubscriptionObserver;
 use Database\Factories\Domains\ClubAdmin\Subscriptions\Models\SubscriptionFactory;
@@ -95,6 +96,8 @@ use Illuminate\Support\Carbon;
 #[ObservedBy(SubscriptionObserver::class)]
 class Subscription extends Model implements DescribesPayment, PayableInterface
 {
+    use HasAuditLog;
+
     /** @use HasFactory<SubscriptionFactory> */
     use HasFactory, SoftDeletes;
 

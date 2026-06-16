@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Competitions\Interclub\Models;
 
 use App\Domains\Shared\Enums\InterclubResultEnum;
+use App\Domains\Shared\Traits\HasAuditLog;
 use Database\Factories\Domains\Competitions\Interclub\Models\InterclubResultFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -38,6 +39,7 @@ use Illuminate\Support\Carbon;
  */
 class InterclubResult extends Model
 {
+    use HasAuditLog;
     use HasFactory;
 
     protected $casts = [

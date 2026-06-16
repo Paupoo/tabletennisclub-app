@@ -7,6 +7,7 @@ namespace App\Domains\ClubAdmin\Club\Models;
 use App\Domains\Competitions\Tournament\Models\TableTournament;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentMatch;
+use App\Domains\Shared\Traits\HasAuditLog;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -55,6 +56,7 @@ use Illuminate\Support\Carbon;
  */
 class Table extends Model
 {
+    use HasAuditLog;
     use HasFactory;
 
     protected $casts = [

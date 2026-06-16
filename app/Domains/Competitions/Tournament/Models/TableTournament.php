@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Competitions\Tournament\Models;
 
+use App\Domains\Shared\Traits\HasAuditLog;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Support\Carbon;
@@ -38,6 +39,8 @@ use Illuminate\Support\Carbon;
  */
 class TableTournament extends Pivot
 {
+    use HasAuditLog;
+
     protected $casts = [
         'match_started_at' => 'datetime:Y-m-d\TH:i',
     ];

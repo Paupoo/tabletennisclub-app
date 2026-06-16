@@ -8,6 +8,7 @@ use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\TrainingCancellationType;
+use App\Domains\Shared\Traits\HasAuditLog;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -59,6 +60,7 @@ use Illuminate\Support\Carbon;
  */
 class Training extends Model
 {
+    use HasAuditLog;
     use HasFactory;
 
     protected $casts = [

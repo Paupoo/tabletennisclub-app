@@ -7,6 +7,7 @@ namespace App\Domains\ClubAdmin\Club\Models;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Shared\Traits\HasAuditLog;
 use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Models\TrainingPack;
 use Database\Factories\Domains\ClubAdmin\Club\Models\RoomFactory;
@@ -76,6 +77,7 @@ use Illuminate\Support\Carbon;
  */
 class Room extends Model
 {
+    use HasAuditLog;
     use HasFactory;
 
     protected $casts = [

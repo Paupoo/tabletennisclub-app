@@ -6,6 +6,7 @@ namespace App\Domains\ClubPosts\Models;
 
 use App\Domains\Shared\Enums\ClubEventTypeEnum;
 use App\Domains\Shared\Enums\EventPostStatusEnum;
+use App\Domains\Shared\Traits\HasAuditLog;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -75,6 +76,7 @@ use Illuminate\Support\Carbon;
  */
 class EventPost extends Model
 {
+    use HasAuditLog;
     use HasFactory;
 
     public const array CATEGORIES = [

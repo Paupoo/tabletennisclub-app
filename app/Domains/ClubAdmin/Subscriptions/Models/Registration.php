@@ -6,6 +6,7 @@ namespace App\Domains\ClubAdmin\Subscriptions\Models;
 
 use App\Contracts\PayableInterface;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\Shared\Traits\HasAuditLog;
 use Database\Factories\Domains\ClubAdmin\Subscriptions\Models\RegistrationFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
@@ -43,6 +44,8 @@ use Illuminate\Support\Carbon;
  */
 class Registration extends Model implements PayableInterface
 {
+    use HasAuditLog;
+
     /** @use HasFactory<RegistrationFactory> */
     use HasFactory;
 

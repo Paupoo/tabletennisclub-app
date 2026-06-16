@@ -1,0 +1,197 @@
+<x-slot:breadcrumbs>
+    <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
+</x-slot:breadcrumbs>
+
+<div x-data="{ mobileSearchOpen: false }">
+    <x-header :title="__('Audit')" :subtitle="__('Everything that happens in the admin')" separator progress-indicator>
+        <x-slot:middle>
+            <div class="hidden w-full lg:block">
+                <x-input class="w-full" clearable icon="o-magnifying-glass"
+                    :placeholder="__('Search...')"
+                    wire:model.live.debounce.300ms="search" />
+            </div>
+        </x-slot:middle>
+        <x-slot:actions>
+            {{-- Mobile: 🔍 · filter --}}
+            <div class="flex items-center gap-1 lg:hidden">
+                <button class="btn btn-ghost btn-circle btn-sm" @click="mobileSearchOpen = true">
+                    <x-icon name="o-magnifying-glass" class="h-5 w-5" />
+                </button>
+                <button class="btn btn-ghost btn-circle btn-sm relative {{ count($filterChips) > 0 ? 'btn-active' : '' }}"
+                    wire:click="$set('filterDrawer', true)">
+                    <x-icon name="o-funnel" class="h-5 w-5" />
+                    @if (count($filterChips) > 0)
+                        <span class="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-bold leading-none text-primary-content">{{ count($filterChips) }}</span>
+                    @endif
+                </button>
+            </div>
+            {{-- Desktop --}}
+            <div class="hidden items-center gap-2 lg:flex">
+                <x-button class="btn-ghost {{ count($filterChips) > 0 ? 'btn-active' : '' }}"
+                    icon="o-funnel" :label="__('Filters')"
+                    wire:click="$set('filterDrawer', true)">
+                    @if (count($filterChips) > 0)
+                        <x-badge class="badge-sm badge-primary" value="{{ count($filterChips) }}" />
+                    @endif
+                </x-button>
+            </div>
+        </x-slot:actions>
+    </x-header>
+
+    {{-- Mobile search bar --}}
+    <div class="border-b border-base-200 lg:hidden" x-show="mobileSearchOpen"
+        x-transition:enter="transition ease-out duration-150"
+        x-transition:enter-start="opacity-0 -translate-y-1"
+        x-transition:enter-end="opacity-100 translate-y-0"
+        style="display:none">
+        <div class="flex items-center gap-2 px-4 py-2.5">
+            <div class="flex flex-1 items-center gap-2 rounded-xl bg-base-200 px-3 py-2">
+                <x-icon name="o-magnifying-glass" class="h-4 w-4 shrink-0 text-base-content/40" />
+                <input wire:model.live.debounce.300ms="search"
+                    class="flex-1 bg-transparent text-sm outline-none placeholder:text-base-content/40"
+                    placeholder="{{ __('Search...') }}" />
+            </div>
+            <button @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm">
+                <x-icon name="o-x-mark" class="h-5 w-5" />
+            </button>
+        </div>
+    </div>
+
+    {{-- Active filter chips --}}
+    <x-admin.shared.filter-chips :chips="$filterChips" />
+
+    <x-card class="bg-base-100 border-none shadow-sm mt-6">
+        <x-table :headers="$headers" :rows="$activities" :sort-by="$sortBy" hover>
+
+            @scope('cell_created_at', $activity)
+            <span class="text-sm tabular-nums whitespace-nowrap">{{ $activity->created_at->format('d/m/Y H:i') }}</span>
+            @endscope
+
+            @scope('cell_causer', $activity)
+            @if ($activity->causer)
+            <span class="text-sm font-medium">{{ $activity->causer->first_name }} {{ $activity->causer->last_name }}</span>
+            @else
+            <span class="text-sm italic opacity-50">{{ __('System') }}</span>
+            @endif
+            @endscope
+
+            @scope('cell_event', $activity)
+            @php($event = $activity->event ?? $activity->description)
+            @if ($event === 'created')
+            <x-badge :value="__('Created')" class="badge-success badge-sm badge-soft" />
+            @elseif ($event === 'updated')
+            <x-badge :value="__('Modified')" class="badge-info badge-sm badge-soft" />
+            @elseif ($event === 'deleted')
+            <x-badge :value="__('Deleted')" class="badge-error badge-sm badge-soft" />
+            @else
+            <x-badge :value="$activity->description" class="badge-ghost badge-sm" />
+            @endif
+            @endscope
+
+            @scope('cell_subject', $activity, $subjectLabels)
+            <div>
+                <div class="text-sm font-medium">{{ $subjectLabels[$activity->subject_type] ?? \Illuminate\Support\Str::afterLast($activity->subject_type, '\\') }}</div>
+                <div class="font-mono text-xs opacity-40">#{{ $activity->subject_id }}</div>
+            </div>
+            @endscope
+
+            @scope('cell_changes', $activity)
+            @php($changes = $activity->attribute_changes)
+            @php($event = $activity->event ?? $activity->description)
+            @if ($changes && isset($changes['attributes']))
+                @if ($event === 'created')
+                {{-- Création : repliée par défaut (sinon mur de champs) --}}
+                <div x-data="{ open: false }" class="text-xs">
+                    <button type="button" @click="open = !open"
+                        class="inline-flex items-center gap-1 text-primary hover:underline">
+                        <x-icon name="o-eye" class="h-3.5 w-3.5" />
+                        <span x-show="!open">{{ trans_choice('{1} :count field set|[2,*] :count fields set', count($changes['attributes']), ['count' => count($changes['attributes'])]) }}</span>
+                        <span x-show="open" style="display:none">{{ __('Hide details') }}</span>
+                    </button>
+                    <div x-show="open" x-transition style="display:none" class="mt-1 space-y-0.5">
+                        @foreach ($changes['attributes'] as $field => $newValue)
+                        <div>
+                            <span class="font-semibold opacity-70">{{ $field }}:</span>
+                            <span class="text-success/80">{{ \Illuminate\Support\Str::limit((string) $newValue, 40) ?: '—' }}</span>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+                @else
+                {{-- Modification / suppression : diff inline --}}
+                <div class="space-y-0.5">
+                    @foreach ($changes['attributes'] as $field => $newValue)
+                    <div class="text-xs">
+                        <span class="font-semibold opacity-70">{{ $field }}:</span>
+                        @if (isset($changes['old'][$field]) && $changes['old'][$field] !== null && $changes['old'][$field] !== '')
+                        <span class="text-error/70 line-through">{{ \Illuminate\Support\Str::limit((string) $changes['old'][$field], 40) }}</span>
+                        <span class="opacity-40">→</span>
+                        @endif
+                        <span class="text-success/80">{{ \Illuminate\Support\Str::limit((string) $newValue, 40) ?: '—' }}</span>
+                    </div>
+                    @endforeach
+                </div>
+                @endif
+            @else
+            <span class="opacity-30">—</span>
+            @endif
+            @endscope
+
+        </x-table>
+
+        @if ($activities->total() === 0)
+        <div class="flex flex-col items-center justify-center py-12 opacity-40">
+            <x-icon name="o-document-magnifying-glass" class="w-12 h-12 mb-4" />
+            <p class="text-sm italic">{{ __('No activity recorded yet.') }}</p>
+        </div>
+        @endif
+
+        <div class="mt-4">
+            {{ $activities->links() }}
+        </div>
+    </x-card>
+
+    {{-- ========================================== --}}
+    {{-- Filter drawer                              --}}
+    {{-- ========================================== --}}
+    <x-admin.shared.filter-drawer :title="__('Filters')">
+        <x-slot:filters>
+            <x-select
+                :label="__('Item type')"
+                wire:model.live="modelFilter"
+                :options="$modelOptions"
+                option-value="id"
+                option-label="name"
+                :placeholder="__('All')"
+                clearable />
+
+            <x-select
+                :label="__('Author')"
+                wire:model.live="causerFilter"
+                :options="$causerOptions"
+                option-value="id"
+                option-label="name"
+                :placeholder="__('All')"
+                clearable />
+
+            <x-select
+                :label="__('Action')"
+                wire:model.live="eventFilter"
+                :options="$eventOptions"
+                option-value="id"
+                option-label="name"
+                :placeholder="__('All')"
+                clearable />
+
+            <x-input
+                :label="__('From')"
+                wire:model.live="dateFrom"
+                type="date" />
+
+            <x-input
+                :label="__('To')"
+                wire:model.live="dateTo"
+                type="date" />
+        </x-slot:filters>
+    </x-admin.shared.filter-drawer>
+</div>

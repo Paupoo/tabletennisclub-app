@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Shared\Models;
 
+use App\Domains\Shared\Traits\HasAuditLog;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
@@ -27,6 +28,8 @@ use Illuminate\Support\Carbon;
  */
 class AppSetting extends Model
 {
+    use HasAuditLog;
+
     protected $fillable = ['key', 'value'];
 
     public static function get(string $key, mixed $default = null): mixed

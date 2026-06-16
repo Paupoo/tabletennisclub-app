@@ -7,6 +7,7 @@ namespace App\Domains\ClubPosts\Models;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\NewsPostCategoryEnum;
 use App\Domains\Shared\Enums\NewsPostStatusEnum;
+use App\Domains\Shared\Traits\HasAuditLog;
 use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -55,6 +56,7 @@ use Illuminate\Support\Carbon;
  */
 class NewsPost extends Model
 {
+    use HasAuditLog;
     use HasFactory, SoftDeletes;
 
     protected $casts = [

@@ -6,6 +6,7 @@ namespace App\Domains\Competitions\Tournament\Models;
 
 use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Traits\HasAuditLog;
 use Database\Factories\Domains\Competitions\Tournament\Models\TournamentMatchFactory;
 use Eloquent;
 use Illuminate\Database\Eloquent\Builder;
@@ -93,6 +94,8 @@ use Illuminate\Support\Carbon;
  */
 class TournamentMatch extends Model
 {
+    use HasAuditLog;
+
     //
     use HasFactory;
 

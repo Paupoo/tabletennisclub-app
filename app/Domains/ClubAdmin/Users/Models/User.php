@@ -19,6 +19,7 @@ use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Gender;
+use App\Domains\Shared\Traits\HasAuditLog;
 use App\Domains\Trainings\Models\Training;
 use App\Http\Controllers\ClubAdmin\DashboardController;
 use App\Observers\UserObserver;
@@ -164,7 +165,7 @@ use Laravel\Sanctum\PersonalAccessToken;
 #[ObservedBy(UserObserver::class)]
 class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
+    use HasApiTokens, HasAuditLog, HasFactory, Notifiable, SoftDeletes;
 
     /**
      * The attributes that should be cast.
@@ -267,6 +268,23 @@ class User extends Authenticatable implements MustVerifyEmail
             CommitteeRolesEnum::SECRETARY,
             CommitteeRolesEnum::PRESIDENT,
             CommitteeRolesEnum::VICE_PRESIDENT,
+        ], true);
+    }
+
+    /**
+     * Whether the user may read the club-wide audit log.
+     *
+     * Full platform admins plus the president, vice-president, secretary and
+     * treasurer committee roles. The plain administrator committee role does
+     * not grant access on its own.
+     */
+    public function canViewAuditLog(): bool
+    {
+        return $this->is_admin || in_array($this->committee_role, [
+            CommitteeRolesEnum::PRESIDENT,
+            CommitteeRolesEnum::VICE_PRESIDENT,
+            CommitteeRolesEnum::SECRETARY,
+            CommitteeRolesEnum::TREASURER,
         ], true);
     }
 

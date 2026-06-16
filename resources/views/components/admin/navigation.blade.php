@@ -31,12 +31,13 @@
         :title="__('Dashboard')"
     />
     <x-menu-item
-        icon="o-bell"
-        link="{{ route('notifications.index') }}"
-        :title="__('Notifications')"
-        :badge="$unreadNotificationsCount > 0 ? (string) $unreadNotificationsCount : null"
-        badge-classes="badge-error"
+    icon="o-bell"
+    link="{{ route('notifications.index') }}"
+    :title="__('Notifications')"
+    :badge="$unreadNotificationsCount > 0 ? (string) $unreadNotificationsCount : null"
+    badge-classes="badge-error"
     />
+    
 
     <x-menu-separator />
     @if(Auth()->user()->is_admin || Auth()->user()->is_committee_member )
@@ -113,6 +114,13 @@
     </x-menu-sub>
     @endif
 
+    @if($user->canViewAuditLog())
     <x-menu-separator />
+    <x-menu-item
+        icon="o-magnifying-glass"
+        link="{{ route('admin.audit.index') }}"
+        :title="__('Audit')"
+    />
+    @endif
 
 </x-menu>

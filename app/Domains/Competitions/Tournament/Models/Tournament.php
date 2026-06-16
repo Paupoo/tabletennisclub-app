@@ -14,6 +14,7 @@ use App\Domains\Shared\Enums\TournamentObjectiveEnum;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\Shared\States\Tournament\Contracts\TournamentStateInterface;
 use App\Domains\Shared\States\Tournament\TournamentStateFactory;
+use App\Domains\Shared\Traits\HasAuditLog;
 use App\Observers\TournamentObserver;
 use Database\Factories\Domains\Competitions\Tournament\Models\TournamentFactory;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -112,6 +113,8 @@ use Illuminate\Support\Carbon;
 #[ObservedBy(TournamentObserver::class)]
 class Tournament extends Model
 {
+    use HasAuditLog;
+
     /** @use HasFactory<TournamentFactory> */
     use HasFactory;
 

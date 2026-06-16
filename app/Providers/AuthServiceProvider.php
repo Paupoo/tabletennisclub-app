@@ -26,5 +26,6 @@ class AuthServiceProvider extends ServiceProvider
     {
         Gate::define('manage-contacts', fn (User $user): bool => $user->canManageClubAdmin());
         Gate::define('manage-season', fn (User $user): bool => $user->canManageClubAdmin());
+        Gate::define('view-audit-log', fn (User $user): bool => $user->canViewAuditLog());
     }
 }

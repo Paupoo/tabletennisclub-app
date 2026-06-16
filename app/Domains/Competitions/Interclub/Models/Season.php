@@ -6,6 +6,7 @@ namespace App\Domains\Competitions\Interclub\Models;
 
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Traits\HasAuditLog;
 use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Models\TrainingPack;
 use Database\Factories\Domains\Competitions\Interclub\Models\SeasonFactory;
@@ -65,6 +66,7 @@ use Illuminate\Support\Facades\DB;
  */
 class Season extends Model
 {
+    use HasAuditLog;
     use HasFactory;
 
     protected $casts = [

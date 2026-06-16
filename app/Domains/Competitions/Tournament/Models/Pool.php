@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Competitions\Tournament\Models;
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Traits\HasAuditLog;
 use Database\Factories\Domains\Competitions\Tournament\Models\PoolFactory;
 use Eloquent;
 use Exception;
@@ -46,6 +47,8 @@ use Illuminate\Support\Carbon;
  */
 class Pool extends Model
 {
+    use HasAuditLog;
+
     /** @use HasFactory<PoolFactory> */
     use HasFactory;
 

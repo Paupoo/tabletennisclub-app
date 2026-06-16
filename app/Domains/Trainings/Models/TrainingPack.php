@@ -12,6 +12,7 @@ use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\Recurrence;
 use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Shared\Enums\TrainingType;
+use App\Domains\Shared\Traits\HasAuditLog;
 use App\Domains\Trainings\Services\TrainingBuilder;
 use App\Domains\Trainings\Services\TrainingDateGenerator;
 use Carbon\Carbon;
@@ -89,6 +90,8 @@ use Illuminate\Database\Eloquent\Relations\MorphOne;
  */
 class TrainingPack extends Model
 {
+    use HasAuditLog;
+
     /** @use HasFactory<TrainingPackFactory> */
     use HasFactory;
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Bar\Models;
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Traits\HasAuditLog;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -45,6 +46,8 @@ use Illuminate\Support\Carbon;
  */
 class BarProduct extends Model
 {
+    use HasAuditLog;
+
     protected $fillable = [
         'name',
         'sale_price',

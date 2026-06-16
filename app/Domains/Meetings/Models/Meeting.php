@@ -11,6 +11,7 @@ use App\Domains\Shared\Enums\MeetingFormatEnum;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\MeetingTypeEnum;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
+use App\Domains\Shared\Traits\HasAuditLog;
 use Database\Factories\Domains\Meetings\Models\MeetingFactory;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Collection;
@@ -95,6 +96,7 @@ use Illuminate\Support\Carbon;
 #[UseFactory(MeetingFactory::class)]
 class Meeting extends Model
 {
+    use HasAuditLog;
     use HasFactory;
 
     protected $casts = [

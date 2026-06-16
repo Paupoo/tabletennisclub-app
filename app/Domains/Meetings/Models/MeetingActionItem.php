@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Meetings\Models;
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Traits\HasAuditLog;
 use Database\Factories\Domains\Meetings\Models\MeetingActionItemFactory;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -44,6 +45,7 @@ use Illuminate\Support\Carbon;
 #[UseFactory(MeetingActionItemFactory::class)]
 class MeetingActionItem extends Model
 {
+    use HasAuditLog;
     use HasFactory;
 
     protected $casts = [

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\ClubAdmin\Contact\Models;
 
+use App\Domains\Shared\Traits\HasAuditLog;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
@@ -33,6 +34,7 @@ use Illuminate\Support\Carbon;
  */
 final class Spam extends Model
 {
+    use HasAuditLog;
     use HasFactory;
 
     protected $casts = [

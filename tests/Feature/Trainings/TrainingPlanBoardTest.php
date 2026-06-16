@@ -182,15 +182,16 @@ describe('board rendering', function (): void {
 });
 
 describe('pool ranking series derivation', function (): void {
-    it('maps a ranking to its series letter or NG when unranked', function (string $ranking, string $expected): void {
+    it('maps a ranking to its series letter or NC when unranked', function (string $ranking, string $expected): void {
         $component = Livewire::actingAs($this->manager)->test(BOARD);
 
         expect($component->instance()->rankingSeries($ranking))->toBe($expected);
     })->with([
         'B series' => ['B2', 'B'],
         'D series' => ['D0', 'D'],
-        'explicit NG' => ['NG', 'NG'],
-        'empty is unranked' => ['', 'NG'],
+        'explicit NC' => ['NC', 'NC'],
+        'NA is unranked' => ['NA', 'NC'],
+        'empty is unranked' => ['', 'NC'],
         'lowercase e is normalised' => ['e6', 'E'],
         'uppercase E' => ['E6', 'E'],
         'A series' => ['A1', 'A'],
@@ -274,14 +275,14 @@ describe('pool filtering', function (): void {
             ->and($pool['cards'][0]['name'])->toBe('Deeone Pool');
     });
 
-    it('filters the pool to unranked members with the NG series', function () use ($makePooled): void {
+    it('filters the pool to unranked members with the NC series', function () use ($makePooled): void {
         $plan = TrainingPlan::factory()->create(['season_id' => $this->season->id]);
         $makePooled($plan, $this->season, 'BeeOne', 'B2', now()->subYears(30));
         $makePooled($plan, $this->season, 'NoRank', '', now()->subYears(30));
 
         $component = Livewire::actingAs($this->manager)
             ->test(BOARD, ['selectedPlanId' => $plan->id])
-            ->set('poolSeriesFilter', 'NG');
+            ->set('poolSeriesFilter', 'NC');
 
         $pool = collect($component->viewData('columns'))->firstWhere('is_pool', true);
 
@@ -395,6 +396,20 @@ describe('capacity tensions', function (): void {
 });
 
 describe('pack management', function (): void {
+    it('closes the add/edit pack modal and clears the form', function (): void {
+        $plan = TrainingPlan::factory()->create(['season_id' => $this->season->id]);
+
+        Livewire::actingAs($this->manager)
+            ->test(BOARD, ['selectedPlanId' => $plan->id])
+            ->call('openAddPack')
+            ->assertSet('showPackModal', true)
+            ->set('packName', 'Half typed')
+            ->call('closePackModal')
+            ->assertSet('showPackModal', false)
+            ->assertSet('packName', '')
+            ->assertHasNoErrors();
+    });
+
     it('adds a hypothetical pack to the selected plan with incremental position', function (): void {
         $plan = TrainingPlan::factory()->create(['season_id' => $this->season->id]);
         TrainingPlanPack::factory()->for($plan, 'plan')->create(['position' => 0]);

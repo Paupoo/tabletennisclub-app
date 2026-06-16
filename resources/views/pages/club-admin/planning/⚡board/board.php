@@ -72,7 +72,7 @@ new class extends Component
     /** Pool-only filter: age category value (AgeCategoryEnum) or '' for all. */
     public string $poolAgeFilter = '';
 
-    /** Pool-only filter: ranking series (A–E or NG) or '' for all. */
+    /** Pool-only filter: ranking series (A–E or NC) or '' for all. */
     public string $poolSeriesFilter = '';
 
     /** Confirm-modal visibility for destructive actions. */
@@ -243,6 +243,14 @@ new class extends Component
 
         $this->resetPackForm();
         $this->showPackModal = true;
+    }
+
+    /** Close the add/edit pack modal and clear its form + any validation errors. */
+    public function closePackModal(): void
+    {
+        $this->showPackModal = false;
+        $this->resetPackForm();
+        $this->resetValidation();
     }
 
     /**
@@ -468,7 +476,7 @@ new class extends Component
 
         $poolSeriesOptions = collect(['A', 'B', 'C', 'D', 'E'])
             ->map(fn (string $s): array => ['id' => $s, 'name' => $s])
-            ->push(['id' => 'NG', 'name' => __('Unranked')]);
+            ->push(['id' => 'NC', 'name' => __('Unranked')]);
 
         return [
             'breadcrumbs' => $this->getBreadcrumbs(),
@@ -588,13 +596,13 @@ new class extends Component
     /**
      * Derive the ranking series from a raw ranking string. A leading letter A–E
      * (e.g. "B2", "e6") maps to that uppercase letter; anything else (empty,
-     * "NG", "D0" still gives "D") falls back to "NG" for non-classified members.
+     * "NC", "NA") falls back to "NC" for non-classified members.
      */
     public function rankingSeries(?string $ranking): string
     {
         $first = strtoupper(substr(trim((string) $ranking), 0, 1));
 
-        return in_array($first, ['A', 'B', 'C', 'D', 'E'], true) ? $first : 'NG';
+        return in_array($first, ['A', 'B', 'C', 'D', 'E'], true) ? $first : 'NC';
     }
 
     /**

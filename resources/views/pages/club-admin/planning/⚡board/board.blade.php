@@ -216,7 +216,7 @@
             :title="$editingPackId ? __('Edit group') : __('Add a group')" separator>
             <div class="space-y-4">
                 <x-input :label="__('Group name')" wire:model="packName"
-                    :placeholder="__('e.g. Tuesday Advanced')" required />
+                    :placeholder="__('e.g. Tuesday Advanced')" />
                 <x-input :label="__('Level')" wire:model="packLevel"
                     :placeholder="__('e.g. B, beginners…')" />
                 <x-select :label="__('Day of week')" wire:model="packDayOfWeek"
@@ -236,7 +236,7 @@
             </div>
 
             <x-slot:actions>
-                <x-button :label="__('Cancel')" @click="$wire.showPackModal = false" />
+                <x-button :label="__('Cancel')" wire:click="closePackModal" />
                 <x-button :label="$editingPackId ? __('Save') : __('Add')" class="btn-primary"
                     wire:click="{{ $editingPackId ? 'savePack' : 'addPack' }}" spinner />
             </x-slot:actions>
@@ -252,7 +252,7 @@
             </div>
 
             <x-slot:actions>
-                <x-button :label="__('Cancel')" @click="$wire.showImportModal = false" />
+                <x-button :label="__('Cancel')" wire:click="$set('showImportModal', false)" />
                 <x-button :label="__('Import')" class="btn-primary"
                     wire:click="import" spinner="import" />
             </x-slot:actions>

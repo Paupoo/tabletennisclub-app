@@ -30,7 +30,7 @@ use Illuminate\Support\Facades\DB;
 class OptimizeTrainingPlanService
 {
     /**
-     * Ranking series strength (higher = stronger). NG / unknown is the floor.
+     * Ranking series strength (higher = stronger). NC / NA / unknown is the floor.
      */
     private const SERIES_STRENGTH = [
         'A' => 5,
@@ -105,9 +105,9 @@ class OptimizeTrainingPlanService
     /**
      * Map a ranking string to a monotonic integer (higher = stronger).
      *
-     * Series order A > B > C > D > E > NG; within a series a smaller number is
-     * stronger (B0 > B6, D0 > D6). Value = series*10 + (10 - number). NG / empty
-     * / unknown is the lowest (0).
+     * Series order A > B > C > D > E > NC; within a series a smaller number is
+     * stronger (B0 > B6, D0 > D6). Value = series*10 + (10 - number). NC / NA /
+     * empty / unknown is the lowest (0).
      */
     public function rankingValue(?string $ranking): int
     {

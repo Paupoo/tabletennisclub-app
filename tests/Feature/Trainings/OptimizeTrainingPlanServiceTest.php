@@ -36,7 +36,7 @@ function poolMember(TrainingPlan $plan, int $seasonId, ?string $ranking, $birthd
 }
 
 describe('ranking value mapping', function (): void {
-    it('orders rankings monotonically: A1 > B0 > B6 > C0 > D0 > E6 > NG', function (): void {
+    it('orders rankings monotonically: A1 > B0 > B6 > C0 > D0 > E6 > NC', function (): void {
         $service = optimizeService();
 
         $a1 = $service->rankingValue('A1');
@@ -45,7 +45,7 @@ describe('ranking value mapping', function (): void {
         $c0 = $service->rankingValue('C0');
         $d0 = $service->rankingValue('D0');
         $e6 = $service->rankingValue('E6');
-        $ng = $service->rankingValue('NG');
+        $ng = $service->rankingValue('NC');
 
         expect($a1)->toBeGreaterThan($b0)
             ->and($b0)->toBeGreaterThan($b6)
@@ -55,11 +55,11 @@ describe('ranking value mapping', function (): void {
             ->and($e6)->toBeGreaterThan($ng);
     });
 
-    it('treats empty and unknown rankings as the lowest (NG) value', function (): void {
+    it('treats empty and unknown rankings as the lowest (NC) value', function (): void {
         $service = optimizeService();
 
-        expect($service->rankingValue(''))->toBe($service->rankingValue('NG'))
-            ->and($service->rankingValue(null))->toBe($service->rankingValue('NG'))
+        expect($service->rankingValue(''))->toBe($service->rankingValue('NC'))
+            ->and($service->rankingValue(null))->toBe($service->rankingValue('NC'))
             ->and($service->rankingValue('e6'))->toBe($service->rankingValue('E6'));
     });
 })->group('trainings');

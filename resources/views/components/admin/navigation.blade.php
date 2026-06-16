@@ -26,6 +26,11 @@
     <x-menu-separator />
 
     <x-menu-item
+        icon="o-home"
+        link="{{ route('dashboard') }}"
+        :title="__('Dashboard')"
+    />
+    <x-menu-item
         icon="o-bell"
         link="{{ route('notifications.index') }}"
         :title="__('Notifications')"

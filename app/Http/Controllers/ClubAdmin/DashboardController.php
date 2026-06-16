@@ -11,7 +11,12 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
+use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\MeetingStatusEnum;
+use App\Domains\Shared\Enums\TournamentStatusEnum;
+use App\Domains\Trainings\Models\Training;
 use App\Http\Controllers\Controller;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
@@ -42,6 +47,9 @@ class DashboardController extends Controller
         $alerts = $this->buildAlerts($user, $isAdmin, $showSecretary, $showTreasurer, $showCaptain);
         $recentActivity = $this->buildActivityFeed();
         $memberTiles = $this->buildMemberTiles($user);
+        $upcomingTrainings = $this->buildUpcomingTrainings();
+        $upcomingMatches = $this->buildUpcomingMatches();
+        $upcomingInternalEvents = $this->buildUpcomingInternalEvents();
 
         return view('clubAdmin.dashboard', compact(
             'showSecretary',
@@ -51,6 +59,9 @@ class DashboardController extends Controller
             'alerts',
             'recentActivity',
             'memberTiles',
+            'upcomingTrainings',
+            'upcomingMatches',
+            'upcomingInternalEvents',
         ));
     }
 
@@ -249,5 +260,84 @@ class DashboardController extends Controller
         }
 
         return $tiles;
+    }
+
+    /**
+     * @return array<int, array{type: string, label: string, sub: string}>
+     */
+    private function buildUpcomingInternalEvents(): array
+    {
+        $events = collect();
+
+        Tournament::where('start_date', '>', now())
+            ->where('status', '!=', TournamentStatusEnum::CANCELLED)
+            ->orderBy('start_date')
+            ->take(3)
+            ->get()
+            ->each(fn (Tournament $t) => $events->push([
+                'type' => 'tournament',
+                'label' => $t->name,
+                'sub' => $t->start_date->translatedFormat('D j M'),
+                'sort_at' => $t->start_date,
+            ]));
+
+        Meeting::where('scheduled_at', '>', now())
+            ->whereNotIn('status', [MeetingStatusEnum::CANCELLED])
+            ->orderBy('scheduled_at')
+            ->take(3)
+            ->get()
+            ->each(fn (Meeting $m) => $events->push([
+                'type' => 'meeting',
+                'label' => $m->title,
+                'sub' => $m->scheduled_at->translatedFormat('D j M · H:i'),
+                'sort_at' => $m->scheduled_at,
+            ]));
+
+        return $events
+            ->sortBy('sort_at')
+            ->take(4)
+            ->map(fn (array $e): array => [
+                'type' => $e['type'],
+                'label' => $e['label'],
+                'sub' => $e['sub'],
+            ])
+            ->values()
+            ->toArray();
+    }
+
+    /**
+     * @return array<int, array{label: string, sub: string}>
+     */
+    private function buildUpcomingMatches(): array
+    {
+        return Interclub::where('start_date_time', '>', now())
+            ->where('is_bye', false)
+            ->orderBy('start_date_time')
+            ->take(3)
+            ->with(['visitedTeam', 'visitingTeam'])
+            ->get()
+            ->map(fn (Interclub $i): array => [
+                'label' => ($i->visitedTeam?->name ?? '?') . ' vs ' . ($i->visitingTeam?->name ?? '?'),
+                'sub' => $i->start_date_time->translatedFormat('D j M · H:i'),
+            ])
+            ->toArray();
+    }
+
+    /**
+     * @return array<int, array{label: string, sub: string}>
+     */
+    private function buildUpcomingTrainings(): array
+    {
+        return Training::where('start', '>', now())
+            ->whereNull('cancelled_at')
+            ->orderBy('start')
+            ->take(3)
+            ->with('room')
+            ->get()
+            ->map(fn (Training $t): array => [
+                'label' => $t->start->translatedFormat('D j M') . ' · ' . $t->start->format('H:i') . '–' . $t->end->format('H:i'),
+                'sub' => $t->room?->name ?? '',
+            ])
+            ->toArray();
     }
 }

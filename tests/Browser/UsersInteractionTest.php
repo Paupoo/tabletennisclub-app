@@ -98,5 +98,5 @@ it('paid badge shows for users with paid subscription', function (): void {
 
     visit(route('admin.users.index'))
         ->assertSee('Sophie')
-        ->assertSee('✓ Paid');
+        ->assertSee('Payé');
 });

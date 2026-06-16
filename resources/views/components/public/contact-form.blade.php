@@ -59,11 +59,7 @@
     <div x-show="showMembershipFields" x-transition
         class="mb-6 bg-blue-50 p-6 rounded-lg space-y-4 border border-blue-200">
         <h4 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <svg class="w-5 h-5 mr-2 text-club-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z">
-                </path>
-            </svg>
+            <x-icon name="o-clipboard-document-list" class="w-5 h-5 mr-2 text-club-blue" />
             Informations sur votre adhésion
         </h4>
 
@@ -186,10 +182,7 @@
     <button type="submit"
         class="w-full bg-club-blue text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-blue-700 transition-colors transform hover:scale-[1.02]">
         <span class="flex items-center justify-center">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
-            </svg>
+            <x-icon name="o-paper-airplane" class="w-5 h-5 mr-2" />
             Envoyer le Message
         </span>
     </button>

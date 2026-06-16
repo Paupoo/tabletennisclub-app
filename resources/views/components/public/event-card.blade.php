@@ -4,16 +4,14 @@
     <div class="p-6 flex flex-col flex-1">
         <div class="flex items-center justify-between mb-4">
             @php
-                $badgeClass = match($event['type']) {
-                    'TOURNAMENT' => 'bg-club-blue text-white',
-                    'TRAINING'   => 'bg-gray-800 text-white',
-                    'INTERCLUB'  => 'bg-green-700 text-white',
-                    default      => 'bg-club-yellow text-club-blue',
+                $typeTone = match($event['type']) {
+                    'TOURNAMENT' => 'primary',
+                    'TRAINING'   => 'dark',
+                    'INTERCLUB'  => 'success',
+                    default      => 'secondary',
                 };
             @endphp
-            <span class="{{ $badgeClass }} text-xs font-medium px-3 py-1 rounded-full uppercase">
-                {{ $event['type_label'] }}
-            </span>
+            <x-badge :tone="$typeTone" solid class="uppercase">{{ $event['type_label'] }}</x-badge>
             <span class="text-2xl">{{ $event['icon'] }}</span>
         </div>
 

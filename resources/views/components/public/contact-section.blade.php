@@ -12,13 +12,7 @@
                     @if (($club?->latitude && $club?->longitude) || ($club?->street && $club?->city_code && $club?->city_name))
                     <div class="flex items-start">
                         <div class="shrink-0 w-12 h-12 bg-club-blue rounded-lg flex items-center justify-center">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z">
-                                </path>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                            </svg>
+                            <x-icon name="o-map-pin" class="w-6 h-6 text-white" />
                         </div>
                         <div class="ml-4">
                             <h3 class="text-lg font-semibold text-gray-900">Adresse</h3>
@@ -42,12 +36,7 @@
                     @if ($club?->phone_contact)
                         <div class="flex items-start">
                             <div class="shrink-0 w-12 h-12 bg-club-blue rounded-lg flex items-center justify-center">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z">
-                                    </path>
-                                </svg>
+                                <x-icon name="o-phone" class="w-6 h-6 text-white" />
                             </div>
                             <div class="ml-4">
                                 <h3 class="text-lg font-semibold text-gray-900">{{ __('Phone') }}</h3>
@@ -60,12 +49,7 @@
                     @if ($club?->email_contact)
                         <div class="flex items-start">
                             <div class="shrink-0 w-12 h-12 bg-club-yellow rounded-lg flex items-center justify-center">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
-                                    </path>
-                                </svg>
+                                <x-icon name="o-envelope" class="w-6 h-6 text-white" />
                             </div>
                             <div class="ml-4">
                                 <h3 class="text-lg font-semibold text-gray-900">Email</h3>
@@ -86,11 +70,7 @@
                     @if (session('success'))
                         <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
                             <div class="flex">
-                                <svg class="w-5 h-5 text-green-400 mr-2 mt-0.5" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M5 13l4 4L19 7"></path>
-                                </svg>
+                                <x-icon name="o-check" class="w-5 h-5 text-green-400 mr-2 mt-0.5" />
                                 <p class="text-green-800">{{ session('success') }}</p>
                             </div>
                         </div>
@@ -100,11 +80,7 @@
                     @if (session('error'))
                         <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
                             <div class="flex">
-                                <svg class="w-5 h-5 text-red-400 mr-2 mt-0.5" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M6 18L18 6M6 6l12 12"></path>
-                                </svg>
+                                <x-icon name="o-x-mark" class="w-5 h-5 text-red-400 mr-2 mt-0.5" />
                                 <p class="text-red-800">{{ session('error') }}</p>
                             </div>
                         </div>

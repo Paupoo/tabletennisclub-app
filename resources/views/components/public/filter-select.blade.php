@@ -3,8 +3,6 @@
         {{ $slot }}
     </select>
     <div class="pointer-events-none absolute inset-y-0 right-2.5 flex items-center text-gray-400">
-        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="m19 9-7 7-7-7" />
-        </svg>
+        <x-icon name="o-chevron-down" class="h-3.5 w-3.5" />
     </div>
 </div>

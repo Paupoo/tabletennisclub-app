@@ -58,13 +58,13 @@
                 @if($showSecretary)
                 @php
                     $secretaryTiles = [
-                        ['icon' => 'o-users',        'label' => 'Membres',      'sub' => 'Gestion des membres',    'href' => route('admin.users.index'),            'color' => 'primary'],
-                        ['icon' => 'o-user-plus',     'label' => 'Inscriptions', 'sub' => 'Nouvelles demandes',     'href' => route('admin.users.registrations'),    'color' => 'primary'],
-                        ['icon' => 'o-newspaper',     'label' => 'News',         'sub' => 'Articles & actualités',  'href' => route('admin.website.articles.index'), 'color' => 'primary'],
-                        ['icon' => 'o-envelope',      'label' => 'Contacts',     'sub' => 'Messages reçus',         'href' => route('admin.website.contacts.index'), 'color' => 'primary'],
-                        ['icon' => 'o-calendar-days', 'label' => 'Réunions',     'sub' => 'Comptes rendus',         'href' => route('admin.meetings.index'),         'color' => 'primary'],
-                        ['icon' => 'o-calendar',      'label' => 'Événements',   'sub' => 'Activités planifiées',   'href' => route('admin.website.events.index'),   'color' => 'primary'],
-                        ['icon' => 'o-cog-6-tooth',   'label' => 'Configuration','sub' => 'Club & paramètres',      'href' => route('admin.club-info'),              'color' => 'primary'],
+                        ['icon' => 'o-users',         'label' => 'Membres',       'sub' => 'Gestion des membres',   'href' => route('admin.users.index'),            'color' => 'blue'],
+                        ['icon' => 'o-user-plus',     'label' => 'Inscriptions',  'sub' => 'Nouvelles demandes',    'href' => route('admin.users.registrations'),    'color' => 'emerald'],
+                        ['icon' => 'o-newspaper',     'label' => 'News',          'sub' => 'Articles & actualités', 'href' => route('admin.website.articles.index'), 'color' => 'violet'],
+                        ['icon' => 'o-envelope',      'label' => 'Contacts',      'sub' => 'Messages reçus',        'href' => route('admin.website.contacts.index'), 'color' => 'cyan'],
+                        ['icon' => 'o-calendar-days', 'label' => 'Réunions',      'sub' => 'Comptes rendus',        'href' => route('admin.meetings.index'),         'color' => 'amber'],
+                        ['icon' => 'o-calendar',      'label' => 'Événements',    'sub' => 'Activités planifiées',  'href' => route('admin.website.events.index'),   'color' => 'orange'],
+                        ['icon' => 'o-cog-6-tooth',   'label' => 'Configuration', 'sub' => 'Club & paramètres',    'href' => route('admin.club-info'),              'color' => 'slate'],
                     ];
                 @endphp
                 <x-section-accordion
@@ -82,10 +82,10 @@
                 @if($showTreasurer)
                 @php
                     $treasurerTiles = [
-                        ['icon' => 'o-banknotes',        'label' => 'Paiements',    'sub' => 'Suivi des paiements',  'href' => route('admin.treasury.payments'),     'color' => 'secondary'],
-                        ['icon' => 'o-credit-card',      'label' => 'Transactions', 'sub' => 'Relevés bancaires',    'href' => route('admin.treasury.transactions'), 'color' => 'secondary'],
-                        ['icon' => 'o-building-library', 'label' => 'Caisse',       'sub' => 'Registre de caisse',   'href' => route('admin.treasury.cash'),         'color' => 'secondary'],
-                        ['icon' => 'o-calendar-days',    'label' => 'Saisons',      'sub' => 'Gestion des périodes', 'href' => route('admin.seasons.index'),         'color' => 'secondary'],
+                        ['icon' => 'o-banknotes',        'label' => 'Paiements',    'sub' => 'Suivi des paiements',  'href' => route('admin.treasury.payments'),     'color' => 'emerald'],
+                        ['icon' => 'o-credit-card',      'label' => 'Transactions', 'sub' => 'Relevés bancaires',    'href' => route('admin.treasury.transactions'), 'color' => 'blue'],
+                        ['icon' => 'o-building-library', 'label' => 'Caisse',       'sub' => 'Registre de caisse',   'href' => route('admin.treasury.cash'),         'color' => 'amber'],
+                        ['icon' => 'o-calendar-days',    'label' => 'Saisons',      'sub' => 'Gestion des périodes', 'href' => route('admin.seasons.index'),         'color' => 'violet'],
                     ];
                 @endphp
                 <x-section-accordion
@@ -103,11 +103,11 @@
                 @if($showCaptain)
                 @php
                     $captainTiles = [
-                        ['icon' => 'o-trophy',                   'label' => 'Équipes',        'sub' => 'Gestion des équipes',    'href' => route('admin.interclubs.teams'),             'color' => 'error'],
-                        ['icon' => 'o-globe-alt',                'label' => 'Interclubs',     'sub' => 'Calendrier & matchs',    'href' => route('admin.interclubs.interclubs'),        'color' => 'error'],
-                        ['icon' => 'o-clipboard-document-check', 'label' => 'Sélections',     'sub' => "Compositions d'équipe",  'href' => route('admin.interclubs.captain-selection'), 'color' => 'error'],
-                        ['icon' => 'o-chart-bar',                'label' => 'Résultats',      'sub' => 'Scores & classements',   'href' => route('admin.interclubs.results'),           'color' => 'error'],
-                        ['icon' => 'o-adjustments-horizontal',   'label' => 'Control center', 'sub' => 'Suivi en temps réel',    'href' => route('admin.interclubs.control-center'),    'color' => 'error'],
+                        ['icon' => 'o-trophy',                   'label' => 'Équipes',        'sub' => 'Gestion des équipes',   'href' => route('admin.interclubs.teams'),             'color' => 'rose'],
+                        ['icon' => 'o-globe-alt',                'label' => 'Interclubs',     'sub' => 'Calendrier & matchs',   'href' => route('admin.interclubs.interclubs'),        'color' => 'blue'],
+                        ['icon' => 'o-clipboard-document-check', 'label' => 'Sélections',     'sub' => "Compositions d'équipe", 'href' => route('admin.interclubs.captain-selection'), 'color' => 'indigo'],
+                        ['icon' => 'o-chart-bar',                'label' => 'Résultats',      'sub' => 'Scores & classements',  'href' => route('admin.interclubs.results'),           'color' => 'amber'],
+                        ['icon' => 'o-adjustments-horizontal',   'label' => 'Control center', 'sub' => 'Suivi en temps réel',   'href' => route('admin.interclubs.control-center'),    'color' => 'teal'],
                     ];
                 @endphp
                 <x-section-accordion
@@ -125,12 +125,12 @@
                 @if($showCommittee)
                 @php
                     $committeeTiles = [
-                        ['icon' => 'o-users',             'label' => 'Membres',       'sub' => 'Vue globale',             'href' => route('admin.users.index'),       'color' => 'neutral'],
-                        ['icon' => 'o-building-office-2', 'label' => 'Salles',        'sub' => 'Installations sportives', 'href' => route('admin.rooms.index'),       'color' => 'neutral'],
-                        ['icon' => 'o-clock',             'label' => 'Entraînements', 'sub' => 'Séances programmées',     'href' => route('admin.trainings.index'),   'color' => 'neutral'],
-                        ['icon' => 'o-calendar-days',     'label' => 'Saisons',       'sub' => 'Gestion des périodes',    'href' => route('admin.seasons.index'),     'color' => 'neutral'],
-                        ['icon' => 'o-trophy',            'label' => 'Tournois',      'sub' => 'Compétitions internes',   'href' => route('admin.tournaments.index'), 'color' => 'neutral'],
-                        ['icon' => 'o-bell',              'label' => 'Notifications', 'sub' => 'Envoi de messages',       'href' => route('notifications.index'),     'color' => 'neutral'],
+                        ['icon' => 'o-users',             'label' => 'Membres',       'sub' => 'Vue globale',             'href' => route('admin.users.index'),       'color' => 'blue'],
+                        ['icon' => 'o-building-office-2', 'label' => 'Salles',        'sub' => 'Installations sportives', 'href' => route('admin.rooms.index'),       'color' => 'emerald'],
+                        ['icon' => 'o-clock',             'label' => 'Entraînements', 'sub' => 'Séances programmées',     'href' => route('admin.trainings.index'),   'color' => 'teal'],
+                        ['icon' => 'o-calendar-days',     'label' => 'Saisons',       'sub' => 'Gestion des périodes',    'href' => route('admin.seasons.index'),     'color' => 'violet'],
+                        ['icon' => 'o-trophy',            'label' => 'Tournois',      'sub' => 'Compétitions internes',   'href' => route('admin.tournaments.index'), 'color' => 'amber'],
+                        ['icon' => 'o-bell',              'label' => 'Notifications', 'sub' => 'Envoi de messages',       'href' => route('notifications.index'),     'color' => 'rose'],
                     ];
                 @endphp
                 <x-section-accordion

@@ -28,9 +28,7 @@
             <a href="{{ route('public.clubPosts.show', $article->slug) }}"
                class="text-club-blue hover:text-club-blue-light font-semibold text-sm inline-flex items-center">
                 Lire la suite
-                <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                </svg>
+                <x-icon name="o-chevron-right" class="ml-1 w-4 h-4" />
             </a>
 
             @if($article->reading_time)

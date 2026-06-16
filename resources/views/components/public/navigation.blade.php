@@ -52,9 +52,7 @@
             <!-- Mobile menu button -->
             <div class="md:hidden">
                 <button @click="toggleMobileMenu()" class="text-gray-900 dark:text-white hover:text-club-blue">
-                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                    </svg>
+                    <x-icon name="o-bars-3" class="h-6 w-6" />
                 </button>
             </div>
         </div>

@@ -7,9 +7,14 @@
 
     <div class="p-6">
         <div class="flex items-center justify-between mb-3">
-            <span class="@if($article->category === \App\Domains\Shared\Enums\NewsPostCategoryEnum::COMPETITION) bg-club-blue text-white @elseif($article->category === \App\Domains\Shared\Enums\NewsPostCategoryEnum::TRAINING) bg-club-yellow text-club-blue @else bg-gray-100 text-gray-800 @endif text-xs font-medium px-3 py-1 rounded-full">
-                {{ $article->category->getLabel() }}
-            </span>
+            @php
+                $categoryTone = match($article->category) {
+                    \App\Domains\Shared\Enums\NewsPostCategoryEnum::COMPETITION => 'primary',
+                    \App\Domains\Shared\Enums\NewsPostCategoryEnum::TRAINING    => 'secondary',
+                    default                                                      => 'neutral',
+                };
+            @endphp
+            <x-badge :tone="$categoryTone" solid>{{ $article->category->getLabel() }}</x-badge>
             <time class="text-sm text-gray-500">{{ $article->created_at?->translatedFormat('d F Y') }}</time>
         </div>
 
@@ -26,9 +31,7 @@
         <div class="flex items-center justify-between">
             <a href="{{ route('public.clubPosts.show', $article->slug) }}" class="text-club-blue hover:text-club-blue-light font-semibold text-sm inline-flex items-center">
                 Lire la suite
-                <svg class="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                </svg>
+                <x-icon name="o-chevron-right" class="ml-1 w-4 h-4" />
             </a>
 
             @if($article->reading_time)

@@ -18,9 +18,7 @@
         <div class="text-center mt-12 animate-on-scroll">
             <a href="{{ route('public.clubPosts.index') ?? '#' }}" class="bg-club-blue text-white px-8 py-3 rounded-lg font-semibold hover:bg-club-blue-light transition-colors inline-flex items-center">
                 Voir Toutes les Actualités
-                <svg class="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                </svg>
+                <x-icon name="o-chevron-right" class="ml-2 w-4 h-4" />
             </a>
         </div>
     </div>

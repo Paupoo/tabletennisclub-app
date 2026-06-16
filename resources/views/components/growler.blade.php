@@ -133,9 +133,7 @@
                 <!-- Bouton de fermeture -->
                 <button @click="remove(notification.id)"
                         class="text-gray-400 hover:text-gray-600 focus:outline-none flex-shrink-0 p-1">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
+                    <x-icon name="o-x-mark" class="w-4 h-4" />
                 </button>
             </div>
         </div>

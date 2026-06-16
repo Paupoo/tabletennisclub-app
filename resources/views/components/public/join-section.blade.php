@@ -46,11 +46,7 @@
             <div class="bg-white rounded-2xl shadow-lg border-2 border-club-blue p-8 animate-on-scroll">
                 <div class="text-center mb-6">
                     <div class="w-16 h-16 bg-club-blue rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z">
-                            </path>
-                        </svg>
+                        <x-icon name="o-user-group" class="w-8 h-8 text-white" />
                     </div>
                     <h3 class="text-2xl font-bold text-gray-900 mb-2">Affiliations</h3>
                     <p class="text-gray-600 mb-4">{{ __('Minimum - Recreational licence') }}</p>
@@ -123,10 +119,7 @@
             <div class="bg-white rounded-2xl shadow-lg border-2 border-club-yellow p-8 animate-on-scroll">
                 <div class="text-center mb-6">
                     <div class="w-16 h-16 bg-club-yellow rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg class="w-8 h-8 text-club-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                        </svg>
+                        <x-icon name="o-bolt" class="w-8 h-8 text-club-blue" />
                     </div>
                     <h3 class="text-2xl font-bold text-gray-900 mb-2">{{ __('Directed Training') }}</h3>
                     <p class="text-gray-600 mb-4">{{ __('Optional - With qualified coach') }}</p>
@@ -259,11 +252,7 @@
             <div class="text-center mt-8">
                 <button @click="goToContactWithData()"
                     class="bg-club-blue text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-club-blue-light transition-colors inline-flex items-center cursor-pointer">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-3.582 8-8 8a8.955 8.955 0 01-2.697-.413l-2.725.688c-.442.111-.905-.111-.905-.666L7 17c-2.611-2.226-4-5.269-4-8.5C3 4.358 7.358 0 12 0s9 4.358 9 8.5z">
-                        </path>
-                    </svg>
+                    <x-icon name="o-chat-bubble-left-ellipsis" class="w-5 h-5 mr-2" />
                     Nous Contacter pour S'inscrire
                 </button>
             </div>
@@ -273,11 +262,7 @@
         <div class="mt-12 bg-blue-50 rounded-lg p-6 animate-on-scroll">
             <div class="flex items-start">
                 <div class="shrink-0">
-                    <svg class="w-6 h-6 text-club-blue mt-1" fill="none" stroke="currentColor"
-                        viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
+                    <x-icon name="o-information-circle" class="w-6 h-6 text-club-blue mt-1" />
                 </div>
                 <div class="ml-3">
                     <h4 class="text-lg font-semibold text-gray-900 mb-2">Informations importantes</h4>

@@ -22,6 +22,8 @@
   --color-club-yellow: #fbbf24;
   --color-club-blue-light: #3b82f6;
   --color-club-yellow-light: #fcd34d;
+  --color-club-blue-dark: #1a3691;
+  --color-club-yellow-dark: #f0ad15;
 }
 
 /*
@@ -125,6 +127,67 @@
 }
 
 
+/* =============================================================================
+   Design System — Semantic token layer (Phase 1)
+   One source of truth for surface/text/border/tag/level/radius/shadow/motion.
+   These are CSS custom properties only — no visual change until consumed.
+   ============================================================================= */
+:root {
+  /* Surfaces */
+  --surface-page:  var(--color-base-200, #f5f5f5);
+  --surface-card:  #ffffff;
+  --surface-dark:  var(--color-gray-900, #111827);
+  --surface-muted: var(--color-gray-50, #f9fafb);
+
+  /* Text */
+  --text-strong:   var(--color-gray-900, #111827);
+  --text-body:     var(--color-gray-600, #4b5563);
+  --text-muted:    var(--color-gray-500, #6b7280);
+  --text-faint:    var(--color-gray-400, #9ca3af);
+  --text-on-brand: #ffffff;
+
+  /* Borders */
+  --border-default: var(--color-gray-200, #e5e7eb);
+  --border-strong:  var(--color-gray-300, #d1d5db);
+  --border-hover:   var(--color-club-blue, #1e40af);
+
+  /* Tag / badge palettes (public site categories) */
+  --tag-comp-bg:    var(--color-club-blue, #1e40af);
+  --tag-comp-fg:    #ffffff;
+  --tag-form-bg:    var(--color-club-yellow, #fbbf24);
+  --tag-form-fg:    var(--color-club-blue, #1e40af);
+  --tag-neutral-bg: var(--color-gray-100, #f3f4f6);
+  --tag-neutral-fg: var(--color-gray-800, #1f2937);
+
+  /* Level / training-type palettes */
+  --level-all:         #1d4ed8; --level-all-bg:     #dbeafe;
+  --level-begin:       #15803d; --level-begin-bg:   #dcfce7;
+  --level-pro:         #b91c1c; --level-pro-bg:     #fee2e2;
+  --level-hope:        #7e22ce; --level-hope-bg:    #f3e8ff;
+  --level-confirm:     #c2410c; --level-confirm-bg: #ffedd5;
+
+  /* Radii (daisyUI already owns --radius-field / --radius-box; these extend it) */
+  --radius-md:   0.375rem;   /* 6 px */
+  --radius-lg:   0.5rem;     /* 8 px — default card */
+  --radius-xl:   0.75rem;    /* 12 px — admin tiles / team cards */
+  --radius-2xl:  1rem;       /* 16 px — feature cards, contact form */
+  --radius-full: 9999px;     /* pills, avatars, icon circles */
+
+  /* Shadows */
+  --shadow-xs:    0 1px 2px 0 rgba(17, 24, 39, 0.05);
+  --shadow-sm:    0 1px 3px 0 rgba(17, 24, 39, 0.08), 0 1px 2px -1px rgba(17, 24, 39, 0.06);
+  --shadow-md:    0 4px 6px -1px rgba(17, 24, 39, 0.08), 0 2px 4px -2px rgba(17, 24, 39, 0.06);
+  --shadow-lg:    0 10px 15px -3px rgba(17, 24, 39, 0.10), 0 4px 6px -4px rgba(17, 24, 39, 0.06);
+  --shadow-focus: 0 0 0 3px rgba(30, 64, 175, 0.10);
+
+  /* Motion */
+  --ease-out:   cubic-bezier(0, 0, 0.2, 1);
+  --dur-fast:   150ms;
+  --dur-base:   200ms;
+  --dur-slow:   300ms;
+  --dur-reveal: 600ms;
+}
+
 /* Typography (markdown rendering) */
 @plugin "@tailwindcss/typography";
 
@@ -213,5 +276,5 @@ input:focus,
 textarea:focus,
 select:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+  box-shadow: var(--shadow-focus);
 }

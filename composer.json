@@ -95,7 +95,8 @@
         "test": [
             "@php artisan config:clear --ansi",
             "@test:lint",
-            "@php artisan test"
+            "@php artisan test --parallel --compact --testsuite=Unit,Feature,Architecture",
+            "@php artisan test --compact --testsuite=Browser"
         ],
         "pre-package-uninstall": [
             "Illuminate\\Foundation\\ComposerScripts::prePackageUninstall"

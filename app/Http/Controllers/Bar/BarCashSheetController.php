@@ -16,7 +16,6 @@ class BarCashSheetController extends Controller
     {
         $this->middleware('auth');
         $this->middleware('throttle:10,1')->only(['send']);
-        $this->cashSheetService = $cashSheetService;
     }
 
     public function index(Request $request)

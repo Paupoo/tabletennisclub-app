@@ -36,8 +36,6 @@
                     {{-- LEFT --}}
                     <div>
                         <div class="order-item-name">{{ $product->name }}</div>
-
-                        /* Stock disponible mais temps réel pas garanti */
                         <div class="muted" style="margin-top:4px; font-weight:900;">
                             {{ euros($unitPrice) }} / unité • Stock dispo : {{ $availableStock }}
                         </div>

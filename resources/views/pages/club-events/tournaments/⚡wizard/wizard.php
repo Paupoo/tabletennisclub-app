@@ -5,10 +5,6 @@ declare(strict_types=1);
 use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
 use App\Data\Tournament\SimulationResult;
 use App\Data\Tournament\TournamentConfig;
-use App\Domains\Shared\Enums\ClubEventTypeEnum;
-use App\Domains\Shared\Enums\TournamentObjectiveEnum;
-use App\Domains\Shared\Enums\TournamentStatusEnum;
-use App\Livewire\Concerns\HasEventPostForm;
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Domains\ClubAdmin\Payment\Models\CashRegister;
@@ -27,7 +23,11 @@ use App\Domains\Competitions\Tournament\Services\TournamentMatchService;
 use App\Domains\Competitions\Tournament\Services\TournamentPoolService;
 use App\Domains\Competitions\Tournament\Services\TournamentService;
 use App\Domains\Competitions\Tournament\Services\TournamentSimulator;
+use App\Domains\Shared\Enums\ClubEventTypeEnum;
+use App\Domains\Shared\Enums\TournamentObjectiveEnum;
+use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Livewire\Concerns\HasBreadcrumbs;
+use App\Livewire\Concerns\HasEventPostForm;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -39,13 +39,19 @@ use Livewire\WithFileUploads;
 use Mary\Traits\Toast;
 
 new class extends Component
-    {
+{
     use HasBreadcrumbs;
     use HasEventPostForm, Toast, WithFileUploads;
 
+    public bool $bulkCancelModal = false;
+
     public bool $bulkDrawer = false;
 
-    public bool $bulkCancelModal = false;
+    public bool $deuceEnabled = true;
+
+    public string $doublesRegistrationMode = 'club';
+
+    public bool $hasHandicapPoints = true;
 
     public bool $inviteIncludeArticle = false;
 
@@ -55,18 +61,13 @@ new class extends Component
 
     public string $matchType = 'single';
 
-    public string $doublesRegistrationMode = 'club';
-
-    // ── Doubles pair composition
-    public int $pairPlayer1Id = 0;
-
-    public int $pairPlayer2Id = 0;
-
     // ── Limite d'inscriptions (0 = illimité)
     public int $maxUsers = 0;
 
     // ── Étape 2 – Invitations
     public string $memberSearch = '';
+
+    public int $memberToRegister = 0;
 
     // ── Étape 1 – Config principale
     public string $name = '';
@@ -77,6 +78,13 @@ new class extends Component
 
     /** Manual fallback when no rooms are selected. */
     public int $nb_tables = 8;
+
+    // ── Doubles pair composition
+    public int $pairPlayer1Id = 0;
+
+    public int $pairPlayer2Id = 0;
+
+    public ?int $paymentActionUserId = null;
 
     public int $pool_size = 4;
 
@@ -95,6 +103,12 @@ new class extends Component
     public float $price = 0;
 
     public bool $publicRegistration = false;
+
+    public string $qrCodeData = '';
+
+    public array $qrPaymentDetails = [];
+
+    public string $registration_deadline = '';
 
     public array $selectedMembers = [];
 
@@ -119,29 +133,22 @@ new class extends Component
     // ── UI state
     public bool $showCancelModal = false;
 
-    public bool $showRequireCloseRegistrationsModal = false;
+    public bool $showCashConfirmModal = false;
 
     public bool $showCloseRegistrationsModal = false;
 
     public bool $showInviteModal = false;
 
-    public bool $showOpenRegistrationsModal = false;
-
     public bool $showLaunchModal = false;
 
-    public bool $showRegisterModal = false;
+    public bool $showOpenRegistrationsModal = false;
 
     // ── Payment modals
     public bool $showQrModal = false;
 
-    public bool $showCashConfirmModal = false;
+    public bool $showRegisterModal = false;
 
-
-    public ?int $paymentActionUserId = null;
-
-    public string $qrCodeData = '';
-
-    public array $qrPaymentDetails = [];
+    public bool $showRequireCloseRegistrationsModal = false;
 
     public array $sortBy = ['column' => 'registered_at', 'direction' => 'asc'];
 
@@ -157,14 +164,6 @@ new class extends Component
 
     // ── Paramètres sportifs
     public int $totalSets = 3;
-
-    public bool $deuceEnabled = true;
-
-    public bool $hasHandicapPoints = true;
-
-    public string $registration_deadline = '';
-
-    public int $memberToRegister = 0;
 
     public int $tournament_minutes = 180;
 
@@ -218,6 +217,25 @@ new class extends Component
                 'name' => $room->name . ' (' . $room->total_playable_tables . ' tables)',
             ])
             ->toArray();
+    }
+
+    public function cancelTournament(): void
+    {
+        if (! $this->tournamentId) {
+            return;
+        }
+
+        $tournament = Tournament::with('users')->findOrFail($this->tournamentId);
+        $tournament->update(['status' => TournamentStatusEnum::CANCELLED]);
+
+        $tournament->users()
+            ->whereIn('tournament_user.registration_status', ['registered', 'confirmed', 'spot_offered', 'waiting'])
+            ->get()
+            ->each->notify(new TournamentCancelledNotification($tournament));
+
+        unset($this->currentTournament, $this->isContractLocked);
+        $this->showCancelModal = false;
+        $this->success(__('Tournament cancelled. All registered players have been notified.'), icon: 'o-x-circle');
     }
 
     public function cancelUserRegistration(int $userId): void
@@ -288,6 +306,78 @@ new class extends Component
         $this->success("{$count} " . __('presences confirmed.'));
     }
 
+    public function confirmCashPayment(): void
+    {
+        if (! $this->tournamentId || ! $this->paymentActionUserId) {
+            return;
+        }
+
+        $register = CashRegister::first();
+        if (! $register) {
+            $this->error(__('No cash register found.'));
+
+            return;
+        }
+
+        $tournament = Tournament::findOrFail($this->tournamentId);
+        $user = User::findOrFail($this->paymentActionUserId);
+
+        app(TournamentService::class)->recordCashPayment($tournament, $user, $register);
+
+        unset($this->registrations);
+        $this->reset(['showCashConfirmModal', 'paymentActionUserId']);
+        $this->success(__('Cash payment recorded.'), icon: 'o-currency-euro');
+    }
+
+    public function confirmCloseAndLaunch(): void
+    {
+        $this->confirmCloseRegistrations();
+        $this->showRequireCloseRegistrationsModal = false;
+        $this->launch();
+    }
+
+    public function confirmCloseRegistrations(): void
+    {
+        if (! $this->tournamentId) {
+            return;
+        }
+
+        $tournament = Tournament::findOrFail($this->tournamentId);
+
+        // Kick everyone still on the waitlist — they no longer have a chance.
+        $tournament->users()
+            ->wherePivotIn('registration_status', ['waiting'])
+            ->get()
+            ->each(function (User $user) use ($tournament): void {
+                DB::table('tournament_user')
+                    ->where('tournament_id', $tournament->id)
+                    ->where('user_id', $user->id)
+                    ->update(['registration_status' => 'cancelled', 'waitlist_position' => null]);
+
+                $user->notify(new TournamentWaitlistRemovedNotification($tournament));
+            });
+
+        $tournament->update(['status' => TournamentStatusEnum::SETUP]);
+
+        unset($this->currentTournament, $this->waitlist, $this->registrations);
+        $this->showCloseRegistrationsModal = false;
+        $this->success(__('Registrations closed. Waitlisted players have been notified.'), icon: 'o-lock-closed');
+    }
+
+    public function confirmOpenRegistrations(): void
+    {
+        if (! $this->tournamentId) {
+            return;
+        }
+
+        $tournament = Tournament::findOrFail($this->tournamentId);
+        $tournament->update(['status' => TournamentStatusEnum::PUBLISHED]);
+
+        unset($this->currentTournament);
+        $this->showOpenRegistrationsModal = false;
+        $this->success(__('Registrations are now open.'), icon: 'o-lock-open');
+    }
+
     public function confirmPresence(int $userId): void
     {
         if (! $this->tournamentId) {
@@ -303,12 +393,68 @@ new class extends Component
         $this->success(__('Presence confirmed.'));
     }
 
+    // ── Pair management (doubles)
+
+    public function createPair(): void
+    {
+        if (! $this->tournamentId || ! $this->pairPlayer1Id || ! $this->pairPlayer2Id) {
+            $this->error(__('Select two different players.'));
+
+            return;
+        }
+
+        if ($this->pairPlayer1Id === $this->pairPlayer2Id) {
+            $this->error(__('A player cannot be paired with themselves.'));
+
+            return;
+        }
+
+        $existing = TournamentPair::where('tournament_id', $this->tournamentId)
+            ->where(fn ($q) => $q
+                ->whereIn('player1_id', [$this->pairPlayer1Id, $this->pairPlayer2Id])
+                ->orWhereIn('player2_id', [$this->pairPlayer1Id, $this->pairPlayer2Id])
+            )
+            ->exists();
+
+        if ($existing) {
+            $this->error(__('One of these players is already in a pair.'));
+
+            return;
+        }
+
+        TournamentPair::create([
+            'tournament_id' => $this->tournamentId,
+            'player1_id' => $this->pairPlayer1Id,
+            'player2_id' => $this->pairPlayer2Id,
+            'registered_by' => Auth::id() ?? 0,
+        ]);
+
+        unset($this->pairs);
+        $this->pairPlayer1Id = 0;
+        $this->pairPlayer2Id = 0;
+        $this->success(__('Pair created.'), icon: 'o-user-group');
+    }
+
     // ── Computed: current tournament model
 
     #[Computed]
     public function currentTournament(): ?Tournament
     {
         return $this->tournamentId ? Tournament::find($this->tournamentId) : null;
+    }
+
+    public function deletePair(int $pairId): void
+    {
+        if (! $this->tournamentId) {
+            return;
+        }
+
+        TournamentPair::where('id', $pairId)
+            ->where('tournament_id', $this->tournamentId)
+            ->delete();
+
+        unset($this->pairs);
+        $this->warning(__('Pair deleted.'));
     }
 
     public function generateMatches(): void
@@ -414,90 +560,12 @@ new class extends Component
         ]);
     }
 
-    public function validateAndLock(): void
-    {
-        if (! $this->tournamentId) {
-            return;
-        }
-
-        if (empty($this->name) || empty($this->registration_deadline)) {
-            $this->error(__('Tournament name and registration deadline are required before locking.'));
-
-            return;
-        }
-
-        Tournament::findOrFail($this->tournamentId)->update(['status' => TournamentStatusEnum::LOCKED]);
-
-        unset($this->currentTournament, $this->isContractLocked);
-
-        $this->step = '4';
-        $this->success(__('Tournament validated! Name and price are now locked.'), icon: 'o-lock-closed');
-    }
-
-    public function cancelTournament(): void
-    {
-        if (! $this->tournamentId) {
-            return;
-        }
-
-        $tournament = Tournament::with('users')->findOrFail($this->tournamentId);
-        $tournament->update(['status' => TournamentStatusEnum::CANCELLED]);
-
-        $tournament->users()
-            ->whereIn('tournament_user.registration_status', ['registered', 'confirmed', 'spot_offered', 'waiting'])
-            ->get()
-            ->each->notify(new TournamentCancelledNotification($tournament));
-
-        unset($this->currentTournament, $this->isContractLocked);
-        $this->showCancelModal = false;
-        $this->success(__('Tournament cancelled. All registered players have been notified.'), icon: 'o-x-circle');
-    }
-
-    public function registerMember(): void
-    {
-        if (! $this->tournamentId || ! $this->memberToRegister) {
-            return;
-        }
-
-        $tournament = Tournament::findOrFail($this->tournamentId);
-        $user = User::findOrFail($this->memberToRegister);
-
-        try {
-            app(TournamentService::class)->registerUser($tournament, $user);
-        } catch (\LogicException $e) {
-            $this->error($e->getMessage());
-
-            return;
-        }
-
-        unset($this->registrations, $this->waitlist, $this->members);
-
-        $this->memberToRegister = 0;
-        $this->showRegisterModal = false;
-        $this->success($user->full_name . ' ' . __('has been registered.'));
-    }
-
     #[Computed]
-    public function registerableMembersOptions(): array
+    public function isLaunched(): bool
     {
-        $alreadyRegistered = $this->tournamentId
-            ? DB::table('tournament_user')
-                ->where('tournament_id', $this->tournamentId)
-                ->whereIn('registration_status', ['registered', 'confirmed', 'spot_offered', 'waiting'])
-                ->pluck('user_id')
-                ->toArray()
-            : [];
+        $status = $this->currentTournament?->status;
 
-        return User::where('is_active', true)
-            ->whereNotIn('id', $alreadyRegistered)
-            ->orderBy('first_name')
-            ->orderBy('last_name')
-            ->get()
-            ->map(fn (User $u) => [
-                'id' => $u->id,
-                'name' => $u->full_name . ' (' . ($u->ranking ?? 'NC') . ')',
-            ])
-            ->toArray();
+        return $status !== null && in_array($status, [TournamentStatusEnum::PENDING, TournamentStatusEnum::CLOSED]);
     }
 
     // ── Launch
@@ -526,13 +594,6 @@ new class extends Component
         $this->js('$wire.processLaunch()');
     }
 
-    public function confirmCloseAndLaunch(): void
-    {
-        $this->confirmCloseRegistrations();
-        $this->showRequireCloseRegistrationsModal = false;
-        $this->launch();
-    }
-
     public function markNoShow(int $userId): void
     {
         if (! $this->tournamentId) {
@@ -548,7 +609,7 @@ new class extends Component
         if ($this->isLaunched) {
             $tournament = Tournament::findOrFail($this->tournamentId);
             $user = User::findOrFail($userId);
-            $forfeited = app(\App\Services\TournamentMatchService::class)
+            $forfeited = app(App\Services\TournamentMatchService::class)
                 ->forfeitPoolMatchesForPlayer($tournament, $user);
         }
 
@@ -559,69 +620,6 @@ new class extends Component
             : __('No-show recorded.');
 
         $this->warning($msg, icon: 'o-no-symbol');
-    }
-
-    // ── Payment actions
-
-    public function openQrModal(int $userId): void
-    {
-        if (! $this->tournamentId) {
-            return;
-        }
-
-        $tournament = Tournament::findOrFail($this->tournamentId);
-        $user = User::findOrFail($userId);
-        $registration = TournamentRegistration::where('tournament_id', $this->tournamentId)
-            ->where('user_id', $userId)
-            ->firstOrFail();
-
-        $payment = app(TournamentService::class)->ensurePaymentExists($registration, $tournament);
-
-        $this->qrPaymentDetails = [
-            'name'        => $user->full_name,
-            'reference'   => $payment->reference,
-            'amount_due'  => $payment->amount_due,
-            'iban'        => Club::ourClub()->first()->bank_account,
-            'bic'         => Club::ourClub()->first()->bic,
-            'beneficiary' => 'CTT Ottignies-Blocry ASBL',
-        ];
-        $this->qrCodeData = (new GeneratePaymentQR)($payment);
-        $this->paymentActionUserId = $userId;
-        $this->showQrModal = true;
-    }
-
-    public function openCashConfirmModal(int $userId): void
-    {
-        $register = CashRegister::first();
-        if (! $register) {
-            $this->error(__('No cash register found. Create one in Treasury first.'));
-            return;
-        }
-
-        $this->paymentActionUserId = $userId;
-        $this->showCashConfirmModal = true;
-    }
-
-    public function confirmCashPayment(): void
-    {
-        if (! $this->tournamentId || ! $this->paymentActionUserId) {
-            return;
-        }
-
-        $register = CashRegister::first();
-        if (! $register) {
-            $this->error(__('No cash register found.'));
-            return;
-        }
-
-        $tournament = Tournament::findOrFail($this->tournamentId);
-        $user = User::findOrFail($this->paymentActionUserId);
-
-        app(TournamentService::class)->recordCashPayment($tournament, $user, $register);
-
-        unset($this->registrations);
-        $this->reset(['showCashConfirmModal', 'paymentActionUserId']);
-        $this->success(__('Cash payment recorded.'), icon: 'o-currency-euro');
     }
 
     public function markQrConfirmed(int $userId): void
@@ -741,12 +739,12 @@ new class extends Component
             $this->nb_tables = (int) $tournament->rooms->sum('total_playable_tables') ?: 8;
 
             $this->step = match ($tournament->status) {
-                TournamentStatusEnum::LOCKED    => '4',
+                TournamentStatusEnum::LOCKED => '4',
                 TournamentStatusEnum::PUBLISHED => '4',
-                TournamentStatusEnum::SETUP     => '5',
+                TournamentStatusEnum::SETUP => '5',
                 TournamentStatusEnum::PENDING,
-                TournamentStatusEnum::CLOSED    => '6',
-                default                         => '1',
+                TournamentStatusEnum::CLOSED => '6',
+                default => '1',
             };
 
             $this->initEventPost($tournament->eventPost, $tournament->name);
@@ -755,9 +753,9 @@ new class extends Component
         // Pre-fill location from the first room's address if not already set
         if ($this->eventLocation === '') {
             $roomId = $this->selectedRooms[0] ?? null;
-            $room   = $roomId
-                ? \App\Domains\ClubAdmin\Club\Models\Room::find($roomId)
-                : \App\Domains\ClubAdmin\Club\Models\Room::first();
+            $room = $roomId
+                ? Room::find($roomId)
+                : Room::first();
 
             if ($room) {
                 $this->eventLocation = implode(', ', array_filter([
@@ -780,6 +778,80 @@ new class extends Component
         $total = Room::whereIn('id', $this->selectedRooms)->sum('total_playable_tables');
 
         return (int) ($total ?: $this->nb_tables);
+    }
+
+    public function openCashConfirmModal(int $userId): void
+    {
+        $register = CashRegister::first();
+        if (! $register) {
+            $this->error(__('No cash register found. Create one in Treasury first.'));
+
+            return;
+        }
+
+        $this->paymentActionUserId = $userId;
+        $this->showCashConfirmModal = true;
+    }
+
+    // ── Payment actions
+
+    public function openQrModal(int $userId): void
+    {
+        if (! $this->tournamentId) {
+            return;
+        }
+
+        $tournament = Tournament::findOrFail($this->tournamentId);
+        $user = User::findOrFail($userId);
+        $registration = TournamentRegistration::where('tournament_id', $this->tournamentId)
+            ->where('user_id', $userId)
+            ->firstOrFail();
+
+        $payment = app(TournamentService::class)->ensurePaymentExists($registration, $tournament);
+
+        $this->qrPaymentDetails = [
+            'name' => $user->full_name,
+            'reference' => $payment->reference,
+            'amount_due' => $payment->amount_due,
+            'iban' => Club::ourClub()->first()->bank_account,
+            'bic' => Club::ourClub()->first()->bic,
+            'beneficiary' => 'CTT Ottignies-Blocry ASBL',
+        ];
+        $this->qrCodeData = (new GeneratePaymentQR)($payment);
+        $this->paymentActionUserId = $userId;
+        $this->showQrModal = true;
+    }
+
+    // ── Registrations
+
+    public function openToggleRegistrationsModal(): void
+    {
+        if ($this->registrationClosed) {
+            $this->showOpenRegistrationsModal = true;
+        } else {
+            $this->showCloseRegistrationsModal = true;
+        }
+    }
+
+    #[Computed]
+    public function pairs(): array
+    {
+        if (! $this->tournamentId) {
+            return [];
+        }
+
+        return TournamentPair::where('tournament_id', $this->tournamentId)
+            ->with(['player1', 'player2'])
+            ->get()
+            ->map(fn (TournamentPair $p) => [
+                'id' => $p->id,
+                'name' => $p->displayName(),
+                'p1_id' => $p->player1_id,
+                'p1_name' => $p->player1?->full_name ?? '?',
+                'p2_id' => $p->player2_id,
+                'p2_name' => $p->player2?->full_name ?? '?',
+            ])
+            ->toArray();
     }
 
     // ── Computed: pools from DB
@@ -908,28 +980,51 @@ new class extends Component
         $this->success($user->full_name . ' ' . __('has been moved to the registered list.'));
     }
 
-    protected function resolveEventPostData(): array
+    #[Computed]
+    public function registerableMembersOptions(): array
     {
+        $alreadyRegistered = $this->tournamentId
+            ? DB::table('tournament_user')
+                ->where('tournament_id', $this->tournamentId)
+                ->whereIn('registration_status', ['registered', 'confirmed', 'spot_offered', 'waiting'])
+                ->pluck('user_id')
+                ->toArray()
+            : [];
+
+        return User::where('is_active', true)
+            ->whereNotIn('id', $alreadyRegistered)
+            ->orderBy('first_name')
+            ->orderBy('last_name')
+            ->get()
+            ->map(fn (User $u) => [
+                'id' => $u->id,
+                'name' => $u->full_name . ' (' . ($u->ranking ?? 'NC') . ')',
+            ])
+            ->toArray();
+    }
+
+    public function registerMember(): void
+    {
+        if (! $this->tournamentId || ! $this->memberToRegister) {
+            return;
+        }
+
         $tournament = Tournament::findOrFail($this->tournamentId);
+        $user = User::findOrFail($this->memberToRegister);
 
-        $startTime = $tournament->start_time
-            ? Carbon::parse($tournament->start_time)
-            : null;
+        try {
+            app(TournamentService::class)->registerUser($tournament, $user);
+        } catch (LogicException $e) {
+            $this->error($e->getMessage());
 
-        $endTime = $startTime && $tournament->duration_minutes > 0
-            ? $startTime->copy()->addMinutes($tournament->duration_minutes)
-            : null;
+            return;
+        }
 
-        return [
-            'model'            => $tournament,
-            'type'             => ClubEventTypeEnum::TOURNAMENT,
-            'icon'             => '🏆',
-            'event_date'       => $tournament->start_date->toDateString(),
-            'start_time'       => $startTime?->format('H:i:s') ?? '00:00:00',
-            'end_time'         => $endTime?->format('H:i:s'),
-            'price'            => (string) $tournament->price,
-            'max_participants' => $tournament->max_users ?: null,
-        ];
+        unset($this->registrations, $this->waitlist, $this->members);
+
+        $this->memberToRegister = 0;
+        $this->showRegisterModal = false;
+        $this->success($user->full_name . ' ' . __('has been registered.'));
     }
 
     // ── Computed: registration status
@@ -938,14 +1033,6 @@ new class extends Component
     public function registrationClosed(): bool
     {
         return $this->currentTournament !== null && $this->currentTournament->status === TournamentStatusEnum::SETUP;
-    }
-
-    #[Computed]
-    public function isLaunched(): bool
-    {
-        $status = $this->currentTournament?->status;
-
-        return $status !== null && in_array($status, [TournamentStatusEnum::PENDING, TournamentStatusEnum::CLOSED]);
     }
 
     // ── Computed: active registrations (not waiting, not cancelled)
@@ -969,119 +1056,20 @@ new class extends Component
         $paidPaymentIds = Payment::whereIn('id', $paymentIds)->where('status', 'paid')->pluck('id')->flip();
 
         $rows = $users->map(fn (User $u) => [
-            'id'               => $u->id,
-            'name'             => $u->full_name,
-            'ranking'          => $u->ranking ?? 'NC',
-            'status'           => $u->pivot->registration_status,
-            'has_paid'         => (bool) $u->pivot->has_paid || isset($paidPaymentIds[$u->pivot->payment_id]),
-            'qr_confirmed'     => (bool) $u->pivot->qr_confirmed,
-            'payment_id'       => $u->pivot->payment_id,
+            'id' => $u->id,
+            'name' => $u->full_name,
+            'ranking' => $u->ranking ?? 'NC',
+            'status' => $u->pivot->registration_status,
+            'has_paid' => (bool) $u->pivot->has_paid || isset($paidPaymentIds[$u->pivot->payment_id]),
+            'qr_confirmed' => (bool) $u->pivot->qr_confirmed,
+            'payment_id' => $u->pivot->payment_id,
             'payment_deadline' => $u->pivot->payment_deadline,
-            'registered_at'    => $u->pivot->created_at,
+            'registered_at' => $u->pivot->created_at,
         ]);
 
         return $dir === 'asc'
             ? $rows->sortBy($col)->values()
             : $rows->sortByDesc($col)->values();
-    }
-
-    // ── Pair management (doubles)
-
-    public function createPair(): void
-    {
-        if (! $this->tournamentId || ! $this->pairPlayer1Id || ! $this->pairPlayer2Id) {
-            $this->error(__('Select two different players.'));
-
-            return;
-        }
-
-        if ($this->pairPlayer1Id === $this->pairPlayer2Id) {
-            $this->error(__('A player cannot be paired with themselves.'));
-
-            return;
-        }
-
-        $existing = TournamentPair::where('tournament_id', $this->tournamentId)
-            ->where(fn ($q) => $q
-                ->whereIn('player1_id', [$this->pairPlayer1Id, $this->pairPlayer2Id])
-                ->orWhereIn('player2_id', [$this->pairPlayer1Id, $this->pairPlayer2Id])
-            )
-            ->exists();
-
-        if ($existing) {
-            $this->error(__('One of these players is already in a pair.'));
-
-            return;
-        }
-
-        TournamentPair::create([
-            'tournament_id' => $this->tournamentId,
-            'player1_id' => $this->pairPlayer1Id,
-            'player2_id' => $this->pairPlayer2Id,
-            'registered_by' => Auth::id() ?? 0,
-        ]);
-
-        unset($this->pairs);
-        $this->pairPlayer1Id = 0;
-        $this->pairPlayer2Id = 0;
-        $this->success(__('Pair created.'), icon: 'o-user-group');
-    }
-
-    public function deletePair(int $pairId): void
-    {
-        if (! $this->tournamentId) {
-            return;
-        }
-
-        TournamentPair::where('id', $pairId)
-            ->where('tournament_id', $this->tournamentId)
-            ->delete();
-
-        unset($this->pairs);
-        $this->warning(__('Pair deleted.'));
-    }
-
-    #[Computed]
-    public function pairs(): array
-    {
-        if (! $this->tournamentId) {
-            return [];
-        }
-
-        return TournamentPair::where('tournament_id', $this->tournamentId)
-            ->with(['player1', 'player2'])
-            ->get()
-            ->map(fn (TournamentPair $p) => [
-                'id'      => $p->id,
-                'name'    => $p->displayName(),
-                'p1_id'   => $p->player1_id,
-                'p1_name' => $p->player1?->full_name ?? '?',
-                'p2_id'   => $p->player2_id,
-                'p2_name' => $p->player2?->full_name ?? '?',
-            ])
-            ->toArray();
-    }
-
-    #[Computed]
-    public function unpaired(): array
-    {
-        if (! $this->tournamentId) {
-            return [];
-        }
-
-        $pairedIds = TournamentPair::where('tournament_id', $this->tournamentId)
-            ->get()
-            ->flatMap(fn ($p) => [$p->player1_id, $p->player2_id])
-            ->unique()
-            ->toArray();
-
-        return Tournament::findOrFail($this->tournamentId)
-            ->users()
-            ->wherePivotIn('registration_status', ['registered', 'confirmed', 'spot_offered'])
-            ->whereNotIn('users.id', $pairedIds)
-            ->get()
-            ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->full_name])
-            ->toArray();
     }
 
     public function removeFromWaitlist(int $userId): void
@@ -1106,15 +1094,6 @@ new class extends Component
         unset($this->waitlist);
 
         $this->success(__('Removed from waiting list.'));
-    }
-
-    // ── Render
-
-    protected function breadcrumbChain(): Breadcrumb
-    {
-        return Breadcrumb::make()
-            ->home()
-            ->current(__('Tournaments Wizard'));
     }
 
     public function render(): mixed
@@ -1297,6 +1276,23 @@ new class extends Component
         unset($this->invitationHistory);
     }
 
+    // ── Computed: simulation
+
+    #[Computed]
+    public function simulation(): SimulationResult
+    {
+        return app(TournamentSimulator::class)->simulate(new TournamentConfig(
+            durationMinutes: max(1, $this->tournament_minutes),
+            nbTables: max(1, $this->nbTables),
+            logisticsBufferMinutes: max(0, $this->logistics_buffer),
+            poolSize: max(2, $this->pool_size),
+            nbPools: max(1, $this->nb_poules),
+            nbQualifiersPerPool: max(1, $this->nb_qualifies),
+            setsToWin: max(1, $this->totalSets),
+            matchType: $this->matchType,
+        ));
+    }
+
     // ── Computed: table efficiency (referee constraint)
 
     /**
@@ -1337,23 +1333,6 @@ new class extends Component
         ];
     }
 
-    // ── Computed: simulation
-
-    #[Computed]
-    public function simulation(): SimulationResult
-    {
-        return app(TournamentSimulator::class)->simulate(new TournamentConfig(
-            durationMinutes: max(1, $this->tournament_minutes),
-            nbTables: max(1, $this->nbTables),
-            logisticsBufferMinutes: max(0, $this->logistics_buffer),
-            poolSize: max(2, $this->pool_size),
-            nbPools: max(1, $this->nb_poules),
-            nbQualifiersPerPool: max(1, $this->nb_qualifies),
-            setsToWin: max(1, $this->totalSets),
-            matchType: $this->matchType,
-        ));
-    }
-
     public function toggleMember(int $id): void
     {
         if (in_array($id, $this->selectedMembers)) {
@@ -1365,57 +1344,26 @@ new class extends Component
         }
     }
 
-    // ── Registrations
-
-    public function openToggleRegistrationsModal(): void
-    {
-        if ($this->registrationClosed) {
-            $this->showOpenRegistrationsModal = true;
-        } else {
-            $this->showCloseRegistrationsModal = true;
-        }
-    }
-
-    public function confirmCloseRegistrations(): void
+    #[Computed]
+    public function unpaired(): array
     {
         if (! $this->tournamentId) {
-            return;
+            return [];
         }
 
-        $tournament = Tournament::findOrFail($this->tournamentId);
-
-        // Kick everyone still on the waitlist — they no longer have a chance.
-        $tournament->users()
-            ->wherePivotIn('registration_status', ['waiting'])
+        $pairedIds = TournamentPair::where('tournament_id', $this->tournamentId)
             ->get()
-            ->each(function (User $user) use ($tournament): void {
-                DB::table('tournament_user')
-                    ->where('tournament_id', $tournament->id)
-                    ->where('user_id', $user->id)
-                    ->update(['registration_status' => 'cancelled', 'waitlist_position' => null]);
+            ->flatMap(fn ($p) => [$p->player1_id, $p->player2_id])
+            ->unique()
+            ->toArray();
 
-                $user->notify(new TournamentWaitlistRemovedNotification($tournament));
-            });
-
-        $tournament->update(['status' => TournamentStatusEnum::SETUP]);
-
-        unset($this->currentTournament, $this->waitlist, $this->registrations);
-        $this->showCloseRegistrationsModal = false;
-        $this->success(__('Registrations closed. Waitlisted players have been notified.'), icon: 'o-lock-closed');
-    }
-
-    public function confirmOpenRegistrations(): void
-    {
-        if (! $this->tournamentId) {
-            return;
-        }
-
-        $tournament = Tournament::findOrFail($this->tournamentId);
-        $tournament->update(['status' => TournamentStatusEnum::PUBLISHED]);
-
-        unset($this->currentTournament);
-        $this->showOpenRegistrationsModal = false;
-        $this->success(__('Registrations are now open.'), icon: 'o-lock-open');
+        return Tournament::findOrFail($this->tournamentId)
+            ->users()
+            ->wherePivotIn('registration_status', ['registered', 'confirmed', 'spot_offered'])
+            ->whereNotIn('users.id', $pairedIds)
+            ->get()
+            ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->full_name])
+            ->toArray();
     }
 
     public function updatedMatchType(): void
@@ -1469,6 +1417,26 @@ new class extends Component
         }
     }
 
+    public function validateAndLock(): void
+    {
+        if (! $this->tournamentId) {
+            return;
+        }
+
+        if (empty($this->name) || empty($this->registration_deadline)) {
+            $this->error(__('Tournament name and registration deadline are required before locking.'));
+
+            return;
+        }
+
+        Tournament::findOrFail($this->tournamentId)->update(['status' => TournamentStatusEnum::LOCKED]);
+
+        unset($this->currentTournament, $this->isContractLocked);
+
+        $this->step = '4';
+        $this->success(__('Tournament validated! Name and price are now locked.'), icon: 'o-lock-closed');
+    }
+
     public function viewBatchDetails(int $_batchId): void {}
 
     // ── Computed: waiting list ordered by position
@@ -1500,6 +1468,39 @@ new class extends Component
             'breadcrumbs' => $this->getBreadcrumbs(),
             'objectiveOptions' => TournamentObjectiveEnum::toOptions(),
             'maxUsers' => $this->maxUsers,
+        ];
+    }
+
+    // ── Render
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__('Tournaments Wizard'));
+    }
+
+    protected function resolveEventPostData(): array
+    {
+        $tournament = Tournament::findOrFail($this->tournamentId);
+
+        $startTime = $tournament->start_time
+            ? Carbon::parse($tournament->start_time)
+            : null;
+
+        $endTime = $startTime && $tournament->duration_minutes > 0
+            ? $startTime->copy()->addMinutes($tournament->duration_minutes)
+            : null;
+
+        return [
+            'model' => $tournament,
+            'type' => ClubEventTypeEnum::TOURNAMENT,
+            'icon' => '🏆',
+            'event_date' => $tournament->start_date->toDateString(),
+            'start_time' => $startTime?->format('H:i:s') ?? '00:00:00',
+            'end_time' => $endTime?->format('H:i:s'),
+            'price' => (string) $tournament->price,
+            'max_participants' => $tournament->max_users ?: null,
         ];
     }
 

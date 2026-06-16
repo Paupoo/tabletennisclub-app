@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Resources\views\Pages\ClubEvents\Interclubs;
 
-use App\Domains\Shared\Enums\InterclubResultEnum;
-use App\Domains\Shared\Enums\LeagueCategory;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\InterclubResult;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
+use App\Domains\Shared\Enums\InterclubResultEnum;
+use App\Domains\Shared\Enums\LeagueCategory;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
@@ -22,7 +22,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast, HasBreadcrumbs;
+    use HasBreadcrumbs, Toast;
 
     // Modal state
     public bool $deleteModal = false;
@@ -32,6 +32,8 @@ new class extends Component
 
     // Form fields
     public ?int $editingInterclubResultId = null;
+
+    public ?string $editingTeamCategory = null;
 
     public ?int $editingTeamId = null;
 
@@ -48,11 +50,9 @@ new class extends Component
 
     public ?string $opponentName = null;
 
-    public ?int $scoreUs = null;
-
     public ?int $scoreThem = null;
 
-    public ?string $editingTeamCategory = null;
+    public ?int $scoreUs = null;
 
     public ?int $seasonId = null;
 
@@ -92,6 +92,11 @@ new class extends Component
         $this->deletingInterclubResultId = null;
     }
 
+    public function maxPoints(): int
+    {
+        return $this->editingTeamCategory === LeagueCategory::MEN->name ? 16 : 10;
+    }
+
     public function mount(): void
     {
         $this->seasonId = Season::current()?->id;
@@ -118,7 +123,7 @@ new class extends Component
         $this->scoreThem = null;
         if ($mr->score && str_contains($mr->score, '-')) {
             [$home, $away] = array_map('intval', explode('-', $mr->score, 2));
-            $this->scoreUs   = $this->isHome ? $home : $away;
+            $this->scoreUs = $this->isHome ? $home : $away;
             $this->scoreThem = $this->isHome ? $away : $home;
         }
 
@@ -139,22 +144,9 @@ new class extends Component
         $this->teamForfeitModal = true;
     }
 
-
-    protected function breadcrumbChain(): Breadcrumb
-    {
-        return Breadcrumb::make()
-            ->home()
-            ->current(__("Results"));
-    }
-
-        public function render(): View
+    public function render(): View
     {
         return $this->view()->title(__('Results'));
-    }
-
-    public function maxPoints(): int
-    {
-        return $this->editingTeamCategory === LeagueCategory::MEN->name ? 16 : 10;
     }
 
     public function rules(): array
@@ -171,7 +163,7 @@ new class extends Component
                 function (string $attribute, mixed $value, \Closure $fail) use ($maxPoints): void {
                     if ($this->scoreUs !== null && $this->scoreThem !== null) {
                         if ($this->scoreUs + $this->scoreThem !== $maxPoints) {
-                            $fail(__("Le score total doit être égal à :max points.", ['max' => $maxPoints]));
+                            $fail(__('Le score total doit être égal à :max points.', ['max' => $maxPoints]));
                         }
                     }
                 },
@@ -180,7 +172,7 @@ new class extends Component
 
         return [
             'matchType' => ['required', Rule::in(['normal', 'bye', 'forfeit_opponent', 'forfeit_general_opponent', 'forfeit_us', 'forfeit_general_us'])],
-            'scoreUs'   => $scoreRule,
+            'scoreUs' => $scoreRule,
             'scoreThem' => $scoreSumRule,
         ];
     }
@@ -291,6 +283,13 @@ new class extends Component
             ],
             'breadcrumbs' => Breadcrumb::make()->home()->add('Interclubs', '#')->results()->toArray(),
         ];
+    }
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__('Results'));
     }
 
     private function authorizeTeam(int $teamId): void

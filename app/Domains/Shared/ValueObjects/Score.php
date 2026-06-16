@@ -13,6 +13,11 @@ class Score
         private readonly int $player2,
     ) {}
 
+    public function __toString(): string
+    {
+        return "{$this->player1}-{$this->player2}";
+    }
+
     public static function make(int $player1, int $player2): self
     {
         if ($player1 < 0 || $player2 < 0) {
@@ -20,6 +25,31 @@ class Score
         }
 
         return new self($player1, $player2);
+    }
+
+    public function difference(): int
+    {
+        return abs($this->player1 - $this->player2);
+    }
+
+    public function equals(Score $other): bool
+    {
+        return $this->player1 === $other->player1 && $this->player2 === $other->player2;
+    }
+
+    public function isWon(): bool
+    {
+        return $this->winner() !== null;
+    }
+
+    public function maxScore(): int
+    {
+        return max($this->player1, $this->player2);
+    }
+
+    public function minScore(): int
+    {
+        return min($this->player1, $this->player2);
     }
 
     public function player1(): int
@@ -43,35 +73,5 @@ class Score
         }
 
         return null;
-    }
-
-    public function isWon(): bool
-    {
-        return $this->winner() !== null;
-    }
-
-    public function maxScore(): int
-    {
-        return max($this->player1, $this->player2);
-    }
-
-    public function minScore(): int
-    {
-        return min($this->player1, $this->player2);
-    }
-
-    public function difference(): int
-    {
-        return abs($this->player1 - $this->player2);
-    }
-
-    public function equals(Score $other): bool
-    {
-        return $this->player1 === $other->player1 && $this->player2 === $other->player2;
-    }
-
-    public function __toString(): string
-    {
-        return "{$this->player1}-{$this->player2}";
     }
 }

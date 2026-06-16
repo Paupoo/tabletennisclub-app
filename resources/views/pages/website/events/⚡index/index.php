@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubPosts\Models\EventPost;
 use App\Domains\Shared\Enums\ClubEventTypeEnum;
 use App\Domains\Shared\Enums\EventPostStatusEnum;
-use App\Domains\ClubPosts\Models\EventPost;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasBulkActions;
 use App\Livewire\Concerns\HasFilterDrawer;
@@ -19,52 +19,10 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast, WithPagination, HasBreadcrumbs;
+    use HasBreadcrumbs, Toast, WithPagination;
     use HasBulkActions, HasFilterDrawer;
 
-    // ── Filters ──────────────────────────────────────────────────────────────
-
-    #[Url]
-    public string $search = '';
-
-    #[Url]
-    public string $status = '';
-
-    #[Url]
-    public string $type = '';
-
-    /** @var array{column: string, direction: string} */
-    public array $sortBy = ['column' => 'event_date', 'direction' => 'desc'];
-
-    // ── Edit drawer ───────────────────────────────────────────────────────────
-
-    public bool $editDrawer = false;
-
-    public ?int $selectedEventId = null;
-
-    public string $editStatus = '';
-
-    public bool $editFeatured = false;
-
-    public string $editTitle = '';
-
-    public string $editDescription = '';
-
-    public string $editLocation = '';
-
-    public string $editEventDate = '';
-
-    public string $editStartTime = '';
-
-    public string $editEndTime = '';
-
-    public string $editPrice = '';
-
-    public string $editIcon = '';
-
-    public string $editNotes = '';
-
-    public string $editFeaturedUntil = '';
+    public bool $confirmBulkArchiveModal = false;
 
     // ── Deletion ──────────────────────────────────────────────────────────────
 
@@ -72,51 +30,63 @@ new class extends Component
 
     public ?int $deletingId = null;
 
-    public bool $confirmBulkArchiveModal = false;
+    public string $editDescription = '';
 
-    // ── HasBulkActions ────────────────────────────────────────────────────────
+    // ── Edit drawer ───────────────────────────────────────────────────────────
 
-    /** @return array<int, string> */
-    protected function getPageIds(): array
+    public bool $editDrawer = false;
+
+    public string $editEndTime = '';
+
+    public string $editEventDate = '';
+
+    public bool $editFeatured = false;
+
+    public string $editFeaturedUntil = '';
+
+    public string $editIcon = '';
+
+    public string $editLocation = '';
+
+    public string $editNotes = '';
+
+    public string $editPrice = '';
+
+    public string $editStartTime = '';
+
+    public string $editStatus = '';
+
+    public string $editTitle = '';
+
+    // ── Filters ──────────────────────────────────────────────────────────────
+
+    #[Url]
+    public string $search = '';
+
+    public ?int $selectedEventId = null;
+
+    /** @var array{column: string, direction: string} */
+    public array $sortBy = ['column' => 'event_date', 'direction' => 'desc'];
+
+    #[Url]
+    public string $status = '';
+
+    #[Url]
+    public string $type = '';
+
+    public function archive(int $id): void
     {
-        return $this->events
-            ->pluck('id')
-            ->map(fn (int $id) => (string) $id)
-            ->toArray();
+        EventPost::findOrFail($id)->update(['status' => EventPostStatusEnum::ARCHIVED]);
+        $this->warning(__('Event archived.'));
     }
 
-    public function getTotalMatchingCount(): int
+    public function bulkArchive(): void
     {
-        return $this->events->total();
-    }
-
-    // ── HasFilterDrawer ───────────────────────────────────────────────────────
-
-    /** @return array<int, array{key: string, label: string}> */
-    public function getFilterChips(): array
-    {
-        $chips = [];
-
-        if (filled($this->status)) {
-            $label = collect(EventPostStatusEnum::cases())
-                ->first(fn ($s) => $s->value === $this->status)?->getLabel() ?? $this->status;
-            $chips[] = ['key' => 'status', 'label' => __('Status') . ': ' . $label];
-        }
-
-        if (filled($this->type)) {
-            $enum  = collect(ClubEventTypeEnum::cases())->first(fn ($e) => $e->value === $this->type);
-            $label = $enum ? $enum->getIcon() . ' ' . $enum->getLabel() : $this->type;
-            $chips[] = ['key' => 'type', 'label' => __('Type') . ': ' . $label];
-        }
-
-        return $chips;
-    }
-
-    public function clearFilters(): void
-    {
-        $this->status = '';
-        $this->type   = '';
-        $this->resetPage();
+        $count = count($this->selected);
+        EventPost::whereIn('id', $this->selected)->update(['status' => EventPostStatusEnum::ARCHIVED]);
+        $this->confirmBulkArchiveModal = false;
+        $this->clearSelection();
+        $this->warning(trans_choice('{1} Event archived.|[2,*] :count events archived.', $count, ['count' => $count]));
     }
 
     // ── Bulk actions ──────────────────────────────────────────────────────────
@@ -129,103 +99,21 @@ new class extends Component
         $this->success(trans_choice('{1} Event published.|[2,*] :count events published.', $count, ['count' => $count]));
     }
 
+    public function clearFilters(): void
+    {
+        $this->status = '';
+        $this->type = '';
+        $this->resetPage();
+    }
+
     public function confirmBulkArchive(): void
     {
         $this->confirmBulkArchiveModal = true;
     }
 
-    public function bulkArchive(): void
-    {
-        $count = count($this->selected);
-        EventPost::whereIn('id', $this->selected)->update(['status' => EventPostStatusEnum::ARCHIVED]);
-        $this->confirmBulkArchiveModal = false;
-        $this->clearSelection();
-        $this->warning(trans_choice('{1} Event archived.|[2,*] :count events archived.', $count, ['count' => $count]));
-    }
-
-    // ── Filter hooks ──────────────────────────────────────────────────────────
-
-    public function updatedSearch(): void { $this->resetPage(); }
-
-    public function updatedStatus(): void { $this->resetPage(); }
-
-    public function updatedType(): void   { $this->resetPage(); }
-
-    // ── Single-record actions ─────────────────────────────────────────────────
-
-    public function openEdit(int $id): void
-    {
-        $event = EventPost::findOrFail($id);
-
-        $this->selectedEventId   = $event->id;
-        $this->editStatus        = $event->status->value;
-        $this->editFeatured      = $event->featured;
-        $this->editTitle         = $event->title;
-        $this->editDescription   = $event->description ?? '';
-        $this->editLocation      = $event->location ?? '';
-        $this->editEventDate     = $event->event_date?->format('Y-m-d') ?? '';
-        $this->editStartTime     = $event->start_time?->format('H:i') ?? '';
-        $this->editEndTime       = $event->end_time?->format('H:i') ?? '';
-        $this->editPrice         = $event->price ?? '';
-        $this->editIcon          = $event->icon ?? '';
-        $this->editNotes         = $event->notes ?? '';
-        $this->editFeaturedUntil = $event->featured_until?->format('Y-m-d') ?? '';
-
-        $this->editDrawer = true;
-    }
-
-    public function saveEdit(): void
-    {
-        $this->validate([
-            'editTitle'         => ['required', 'string', 'max:255'],
-            'editDescription'   => ['required', 'string'],
-            'editLocation'      => ['required', 'string', 'max:255'],
-            'editStatus'        => ['required', 'in:DRAFT,PUBLISHED,ARCHIVED'],
-            'editEventDate'     => ['required', 'date'],
-            'editStartTime'     => ['required', 'date_format:H:i'],
-            'editEndTime'       => ['nullable', 'date_format:H:i'],
-            'editPrice'         => ['nullable', 'string', 'max:255'],
-            'editIcon'          => ['nullable', 'string', 'max:10'],
-            'editNotes'         => ['nullable', 'string'],
-            'editFeaturedUntil' => ['nullable', 'date', 'after_or_equal:today'],
-        ]);
-
-        EventPost::findOrFail($this->selectedEventId)->update([
-            'title'          => $this->editTitle,
-            'description'    => $this->editDescription,
-            'location'       => $this->editLocation,
-            'status'         => $this->editStatus,
-            'featured'       => $this->editFeatured,
-            'event_date'     => $this->editEventDate,
-            'start_time'     => $this->editStartTime,
-            'end_time'       => $this->editEndTime ?: null,
-            'price'          => $this->editPrice ?: null,
-            'icon'           => $this->editIcon ?: null,
-            'notes'          => $this->editNotes ?: null,
-            'featured_until' => $this->editFeaturedUntil ?: null,
-        ]);
-
-        $this->editDrawer      = false;
-        $this->selectedEventId = null;
-
-        $this->success(__('Event updated.'));
-    }
-
-    public function publish(int $id): void
-    {
-        EventPost::findOrFail($id)->update(['status' => EventPostStatusEnum::PUBLISHED]);
-        $this->success(__('Event published.'));
-    }
-
-    public function archive(int $id): void
-    {
-        EventPost::findOrFail($id)->update(['status' => EventPostStatusEnum::ARCHIVED]);
-        $this->warning(__('Event archived.'));
-    }
-
     public function confirmDelete(int $id): void
     {
-        $this->deletingId  = $id;
+        $this->deletingId = $id;
         $this->deleteModal = true;
     }
 
@@ -243,7 +131,7 @@ new class extends Component
         $event->delete();
 
         $this->deleteModal = false;
-        $this->deletingId  = null;
+        $this->deletingId = null;
 
         $this->error(__('Event deleted.'));
     }
@@ -268,16 +156,119 @@ new class extends Component
         return $this->getFilterChips();
     }
 
-    protected function breadcrumbChain(): Breadcrumb
+    // ── HasFilterDrawer ───────────────────────────────────────────────────────
+
+    /** @return array<int, array{key: string, label: string}> */
+    public function getFilterChips(): array
     {
-        return Breadcrumb::make()
-            ->home()
-            ->current(__('Events'));
+        $chips = [];
+
+        if (filled($this->status)) {
+            $label = collect(EventPostStatusEnum::cases())
+                ->first(fn ($s) => $s->value === $this->status)?->getLabel() ?? $this->status;
+            $chips[] = ['key' => 'status', 'label' => __('Status') . ': ' . $label];
+        }
+
+        if (filled($this->type)) {
+            $enum = collect(ClubEventTypeEnum::cases())->first(fn ($e) => $e->value === $this->type);
+            $label = $enum ? $enum->getIcon() . ' ' . $enum->getLabel() : $this->type;
+            $chips[] = ['key' => 'type', 'label' => __('Type') . ': ' . $label];
+        }
+
+        return $chips;
+    }
+
+    public function getTotalMatchingCount(): int
+    {
+        return $this->events->total();
+    }
+
+    // ── Single-record actions ─────────────────────────────────────────────────
+
+    public function openEdit(int $id): void
+    {
+        $event = EventPost::findOrFail($id);
+
+        $this->selectedEventId = $event->id;
+        $this->editStatus = $event->status->value;
+        $this->editFeatured = $event->featured;
+        $this->editTitle = $event->title;
+        $this->editDescription = $event->description ?? '';
+        $this->editLocation = $event->location ?? '';
+        $this->editEventDate = $event->event_date?->format('Y-m-d') ?? '';
+        $this->editStartTime = $event->start_time?->format('H:i') ?? '';
+        $this->editEndTime = $event->end_time?->format('H:i') ?? '';
+        $this->editPrice = $event->price ?? '';
+        $this->editIcon = $event->icon ?? '';
+        $this->editNotes = $event->notes ?? '';
+        $this->editFeaturedUntil = $event->featured_until?->format('Y-m-d') ?? '';
+
+        $this->editDrawer = true;
+    }
+
+    public function publish(int $id): void
+    {
+        EventPost::findOrFail($id)->update(['status' => EventPostStatusEnum::PUBLISHED]);
+        $this->success(__('Event published.'));
     }
 
     public function render(): View
     {
         return $this->view();
+    }
+
+    public function saveEdit(): void
+    {
+        $this->validate([
+            'editTitle' => ['required', 'string', 'max:255'],
+            'editDescription' => ['required', 'string'],
+            'editLocation' => ['required', 'string', 'max:255'],
+            'editStatus' => ['required', 'in:DRAFT,PUBLISHED,ARCHIVED'],
+            'editEventDate' => ['required', 'date'],
+            'editStartTime' => ['required', 'date_format:H:i'],
+            'editEndTime' => ['nullable', 'date_format:H:i'],
+            'editPrice' => ['nullable', 'string', 'max:255'],
+            'editIcon' => ['nullable', 'string', 'max:10'],
+            'editNotes' => ['nullable', 'string'],
+            'editFeaturedUntil' => ['nullable', 'date', 'after_or_equal:today'],
+        ]);
+
+        EventPost::findOrFail($this->selectedEventId)->update([
+            'title' => $this->editTitle,
+            'description' => $this->editDescription,
+            'location' => $this->editLocation,
+            'status' => $this->editStatus,
+            'featured' => $this->editFeatured,
+            'event_date' => $this->editEventDate,
+            'start_time' => $this->editStartTime,
+            'end_time' => $this->editEndTime ?: null,
+            'price' => $this->editPrice ?: null,
+            'icon' => $this->editIcon ?: null,
+            'notes' => $this->editNotes ?: null,
+            'featured_until' => $this->editFeaturedUntil ?: null,
+        ]);
+
+        $this->editDrawer = false;
+        $this->selectedEventId = null;
+
+        $this->success(__('Event updated.'));
+    }
+
+    // ── Filter hooks ──────────────────────────────────────────────────────────
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedStatus(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedType(): void
+    {
+        $this->resetPage();
     }
 
     /** @return array<string, mixed> */
@@ -286,10 +277,10 @@ new class extends Component
         $statsBase = EventPost::query();
 
         $stats = [
-            'total'     => (clone $statsBase)->count(),
+            'total' => (clone $statsBase)->count(),
             'published' => (clone $statsBase)->where('status', EventPostStatusEnum::PUBLISHED->value)->count(),
-            'draft'     => (clone $statsBase)->where('status', EventPostStatusEnum::DRAFT->value)->count(),
-            'archived'  => (clone $statsBase)->where('status', EventPostStatusEnum::ARCHIVED->value)->count(),
+            'draft' => (clone $statsBase)->where('status', EventPostStatusEnum::DRAFT->value)->count(),
+            'archived' => (clone $statsBase)->where('status', EventPostStatusEnum::ARCHIVED->value)->count(),
         ];
 
         $statusOptions = collect(EventPostStatusEnum::cases())
@@ -314,14 +305,32 @@ new class extends Component
         ];
 
         return [
-            'breadcrumbs'   => $this->getBreadcrumbs(),
-            'events'        => $this->events,
-            'stats'         => $stats,
+            'breadcrumbs' => $this->getBreadcrumbs(),
+            'events' => $this->events,
+            'stats' => $stats,
             'statusOptions' => $statusOptions,
-            'typeOptions'   => $typeOptions,
+            'typeOptions' => $typeOptions,
             'selectedEvent' => $selectedEvent,
-            'headers'       => $headers,
-            'filterChips'   => $this->filterChips,
+            'headers' => $headers,
+            'filterChips' => $this->filterChips,
         ];
+    }
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__('Events'));
+    }
+
+    // ── HasBulkActions ────────────────────────────────────────────────────────
+
+    /** @return array<int, string> */
+    protected function getPageIds(): array
+    {
+        return $this->events
+            ->pluck('id')
+            ->map(fn (int $id) => (string) $id)
+            ->toArray();
     }
 };

@@ -2,11 +2,10 @@
 
 declare(strict_types=1);
 
-use App\Domains\Shared\Enums\TrainingCancellationType;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Shared\Enums\TrainingCancellationType;
 use App\Domains\Trainings\Models\Training;
-use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Trainings\Notifications\TrainingSessionCancelledNotification;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
@@ -18,10 +17,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast, HasBreadcrumbs;
-
-    // ── Session drill-down ────────────────────────────────────────────────────
-    public ?int $selectedSessionId = null;
+    use HasBreadcrumbs, Toast;
 
     // ── Attendance ────────────────────────────────────────────────────────────
     /** @var array<int, string> pivot status keyed by user_id */
@@ -30,9 +26,12 @@ new class extends Component
     // ── Cancellation modal ────────────────────────────────────────────────────
     public bool $cancelModal = false;
 
+    public string $cancelNote = '';
+
     public string $cancelType = 'FREE';
 
-    public string $cancelNote = '';
+    // ── Session drill-down ────────────────────────────────────────────────────
+    public ?int $selectedSessionId = null;
 
     // ── Computed ──────────────────────────────────────────────────────────────
 
@@ -42,115 +41,10 @@ new class extends Component
         return Season::where('is_active', true)->first();
     }
 
-    /** @return Collection<int, Training> */
-    #[Computed]
-    public function upcomingSessions(): Collection
-    {
-        /** @var User $coach */
-        $coach = auth()->user();
-
-        return Training::with(['trainingPack', 'room'])
-            ->where('trainer_id', $coach->id)
-            ->where('start', '>=', Carbon::now())
-            ->where('status', 'scheduled')
-            ->orderBy('start')
-            ->get();
-    }
-
-    #[Computed]
-    public function selectedSession(): ?Training
-    {
-        return $this->selectedSessionId
-            ? Training::with(['trainingPack.room', 'room'])->find($this->selectedSessionId)
-            : null;
-    }
-
-    /**
-     * Enrolled members for the selected session's pack, with their stats.
-     *
-     * @return Collection<int, User>
-     */
-    #[Computed]
-    public function enrolledMembers(): Collection
-    {
-        if (! $this->selectedSession?->trainingPack) {
-            return new Collection();
-        }
-
-        return $this->selectedSession->trainingPack->trainees()
-            ->with(['guardians', 'teams.league'])
-            ->get();
-    }
-
-    /** Presence rate for a user in the selected pack (attended / past sessions). */
-    public function presenceRate(int $userId): int
-    {
-        if (! $this->selectedSession?->training_pack_id) {
-            return 0;
-        }
-
-        $past = Training::where('training_pack_id', $this->selectedSession->training_pack_id)
-            ->where('start', '<', Carbon::now())
-            ->count();
-
-        if ($past === 0) {
-            return 0;
-        }
-
-        $present = Training::where('training_pack_id', $this->selectedSession->training_pack_id)
-            ->where('start', '<', Carbon::now())
-            ->whereHas('trainees', fn ($q) => $q->where('user_id', $userId)->where('training_user.status', 'present'))
-            ->count();
-
-        return (int) round(($present / $past) * 100);
-    }
-
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
-
-    public function viewSession(int $trainingId): void
-    {
-        $this->selectedSessionId = $trainingId;
-        $this->attendanceStatus = [];
-
-        // Pre-load existing attendance status from pivot
-        $session = Training::with(['trainees'])->findOrFail($trainingId);
-        foreach ($session->trainees as $trainee) {
-            $this->attendanceStatus[$trainee->id] = $trainee->pivot->status;
-        }
-
-        unset($this->selectedSession, $this->enrolledMembers);
-    }
-
     public function backToList(): void
     {
         $this->selectedSessionId = null;
         unset($this->upcomingSessions);
-    }
-
-    public function setAttendance(int $userId, string $status): void
-    {
-        if (! $this->selectedSessionId) {
-            return;
-        }
-
-        $this->attendanceStatus[$userId] = $status;
-
-        $session = Training::findOrFail($this->selectedSessionId);
-
-        if ($session->trainees()->where('user_id', $userId)->exists()) {
-            $session->trainees()->updateExistingPivot($userId, ['status' => $status]);
-        } else {
-            $session->trainees()->attach($userId, ['status' => $status]);
-        }
-    }
-
-    // ── Cancellation ──────────────────────────────────────────────────────────
-
-    public function openCancel(): void
-    {
-        $this->cancelType = 'FREE';
-        $this->cancelNote = '';
-        $this->cancelModal = true;
     }
 
     public function confirmCancel(): void
@@ -177,13 +71,109 @@ new class extends Component
         $this->warning(__('Session cancelled. Members have been notified.'), icon: 'o-x-circle');
     }
 
-    // ── Render ────────────────────────────────────────────────────────────────
-
-    protected function breadcrumbChain(): Breadcrumb
+    /**
+     * Enrolled members for the selected session's pack, with their stats.
+     *
+     * @return Collection<int, User>
+     */
+    #[Computed]
+    public function enrolledMembers(): Collection
     {
-        return Breadcrumb::make()
-            ->home()
-            ->current(__('Trainings Coach'));
+        if (! $this->selectedSession?->trainingPack) {
+            return new Collection;
+        }
+
+        return $this->selectedSession->trainingPack->trainees()
+            ->with(['guardians', 'teams.league'])
+            ->get();
+    }
+
+    // ── Cancellation ──────────────────────────────────────────────────────────
+
+    public function openCancel(): void
+    {
+        $this->cancelType = 'FREE';
+        $this->cancelNote = '';
+        $this->cancelModal = true;
+    }
+
+    /** Presence rate for a user in the selected pack (attended / past sessions). */
+    public function presenceRate(int $userId): int
+    {
+        if (! $this->selectedSession?->training_pack_id) {
+            return 0;
+        }
+
+        $past = Training::where('training_pack_id', $this->selectedSession->training_pack_id)
+            ->where('start', '<', Carbon::now())
+            ->count();
+
+        if ($past === 0) {
+            return 0;
+        }
+
+        $present = Training::where('training_pack_id', $this->selectedSession->training_pack_id)
+            ->where('start', '<', Carbon::now())
+            ->whereHas('trainees', fn ($q) => $q->where('user_id', $userId)->where('training_user.status', 'present'))
+            ->count();
+
+        return (int) round(($present / $past) * 100);
+    }
+
+    #[Computed]
+    public function selectedSession(): ?Training
+    {
+        return $this->selectedSessionId
+            ? Training::with(['trainingPack.room', 'room'])->find($this->selectedSessionId)
+            : null;
+    }
+
+    public function setAttendance(int $userId, string $status): void
+    {
+        if (! $this->selectedSessionId) {
+            return;
+        }
+
+        $this->attendanceStatus[$userId] = $status;
+
+        $session = Training::findOrFail($this->selectedSessionId);
+
+        if ($session->trainees()->where('user_id', $userId)->exists()) {
+            $session->trainees()->updateExistingPivot($userId, ['status' => $status]);
+        } else {
+            $session->trainees()->attach($userId, ['status' => $status]);
+        }
+    }
+
+    /** @return Collection<int, Training> */
+    #[Computed]
+    public function upcomingSessions(): Collection
+    {
+        /** @var User $coach */
+        $coach = auth()->user();
+
+        return Training::with(['trainingPack', 'room'])
+            ->where('trainer_id', $coach->id)
+            ->where('start', '>=', Carbon::now())
+            ->where('status', 'scheduled')
+            ->orderBy('start')
+            ->get();
+    }
+
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
+
+    public function viewSession(int $trainingId): void
+    {
+        $this->selectedSessionId = $trainingId;
+        $this->attendanceStatus = [];
+
+        // Pre-load existing attendance status from pivot
+        $session = Training::with(['trainees'])->findOrFail($trainingId);
+        foreach ($session->trainees as $trainee) {
+            $this->attendanceStatus[$trainee->id] = $trainee->pivot->status;
+        }
+
+        unset($this->selectedSession, $this->enrolledMembers);
     }
 
     public function with(): array
@@ -195,5 +185,14 @@ new class extends Component
             'enrolledMembers' => $this->enrolledMembers,
             'breadcrumbs' => $this->getBreadcrumbs(),
         ];
+    }
+
+    // ── Render ────────────────────────────────────────────────────────────────
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__('Trainings Coach'));
     }
 };

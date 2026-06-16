@@ -118,37 +118,6 @@ new class extends Component
         $this->selectedTemplateKey = '';
     }
 
-    /**
-     * Selecting a template in the dropdown immediately opens the editor
-     * pre-filled with its (variable-resolved) content.
-     */
-    public function updatedSelectedTemplateKey(string $value): void
-    {
-        if ($value !== '') {
-            $this->applyTemplate();
-        }
-    }
-
-    /**
-     * Open the editor for a blank, from-scratch custom email.
-     */
-    public function openCustomEmail(): void
-    {
-        $this->authorizeManagement();
-
-        $this->reset(['selectedTemplateKey', 'emailSubject', 'emailBody', 'pendingApplyStatus']);
-        $this->emailModal = true;
-    }
-
-    /**
-     * Close the editor and clear its state so re-selecting the same template
-     * re-triggers the open.
-     */
-    public function closeEmailModal(): void
-    {
-        $this->reset(['emailModal', 'selectedTemplateKey', 'emailSubject', 'emailBody', 'pendingApplyStatus', 'emailCopy']);
-    }
-
     public function bulkDelete(): void
     {
         $count = count($this->selected);
@@ -166,6 +135,15 @@ new class extends Component
         $this->experience = '';
         $this->wantsCompetition = '';
         $this->resetPage();
+    }
+
+    /**
+     * Close the editor and clear its state so re-selecting the same template
+     * re-triggers the open.
+     */
+    public function closeEmailModal(): void
+    {
+        $this->reset(['emailModal', 'selectedTemplateKey', 'emailSubject', 'emailBody', 'pendingApplyStatus', 'emailCopy']);
     }
 
     // ── Bulk actions ──────────────────────────────────────────────────────────
@@ -278,6 +256,17 @@ new class extends Component
         $this->success(__('User created and invitation sent to :email.', ['email' => $contact->email]));
     }
 
+    /**
+     * Open the editor for a blank, from-scratch custom email.
+     */
+    public function openCustomEmail(): void
+    {
+        $this->authorizeManagement();
+
+        $this->reset(['selectedTemplateKey', 'emailSubject', 'emailBody', 'pendingApplyStatus']);
+        $this->emailModal = true;
+    }
+
     // ── Single-record actions ─────────────────────────────────────────────────
 
     public function openDetail(int $id): void
@@ -363,6 +352,17 @@ new class extends Component
     public function updatedSearch(): void
     {
         $this->resetPage();
+    }
+
+    /**
+     * Selecting a template in the dropdown immediately opens the editor
+     * pre-filled with its (variable-resolved) content.
+     */
+    public function updatedSelectedTemplateKey(string $value): void
+    {
+        if ($value !== '') {
+            $this->applyTemplate();
+        }
     }
 
     public function updatedStatus(): void

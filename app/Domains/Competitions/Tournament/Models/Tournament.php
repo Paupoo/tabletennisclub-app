@@ -59,6 +59,7 @@ use Illuminate\Support\Carbon;
  * @property-read int|null $tables_count
  * @property-read Collection<int, User> $users
  * @property-read int|null $users_count
+ *
  * @method static TournamentFactory factory($count = null, $state = [])
  * @method static Builder<static>|Tournament newModelQuery()
  * @method static Builder<static>|Tournament newQuery()
@@ -75,6 +76,7 @@ use Illuminate\Support\Carbon;
  * @method static Builder<static>|Tournament whereStatus($value)
  * @method static Builder<static>|Tournament whereTotalUsers($value)
  * @method static Builder<static>|Tournament whereUpdatedAt($value)
+ *
  * @property string|null $description
  * @property string|null $location
  * @property string|null $image
@@ -85,8 +87,9 @@ use Illuminate\Support\Carbon;
  * @property mixed $0
  * @property-read EventPost|null $eventPost
  * @property-read NewsPost|null $newsPost
- * @property-read Collection<int, \App\Domains\Competitions\Tournament\Models\TournamentPair> $pairs
+ * @property-read Collection<int, TournamentPair> $pairs
  * @property-read int|null $pairs_count
+ *
  * @method static Builder<static>|Tournament whereDescription($value)
  * @method static Builder<static>|Tournament whereDeuceEnabled($value)
  * @method static Builder<static>|Tournament whereDoublesRegistrationMode($value)
@@ -103,6 +106,7 @@ use Illuminate\Support\Carbon;
  * @method static Builder<static>|Tournament whereRegistrationDeadline($value)
  * @method static Builder<static>|Tournament whereSetsToWin($value)
  * @method static Builder<static>|Tournament whereStartTime($value)
+ *
  * @mixin \Eloquent
  */
 #[ObservedBy(TournamentObserver::class)]
@@ -173,11 +177,6 @@ class Tournament extends Model
         return $this->price > 0;
     }
 
-    public function state(): TournamentStateInterface
-    {
-        return TournamentStateFactory::create($this->status);
-    }
-
     public function matches(): HasMany
     {
         return $this->hasMany(TournamentMatch::class);
@@ -219,6 +218,11 @@ class Tournament extends Model
     {
         $query->where('name', 'like', '%' . $value . '%')
             ->orWhere('price', 'like', '%' . $value . '%');
+    }
+
+    public function state(): TournamentStateInterface
+    {
+        return TournamentStateFactory::create($this->status);
     }
 
     public function tables(): BelongsToMany

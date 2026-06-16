@@ -21,6 +21,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $updated_at
  * @property-read TournamentMatch|null $poolMatch
  * @property-read User|null $winner
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MatchSet newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MatchSet newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MatchSet query()
@@ -32,6 +33,7 @@ use Illuminate\Support\Carbon;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MatchSet whereTournamentMatchId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MatchSet whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MatchSet whereWinnerId($value)
+ *
  * @mixin \Eloquent
  */
 class MatchSet extends Model

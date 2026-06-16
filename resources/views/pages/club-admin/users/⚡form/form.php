@@ -8,14 +8,16 @@ use App\Actions\User\SendInvitationAction;
 use App\Actions\User\UpdateUserAction;
 use App\Data\User\CreateUserData;
 use App\Data\User\UpdateUserData;
-use App\Domains\Shared\Enums\CommitteeRolesEnum;
-use App\Domains\Shared\Enums\Gender;
 use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\Gender;
+use App\Domains\Shared\Rules\ValidIban;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasPhotoUpload;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Password as PasswordBroker;
@@ -28,13 +30,16 @@ use Livewire\Attributes\Computed;
 use Livewire\Attributes\Rule;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
-use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
 use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast, WithFileUploads, HasBreadcrumbs, HasPhotoUpload;
+    use HasBreadcrumbs, HasPhotoUpload, Toast, WithFileUploads;
+
+    public string $anonymizeConfirmText = '';
+
+    public bool $anonymizeModal = false;
 
     #[Rule('nullable|date')]
     public ?string $birthdate = null;
@@ -58,17 +63,37 @@ new class extends Component
     #[Rule('required')]
     public ?Gender $gender = Gender::MEN;
 
-    // Permissions
+    public ?string $guardianEmail = null;
 
-    #[Rule('required|boolean')]
-    public bool $is_coach = false;
+    public string $guardianFirstName = '';
 
-    public bool $is_admin = false;
+    public ?string $guardianIban = null;
+
+    // Guardian (legal representatives for minors)
+
+    /** @var array<int> Linked guardian ids (source of truth, synced on save). */
+    public array $guardianIds = [];
+
+    public string $guardianLastName = '';
+
+    public string $guardianPhone = '';
+
+    public string $guardianSearch = '';
 
     // Club equipment
 
     #[Rule('required|boolean')]
     public bool $has_key = false;
+
+    #[Rule(['nullable', new ValidIban])]
+    public ?string $iban = null;
+
+    public bool $is_admin = false;
+
+    // Permissions
+
+    #[Rule('required|boolean')]
+    public bool $is_coach = false;
 
     #[Rule('required|boolean')]
     public bool $is_committee_member = false;
@@ -87,28 +112,6 @@ new class extends Component
     #[Rule('nullable|string')]
     public ?string $licence_type = null;
 
-    #[Rule(['nullable', new \App\Domains\Shared\Rules\ValidIban])]
-    public ?string $iban = null;
-
-    // Guardian (legal representatives for minors)
-
-    /** @var array<int> Linked guardian ids (source of truth, synced on save). */
-    public array $guardianIds = [];
-
-    public string $guardianSearch = '';
-
-    public bool $showGuardianForm = false;
-
-    public string $guardianFirstName = '';
-
-    public string $guardianLastName = '';
-
-    public string $guardianPhone = '';
-
-    public ?string $guardianEmail = null;
-
-    public ?string $guardianIban = null;
-
     // Security
     #[Validate()]
     public string $password = '';
@@ -120,104 +123,12 @@ new class extends Component
 
     public ?string $ranking = null;
 
+    public bool $showGuardianForm = false;
+
     #[Rule('required|string')]
     public string $street = '';
 
     public ?User $user = null;
-
-    public bool $anonymizeModal = false;
-
-    public string $anonymizeConfirmText = '';
-
-    #[Computed()]
-    public function CommitteeRoleOptions(): array
-    {
-        return CommitteeRolesEnum::getOptions();
-    }
-
-    /**
-     * Whether the currently entered birthdate makes the member a minor (< 18y).
-     */
-    #[Computed()]
-    public function isMinor(): bool
-    {
-        return $this->birthdate !== null
-            && $this->birthdate !== ''
-            && Carbon::parse($this->birthdate)->age < 18;
-    }
-
-    /**
-     * Guardians currently linked to the member (from in-memory selection).
-     *
-     * @return \Illuminate\Support\Collection<int, Guardian>
-     */
-    #[Computed()]
-    public function linkedGuardians(): \Illuminate\Support\Collection
-    {
-        if ($this->guardianIds === []) {
-            return collect();
-        }
-
-        return Guardian::whereIn('id', $this->guardianIds)->get();
-    }
-
-    /**
-     * Existing guardians matching the search box, excluding already-linked ones.
-     *
-     * @return \Illuminate\Support\Collection<int, Guardian>
-     */
-    #[Computed()]
-    public function guardianSearchResults(): \Illuminate\Support\Collection
-    {
-        $term = trim($this->guardianSearch);
-
-        if (mb_strlen($term) < 2) {
-            return collect();
-        }
-
-        return Guardian::query()
-            ->whereNotIn('id', $this->guardianIds)
-            ->where(function ($query) use ($term): void {
-                $query->where('first_name', 'like', "%{$term}%")
-                    ->orWhere('last_name', 'like', "%{$term}%")
-                    ->orWhere('email', 'like', "%{$term}%");
-            })
-            ->orderBy('last_name')
-            ->limit(8)
-            ->get();
-    }
-
-    /**
-     * Adult club members matching the search box, who can be linked as a guardian.
-     * Excludes the member being edited, minors, and members already a guardian.
-     *
-     * @return \Illuminate\Support\Collection<int, User>
-     */
-    #[Computed()]
-    public function memberSearchResults(): \Illuminate\Support\Collection
-    {
-        $term = trim($this->guardianSearch);
-
-        if (mb_strlen($term) < 2) {
-            return collect();
-        }
-
-        return User::query()
-            ->when($this->user?->exists, fn ($query) => $query->whereKeyNot($this->user->id))
-            ->whereNotIn('id', Guardian::whereNotNull('user_id')->pluck('user_id'))
-            ->where(function ($query): void {
-                $query->whereNull('birthdate')
-                    ->orWhereDate('birthdate', '<=', now()->subYears(18));
-            })
-            ->where(function ($query) use ($term): void {
-                $query->where('first_name', 'like', "%{$term}%")
-                    ->orWhere('last_name', 'like', "%{$term}%")
-                    ->orWhere('email', 'like', "%{$term}%");
-            })
-            ->orderBy('last_name')
-            ->limit(8)
-            ->get();
-    }
 
     public function attachGuardian(int $guardianId): void
     {
@@ -243,10 +154,10 @@ new class extends Component
             ['user_id' => $member->id],
             [
                 'first_name' => $member->first_name,
-                'last_name'  => $member->last_name,
-                'phone'      => $member->phone_number,
-                'email'      => $member->email,
-                'iban'       => $member->iban,
+                'last_name' => $member->last_name,
+                'phone' => $member->phone_number,
+                'email' => $member->email,
+                'iban' => $member->iban,
             ],
         );
 
@@ -258,13 +169,28 @@ new class extends Component
         unset($this->linkedGuardians, $this->guardianSearchResults, $this->memberSearchResults);
     }
 
-    public function detachGuardian(int $guardianId): void
+    #[Computed()]
+    public function CommitteeRoleOptions(): array
     {
-        $this->guardianIds = array_values(
-            array_filter($this->guardianIds, fn (int $id): bool => $id !== $guardianId)
-        );
+        return CommitteeRolesEnum::getOptions();
+    }
 
-        unset($this->linkedGuardians, $this->guardianSearchResults, $this->memberSearchResults);
+    public function confirmAnonymize(): void
+    {
+        abort_unless(Auth::user()->is_admin && Auth::user()->isNot($this->user), 403);
+
+        if (strtoupper($this->anonymizeConfirmText) !== 'ANONYMIZE') {
+            $this->error(__('Type ANONYMIZE to confirm.'));
+
+            return;
+        }
+
+        AnonymizeUserAction::handle($this->user);
+
+        $this->anonymizeModal = false;
+        $this->anonymizeConfirmText = '';
+
+        $this->success(__('User anonymized. All personal data has been erased.'), redirectTo: route('admin.users.index'));
     }
 
     public function createGuardian(): void
@@ -273,18 +199,18 @@ new class extends Component
 
         $validated = $this->validate([
             'guardianFirstName' => ['required', 'string', 'max:255'],
-            'guardianLastName'  => ['required', 'string', 'max:255'],
-            'guardianPhone'     => ['required', 'string', 'max:30'],
-            'guardianEmail'     => ['nullable', 'email', 'max:255'],
-            'guardianIban'      => ['nullable', new \App\Domains\Shared\Rules\ValidIban],
+            'guardianLastName' => ['required', 'string', 'max:255'],
+            'guardianPhone' => ['required', 'string', 'max:30'],
+            'guardianEmail' => ['nullable', 'email', 'max:255'],
+            'guardianIban' => ['nullable', new ValidIban],
         ]);
 
         $guardian = Guardian::create([
             'first_name' => $validated['guardianFirstName'],
-            'last_name'  => $validated['guardianLastName'],
-            'phone'      => $validated['guardianPhone'],
-            'email'      => $validated['guardianEmail'] ?? null,
-            'iban'       => $validated['guardianIban'] ?? null,
+            'last_name' => $validated['guardianLastName'],
+            'phone' => $validated['guardianPhone'],
+            'email' => $validated['guardianEmail'] ?? null,
+            'iban' => $validated['guardianIban'] ?? null,
         ]);
 
         $this->guardianIds[] = $guardian->id;
@@ -303,16 +229,109 @@ new class extends Component
         $this->success(__('Guardian added and linked.'));
     }
 
+    public function detachGuardian(int $guardianId): void
+    {
+        $this->guardianIds = array_values(
+            array_filter($this->guardianIds, fn (int $id): bool => $id !== $guardianId)
+        );
+
+        unset($this->linkedGuardians, $this->guardianSearchResults, $this->memberSearchResults);
+    }
+
+    /**
+     * Existing guardians matching the search box, excluding already-linked ones.
+     *
+     * @return Collection<int, Guardian>
+     */
+    #[Computed()]
+    public function guardianSearchResults(): Collection
+    {
+        $term = trim($this->guardianSearch);
+
+        if (mb_strlen($term) < 2) {
+            return collect();
+        }
+
+        return Guardian::query()
+            ->whereNotIn('id', $this->guardianIds)
+            ->where(function ($query) use ($term): void {
+                $query->where('first_name', 'like', "%{$term}%")
+                    ->orWhere('last_name', 'like', "%{$term}%")
+                    ->orWhere('email', 'like', "%{$term}%");
+            })
+            ->orderBy('last_name')
+            ->limit(8)
+            ->get();
+    }
+
+    /**
+     * Whether the currently entered birthdate makes the member a minor (< 18y).
+     */
+    #[Computed()]
+    public function isMinor(): bool
+    {
+        return $this->birthdate !== null
+            && $this->birthdate !== ''
+            && Carbon::parse($this->birthdate)->age < 18;
+    }
+
+    /**
+     * Guardians currently linked to the member (from in-memory selection).
+     *
+     * @return Collection<int, Guardian>
+     */
+    #[Computed()]
+    public function linkedGuardians(): Collection
+    {
+        if ($this->guardianIds === []) {
+            return collect();
+        }
+
+        return Guardian::whereIn('id', $this->guardianIds)->get();
+    }
+
+    /**
+     * Adult club members matching the search box, who can be linked as a guardian.
+     * Excludes the member being edited, minors, and members already a guardian.
+     *
+     * @return Collection<int, User>
+     */
+    #[Computed()]
+    public function memberSearchResults(): Collection
+    {
+        $term = trim($this->guardianSearch);
+
+        if (mb_strlen($term) < 2) {
+            return collect();
+        }
+
+        return User::query()
+            ->when($this->user?->exists, fn ($query) => $query->whereKeyNot($this->user->id))
+            ->whereNotIn('id', Guardian::whereNotNull('user_id')->pluck('user_id'))
+            ->where(function ($query): void {
+                $query->whereNull('birthdate')
+                    ->orWhereDate('birthdate', '<=', now()->subYears(18));
+            })
+            ->where(function ($query) use ($term): void {
+                $query->where('first_name', 'like', "%{$term}%")
+                    ->orWhere('last_name', 'like', "%{$term}%")
+                    ->orWhere('email', 'like', "%{$term}%");
+            })
+            ->orderBy('last_name')
+            ->limit(8)
+            ->get();
+    }
+
     public function mount(?User $user): void
     {
         if ($user && $user->exists) {
-            $this->first_name   = $user->first_name ?? '';
-            $this->last_name    = $user->last_name ?? '';
-            $this->gender       = $user->gender ?? '';
-            $this->email        = $user->email ?? '';
-            $this->street       = $user->street ?? '';
-            $this->city_code    = $user->city_code ?? '';
-            $this->city_name    = $user->city_name ?? '';
+            $this->first_name = $user->first_name ?? '';
+            $this->last_name = $user->last_name ?? '';
+            $this->gender = $user->gender ?? '';
+            $this->email = $user->email ?? '';
+            $this->street = $user->street ?? '';
+            $this->city_code = $user->city_code ?? '';
+            $this->city_name = $user->city_name ?? '';
             $this->phone_number = $user->phone_number ?? '';
             $this->birthdate = $user->birthdate?->format('Y-m-d');
             $this->iban = $user->iban;
@@ -330,21 +349,22 @@ new class extends Component
         }
     }
 
-
-    protected function breadcrumbChain(): Breadcrumb
-    {
-        return Breadcrumb::make()
-            ->home()
-            ->users()
-            ->current($this->user?->exists ? __("Edit") : __("Create"));
-    }
-
-        public function render(): View
+    public function render(): View
     {
         return $this->view()
             ->title($this->user?->exists
                 ? __('Update ') . $this->first_name . ' ' . $this->last_name
                 : __('Create new user'));
+    }
+
+    public function resendInvitation(): void
+    {
+        abort_unless($this->user !== null, 404);
+        Gate::authorize('update', $this->user);
+
+        SendInvitationAction::handle($this->user);
+
+        $this->success(__('Invitation re-sent to :email.', ['email' => $this->user->email]));
     }
 
     // Hook déclenché par wire:model.live à chaque modification du champ
@@ -432,44 +452,6 @@ new class extends Component
                 },
             ],
         ];
-    }
-
-    public function confirmAnonymize(): void
-    {
-        abort_unless(Auth::user()->is_admin && Auth::user()->isNot($this->user), 403);
-
-        if (strtoupper($this->anonymizeConfirmText) !== 'ANONYMIZE') {
-            $this->error(__('Type ANONYMIZE to confirm.'));
-
-            return;
-        }
-
-        AnonymizeUserAction::handle($this->user);
-
-        $this->anonymizeModal = false;
-        $this->anonymizeConfirmText = '';
-
-        $this->success(__('User anonymized. All personal data has been erased.'), redirectTo: route('admin.users.index'));
-    }
-
-    public function resendInvitation(): void
-    {
-        abort_unless($this->user !== null, 404);
-        Gate::authorize('update', $this->user);
-
-        SendInvitationAction::handle($this->user);
-
-        $this->success(__('Invitation re-sent to :email.', ['email' => $this->user->email]));
-    }
-
-    public function sendPasswordResetLink(): void
-    {
-        abort_unless($this->user !== null, 404);
-        Gate::authorize('updatePassword', $this->user);
-
-        PasswordBroker::sendResetLink(['email' => $this->user->email]);
-
-        $this->success(__('Password reset link sent to :email.', ['email' => $this->user->email]));
     }
 
     public function save(): void
@@ -577,6 +559,16 @@ new class extends Component
         }
     }
 
+    public function sendPasswordResetLink(): void
+    {
+        abort_unless($this->user !== null, 404);
+        Gate::authorize('updatePassword', $this->user);
+
+        PasswordBroker::sendResetLink(['email' => $this->user->email]);
+
+        $this->success(__('Password reset link sent to :email.', ['email' => $this->user->email]));
+    }
+
     public function updatedLicenceType(string $value): void
     {
         $this->is_competitor = $value === 'competitive';
@@ -657,4 +649,11 @@ new class extends Component
         ];
     }
 
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->users()
+            ->current($this->user?->exists ? __('Edit') : __('Create'));
+    }
 };

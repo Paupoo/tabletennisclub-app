@@ -23,39 +23,50 @@ use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 
 new class extends Component
 {
-    use Toast, WithFileUploads, WithPagination, HasBreadcrumbs;
+    use HasBreadcrumbs, Toast, WithFileUploads, WithPagination;
     use HasBulkActions, HasFilterDrawer;
 
-    public mixed $importFile = null;
-    public bool $importModal           = false;
-    public bool $confirmDeleteModal    = false;
-    public int  $reconciledInSelection = 0;
-    public string $search  = '';
-    public array  $sortBy  = ['column' => 'date', 'direction' => 'desc'];
+    public string $amountDirection = '';
+
+    public bool $confirmDeleteModal = false;
 
     // Drawer filters
-    public string $dateFrom          = '';
-    public string $dateTo            = '';
-    public string $reconciledFilter  = '';
-    public string $amountDirection   = '';
+    public string $dateFrom = '';
 
-    public function updatedSearch(): void { $this->resetPage(); }
-    public function updatedSortBy(): void { $this->resetPage(); }
-    public function updatedDateFrom(): void { $this->resetPage(); }
-    public function updatedDateTo(): void { $this->resetPage(); }
-    public function updatedReconciledFilter(): void { $this->resetPage(); }
-    public function updatedAmountDirection(): void { $this->resetPage(); }
+    public string $dateTo = '';
 
-    // ==================== HasBulkActions ====================
+    public mixed $importFile = null;
 
-    protected function getPageIds(): array
+    public bool $importModal = false;
+
+    public string $reconciledFilter = '';
+
+    public int $reconciledInSelection = 0;
+
+    public string $search = '';
+
+    public array $sortBy = ['column' => 'date', 'direction' => 'desc'];
+
+    public function bulkDelete(): void
     {
-        return $this->transactions()->pluck('id')->map(fn ($id) => (string) $id)->toArray();
+        $ids = array_map('intval', $this->selected);
+
+        if ($this->selectingAllResults) {
+            $ids = $this->allMatchingTransactionIds();
+        }
+
+        Transaction::whereIn('id', $ids)->delete();
+
+        $this->confirmDeleteModal = false;
+        $this->reconciledInSelection = 0;
+        $this->clearSelection();
+        $this->success(__(':count transaction(s) deleted.', ['count' => count($ids)]));
     }
 
-    public function getTotalMatchingCount(): int
+    public function clearFilters(): void
     {
-        return $this->transactions()->total();
+        $this->reset(['dateFrom', 'dateTo', 'reconciledFilter', 'amountDirection']);
+        $this->resetPage();
     }
 
     // ==================== HasFilterDrawer ====================
@@ -73,22 +84,32 @@ new class extends Component
         }
 
         if ($this->reconciledFilter) {
-            $label   = $this->reconciledFilter === 'reconciled' ? __('Reconciled') : __('Unreconciled');
+            $label = $this->reconciledFilter === 'reconciled' ? __('Reconciled') : __('Unreconciled');
             $chips[] = ['key' => 'reconciledFilter', 'label' => $label];
         }
 
         if ($this->amountDirection) {
-            $label   = $this->amountDirection === 'credit' ? __('Credit') : __('Debit');
+            $label = $this->amountDirection === 'credit' ? __('Credit') : __('Debit');
             $chips[] = ['key' => 'amountDirection', 'label' => $label];
         }
 
         return $chips;
     }
 
-    public function clearFilters(): void
+    public function getTotalMatchingCount(): int
     {
-        $this->reset(['dateFrom', 'dateTo', 'reconciledFilter', 'amountDirection']);
-        $this->resetPage();
+        return $this->transactions()->total();
+    }
+
+    public function headers(): array
+    {
+        return [
+            ['key' => 'date',                 'label' => __('Date'),        'sortable' => true],
+            ['key' => 'counterparty_name',    'label' => __('Counterparty'), 'sortable' => true],
+            ['key' => 'structured_reference', 'label' => __('Reference'),   'sortable' => false],
+            ['key' => 'amount',               'label' => __('Amount'),      'sortable' => true],
+            ['key' => 'status',               'label' => __('Status'),      'sortable' => false],
+        ];
     }
 
     // ==================== Bulk actions ====================
@@ -98,41 +119,7 @@ new class extends Component
         $ids = array_map('intval', $this->selected);
 
         $this->reconciledInSelection = Transaction::whereIn('id', $ids)->has('payment')->count();
-        $this->confirmDeleteModal    = true;
-    }
-
-    public function bulkDelete(): void
-    {
-        $ids = array_map('intval', $this->selected);
-
-        if ($this->selectingAllResults) {
-            $ids = $this->allMatchingTransactionIds();
-        }
-
-        Transaction::whereIn('id', $ids)->delete();
-
-        $this->confirmDeleteModal    = false;
-        $this->reconciledInSelection = 0;
-        $this->clearSelection();
-        $this->success(__(':count transaction(s) deleted.', ['count' => count($ids)]));
-    }
-
-    private function allMatchingTransactionIds(): array
-    {
-        return Transaction::when($this->search, fn ($q) => $q
-            ->where('counterparty_name', 'like', "%{$this->search}%")
-            ->orWhere('structured_reference', 'like', "%{$this->search}%")
-            ->orWhere('free_reference', 'like', "%{$this->search}%")
-            ->orWhere('description', 'like', "%{$this->search}%")
-        )
-            ->when($this->dateFrom, fn ($q) => $q->whereDate('date', '>=', $this->dateFrom))
-            ->when($this->dateTo, fn ($q) => $q->whereDate('date', '<=', $this->dateTo))
-            ->when($this->reconciledFilter === 'reconciled', fn ($q) => $q->has('payment'))
-            ->when($this->reconciledFilter === 'unreconciled', fn ($q) => $q->doesntHave('payment'))
-            ->when($this->amountDirection === 'credit', fn ($q) => $q->where('amount', '>', 0))
-            ->when($this->amountDirection === 'debit', fn ($q) => $q->where('amount', '<', 0))
-            ->pluck('id')
-            ->toArray();
+        $this->confirmDeleteModal = true;
     }
 
     // ==================== Actions ====================
@@ -145,8 +132,8 @@ new class extends Component
 
         try {
             $spreadsheet = IOFactory::load($path);
-            $sheet       = $spreadsheet->getActiveSheet();
-            $rows        = $sheet->toArray(null, true, true, true);
+            $sheet = $spreadsheet->getActiveSheet();
+            $rows = $sheet->toArray(null, true, true, true);
 
             if (empty($rows)) {
                 $this->error(__('Empty or invalid file.'));
@@ -155,27 +142,27 @@ new class extends Component
             }
 
             $headerRow = array_shift($rows);
-            $header    = array_map(fn ($h) => $this->normalizeHeader($h ?? ''), $headerRow);
+            $header = array_map(fn ($h) => $this->normalizeHeader($h ?? ''), $headerRow);
 
-            $newCount       = 0;
+            $newCount = 0;
             $duplicateCount = 0;
-            $errorCount     = 0;
-            $failedRows     = [];
-            $lineNumber     = 1;
+            $errorCount = 0;
+            $failedRows = [];
+            $lineNumber = 1;
 
             DB::transaction(function () use ($rows, $header, &$newCount, &$duplicateCount, &$errorCount, &$failedRows, &$lineNumber): void {
                 $bankImport = BankImport::create([
-                    'user_id'        => Auth::id(),
-                    'new_count'      => 0,
+                    'user_id' => Auth::id(),
+                    'new_count' => 0,
                     'duplicate_count' => 0,
-                    'error_count'    => 0,
+                    'error_count' => 0,
                 ]);
 
                 foreach ($rows as $row) {
                     $lineNumber++;
 
-                    $row      = array_map(fn ($v) => ($v === null || trim((string) $v) === '') ? null : trim((string) $v), $row);
-                    $row      = array_pad(array_slice($row, 0, count($header)), count($header), null);
+                    $row = array_map(fn ($v) => ($v === null || trim((string) $v) === '') ? null : trim((string) $v), $row);
+                    $row = array_pad(array_slice($row, 0, count($header)), count($header), null);
                     $rowAssoc = array_combine($header, $row);
 
                     if ($rowAssoc === false) {
@@ -183,12 +170,12 @@ new class extends Component
                     }
 
                     // Raw strings for fingerprinting (before any type conversion)
-                    $rawDate               = $rowAssoc['date'] ?? '';
-                    $rawAmount             = $rowAssoc['montant'] ?? $rowAssoc['amount'] ?? '';
-                    $rawCounterpartyIban   = $rowAssoc['numero de compte contrepartie'] ?? '';
-                    $rawStructuredRef      = $rowAssoc['communication structuree'] ?? '';
-                    $rawFreeRef            = $rowAssoc['communication libre'] ?? '';
-                    $rawDescription        = $rowAssoc['description'] ?? '';
+                    $rawDate = $rowAssoc['date'] ?? '';
+                    $rawAmount = $rowAssoc['montant'] ?? $rowAssoc['amount'] ?? '';
+                    $rawCounterpartyIban = $rowAssoc['numero de compte contrepartie'] ?? '';
+                    $rawStructuredRef = $rowAssoc['communication structuree'] ?? '';
+                    $rawFreeRef = $rowAssoc['communication libre'] ?? '';
+                    $rawDescription = $rowAssoc['description'] ?? '';
 
                     $fingerprint = hash('sha256', implode('|', [
                         $rawDate,
@@ -201,42 +188,43 @@ new class extends Component
 
                     if (Transaction::where('import_fingerprint', $fingerprint)->exists()) {
                         $duplicateCount++;
+
                         continue;
                     }
 
                     try {
                         Transaction::create([
-                            'date'                      => $this->parseDate($rawDate),
-                            'description'               => $rawDescription ?: null,
-                            'amount'                    => $this->parseAmount($rawAmount),
-                            'counterparty_name'         => $rowAssoc['nom contrepartie'] ?? null,
+                            'date' => $this->parseDate($rawDate),
+                            'description' => $rawDescription ?: null,
+                            'amount' => $this->parseAmount($rawAmount),
+                            'counterparty_name' => $rowAssoc['nom contrepartie'] ?? null,
                             'counterparty_bank_account' => $rawCounterpartyIban ?: null,
-                            'structured_reference'      => $rawStructuredRef ?: null,
-                            'free_reference'            => $rawFreeRef ?: null,
-                            'import_fingerprint'        => $fingerprint,
-                            'bank_import_id'            => $bankImport->id,
+                            'structured_reference' => $rawStructuredRef ?: null,
+                            'free_reference' => $rawFreeRef ?: null,
+                            'import_fingerprint' => $fingerprint,
+                            'bank_import_id' => $bankImport->id,
                         ]);
                         $newCount++;
-                    } catch (\Exception $e) {
+                    } catch (Exception $e) {
                         $errorCount++;
                         $failedRows[] = [
-                            'line'    => $lineNumber,
-                            'data'    => $rowAssoc,
-                            'reason'  => $e->getMessage(),
+                            'line' => $lineNumber,
+                            'data' => $rowAssoc,
+                            'reason' => $e->getMessage(),
                         ];
                     }
                 }
 
                 $bankImport->update([
-                    'new_count'       => $newCount,
+                    'new_count' => $newCount,
                     'duplicate_count' => $duplicateCount,
-                    'error_count'     => $errorCount,
-                    'failed_rows'     => $failedRows ?: null,
+                    'error_count' => $errorCount,
+                    'failed_rows' => $failedRows ?: null,
                 ]);
             });
 
             $this->importModal = false;
-            $this->importFile  = null;
+            $this->importFile = null;
 
             $message = __(':count new transaction(s) imported.', ['count' => $newCount]);
             if ($duplicateCount > 0) {
@@ -248,9 +236,28 @@ new class extends Component
             } else {
                 $this->success($message);
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->error(__('Error reading file: :message', ['message' => $e->getMessage()]));
         }
+    }
+
+    public function render(): View
+    {
+        return $this->view([
+            'headers' => $this->headers(),
+            'transactions' => $this->transactions(),
+            'filterChips' => $this->getFilterChips(),
+            'reconciledOptions' => [
+                ['id' => 'reconciled',   'name' => __('Reconciled')],
+                ['id' => 'unreconciled', 'name' => __('Unreconciled')],
+            ],
+            'amountDirectionOptions' => [
+                ['id' => 'credit', 'name' => __('Credit (incoming)')],
+                ['id' => 'debit',  'name' => __('Debit (outgoing)')],
+            ],
+            'recentImports' => BankImport::with('user')->latest()->limit(10)->get(),
+            'breadcrumbs' => $this->getBreadcrumbs(),
+        ]);
     }
 
     // ==================== Data ====================
@@ -259,20 +266,9 @@ new class extends Component
     public function stats(): array
     {
         return [
-            'total'        => Transaction::count(),
-            'reconciled'   => Transaction::has('payment')->count(),
+            'total' => Transaction::count(),
+            'reconciled' => Transaction::has('payment')->count(),
             'unreconciled' => Transaction::doesntHave('payment')->where('amount', '>', 0)->count(),
-        ];
-    }
-
-    public function headers(): array
-    {
-        return [
-            ['key' => 'date',                 'label' => __('Date'),        'sortable' => true],
-            ['key' => 'counterparty_name',    'label' => __('Counterparty'), 'sortable' => true],
-            ['key' => 'structured_reference', 'label' => __('Reference'),   'sortable' => false],
-            ['key' => 'amount',               'label' => __('Amount'),      'sortable' => true],
-            ['key' => 'status',               'label' => __('Status'),      'sortable' => false],
         ];
     }
 
@@ -298,6 +294,36 @@ new class extends Component
             ->paginate(25);
     }
 
+    public function updatedAmountDirection(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedDateFrom(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedDateTo(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedReconciledFilter(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedSortBy(): void
+    {
+        $this->resetPage();
+    }
+
     protected function breadcrumbChain(): Breadcrumb
     {
         return Breadcrumb::make()
@@ -305,28 +331,34 @@ new class extends Component
             ->current(__('Treasury — Transactions'));
     }
 
-    public function render(): View
+    // ==================== HasBulkActions ====================
+
+    protected function getPageIds(): array
     {
-        return $this->view([
-            'headers'      => $this->headers(),
-            'transactions' => $this->transactions(),
-            'filterChips'  => $this->getFilterChips(),
-            'reconciledOptions' => [
-                ['id' => 'reconciled',   'name' => __('Reconciled')],
-                ['id' => 'unreconciled', 'name' => __('Unreconciled')],
-            ],
-            'amountDirectionOptions' => [
-                ['id' => 'credit', 'name' => __('Credit (incoming)')],
-                ['id' => 'debit',  'name' => __('Debit (outgoing)')],
-            ],
-            'recentImports' => BankImport::with('user')->latest()->limit(10)->get(),
-            'breadcrumbs'   => $this->getBreadcrumbs(),
-        ]);
+        return $this->transactions()->pluck('id')->map(fn ($id) => (string) $id)->toArray();
+    }
+
+    private function allMatchingTransactionIds(): array
+    {
+        return Transaction::when($this->search, fn ($q) => $q
+            ->where('counterparty_name', 'like', "%{$this->search}%")
+            ->orWhere('structured_reference', 'like', "%{$this->search}%")
+            ->orWhere('free_reference', 'like', "%{$this->search}%")
+            ->orWhere('description', 'like', "%{$this->search}%")
+        )
+            ->when($this->dateFrom, fn ($q) => $q->whereDate('date', '>=', $this->dateFrom))
+            ->when($this->dateTo, fn ($q) => $q->whereDate('date', '<=', $this->dateTo))
+            ->when($this->reconciledFilter === 'reconciled', fn ($q) => $q->has('payment'))
+            ->when($this->reconciledFilter === 'unreconciled', fn ($q) => $q->doesntHave('payment'))
+            ->when($this->amountDirection === 'credit', fn ($q) => $q->where('amount', '>', 0))
+            ->when($this->amountDirection === 'debit', fn ($q) => $q->where('amount', '<', 0))
+            ->pluck('id')
+            ->toArray();
     }
 
     private function normalizeHeader(string $h): string
     {
-        $h       = strtolower(trim($h));
+        $h = strtolower(trim($h));
         $accents = ['é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e', 'à' => 'a', 'â' => 'a', 'ä' => 'a', 'ù' => 'u', 'û' => 'u', 'ü' => 'u', 'ô' => 'o', 'ö' => 'o', 'î' => 'i', 'ï' => 'i', 'ç' => 'c'];
 
         return str_replace(array_keys($accents), array_values($accents), $h);
@@ -354,7 +386,7 @@ new class extends Component
         if (is_numeric($v)) {
             try {
                 return ExcelDate::excelToDateTimeObject($v)->format('Y-m-d');
-            } catch (\Exception) {
+            } catch (Exception) {
                 return null;
             }
         }
@@ -365,7 +397,7 @@ new class extends Component
                 if ($d) {
                     return $d->format('Y-m-d');
                 }
-            } catch (\Exception) {
+            } catch (Exception) {
                 continue;
             }
         }

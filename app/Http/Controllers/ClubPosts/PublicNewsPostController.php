@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\ClubPosts;
 
-use App\Http\Controllers\Controller;
 use App\Domains\ClubPosts\Models\NewsPost;
+use App\Http\Controllers\Controller;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;

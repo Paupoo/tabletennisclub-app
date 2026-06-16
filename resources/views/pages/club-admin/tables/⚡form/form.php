@@ -11,7 +11,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast, HasBreadcrumbs;
+    use HasBreadcrumbs, Toast;
 
     #[Validate('nullable')]
     public ?string $brand = null;
@@ -52,16 +52,7 @@ new class extends Component
         $this->states = Table::getStates();
     }
 
-
-    protected function breadcrumbChain(): Breadcrumb
-    {
-        return Breadcrumb::make()
-            ->home()
-            ->tables()
-            ->current($this->tableId ? __("Update") : __("Create"));
-    }
-
-        public function render(): View
+    public function render(): View
     {
         return $this->view();
     }
@@ -86,5 +77,13 @@ new class extends Component
             'rooms' => Room::all(),
             'states' => $this->states,
         ];
+    }
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->tables()
+            ->current($this->tableId ? __('Update') : __('Create'));
     }
 };

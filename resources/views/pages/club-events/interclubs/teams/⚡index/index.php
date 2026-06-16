@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Resources\views\Pages\ClubEvents\Interclubs\Teams;
 
-use App\Domains\Shared\Enums\LeagueCategory;
-use App\Domains\Shared\Enums\LeagueLevel;
-use App\Domains\Shared\Enums\TeamName;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
+use App\Domains\Shared\Enums\LeagueCategory;
+use App\Domains\Shared\Enums\LeagueLevel;
+use App\Domains\Shared\Enums\TeamName;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Collection;
@@ -22,38 +22,34 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast, HasBreadcrumbs;
+    use HasBreadcrumbs, Toast;
+
+    public bool $createModal = false;
+
+    public bool $deleteAllModal = false;
+
+    public bool $deleteModal = false;
+
+    public string $newCategory = '';
+
+    public string $newDivision = '';
+
+    public string $newLevel = '';
+
+    public string $newTeamName = '';
 
     public string $search = '';
 
     public ?int $selectedSeasonId = null;
 
-    public bool $deleteModal    = false;
-    public bool $deleteAllModal = false;
-    public bool $createModal    = false;
-    public ?int $teamToDelete   = null;
+    public ?int $teamToDelete = null;
 
-    public string $newTeamName = '';
-    public string $newCategory = '';
-    public string $newLevel    = '';
-    public string $newDivision = '';
-
-    public function mount(): void
+    public function confirmDelete(int $id): void
     {
-        $this->selectedSeasonId = Season::current()?->id;
-    }
+        abort_unless(Auth::user()->is_admin || Auth::user()->is_committee_member, 403);
 
-
-    protected function breadcrumbChain(): Breadcrumb
-    {
-        return Breadcrumb::make()
-            ->home()
-            ->current(__("Teams"));
-    }
-
-        public function render(): View
-    {
-        return $this->view();
+        $this->teamToDelete = $id;
+        $this->deleteModal = true;
     }
 
     public function createTeam(): void
@@ -63,12 +59,12 @@ new class extends Component
         $this->validate([
             'newTeamName' => ['required', 'string'],
             'newCategory' => ['required', 'string'],
-            'newLevel'    => ['required', 'string'],
+            'newLevel' => ['required', 'string'],
             'newDivision' => ['required', 'string'],
         ], [
             'newTeamName.required' => 'Choisissez une lettre pour l\'équipe.',
             'newCategory.required' => __('Please select a category.'),
-            'newLevel.required'    => __('Please select a level.'),
+            'newLevel.required' => __('Please select a level.'),
             'newDivision.required' => 'Indiquez la division.',
         ]);
 
@@ -83,31 +79,23 @@ new class extends Component
         $ourClub = Club::own();
 
         $league = League::firstOrCreate([
-            'category'  => $this->newCategory,
-            'level'     => $this->newLevel,
-            'division'  => $this->newDivision,
+            'category' => $this->newCategory,
+            'level' => $this->newLevel,
+            'division' => $this->newDivision,
             'season_id' => $season->id,
         ]);
 
         Team::create([
-            'name'      => $this->newTeamName,
+            'name' => $this->newTeamName,
             'season_id' => $season->id,
             'league_id' => $league->id,
-            'club_id'   => $ourClub?->id,
+            'club_id' => $ourClub?->id,
         ]);
 
         $this->reset('newTeamName', 'newCategory', 'newLevel', 'newDivision');
         $this->createModal = false;
 
         $this->success('Équipe créée.');
-    }
-
-    public function confirmDelete(int $id): void
-    {
-        abort_unless(Auth::user()->is_admin || Auth::user()->is_committee_member, 403);
-
-        $this->teamToDelete  = $id;
-        $this->deleteModal   = true;
     }
 
     public function delete(): void
@@ -117,7 +105,7 @@ new class extends Component
         $team->delete();
 
         $this->teamToDelete = null;
-        $this->deleteModal  = false;
+        $this->deleteModal = false;
 
         $this->success('Équipe supprimée.');
     }
@@ -144,6 +132,16 @@ new class extends Component
 
         $this->deleteAllModal = false;
         $this->success("{$teams->count()} équipes supprimées.");
+    }
+
+    public function mount(): void
+    {
+        $this->selectedSeasonId = Season::current()?->id;
+    }
+
+    public function render(): View
+    {
+        return $this->view();
     }
 
     public function teams(): Collection
@@ -173,35 +171,34 @@ new class extends Component
             ->get();
 
         $categoryLabels = [
-            'MEN'      => 'Hommes',
+            'MEN' => 'Hommes',
             'VETERANS' => 'Vétérans',
-            'WOMEN'    => 'Dames',
+            'WOMEN' => 'Dames',
         ];
 
         return $teams
             ->map(function (Team $team) use ($nextMatches, $categoryLabels) {
-                $nextMatch = $nextMatches->first(fn (Interclub $ic) =>
-                    $ic->visited_team_id === $team->id || $ic->visiting_team_id === $team->id
+                $nextMatch = $nextMatches->first(fn (Interclub $ic) => $ic->visited_team_id === $team->id || $ic->visiting_team_id === $team->id
                 );
 
                 $rawCategory = $team->league?->category ?? '';
-                $category    = $categoryLabels[$rawCategory] ?? $rawCategory;
+                $category = $categoryLabels[$rawCategory] ?? $rawCategory;
 
                 $levelLabels = array_column(LeagueLevel::cases(), 'value', 'name');
-                $levelLabel  = $levelLabels[$team->league?->level] ?? $team->league?->level;
-                $division    = implode(' – ', array_filter([$levelLabel, $team->league?->division]));
+                $levelLabel = $levelLabels[$team->league?->level] ?? $team->league?->level;
+                $division = implode(' – ', array_filter([$levelLabel, $team->league?->division]));
 
                 return (object) [
-                    'id'            => $team->id,
-                    'name'          => trim(($team->club?->name ?? '') . ' ' . $team->name),
-                    'teamLetter'    => $team->name,
-                    'division'      => $division ?: '—',
-                    'category'      => $category,
-                    'captain_name'  => $team->captain
+                    'id' => $team->id,
+                    'name' => trim(($team->club?->name ?? '') . ' ' . $team->name),
+                    'teamLetter' => $team->name,
+                    'division' => $division ?: '—',
+                    'category' => $category,
+                    'captain_name' => $team->captain
                         ? $team->captain->first_name . ' ' . $team->captain->last_name
                         : '—',
-                    'membersCount'  => $team->users->count(),
-                    'rank'          => null,
+                    'membersCount' => $team->users->count(),
+                    'rank' => null,
                     'nextMatchDate' => $nextMatch?->start_date_time,
                 ];
             })
@@ -225,14 +222,21 @@ new class extends Component
                 ->add('Interclubs', '#')
                 ->current(__('Our teams'))
                 ->toArray(),
-            'teams'           => $teams,
-            'season'          => $selectedSeason,
-            'seasons'         => Season::orderBy('start_at')->get(),
-            'teamsCount'      => $teams->count(),
+            'teams' => $teams,
+            'season' => $selectedSeason,
+            'seasons' => Season::orderBy('start_at')->get(),
+            'teamsCount' => $teams->count(),
             'teamNameOptions' => collect(TeamName::cases())->map(fn ($t) => ['id' => $t->name, 'name' => $t->name]),
             'categoryOptions' => collect(LeagueCategory::cases())->map(fn ($c) => ['id' => $c->name, 'name' => $c->value]),
-            'levelOptions'          => collect(LeagueLevel::cases())->map(fn ($l) => ['id' => $l->name, 'name' => $l->value]),
-            'isAdminOrCommittee'    => Auth::user()->is_admin || Auth::user()->is_committee_member,
+            'levelOptions' => collect(LeagueLevel::cases())->map(fn ($l) => ['id' => $l->name, 'name' => $l->value]),
+            'isAdminOrCommittee' => Auth::user()->is_admin || Auth::user()->is_committee_member,
         ];
+    }
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__('Teams'));
     }
 };

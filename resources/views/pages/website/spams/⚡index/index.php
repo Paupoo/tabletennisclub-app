@@ -19,94 +19,30 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast, WithPagination, HasBreadcrumbs;
+    use HasBreadcrumbs, Toast, WithPagination;
     use HasBulkActions, HasFilterDrawer;
 
-    #[Url]
-    public string $search = '';
-
-    #[Url]
-    public string $period = '';
-
-    #[Url]
-    public string $userAgentType = '';
-
-    /** @var array{column: string, direction: string} */
-    public array $sortBy = ['column' => 'created_at', 'direction' => 'desc'];
-
-    public bool $detailModal = false;
-
-    public ?int $detailSpamId = null;
+    public bool $bulkDeleteModal = false;
 
     public bool $deleteModal = false;
 
     public ?int $deletingId = null;
 
-    public bool $bulkDeleteModal = false;
+    public bool $detailModal = false;
 
-    // ── HasBulkActions ────────────────────────────────────────────────────────
+    public ?int $detailSpamId = null;
 
-    /** @return array<int, string> */
-    protected function getPageIds(): array
-    {
-        return $this->spams
-            ->pluck('id')
-            ->map(fn (int $id) => (string) $id)
-            ->toArray();
-    }
+    #[Url]
+    public string $period = '';
 
-    public function getTotalMatchingCount(): int
-    {
-        return $this->spams->total();
-    }
+    #[Url]
+    public string $search = '';
 
-    // ── HasFilterDrawer ───────────────────────────────────────────────────────
+    /** @var array{column: string, direction: string} */
+    public array $sortBy = ['column' => 'created_at', 'direction' => 'desc'];
 
-    /** @return array<int, array{key: string, label: string}> */
-    public function getFilterChips(): array
-    {
-        $chips = [];
-
-        if (filled($this->period)) {
-            $chips[] = [
-                'key'   => 'period',
-                'label' => match ($this->period) {
-                    'today' => __('Period') . ': ' . __('Today'),
-                    'week'  => __('Period') . ': ' . __('This week'),
-                    'month' => __('Period') . ': ' . __('This month'),
-                    default => __('Period') . ': ' . $this->period,
-                },
-            ];
-        }
-
-        if (filled($this->userAgentType)) {
-            $chips[] = [
-                'key'   => 'userAgentType',
-                'label' => __('Type') . ': ' . match ($this->userAgentType) {
-                    'bot'     => 'Bot',
-                    'curl'    => 'cURL',
-                    'browser' => __('Browsers'),
-                    default   => $this->userAgentType,
-                },
-            ];
-        }
-
-        return $chips;
-    }
-
-    public function clearFilters(): void
-    {
-        $this->period        = '';
-        $this->userAgentType = '';
-        $this->resetPage();
-    }
-
-    // ── Bulk actions ──────────────────────────────────────────────────────────
-
-    public function confirmBulkDelete(): void
-    {
-        $this->bulkDeleteModal = true;
-    }
+    #[Url]
+    public string $userAgentType = '';
 
     public function bulkDelete(): void
     {
@@ -120,25 +56,23 @@ new class extends Component
         $this->error(trans_choice('selectedCount', $count, ['count' => $count]) . ' ' . __('deleted.'));
     }
 
-    // ── Filter hooks ──────────────────────────────────────────────────────────
-
-    public function updatedSearch(): void        { $this->resetPage(); }
-
-    public function updatedPeriod(): void        { $this->resetPage(); }
-
-    public function updatedUserAgentType(): void { $this->resetPage(); }
-
-    // ── Single-record actions ─────────────────────────────────────────────────
-
-    public function openDetail(int $id): void
+    public function clearFilters(): void
     {
-        $this->detailSpamId = $id;
-        $this->detailModal  = true;
+        $this->period = '';
+        $this->userAgentType = '';
+        $this->resetPage();
+    }
+
+    // ── Bulk actions ──────────────────────────────────────────────────────────
+
+    public function confirmBulkDelete(): void
+    {
+        $this->bulkDeleteModal = true;
     }
 
     public function confirmDelete(int $id): void
     {
-        $this->deletingId  = $id;
+        $this->deletingId = $id;
         $this->deleteModal = true;
     }
 
@@ -146,8 +80,67 @@ new class extends Component
     {
         Spam::findOrFail($this->deletingId)->delete();
         $this->deleteModal = false;
-        $this->deletingId  = null;
+        $this->deletingId = null;
         $this->error(__('Spam deleted.'));
+    }
+
+    /** @return array<int, array{key: string, label: string}> */
+    #[Computed]
+    public function filterChips(): array
+    {
+        return $this->getFilterChips();
+    }
+
+    // ── HasFilterDrawer ───────────────────────────────────────────────────────
+
+    /** @return array<int, array{key: string, label: string}> */
+    public function getFilterChips(): array
+    {
+        $chips = [];
+
+        if (filled($this->period)) {
+            $chips[] = [
+                'key' => 'period',
+                'label' => match ($this->period) {
+                    'today' => __('Period') . ': ' . __('Today'),
+                    'week' => __('Period') . ': ' . __('This week'),
+                    'month' => __('Period') . ': ' . __('This month'),
+                    default => __('Period') . ': ' . $this->period,
+                },
+            ];
+        }
+
+        if (filled($this->userAgentType)) {
+            $chips[] = [
+                'key' => 'userAgentType',
+                'label' => __('Type') . ': ' . match ($this->userAgentType) {
+                    'bot' => 'Bot',
+                    'curl' => 'cURL',
+                    'browser' => __('Browsers'),
+                    default => $this->userAgentType,
+                },
+            ];
+        }
+
+        return $chips;
+    }
+
+    public function getTotalMatchingCount(): int
+    {
+        return $this->spams->total();
+    }
+
+    // ── Single-record actions ─────────────────────────────────────────────────
+
+    public function openDetail(int $id): void
+    {
+        $this->detailSpamId = $id;
+        $this->detailModal = true;
+    }
+
+    public function render(): View
+    {
+        return $this->view();
     }
 
     // ── Computed ──────────────────────────────────────────────────────────────
@@ -168,7 +161,7 @@ new class extends Component
         if ($this->period) {
             match ($this->period) {
                 'today' => $query->whereDate('created_at', today()),
-                'week'  => $query->where('created_at', '>=', now()->subWeek()),
+                'week' => $query->where('created_at', '>=', now()->subWeek()),
                 'month' => $query->where('created_at', '>=', now()->subMonth()),
                 default => null,
             };
@@ -176,41 +169,39 @@ new class extends Component
 
         if ($this->userAgentType) {
             $query->where('user_agent', 'like', match ($this->userAgentType) {
-                'bot'     => '%bot%',
-                'curl'    => '%curl%',
+                'bot' => '%bot%',
+                'curl' => '%curl%',
                 'browser' => '%Mozilla%',
-                default   => '%',
+                default => '%',
             });
         }
 
         return $query->paginate(25);
     }
 
-    /** @return array<int, array{key: string, label: string}> */
-    #[Computed]
-    public function filterChips(): array
+    public function updatedPeriod(): void
     {
-        return $this->getFilterChips();
+        $this->resetPage();
     }
 
-    protected function breadcrumbChain(): Breadcrumb
+    // ── Filter hooks ──────────────────────────────────────────────────────────
+
+    public function updatedSearch(): void
     {
-        return Breadcrumb::make()
-            ->home()
-            ->current(__('Spams'));
+        $this->resetPage();
     }
 
-    public function render(): View
+    public function updatedUserAgentType(): void
     {
-        return $this->view();
+        $this->resetPage();
     }
 
     /** @return array<string, mixed> */
     public function with(): array
     {
         $stats = [
-            'total'     => Spam::count(),
-            'today'     => Spam::whereDate('created_at', today())->count(),
+            'total' => Spam::count(),
+            'today' => Spam::whereDate('created_at', today())->count(),
             'uniqueIps' => Spam::distinct('ip')->count('ip'),
         ];
 
@@ -236,14 +227,32 @@ new class extends Component
         ];
 
         return [
-            'breadcrumbs'      => $this->getBreadcrumbs(),
-            'spams'            => $this->spams,
-            'stats'            => $stats,
-            'periodOptions'    => $periodOptions,
+            'breadcrumbs' => $this->getBreadcrumbs(),
+            'spams' => $this->spams,
+            'stats' => $stats,
+            'periodOptions' => $periodOptions,
             'userAgentOptions' => $userAgentOptions,
-            'detailSpam'       => $detailSpam,
-            'headers'          => $headers,
-            'filterChips'      => $this->filterChips,
+            'detailSpam' => $detailSpam,
+            'headers' => $headers,
+            'filterChips' => $this->filterChips,
         ];
+    }
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__('Spams'));
+    }
+
+    // ── HasBulkActions ────────────────────────────────────────────────────────
+
+    /** @return array<int, string> */
+    protected function getPageIds(): array
+    {
+        return $this->spams
+            ->pluck('id')
+            ->map(fn (int $id) => (string) $id)
+            ->toArray();
     }
 };

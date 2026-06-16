@@ -6,7 +6,6 @@ namespace Resources\views\Pages\ClubEvents\Interclubs\Interclubs;
 
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Interclub;
-use App\Domains\Competitions\Interclub\Models\InterclubResult;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Livewire\Concerns\HasBreadcrumbs;
@@ -20,31 +19,48 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast, HasBreadcrumbs;
+    use HasBreadcrumbs, Toast;
+
+    public bool $deleteModal = false;
+
+    public ?int $deletingInterclubId = null;
+
+    public ?int $editingInterclubId = null;
+
+    public bool $editModal = false;
+
+    public ?string $formAddress = null;
+
+    public ?string $formDate = null;
+
+    public bool $formIsHome = true;
+
+    public ?int $formOpponentTeamId = null;
+
+    public ?int $formOurTeamId = null;
+
+    public string $formTime = '09:00';
 
     public ?int $seasonId = null;
 
     public ?int $selectedTeamId = null;
 
-    public bool $editModal = false;
+    public function confirmDelete(int $interclubId): void
+    {
+        $this->deletingInterclubId = $interclubId;
+        $this->deleteModal = true;
+    }
 
-    public bool $deleteModal = false;
+    public function delete(): void
+    {
+        if ($this->deletingInterclubId) {
+            Interclub::findOrFail($this->deletingInterclubId)->delete();
+            $this->success(__('Match deleted'));
+        }
 
-    public ?int $editingInterclubId = null;
-
-    public ?int $deletingInterclubId = null;
-
-    public ?int $formOurTeamId = null;
-
-    public ?int $formOpponentTeamId = null;
-
-    public ?string $formDate = null;
-
-    public string $formTime = '09:00';
-
-    public bool $formIsHome = true;
-
-    public ?string $formAddress = null;
+        $this->deleteModal = false;
+        $this->deletingInterclubId = null;
+    }
 
     public function mount(): void
     {
@@ -83,6 +99,11 @@ new class extends Component
         $this->editModal = true;
     }
 
+    public function render(): View
+    {
+        return $this->view()->title(__('Interclubs Schedule'));
+    }
+
     public function save(): void
     {
         $this->validate([
@@ -119,39 +140,8 @@ new class extends Component
         $this->editModal = false;
     }
 
-    public function confirmDelete(int $interclubId): void
+    public function updatedFormIsHome(): void
     {
-        $this->deletingInterclubId = $interclubId;
-        $this->deleteModal = true;
-    }
-
-    public function delete(): void
-    {
-        if ($this->deletingInterclubId) {
-            Interclub::findOrFail($this->deletingInterclubId)->delete();
-            $this->success(__('Match deleted'));
-        }
-
-        $this->deleteModal = false;
-        $this->deletingInterclubId = null;
-    }
-
-
-    protected function breadcrumbChain(): Breadcrumb
-    {
-        return Breadcrumb::make()
-            ->home()
-            ->current(__("Interclubs"));
-    }
-
-        public function render(): View
-    {
-        return $this->view()->title(__('Interclubs Schedule'));
-    }
-
-    public function updatedFormOurTeamId(): void
-    {
-        $this->formOpponentTeamId = null;
         $this->fillAddress();
     }
 
@@ -160,24 +150,10 @@ new class extends Component
         $this->fillAddress();
     }
 
-    public function updatedFormIsHome(): void
+    public function updatedFormOurTeamId(): void
     {
+        $this->formOpponentTeamId = null;
         $this->fillAddress();
-    }
-
-    private function fillAddress(): void
-    {
-        if ($this->formIsHome) {
-            $this->formAddress = $this->ourClubAddress();
-        } elseif ($this->formOpponentTeamId) {
-            $team = Team::with('club')->find($this->formOpponentTeamId);
-            $this->formAddress = $team?->club?->street ?? $this->formAddress;
-        }
-    }
-
-    private function ourClubAddress(): ?string
-    {
-        return Club::own()?->street;
     }
 
     public function with(): array
@@ -217,25 +193,42 @@ new class extends Component
             ->orderBy('name')
             ->get()
             ->map(fn (Team $t) => [
-                'id'   => $t->id,
+                'id' => $t->id,
                 'name' => trim(($t->club?->name ?? '') . ' ' . $t->name),
             ]);
 
         $matchDayMap = $this->seasonId ? Interclub::matchDayMap($this->seasonId) : [];
 
         return [
-            'breadcrumbs'    => Breadcrumb::make()->home()->add(__('Interclubs'), route('admin.interclubs.captain-selection'))->current(__('Schedule'))->toArray(),
-            'seasons'        => Season::orderBy('start_at')->get(),
-            'ourTeams'       => $ourTeams,
+            'breadcrumbs' => Breadcrumb::make()->home()->add(__('Interclubs'), route('admin.interclubs.captain-selection'))->current(__('Schedule'))->toArray(),
+            'seasons' => Season::orderBy('start_at')->get(),
+            'ourTeams' => $ourTeams,
             'ourTeamOptions' => $ourTeams->map(fn (Team $t) => [
-                'id'   => $t->id,
+                'id' => $t->id,
                 'name' => trim(($t->club?->name ?? '') . ' ' . $t->name),
             ])->values()->toArray(),
-            'opponentTeams'  => $opponentTeams->toArray(),
-            'grouped'        => $grouped,
-            'total'          => $interclubs->count(),
-            'matchDayMap'    => $matchDayMap,
+            'opponentTeams' => $opponentTeams->toArray(),
+            'grouped' => $grouped,
+            'total' => $interclubs->count(),
+            'matchDayMap' => $matchDayMap,
         ];
+    }
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__('Interclubs'));
+    }
+
+    private function fillAddress(): void
+    {
+        if ($this->formIsHome) {
+            $this->formAddress = $this->ourClubAddress();
+        } elseif ($this->formOpponentTeamId) {
+            $team = Team::with('club')->find($this->formOpponentTeamId);
+            $this->formAddress = $team?->club?->street ?? $this->formAddress;
+        }
     }
 
     private function formatInterclub(Interclub $ic, array $ourTeamIds): array
@@ -248,30 +241,35 @@ new class extends Component
         $categoryValue = is_string($categoryRaw) ? $categoryRaw : ($categoryRaw?->value ?? '');
 
         [$categoryLabel, $categorySort] = match ($categoryValue) {
-            'MEN'      => ['Hommes', 1],
+            'MEN' => ['Hommes', 1],
             'VETERANS' => ['Vétérans', 2],
-            'WOMEN'    => ['Dames', 3],
-            default    => ['—', 99],
+            'WOMEN' => ['Dames', 3],
+            default => ['—', 99],
         };
 
         return [
-            'id'             => $ic->id,
-            'our_team_id'    => $ourTeam?->id,
-            'our_team_name'  => $ourTeam?->name ?? '—',
+            'id' => $ic->id,
+            'our_team_id' => $ourTeam?->id,
+            'our_team_name' => $ourTeam?->name ?? '—',
             'category_label' => $categoryLabel,
-            'category_sort'  => $categorySort,
-            'week'           => $ic->week_number,
-            'date'           => $ic->start_date_time->format('d/m/Y'),
-            'date_sort'      => $ic->start_date_time->format('Y-m-d H:i:s'),
-            'time'           => $ic->start_date_time->format('H:i'),
-            'is_home'        => $isHome,
-            'opponent'       => trim(($opponentTeam?->club?->name ?? '') . ' ' . ($opponentTeam?->name ?? '')) ?: '—',
-            'address'        => $ic->address ?? '—',
-            'division'       => $ic->league?->division ?? '',
+            'category_sort' => $categorySort,
+            'week' => $ic->week_number,
+            'date' => $ic->start_date_time->format('d/m/Y'),
+            'date_sort' => $ic->start_date_time->format('Y-m-d H:i:s'),
+            'time' => $ic->start_date_time->format('H:i'),
+            'is_home' => $isHome,
+            'opponent' => trim(($opponentTeam?->club?->name ?? '') . ' ' . ($opponentTeam?->name ?? '')) ?: '—',
+            'address' => $ic->address ?? '—',
+            'division' => $ic->league?->division ?? '',
         ];
     }
 
-private function totalPlayersByCategory(?string $category): int
+    private function ourClubAddress(): ?string
+    {
+        return Club::own()?->street;
+    }
+
+    private function totalPlayersByCategory(?string $category): int
     {
         return match ($category) {
             'MEN' => 4,

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Livewire\Concerns;
 
-use App\Domains\Shared\Enums\EventPostStatusEnum;
 use App\Domains\ClubPosts\Models\EventPost;
 use App\Domains\ClubPosts\Services\EventPostService;
+use App\Domains\Shared\Enums\EventPostStatusEnum;
 use Illuminate\Validation\ValidationException;
 
 /**

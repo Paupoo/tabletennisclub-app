@@ -28,23 +28,23 @@ use Illuminate\Support\Carbon;
  * @property-read Interclub|null $interclub
  * @property-read Team $team
  * @property-read Season $season
+ *
  * @method static InterclubResultFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|InterclubResult newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|InterclubResult newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|InterclubResult query()
+ *
  * @mixin \Eloquent
  */
 class InterclubResult extends Model
 {
     use HasFactory;
 
-    protected $table = 'interclub_results';
-
     protected $casts = [
         'match_date' => 'date',
-        'result'     => InterclubResultEnum::class,
-        'is_home'    => 'boolean',
-        'is_bye'     => 'boolean',
+        'result' => InterclubResultEnum::class,
+        'is_home' => 'boolean',
+        'is_bye' => 'boolean',
     ];
 
     protected $fillable = [
@@ -59,6 +59,8 @@ class InterclubResult extends Model
         'result',
         'is_bye',
     ];
+
+    protected $table = 'interclub_results';
 
     public function interclub(): BelongsTo
     {

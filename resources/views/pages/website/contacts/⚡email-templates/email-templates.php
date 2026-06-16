@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Contact\Models\EmailTemplate;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
+use Database\Seeders\EmailTemplateSeeder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
@@ -18,7 +19,7 @@ new class extends Component
     use HasBreadcrumbs, Toast;
 
     /**
-     * Starter templates seeded by {@see \Database\Seeders\EmailTemplateSeeder}.
+     * Starter templates seeded by {@see EmailTemplateSeeder}.
      * Their `key` is referenced by the rest of the app, so it is rendered
      * read-only when editing — the rest of the template stays editable.
      *
@@ -58,20 +59,35 @@ new class extends Component
     /** Whether the key field is locked (system starter template being edited). */
     public bool $keyLocked = false;
 
+    // ── Delete ─────────────────────────────────────────────────────────────────
+
+    public function confirmDelete(int $id): void
+    {
+        Gate::authorize('manage-contacts');
+
+        $this->deletingId = $id;
+        $this->deleteModal = true;
+    }
+
+    public function deleteTemplate(): void
+    {
+        Gate::authorize('manage-contacts');
+
+        if ($this->deletingId) {
+            EmailTemplate::findOrFail($this->deletingId)->delete();
+            unset($this->templates);
+            $this->success(__('Template deleted.'), icon: 'o-trash');
+        }
+
+        $this->deleteModal = false;
+        $this->deletingId = null;
+    }
+
     // ── Lifecycle ──────────────────────────────────────────────────────────────
 
     public function mount(): void
     {
         Gate::authorize('manage-contacts');
-    }
-
-    // ── Computed ───────────────────────────────────────────────────────────────
-
-    /** @return Collection<int, EmailTemplate> */
-    #[Computed]
-    public function templates(): Collection
-    {
-        return EmailTemplate::query()->orderBy('name')->get();
     }
 
     // ── Create ─────────────────────────────────────────────────────────────────
@@ -102,6 +118,13 @@ new class extends Component
         $this->keyLocked = in_array($template->key, self::SYSTEM_KEYS, true);
         $this->resetErrorBag();
         $this->formModal = true;
+    }
+
+    // ── Render ─────────────────────────────────────────────────────────────────
+
+    public function render(): View
+    {
+        return $this->view();
     }
 
     // ── Save (create or update) ────────────────────────────────────────────────
@@ -152,6 +175,15 @@ new class extends Component
         $this->resetForm();
     }
 
+    // ── Computed ───────────────────────────────────────────────────────────────
+
+    /** @return Collection<int, EmailTemplate> */
+    #[Computed]
+    public function templates(): Collection
+    {
+        return EmailTemplate::query()->orderBy('name')->get();
+    }
+
     // ── Toggle active ──────────────────────────────────────────────────────────
 
     public function toggleActive(int $id): void
@@ -162,37 +194,6 @@ new class extends Component
         $template->update(['is_active' => ! $template->is_active]);
 
         unset($this->templates);
-    }
-
-    // ── Delete ─────────────────────────────────────────────────────────────────
-
-    public function confirmDelete(int $id): void
-    {
-        Gate::authorize('manage-contacts');
-
-        $this->deletingId = $id;
-        $this->deleteModal = true;
-    }
-
-    public function deleteTemplate(): void
-    {
-        Gate::authorize('manage-contacts');
-
-        if ($this->deletingId) {
-            EmailTemplate::findOrFail($this->deletingId)->delete();
-            unset($this->templates);
-            $this->success(__('Template deleted.'), icon: 'o-trash');
-        }
-
-        $this->deleteModal = false;
-        $this->deletingId = null;
-    }
-
-    // ── Render ─────────────────────────────────────────────────────────────────
-
-    public function render(): View
-    {
-        return $this->view();
     }
 
     public function with(): array

@@ -8,6 +8,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
@@ -17,72 +18,38 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast, HasBreadcrumbs;
+    use HasBreadcrumbs, Toast;
 
-    public bool $manualEntryModal = false;
-    public bool $createRegisterModal = false;
     public bool $changeHolderModal = false;
+
+    public bool $createRegisterModal = false;
 
     #[Rule('required|integer|not_in:0')]
     public int $entryAmount = 0;
 
-    #[Rule('required|string|in:tournament_payment,training_payment,manual')]
-    public string $entryReason = 'manual';
-
     #[Rule('nullable|string|max:500')]
     public ?string $entryNotes = null;
 
-    #[Rule('required|string|max:100')]
-    public string $newRegisterName = 'Caisse principale';
+    #[Rule('required|string|in:tournament_payment,training_payment,manual')]
+    public string $entryReason = 'manual';
 
-    #[Rule('nullable|exists:users,id')]
-    public ?int $newRegisterHolderUserId = null;
+    public bool $manualEntryModal = false;
 
     #[Rule('nullable|exists:users,id')]
     public ?int $newHolderUserId = null;
 
+    #[Rule('nullable|exists:users,id')]
+    public ?int $newRegisterHolderUserId = null;
+
+    #[Rule('required|string|max:100')]
+    public string $newRegisterName = 'Caisse principale';
+
     public ?int $selectedRegisterId = null;
 
-    public function mount(): void
+    #[Computed]
+    public function balance(): int
     {
-        $register = CashRegister::first();
-        $this->selectedRegisterId = $register?->id;
-    }
-
-    public function createRegister(): void
-    {
-        $this->validateOnly('newRegisterName');
-        $this->validateOnly('newRegisterHolderUserId');
-
-        /** @var User $auth */
-        $auth = Auth::user();
-
-        if (! $auth->is_admin && $auth->committee_role !== CommitteeRolesEnum::TREASURER) {
-            abort(403);
-        }
-
-        $register = CashRegister::create([
-            'name'             => $this->newRegisterName,
-            'held_by_user_id'  => $this->newRegisterHolderUserId,
-        ]);
-
-        $this->selectedRegisterId = $register->id;
-        $this->reset(['newRegisterName', 'newRegisterHolderUserId', 'createRegisterModal']);
-        unset($this->register, $this->registers);
-        $this->success(__('Cash register created.'));
-    }
-
-    public function openChangeHolder(): void
-    {
-        /** @var User $auth */
-        $auth = Auth::user();
-
-        if (! $auth->is_admin && $auth->committee_role !== CommitteeRolesEnum::TREASURER) {
-            abort(403);
-        }
-
-        $this->newHolderUserId  = $this->register?->held_by_user_id;
-        $this->changeHolderModal = true;
+        return $this->register?->currentBalance() ?? 0;
     }
 
     public function confirmChangeHolder(): void
@@ -104,6 +71,48 @@ new class extends Component
         $this->success(__('Holder updated.'));
     }
 
+    public function createRegister(): void
+    {
+        $this->validateOnly('newRegisterName');
+        $this->validateOnly('newRegisterHolderUserId');
+
+        /** @var User $auth */
+        $auth = Auth::user();
+
+        if (! $auth->is_admin && $auth->committee_role !== CommitteeRolesEnum::TREASURER) {
+            abort(403);
+        }
+
+        $register = CashRegister::create([
+            'name' => $this->newRegisterName,
+            'held_by_user_id' => $this->newRegisterHolderUserId,
+        ]);
+
+        $this->selectedRegisterId = $register->id;
+        $this->reset(['newRegisterName', 'newRegisterHolderUserId', 'createRegisterModal']);
+        unset($this->register, $this->registers);
+        $this->success(__('Cash register created.'));
+    }
+
+    public function mount(): void
+    {
+        $register = CashRegister::first();
+        $this->selectedRegisterId = $register?->id;
+    }
+
+    public function openChangeHolder(): void
+    {
+        /** @var User $auth */
+        $auth = Auth::user();
+
+        if (! $auth->is_admin && $auth->committee_role !== CommitteeRolesEnum::TREASURER) {
+            abort(403);
+        }
+
+        $this->newHolderUserId = $this->register?->held_by_user_id;
+        $this->changeHolderModal = true;
+    }
+
     public function openManualEntry(): void
     {
         $this->reset(['entryAmount', 'entryReason', 'entryNotes']);
@@ -111,31 +120,13 @@ new class extends Component
         $this->manualEntryModal = true;
     }
 
-    public function saveManualEntry(): void
+    public function reasonOptions(): array
     {
-        $this->validate([
-            'entryAmount' => 'required|integer|not_in:0',
-            'entryReason' => 'required|string',
-            'entryNotes'  => 'nullable|string|max:500',
-        ]);
-
-        $register = CashRegister::find($this->selectedRegisterId);
-        if (! $register) {
-            $this->error(__('No cash register selected.'));
-            return;
-        }
-
-        CashRegisterEntry::create([
-            'cash_register_id' => $register->id,
-            'amount'           => $this->entryAmount * 100,
-            'reason'           => $this->entryReason,
-            'notes'            => $this->entryNotes,
-            'recorded_by_id'   => Auth::id(),
-        ]);
-
-        unset($this->register);
-        $this->reset(['entryAmount', 'entryReason', 'entryNotes', 'manualEntryModal']);
-        $this->success(__('Entry recorded.'));
+        return [
+            ['id' => 'manual',             'name' => __('Manual')],
+            ['id' => 'tournament_payment', 'name' => __('Tournament payment')],
+            ['id' => 'training_payment',   'name' => __('Training payment')],
+        ];
     }
 
     #[Computed]
@@ -149,13 +140,50 @@ new class extends Component
     }
 
     #[Computed]
-    public function registers(): \Illuminate\Database\Eloquent\Collection
+    public function registers(): Illuminate\Database\Eloquent\Collection
     {
         return CashRegister::orderBy('name')->get();
     }
 
+    public function render(): View
+    {
+        return $this->view([
+            'breadcrumbs' => $this->getBreadcrumbs(),
+            'reasonOptions' => $this->reasonOptions(),
+            'users' => $this->users,
+        ]);
+    }
+
+    public function saveManualEntry(): void
+    {
+        $this->validate([
+            'entryAmount' => 'required|integer|not_in:0',
+            'entryReason' => 'required|string',
+            'entryNotes' => 'nullable|string|max:500',
+        ]);
+
+        $register = CashRegister::find($this->selectedRegisterId);
+        if (! $register) {
+            $this->error(__('No cash register selected.'));
+
+            return;
+        }
+
+        CashRegisterEntry::create([
+            'cash_register_id' => $register->id,
+            'amount' => $this->entryAmount * 100,
+            'reason' => $this->entryReason,
+            'notes' => $this->entryNotes,
+            'recorded_by_id' => Auth::id(),
+        ]);
+
+        unset($this->register);
+        $this->reset(['entryAmount', 'entryReason', 'entryNotes', 'manualEntryModal']);
+        $this->success(__('Entry recorded.'));
+    }
+
     #[Computed]
-    public function users(): \Illuminate\Support\Collection
+    public function users(): Collection
     {
         return User::where('is_active', true)
             ->orderBy('last_name')
@@ -164,35 +192,10 @@ new class extends Component
             ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->first_name . ' ' . $u->last_name]);
     }
 
-    #[Computed]
-    public function balance(): int
-    {
-        return $this->register?->currentBalance() ?? 0;
-    }
-
-    public function reasonOptions(): array
-    {
-        return [
-            ['id' => 'manual',             'name' => __('Manual')],
-            ['id' => 'tournament_payment', 'name' => __('Tournament payment')],
-            ['id' => 'training_payment',   'name' => __('Training payment')],
-        ];
-    }
-
-
     protected function breadcrumbChain(): Breadcrumb
     {
         return Breadcrumb::make()
             ->home()
-            ->current(__("Treasury — Cash Register"));
-    }
-
-        public function render(): View
-    {
-        return $this->view([
-            'breadcrumbs'   => $this->getBreadcrumbs(),
-            'reasonOptions' => $this->reasonOptions(),
-            'users'         => $this->users,
-        ]);
+            ->current(__('Treasury — Cash Register'));
     }
 };

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Shared\Enums\MeetingFormatEnum;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\MeetingTypeEnum;
-use App\Domains\ClubAdmin\Users\Models\User;
-use App\Domains\Meetings\Models\Meeting;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasBulkActions;
 use App\Livewire\Concerns\HasFilterDrawer;
@@ -22,40 +22,65 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast, WithPagination, HasBreadcrumbs;
+    use HasBreadcrumbs, Toast, WithPagination;
     use HasBulkActions, HasFilterDrawer;
+
+    public bool $confirmBulkCancelModal = false;
+
+    #[Url]
+    public string $format = '';
 
     #[Url]
     public string $search = '';
 
-    #[Url]
-    public string $type = '';
+    /** @var array{column: string, direction: string} */
+    public array $sortBy = ['column' => 'scheduled_at', 'direction' => 'desc'];
 
     #[Url]
     public string $status = '';
 
     #[Url]
-    public string $format = '';
+    public string $type = '';
 
-    /** @var array{column: string, direction: string} */
-    public array $sortBy = ['column' => 'scheduled_at', 'direction' => 'desc'];
-
-    public bool $confirmBulkCancelModal = false;
-
-    // ── HasBulkActions ────────────────────────────────────────────────────────
-
-    /** @return array<int, string> */
-    protected function getPageIds(): array
+    public function bulkCancel(): void
     {
-        return $this->meetings
-            ->pluck('id')
-            ->map(fn (int $id) => (string) $id)
-            ->toArray();
+        $count = count($this->selected);
+        Meeting::whereIn('id', $this->selected)->update(['status' => MeetingStatusEnum::CANCELLED]);
+        $this->confirmBulkCancelModal = false;
+        $this->clearSelection();
+        $this->warning(trans_choice('{1} Meeting cancelled.|[2,*] :count meetings cancelled.', $count, ['count' => $count]));
     }
 
-    public function getTotalMatchingCount(): int
+    // ── Computed ──────────────────────────────────────────────────────────────
+
+    #[Computed]
+    public function canManage(): bool
     {
-        return $this->meetings->total();
+        $user = Auth::user();
+
+        return $user instanceof User && ($user->is_admin || $user->is_committee_member);
+    }
+
+    public function clearFilters(): void
+    {
+        $this->type = '';
+        $this->status = '';
+        $this->format = '';
+        $this->resetPage();
+    }
+
+    // ── Bulk actions ──────────────────────────────────────────────────────────
+
+    public function confirmBulkCancel(): void
+    {
+        $this->confirmBulkCancelModal = true;
+    }
+
+    /** @return array<int, array{key: string, label: string}> */
+    #[Computed]
+    public function filterChips(): array
+    {
+        return $this->getFilterChips();
     }
 
     // ── HasFilterDrawer ───────────────────────────────────────────────────────
@@ -86,53 +111,9 @@ new class extends Component
         return $chips;
     }
 
-    public function clearFilters(): void
+    public function getTotalMatchingCount(): int
     {
-        $this->type   = '';
-        $this->status = '';
-        $this->format = '';
-        $this->resetPage();
-    }
-
-    // ── Bulk actions ──────────────────────────────────────────────────────────
-
-    public function confirmBulkCancel(): void
-    {
-        $this->confirmBulkCancelModal = true;
-    }
-
-    public function bulkCancel(): void
-    {
-        $count = count($this->selected);
-        Meeting::whereIn('id', $this->selected)->update(['status' => MeetingStatusEnum::CANCELLED]);
-        $this->confirmBulkCancelModal = false;
-        $this->clearSelection();
-        $this->warning(trans_choice('{1} Meeting cancelled.|[2,*] :count meetings cancelled.', $count, ['count' => $count]));
-    }
-
-    // ── Filter hooks ──────────────────────────────────────────────────────────
-
-    public function updatedSearch(): void  { $this->resetPage(); }
-
-    public function updatedType(): void    { $this->resetPage(); }
-
-    public function updatedStatus(): void  { $this->resetPage(); }
-
-    public function updatedFormat(): void  { $this->resetPage(); }
-
-    // ── Computed ──────────────────────────────────────────────────────────────
-
-    #[Computed]
-    public function canManage(): bool
-    {
-        $user = Auth::user();
-
-        return $user instanceof User && ($user->is_admin || $user->is_committee_member);
-    }
-
-    public function refreshMeetings(): void
-    {
-        unset($this->meetings);
+        return $this->meetings->total();
     }
 
     #[Computed]
@@ -150,18 +131,9 @@ new class extends Component
             ->paginate(20);
     }
 
-    /** @return array<int, array{key: string, label: string}> */
-    #[Computed]
-    public function filterChips(): array
+    public function refreshMeetings(): void
     {
-        return $this->getFilterChips();
-    }
-
-    protected function breadcrumbChain(): Breadcrumb
-    {
-        return Breadcrumb::make()
-            ->home()
-            ->current(__('Meetings'));
+        unset($this->meetings);
     }
 
     public function render(): View
@@ -169,25 +141,47 @@ new class extends Component
         return $this->view();
     }
 
+    public function updatedFormat(): void
+    {
+        $this->resetPage();
+    }
+
+    // ── Filter hooks ──────────────────────────────────────────────────────────
+
+    public function updatedSearch(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedStatus(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedType(): void
+    {
+        $this->resetPage();
+    }
+
     /** @return array<string, mixed> */
     public function with(): array
     {
         $stats = [
-            'total'     => Meeting::count(),
-            'upcoming'  => Meeting::where('status', MeetingStatusEnum::CONFIRMED->value)
+            'total' => Meeting::count(),
+            'upcoming' => Meeting::where('status', MeetingStatusEnum::CONFIRMED->value)
                 ->where('scheduled_at', '>', now())->count(),
-            'planning'  => Meeting::where('status', MeetingStatusEnum::PLANNING->value)->count(),
+            'planning' => Meeting::where('status', MeetingStatusEnum::PLANNING->value)->count(),
             'completed' => Meeting::where('status', MeetingStatusEnum::COMPLETED->value)->count(),
         ];
 
         return [
-            'breadcrumbs'   => $this->getBreadcrumbs(),
-            'meetings'      => $this->meetings,
-            'stats'         => $stats,
-            'typeOptions'   => MeetingTypeEnum::getOptions(),
+            'breadcrumbs' => $this->getBreadcrumbs(),
+            'meetings' => $this->meetings,
+            'stats' => $stats,
+            'typeOptions' => MeetingTypeEnum::getOptions(),
             'statusOptions' => MeetingStatusEnum::getOptions(),
             'formatOptions' => MeetingFormatEnum::getOptions(),
-            'headers'       => [
+            'headers' => [
                 ['key' => 'title',        'label' => __('Title')],
                 ['key' => 'type',         'label' => __('Type'),    'sortable' => false],
                 ['key' => 'scheduled_at', 'label' => __('Date')],
@@ -198,5 +192,23 @@ new class extends Component
             ],
             'filterChips' => $this->filterChips,
         ];
+    }
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__('Meetings'));
+    }
+
+    // ── HasBulkActions ────────────────────────────────────────────────────────
+
+    /** @return array<int, string> */
+    protected function getPageIds(): array
+    {
+        return $this->meetings
+            ->pluck('id')
+            ->map(fn (int $id) => (string) $id)
+            ->toArray();
     }
 };

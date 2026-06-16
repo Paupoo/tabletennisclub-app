@@ -8,6 +8,14 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    public function down(): void
+    {
+        Schema::table('interclub_results', function (Blueprint $table): void {
+            $table->dropForeign(['interclub_id']);
+            $table->dropColumn('interclub_id');
+        });
+    }
+
     public function up(): void
     {
         Schema::table('interclub_results', function (Blueprint $table): void {
@@ -17,14 +25,6 @@ return new class extends Migration
                 ->after('id')
                 ->constrained('interclubs')
                 ->nullOnDelete();
-        });
-    }
-
-    public function down(): void
-    {
-        Schema::table('interclub_results', function (Blueprint $table): void {
-            $table->dropForeign(['interclub_id']);
-            $table->dropColumn('interclub_id');
         });
     }
 };

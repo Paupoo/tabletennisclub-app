@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Club\Models\Room;
+use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\Recurrence;
 use App\Domains\Shared\Enums\TrainingCancellationType;
 use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Shared\Enums\TrainingType;
-use App\Domains\ClubAdmin\Club\Models\Room;
-use App\Domains\ClubAdmin\Users\Models\User;
-use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Trainings\Notifications\TrainingSessionCancelledNotification;
@@ -22,22 +22,24 @@ use Livewire\Component;
 use Mary\Traits\Toast;
 
 new class extends Component
-    {
+{
     use HasBreadcrumbs;
     use Toast;
 
     // ── Cancellation modal ────────────────────────────────────────────────────
     public bool $cancelModal = false;
 
-    public bool $deactivatePackModal = false;
-
-    public ?int $deactivatingPackId = null;
-
     public string $cancelNote = '';
 
     public ?int $cancelTrainingId = null;
 
     public string $cancelType = 'FREE';
+
+    public bool $deactivatePackModal = false;
+
+    public ?int $deactivatingPackId = null;
+
+    public bool $formAllowDiscount = true;
 
     public ?int $formDayOfWeek = null;
 
@@ -58,8 +60,6 @@ new class extends Component
 
     // Step 3 — Price (in euros)
     public float $formPrice = 90;
-
-    public bool $formAllowDiscount = true;
 
     // Step 2 — Planning
     public string $formRecurrenceType = 'weekly'; // 'weekly' | 'specific_days'
@@ -133,6 +133,13 @@ new class extends Component
         $this->warning(__('Session cancelled. Members have been notified.'), icon: 'o-x-circle');
     }
 
+    public function confirmDeactivatePack(): void
+    {
+        if ($this->deactivatingPackId) {
+            $this->deactivatePack($this->deactivatingPackId);
+        }
+    }
+
     #[Computed]
     public function dayOptions(): array
     {
@@ -147,26 +154,13 @@ new class extends Component
         ];
     }
 
-    public function openDeactivatePack(int $packId): void
-    {
-        $this->deactivatingPackId    = $packId;
-        $this->deactivatePackModal   = true;
-    }
-
     public function deactivatePack(int $packId): void
     {
         TrainingPack::findOrFail($packId)->update(['is_active' => false]);
         unset($this->packs);
         $this->deactivatePackModal = false;
-        $this->deactivatingPackId  = null;
+        $this->deactivatingPackId = null;
         $this->warning(__('Pack deactivated.'));
-    }
-
-    public function confirmDeactivatePack(): void
-    {
-        if ($this->deactivatingPackId) {
-            $this->deactivatePack($this->deactivatingPackId);
-        }
     }
 
     #[Computed]
@@ -175,15 +169,6 @@ new class extends Component
         return collect(TrainingLevel::cases())
             ->map(fn ($e) => ['id' => $e->value, 'name' => $e->value])
             ->toArray();
-    }
-
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
-
-    protected function breadcrumbChain(): Breadcrumb
-    {
-        return Breadcrumb::make()
-            ->home()
-            ->current(__('Trainings'));
     }
 
     public function mount(): void
@@ -249,6 +234,12 @@ new class extends Component
         $this->resetWizardFields();
         $this->wizardOpen = true;
         $this->step = '1';
+    }
+
+    public function openDeactivatePack(int $packId): void
+    {
+        $this->deactivatingPackId = $packId;
+        $this->deactivatePackModal = true;
     }
 
     public function openEdit(int $packId): void
@@ -360,6 +351,11 @@ new class extends Component
         if ((int) $this->step > 1) {
             $this->step = (string) ((int) $this->step - 1);
         }
+    }
+
+    public function refreshPacks(): void
+    {
+        unset($this->packs);
     }
 
     #[Computed]
@@ -562,9 +558,13 @@ new class extends Component
         return $this->formSeasonId ? Season::find($this->formSeasonId) : null;
     }
 
-    public function refreshPacks(): void
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
+
+    protected function breadcrumbChain(): Breadcrumb
     {
-        unset($this->packs);
+        return Breadcrumb::make()
+            ->home()
+            ->current(__('Trainings'));
     }
 
     private function resetWizardFields(): void

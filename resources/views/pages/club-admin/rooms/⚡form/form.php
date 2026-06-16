@@ -14,7 +14,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast, HasBreadcrumbs;
+    use HasBreadcrumbs, Toast;
 
     #[Validate('string|max:255')]
     public string $access_description = '';
@@ -154,16 +154,7 @@ new class extends Component
         $this->filteredTables = $this->allTables;
     }
 
-
-    protected function breadcrumbChain(): Breadcrumb
-    {
-        return Breadcrumb::make()
-            ->home()
-            ->rooms()
-            ->current($this->room->exists ? __("Edit") : __("Create"));
-    }
-
-        public function render(): View
+    public function render(): View
     {
         return $this->view();
     }
@@ -250,5 +241,13 @@ new class extends Component
         return [
             'breadcrumbs' => $this->getBreadcrumbs(),
         ];
+    }
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->rooms()
+            ->current($this->room->exists ? __('Edit') : __('Create'));
     }
 };

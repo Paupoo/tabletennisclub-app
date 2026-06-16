@@ -23,7 +23,8 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read User|null $assignedTo
- * @property-read \App\Domains\Meetings\Models\Meeting $meeting
+ * @property-read Meeting $meeting
+ *
  * @method static \Database\Factories\Domains\Meetings\Models\MeetingActionItemFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingActionItem newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingActionItem newQuery()
@@ -37,6 +38,7 @@ use Illuminate\Support\Carbon;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingActionItem whereMeetingId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingActionItem whereTitle($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingActionItem whereUpdatedAt($value)
+ *
  * @mixin \Eloquent
  */
 #[UseFactory(MeetingActionItemFactory::class)]

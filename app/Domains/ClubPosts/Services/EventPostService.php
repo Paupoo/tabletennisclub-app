@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Domains\ClubPosts\Services;
 
+use App\Domains\ClubPosts\Models\EventPost;
 use App\Domains\Shared\Enums\ClubEventTypeEnum;
 use App\Domains\Shared\Enums\EventPostStatusEnum;
-use App\Domains\ClubPosts\Models\EventPost;
 use Illuminate\Database\Eloquent\Model;
 
 class EventPostService

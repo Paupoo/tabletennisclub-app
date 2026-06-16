@@ -18,6 +18,7 @@ use Carbon\Carbon;
 use Database\Factories\Domains\Trainings\Models\TrainingPackFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -51,11 +52,12 @@ use Illuminate\Database\Eloquent\Relations\MorphOne;
  * @property-read EventPost|null $eventPost
  * @property-read Room $room
  * @property-read Season $season
- * @property-read \Illuminate\Database\Eloquent\Collection<int, Subscription> $subscriptions
+ * @property-read Collection<int, Subscription> $subscriptions
  * @property-read int|null $subscriptions_count
  * @property-read User|null $trainer
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Domains\Trainings\Models\Training> $trainings
+ * @property-read Collection<int, Training> $trainings
  * @property-read int|null $trainings_count
+ *
  * @method static \Database\Factories\Domains\Trainings\Models\TrainingPackFactory factory($count = null, $state = [])
  * @method static Builder<static>|TrainingPack newModelQuery()
  * @method static Builder<static>|TrainingPack newQuery()
@@ -82,6 +84,7 @@ use Illuminate\Database\Eloquent\Relations\MorphOne;
  * @method static Builder<static>|TrainingPack whereTrainerId($value)
  * @method static Builder<static>|TrainingPack whereType($value)
  * @method static Builder<static>|TrainingPack whereUpdatedAt($value)
+ *
  * @mixin \Eloquent
  */
 class TrainingPack extends Model

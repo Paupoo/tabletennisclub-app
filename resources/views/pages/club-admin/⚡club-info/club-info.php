@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Resources\views\Pages\ClubEvents\Interclubs\Teams;
 
-use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Domains\ClubAdmin\Payment\Models\CashRegister;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Shared\Models\AppSetting;
+use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Validation\Rule as ValidationRule;
 use Illuminate\Validation\ValidationException;
@@ -20,15 +20,15 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast, HasBreadcrumbs;
+    use HasBreadcrumbs, Toast;
 
     public bool $addCommitteeMemberModal = false;
 
-    #[Validate('string|max:20')]
-    public ?string $bic;
-
     #[Validate('string|max:50')]
     public ?string $bank_account;
+
+    #[Validate('string|max:20')]
+    public ?string $bic;
 
     #[Validate('nullable|string|max:100')]
     public ?string $building_name;
@@ -44,6 +44,26 @@ new class extends Component
 
     #[Validate('nullable|string|max:13')]
     public ?string $enterprise_number;
+
+    #[Validate('nullable|string|max:100')]
+    public ?string $interclubDay = 'Vendredi';
+
+    #[Validate('nullable|string|max:255')]
+    public ?string $interclubDescription = 'Matches de compétition à domicile. Venez nous supporter !';
+
+    // ── Interclub schedule settings ───────────────────────────────────────────
+
+    #[Validate('boolean')]
+    public bool $interclubEnabled = true;
+
+    #[Validate('nullable|string|max:100')]
+    public ?string $interclubLocation = 'Demeester (0 et -1)';
+
+    #[Validate('nullable|string|max:100')]
+    public ?string $interclubTimeEnd = '23:30';
+
+    #[Validate('nullable|string|max:100')]
+    public ?string $interclubTimeStart = '19:00';
 
     #[Validate('nullable|numeric')]
     public ?float $latitude;
@@ -63,26 +83,6 @@ new class extends Component
 
     #[Validate('nullable|string')]
     public ?string $website_url;
-
-    // ── Interclub schedule settings ───────────────────────────────────────────
-
-    #[Validate('boolean')]
-    public bool $interclubEnabled = true;
-
-    #[Validate('nullable|string|max:100')]
-    public ?string $interclubDay = 'Vendredi';
-
-    #[Validate('nullable|string|max:100')]
-    public ?string $interclubTimeStart = '19:00';
-
-    #[Validate('nullable|string|max:100')]
-    public ?string $interclubTimeEnd = '23:30';
-
-    #[Validate('nullable|string|max:100')]
-    public ?string $interclubLocation = 'Demeester (0 et -1)';
-
-    #[Validate('nullable|string|max:255')]
-    public ?string $interclubDescription = 'Matches de compétition à domicile. Venez nous supporter !';
 
     public function mount(): void
     {
@@ -127,13 +127,6 @@ new class extends Component
         ]);
 
         $this->success(__('Member removed from committee list'));
-    }
-
-    protected function breadcrumbChain(): Breadcrumb
-    {
-        return Breadcrumb::make()
-            ->home()
-            ->current(__('Club Information'));
     }
 
     public function render(): View
@@ -208,5 +201,12 @@ new class extends Component
                 ->orderBy('name')
                 ->get(),
         ];
+    }
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__('Club Information'));
     }
 };

@@ -4,20 +4,20 @@ declare(strict_types=1);
 
 use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
 use App\Actions\Meetings\RespondToMeetingRsvp;
-use App\Domains\Competitions\Interclub\Models\Club;
-use App\Domains\Shared\Enums\MeetingStatusEnum;
-use App\Domains\Shared\Enums\MeetingUserStatusEnum;
-use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
-use App\Domains\Meetings\Models\Meeting;
-use App\Domains\Meetings\Models\MeetingUser;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentPair;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
-use App\Domains\Trainings\Models\Training;
 use App\Domains\Competitions\Tournament\Services\TournamentService;
+use App\Domains\Meetings\Models\Meeting;
+use App\Domains\Meetings\Models\MeetingUser;
+use App\Domains\Shared\Enums\MeetingStatusEnum;
+use App\Domains\Shared\Enums\MeetingUserStatusEnum;
+use App\Domains\Shared\Enums\TournamentStatusEnum;
+use App\Domains\Trainings\Models\Training;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
@@ -29,63 +29,35 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast, HasBreadcrumbs;
-
-    public User $user;
-
-    public bool $onlyUpcoming = true;
-
-    public bool $paymentModal = false;
-
-    public ?int $selectedPaymentId = null;
-
-    public bool $cancelConfirmModal = false;
+    use HasBreadcrumbs, Toast;
 
     public ?int $cancelConfirmId = null;
 
-    public ?string $paymentQr = null;
-
-    // ── Doubles self-pairing
-    public int $partnerTournamentId = 0;
-
-    public int $selectedPartnerId = 0;
+    public bool $cancelConfirmModal = false;
 
     // ── Meeting RSVP modal
     public bool $meetingRsvpModal = false;
 
-    public ?int $rsvpMeetingId = null;
+    public bool $onlyUpcoming = true;
+
+    // ── Doubles self-pairing
+    public int $partnerTournamentId = 0;
+
+    public bool $paymentModal = false;
+
+    public ?string $paymentQr = null;
 
     public string $rsvpAttendance = 'confirmed';
 
     public string $rsvpMeal = 'skip';
 
-    #[Computed]
-    public function ourClub(): Club
-    {
-        return Club::ourClub()->first();
-    }
+    public ?int $rsvpMeetingId = null;
 
-    #[Computed]
-    public function upcomingTournaments(): Collection
-    {
-        return Tournament::where('status', TournamentStatusEnum::PUBLISHED)
-            ->where('start_date', '>=', now())
-            ->withCount([
-                'users AS active_registrations_count' => fn ($q) =>
-                    $q->whereIn('tournament_user.registration_status', ['registered', 'confirmed', 'spot_offered']),
-            ])
-            ->with([
-                'users' => fn ($q) => $q->where('tournament_user.user_id', $this->user->id),
-                'pairs' => fn ($q) => $q
-                    ->where(fn ($q2) => $q2
-                        ->where('player1_id', $this->user->id)
-                        ->orWhere('player2_id', $this->user->id)
-                    )
-                    ->with(['player1', 'player2']),
-            ])
-            ->orderBy('start_date')
-            ->get();
-    }
+    public int $selectedPartnerId = 0;
+
+    public ?int $selectedPaymentId = null;
+
+    public User $user;
 
     #[Computed]
     public function availablePartners(): array
@@ -110,11 +82,126 @@ new class extends Component
             ->toArray();
     }
 
+    public function cancelRegistration(int $tournamentId): void
+    {
+        $tournament = Tournament::findOrFail($tournamentId);
+        app(TournamentService::class)->cancelRegistration($tournament, $this->user);
+        unset($this->upcomingTournaments);
+        $this->cancelConfirmModal = false;
+        $this->cancelConfirmId = null;
+        $this->warning(__('Registration cancelled.'));
+    }
+
+    public function confirmCancel(): void
+    {
+        if ($this->cancelConfirmId) {
+            $this->cancelRegistration($this->cancelConfirmId);
+        }
+    }
+
+    public function confirmTournamentSpot(int $tournamentId): void
+    {
+        TournamentRegistration::where('user_id', $this->user->id)
+            ->where('tournament_id', $tournamentId)
+            ->where('registration_status', 'spot_offered')
+            ->update([
+                'registration_status' => 'confirmed',
+                'confirmation_deadline' => null,
+            ]);
+
+        unset($this->upcomingTournaments);
+        $this->success(__('Spot confirmed!'));
+    }
+
+    /**
+     * This user's meeting registrations (with payment), keyed by meeting id —
+     * powers the row status/meal badges and the RSVP modal prefill.
+     *
+     * @return Illuminate\Support\Collection<int, MeetingUser>
+     */
+    #[Computed]
+    public function meetingRegistrations(): Illuminate\Support\Collection
+    {
+        $meetingIds = $this->upcomingMeetings->pluck('id');
+
+        if ($meetingIds->isEmpty()) {
+            return collect();
+        }
+
+        return MeetingUser::with('payment')
+            ->where('user_id', $this->user->id)
+            ->whereIn('meeting_id', $meetingIds)
+            ->get()
+            ->keyBy('meeting_id');
+    }
+
+    #[Computed]
+    public function myPastTournaments(): Collection
+    {
+        return $this->user->tournaments()
+            ->where('start_date', '<', now())
+            ->orderByDesc('start_date')
+            ->limit(10)
+            ->get();
+    }
+
+    public function openCancelConfirm(int $tournamentId): void
+    {
+        $this->cancelConfirmId = $tournamentId;
+        $this->cancelConfirmModal = true;
+    }
+
+    public function openMeetingRsvp(int $meetingId): void
+    {
+        $registration = $this->meetingRegistrations[$meetingId] ?? null;
+
+        $this->rsvpMeetingId = $meetingId;
+        $this->rsvpAttendance = $registration?->status === MeetingUserStatusEnum::DECLINED ? 'declined' : 'confirmed';
+        $this->rsvpMeal = $registration?->meal_reserved === true ? 'reserve' : 'skip';
+        $this->meetingRsvpModal = true;
+    }
+
     public function openPartnerSelect(int $tournamentId): void
     {
         $this->partnerTournamentId = $tournamentId;
         $this->selectedPartnerId = 0;
         unset($this->availablePartners);
+    }
+
+    public function openPaymentModal(int $paymentId): void
+    {
+        $payment = Payment::findOrFail($paymentId);
+        $this->selectedPaymentId = $paymentId;
+        $this->paymentQr = (new GeneratePaymentQR)($payment);
+        $this->paymentModal = true;
+    }
+
+    #[Computed]
+    public function ourClub(): Club
+    {
+        return Club::ourClub()->first();
+    }
+
+    #[Computed]
+    public function pendingPayments(): Collection
+    {
+        return Payment::where('status', 'pending')
+            ->whereHasMorph('payable', [TournamentRegistration::class, MeetingUser::class],
+                fn ($q) => $q->where('user_id', $this->user->id)
+            )
+            ->with(['payable' => fn (MorphTo $morphTo) => $morphTo->morphWith([
+                TournamentRegistration::class => ['tournament'],
+                MeetingUser::class => ['meeting'],
+            ])])
+            ->get();
+    }
+
+    public function register(int $tournamentId): void
+    {
+        $tournament = Tournament::findOrFail($tournamentId);
+        app(TournamentService::class)->registerUser($tournament, $this->user);
+        unset($this->upcomingTournaments);
+        $this->success(__('Registration confirmed!'));
     }
 
     public function registerAsPair(int $tournamentId): void
@@ -127,8 +214,8 @@ new class extends Component
 
         TournamentPair::create([
             'tournament_id' => $tournamentId,
-            'player1_id'    => $this->user->id,
-            'player2_id'    => $this->selectedPartnerId,
+            'player1_id' => $this->user->id,
+            'player2_id' => $this->selectedPartnerId,
             'registered_by' => $this->user->id,
         ]);
 
@@ -162,81 +249,49 @@ new class extends Component
         $this->warning(__('Pair removed.'));
     }
 
-    #[Computed]
-    public function pendingPayments(): Collection
+    public function saveMeetingRsvp(): void
     {
-        return Payment::where('status', 'pending')
-            ->whereHasMorph('payable', [TournamentRegistration::class, MeetingUser::class],
-                fn ($q) => $q->where('user_id', $this->user->id)
-            )
-            ->with(['payable' => fn (MorphTo $morphTo) => $morphTo->morphWith([
-                TournamentRegistration::class => ['tournament'],
-                MeetingUser::class => ['meeting'],
-            ])])
+        $meeting = Meeting::findOrFail($this->rsvpMeetingId);
+
+        $attending = $this->rsvpAttendance === 'confirmed';
+        $mealReserved = $meeting->has_meal ? ($this->rsvpMeal === 'reserve') : null;
+
+        (new RespondToMeetingRsvp)($meeting, $this->user, $attending, $mealReserved);
+
+        $this->meetingRsvpModal = false;
+        unset($this->upcomingMeetings, $this->meetingRegistrations, $this->pendingPayments);
+        $this->success(__('Your participation has been updated.'), icon: 'o-calendar-days');
+    }
+
+    #[Computed]
+    public function upcomingMeetings(): Collection
+    {
+        return $this->user->meetings()
+            ->where('meetings.status', MeetingStatusEnum::CONFIRMED->value)
+            ->where('scheduled_at', '>=', now())
+            ->orderBy('scheduled_at')
             ->get();
     }
 
     #[Computed]
-    public function myPastTournaments(): Collection
+    public function upcomingTournaments(): Collection
     {
-        return $this->user->tournaments()
-            ->where('start_date', '<', now())
-            ->orderByDesc('start_date')
-            ->limit(10)
+        return Tournament::where('status', TournamentStatusEnum::PUBLISHED)
+            ->where('start_date', '>=', now())
+            ->withCount([
+                'users AS active_registrations_count' => fn ($q) => $q->whereIn('tournament_user.registration_status', ['registered', 'confirmed', 'spot_offered']),
+            ])
+            ->with([
+                'users' => fn ($q) => $q->where('tournament_user.user_id', $this->user->id),
+                'pairs' => fn ($q) => $q
+                    ->where(fn ($q2) => $q2
+                        ->where('player1_id', $this->user->id)
+                        ->orWhere('player2_id', $this->user->id)
+                    )
+                    ->with(['player1', 'player2']),
+            ])
+            ->orderBy('start_date')
             ->get();
-    }
-
-    public function openPaymentModal(int $paymentId): void
-    {
-        $payment = Payment::findOrFail($paymentId);
-        $this->selectedPaymentId = $paymentId;
-        $this->paymentQr = (new GeneratePaymentQR)($payment);
-        $this->paymentModal = true;
-    }
-
-    public function register(int $tournamentId): void
-    {
-        $tournament = Tournament::findOrFail($tournamentId);
-        app(TournamentService::class)->registerUser($tournament, $this->user);
-        unset($this->upcomingTournaments);
-        $this->success(__('Registration confirmed!'));
-    }
-
-    public function confirmTournamentSpot(int $tournamentId): void
-    {
-        TournamentRegistration::where('user_id', $this->user->id)
-            ->where('tournament_id', $tournamentId)
-            ->where('registration_status', 'spot_offered')
-            ->update([
-                'registration_status'   => 'confirmed',
-                'confirmation_deadline' => null,
-            ]);
-
-        unset($this->upcomingTournaments);
-        $this->success(__('Spot confirmed!'));
-    }
-
-    public function openCancelConfirm(int $tournamentId): void
-    {
-        $this->cancelConfirmId    = $tournamentId;
-        $this->cancelConfirmModal = true;
-    }
-
-    public function cancelRegistration(int $tournamentId): void
-    {
-        $tournament = Tournament::findOrFail($tournamentId);
-        app(TournamentService::class)->cancelRegistration($tournament, $this->user);
-        unset($this->upcomingTournaments);
-        $this->cancelConfirmModal = false;
-        $this->cancelConfirmId    = null;
-        $this->warning(__('Registration cancelled.'));
-    }
-
-    public function confirmCancel(): void
-    {
-        if ($this->cancelConfirmId) {
-            $this->cancelRegistration($this->cancelConfirmId);
-        }
     }
 
     /** @return Collection<int, Training> */
@@ -245,7 +300,7 @@ new class extends Component
     {
         $season = Season::where('is_active', true)->first();
         if (! $season) {
-            return new Collection();
+            return new Collection;
         }
 
         // Get training pack IDs the user is subscribed to via their active subscription
@@ -257,7 +312,7 @@ new class extends Component
             ->flatMap(fn ($sub) => $sub->trainingPacks->pluck('id'));
 
         if ($packIds->isEmpty()) {
-            return new Collection();
+            return new Collection;
         }
 
         return Training::with(['trainingPack', 'room'])
@@ -269,60 +324,11 @@ new class extends Component
             ->get();
     }
 
-    #[Computed]
-    public function upcomingMeetings(): \Illuminate\Database\Eloquent\Collection
+    public function with(): array
     {
-        return $this->user->meetings()
-            ->where('meetings.status', MeetingStatusEnum::CONFIRMED->value)
-            ->where('scheduled_at', '>=', now())
-            ->orderBy('scheduled_at')
-            ->get();
-    }
-
-    /**
-     * This user's meeting registrations (with payment), keyed by meeting id —
-     * powers the row status/meal badges and the RSVP modal prefill.
-     *
-     * @return \Illuminate\Support\Collection<int, MeetingUser>
-     */
-    #[Computed]
-    public function meetingRegistrations(): \Illuminate\Support\Collection
-    {
-        $meetingIds = $this->upcomingMeetings->pluck('id');
-
-        if ($meetingIds->isEmpty()) {
-            return collect();
-        }
-
-        return MeetingUser::with('payment')
-            ->where('user_id', $this->user->id)
-            ->whereIn('meeting_id', $meetingIds)
-            ->get()
-            ->keyBy('meeting_id');
-    }
-
-    public function openMeetingRsvp(int $meetingId): void
-    {
-        $registration = $this->meetingRegistrations[$meetingId] ?? null;
-
-        $this->rsvpMeetingId    = $meetingId;
-        $this->rsvpAttendance   = $registration?->status === MeetingUserStatusEnum::DECLINED ? 'declined' : 'confirmed';
-        $this->rsvpMeal         = $registration?->meal_reserved === true ? 'reserve' : 'skip';
-        $this->meetingRsvpModal = true;
-    }
-
-    public function saveMeetingRsvp(): void
-    {
-        $meeting = Meeting::findOrFail($this->rsvpMeetingId);
-
-        $attending    = $this->rsvpAttendance === 'confirmed';
-        $mealReserved = $meeting->has_meal ? ($this->rsvpMeal === 'reserve') : null;
-
-        (new RespondToMeetingRsvp)($meeting, $this->user, $attending, $mealReserved);
-
-        $this->meetingRsvpModal = false;
-        unset($this->upcomingMeetings, $this->meetingRegistrations, $this->pendingPayments);
-        $this->success(__('Your participation has been updated.'), icon: 'o-calendar-days');
+        return [
+            'breadcrumbs' => $this->getBreadcrumbs(),
+        ];
     }
 
     protected function breadcrumbChain(): Breadcrumb
@@ -330,12 +336,5 @@ new class extends Component
         return Breadcrumb::make()
             ->home()
             ->current(__('Events & Activities'));
-    }
-
-    public function with(): array
-    {
-        return [
-            'breadcrumbs' => $this->getBreadcrumbs(),
-        ];
     }
 };

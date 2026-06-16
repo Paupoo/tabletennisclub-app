@@ -13,7 +13,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast, HasBreadcrumbs;
+    use HasBreadcrumbs, Toast;
 
     public ?int $activateId = null;
 
@@ -192,15 +192,6 @@ new class extends Component
         $this->success(__('Season updated.'), icon: 'o-check-circle');
     }
 
-    // ── Render ────────────────────────────────────────────────────────────────
-
-    protected function breadcrumbChain(): Breadcrumb
-    {
-        return Breadcrumb::make()
-            ->home()
-            ->current(__('Seasons'));
-    }
-
     public function with(): array
     {
         $all = $this->seasons;
@@ -213,5 +204,14 @@ new class extends Component
             'pastCount' => $pastCount,
             'breadcrumbs' => $this->getBreadcrumbs(),
         ];
+    }
+
+    // ── Render ────────────────────────────────────────────────────────────────
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__('Seasons'));
     }
 };

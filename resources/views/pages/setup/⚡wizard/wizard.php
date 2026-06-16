@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-use App\Domains\Shared\Models\AppSetting;
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Shared\Models\AppSetting;
 use App\Domains\Shared\Rules\ValidIban;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -438,5 +438,4 @@ new class extends Component
         $this->maxReachable = max($this->maxReachable, 2);
         $this->step = '2';
     }
-
 };

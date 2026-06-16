@@ -11,7 +11,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast, HasBreadcrumbs;
+    use HasBreadcrumbs, Toast;
 
     public bool $deleteModal = false;
 
@@ -51,15 +51,7 @@ new class extends Component
         }
     }
 
-
-    protected function breadcrumbChain(): Breadcrumb
-    {
-        return Breadcrumb::make()
-            ->home()
-            ->current(__("Tables"));
-    }
-
-        public function render(): View
+    public function render(): View
     {
         return $this->view();
     }
@@ -121,5 +113,12 @@ new class extends Component
             // Si la table n'a pas de salle (room est null), on la met dans "Non assignée"
             'groupedTables' => $groupedTables,
         ];
+    }
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__('Tables'));
     }
 };

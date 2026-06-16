@@ -45,4 +45,3 @@ final class LockedState extends AbstractTournamentState
         return TournamentStatusEnum::CANCELLED;
     }
 }
-    

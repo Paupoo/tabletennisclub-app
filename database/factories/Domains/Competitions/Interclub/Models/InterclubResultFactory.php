@@ -27,15 +27,15 @@ class InterclubResultFactory extends Factory
         $date = fake()->dateTimeBetween('-6 months', 'now');
 
         return [
-            'team_id'       => Team::factory(),
-            'season_id'     => Season::factory(),
-            'match_date'    => $date->format('Y-m-d'),
-            'week_number'   => (int) $date->format('W'),
-            'is_home'       => fake()->boolean(),
+            'team_id' => Team::factory(),
+            'season_id' => Season::factory(),
+            'match_date' => $date->format('Y-m-d'),
+            'week_number' => (int) $date->format('W'),
+            'is_home' => fake()->boolean(),
             'opponent_name' => fake()->company() . ' ' . strtoupper(fake()->randomLetter()),
-            'score'         => fake()->numberBetween(0, 16) . '-' . fake()->numberBetween(0, 16),
-            'result'        => fake()->randomElement(InterclubResultEnum::cases()),
-            'is_bye'        => false,
+            'score' => fake()->numberBetween(0, 16) . '-' . fake()->numberBetween(0, 16),
+            'result' => fake()->randomElement(InterclubResultEnum::cases()),
+            'is_bye' => false,
         ];
     }
 }

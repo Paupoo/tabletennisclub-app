@@ -112,6 +112,32 @@ new class extends Component
         return $this->view();
     }
 
+    /**
+     * Toggle a boolean season attribute on a subscription (admin entry — decision #3).
+     * Reserved to the management group (decision #18).
+     */
+    public function updateAttribute(int $subscriptionId, string $attribute, bool $value): void
+    {
+        $this->authorizeManagement();
+
+        if (! in_array($attribute, ['can_drive', 'wants_to_be_captain', 'volunteer_help', 'wants_directed_training'], true)) {
+            return;
+        }
+
+        $subscription = $this->seasonSubscription($subscriptionId);
+
+        $payload = [$attribute => $value];
+
+        // Turning driving off clears any residual seat count.
+        if ($attribute === 'can_drive' && ! $value) {
+            $payload['seats_available'] = null;
+        }
+
+        $subscription->update($payload);
+
+        $this->success(__('Roster updated.'));
+    }
+
     public function updatedAgeCategory(): void
     {
         $this->resetPage();
@@ -145,32 +171,6 @@ new class extends Component
     public function updatedWantsToBeCaptain(): void
     {
         $this->resetPage();
-    }
-
-    /**
-     * Toggle a boolean season attribute on a subscription (admin entry — decision #3).
-     * Reserved to the management group (decision #18).
-     */
-    public function updateAttribute(int $subscriptionId, string $attribute, bool $value): void
-    {
-        $this->authorizeManagement();
-
-        if (! in_array($attribute, ['can_drive', 'wants_to_be_captain', 'volunteer_help', 'wants_directed_training'], true)) {
-            return;
-        }
-
-        $subscription = $this->seasonSubscription($subscriptionId);
-
-        $payload = [$attribute => $value];
-
-        // Turning driving off clears any residual seat count.
-        if ($attribute === 'can_drive' && ! $value) {
-            $payload['seats_available'] = null;
-        }
-
-        $subscription->update($payload);
-
-        $this->success(__('Roster updated.'));
     }
 
     /**

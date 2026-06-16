@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class BarProductController extends Controller
@@ -68,17 +69,19 @@ class BarProductController extends Controller
         $validated['name'] = $validated['product_name'];
         unset($validated['product_name']);
 
-        $product = BarProduct::create($validated);
+        DB::transaction(function () use ($validated, $initialStock) {
+            $product = BarProduct::create($validated);
 
-        if ($initialStock > 0) {
-            $this->stockService->addIncomingStock(
-                (int) $product->id,
-                (int) $initialStock,
-                'Initial stock',
-                auth()->id(),
-                auth()->id()
-            );
-        }
+            if ($initialStock > 0) {
+                $this->stockService->addIncomingStock(
+                    (int) $product->id,
+                    (int) $initialStock,
+                    'Initial stock',
+                    auth()->id(),
+                    auth()->id()
+                );
+            }
+        });
 
         session()->forget('product_form');
 
@@ -87,14 +90,16 @@ class BarProductController extends Controller
 
     public function storeState(Request $request): Response
     {
+        $validated = $request->validate([
+            'product_name' => 'nullable|string|max:150',
+            'sale_price' => ['nullable', 'string', 'regex:/^\d+(?:[\.,]\d{1,2})?$/'],
+            'stock' => 'nullable|integer|min:0',
+            'is_available' => 'nullable|boolean',
+            'category_id' => 'nullable|exists:bar_categories,id',
+        ]);
+
         session([
-            'product_form' => $request->only([
-                'product_name',
-                'sale_price',
-                'stock',
-                'is_available',
-                'category_id',
-            ]),
+            'product_form' => $validated,
         ]);
 
         return response()->noContent();
@@ -110,45 +115,46 @@ class BarProductController extends Controller
             'is_available' => ['sometimes', 'boolean'],
         ]);
 
-        if (array_key_exists('sale_price', $validated)) {
-            $validated['sale_price'] = cents($validated['sale_price']);
-        }
+        DB::transaction(function () use ($validated, $product) {
+            if (array_key_exists('stock', $validated)) {
+                $newStock = (int) $validated['stock'];
+                unset($validated['stock']);
 
-        if (array_key_exists('stock', $validated)) {
-            $newStock = (int) $validated['stock'];
-            unset($validated['stock']);
+                $currentStock = (int) $product->stock;
+                $delta = $newStock - $currentStock;
 
-            $currentStock = (int) $product->stock;
-            $delta = $newStock - $currentStock;
-
-            if ($delta > 0) {
-                $this->stockService->addIncomingStock(
-                    (int) $product->id,
-                    (int) $delta,
-                    'Stock adjustment',
-                    auth()->id(),
-                    auth()->id()
-                );
-            } elseif ($delta < 0) {
-                $this->stockService->consumeFIFO(
-                    (int) $product->id,
-                    abs((int) $delta),
-                    'Stock adjustment',
-                    auth()->id(),
-                    auth()->id()
-                );
+                if ($delta > 0) {
+                    $this->stockService->addIncomingStock(
+                        (int) $product->id,
+                        (int) $delta,
+                        'Stock adjustment',
+                        auth()->id(),
+                        auth()->id()
+                    );
+                } elseif ($delta < 0) {
+                    $this->stockService->consumeFIFO(
+                        (int) $product->id,
+                        abs((int) $delta),
+                        'Stock adjustment',
+                        auth()->id(),
+                        auth()->id()
+                    );
+                }
             }
-        }
 
-        // ← Renommer product_name → name avant le update()
-        if (array_key_exists('product_name', $validated)) {
-            $validated['name'] = $validated['product_name'];
-            unset($validated['product_name']);
-        }
+            if (array_key_exists('sale_price', $validated)) {
+                $validated['sale_price'] = cents($validated['sale_price']);
+            }
 
-        if (! empty($validated)) {
-            $product->update($validated);
-        }
+            if (array_key_exists('product_name', $validated)) {
+                $validated['name'] = $validated['product_name'];
+                unset($validated['product_name']);
+            }
+
+            if (! empty($validated)) {
+                $product->update($validated);
+            }
+        });
 
         return back()->with('success', 'Product updated');
     }

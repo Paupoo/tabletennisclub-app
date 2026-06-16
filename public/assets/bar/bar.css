@@ -73,13 +73,12 @@ a { color: var(--info); text-decoration: none; }
 
 .muted { color: var(--muted); font-size: 13px; }
 
-.h2 {
+/* .h2 {
   margin: 0 0 12px;
   font-size: 22px;
   font-weight: 900;
   letter-spacing: .2px;
-}
-
+} */
 
 .btn:disabled {
     opacity: 0.5;
@@ -139,7 +138,7 @@ a { color: var(--info); text-decoration: none; }
   background: var(--accentBg);
 }
 
-/* .hamburger {
+.hamburger {
   width: var(--h-btn-sm);
   height: var(--h-btn-sm);
   border-radius: var(--radius-md);
@@ -154,14 +153,7 @@ a { color: var(--info); text-decoration: none; }
   justify-content: center;
 }
 .hamburger:hover  { filter: brightness(1.06); }
-.hamburger:focus  { outline: 2px solid rgba(147,197,253,.65); outline-offset: 2px; } */
-
-/* .nav-mobile {
-  display: none;
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--line);
-  background: rgba(12,18,26,.96);
-} */
+.hamburger:focus  { outline: 2px solid rgba(147,197,253,.65); outline-offset: 2px; } 
 
 .nav-mobile {
     display: none;
@@ -190,12 +182,12 @@ a { color: var(--info); text-decoration: none; }
   border-radius: var(--radius-md);
   color: var(--text);
   font-weight: 900;
+  font-size: 18px;
+  background: none;
+  border: none;
 }
-.nav-mobile-link:hover { text-decoration: none; background: rgba(255,255,255,.04); }
 
-.menu-toggle {
-  font-size: 24px;
-}
+.nav-mobile-link:hover { text-decoration: none; background: rgba(255,255,255,.04); }
 
 @media (max-width: 720px) {
   .header-nav  { display: none; }
@@ -238,6 +230,16 @@ a { color: var(--info); text-decoration: none; }
 }
 
 /* ── 5. FORMULAIRES ────────────────────────────────────────── */
+/* Fix Safari autofill */
+input.form-input:-webkit-autofill,
+input.form-input:-webkit-autofill:hover,
+input.form-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text);
+  transition: background-color 9999s ease-in-out 0s;
+  box-shadow: 0 0 0px 1000px rgba(0,0,0,.18) inset;
+  border: 1px solid rgba(255,255,255,.12);
+}
+
 input.form-input,
 .login-input {
   width: 100%;
@@ -252,20 +254,6 @@ input.form-input,
   outline: none;
   -webkit-appearance: none;
   appearance: none;
-}
-input.form-input::placeholder,
-.login-input::placeholder { color: rgba(168,179,195,.7); }
-input.form-input:focus,
-.login-input:focus         { outline: 2px solid rgba(147,197,253,.45); outline-offset: 2px; }
-
-/* Fix Safari autofill */
-input.form-input:-webkit-autofill,
-input.form-input:-webkit-autofill:hover,
-input.form-input:-webkit-autofill:focus {
-  -webkit-text-fill-color: var(--text);
-  transition: background-color 9999s ease-in-out 0s;
-  box-shadow: 0 0 0px 1000px rgba(0,0,0,.18) inset;
-  border: 1px solid rgba(255,255,255,.12);
 }
 
 /* Label générique (réutilisé par cashsheet) */
@@ -366,24 +354,6 @@ select option       { background: #0b1327; color: var(--text); }
 .btn-qty:disabled,
 .qty-btn:disabled { opacity: .45; cursor: not-allowed; filter: none; }
 
-/* Login button */
-.login-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: var(--h-input);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--accentBord);
-  background: rgba(34,197,94,.75);
-  color: var(--bg0);
-  font-weight: 900;
-  font-size: 15px;
-  cursor: pointer;
-  margin-top: 8px;
-}
-.login-btn:hover { filter: brightness(1.05); }
-
 /* Cart button */
 .btn-cart {
   display: inline-flex;
@@ -430,15 +400,7 @@ select option       { background: #0b1327; color: var(--text); }
   border: 1px solid rgba(34,197,94,.30);
 }
 
-.login-error {
-  margin-top: 12px;
-  padding: 10px 12px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--dangerBord);
-  background: var(--dangerBg);
-  color: #ffb4b4;
-  font-weight: 800;
-}
+
 
 
 /* ── 9. CHIPS / BADGES ─────────────────────────────────────── */
@@ -537,16 +499,6 @@ details select {
     position: relative;
     z-index: 2;
 }
-
-/* details > summary {
-    position: relative;
-    z-index: 1;
-} */
-
-/* details > *:not(summary) {
-    position: relative;
-    z-index: 2;
-} */
 
 .product-row {
   display: flex;
@@ -686,12 +638,6 @@ select.product-input {
   border-radius: 14px;
   background: rgba(255,255,255,.02);
   font-weight: 900;
-}
-
-.avail-inline input {
-  width: 18px;
-  height: 18px;
-  accent-color: var(--primary);
 }
 
 .avail-inline span {
@@ -881,35 +827,6 @@ select.product-input {
 .cart-summary-bar a:hover {
     text-decoration: underline;
 }
-
-/* ── 14. PAGE LOGIN ────────────────────────────────────────── */
-body.login {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 18px;
-}
-
-.login-page { width: 100%; display: flex; align-items: center; justify-content: center; }
-
-.login-card {
-  width: min(520px, 100%);
-  padding: 26px 22px;
-  border-radius: 18px;
-  background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
-  border: 1px solid var(--line);
-  box-shadow: 0 20px 50px rgba(0,0,0,.35);
-  text-align: center;
-}
-
-.login-icon     { font-size: 42px; margin-bottom: 8px; }
-.login-title    { font-weight: 900; font-size: 20px; margin: 0; }
-.login-subtitle { margin: 6px 0 18px; color: var(--muted); font-weight: 700; font-size: 13px; }
-.login-form     { text-align: left; margin-top: 10px; }
-.login-field    { margin: 14px 0; }
-.login-label    { display: block; font-size: 13px; font-weight: 800; color: var(--muted); margin-bottom: 8px; }
-
 
 /* ── 15. CARDS COMMANDES ───────────────────────────────────── */
 .orders-page  { padding: 14px; }
@@ -1128,12 +1045,6 @@ body.login {
     max-width: 400px;
     border: 1px solid var(--line);
 }
-
-/* .kpis {
-  display: flex;
-  gap: 12px;
-  margin: 14px;
-} */
 
 .kpis {
   display: grid;

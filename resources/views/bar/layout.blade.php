@@ -28,7 +28,7 @@
             <div class="header-badge">👋 {{ auth()->user()->first_name }}</div>
             @endauth
             
-            <button id="menuToggle" class="menu-toggle">☰</button>
+            <button id="menuToggle" class="hamburger">☰</button>
         </div>
 </header>
 
@@ -39,8 +39,13 @@
     <a class="nav-mobile-link" href="{{ route('bar.products.index') }}">🍺 Produits</a>
     <a class="nav-mobile-link" href="{{ route('bar.categories.index') }}">🏷️ Catégories</a>
     <a class="nav-mobile-link" href="{{ route('bar.cashSheet.index') }}">💵 Feuille de caisse</a>
-    <a class="nav-mobile-link" href="#">🚪 Quitter</a>
-    <a class="nav-mobile-link" href="#">🔒 Connexion</a>
+    <!-- <a class="nav-mobile-link" href="{{ route('bar.logout') }}">🚪 Quitter</a> -->
+     <form method="POST" action="{{ route('bar.logout') }}">
+        @csrf
+        <button type="submit" class="nav-mobile-link">
+            🚪 Quitter
+        </button>
+    </form>
 </div>
 
     {{-- Main Content --}}
@@ -62,14 +67,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const rect = button.getBoundingClientRect();
 
-        // ✅ Position menu relative to button
+        // Position menu relative to button
         nav.style.top = rect.bottom + "px";
         nav.style.right = (window.innerWidth - rect.right) + "px";
-        nav.style.left = "auto"; // ✅ important (reset)
-
-        // Optional: align right instead
-        // nav.style.right = (window.innerWidth - rect.right) + "px";
-
+        nav.style.left = "auto"; // important (reset)
         nav.classList.toggle('open');
     });
 
@@ -80,24 +81,4 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
 });
-
-// document.addEventListener('DOMContentLoaded', () => {
-
-//     const button = document.getElementById('menuToggle');
-//     const nav = document.getElementById('navMobile');
-
-//     if (!button || !nav) return;
-
-//     button.addEventListener('click', () => {
-//         nav.classList.toggle('open');
-
-//         // Optional: lock/unlock background scroll
-//         if (nav.classList.contains('open')) {
-//             document.body.style.overflow = 'hidden';
-//         } else {
-//             document.body.style.overflow = '';
-//         }
-//     });
-
-// });
 </script>

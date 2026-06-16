@@ -45,6 +45,9 @@ class BarPaymentController extends Controller
 
     public function show(Request $request, BarOrder $order, GeneratePaymentQR $generatePaymentQR): View
     {
+        if ((int) $order->created_by !== (int) auth()->id()) {
+            abort(403);
+        }
         // load items + product for display
         $order->load('items.product');
 
@@ -53,7 +56,7 @@ class BarPaymentController extends Controller
         $qrCode = null;
         if ($method === 'qr') {
             $payment = new Payment([
-                'amount_due' => $order->total_price,
+                'amount_due' => $order->total_price / 100,
                 'reference' => "Bar order #{$order->id}",
             ]);
             $qrCode = $generatePaymentQR($payment);

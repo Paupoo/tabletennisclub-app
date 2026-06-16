@@ -26,7 +26,7 @@ class GeneratePaymentQR
     {
         $BIC = Club::ourClub()->first()->bic;
         $IBAN = Club::ourClub()->first()->bank_account;
-        $amount = $payment->amount_due;
+        $amount = number_format((float) $payment->amount_due, 2, '.', '');
         $currency = 'EUR';
         $beneficiary = 'CTT Ottignies-Blocry ASBL';
         $reference = $payment->reference; // votre référence / communication

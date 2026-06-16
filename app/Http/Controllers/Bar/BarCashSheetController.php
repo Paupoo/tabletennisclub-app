@@ -6,17 +6,16 @@ namespace App\Http\Controllers\Bar;
 
 use App\Domains\Bar\Services\CashSheetService;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class BarCashSheetController extends Controller
 {
-    private CashSheetService $cashSheetService;
-
-    public function __construct(CashSheetService $cashSheetService)
+    public function __construct(private readonly CashSheetService $cashSheetService)
     {
         $this->middleware('auth');
-        $this->cashSheetService = $cashSheetService;
+        $this->middleware('throttle:10,1')->only(['send']);
     }
 
     public function index(Request $request): View
@@ -37,10 +36,10 @@ class BarCashSheetController extends Controller
         ]);
     }
 
-    public function send(Request $request): void
+    public function send(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'date' => 'required|date',
+            'date' => 'required|date|before_or_equal:today',
             'to' => 'required|email',
             'save_default' => 'nullable|boolean',
         ]);
@@ -69,13 +68,17 @@ class BarCashSheetController extends Controller
         $body .= '- Offert: ' . euros((int) ($summary['by_method_cents']['offered'] ?? 0)) . "\n\n";
         $body .= "Cordialement.\n";
 
+        if (empty($csv)) {
+            return back()->with('warning', 'Aucune donnée à envoyer.');
+        }
+
         $ok = $this->cashSheetService->sendCsv($to, $subject, $body, $date, $csv);
 
-        // return redirect()
-        //     ->route('bar.cashSheet.index', ['date' => $date])
-        //     ->with(
-        //         $ok ? 'success' : 'warning',
-        //         $ok ? 'Email envoyé avec succès.' : 'Échec de l’envoi email.'
-        //     );
+        return redirect()
+            ->route('bar.cashSheet.index', ['date' => $date])
+            ->with(
+                $ok ? 'success' : 'warning',
+                $ok ? 'Email envoyé avec succès.' : 'Échec de l’envoi email.'
+            );
     }
 }

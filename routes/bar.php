@@ -7,8 +7,9 @@ use App\Http\Controllers\Bar\BarCashSheetController;
 use App\Http\Controllers\Bar\BarCategoryController;
 use App\Http\Controllers\Bar\BarController;
 use App\Http\Controllers\Bar\BarOrderController;
-use App\Http\Controllers\Bar\BarPaymentController;
 use App\Http\Controllers\Bar\BarProductController;
+use App\Http\Controllers\Bar\BarPaymentController;
+use App\Http\Controllers\ClubAdmin\Users\Auth\AuthenticatedSessionController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -42,11 +43,11 @@ Route::post('/cart/pay', [BarCartController::class, 'pay'])
 |--------------------------------------------------------------------------
 */
 Route::get('/orders/{order}/payment', [BarPaymentController::class, 'show'])
-    ->name('payment.show');
+        ->name('payment.show');
 Route::post('/orders/{order}/payment', [BarPaymentController::class, 'show'])
-    ->name('payment.show.post');
+        ->name('payment.show.post');
 Route::post('/orders/{order}/payment/pay', [BarPaymentController::class, 'pay'])
-    ->name('payment.pay');
+        ->name('payment.pay');
 /*
 |--------------------------------------------------------------------------
 | Orders
@@ -54,6 +55,16 @@ Route::post('/orders/{order}/payment/pay', [BarPaymentController::class, 'pay'])
 */
 Route::get('/orders', [BarOrderController::class, 'index'])
     ->name('orders.index');
+// Route::post('/orders/{order}/pay', [BarOrderController::class, 'pay'])
+//     ->name('orders.pay');
+Route::get('/orders/history', [BarOrderController::class, 'history'])
+    ->name('orders.history');
+Route::get('/orders/{order}/modify', [BarOrderController::class, 'modify'])
+    ->name('orders.modify');
+Route::post('/orders/cancel-edit', [BarOrderController::class, 'cancelEdit'])
+    ->name('orders.cancelEdit');
+Route::delete('/orders/{order}', [BarOrderController::class, 'destroy'])
+    ->name('orders.destroy');
 // Route::post('/orders/{order}/pay', [BarOrderController::class, 'pay'])
 //     ->name('orders.pay');
 Route::get('/orders/history', [BarOrderController::class, 'history'])
@@ -109,3 +120,11 @@ Route::prefix('cashsheet')->name('cashSheet.')->group(function () {
     Route::post('/bar/cashSheet/send', [BarCashSheetController::class, 'send'])
         ->name('send');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Logout
+|--------------------------------------------------------------------------
+*/
+Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])
+    ->name('logout');

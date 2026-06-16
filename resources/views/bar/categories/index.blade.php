@@ -33,7 +33,7 @@
      CATEGORY LIST
 ========================= --}}
 <section class="panel" style="margin:14px;">
-    <h2 class="h2" style="margin-top:0;">📋 Liste</h2>
+    <h1>📋 Liste</h1>
     @if($categories->isEmpty())
     <div class="muted">Aucune catégorie.</div>
     @else

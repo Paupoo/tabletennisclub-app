@@ -185,7 +185,7 @@ new class extends Component
     #[Computed]
     public function users(): Collection
     {
-        return User::where('is_active', true)
+        return User::active()
             ->orderBy('last_name')
             ->orderBy('first_name')
             ->get(['id', 'first_name', 'last_name'])

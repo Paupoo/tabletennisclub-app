@@ -324,6 +324,27 @@ class User extends Authenticatable implements MustVerifyEmail
             ->exists();
     }
 
+    public function getIsActiveAttribute(): bool
+    {
+        if (array_key_exists('is_active', $this->attributes)) {
+            return (bool) $this->attributes['is_active'];
+        }
+
+        $seasonId = Season::current()?->id;
+
+        if ($this->relationLoaded('subscriptions')) {
+            return $this->subscriptions
+                ->where('season_id', $seasonId)
+                ->whereIn('status', ['confirmed', 'paid'])
+                ->isNotEmpty();
+        }
+
+        return $this->subscriptions()
+            ->where('season_id', $seasonId)
+            ->whereIn('status', ['confirmed', 'paid'])
+            ->exists();
+    }
+
     public function getIsCompetitorAttribute(): bool
     {
         // Use pre-loaded exists value (e.g. from ->withExists(['subscriptions as is_competitor' => ...])) if available

@@ -221,3 +221,32 @@ describe('trainer update', function (): void {
             ->toBe($coachB->id);
     });
 });
+
+// ── regression: trainerOptions lists every coach (is_active column was dropped) ─
+
+describe('trainerOptions', function (): void {
+    it('lists every coach even without an active subscription, and excludes non-coaches', function (): void {
+        $admin = User::factory()->isAdmin()->create();
+        $season = makeActiveSeason();
+
+        // Coach without any subscription — must still be selectable as a trainer.
+        User::factory()->create([
+            'is_coach' => true,
+            'first_name' => 'Zelda',
+            'last_name' => 'Coachowski',
+        ]);
+
+        // Active member (confirmed subscription) but not a coach — must not appear.
+        activeMember($season, [
+            'is_coach' => false,
+            'first_name' => 'Nestor',
+            'last_name' => 'Nocoach',
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-events.trainings.index')
+            ->call('openCreate')
+            ->assertSee('Zelda Coachowski')
+            ->assertDontSee('Nestor Nocoach');
+    });
+});

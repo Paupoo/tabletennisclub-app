@@ -676,3 +676,25 @@ describe('Meeting attendance — catering view', function (): void {
             ->assertDontSee(__('Catering'));
     });
 });
+
+// ── regression: GA invitee count uses active members (is_active column was dropped) ─
+describe('meeting form invitee count', function (): void {
+    it('counts only active members for a general assembly', function (): void {
+        $admin = meetingAdmin();
+        $season = makeActiveSeason();
+
+        activeMember($season);
+        activeMember($season);
+
+        // Users without an active subscription must not be counted.
+        User::factory()->count(3)->create();
+
+        $component = Livewire::actingAs($admin)
+            ->test('pages::club-events.meetings.form')
+            ->set('type', 'general_assembly')
+            ->set('step', '3')
+            ->assertStatus(200);
+
+        expect($component->instance()->inviteeCount())->toBe(2);
+    });
+});

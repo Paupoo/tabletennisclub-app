@@ -126,7 +126,7 @@ new class extends Component
     public function inviteeCount(): int
     {
         return $this->type === 'general_assembly'
-            ? User::where('is_active', true)->count()
+            ? User::active()->count()
             : User::where(fn ($q) => $q->where('is_admin', true)->orWhere('is_committee_member', true))->count();
     }
 

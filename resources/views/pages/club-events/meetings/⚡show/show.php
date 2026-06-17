@@ -87,7 +87,7 @@ new class extends Component
     #[Computed]
     public function allMembers(): Illuminate\Database\Eloquent\Collection
     {
-        return User::where('is_active', true)->orderBy('last_name')->get();
+        return User::active()->orderBy('last_name')->get();
     }
 
     public function cancelMeeting(): void
@@ -368,7 +368,7 @@ new class extends Component
         }
 
         $recipients = $toAll
-            ? User::where('is_active', true)->get()
+            ? User::active()->get()
             : $this->committeeUsers;
 
         Notification::send($recipients, new MeetingMinutesNotification($meeting));
@@ -439,7 +439,7 @@ new class extends Component
 
         // Nobody invited yet — fall back to target audience
         return $meeting->type === MeetingTypeEnum::GENERAL_ASSEMBLY
-            ? User::where('is_active', true)->get()
+            ? User::active()->get()
             : User::where(fn ($q) => $q->where('is_admin', true)->orWhere('is_committee_member', true))->get();
     }
 };

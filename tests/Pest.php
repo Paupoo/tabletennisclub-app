@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Tournament\Models\Tournament;
@@ -68,6 +70,24 @@ function makeActiveSeason(): Season
         'start_at' => now()->startOfYear(),
         'end_at' => now()->endOfYear(),
     ]);
+}
+
+/**
+ * Create a user that counts as "active" for the given season
+ * (i.e. holds a confirmed subscription — matches User::active()).
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function activeMember(Season $season, array $attributes = []): User
+{
+    $user = User::factory()->create($attributes);
+
+    Subscription::factory()->for($user)->create([
+        'season_id' => $season->id,
+        'status' => 'confirmed',
+    ]);
+
+    return $user;
 }
 
 function makeTrainingPack(Season $season, array $overrides = []): TrainingPack

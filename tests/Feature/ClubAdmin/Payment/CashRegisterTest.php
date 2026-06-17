@@ -145,6 +145,20 @@ describe('Cash register view', function (): void {
         expect(CashRegister::where('name', 'Caisse tournoi')->exists())->toBeTrue();
     });
 
+    // Regression: the is_active column was dropped — holder list must use active members.
+    it('lists active members as holders and excludes users without an active subscription', function (): void {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $season = makeActiveSeason();
+
+        activeMember($season, ['first_name' => 'Olga', 'last_name' => 'Activsky']);
+        User::factory()->create(['first_name' => 'Igor', 'last_name' => 'Inactif']);
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-admin.treasury.cash-register')
+            ->assertSee('Olga Activsky')
+            ->assertDontSee('Igor Inactif');
+    });
+
     it('records a manual entry', function (): void {
         $admin = User::factory()->create(['is_admin' => true]);
         $register = createCashRegister();

@@ -991,7 +991,7 @@ new class extends Component
                 ->toArray()
             : [];
 
-        return User::where('is_active', true)
+        return User::active()
             ->whereNotIn('id', $alreadyRegistered)
             ->orderBy('first_name')
             ->orderBy('last_name')

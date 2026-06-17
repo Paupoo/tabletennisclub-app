@@ -327,3 +327,33 @@ describe('saveEventPost', function (): void {
     });
 
 })->group('Tournament', 'Wizard', 'Article');
+
+// ── registerableMembersOptions (regression: is_active column was dropped) ────────
+
+describe('registerableMembersOptions', function (): void {
+    it('lists active members and excludes users without an active subscription', function (): void {
+        $admin = User::factory()->isAdmin()->create();
+        $season = makeActiveSeason();
+
+        $active = activeMember($season, [
+            'first_name' => 'Olga',
+            'last_name' => 'Activsky',
+        ]);
+
+        // No subscription at all — not active for the current season.
+        User::factory()->create([
+            'first_name' => 'Igor',
+            'last_name' => 'Inactif',
+        ]);
+
+        $tournament = wizardTournament();
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-events.tournaments.wizard', ['tournament' => $tournament])
+            ->set('step', '5')
+            ->assertSee('Olga Activsky')
+            ->assertDontSee('Igor Inactif');
+
+        expect($active->is_active)->toBeTrue();
+    });
+})->group('Tournament', 'Wizard');

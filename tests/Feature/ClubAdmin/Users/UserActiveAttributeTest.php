@@ -43,7 +43,11 @@ it('is not active when the subscription is only pending', function (): void {
 
 it('is not active when the confirmed subscription belongs to another season', function (): void {
     makeActiveSeason();
-    $otherSeason = Season::factory()->create(['is_active' => false]);
+    $otherSeason = Season::factory()->create([
+        'is_active' => false,
+        'start_at' => now()->subYear()->startOfYear(),
+        'end_at' => now()->subYear()->endOfYear(),
+    ]);
     $user = User::factory()->create();
     Subscription::factory()->for($user)->create(['season_id' => $otherSeason->id, 'status' => 'confirmed']);
 

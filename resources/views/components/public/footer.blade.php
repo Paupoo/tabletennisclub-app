@@ -25,14 +25,15 @@
             <div>
                 <h4 class="text-lg font-semibold mb-4">Informations de contact</h4>
                 <div class="space-y-2 text-gray-400">
+                    @if($club)
                     <div class="flex gap-4 items-start">
                         <p>
                             📍
                         </p>
                         <div class="flex flex-col gap-1">
-                            
+
                                 <p>
-                                    {{ $club?->building_name }}
+                                    {{ $club->building_name }}
                                 </p>
                                 <p>
                                     {{ $club->street }}
@@ -40,7 +41,7 @@
                                 <p>
                                     {{ $club->city_code }} {{ $club->city_name }}
                                 </p>
-                            
+
                         </div>
                     </div>
                     @if($club->phone_contact)
@@ -56,6 +57,7 @@
                                 href="mailto:{{ $club->email_contact }}">{{ $club->email_contact }}</a>
                         </p>
                     </div>
+                    @endif
                     @endif
                 </div>
             </div>

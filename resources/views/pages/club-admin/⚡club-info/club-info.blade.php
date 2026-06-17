@@ -33,15 +33,15 @@
         
         {{-- Contact --}}
         <x-admin.shared.form-section :separator="true" :subtitle="__('Information to facilitate people to contact us.')" :title="__('Contact Details')">
-                    <x-input icon="o-phone" :label="__('Phone Contact')" wire:model="phone_contact" />
+                    <x-input icon="o-phone" :label="__('Phone Contact (Optional)')" wire:model="phone_contact" />
                     <x-input icon="o-envelope-open" :label="__('Email Contact')" wire:model="email_contact" required/>
                     <x-input :label="__('Website URL')" prefix="https://" wire:model="website_url" />
         </x-admin.shared.form-section>
 
         {{-- Accounting --}}
         <x-admin.shared.form-section :separator="true" :subtitle="__('Banking and accounting data')" :title="__('Accounting')">
-            <x-input icon="o-finger-print" :label="__('BIC Code')" wire:model="bic" />
-            <x-input icon="o-currency-euro" :label="__('Bank Account (IBAN)')" wire:model="bank_account" />
+            <x-input icon="o-finger-print" :label="__('BIC Code')" wire:model="bic" required />
+            <x-input icon="o-currency-euro" :label="__('Bank Account (IBAN)')" wire:model="bank_account" required/>
             <x-input icon="o-identification" :label="__('Enterprise Number (Optional)')" wire:model="enterprise_number" />
         </x-admin.shared.form-section>
                 

@@ -29,7 +29,7 @@
             {{ $slot }}
         </main>
 
-        <x-public.footer />
+        <x-public.footer :club="App\Domains\Competitions\Interclub\Models\Club::own()"/>
     </div>
     @livewireScripts
 </body>

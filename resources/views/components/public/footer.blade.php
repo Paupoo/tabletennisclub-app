@@ -30,29 +30,33 @@
                             📍
                         </p>
                         <div class="flex flex-col gap-1">
-                            <a href="{{ config('app.club_osm_link') }}" target="_blank" rel="noopener noreferrer">
+                            
                                 <p>
-                                    {{ config('app.club_building_name', 'sport center') }}
+                                    {{ $club?->building_name }}
                                 </p>
                                 <p>
-                                    {{ config('app.club_street', 'some street 123') }}
+                                    {{ $club->street }}
                                 </p>
                                 <p>
-                                    {{ config('app.club_zip_code', '0000') }} {{ config('app.club_city', 'Somewhere') }}
+                                    {{ $club->city_code }} {{ $club->city_name }}
                                 </p>
-                            </a>
+                            
                         </div>
                     </div>
+                    @if($club->phone_contact)
                     <div class="flex gap-4 items-start" inert>
                         <p>📞</p>
-                        <p> {{ config('app.club_phone_number', '+32 123 12 34 56') }}</p>
+                        <p>{{ $club->phone_contact }}</p>
                     </div>
-                    <div class="flex gap-4 items-start">
+                    @endif
+                    @if($club->email_contact)
+                    <div class="flex gap-4 items-start" inert>
                         <p>✉️</p>
                         <p><a
-                                href="mailto:{{ config('app.club_email', 'nomail@nomail.com') }}">{{ config('app.club_email', 'nomail@nomail.com') }}</a>
+                                href="mailto:{{ $club->email_contact }}">{{ $club->email_contact }}</a>
                         </p>
                     </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -83,6 +87,13 @@
                     <a href="#" class="text-gray-400 underline hover:text-white transition-colors text-xs"
                         onclick="showLicense(); return false;">
                         Licence MIT
+                    </a>
+                    <span class="hidden sm:inline text-gray-600">•</span>
+                    <a href="https://github.com/Paupoo/tabletennisclub-app"
+                        target="_blank" rel="noopener noreferrer"
+                        class="flex items-center gap-1 text-gray-400 hover:text-white transition-colors text-xs">
+                        <x-icon name="o-code-bracket" class="w-4 h-4" />
+                        GitHub
                     </a>
                 </div>
             </div>
@@ -189,7 +200,8 @@
                                 Nous récupérons uniquement les adresses IP des robots qui spamment notre formulaire de contact afin de les bloquer au fur et à mesure.
                             </p>
                             <p>
-                                Le code de ce site est complètement open source et disponible ici (to do)
+                                Le code de ce site est complètement open source et disponible
+                                <a href="https://github.com/Paupoo/tabletennisclub-app" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline">ici</a>.
                             </p>
                             <p>
                                 Si vous avez la moindre question, vous pouvez simplement nous écrire via notre <a href="{{ route('home') . '#contact' }}">formulaire de contact</a>.

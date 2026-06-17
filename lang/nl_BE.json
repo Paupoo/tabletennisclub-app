@@ -1823,7 +1823,7 @@
     "Phase finale": "Eindronde",
     "Phone": "Telefoon",
     "Phone Contact": "Telefonisch contact",
-    "Phone Contact (Optional)": "Telefonisch contact (optioneel)", 
+    "Phone Contact (Optional)": "Telefonisch contact (optioneel)",
     "Phone Number": "Telefoonnummer",
     "Photo": "Foto",
     "Photo deleted": "Foto verwijderd",
@@ -3268,5 +3268,18 @@
     "Everything that happens in the admin": "Alles wat er in het beheer gebeurt",
     "System": "Systeem",
     "No activity recorded yet.": "Nog geen activiteit geregistreerd.",
-    "Item type": "Itemtype"
+    "Item type": "Itemtype",
+    "{1} Meeting archived.|[2,*] :count meetings archived.": "{1} Vergadering gearchiveerd.|[2,*] :count vergaderingen gearchiveerd.",
+    "{1} Meeting deleted.|[2,*] :count meetings deleted.": "{1} Vergadering verwijderd.|[2,*] :count vergaderingen verwijderd.",
+    "{1} Meeting restored.|[2,*] :count meetings restored.": "{1} Vergadering hersteld.|[2,*] :count vergaderingen hersteld.",
+    "This meeting cannot be archived yet": "Deze vergadering kan nog niet worden gearchiveerd",
+    "This meeting cannot be deleted — invitations have already been sent": "Deze vergadering kan niet worden verwijderd — er zijn al uitnodigingen verstuurd",
+    "Meeting archived": "Vergadering gearchiveerd",
+    "Meeting deleted": "Vergadering verwijderd",
+    "Meeting restored": "Vergadering hersteld",
+    "Show archived meetings": "Gearchiveerde vergaderingen tonen",
+    "Delete selected meetings?": "Geselecteerde vergaderingen verwijderen?",
+    "Only meetings that have not taken place and have no invitations sent will be deleted. This action is irreversible.": "Alleen vergaderingen die nog niet hebben plaatsgevonden en waarvoor geen uitnodigingen zijn verstuurd, worden verwijderd. Deze actie is onomkeerbaar.",
+    "Delete meeting": "Vergadering verwijderen",
+    "This meeting will be permanently deleted. This action is irreversible.": "Deze vergadering wordt definitief verwijderd. Deze actie is onomkeerbaar."
 }

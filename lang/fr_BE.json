@@ -1823,7 +1823,7 @@
     "Phase finale": "Phase finale",
     "Phone": "Téléphone",
     "Phone Contact": "Contact téléphonique",
-    "Phone Contact (Optional)": "Contact téléphonique (optionnel)", 
+    "Phone Contact (Optional)": "Contact téléphonique (optionnel)",
     "Phone Number": "Numéro de téléphone",
     "Photo": "Photo",
     "Photo deleted": "Photo supprimée",
@@ -3268,5 +3268,18 @@
     "Everything that happens in the admin": "Tout ce qui se passe dans l'administration",
     "System": "Système",
     "No activity recorded yet.": "Aucune activité enregistrée pour le moment.",
-    "Item type": "Type d'élément"
+    "Item type": "Type d'élément",
+    "{1} Meeting archived.|[2,*] :count meetings archived.": "{1} Réunion archivée.|[2,*] :count réunions archivées.",
+    "{1} Meeting deleted.|[2,*] :count meetings deleted.": "{1} Réunion supprimée.|[2,*] :count réunions supprimées.",
+    "{1} Meeting restored.|[2,*] :count meetings restored.": "{1} Réunion restaurée.|[2,*] :count réunions restaurées.",
+    "This meeting cannot be archived yet": "Cette réunion ne peut pas encore être archivée",
+    "This meeting cannot be deleted — invitations have already been sent": "Cette réunion ne peut pas être supprimée — des invitations ont déjà été envoyées",
+    "Meeting archived": "Réunion archivée",
+    "Meeting deleted": "Réunion supprimée",
+    "Meeting restored": "Réunion restaurée",
+    "Show archived meetings": "Afficher les réunions archivées",
+    "Delete selected meetings?": "Supprimer les réunions sélectionnées ?",
+    "Only meetings that have not taken place and have no invitations sent will be deleted. This action is irreversible.": "Seules les réunions qui n'ont pas eu lieu et sans invitation envoyée seront supprimées. Cette action est irréversible.",
+    "Delete meeting": "Supprimer la réunion",
+    "This meeting will be permanently deleted. This action is irreversible.": "Cette réunion sera définitivement supprimée. Cette action est irréversible."
 }

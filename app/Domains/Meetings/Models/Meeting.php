@@ -7,6 +7,7 @@ namespace App\Domains\Meetings\Models;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\ClubPosts\Models\EventPost;
+use App\Domains\Shared\Enums\EventPostStatusEnum;
 use App\Domains\Shared\Enums\MeetingFormatEnum;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\MeetingTypeEnum;
@@ -44,6 +45,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $cancellation_note
  * @property string|null $postponed_note
  * @property Carbon|null $postponed_to
+ * @property Carbon|null $archived_at
  * @property int $created_by
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -108,6 +110,7 @@ class Meeting extends Model
         'rsvp_deadline' => 'date',
         'has_meal' => 'boolean',
         'postponed_to' => 'datetime',
+        'archived_at' => 'datetime',
     ];
 
     protected $fillable = [
@@ -128,6 +131,7 @@ class Meeting extends Model
         'cancellation_note',
         'postponed_note',
         'postponed_to',
+        'archived_at',
         'created_by',
     ];
 
@@ -141,6 +145,16 @@ class Meeting extends Model
         return $this->hasMany(MeetingAgendaItem::class)->orderBy('sort_order');
     }
 
+    /** Archive the meeting and hide any published web event post. */
+    public function archive(): void
+    {
+        $this->update(['archived_at' => now()]);
+
+        $this->eventPost()
+            ->where('status', EventPostStatusEnum::PUBLISHED)
+            ->update(['status' => EventPostStatusEnum::ARCHIVED]);
+    }
+
     public function attendedCount(): int
     {
         return $this->users()
@@ -151,6 +165,26 @@ class Meeting extends Model
     public function attendedUsers(): BelongsToMany
     {
         return $this->users()->wherePivot('status', MeetingUserStatusEnum::ATTENDED->value);
+    }
+
+    /** Archivable once it can no longer take place: completed, cancelled or postponed. */
+    public function canBeArchived(): bool
+    {
+        return ! $this->isArchived() && in_array($this->status, [
+            MeetingStatusEnum::COMPLETED,
+            MeetingStatusEnum::CANCELLED,
+            MeetingStatusEnum::POSTPONED,
+        ], true);
+    }
+
+    /** Deletable only while it has not taken place and nobody has been notified yet. */
+    public function canBeDeleted(): bool
+    {
+        if ($this->status === MeetingStatusEnum::COMPLETED) {
+            return false;
+        }
+
+        return ! $this->users()->whereNotNull('invitation_sent_at')->exists();
     }
 
     public function confirmedCount(): int
@@ -187,6 +221,11 @@ class Meeting extends Model
     public function getMealPriceAttribute(): ?float
     {
         return $this->meal_price_cents !== null ? $this->meal_price_cents / 100 : null;
+    }
+
+    public function isArchived(): bool
+    {
+        return $this->archived_at !== null;
     }
 
     public function isInPollPhase(): bool
@@ -242,6 +281,16 @@ class Meeting extends Model
         return min(100.0, round($this->confirmedCount() / $this->quorum * 100, 1));
     }
 
+    /** Restore the meeting to the active list and republish a previously archived web post. */
+    public function unarchive(): void
+    {
+        $this->update(['archived_at' => null]);
+
+        $this->eventPost()
+            ->where('status', EventPostStatusEnum::ARCHIVED)
+            ->update(['status' => EventPostStatusEnum::PUBLISHED]);
+    }
+
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class)
@@ -249,5 +298,13 @@ class Meeting extends Model
             ->withPivot(['id', 'status', 'invitation_sent_at', 'response_at', 'meal_reserved', 'meal_responded_at'])
             ->as('registration')
             ->withTimestamps();
+    }
+
+    protected static function booted(): void
+    {
+        // EventPost is polymorphic (no FK cascade) — drop it explicitly on delete.
+        static::deleting(function (Meeting $meeting): void {
+            $meeting->eventPost()->delete();
+        });
     }
 }

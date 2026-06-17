@@ -27,11 +27,16 @@ new class extends Component
 
     public bool $confirmBulkCancelModal = false;
 
+    public bool $confirmBulkDeleteModal = false;
+
     #[Url]
     public string $format = '';
 
     #[Url]
     public string $search = '';
+
+    #[Url]
+    public bool $showArchived = false;
 
     /** @var array{column: string, direction: string} */
     public array $sortBy = ['column' => 'scheduled_at', 'direction' => 'desc'];
@@ -42,6 +47,20 @@ new class extends Component
     #[Url]
     public string $type = '';
 
+    public function bulkArchive(): void
+    {
+        abort_unless($this->canManage, 403);
+
+        $meetings = Meeting::whereIn('id', $this->selected)->get()
+            ->filter(fn (Meeting $meeting): bool => $meeting->canBeArchived());
+
+        $meetings->each(fn (Meeting $meeting) => $meeting->archive());
+
+        $count = $meetings->count();
+        $this->clearSelection();
+        $this->success(trans_choice('{1} Meeting archived.|[2,*] :count meetings archived.', $count, ['count' => $count]));
+    }
+
     public function bulkCancel(): void
     {
         $count = count($this->selected);
@@ -49,6 +68,35 @@ new class extends Component
         $this->confirmBulkCancelModal = false;
         $this->clearSelection();
         $this->warning(trans_choice('{1} Meeting cancelled.|[2,*] :count meetings cancelled.', $count, ['count' => $count]));
+    }
+
+    public function bulkDelete(): void
+    {
+        abort_unless($this->canManage, 403);
+
+        $meetings = Meeting::whereIn('id', $this->selected)->get()
+            ->filter(fn (Meeting $meeting): bool => $meeting->canBeDeleted());
+
+        $count = $meetings->count();
+        $meetings->each(fn (Meeting $meeting) => $meeting->delete());
+
+        $this->confirmBulkDeleteModal = false;
+        $this->clearSelection();
+        $this->warning(trans_choice('{1} Meeting deleted.|[2,*] :count meetings deleted.', $count, ['count' => $count]));
+    }
+
+    public function bulkUnarchive(): void
+    {
+        abort_unless($this->canManage, 403);
+
+        $meetings = Meeting::whereIn('id', $this->selected)->get()
+            ->filter(fn (Meeting $meeting): bool => $meeting->isArchived());
+
+        $meetings->each(fn (Meeting $meeting) => $meeting->unarchive());
+
+        $count = $meetings->count();
+        $this->clearSelection();
+        $this->success(trans_choice('{1} Meeting restored.|[2,*] :count meetings restored.', $count, ['count' => $count]));
     }
 
     // ── Computed ──────────────────────────────────────────────────────────────
@@ -74,6 +122,11 @@ new class extends Component
     public function confirmBulkCancel(): void
     {
         $this->confirmBulkCancelModal = true;
+    }
+
+    public function confirmBulkDelete(): void
+    {
+        $this->confirmBulkDeleteModal = true;
     }
 
     /** @return array<int, array{key: string, label: string}> */
@@ -127,6 +180,11 @@ new class extends Component
             ->when($this->type, fn ($q) => $q->where('type', $this->type))
             ->when($this->status, fn ($q) => $q->where('status', $this->status))
             ->when($this->format, fn ($q) => $q->where('format', $this->format))
+            ->when(
+                $this->showArchived,
+                fn ($q) => $q->whereNotNull('archived_at'),
+                fn ($q) => $q->whereNull('archived_at'),
+            )
             ->orderBy($this->sortBy['column'] ?? 'scheduled_at', $this->sortBy['direction'] ?? 'desc')
             ->paginate(20);
     }
@@ -150,6 +208,12 @@ new class extends Component
 
     public function updatedSearch(): void
     {
+        $this->resetPage();
+    }
+
+    public function updatedShowArchived(): void
+    {
+        $this->clearSelection();
         $this->resetPage();
     }
 

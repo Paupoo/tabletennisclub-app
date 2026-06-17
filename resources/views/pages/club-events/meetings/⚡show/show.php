@@ -58,6 +58,8 @@ new class extends Component
     // Modals
     public bool $showCancelModal = false;
 
+    public bool $showDeleteModal = false;
+
     public bool $showInviteModal = false;
 
     public bool $showPollModal = false;
@@ -88,6 +90,24 @@ new class extends Component
     public function allMembers(): Illuminate\Database\Eloquent\Collection
     {
         return User::active()->orderBy('last_name')->get();
+    }
+
+    public function archiveMeeting(): void
+    {
+        abort_unless($this->canManage, 403);
+
+        $meeting = Meeting::findOrFail($this->meetingId);
+
+        if (! $meeting->canBeArchived()) {
+            $this->toast(type: 'error', title: __('This meeting cannot be archived yet'));
+
+            return;
+        }
+
+        $meeting->archive();
+
+        $this->toast(type: 'success', title: __('Meeting archived'));
+        $this->redirectRoute('admin.meetings.index', navigate: true);
     }
 
     public function cancelMeeting(): void
@@ -124,6 +144,24 @@ new class extends Component
     {
         return User::where(fn ($q) => $q->where('is_admin', true)->orWhere('is_committee_member', true))
             ->orderBy('last_name')->get();
+    }
+
+    public function deleteMeeting(): void
+    {
+        abort_unless($this->canManage, 403);
+
+        $meeting = Meeting::findOrFail($this->meetingId);
+
+        if (! $meeting->canBeDeleted()) {
+            $this->toast(type: 'error', title: __('This meeting cannot be deleted — invitations have already been sent'));
+
+            return;
+        }
+
+        $meeting->delete();
+
+        $this->toast(type: 'warning', title: __('Meeting deleted'));
+        $this->redirectRoute('admin.meetings.index', navigate: true);
     }
 
     public function markAbsent(int $userId): void
@@ -377,6 +415,16 @@ new class extends Component
         $minutes->update([$field => now()]);
 
         $this->toast(type: 'success', title: __('Minutes sent to :n members', ['n' => $recipients->count()]));
+        unset($this->meeting);
+    }
+
+    public function unarchiveMeeting(): void
+    {
+        abort_unless($this->canManage, 403);
+
+        Meeting::findOrFail($this->meetingId)->unarchive();
+
+        $this->toast(type: 'success', title: __('Meeting restored'));
         unset($this->meeting);
     }
 

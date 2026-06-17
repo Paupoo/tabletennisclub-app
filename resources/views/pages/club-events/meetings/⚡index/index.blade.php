@@ -266,8 +266,17 @@
             :selecting-all-results="$selectingAllResults"
             :select-all="$selectAll">
             <x-slot:actions>
-                <x-button class="btn-ghost btn-sm text-warning" icon="o-x-circle" :label="__('Cancel')"
-                    wire:click="confirmBulkCancel" />
+                @if ($showArchived)
+                    <x-button class="btn-ghost btn-sm text-success" icon="o-arrow-uturn-left"
+                        :label="__('Restore')" wire:click="bulkUnarchive" />
+                @else
+                    <x-button class="btn-ghost btn-sm text-warning" icon="o-x-circle" :label="__('Cancel')"
+                        wire:click="confirmBulkCancel" />
+                    <x-button class="btn-ghost btn-sm" icon="o-archive-box"
+                        :label="__('Archive')" wire:click="bulkArchive" />
+                    <x-button class="btn-ghost btn-sm text-error" icon="o-trash"
+                        :label="__('Delete')" wire:click="confirmBulkDelete" />
+                @endif
             </x-slot:actions>
         </x-admin.shared.selection-pill>
     @endif
@@ -290,6 +299,9 @@
                 <x-select :options="$formatOptions" :placeholder="__('All formats')"
                     wire:model.live="format" class="w-full" />
             </div>
+            <div class="border-t border-base-200 pt-4">
+                <x-toggle wire:model.live="showArchived" :label="__('Show archived meetings')" right />
+            </div>
         </x-slot:filters>
     </x-admin.shared.filter-drawer>
 
@@ -299,6 +311,14 @@
         <p>
             {{ trans_choice('selectedCount', count($selected), ['count' => count($selected)]) }}
             {{ __('will be marked as cancelled.') }}
+        </p>
+    </x-confirm-modal>
+
+    {{-- ── Modal suppression bulk ─────────────────────────────────────── --}}
+    <x-confirm-modal model="confirmBulkDeleteModal" :title="__('Delete selected meetings?')"
+        :confirmLabel="__('Confirm deletion')" confirmAction="bulkDelete">
+        <p>
+            {{ __('Only meetings that have not taken place and have no invitations sent will be deleted. This action is irreversible.') }}
         </p>
     </x-confirm-modal>
 

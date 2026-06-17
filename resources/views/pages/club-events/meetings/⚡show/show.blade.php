@@ -34,6 +34,20 @@
                 <x-button :label="__('Edit')" icon="o-pencil-square"
                     class="btn-primary btn-sm"
                     link="{{ route('admin.meetings.edit', $meeting) }}" />
+                @if ($meeting->isArchived())
+                    <x-button :label="__('Restore')" icon="o-arrow-uturn-left"
+                        class="btn-outline btn-sm"
+                        wire:click="unarchiveMeeting" spinner="unarchiveMeeting" />
+                @elseif ($meeting->canBeArchived())
+                    <x-button :label="__('Archive')" icon="o-archive-box"
+                        class="btn-outline btn-sm"
+                        wire:click="archiveMeeting" spinner="archiveMeeting" />
+                @endif
+                @if ($meeting->canBeDeleted())
+                    <x-button :label="__('Delete')" icon="o-trash"
+                        class="btn-error btn-outline btn-sm"
+                        wire:click="$set('showDeleteModal', true)" />
+                @endif
             @endif
         </x-slot:actions>
     </x-header>
@@ -577,4 +591,10 @@
                 class="btn-warning" wire:click="postponeMeeting" spinner="postponeMeeting" />
         </x-slot:actions>
     </x-modal>
+
+    {{-- ── Delete modal ──────────────────────────────────────────────── --}}
+    <x-confirm-modal model="showDeleteModal" :title="__('Delete meeting')"
+        :confirmLabel="__('Confirm deletion')" confirmAction="deleteMeeting">
+        <p>{{ __('This meeting will be permanently deleted. This action is irreversible.') }}</p>
+    </x-confirm-modal>
 </div>

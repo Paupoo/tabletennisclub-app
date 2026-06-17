@@ -145,4 +145,31 @@ class Club extends Model
     {
         return $this->hasMany(User::class);
     }
+
+    /**
+     * Guarantee the "only one own club" invariant in the application layer:
+     * whenever a club is set as the own club, demote any other club that still
+     * holds the flag. Replaces the DB-level partial unique index, which is not
+     * portable across SQLite (tests) and MySQL/MariaDB (production).
+     */
+    protected static function booted(): void
+    {
+        static::saved(function (self $club): void {
+            if (! $club->is_own_club) {
+                return;
+            }
+
+            // Act when the club is newly created as own, or its flag just flipped on.
+            // wasChanged() is not populated on inserts, hence the wasRecentlyCreated check.
+            if (! $club->wasRecentlyCreated && ! $club->wasChanged('is_own_club')) {
+                return;
+            }
+
+            self::whereKeyNot($club->getKey())
+                ->where('is_own_club', true)
+                ->update(['is_own_club' => false]);
+
+            self::forgetOwnClub();
+        });
+    }
 }

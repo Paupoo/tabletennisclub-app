@@ -98,6 +98,7 @@
             @scope('cell_changes', $activity)
             @php($changes = $activity->attribute_changes)
             @php($event = $activity->event ?? $activity->description)
+            @php($formatValue = fn ($value) => \Illuminate\Support\Str::limit(is_array($value) ? json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : (string) $value, 40))
             @if ($changes && isset($changes['attributes']))
                 @if ($event === 'created')
                 {{-- Création : repliée par défaut (sinon mur de champs) --}}
@@ -112,7 +113,7 @@
                         @foreach ($changes['attributes'] as $field => $newValue)
                         <div>
                             <span class="font-semibold opacity-70">{{ $field }}:</span>
-                            <span class="text-success/80">{{ \Illuminate\Support\Str::limit((string) $newValue, 40) ?: '—' }}</span>
+                            <span class="text-success/80">{{ $formatValue($newValue) ?: '—' }}</span>
                         </div>
                         @endforeach
                     </div>
@@ -124,10 +125,10 @@
                     <div class="text-xs">
                         <span class="font-semibold opacity-70">{{ $field }}:</span>
                         @if (isset($changes['old'][$field]) && $changes['old'][$field] !== null && $changes['old'][$field] !== '')
-                        <span class="text-error/70 line-through">{{ \Illuminate\Support\Str::limit((string) $changes['old'][$field], 40) }}</span>
+                        <span class="text-error/70 line-through">{{ $formatValue($changes['old'][$field]) }}</span>
                         <span class="opacity-40">→</span>
                         @endif
-                        <span class="text-success/80">{{ \Illuminate\Support\Str::limit((string) $newValue, 40) ?: '—' }}</span>
+                        <span class="text-success/80">{{ $formatValue($newValue) ?: '—' }}</span>
                     </div>
                     @endforeach
                 </div>

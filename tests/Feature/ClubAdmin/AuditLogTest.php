@@ -166,6 +166,21 @@ it('lists logged activity and filters it by item type', function () {
         ->assertDontSee('Marcelle');
 });
 
+it('renders the audit log when a logged activity has an array-cast attribute', function () {
+    $admin = User::factory()->create(['is_admin' => true]);
+
+    // Spam casts `inputs` to an array, so the created activity stores an array
+    // value the audit table must render without an "Array to string" error.
+    Spam::factory()->create([
+        'inputs' => ['email' => 'spammer@example.com', 'message' => 'buy now'],
+    ]);
+
+    Livewire::actingAs($admin)
+        ->test('pages::club-admin.audit.index')
+        ->assertOk()
+        ->assertSee('spammer@example.com');
+});
+
 it('grants audit log access to admins and management committee roles', function (array $attributes, bool $expected) {
     $user = User::factory()->create($attributes);
 

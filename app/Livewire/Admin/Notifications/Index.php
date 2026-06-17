@@ -6,21 +6,25 @@ namespace App\Livewire\Admin\Notifications;
 
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
-use Illuminate\Pagination\Paginator;
+use Illuminate\View\View;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 
 class Index extends Component
 {
-    use WithPagination, HasBreadcrumbs;
+    use HasBreadcrumbs, WithPagination;
 
     #[Url]
     public string $filter = 'all';
 
-    public function updated(): void
+    public function markAllAsRead(): void
     {
-        $this->resetPage();
+        auth()->user()->notifications()
+            ->whereNull('read_at')
+            ->update(['read_at' => now()]);
+
+        $this->dispatch('notifications-updated');
     }
 
     public function markAsRead(string $id): void
@@ -37,23 +41,7 @@ class Index extends Component
         }
     }
 
-    public function markAllAsRead(): void
-    {
-        auth()->user()->notifications()
-            ->whereNull('read_at')
-            ->update(['read_at' => now()]);
-
-        $this->dispatch('notifications-updated');
-    }
-
-    protected function breadcrumbChain(): Breadcrumb
-    {
-        return Breadcrumb::make()
-            ->home()
-            ->current(__('Notifications'));
-    }
-
-    public function render()
+    public function render(): View
     {
         $query = auth()->user()->notifications();
 
@@ -74,5 +62,17 @@ class Index extends Component
             'unreadCount' => $unreadCount,
             'breadcrumbs' => $this->getBreadcrumbs(),
         ])->layout('layouts.app');
+    }
+
+    public function updated(): void
+    {
+        $this->resetPage();
+    }
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__('Notifications'));
     }
 }

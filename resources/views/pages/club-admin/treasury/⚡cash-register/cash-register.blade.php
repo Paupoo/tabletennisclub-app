@@ -40,6 +40,24 @@
     @endif
 
     @if($this->register)
+    {{-- Holder info --}}
+    <div class="flex items-center gap-3 mb-4 px-1">
+        <x-icon name="o-user-circle" class="w-5 h-5 text-base-content/40 shrink-0" />
+        <span class="text-sm text-base-content/60">{{ __('Holder') }}:</span>
+        @if($this->register->heldBy)
+            <span class="text-sm font-medium">{{ $this->register->heldBy->first_name }} {{ $this->register->heldBy->last_name }}</span>
+        @else
+            <span class="text-sm italic text-base-content/40">{{ __('None') }}</span>
+        @endif
+        @if(Auth::user()->is_admin || Auth::user()->committee_role === \App\Domains\Shared\Enums\CommitteeRolesEnum::TREASURER)
+            <x-button
+                :label="__('Change')"
+                icon="o-pencil"
+                class="btn-ghost btn-xs ml-1"
+                wire:click="openChangeHolder" />
+        @endif
+    </div>
+
     {{-- Balance card --}}
     <div class="grid grid-cols-3 gap-4 mb-6">
         <x-card @class([
@@ -148,10 +166,34 @@
 
     {{-- Modal: Create register --}}
     <x-modal wire:model="createRegisterModal" :title="__('Create Cash Register')" separator>
-        <x-input :label="__('Register name')" wire:model="newRegisterName" autofocus />
+        <div class="space-y-4">
+            <x-input :label="__('Register name')" wire:model="newRegisterName" autofocus />
+            <x-select
+                :label="__('Holder')"
+                :options="$users"
+                option-label="name"
+                :placeholder="__('Select a holder...')"
+                wire:model="newRegisterHolderUserId"
+                clearable />
+        </div>
         <x-slot:actions>
             <x-button :label="__('Cancel')" @click="$wire.createRegisterModal = false" class="btn-ghost" />
             <x-button :label="__('Create')" icon="o-check" class="btn-primary" wire:click="createRegister" spinner />
+        </x-slot:actions>
+    </x-modal>
+
+    {{-- Modal: Change holder --}}
+    <x-modal wire:model="changeHolderModal" :title="__('Change holder')" separator>
+        <x-select
+            :label="__('Holder')"
+            :options="$users"
+            option-label="name"
+            :placeholder="__('Select a holder...')"
+            wire:model="newHolderUserId"
+            clearable />
+        <x-slot:actions>
+            <x-button :label="__('Cancel')" @click="$wire.changeHolderModal = false" class="btn-ghost" />
+            <x-button :label="__('Save')" icon="o-check" class="btn-primary" wire:click="confirmChangeHolder" spinner />
         </x-slot:actions>
     </x-modal>
 

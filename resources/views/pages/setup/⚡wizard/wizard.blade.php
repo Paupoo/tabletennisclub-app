@@ -5,12 +5,11 @@
         $wizardSteps = [
             1 => ['label' => __('Welcome'),       'icon' => 'o-hand-raised'],
             2 => ['label' => __('Administrator'),  'icon' => 'o-user-circle'],
-            3 => ['label' => __('Licence'),        'icon' => 'o-identification'],
-            4 => ['label' => __('Club'),           'icon' => 'o-building-office'],
-            5 => ['label' => __('Season'),         'icon' => 'o-calendar'],
-            6 => ['label' => __('Rooms'),          'icon' => 'o-map-pin'],
-            7 => ['label' => __('Tables'),         'icon' => 'o-table-cells'],
-            8 => ['label' => __('Done'),           'icon' => 'o-check-badge'],
+            3 => ['label' => __('Club'),           'icon' => 'o-building-office'],
+            4 => ['label' => __('Season'),         'icon' => 'o-calendar'],
+            5 => ['label' => __('Rooms'),          'icon' => 'o-map-pin'],
+            6 => ['label' => __('Tables'),         'icon' => 'o-table-cells'],
+            7 => ['label' => __('Done'),           'icon' => 'o-check-badge'],
         ];
     @endphp
 
@@ -39,7 +38,7 @@
                     <x-icon name="o-check-circle" class="w-3.5 h-3.5 text-success shrink-0" />
                 @endif
             </button>
-            @if ($num < 8)
+            @if ($num < 7)
                 <x-icon name="o-chevron-right" class="w-4 h-4 text-base-content/15 shrink-0 mx-0.5" />
             @endif
         @endforeach
@@ -63,9 +62,9 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8 text-left max-w-lg mx-auto">
                 @foreach ([
                     ['icon' => 'o-user-circle',     'label' => __('Administrator account')],
-                    ['icon' => 'o-identification',  'label' => __('Club licence')],
                     ['icon' => 'o-building-office', 'label' => __('Club information')],
                     ['icon' => 'o-calendar',        'label' => __('First season')],
+                    ['icon' => 'o-map-pin',         'label' => __('Training rooms')],
                 ] as $item)
                     <div class="flex items-center gap-2.5 p-3 bg-base-200/50 rounded-lg">
                         <x-icon name="{{ $item['icon'] }}" class="w-5 h-5 text-primary shrink-0" />
@@ -86,9 +85,10 @@
     {{-- STEP 2 — Administrator account --}}
     @if ($step == '2')
         <div class="animate-in fade-in duration-500">
+
             <h2 class="text-lg font-semibold text-base-content mb-1">{{ __('Administrator account') }}</h2>
             @if ($submittedStep >= 2)
-                <x-alert :description="__('This step has already been completed and can no longer be modified.')" icon="o-lock-closed" class="alert-warning alert-soft mb-4" />
+                <x-alert :title="__('This step has already been completed and can no longer be modified.')" icon="o-lock-closed" class="alert-warning alert-soft mb-4" />
             @else
             <p class="text-sm text-base-content/60 mb-6">{{ __('This account will have access to all features of the application.') }}</p>
             @endif
@@ -142,54 +142,12 @@
         </div>
     @endif
 
-    {{-- STEP 3 — Club licence --}}
+    {{-- STEP 3 — Club (licence + info, merged) --}}
     @if ($step == '3')
         <div class="animate-in fade-in duration-500">
-            <h2 class="text-lg font-semibold text-base-content mb-1">{{ __('Club federal licence') }}</h2>
-            @if ($submittedStep >= 3)
-                <x-alert :description="__('This step has already been completed and can no longer be modified.')" icon="o-lock-closed" class="alert-warning alert-soft mb-4" />
-            @else
-            <p class="text-sm text-base-content/60 mb-6">{{ __('This affiliation number identifies your club with the federation and throughout the application.') }}</p>
-            @endif
-
-            <div class="max-w-xs">
-                <x-input
-                    :label="__('Licence')"
-                    wire:model="licence"
-                    pattern="[A-Z]{3}[0-9]{3}"
-                    placeholder="BBW214"
-                    :hint="__('E.g. BBW214, HEW058...')"
-                    required
-                />
-            </div>
-
-            <x-alert
-                :title="__('Information')"
-                :description="__('This value will be saved to your system configuration. It can only be changed by accessing the .env file directly.')"
-                icon="o-information-circle"
-                class="alert-info alert-soft mt-4"
-            />
-
-            @if ($submittedStep < 3)
-            <div class="flex justify-end mt-6">
-                <x-button
-                    :label="__('Next')"
-                    icon-right="o-arrow-right"
-                    class="btn-primary"
-                    wire:click="completeStep3"
-                    spinner="completeStep3"
-                />
-            </div>
-            @endif
-        </div>
-    @endif
-
-    {{-- STEP 4 — Club information --}}
-    @if ($step == '4')
-        <div class="animate-in fade-in duration-500">
             <h2 class="text-lg font-semibold text-base-content mb-1">{{ __('Club information') }}</h2>
-            @if ($submittedStep >= 4)
-                <x-alert :description="__('This step has already been completed and can no longer be modified.')" icon="o-lock-closed" class="alert-warning alert-soft mb-4" />
+            @if ($submittedStep >= 3)
+                <x-alert :title="__('This step has already been completed and can no longer be modified.')" icon="o-lock-closed" class="alert-warning alert-soft mb-4" />
             @else
             <p class="text-sm text-base-content/60 mb-6">{{ __('This information will be displayed on the public site and used in official communications.') }}</p>
             @endif
@@ -207,14 +165,27 @@
                             required
                         />
                         <x-input
-                            :label="__('IBAN account number')"
-                            wire:model="clubBankAccount"
-                            placeholder="BE00 0000 0000 0000"
+                            :label="__('Licence')"
+                            wire:model="licence"
+                            pattern="[A-Z]{3}[0-9]{3}"
+                            placeholder="BBW214"
+                            :hint="__('E.g. BBW214, HEW058...')"
+                            required
                         />
                         <x-input
                             :label="__('Enterprise number')"
                             wire:model="clubEnterpriseNumber"
                             placeholder="0000.000.000"
+                        />
+                        <x-input
+                            :label="__('BIC / SWIFT code')"
+                            wire:model="clubBic"
+                            placeholder="GEBABEBB"
+                        />
+                        <x-input
+                            :label="__('IBAN account number')"
+                            wire:model="clubBankAccount"
+                            placeholder="BE00 0000 0000 0000"
                         />
                     </div>
                 </div>
@@ -260,6 +231,7 @@
                             wire:model="clubEmailContact"
                             type="email"
                             placeholder="contact@myclub.be"
+                            required
                         />
                         <x-input
                             :label="__('Phone')"
@@ -276,26 +248,26 @@
                 </div>
             </div>
 
-            @if ($submittedStep < 4)
+            @if ($submittedStep < 3)
             <div class="flex justify-end mt-6">
                 <x-button
                     :label="__('Next')"
                     icon-right="o-arrow-right"
                     class="btn-primary"
-                    wire:click="completeStep4"
-                    spinner="completeStep4"
+                    wire:click="completeStep3"
+                    spinner="completeStep3"
                 />
             </div>
             @endif
         </div>
     @endif
 
-    {{-- STEP 5 — Season --}}
-    @if ($step == '5')
+    {{-- STEP 4 — Season --}}
+    @if ($step == '4')
         <div class="animate-in fade-in duration-500">
             <h2 class="text-lg font-semibold text-base-content mb-1">{{ __('First season') }}</h2>
-            @if ($submittedStep >= 5)
-                <x-alert :description="__('This step has already been completed and can no longer be modified.')" icon="o-lock-closed" class="alert-warning alert-soft mb-4" />
+            @if ($submittedStep >= 4)
+                <x-alert :title="__('This step has already been completed and can no longer be modified.')" icon="o-lock-closed" class="alert-warning alert-soft mb-4" />
             @else
             <p class="text-sm text-base-content/60 mb-6">{{ __('The season is the reference period for memberships, training sessions and interclub matches. It will be marked as the active season.') }}</p>
             @endif
@@ -322,28 +294,28 @@
                 />
             </div>
 
-            @if ($submittedStep < 5)
+            @if ($submittedStep < 4)
             <div class="flex justify-end mt-6">
                 <x-button
                     :label="__('Create season')"
                     icon-right="o-arrow-right"
                     class="btn-primary"
-                    wire:click="completeStep5"
-                    spinner="completeStep5"
+                    wire:click="completeStep4"
+                    spinner="completeStep4"
                 />
             </div>
             @endif
         </div>
     @endif
 
-    {{-- STEP 6 — Rooms --}}
-    @if ($step == '6')
+    {{-- STEP 5 — Rooms --}}
+    @if ($step == '5')
         <div class="animate-in fade-in duration-500">
             <div class="flex items-start justify-between mb-1">
                 <div>
                     <h2 class="text-lg font-semibold text-base-content">{{ __('Training rooms') }}</h2>
-                    @if ($submittedStep >= 6)
-                        <x-alert :description="__('This step has already been completed and can no longer be modified.')" icon="o-lock-closed" class="alert-warning alert-soft mt-2" />
+                    @if ($submittedStep >= 5)
+                        <x-alert :title="__('This step has already been completed and can no longer be modified.')" icon="o-lock-closed" class="alert-warning alert-soft mt-2" />
                     @else
                     <p class="text-sm text-base-content/60 mt-0.5">{{ __('Add the rooms where your training sessions and interclub matches take place.') }}</p>
                     @endif
@@ -376,7 +348,7 @@
             @endif
 
             {{-- Add room form --}}
-            @if ($submittedStep < 6 && $showRoomForm)
+            @if ($submittedStep < 5 && $showRoomForm)
                 <div class="border border-base-300 rounded-xl p-4 mt-2">
                     <p class="text-sm font-semibold text-base-content mb-4">{{ __('New room') }}</p>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -446,7 +418,7 @@
                         />
                     </div>
                 </div>
-            @elseif ($submittedStep < 6)
+            @elseif ($submittedStep < 5)
                 <x-button
                     :label="__('+ Add a room')"
                     class="btn-ghost btn-sm border border-dashed border-base-300 w-full mt-2"
@@ -454,33 +426,33 @@
                 />
             @endif
 
-            @if ($submittedStep < 6)
+            @if ($submittedStep < 5)
             <div class="flex items-center justify-between mt-6">
                 <x-button
                     :label="__('Skip this step')"
                     class="btn-ghost btn-sm"
-                    wire:click="skipStep6"
+                    wire:click="skipStep5"
                 />
                 <x-button
                     :label="__('Next')"
                     icon-right="o-arrow-right"
                     class="btn-primary"
-                    wire:click="completeStep6"
-                    spinner="completeStep6"
+                    wire:click="completeStep5"
+                    spinner="completeStep5"
                 />
             </div>
             @endif
         </div>
     @endif
 
-    {{-- STEP 7 — Tables --}}
-    @if ($step == '7')
+    {{-- STEP 6 — Tables --}}
+    @if ($step == '6')
         <div class="animate-in fade-in duration-500">
             <div class="flex items-start justify-between mb-1">
                 <div>
                     <h2 class="text-lg font-semibold text-base-content">{{ __('Ping-pong tables') }}</h2>
-                    @if ($submittedStep >= 7)
-                        <x-alert :description="__('This step has already been completed and can no longer be modified.')" icon="o-lock-closed" class="alert-warning alert-soft mt-2" />
+                    @if ($submittedStep >= 6)
+                        <x-alert :title="__('This step has already been completed and can no longer be modified.')" icon="o-lock-closed" class="alert-warning alert-soft mt-2" />
                     @else
                     <p class="text-sm text-base-content/60 mt-0.5">{{ __('Add the tables available in each room.') }}</p>
                     @endif
@@ -519,7 +491,7 @@
                                 </div>
                             @endforeach
 
-                            @if ($submittedStep < 7 && $showTableForm && $activeRoomIndex === $i)
+                            @if ($submittedStep < 6 && $showTableForm && $activeRoomIndex === $i)
                                 <div class="border border-base-300 rounded-lg p-3 mt-2">
                                     <div class="grid grid-cols-2 gap-3">
                                         <x-input
@@ -554,7 +526,7 @@
                                         />
                                     </div>
                                 </div>
-                            @elseif ($submittedStep < 7)
+                            @elseif ($submittedStep < 6)
                                 <button
                                     class="w-full text-center text-xs text-base-content/40 hover:text-base-content/60 py-1.5 border border-dashed border-base-300 rounded-lg transition-colors"
                                     wire:click="openTableForm({{ $i }})"
@@ -567,27 +539,27 @@
                 @endforeach
             </div>
 
-            @if ($submittedStep < 7)
+            @if ($submittedStep < 6)
             <div class="flex items-center justify-between mt-6">
                 <x-button
                     :label="__('Skip this step')"
                     class="btn-ghost btn-sm"
-                    wire:click="skipStep7"
+                    wire:click="skipStep6"
                 />
                 <x-button
                     :label="__('Next')"
                     icon-right="o-arrow-right"
                     class="btn-primary"
-                    wire:click="completeStep7"
-                    spinner="completeStep7"
+                    wire:click="completeStep6"
+                    spinner="completeStep6"
                 />
             </div>
             @endif
         </div>
     @endif
 
-    {{-- STEP 8 — Done --}}
-    @if ($step == '8')
+    {{-- STEP 7 — Done --}}
+    @if ($step == '7')
         <div class="animate-in fade-in duration-500 text-center py-4">
             <div class="w-16 h-16 bg-success/15 rounded-full flex items-center justify-center mx-auto mb-4">
                 <x-icon name="o-check-badge" class="w-8 h-8 text-success" />

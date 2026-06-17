@@ -7,6 +7,8 @@ use App\Domains\ClubPosts\Models\EventPost;
 use App\Domains\Shared\Enums\ClubEventTypeEnum;
 use App\Domains\Shared\Enums\EventPostStatusEnum;
 use App\Domains\Trainings\Models\TrainingPack;
+use Carbon\Carbon;
+use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -23,22 +25,37 @@ function eventPostPack(array $overrides = []): TrainingPack
     ], $overrides));
 }
 
-function mountTrainings(User $admin)
+function mountEventPostButton(User $admin, TrainingPack $pack): Testable
 {
+    $startTime = $pack->start_time ? Carbon::parse($pack->start_time)->format('H:i:s') : null;
+    $endTime = ($startTime && $pack->duration_minutes)
+        ? Carbon::parse($pack->start_time)->addMinutes($pack->duration_minutes)->format('H:i:s')
+        : null;
+
     return Livewire::actingAs($admin)
-        ->test('pages::club-events.trainings.index');
+        ->test('admin.shared.event-post-button', [
+            'modelClass' => TrainingPack::class,
+            'modelId' => $pack->id,
+            'eventType' => 'TRAINING',
+            'icon' => '🎯',
+            'eventDate' => $pack->pack_start_date?->toDateString(),
+            'startTime' => $startTime,
+            'endTime' => $endTime,
+            'price' => (string) $pack->price,
+            'maxParticipants' => $pack->max_participants,
+            'defaultTitle' => $pack->name,
+            'canPublish' => true,
+        ]);
 }
 
-// ── openEventPost — chargement du formulaire ──────────────────────────────────
+// ── mount — form initialisation ───────────────────────────────────────────────
 
-describe('openEventPost', function (): void {
-    it('opens the modal and pre-fills title from pack name', function (): void {
+describe('EventPostButton mount', function (): void {
+    it('pre-fills title from pack name when no event post exists', function (): void {
         $admin = User::factory()->create();
         $pack = eventPostPack(['name' => 'Stage Olympique']);
 
-        mountTrainings($admin)
-            ->call('openEventPost', $pack->id)
-            ->assertSet('showEventPostModal', true)
+        mountEventPostButton($admin, $pack)
             ->assertSet('eventTitle', 'Stage Olympique')
             ->assertSet('eventPostId', null);
     });
@@ -60,30 +77,53 @@ describe('openEventPost', function (): void {
             'icon' => '🎯',
         ]);
 
-        mountTrainings($admin)
-            ->call('openEventPost', $pack->id)
+        mountEventPostButton($admin, $pack)
             ->assertSet('eventTitle', 'Stage déjà publié')
             ->assertSet('eventDescription', 'Description existante')
             ->assertSet('eventLocation', 'Salle Blocry')
             ->assertSet('eventStatus', 'PUBLISHED');
     });
 
-    it('sets eventPostPackHasDate to false when pack has no start date', function (): void {
+    it('opens the modal on open()', function (): void {
+        $admin = User::factory()->create();
+        $pack = eventPostPack();
+
+        mountEventPostButton($admin, $pack)
+            ->call('open')
+            ->assertSet('showModal', true);
+    });
+
+    it('does not open the modal when canPublish is false', function (): void {
         $admin = User::factory()->create();
         $pack = eventPostPack(['pack_start_date' => null]);
 
-        mountTrainings($admin)
-            ->call('openEventPost', $pack->id)
-            ->assertSet('eventPostPackHasDate', false);
+        Livewire::actingAs($admin)
+            ->test('admin.shared.event-post-button', [
+                'modelClass' => TrainingPack::class,
+                'modelId' => $pack->id,
+                'eventType' => 'TRAINING',
+                'icon' => '🎯',
+                'defaultTitle' => $pack->name,
+                'canPublish' => false,
+            ])
+            ->call('open')
+            ->assertSet('showModal', false);
     });
 
-    it('sets eventPostPackHasDate to true when pack has a start date', function (): void {
+    it('uses today as fallback event_date when pack has no start date', function (): void {
         $admin = User::factory()->create();
-        $pack = eventPostPack(['pack_start_date' => '2026-07-06']);
+        $pack = eventPostPack(['pack_start_date' => null]);
 
-        mountTrainings($admin)
-            ->call('openEventPost', $pack->id)
-            ->assertSet('eventPostPackHasDate', true);
+        // Component prop eventDate = null, resolveEventPostData will fallback to today()
+        $component = mountEventPostButton($admin, $pack);
+
+        $component->set('eventTitle', 'Stage sans date')
+            ->call('saveEventPost', 'draft');
+
+        $ep = EventPost::where('eventable_id', $pack->id)->first();
+
+        expect($ep)->not->toBeNull()
+            ->and($ep->event_date->toDateString())->toBe(now()->toDateString());
     });
 });
 
@@ -94,8 +134,7 @@ describe('saveEventPost — create', function (): void {
         $admin = User::factory()->create();
         $pack = eventPostPack();
 
-        mountTrainings($admin)
-            ->call('openEventPost', $pack->id)
+        mountEventPostButton($admin, $pack)
             ->set('eventTitle', "Stage d'été 2026")
             ->set('eventDescription', 'Deux semaines de ping-pong intensif.')
             ->call('saveEventPost', 'draft');
@@ -115,8 +154,7 @@ describe('saveEventPost — create', function (): void {
         $admin = User::factory()->create();
         $pack = eventPostPack();
 
-        mountTrainings($admin)
-            ->call('openEventPost', $pack->id)
+        mountEventPostButton($admin, $pack)
             ->set('eventTitle', "Stage d'été 2026")
             ->set('eventDescription', 'Deux semaines de ping-pong intensif pour tous.')
             ->call('saveEventPost', 'published');
@@ -132,8 +170,7 @@ describe('saveEventPost — create', function (): void {
         $admin = User::factory()->create();
         $pack = eventPostPack(['start_time' => '09:00:00', 'duration_minutes' => 420]);
 
-        mountTrainings($admin)
-            ->call('openEventPost', $pack->id)
+        mountEventPostButton($admin, $pack)
             ->set('eventTitle', 'Stage matin')
             ->call('saveEventPost', 'draft');
 
@@ -149,8 +186,7 @@ describe('saveEventPost — create', function (): void {
         $admin = User::factory()->create();
         $pack = eventPostPack(['pack_start_date' => '2026-07-06']);
 
-        mountTrainings($admin)
-            ->call('openEventPost', $pack->id)
+        mountEventPostButton($admin, $pack)
             ->set('eventTitle', 'Stage juillet')
             ->call('saveEventPost', 'draft');
 
@@ -165,8 +201,7 @@ describe('saveEventPost — create', function (): void {
         $admin = User::factory()->create();
         $pack = eventPostPack();
 
-        mountTrainings($admin)
-            ->call('openEventPost', $pack->id)
+        mountEventPostButton($admin, $pack)
             ->set('eventTitle', 'Stage test')
             ->call('saveEventPost', 'draft');
 
@@ -180,8 +215,7 @@ describe('saveEventPost — create', function (): void {
         $admin = User::factory()->create();
         $pack = eventPostPack();
 
-        mountTrainings($admin)
-            ->call('openEventPost', $pack->id)
+        mountEventPostButton($admin, $pack)
             ->set('eventTitle', '')
             ->call('saveEventPost', 'draft')
             ->assertHasErrors(['eventTitle']);
@@ -193,11 +227,11 @@ describe('saveEventPost — create', function (): void {
         $admin = User::factory()->create();
         $pack = eventPostPack();
 
-        mountTrainings($admin)
-            ->call('openEventPost', $pack->id)
+        mountEventPostButton($admin, $pack)
+            ->call('open')
             ->set('eventTitle', 'Stage été')
             ->call('saveEventPost', 'draft')
-            ->assertSet('showEventPostModal', false);
+            ->assertSet('showModal', false);
     });
 });
 
@@ -208,15 +242,16 @@ describe('saveEventPost — update', function (): void {
         $admin = User::factory()->create();
         $pack = eventPostPack();
 
-        $component = mountTrainings($admin)
-            ->call('openEventPost', $pack->id)
+        $component = mountEventPostButton($admin, $pack)
             ->set('eventTitle', 'Titre initial')
             ->call('saveEventPost', 'draft');
 
         expect(EventPost::count())->toBe(1);
 
-        $component
-            ->call('openEventPost', $pack->id)
+        // Re-mount to simulate re-opening the button with the existing EP
+        $pack->refresh();
+
+        mountEventPostButton($admin, $pack)
             ->set('eventTitle', 'Titre mis à jour')
             ->set('eventDescription', 'Description suffisamment longue pour être publiée.')
             ->call('saveEventPost', 'published');

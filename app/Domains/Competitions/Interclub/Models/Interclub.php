@@ -7,6 +7,7 @@ namespace App\Domains\Competitions\Interclub\Models;
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\LeagueCategory;
+use App\Domains\Shared\Traits\HasAuditLog;
 use App\Domains\Shared\Traits\HasAvailability;
 use App\Observers\InterclubObserver;
 use Carbon\Carbon;
@@ -21,6 +22,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * @property int $id
@@ -46,6 +48,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property-read int|null $users_count
  * @property-read Team|null $visitedTeam
  * @property-read Team|null $visitingTeam
+ *
  * @method static InterclubFactory factory($count = null, $state = [])
  * @method static Builder<static>|Interclub newModelQuery()
  * @method static Builder<static>|Interclub newQuery()
@@ -64,17 +67,19 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static Builder<static>|Interclub whereVisitedTeamId($value)
  * @method static Builder<static>|Interclub whereVisitingTeamId($value)
  * @method static Builder<static>|Interclub whereWeekNumber($value)
+ *
  * @mixin Eloquent
  */
 #[ObservedBy(InterclubObserver::class)]
 class Interclub extends Model
 {
+    use HasAuditLog;
     use HasAvailability;
     use HasFactory;
 
     protected $casts = [
         'start_date_time' => 'datetime',
-        'is_bye'          => 'boolean',
+        'is_bye' => 'boolean',
     ];
 
     protected $fillable = [
@@ -91,30 +96,39 @@ class Interclub extends Model
         'week_number',
     ];
 
-    /** @return array<int, int> week_number => match_day (1-based) */
-    public static function matchDayMap(int $seasonId): array
+    /**
+     * @param  array<int, int>  $teamIds
+     * @return array<int, int> week_number => match_day (1-based)
+     */
+    public static function matchDayMap(int $seasonId, array $teamIds = []): array
     {
-        return self::where('season_id', $seasonId)
-            ->whereNotNull('week_number')
-            ->orderBy('start_date_time')
+        $query = self::where('season_id', $seasonId)->whereNotNull('week_number');
+
+        if ($teamIds) {
+            $query->where(fn ($q) => $q
+                ->whereIn('visited_team_id', $teamIds)
+                ->orWhereIn('visiting_team_id', $teamIds));
+        }
+
+        return $query->orderBy('start_date_time')
             ->pluck('week_number')
             ->unique()
             ->values()
             ->flip()
-            ->map(fn ($i) => $i + 1)
+            ->map(fn (int $i) => $i + 1)
             ->toArray();
+    }
+
+    public function interclubResult(): HasOne
+    {
+        return $this->hasOne(InterclubResult::class);
     }
 
     public function isHome(): bool
     {
         $this->loadMissing('visitedTeam.club');
 
-        return $this->visitedTeam?->club?->licence === config('app.club_licence');
-    }
-
-    public function interclubResult(): \Illuminate\Database\Eloquent\Relations\HasOne
-    {
-        return $this->hasOne(InterclubResult::class);
+        return (bool) $this->visitedTeam?->club?->is_own_club;
     }
 
     public function league(): BelongsTo

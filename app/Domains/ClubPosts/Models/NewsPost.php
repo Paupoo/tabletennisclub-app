@@ -7,26 +7,30 @@ namespace App\Domains\ClubPosts\Models;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\NewsPostCategoryEnum;
 use App\Domains\Shared\Enums\NewsPostStatusEnum;
+use App\Domains\Shared\Traits\HasAuditLog;
 use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
  * @property string $title
  * @property string $slug
  * @property string $content
+ * @property int|null $reading_time
  * @property NewsPostCategoryEnum $category
  * @property string|null $image
  * @property int $user_id
  * @property NewsPostStatusEnum $status
  * @property bool $is_public
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * @property-read User $user
+ *
  * @method static \Database\Factories\Domains\ClubPosts\Models\NewsPostFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NewsPost newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NewsPost newQuery()
@@ -47,16 +51,19 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NewsPost whereUserId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NewsPost withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|NewsPost withoutTrashed()
+ *
  * @mixin \Eloquent
  */
 class NewsPost extends Model
 {
+    use HasAuditLog;
     use HasFactory, SoftDeletes;
 
     protected $casts = [
         'title' => 'string',
         'slug' => 'string',
         'content' => 'string',
+        'reading_time' => 'integer',
         'category' => NewsPostCategoryEnum::class,
         'image' => 'string',
         'status' => NewsPostStatusEnum::class,
@@ -68,6 +75,7 @@ class NewsPost extends Model
         'title',
         'slug',
         'content',
+        'reading_time',
         'category',
         'image',
         'status',
@@ -89,5 +97,15 @@ class NewsPost extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::saving(function (NewsPost $post) {
+            $words = str_word_count(strip_tags($post->content ?? ''));
+            $post->reading_time = (int) ceil($words / 225);
+        });
     }
 }

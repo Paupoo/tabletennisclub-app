@@ -2,15 +2,13 @@
 
 declare(strict_types=1);
 
-use App\Domains\Shared\Enums\ClubEventTypeEnum;
+use App\Domains\ClubAdmin\Club\Models\Room;
+use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\Recurrence;
 use App\Domains\Shared\Enums\TrainingCancellationType;
 use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Shared\Enums\TrainingType;
-use App\Livewire\Concerns\HasEventPostForm;
-use App\Domains\ClubAdmin\Club\Models\Room;
-use App\Domains\ClubAdmin\Users\Models\User;
-use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Trainings\Notifications\TrainingSessionCancelledNotification;
@@ -24,22 +22,24 @@ use Livewire\Component;
 use Mary\Traits\Toast;
 
 new class extends Component
-    {
+{
     use HasBreadcrumbs;
-    use HasEventPostForm, Toast;
+    use Toast;
 
     // ── Cancellation modal ────────────────────────────────────────────────────
     public bool $cancelModal = false;
-
-    public bool $deactivatePackModal = false;
-
-    public ?int $deactivatingPackId = null;
 
     public string $cancelNote = '';
 
     public ?int $cancelTrainingId = null;
 
     public string $cancelType = 'FREE';
+
+    public bool $deactivatePackModal = false;
+
+    public ?int $deactivatingPackId = null;
+
+    public bool $formAllowDiscount = true;
 
     public ?int $formDayOfWeek = null;
 
@@ -60,8 +60,6 @@ new class extends Component
 
     // Step 3 — Price (in euros)
     public float $formPrice = 90;
-
-    public bool $formAllowDiscount = true;
 
     // Step 2 — Planning
     public string $formRecurrenceType = 'weekly'; // 'weekly' | 'specific_days'
@@ -89,13 +87,6 @@ new class extends Component
 
     // ── View filter ───────────────────────────────────────────────────────────
     public int $viewSeasonId = 0;
-
-    // ── Event post modal ──────────────────────────────────────────────────────
-    public ?int $eventPostPackId = null;
-
-    public bool $eventPostPackHasDate = true;
-
-    public bool $showEventPostModal = false;
 
     // ── Wizard state ──────────────────────────────────────────────────────────
     public bool $wizardOpen = false;
@@ -142,6 +133,13 @@ new class extends Component
         $this->warning(__('Session cancelled. Members have been notified.'), icon: 'o-x-circle');
     }
 
+    public function confirmDeactivatePack(): void
+    {
+        if ($this->deactivatingPackId) {
+            $this->deactivatePack($this->deactivatingPackId);
+        }
+    }
+
     #[Computed]
     public function dayOptions(): array
     {
@@ -156,26 +154,13 @@ new class extends Component
         ];
     }
 
-    public function openDeactivatePack(int $packId): void
-    {
-        $this->deactivatingPackId    = $packId;
-        $this->deactivatePackModal   = true;
-    }
-
     public function deactivatePack(int $packId): void
     {
         TrainingPack::findOrFail($packId)->update(['is_active' => false]);
         unset($this->packs);
         $this->deactivatePackModal = false;
-        $this->deactivatingPackId  = null;
+        $this->deactivatingPackId = null;
         $this->warning(__('Pack deactivated.'));
-    }
-
-    public function confirmDeactivatePack(): void
-    {
-        if ($this->deactivatingPackId) {
-            $this->deactivatePack($this->deactivatingPackId);
-        }
     }
 
     #[Computed]
@@ -184,15 +169,6 @@ new class extends Component
         return collect(TrainingLevel::cases())
             ->map(fn ($e) => ['id' => $e->value, 'name' => $e->value])
             ->toArray();
-    }
-
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
-
-    protected function breadcrumbChain(): Breadcrumb
-    {
-        return Breadcrumb::make()
-            ->home()
-            ->current(__('Trainings'));
     }
 
     public function mount(): void
@@ -258,6 +234,12 @@ new class extends Component
         $this->resetWizardFields();
         $this->wizardOpen = true;
         $this->step = '1';
+    }
+
+    public function openDeactivatePack(int $packId): void
+    {
+        $this->deactivatingPackId = $packId;
+        $this->deactivatePackModal = true;
     }
 
     public function openEdit(int $packId): void
@@ -369,6 +351,11 @@ new class extends Component
         if ((int) $this->step > 1) {
             $this->step = (string) ((int) $this->step - 1);
         }
+    }
+
+    public function refreshPacks(): void
+    {
+        unset($this->packs);
     }
 
     #[Computed]
@@ -571,56 +558,13 @@ new class extends Component
         return $this->formSeasonId ? Season::find($this->formSeasonId) : null;
     }
 
-    // ── Event post management ─────────────────────────────────────────────────
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
 
-    public function openEventPost(int $packId): void
+    protected function breadcrumbChain(): Breadcrumb
     {
-        $pack = TrainingPack::with(['eventPost', 'room'])->findOrFail($packId);
-
-        $this->eventPostPackId      = $packId;
-        $this->eventPostPackHasDate = $pack->pack_start_date !== null;
-
-        $this->initEventPost($pack->eventPost, $pack->name);
-
-        // Pre-fill location from the pack's room when no existing event post sets it
-        if ($this->eventLocation === '' && $pack->room) {
-            $this->eventLocation = implode(', ', array_filter([
-                $pack->room->street,
-                $pack->room->city_name,
-            ]));
-        }
-
-        $this->showEventPostModal = true;
-    }
-
-    protected function onEventPostSaved(): void
-    {
-        $this->showEventPostModal = false;
-        unset($this->packs);
-    }
-
-    protected function resolveEventPostData(): array
-    {
-        $pack = TrainingPack::findOrFail($this->eventPostPackId);
-
-        $startTime = $pack->start_time
-            ? Carbon::parse($pack->start_time)
-            : null;
-
-        $endTime = $startTime && $pack->duration_minutes
-            ? $startTime->copy()->addMinutes($pack->duration_minutes)
-            : null;
-
-        return [
-            'model'            => $pack,
-            'type'             => ClubEventTypeEnum::TRAINING,
-            'icon'             => '🎯',
-            'event_date'       => $pack->pack_start_date?->toDateString() ?? now()->toDateString(),
-            'start_time'       => $startTime?->format('H:i:s') ?? '00:00:00',
-            'end_time'         => $endTime?->format('H:i:s'),
-            'price'            => (string) $pack->price,
-            'max_participants' => $pack->max_participants,
-        ];
+        return Breadcrumb::make()
+            ->home()
+            ->current(__('Trainings'));
     }
 
     private function resetWizardFields(): void

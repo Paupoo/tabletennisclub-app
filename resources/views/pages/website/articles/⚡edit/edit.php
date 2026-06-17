@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Resources\views\Pages\Website\Articles\Edit;
 
+use App\Domains\ClubPosts\Models\NewsPost;
 use App\Domains\Shared\Enums\NewsPostCategoryEnum;
 use App\Domains\Shared\Enums\NewsPostStatusEnum;
-use App\Domains\ClubPosts\Models\NewsPost;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Facades\Auth;
@@ -21,38 +21,38 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast, WithFileUploads, HasBreadcrumbs;
+    use HasBreadcrumbs, Toast, WithFileUploads;
+
+    public string $category = '';
+
+    public string $content = '';
+
+    public ?string $existingImage = null;
+
+    public mixed $image = null;
+
+    public bool $isPublic = true;
 
     #[Locked]
     public ?int $newsPostId = null;
 
-    public string $title          = '';
-    public string $slug           = '';
-    public string $content        = '';
-    public string $category       = '';
-    public string $status         = 'draft';
-    public bool $isPublic         = true;
-    public ?string $existingImage = null;
-    public mixed $image            = null;
+    public string $slug = '';
+
+    public string $status = 'draft';
+
+    public string $title = '';
 
     public function mount(?NewsPost $newsPost = null): void
     {
         if ($newsPost && $newsPost->exists) {
-            $this->newsPostId    = $newsPost->id;
-            $this->title         = $newsPost->title;
-            $this->slug          = $newsPost->slug;
-            $this->content       = $newsPost->content ?? '';
-            $this->category      = $newsPost->category?->value ?? '';
-            $this->status        = $newsPost->status?->value ?? 'draft';
-            $this->isPublic      = (bool) $newsPost->is_public;
+            $this->newsPostId = $newsPost->id;
+            $this->title = $newsPost->title;
+            $this->slug = $newsPost->slug;
+            $this->content = $newsPost->content ?? '';
+            $this->category = $newsPost->category?->value ?? '';
+            $this->status = $newsPost->status?->value ?? 'draft';
+            $this->isPublic = (bool) $newsPost->is_public;
             $this->existingImage = $newsPost->image;
-        }
-    }
-
-    public function updatedTitle(): void
-    {
-        if (! $this->newsPostId) {
-            $this->slug = Str::slug($this->title);
         }
     }
 
@@ -64,15 +64,20 @@ new class extends Component
         }
     }
 
+    public function render(): View
+    {
+        return $this->view();
+    }
+
     public function save(): void
     {
         $this->validate([
-            'title'    => ['required', 'string', 'max:255'],
-            'slug'     => ['required', 'string', Rule::unique('news_posts', 'slug')->ignore($this->newsPostId)],
-            'content'  => ['required', 'string'],
+            'title' => ['required', 'string', 'max:255'],
+            'slug' => ['required', 'string', Rule::unique('news_posts', 'slug')->ignore($this->newsPostId)],
+            'content' => ['required', 'string'],
             'category' => ['required', Rule::in(NewsPostCategoryEnum::values())],
-            'status'   => ['required', Rule::in(NewsPostStatusEnum::values())],
-            'image'    => ['nullable', 'image', 'max:4096'],
+            'status' => ['required', Rule::in(NewsPostStatusEnum::values())],
+            'image' => ['nullable', 'image', 'max:4096'],
         ]);
 
         $imagePath = $this->existingImage;
@@ -85,43 +90,37 @@ new class extends Component
         }
 
         $data = [
-            'title'     => $this->title,
-            'slug'      => Str::slug($this->slug),
-            'content'   => $this->content,
-            'category'  => $this->category,
-            'status'    => NewsPostStatusEnum::from($this->status),
+            'title' => $this->title,
+            'slug' => Str::slug($this->slug),
+            'content' => $this->content,
+            'category' => $this->category,
+            'status' => NewsPostStatusEnum::from($this->status),
             'is_public' => $this->isPublic,
-            'image'     => $imagePath,
-            'user_id'   => Auth::id(),
+            'image' => $imagePath,
+            'user_id' => Auth::id(),
         ];
 
         if ($this->newsPostId) {
             NewsPost::findOrFail($this->newsPostId)->update($data);
         } else {
-            $post             = NewsPost::create($data);
+            $post = NewsPost::create($data);
             $this->newsPostId = $post->id;
         }
 
         $label = match ($this->status) {
             'published' => __('Article published.'),
-            'archived'  => __('Article archived.'),
-            default     => __('Draft saved.'),
+            'archived' => __('Article archived.'),
+            default => __('Draft saved.'),
         };
 
         $this->success($label, redirectTo: route('admin.website.articles.index'));
     }
 
-
-    protected function breadcrumbChain(): Breadcrumb
+    public function updatedTitle(): void
     {
-        return Breadcrumb::make()
-            ->home()
-            ->current($this->article?->exists ? __("Edit") : __("Create"));
-    }
-
-        public function render(): View
-    {
-        return $this->view();
+        if (! $this->newsPostId) {
+            $this->slug = Str::slug($this->title);
+        }
     }
 
     public function with(): array
@@ -140,8 +139,15 @@ new class extends Component
                 ->current($this->newsPostId ? 'Modifier' : 'Nouvel article')
                 ->toArray(),
             'categoryOptions' => $categoryOptions,
-            'statusOptions'   => $statusOptions,
+            'statusOptions' => $statusOptions,
             'markdownPreview' => Str::markdown($this->content ?: ''),
         ];
+    }
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current($this->article?->exists ? __('Edit') : __('Create'));
     }
 };

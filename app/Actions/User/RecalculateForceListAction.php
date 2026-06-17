@@ -14,7 +14,7 @@ class RecalculateForceListAction
      */
     public static function handle(): void
     {
-        User::where('is_competitor', true)
+        User::competitor()
             ->orderBy('ranking')
             ->orderBy('last_name')
             ->orderBy('first_name')

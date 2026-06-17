@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Competitions\Tournament\Notifications;
 
 use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -33,6 +34,8 @@ class TournamentDebtReminderNotification extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
+        $club = Club::ourClub()->first();
+
         return (new MailMessage)
             ->subject(__('Payment reminder') . ' — ' . $this->tournament->name)
             ->greeting(__('Hello') . ', ' . $notifiable->first_name . ' !')
@@ -44,9 +47,10 @@ class TournamentDebtReminderNotification extends Notification
             ]))
             ->line('---')
             ->line(__('Structured reference: :ref', ['ref' => $this->payment->reference]))
-            ->line(__('IBAN: BE23 7323 3320 8791 — BIC: CREGBEBB — Beneficiary: CTT Ottignies-Blocry ASBL'))
+            ->line(__('payment.iban_bic_beneficiary_line', ['iban' => $club->bank_account, 'bic' => $club->bic, 'name' => $club->name]))
             ->line('---')
-            ->line(__('Please settle your payment as soon as possible. Contact us if you have any questions.'));
+            ->line(__('Please settle your payment as soon as possible. Contact us if you have any questions.'))
+            ->line(__('If you have already paid by the time you receive this message, please ignore this reminder.'));
     }
 
     /** @return array<int, string> */

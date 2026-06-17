@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Actions\ClubAdmin\Contact\StoreContactAction;
 use App\Domains\ClubAdmin\Contact\Models\Contact;
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Shared\Enums\ContactReasonEnum;
 use App\Mail\ContactFormConfirmationEmail;
 use App\Mail\ContactFormNotificationEmail;
@@ -11,6 +12,10 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 
 uses(RefreshDatabase::class);
+
+beforeEach(function (): void {
+    Club::factory()->create(['is_own_club' => true, 'email_contact' => 'club@test.com']);
+});
 
 it('creates a contact record in the database', function (): void {
     Mail::fake();
@@ -51,7 +56,7 @@ it('sends a notification email to the club admin', function (): void {
         'message' => 'Question',
     ]);
 
-    Mail::assertQueued(ContactFormNotificationEmail::class);
+    Mail::assertQueued(ContactFormNotificationEmail::class, fn ($mail): bool => $mail->hasTo('club@test.com'));
 });
 
 it('returns the created Contact instance', function (): void {

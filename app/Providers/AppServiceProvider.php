@@ -9,6 +9,7 @@ use App\Domains\Trainings\Services\TrainingBuilder;
 use App\Domains\Trainings\Services\TrainingDateGenerator;
 use App\Services\ForceList;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Application;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\ServiceProvider;
 
@@ -33,19 +34,19 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         //
-        $this->app->singleton('ForceList', function ($app) {
+        $this->app->singleton('ForceList', function (Application $app): ForceList {
             return new ForceList;
         });
 
-        $this->app->singleton(TrainingDateGenerator::class, function ($app) {
+        $this->app->singleton(TrainingDateGenerator::class, function (Application $app): TrainingDateGenerator {
             return new TrainingDateGenerator;
         });
 
-        $this->app->singleton(TrainingBuilder::class, function ($app) {
+        $this->app->singleton(TrainingBuilder::class, function (Application $app): TrainingBuilder {
             return new TrainingBuilder;
         });
 
-        $this->app->singleton(InterclubService::class, function ($app) {
+        $this->app->singleton(InterclubService::class, function (Application $app): InterclubService {
             return new InterclubService;
         });
     }

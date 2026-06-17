@@ -6,6 +6,7 @@ namespace App\Http\Requests\ClubAdmin\Contact;
 
 use App\Support\Captcha;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreContactRequest extends FormRequest
@@ -61,9 +62,9 @@ class StoreContactRequest extends FormRequest
         ];
     }
 
-    public function withValidator($validator): void
+    public function withValidator(Validator $validator): void
     {
-        $validator->after(function ($validator): void {
+        $validator->after(function (Validator $validator): void {
 
             $captcha = session('captcha');
 

@@ -3,33 +3,56 @@
 declare(strict_types=1);
 
 use App\Domains\ClubPosts\Models\NewsPost;
+use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\NewsPostCategoryEnum;
 use App\Domains\Shared\Enums\NewsPostStatusEnum;
 use App\Livewire\Public\Articles\ArticleList;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
-    // Création d'articles exemples pour tests
+    Season::factory()->create([
+        'is_active' => true,
+        'start_at' => '2024-09-01',
+        'end_at' => '2025-06-30',
+    ]);
+
     NewsPost::factory()->create([
         'status' => NewsPostStatusEnum::PUBLISHED,
         'category' => NewsPostCategoryEnum::PARTNERSHIP,
-        'created_at' => '2024-05-15',
+        'created_at' => '2024-10-15',
     ]);
     NewsPost::factory()->create([
         'status' => NewsPostStatusEnum::PUBLISHED,
         'category' => NewsPostCategoryEnum::EVENT,
-        'created_at' => '2023-01-10',
+        'created_at' => '2024-11-10',
     ]);
     NewsPost::factory()->create([
         'status' => NewsPostStatusEnum::DRAFT,
         'category' => NewsPostCategoryEnum::PARTNERSHIP,
-        'created_at' => '2024-01-01',
+        'created_at' => '2024-10-01',
     ]);
+});
+
+it('does not show empty state when articles exist but not in the active season', function (): void {
+    // Deactivate the beforeEach season, set a new active one with no articles
+    Season::where('is_active', true)->update(['is_active' => false]);
+    Season::factory()->create([
+        'is_active' => true,
+        'start_at' => '2026-09-01',
+        'end_at' => '2027-06-30',
+    ]);
+    Cache::forget('season.current');
+
+    // Articles from beforeEach still exist (2024 dates) — just outside the new active season
+    // Component must fall back to showing all articles, not the empty state
+    Livewire::test(ArticleList::class)
+        ->assertDontSee(__('No articles found'));
 });
 
 it('initializes with correct default values and collections', function (): void {
@@ -37,171 +60,149 @@ it('initializes with correct default values and collections', function (): void 
     $component->mount();
 
     expect($component->category)->toBe('');
-    expect($component->year)->toBe('');
-    expect($component->month)->toBe('');
     expect($component->sort)->toBe('desc');
+    expect($component->defaultSeasonId)->toBeInt()->toBeGreaterThan(0);
+    expect($component->seasonId)->toBe($component->defaultSeasonId);
 
-    // Categories loaded correspond à enum values
     expect($component->categories)->toBeInstanceOf(Collection::class);
     expect($component->categories)->toContain(NewsPostCategoryEnum::PARTNERSHIP->value);
 
-    // Years loaded
-    expect($component->years)->toBeInstanceOf(Collection::class);
-    expect($component->years->contains(2024))->toBeTrue();
-
-    // Months loaded
-    expect($component->months)->toBeInstanceOf(Collection::class);
-    expect($component->months->get('01'))->toBe('Janvier');
+    expect($component->seasons)->toBeInstanceOf(Collection::class);
+    expect($component->seasons->isNotEmpty())->toBeTrue();
 });
 
 it('applies filters correctly in getArticlesProperty', function (): void {
     $component = Livewire::test(ArticleList::class)
         ->set('category', NewsPostCategoryEnum::PARTNERSHIP->value)
-        ->set('year', '2024')
-        ->set('month', '05')
         ->set('sort', 'asc');
 
-    // Vérifier que les propriétés sont bien définies
     $component->assertSet('category', NewsPostCategoryEnum::PARTNERSHIP->value);
-    $component->assertSet('year', '2024');
-    $component->assertSet('month', '05');
     $component->assertSet('sort', 'asc');
 
-    // Vérifier que les articles sont bien filtrés
     $articles = $component->instance()->getArticlesProperty();
     expect($articles)->toBeInstanceOf(LengthAwarePaginator::class);
     expect($articles->count())->toBeGreaterThanOrEqual(0);
 
-    // Vérifier que seuls les articles correspondant aux filtres sont retournés
     if ($articles->count() > 0) {
         foreach ($articles as $article) {
             expect($article->category)->toBe(NewsPostCategoryEnum::PARTNERSHIP);
-            expect($article->created_at->year)->toBe(2024);
-            expect($article->created_at->month)->toBe(5);
         }
     }
 });
 
 it('returns only published articles', function (): void {
-    // Créer des articles avec différents statuts
     $publishedArticle = NewsPost::factory()->create([
         'status' => NewsPostStatusEnum::PUBLISHED,
         'category' => NewsPostCategoryEnum::PARTNERSHIP,
-        'created_at' => '2024-05-15',
+        'created_at' => '2024-10-15',
     ]);
 
     $draftArticle = NewsPost::factory()->create([
         'status' => NewsPostStatusEnum::DRAFT,
         'category' => NewsPostCategoryEnum::PARTNERSHIP,
-        'created_at' => '2024-05-16',
+        'created_at' => '2024-10-16',
     ]);
 
     $archivedArticle = NewsPost::factory()->create([
         'status' => NewsPostStatusEnum::ARCHIVED,
         'category' => NewsPostCategoryEnum::EVENT,
-        'created_at' => '2024-05-17',
+        'created_at' => '2024-10-17',
     ]);
 
     $component = new ArticleList;
     $component->mount();
     $articles = $component->getArticlesProperty();
 
-    // Vérifier qu'on a bien des articles
     expect($articles->count())->toBeGreaterThan(0);
 
-    // Vérifier que tous les articles retournés sont publiés
     foreach ($articles as $article) {
         expect($article->status)->toBe(NewsPostStatusEnum::PUBLISHED);
     }
 
-    // Vérifier que l'article publié est dans les résultats
     $articleIds = $articles->pluck('id')->toArray();
     expect($articleIds)->toContain($publishedArticle->id);
-
-    // Vérifier que les articles non publiés ne sont PAS dans les résultats
     expect($articleIds)->not->toContain($draftArticle->id);
     expect($articleIds)->not->toContain($archivedArticle->id);
 });
 
 it('resets pagination when filters update', function (): void {
-    // Créer suffisamment d'articles pour avoir plusieurs pages
     NewsPost::factory()->count(20)->create([
         'status' => NewsPostStatusEnum::PUBLISHED->value,
         'category' => NewsPostCategoryEnum::PARTNERSHIP->value,
+        'created_at' => '2024-10-15',
     ]);
 
     $component = Livewire::test(ArticleList::class)
         ->call('gotoPage', 2);
 
-    // Vérifier qu'on est bien sur la page 2
     $articles = $component->instance()->getArticlesProperty();
     expect($articles->currentPage())->toBe(2);
 
-    // Changer un filtre - cela devrait reset la page à 1
     $component->set('category', NewsPostCategoryEnum::EVENT->value);
 
-    // Vérifier que la page est maintenant à 1
     $articlesAfterFilter = $component->instance()->getArticlesProperty();
     expect($articlesAfterFilter->currentPage())->toBe(1);
 });
 
 it('tests that clearAllFilters resets all filters and sort', function (): void {
+    $activeSeason = Season::firstWhere('is_active', true);
+
     $component = Livewire::test(ArticleList::class)
         ->set('category', NewsPostCategoryEnum::PARTNERSHIP->value)
-        ->set('year', '2024')
-        ->set('month', '05')
         ->set('sort', 'asc');
 
     $component->call('clearAllFilters');
 
     $component->assertSet('category', '');
-    $component->assertSet('year', '');
-    $component->assertSet('month', '');
     $component->assertSet('sort', 'desc');
+    $component->assertSet('seasonId', $activeSeason->id);
 });
 
-it('tests that  clearFilter resets individual filters correctly', function (): void {
+it('tests that clearFilter resets individual filters correctly', function (): void {
+    $activeSeason = Season::firstWhere('is_active', true);
+
     $component = new ArticleList;
+    $component->mount();
     $component->category = NewsPostCategoryEnum::PARTNERSHIP->value;
-    $component->year = '2024';
-    $component->month = '05';
     $component->sort = 'asc';
 
     $component->clearFilter('category');
     expect($component->category)->toBe('');
 
-    $component->clearFilter('year');
-    expect($component->year)->toBe('');
-
-    $component->clearFilter('month');
-    expect($component->month)->toBe('');
-
     $component->clearFilter('sort');
     expect($component->sort)->toBe('desc');
+
+    $component->clearFilter('seasonId');
+    expect($component->seasonId)->toBe($activeSeason->id);
 });
 
 it('tests that activeFiltersCountProperty returns correct count', function (): void {
-    $component = Livewire::test(ArticleList::class)
-        ->set('category', NewsPostCategoryEnum::PARTNERSHIP->value)
-        ->set('year', '')
-        ->set('month', '05');
+    $activeSeason = Season::firstWhere('is_active', true);
+    $otherSeason = Season::factory()->create([
+        'is_active' => false,
+        'start_at' => '2023-09-01',
+        'end_at' => '2024-06-30',
+    ]);
 
+    $component = Livewire::test(ArticleList::class)
+        ->set('category', NewsPostCategoryEnum::PARTNERSHIP->value);
+
+    expect($component->instance()->activeFiltersCount)->toBe(1);
+
+    $component->set('seasonId', $otherSeason->id);
     expect($component->instance()->activeFiltersCount)->toBe(2);
 
-    // On remet tous les filtres à vide
-    $component->set('category', '')->set('year', '')->set('month', '');
-
+    $component->set('category', '')->set('seasonId', $activeSeason->id);
     expect($component->instance()->activeFiltersCount)->toBe(0);
 });
 
 it('tests that applyFilters modifies the query as expected', function (): void {
     $component = new ArticleList;
+    $component->mount();
 
     $query = NewsPost::query()->where('status', NewsPostStatusEnum::PUBLISHED);
 
     $component->category = NewsPostCategoryEnum::PARTNERSHIP->value;
-    $component->year = '2024';
-    $component->month = '05';
 
     $reflection = new ReflectionClass($component);
     $method = $reflection->getMethod('applyFilters');
@@ -217,10 +218,8 @@ it('tests that applyFilters modifies the query as expected', function (): void {
 it('tests that forceRefresh dispatches event', function (): void {
     $component = Livewire::test(ArticleList::class);
 
-    // Appeler la méthode forceRefresh
     $component->call('forceRefresh');
 
-    // Vérifier que l'événement $refresh a été dispatché
     $component->assertDispatched('$refresh');
     expect(method_exists($component->instance(), 'forceRefresh'))->toBeTrue();
 });

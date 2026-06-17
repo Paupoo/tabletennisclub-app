@@ -6,7 +6,7 @@
         {{-- Title --}}
         <div>
             <label for="title" class="block text-sm font-medium text-gray-700 mb-1">{{ __('NewsPost Title')}}</label>
-            <input type="text" name="title" id="title" :placeholder="__('Title')"
+            <input type="text" name="title" id="title" placeholder="{{ __('Title') }}"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-blue-500 focus:border-blue-500"
                 value="{{ old('name', $article->title)}}"
                 >
@@ -17,7 +17,7 @@
         @if($article->id)
         <div>
             <label for="author" class="block text-sm font-medium text-gray-700 mb-1">{{ __('Author')}}</label>
-            <input type="text" name="author" id="author" :placeholder="__('Author')" disabled
+            <input type="text" name="author" id="author" placeholder="{{ __('Author') }}" disabled
                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-xs focus:outline-hidden focus:ring-blue-500 focus:border-blue-500"
                 value="{{ old('name', $article->author)}}"
                 >

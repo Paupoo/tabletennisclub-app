@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Livewire\Component;
 
@@ -51,13 +50,6 @@ new class extends Component
         $this->activeWeek = $week;
     }
 
-    protected function breadcrumbChain(): Breadcrumb
-    {
-        return Breadcrumb::make()
-            ->home()
-            ->current(__('My teams'));
-    }
-
     public function with(): array
     {
         return [
@@ -66,5 +58,12 @@ new class extends Component
                 ->add(__('My teams'), '#', 'o-users')
                 ->toArray(),
         ];
+    }
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__('My teams'));
     }
 };

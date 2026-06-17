@@ -6,6 +6,7 @@ use App\Actions\User\UpdateUserAction;
 use App\Data\User\UpdateUserData;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\Gender;
+use App\Domains\Shared\Rules\ValidIban;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasPhotoUpload;
 use App\Support\Breadcrumb;
@@ -23,35 +24,12 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast, WithFileUploads, HasBreadcrumbs, HasPhotoUpload;
-
-    public User $user;
-
-    public bool $drawer = false;
+    use HasBreadcrumbs, HasPhotoUpload, Toast, WithFileUploads;
 
     public string $activeTeamTab = '';
 
-    // Identity
-    #[Rule('required|string|max:255')]
-    public string $first_name = '';
-
-    #[Rule('required|string|max:255')]
-    public string $last_name = '';
-
-    #[Rule('required')]
-    public ?Gender $gender = Gender::MEN;
-
     #[Rule('nullable|date')]
     public ?string $birthdate = null;
-
-    // Contact
-    public string $email = '';
-
-    #[Rule('nullable|string|max:20')]
-    public ?string $phone_number = null;
-
-    #[Rule('nullable|string|max:255')]
-    public ?string $street = null;
 
     #[Rule('nullable|integer|between:1000,9999')]
     public ?string $city_code = null;
@@ -59,13 +37,48 @@ new class extends Component
     #[Rule('nullable|string|max:100')]
     public ?string $city_name = null;
 
-    #[Rule(['nullable', new \App\Domains\Shared\Rules\ValidIban])]
+    public bool $drawer = false;
+
+    // Contact
+    public string $email = '';
+
+    // Identity
+    #[Rule('required|string|max:255')]
+    public string $first_name = '';
+
+    #[Rule('required')]
+    public ?Gender $gender = Gender::MEN;
+
+    #[Rule(['nullable', new ValidIban])]
     public ?string $iban = null;
+
+    #[Rule('required|string|max:255')]
+    public string $last_name = '';
 
     // Documents (uploaded by the member)
     public $medicalCertificate = null;
 
     public $parentalConsent = null;
+
+    #[Rule('nullable|string|max:20')]
+    public ?string $phone_number = null;
+
+    #[Rule('nullable|string|max:255')]
+    public ?string $street = null;
+
+    public User $user;
+
+    /**
+     * Whether the member is a minor (< 18y) based on the entered birthdate.
+     * Drives whether the parental consent document is relevant.
+     */
+    #[Computed()]
+    public function isMinor(): bool
+    {
+        return $this->birthdate !== null
+            && $this->birthdate !== ''
+            && Carbon::parse($this->birthdate)->age < 18;
+    }
 
     public function mount(User $user): void
     {
@@ -84,16 +97,18 @@ new class extends Component
         $this->activeTeamTab = 'team-' . $this->user->teams->first()?->id;
     }
 
-    /**
-     * Whether the member is a minor (< 18y) based on the entered birthdate.
-     * Drives whether the parental consent document is relevant.
-     */
-    #[Computed()]
-    public function isMinor(): bool
+    public function render(): View
     {
-        return $this->birthdate !== null
-            && $this->birthdate !== ''
-            && Carbon::parse($this->birthdate)->age < 18;
+        return $this->view();
+    }
+
+    public function requestErasure(): void
+    {
+        abort_unless(Auth::user()->is($this->user), 403);
+
+        $this->user->update(['gdpr_erasure_requested_at' => now()]);
+
+        $this->success(__('Erasure request sent. The admin will process it shortly.'));
     }
 
     public function rules(): array
@@ -162,7 +177,6 @@ new class extends Component
                 guardian_phone_number: $this->user->guardian_phone_number,
                 iban: $this->iban,
                 // Admin-only fields are preserved from the current model (not self-editable).
-                is_active: $this->user->is_active,
                 is_competitor: $this->user->is_competitor,
                 is_committee_member: $this->user->is_committee_member,
                 is_admin: $this->user->is_admin,
@@ -178,6 +192,23 @@ new class extends Component
         $this->drawer = false;
 
         $this->success(__('Profile updated.'));
+    }
+
+    public function with(): array
+    {
+        $this->user->loadMissing('teams.league', 'teams.users', 'teams.club', 'teams.season');
+
+        return [
+            'genders' => Gender::options(),
+            'breadcrumbs' => $this->getBreadcrumbs(),
+        ];
+    }
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->add(__('My profile'), null, null);
     }
 
     /**
@@ -208,36 +239,5 @@ new class extends Component
             $user->update(['parental_consent_path' => "/storage/{$path}"]);
             $this->parentalConsent = null;
         }
-    }
-
-    public function requestErasure(): void
-    {
-        abort_unless(Auth::user()->is($this->user), 403);
-
-        $this->user->update(['gdpr_erasure_requested_at' => now()]);
-
-        $this->success(__('Erasure request sent. The admin will process it shortly.'));
-    }
-
-    public function with(): array
-    {
-        $this->user->loadMissing('teams.league', 'teams.users', 'teams.club', 'teams.season');
-
-        return [
-            'genders' => Gender::options(),
-            'breadcrumbs' => $this->getBreadcrumbs(),
-        ];
-    }
-
-    protected function breadcrumbChain(): Breadcrumb
-    {
-        return Breadcrumb::make()
-            ->home()
-            ->add(__('My profile'), null, null);
-    }
-
-    public function render(): View
-    {
-        return $this->view();
     }
 };

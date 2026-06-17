@@ -32,9 +32,4 @@ enum MeetingTypeEnum: string
             self::GENERAL_ASSEMBLY => __('General Assembly'),
         };
     }
-
-    public function isPublic(): bool
-    {
-        return $this === self::GENERAL_ASSEMBLY;
-    }
 }

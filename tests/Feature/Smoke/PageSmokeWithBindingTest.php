@@ -11,6 +11,7 @@ use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Meetings\Models\Meeting;
 use Illuminate\Testing\TestResponse;
+use Livewire\Livewire;
 
 /*
 |--------------------------------------------------------------------------
@@ -29,7 +30,7 @@ beforeEach(function (): void {
     $this->admin = User::factory()
         ->isAdmin()
         ->isCommitteeMember()
-        ->create(['is_active' => true]);
+        ->create([]);
 
     $this->season = makeActiveSeason();
 });
@@ -42,6 +43,21 @@ function smokeGet(string $route, mixed ...$params): TestResponse
 it('renders user edit', function (): void {
     $user = User::factory()->create();
     smokeGet('admin.users.edit', $user)->assertOk();
+});
+
+it('user edit form mounts without TypeError when has_key attribute is missing (regression)', function (): void {
+    // Reproduces the TypeError that occurs when the has_key migration has not run yet:
+    // the attribute is absent from the model → getAttribute() returns null →
+    // assigning null to a typed bool Livewire property throws TypeError.
+    $user = User::factory()->isNotCompetitor()->create();
+
+    $attrs = $user->getAttributes();
+    unset($attrs['has_key']);
+    $user->setRawAttributes($attrs, true);
+
+    Livewire::actingAs(test()->admin)
+        ->test('pages::club-admin.users.form', ['user' => $user])
+        ->assertOk();
 });
 
 it('renders my-space pages for the user', function (string $routeName): void {

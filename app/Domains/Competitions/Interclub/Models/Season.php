@@ -6,6 +6,7 @@ namespace App\Domains\Competitions\Interclub\Models;
 
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Traits\HasAuditLog;
 use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Models\TrainingPack;
 use Database\Factories\Domains\Competitions\Interclub\Models\SeasonFactory;
@@ -34,6 +35,7 @@ use Illuminate\Support\Facades\DB;
  * @property-read int|null $teams_count
  * @property-read Collection<int, Training> $trainings
  * @property-read int|null $trainings_count
+ *
  * @method static SeasonFactory factory($count = null, $state = [])
  * @method static Builder<static>|Season newModelQuery()
  * @method static Builder<static>|Season newQuery()
@@ -44,6 +46,7 @@ use Illuminate\Support\Facades\DB;
  * @method static Builder<static>|Season whereName($value)
  * @method static Builder<static>|Season whereStartYear($value)
  * @method static Builder<static>|Season whereUpdatedAt($value)
+ *
  * @property bool $is_active
  * @property bool $registrations_open
  * @property-read Collection<int, Subscription> $subscriptions
@@ -52,15 +55,18 @@ use Illuminate\Support\Facades\DB;
  * @property-read int|null $training_packs_count
  * @property-read Collection<int, User> $users
  * @property-read int|null $users_count
+ *
  * @method static Builder<static>|Season active()
  * @method static Builder<static>|Season whereEndAt($value)
  * @method static Builder<static>|Season whereIsActive($value)
  * @method static Builder<static>|Season whereRegistrationsOpen($value)
  * @method static Builder<static>|Season whereStartAt($value)
+ *
  * @mixin \Eloquent
  */
 class Season extends Model
 {
+    use HasAuditLog;
     use HasFactory;
 
     protected $casts = [
@@ -169,9 +175,9 @@ class Season extends Model
             ->withTimestamps();
     }
 
-    protected static function booted()
+    protected static function booted(): void
     {
-        static::saving(function ($season): void {
+        static::saving(function (self $season): void {
             if ($season->start_at >= $season->end_at) {
                 throw new \DomainException('start_at must be before end_at');
             }
@@ -179,7 +185,7 @@ class Season extends Model
             // Reject any season whose date range overlaps an existing one.
             // Standard overlap condition: A.start < B.end AND A.end > B.start
             $overlaps = static::query()
-                ->when($season->exists, fn ($q) => $q->where('id', '!=', $season->id))
+                ->when($season->exists, fn (Builder $q) => $q->where('id', '!=', $season->id))
                 ->where('start_at', '<', $season->end_at)
                 ->where('end_at', '>', $season->start_at)
                 ->exists();

@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Domains\ClubAdmin\Contact\Models;
 
+use App\Domains\Shared\Traits\HasAuditLog;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -13,8 +15,9 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $user_agent
  * @property array<array-key, mixed>|null $inputs
  * @property int $is_blocked
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ *
  * @method static \Database\Factories\Domains\ClubAdmin\Contact\Models\SpamFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Spam newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Spam newQuery()
@@ -26,10 +29,12 @@ use Illuminate\Database\Eloquent\Model;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Spam whereIsBlocked($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Spam whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Spam whereUserAgent($value)
+ *
  * @mixin \Eloquent
  */
 final class Spam extends Model
 {
+    use HasAuditLog;
     use HasFactory;
 
     protected $casts = [

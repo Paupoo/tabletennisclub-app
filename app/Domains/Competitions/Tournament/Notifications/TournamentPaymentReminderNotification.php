@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Competitions\Tournament\Notifications;
 
 use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
@@ -36,6 +37,7 @@ class TournamentPaymentReminderNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         $hoursLeft = (int) now()->diffInHours($this->deadline, false);
+        $club = Club::ourClub()->first();
 
         return (new MailMessage)
             ->subject(__('Payment reminder') . ' — ' . $this->tournament->name)
@@ -50,9 +52,10 @@ class TournamentPaymentReminderNotification extends Notification
             ]))
             ->line('---')
             ->line(__('Structured reference: :ref', ['ref' => $this->payment->reference]))
-            ->line(__('IBAN: BE23 7323 3320 8791 — BIC: CREGBEBB'))
+            ->line(__('payment.iban_bic_line', ['iban' => $club->bank_account, 'bic' => $club->bic]))
             ->line('---')
-            ->line(__('After the deadline, your registration will be cancelled automatically.'));
+            ->line(__('After the deadline, your registration will be cancelled automatically.'))
+            ->line(__('If you have already paid by the time you receive this message, please ignore this reminder.'));
     }
 
     /** @return array<int, string> */

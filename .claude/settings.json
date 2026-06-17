@@ -4,7 +4,11 @@
       "mcp__laravel-boost__last-error",
       "mcp__laravel-boost__browser-logs",
       "mcp__laravel-boost__search-docs",
+      "mcp__laravel-boost__database-query",
+      "mcp__laravel-boost__database-schema",
+      "mcp__laravel-boost__get-absolute-url",
       "Bash(vendor/bin/pint *)",
+      "Bash(php artisan route:list *)",
       "Bash(php /tmp/fix_missing_trait.php)",
       "Bash(php add_all_breadcrumbs.php)"
     ]

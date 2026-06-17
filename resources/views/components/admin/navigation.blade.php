@@ -26,12 +26,18 @@
     <x-menu-separator />
 
     <x-menu-item
-        icon="o-bell"
-        link="{{ route('notifications.index') }}"
-        :title="__('Notifications')"
-        :badge="$unreadNotificationsCount > 0 ? (string) $unreadNotificationsCount : null"
-        badge-classes="badge-error"
+        icon="o-home"
+        link="{{ route('dashboard') }}"
+        :title="__('Dashboard')"
     />
+    <x-menu-item
+    icon="o-bell"
+    link="{{ route('notifications.index') }}"
+    :title="__('Notifications')"
+    :badge="$unreadNotificationsCount > 0 ? (string) $unreadNotificationsCount : null"
+    badge-classes="badge-error"
+    />
+    
 
     <x-menu-separator />
     @if(Auth()->user()->is_admin || Auth()->user()->is_committee_member )
@@ -42,9 +48,11 @@
         <x-menu-item icon="o-squares-2x2" link="{{ route('admin.tables.index') }}" :title="__('Tables')" />
     </x-menu-sub>
                     
-    <x-menu-sub icon="o-inbox-stack" :title="__('Members Admin')">
+    <x-menu-sub icon="o-user-group" :title="__('Members Admin')">
         <x-menu-item icon="o-users" link="{{ route('admin.users.index') }}" :title="__('Users')" />
-        <x-menu-item icon="o-credit-card" link="{{ route('admin.users.registrations') }}" :title="__('Registrations')" />
+        <x-menu-item icon="o-list-bullet" link="{{ route('admin.users.registrations') }}" :title="__('Registrations')" />
+        <x-menu-item icon="o-clipboard-document-list" link="{{ route('admin.subscriptions.roster') }}" :title="__('Season roster')" />
+        <x-menu-item icon="o-view-columns" link="{{ route('admin.planning.board') }}" :title="__('Planning board')" />
     </x-menu-sub>
 
     <x-menu-sub icon="o-banknotes" :title="__('Treasury')">
@@ -98,11 +106,21 @@
     <x-menu-sub icon="o-globe-alt" :title="__('Website')">
         <x-menu-item icon="o-newspaper" link="{{ route('admin.website.articles.index') }}" :title="__('Articles')" />
         <x-menu-item icon="o-envelope-open" link="{{ route('admin.website.contacts.index') }}" :title="__('Contacts')" />
+        @can('manage-contacts')
+            <x-menu-item icon="o-document-text" link="{{ route('admin.website.contacts.email-templates') }}" :title="__('Email templates')" />
+        @endcan
         <x-menu-item icon="o-shield-exclamation" link="{{ route('admin.website.spams.index') }}" :title="__('Spam')" />
         <x-menu-item icon="o-calendar-days" link="{{ route('admin.website.events.index') }}" :title="__('Events')" />
     </x-menu-sub>
     @endif
 
+    @if($user->canViewAuditLog())
     <x-menu-separator />
+    <x-menu-item
+        icon="o-magnifying-glass"
+        link="{{ route('admin.audit.index') }}"
+        :title="__('Audit')"
+    />
+    @endif
 
 </x-menu>

@@ -3,11 +3,8 @@
 
 Bonjour **{{ $payment->payable->user->first_name ?? '' }}**,
 
-@if($payment->payable instanceof \App\Domains\ClubAdmin\Subscriptions\Models\Subscription)
-Vous êtes inscrit à la saison **{{ $payment->payable->season?->name ?? '' }}**.
-@elseif($payment->payable instanceof \App\Models\ClubEvents\Tournament\TournamentRegistration)
-Vous êtes inscrit au tournoi **{{ $payment->payable->tournament?->name ?? '' }}**.
-@endif
+@php $label = $payment->payable->getPaymentLabel(); @endphp
+Vous avez un paiement en attente pour **{{ $label['type'] }}** : **{{ $label['name'] }}**.
 
 Montant à régler : **{{ number_format($payment->amount_due, 2, ',', ' ') }} €**
 
@@ -25,6 +22,8 @@ Montant à régler : **{{ number_format($payment->amount_due, 2, ',', ' ') }} �
 **QR code de paiement :**
 
 <img src="{{ $qrCode }}" alt="QR code de paiement" style="max-width: 160px; display: block;" />
+
+*{{ __('If you have already paid by the time you receive this message, please ignore this reminder.') }}*
 
 Merci pour votre inscription et votre engagement dans notre club !
 </x-mail::message>

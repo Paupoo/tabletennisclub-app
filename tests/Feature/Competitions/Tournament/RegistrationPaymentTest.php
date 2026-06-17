@@ -6,6 +6,7 @@ use App\Domains\ClubAdmin\Payment\Models\CashRegister;
 use App\Domains\ClubAdmin\Payment\Models\CashRegisterEntry;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Competitions\Tournament\Services\TournamentService;
@@ -174,6 +175,9 @@ describe('recordDebt', function (): void {
 // ── openQrModal (Livewire) ────────────────────────────────────────────────────
 
 describe('openQrModal', function (): void {
+    beforeEach(function (): void {
+        Club::factory()->ownClub()->create();
+    });
     it('creates a Payment on-the-fly and opens the QR modal for a registration without payment_id', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $tournament = paidTournamentNoPayment();

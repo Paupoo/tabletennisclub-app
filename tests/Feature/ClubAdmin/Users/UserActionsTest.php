@@ -8,7 +8,6 @@ use App\Actions\User\OnboardFromContactAction;
 use App\Actions\User\RestoreUserAction;
 use App\Actions\User\SendInvitationAction;
 use App\Actions\User\SoftDeleteUserAction;
-use App\Actions\User\ToggleActiveAction;
 use App\Actions\User\UpdateUserAction;
 use App\Data\User\CreateUserData;
 use App\Data\User\UpdateUserData;
@@ -277,29 +276,6 @@ describe('AnonymizeUserAction', function (): void {
     });
 });
 
-// ── ToggleActiveAction ─────────────────────────────────────────────────────────
-
-describe('ToggleActiveAction', function (): void {
-    it('activates an inactive user', function (): void {
-        $actor = $this->createFakeAdmin();
-        $user = User::factory()->create(['is_active' => false]);
-
-        ToggleActiveAction::handle($user, true, $actor);
-
-        expect($user->fresh()->is_active)->toBeTrue()
-            ->and($user->fresh()->updated_by)->toBe($actor->id);
-    });
-
-    it('deactivates an active user', function (): void {
-        $actor = $this->createFakeAdmin();
-        $user = User::factory()->create(['is_active' => true]);
-
-        ToggleActiveAction::handle($user, false, $actor);
-
-        expect($user->fresh()->is_active)->toBeFalse();
-    });
-});
-
 // ── SendInvitationAction ───────────────────────────────────────────────────────
 
 describe('SendInvitationAction', function (): void {
@@ -345,15 +321,16 @@ describe('OnboardFromContactAction', function (): void {
             ->and($user->email)->toBe('sophie.bernard@example.com');
     });
 
-    it('marks contact as processed', function (): void {
+    it('marks contact as processed and links it to the created user', function (): void {
         Mail::fake();
 
         $actor = $this->createFakeAdmin();
         $contact = Contact::factory()->create(['interest' => ContactReasonEnum::JOIN_US]);
 
-        OnboardFromContactAction::handle($contact, $actor);
+        $user = OnboardFromContactAction::handle($contact, $actor);
 
-        expect($contact->fresh()->status)->toBe('processed');
+        expect($contact->fresh()->status)->toBe('processed')
+            ->and($contact->fresh()->user_id)->toBe($user->id);
     });
 
     it('sends invitation email to new user', function (): void {

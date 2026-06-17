@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Contact\Models\Contact;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\ContactReasonEnum;
 use App\Mail\InviteNewUserMail;
 use Illuminate\Support\Facades\Mail;
@@ -63,7 +64,23 @@ test('onboarding sends invitation email to new user', function (): void {
     Mail::assertQueued(InviteNewUserMail::class, fn ($mail) => $mail->hasTo('test.onboard@club.com'));
 });
 
-test('committee member can also onboard a contact', function (): void {
+test('a managing committee member (secretary) can onboard a contact', function (): void {
+    $secretary = User::factory()->isCommitteeMember()->create([
+        'committee_role' => CommitteeRolesEnum::SECRETARY,
+    ]);
+    $contact = Contact::factory()->create([
+        'interest' => ContactReasonEnum::TRIAL,
+        'status' => 'new',
+    ]);
+
+    Livewire::actingAs($secretary)
+        ->test('pages::website.contacts.index')
+        ->call('onboardContact', $contact->id);
+
+    expect(User::where('email', $contact->email)->exists())->toBeTrue();
+});
+
+test('a non-managing committee member cannot onboard a contact', function (): void {
     $committee = $this->createFakeCommitteeMember();
     $contact = Contact::factory()->create([
         'interest' => ContactReasonEnum::TRIAL,
@@ -72,7 +89,8 @@ test('committee member can also onboard a contact', function (): void {
 
     Livewire::actingAs($committee)
         ->test('pages::website.contacts.index')
-        ->call('onboardContact', $contact->id);
+        ->call('onboardContact', $contact->id)
+        ->assertForbidden();
 
-    expect(User::where('email', $contact->email)->exists())->toBeTrue();
+    expect(User::where('email', $contact->email)->exists())->toBeFalse();
 });

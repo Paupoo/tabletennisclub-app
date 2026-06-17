@@ -20,10 +20,7 @@ class MeetingFactory extends Factory
 
     public function committee(): static
     {
-        return $this->state([
-            'type' => MeetingTypeEnum::COMMITTEE,
-            'is_public' => false,
-        ]);
+        return $this->state(['type' => MeetingTypeEnum::COMMITTEE]);
     }
 
     public function completed(): static
@@ -65,7 +62,6 @@ class MeetingFactory extends Factory
             'type' => $type,
             'status' => $status,
             'format' => $format,
-            'is_public' => $type === MeetingTypeEnum::GENERAL_ASSEMBLY,
             'description' => fake()->optional()->paragraph(),
             'scheduled_at' => $scheduledAt,
             'ends_at' => $scheduledAt ? (clone $scheduledAt)->modify('+2 hours') : null,
@@ -82,10 +78,7 @@ class MeetingFactory extends Factory
 
     public function generalAssembly(): static
     {
-        return $this->state([
-            'type' => MeetingTypeEnum::GENERAL_ASSEMBLY,
-            'is_public' => true,
-        ]);
+        return $this->state(['type' => MeetingTypeEnum::GENERAL_ASSEMBLY]);
     }
 
     public function physical(): static

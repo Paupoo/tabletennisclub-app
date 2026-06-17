@@ -62,11 +62,7 @@
                 <div class="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4 text-sm">
                     <p class="flex items-center">
                         Made with
-                        <svg class="w-4 h-4 mx-1 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd"
-                                d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z"
-                                clip-rule="evenodd"></path>
-                        </svg>
+                        <x-icon name="s-heart" class="w-4 h-4 mx-1 text-red-400" />
                         by <span class="font-medium text-white ml-1">Aurélien Paulus</span>
                     </p>
                     <span class="hidden sm:inline text-gray-600">•</span>
@@ -125,10 +121,7 @@
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-xl text-decoration-line font-bold text-gray-900">Licence MIT</h3>
                         <button onclick="hideLicense()" class="text-gray-400 hover:text-gray-600">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
+                            <x-icon name="o-x-mark" class="w-6 h-6" />
                         </button>
                     </div>
                     <div class="prose prose-sm max-w-none">
@@ -172,10 +165,7 @@
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-xl font-bold text-gray-900">{{ __('Privacy Policy') }}</h3>
                         <button onclick="hidePrivacyPolicy()" class="text-gray-400 hover:text-gray-600">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
+                            <x-icon name="o-x-mark" class="w-6 h-6" />
                         </button>
                     </div>
                     <div class="prose prose-sm max-w-none">

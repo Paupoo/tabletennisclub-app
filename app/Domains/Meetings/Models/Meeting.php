@@ -6,10 +6,12 @@ namespace App\Domains\Meetings\Models;
 
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\ClubPosts\Models\EventPost;
 use App\Domains\Shared\Enums\MeetingFormatEnum;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\MeetingTypeEnum;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
+use App\Domains\Shared\Traits\HasAuditLog;
 use Database\Factories\Domains\Meetings\Models\MeetingFactory;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Collection;
@@ -19,6 +21,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Carbon;
 
 /**
@@ -27,7 +31,6 @@ use Illuminate\Support\Carbon;
  * @property MeetingTypeEnum $type
  * @property MeetingStatusEnum $status
  * @property MeetingFormatEnum $format
- * @property bool $is_public
  * @property string|null $description
  * @property Carbon|null $scheduled_at
  * @property Carbon|null $ends_at
@@ -45,6 +48,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read User $creator
+ * @property-read EventPost|null $eventPost
  * @property-read Collection<int, User> $users
  * @property-read Collection<int, MeetingDateProposal> $dateProposals
  * @property-read Collection<int, MeetingAgendaItem> $agendaItems
@@ -52,7 +56,7 @@ use Illuminate\Support\Carbon;
  * @property-read Collection<int, MeetingActionItem> $actionItems
  * @property-read int|null $action_items_count
  * @property-read int|null $agenda_items_count
- * @property-read \App\Domains\Meetings\Models\MeetingUser|null $registration
+ * @property-read MeetingUser|null $registration
  * @property-read Collection<int, User> $attendedUsers
  * @property-read int|null $attended_users_count
  * @property-read Collection<int, User> $confirmedUsers
@@ -60,6 +64,7 @@ use Illuminate\Support\Carbon;
  * @property-read int|null $date_proposals_count
  * @property-read float|null $meal_price
  * @property-read int|null $users_count
+ *
  * @method static \Database\Factories\Domains\Meetings\Models\MeetingFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting newQuery()
@@ -72,7 +77,6 @@ use Illuminate\Support\Carbon;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereFormat($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereHasMeal($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereIsPublic($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereLocation($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereMealDescription($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereMealPriceCents($value)
@@ -86,18 +90,19 @@ use Illuminate\Support\Carbon;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereTitle($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereType($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Meeting whereUpdatedAt($value)
+ *
  * @mixin \Eloquent
  */
 #[UseFactory(MeetingFactory::class)]
 class Meeting extends Model
 {
+    use HasAuditLog;
     use HasFactory;
 
     protected $casts = [
         'type' => MeetingTypeEnum::class,
         'status' => MeetingStatusEnum::class,
         'format' => MeetingFormatEnum::class,
-        'is_public' => 'boolean',
         'scheduled_at' => 'datetime',
         'ends_at' => 'datetime',
         'rsvp_deadline' => 'date',
@@ -110,7 +115,6 @@ class Meeting extends Model
         'type',
         'status',
         'format',
-        'is_public',
         'description',
         'scheduled_at',
         'ends_at',
@@ -174,6 +178,11 @@ class Meeting extends Model
         return $this->hasMany(MeetingDateProposal::class)->orderBy('proposed_at');
     }
 
+    public function eventPost(): MorphOne
+    {
+        return $this->morphOne(EventPost::class, 'eventable');
+    }
+
     /** @return float|null Meal price in euros */
     public function getMealPriceAttribute(): ?float
     {
@@ -205,7 +214,7 @@ class Meeting extends Model
     {
         return (int) Payment::query()
             ->where('payable_type', (new MeetingUser)->getMorphClass())
-            ->whereIn('payable_id', function ($query): void {
+            ->whereIn('payable_id', function (Builder $query): void {
                 $query->select('id')
                     ->from('meeting_user')
                     ->where('meeting_id', $this->id)

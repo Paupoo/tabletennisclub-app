@@ -30,4 +30,14 @@ class ClubFactory extends Factory
             'city_name' => fake()->city(),
         ];
     }
+
+    public function ownClub(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'name' => 'C.T.T Ottignies-Blocry',
+            'is_own_club' => true,
+            'bic' => 'CREGBEBB',
+            'bank_account' => 'BE23732333208791',
+        ]);
+    }
 }

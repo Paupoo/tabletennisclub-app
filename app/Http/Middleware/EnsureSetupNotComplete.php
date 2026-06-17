@@ -13,8 +13,12 @@ class EnsureSetupNotComplete
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (AppSetting::get('setup_completed') === '1') {
-            return redirect('/');
+        try {
+            if (AppSetting::get('setup_completed') === '1') {
+                return redirect('/');
+            }
+        } catch (\Exception) {
+            // Table may not exist on a fresh install — allow access.
         }
 
         return $next($request);

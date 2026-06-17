@@ -42,10 +42,9 @@ describe('minor detection in the admin form', function () {
 });
 
 describe('warn on save', function () {
-    it('still saves a minor without guardian (warn, not block) when inactive', function () {
+    it('still saves a minor without guardian (warn, not block)', function () {
         $user = User::factory()->create([
             'birthdate' => now()->subYears(15),
-            'is_active' => false,
             'is_coach' => false,
         ]);
 
@@ -56,63 +55,6 @@ describe('warn on save', function () {
             ->assertHasNoErrors();
 
         expect($user->fresh()->isMinor())->toBeTrue();
-    });
-});
-
-describe('hard block on affiliation (is_active)', function () {
-    it('blocks setting a minor active without a guardian', function () {
-        $user = User::factory()->create([
-            'birthdate' => now()->subYears(15),
-            'is_active' => false,
-            'is_coach' => false,
-        ]);
-
-        Livewire::test(GUARDIAN_FORM_COMPONENT, ['user' => $user])
-            ->set('licence_type', 'recreative')
-            ->set('is_active', true)
-            ->set('password', '')
-            ->call('save')
-            ->assertHasErrors('is_active');
-
-        expect($user->fresh()->is_active)->toBeFalse();
-    });
-
-    it('allows setting a minor active once a guardian is linked', function () {
-        $user = User::factory()->create([
-            'birthdate' => now()->subYears(15),
-            'is_active' => false,
-            'is_coach' => false,
-        ]);
-        $guardian = Guardian::factory()->create();
-
-        Livewire::test(GUARDIAN_FORM_COMPONENT, ['user' => $user])
-            ->set('licence_type', 'recreative')
-            ->call('attachGuardian', $guardian->id)
-            ->set('is_active', true)
-            ->set('password', '')
-            ->call('save')
-            ->assertHasNoErrors();
-
-        $user->refresh();
-        expect($user->is_active)->toBeTrue()
-            ->and($user->guardians)->toHaveCount(1);
-    });
-
-    it('does not block an adult set active without a guardian', function () {
-        $user = User::factory()->create([
-            'birthdate' => now()->subYears(30),
-            'is_active' => false,
-            'is_coach' => false,
-        ]);
-
-        Livewire::test(GUARDIAN_FORM_COMPONENT, ['user' => $user])
-            ->set('licence_type', 'recreative')
-            ->set('is_active', true)
-            ->set('password', '')
-            ->call('save')
-            ->assertHasNoErrors();
-
-        expect($user->fresh()->is_active)->toBeTrue();
     });
 });
 
@@ -139,7 +81,6 @@ describe('guardian management from the form', function () {
     it('detaches a linked guardian', function () {
         $user = User::factory()->create([
             'birthdate' => now()->subYears(15),
-            'is_active' => false,
             'is_coach' => false,
         ]);
         $guardian = Guardian::factory()->create();
@@ -181,7 +122,7 @@ describe('linking an existing member as guardian', function () {
     });
 
     it('creates a guardian linked to the member and links it to the minor', function () {
-        $minor = User::factory()->create(['birthdate' => now()->subYears(15), 'is_active' => false, 'is_coach' => false]);
+        $minor = User::factory()->create(['birthdate' => now()->subYears(15), 'is_coach' => false]);
         $adult = User::factory()->create([
             'first_name' => 'Paul',
             'last_name' => 'Durand',

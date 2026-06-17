@@ -1,79 +1,84 @@
-<div>
+<div x-data="{ mobileSearchOpen: false, mobileActionsOpen: false }">
     <x-slot:breadcrumbs>
         <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
     </x-slot:breadcrumbs>
 
     <x-header progress-indicator separator :title="__('Users')">
         <x-slot:middle>
-            <x-input class="w-full" clearable icon="o-magnifying-glass" :placeholder="__('Search...')"
-                wire:model.live.debounce.300ms="search" />
+            <div class="hidden w-full lg:block">
+                <x-input class="w-full" clearable icon="o-magnifying-glass" :placeholder="__('Search...')"
+                    wire:model.live.debounce.300ms="search" />
+            </div>
         </x-slot:middle>
         <x-slot:actions>
-            <x-button class="btn-ghost {{ $activeFiltersCount > 0 ? 'btn-active' : '' }}"
-                wire:click="$toggle('showFilters')">
-                <x-icon class="h-5 w-5" name="o-funnel" />
-                {{ __('Filters') }}
-                @if ($activeFiltersCount > 0)
-                    <x-badge class="badge-sm badge-primary" value="{{ $activeFiltersCount }}" />
+            {{-- Mobile: 🔍 · filter · ☰ --}}
+            <div class="flex items-center gap-1 lg:hidden">
+                <button class="btn btn-ghost btn-circle btn-sm" @click="mobileSearchOpen = true">
+                    <x-icon name="o-magnifying-glass" class="h-5 w-5" />
+                </button>
+                <button class="btn btn-ghost btn-circle btn-sm relative {{ count($filterChips) > 0 ? 'btn-active' : '' }}"
+                    wire:click="$set('filterDrawer', true)">
+                    <x-icon name="o-funnel" class="h-5 w-5" />
+                    @if (count($filterChips) > 0)
+                        <span class="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-bold leading-none text-primary-content">{{ count($filterChips) }}</span>
+                    @endif
+                </button>
+                <button class="btn btn-primary btn-circle btn-sm" @click="mobileActionsOpen = true">
+                    <x-icon name="o-bars-3" class="h-5 w-5" />
+                </button>
+            </div>
+            {{-- Desktop: full buttons --}}
+            <div class="hidden items-center gap-2 lg:flex">
+                <x-button class="btn-ghost {{ count($filterChips) > 0 ? 'btn-active' : '' }}"
+                    icon="o-funnel" :label="__('Filters')"
+                    wire:click="$set('filterDrawer', true)">
+                    @if (count($filterChips) > 0)
+                        <x-badge class="badge-sm badge-primary" value="{{ count($filterChips) }}" />
+                    @endif
+                </x-button>
+                @if (Auth::user()->is_admin || Auth::user()->is_committee_member)
+                    <x-button class="btn-ghost btn-sm btn-circle" icon="o-arrow-path"
+                        :tooltip="__('Recalculate force list')"
+                        wire:click="recalculateForceList" spinner="recalculateForceList" />
                 @endif
-            </x-button>
-            @if (Auth::user()->is_admin || Auth::user()->is_committee_member)
-                <x-button class="btn-ghost btn-sm btn-circle" icon="o-arrow-path"
-                    :tooltip="__('Recalculate force list')"
-                    wire:click="recalculateForceList" spinner="recalculateForceList" />
-            @endif
-            <x-button class="btn-ghost" icon="o-envelope" :label="__('Quick invite')"
-                wire:click="$set('quickInviteDrawer', true)" responsive />
-            <x-button class="btn-primary" icon="o-plus" :label="__('Create')"
-                link="{{ route('admin.users.create') }}" responsive />
+                <x-button class="btn-ghost" icon="o-envelope" :label="__('Quick invite')"
+                    wire:click="$set('quickInviteDrawer', true)" />
+                <x-button class="btn-primary" icon="o-plus" :label="__('Create')"
+                    link="{{ route('admin.users.create') }}" />
+            </div>
         </x-slot:actions>
     </x-header>
 
-    {{-- ── Filtres ────────────────────────────────────────────────────── --}}
-    <x-admin.shared.filter-bar :active-filters-count="$activeFiltersCount" :show="$showFilters">
-        <x-slot:filters>
-            <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
-                    {{ __('Licence type') }}
-                </p>
-                <div class="space-y-1">
-                    <x-radio wire:model.live="selectedLicenceType" :options="$licenceTypes" />
-                </div>
+    {{-- Mobile search bar --}}
+    <div class="lg:hidden border-b border-base-200" x-show="mobileSearchOpen"
+        x-transition:enter="transition ease-out duration-150"
+        x-transition:enter-start="opacity-0 -translate-y-1"
+        x-transition:enter-end="opacity-100 translate-y-0"
+        style="display:none">
+        <div class="flex items-center gap-2 px-4 py-2.5">
+            <div class="flex flex-1 items-center gap-2 rounded-xl bg-base-200 px-3 py-2">
+                <x-icon name="o-magnifying-glass" class="h-4 w-4 shrink-0 text-base-content/40" />
+                <input wire:model.live.debounce.300ms="search"
+                    class="flex-1 bg-transparent text-sm outline-none placeholder:text-base-content/40"
+                    placeholder="{{ __('Search...') }}" />
             </div>
-            <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
-                    {{ __('Gender') }}
-                </p>
-                <div class="space-y-1">
-                    @foreach (\App\Domains\Shared\Enums\Gender::options() as $gender)
-                        <x-checkbox :label="$gender['name']" :value="$gender['id']" wire:model.live="categories" />
-                    @endforeach
-                </div>
-            </div>
-            <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
-                    {{ __('Status') }}
-                </p>
-                <x-toggle :label="__('Show inactive users')" wire:model.live="showInactiveUsers" />
-            </div>
-            <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
-                    {{ __('Teams') }}
-                </p>
-                <x-choices :options="$teams" class="w-full" clearable :placeholder="__('Select a team...')"
-                    wire:model.live="team_ids" />
-            </div>
-        </x-slot:filters>
-    </x-admin.shared.filter-bar>
+            <button @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm">
+                <x-icon name="o-x-mark" class="h-5 w-5" />
+            </button>
+        </div>
+    </div>
+
+    {{-- ── Active filter chips ──────────────────────────────────────────────── --}}
+    <x-admin.shared.filter-chips :chips="$filterChips" />
 
     {{-- ── Cartes stats ──────────────────────────────────────────────── --}}
     <div class="mb-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
         @php
             $statCards = [
-                ['label' => __('Total'),       'key' => 'total',       'icon' => 'o-users',        'bg' => 'bg-base-200',    'color' => 'text-base-content/60'],
-                ['label' => __('Active'),      'key' => 'active',      'icon' => 'o-check-circle', 'bg' => 'bg-success/10',  'color' => 'text-success'],
-                ['label' => __('Competitive'), 'key' => 'competitive', 'icon' => 'o-trophy',       'bg' => 'bg-primary/10',  'color' => 'text-primary'],
-                ['label' => __('Inactive'),    'key' => 'inactive',    'icon' => 'o-x-circle',     'bg' => 'bg-base-200',    'color' => 'text-base-content/30'],
+                ['label' => __('Total'),        'key' => 'total',        'icon' => 'o-users',        'bg' => 'bg-base-200',    'color' => 'text-base-content/60'],
+                ['label' => __('Registered'),   'key' => 'registered',   'icon' => 'o-check-circle', 'bg' => 'bg-success/10',  'color' => 'text-success'],
+                ['label' => __('Competitive'),  'key' => 'competitive',  'icon' => 'o-trophy',       'bg' => 'bg-primary/10',  'color' => 'text-primary'],
+                ['label' => __('Unregistered'), 'key' => 'unregistered', 'icon' => 'o-x-circle',     'bg' => 'bg-base-200',    'color' => 'text-base-content/30'],
             ];
         @endphp
         @foreach ($statCards as $card)
@@ -107,40 +112,7 @@
         </div>
     @endif
 
-    {{-- ── Barre bulk (contextuelle) ────────────────────────────────── --}}
-    @if (count($selected) > 0)
-        <x-admin.shared.bulk-bar :selected="$selected">
-            <x-slot:actions>
-                <div class="border-base-200 flex items-center gap-2 border-r pr-3">
-                    <div class="min-w-44 shrink-0">
-                        <x-choices :options="$teams" class="w-full" clearable
-                            :placeholder="__('Add to a team...')" single wire:model.live="team_id" />
-                    </div>
-                    <x-button :disabled="$team_id === null" class="btn-ghost btn-sm" :label="__('Add')"
-                        wire:click="bulkAddToTeam" />
-                </div>
-                <div class="border-base-200 flex items-center gap-2 border-r pr-3">
-                    <div class="min-w-44 shrink-0">
-                        <x-choices :options="$subscriptions" class="w-full" clearable :placeholder="__('Subscribe to...')"
-                            single wire:model.live="subscription_id" />
-                    </div>
-                    <x-button :disabled="$subscription_id === null" class="btn-ghost btn-sm" :label="__('Subscribe')"
-                        wire:click="bulkSubscribe" />
-                </div>
-                <div class="flex items-center gap-1">
-                    <x-button class="btn-ghost btn-sm" :label="__('Activate')" wire:click="bulkActivate" />
-                    <span class="text-base-content/20 text-sm">/</span>
-                    <x-button class="btn-ghost btn-sm" :label="__('Deactivate')" wire:click="bulkDeactivate" />
-                </div>
-                @if (Auth::user()->is_admin)
-                    <x-button class="btn-ghost btn-sm text-error" icon="o-archive-box" :label="__('Archive')"
-                        wire:click="confirmBulkDelete" />
-                @endif
-            </x-slot:actions>
-        </x-admin.shared.bulk-bar>
-    @endif
-
-    {{-- ── Vue mobile (list) ─────────────────────────────────────────── --}}
+    {{-- ── Vue mobile ───────────────────────────────────────────────── --}}
     <div class="grid grid-cols-1 gap-3 lg:hidden">
         @forelse ($users as $user)
             @php
@@ -155,7 +127,14 @@
             <x-list-item :item="$user" class="bg-base-100 rounded-lg border"
                 wire:key="mobile-user-{{ $user->id }}">
                 <x-slot:avatar>
-                    <x-avatar :image="$user->photo ?? '/images/empty-user.jpg'" class="!w-10" />
+                    @if ($selectionModeActive)
+                        <input type="checkbox"
+                            class="checkbox checkbox-primary checkbox-sm"
+                            value="{{ $user->id }}"
+                            wire:model.live="selected" />
+                    @else
+                        <x-avatar :image="$user->photo ?? '/images/empty-user.jpg'" class="w-10!" />
+                    @endif
                 </x-slot:avatar>
                 <x-slot:value>
                     <span class="font-medium">{{ $user->first_name }} {{ $user->last_name }}</span>
@@ -169,7 +148,7 @@
                         @endif
                         <x-badge :value="$invBadge['label']" class="{{ $invBadge['class'] }}" />
                         @if ($user->has_paid)
-                            <x-badge value="✓ Paid" class="badge-success badge-xs" />
+                            <x-badge :value="__('Paid')" class="badge-success badge-xs" />
                         @else
                             <x-badge value="Unpaid" class="badge-error badge-soft badge-xs" />
                         @endif
@@ -177,19 +156,21 @@
                     </div>
                 </x-slot:sub-value>
                 <x-slot:actions>
-                    <x-admin.shared.row-actions>
-                        <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
-                            :tooltip="__('Edit')" link="{{ route('admin.users.edit', $user) }}" />
-                        @if ($invStatus !== 'active')
-                            <x-button class="btn-ghost btn-sm btn-circle" icon="o-envelope"
-                                :tooltip="__('Resend invitation')"
-                                wire:click="sendInvitation({{ $user->id }})" spinner />
-                        @endif
-                        @if (Auth::user()->is_admin && Auth::id() !== $user->id)
-                            <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-archive-box"
-                                :tooltip="__('Archive')" wire:click="confirmDelete({{ $user->id }})" />
-                        @endif
-                    </x-admin.shared.row-actions>
+                    @if (! $selectionModeActive)
+                        <x-admin.shared.row-actions>
+                            <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
+                                :tooltip="__('Edit')" link="{{ route('admin.users.edit', $user) }}" />
+                            @if ($invStatus !== 'active')
+                                <x-button class="btn-ghost btn-sm btn-circle" icon="o-envelope"
+                                    :tooltip="__('Resend invitation')"
+                                    wire:click="sendInvitation({{ $user->id }})" spinner />
+                            @endif
+                            @if (Auth::user()->is_admin && Auth::id() !== $user->id)
+                                <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-archive-box"
+                                    :tooltip="__('Archive')" wire:click="confirmDelete({{ $user->id }})" />
+                            @endif
+                        </x-admin.shared.row-actions>
+                    @endif
                 </x-slot:actions>
             </x-list-item>
         @empty
@@ -200,7 +181,7 @@
         @endforelse
     </div>
 
-    {{-- ── Vue desktop (table) ────────────────────────────────────────── --}}
+    {{-- ── Vue desktop ────────────────────────────────────────────────── --}}
     <div class="hidden lg:block">
         <x-card>
             @if ($users->isEmpty())
@@ -239,11 +220,9 @@
                             };
                         @endphp
                         <div class="flex items-center gap-2">
-                            {{-- Badge invitation --}}
                             <x-badge :value="$invBadge['label']" class="{{ $invBadge['class'] }}" />
-                            {{-- Badge paiement --}}
                             @if ($user->has_paid)
-                                <x-badge value="✓ Paid" class="badge-success badge-soft badge-xs" />
+                                <x-badge :value="__('Paid')" class="badge-success badge-soft badge-xs" />
                             @else
                                 <x-badge :value="__('Unpaid')" class="badge-error badge-soft badge-xs" />
                             @endif
@@ -279,16 +258,118 @@
         </x-card>
     </div>
 
-    {{-- ── Modales ───────────────────────────────────────────────────── --}}
+    {{-- ── Floating Pill — bulk actions ───────────────────────────────── --}}
+    <x-admin.shared.selection-pill
+        :selected="$selected"
+        :total="$this->getTotalMatchingCount()"
+        :selecting-all-results="$selectingAllResults"
+        :select-all="$selectAll">
+        <x-slot:actions>
+            <x-button class="btn-ghost btn-sm" icon="o-user-group" :label="__('Add to team')"
+                wire:click="$set('addToTeamModal', true)" />
+            <x-button class="btn-ghost btn-sm" icon="o-calendar" :label="__('Subscribe')"
+                wire:click="$set('subscribeModal', true)" />
+            <span class="text-base-content/20">|</span>
+            @if (Auth::user()->is_admin)
+                <x-button class="btn-ghost btn-sm text-error" icon="o-archive-box" :label="__('Archive')"
+                    wire:click="confirmBulkArchive" />
+            @endif
+        </x-slot:actions>
+    </x-admin.shared.selection-pill>
+
+    {{-- ── Filter drawer ────────────────────────────────────────────────────── --}}
+    <x-admin.shared.filter-drawer :title="__('Filters')">
+        <x-slot:filters>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    {{ __('Licence type') }}
+                </p>
+                <x-radio wire:model.live="selectedLicenceType" :options="$licenceTypes" />
+            </div>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    {{ __('Gender') }}
+                </p>
+                <div class="space-y-1">
+                    @foreach (\App\Domains\Shared\Enums\Gender::options() as $gender)
+                        <x-checkbox :label="$gender['name']" :value="$gender['id']" wire:model.live="categories" />
+                    @endforeach
+                </div>
+            </div>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    {{ __('Profile') }}
+                </p>
+                <x-toggle :label="__('Incomplete profile')" wire:model.live="incompleteProfile" />
+            </div>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    {{ __('Subscription') }}
+                </p>
+                <x-toggle :label="__('Unpaid subscription')" wire:model.live="unpaidSubscription" />
+            </div>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    {{ __('Equipment') }}
+                </p>
+                <x-toggle :label="__('Has a key')" wire:model.live="hasKey" />
+                <x-toggle :label="__('Has a cash register')" wire:model.live="hasCashRegister" class="mt-2" />
+            </div>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    {{ __('Teams') }}
+                </p>
+                <x-choices :options="$teams" class="w-full" clearable :placeholder="__('Select a team...')"
+                    wire:model.live="team_ids" />
+            </div>
+        </x-slot:filters>
+    </x-admin.shared.filter-drawer>
+
+    {{-- ── Modal archive single ─────────────────────────────────────── --}}
     <x-confirm-modal model="deleteModal" :title="__('Archive this member?')"
         :confirmLabel="__('Archive')" confirmAction="delete">
         <p>{{ __('The member will be archived and can be restored later. No data is permanently deleted.') }}</p>
     </x-confirm-modal>
 
-    <x-confirm-modal model="deleteSelectedModal" :title="__('Archive selected members?')"
-        :confirmLabel="__('Archive')" confirmAction="deleteSelected">
+    {{-- ── Modal archive bulk ───────────────────────────────────────── --}}
+    <x-confirm-modal model="confirmArchiveModal" :title="__('Archive selected members?')"
+        :confirmLabel="__('Archive')" confirmAction="bulkArchive">
         <p>{{ __('Selected members will be archived. Your own account is automatically excluded. Members can be restored later.') }}</p>
     </x-confirm-modal>
+
+    {{-- ── Modal add to team ────────────────────────────────────────── --}}
+    <x-modal wire:model="addToTeamModal" :title="__('Add to a team')">
+        <div class="space-y-4">
+            <p class="text-sm text-base-content/60">
+                {{ trans_choice('selectedCount', count($selected), ['count' => count($selected)]) }}
+                {{ __('will be added to the selected team.') }}
+            </p>
+            <x-choices :options="$teams" class="w-full" clearable :placeholder="__('Select a team...')"
+                single wire:model.live="team_id" />
+        </div>
+        <x-slot:actions>
+            <x-button :label="__('Cancel')" wire:click="$set('addToTeamModal', false)" />
+            <x-button class="btn-primary" :disabled="$team_id === null" :label="__('Add')"
+                wire:click="bulkAddToTeam" spinner="bulkAddToTeam" />
+        </x-slot:actions>
+    </x-modal>
+
+    {{-- ── Modal subscribe ──────────────────────────────────────────── --}}
+    <x-modal wire:model="subscribeModal" :title="__('Subscribe to an event')">
+        <div class="space-y-4">
+            <p class="text-sm text-base-content/60">
+                {{ trans_choice('selectedCount', count($selected), ['count' => count($selected)]) }}
+                {{ __('will be subscribed to the selected event.') }}
+            </p>
+            <x-choices :options="$subscriptions" class="w-full" clearable :placeholder="__('Subscribe to...')"
+                single wire:model.live="subscription_id" />
+        </div>
+        <x-slot:actions>
+            <x-button :label="__('Cancel')" wire:click="$set('subscribeModal', false)" />
+            <x-button class="btn-primary" :disabled="$subscription_id === null" :label="__('Subscribe')"
+                wire:click="bulkSubscribe" spinner="bulkSubscribe" />
+        </x-slot:actions>
+    </x-modal>
 
     {{-- ── Modal anonymisation RGPD ─────────────────────────────────── --}}
     <x-modal wire:model="anonymizeModal" :title="__('GDPR Anonymization — Irreversible')">
@@ -314,6 +395,26 @@
                 :disabled="strtoupper($anonymizeConfirmText) !== 'ANONYMIZE'" />
         </x-slot:actions>
     </x-modal>
+
+    {{-- ── Mobile action sheet ─────────────────────────────────────────── --}}
+    <x-admin.shared.mobile-actions>
+        <x-admin.shared.mobile-action-item
+            icon="o-plus" color="primary"
+            :label="__('Create a member')"
+            :description="__('Add a new member to the club')"
+            @click="mobileActionsOpen = false; window.location.href = '{{ route('admin.users.create') }}'" />
+        <x-admin.shared.mobile-action-item
+            icon="o-envelope" color="info"
+            :label="__('Quick invite')"
+            :description="__('Send an invitation by email')"
+            @click="mobileActionsOpen = false; $wire.set('quickInviteDrawer', true)" />
+        <div class="my-1 h-px bg-base-200"></div>
+        <x-admin.shared.mobile-action-item
+            icon="o-check-circle" color="base"
+            :label="__('Select')"
+            :description="__('Bulk actions on multiple members')"
+            @click="mobileActionsOpen = false; $wire.call('toggleSelectionMode')" />
+    </x-admin.shared.mobile-actions>
 
     {{-- ── Quick invite ──────────────────────────────────────────────── --}}
     <x-drawer wire:model="quickInviteDrawer" :title="__('Quick invite')" right class="w-full max-w-sm">

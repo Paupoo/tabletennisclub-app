@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
-// use Illuminate\Support\Facades\Gate;
+use App\Domains\ClubAdmin\Users\Models\User;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
+use Illuminate\Support\Facades\Gate;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -23,6 +24,8 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Gate::define('manage-contacts', fn (User $user): bool => $user->canManageClubAdmin());
+        Gate::define('manage-season', fn (User $user): bool => $user->canManageClubAdmin());
+        Gate::define('view-audit-log', fn (User $user): bool => $user->canViewAuditLog());
     }
 }

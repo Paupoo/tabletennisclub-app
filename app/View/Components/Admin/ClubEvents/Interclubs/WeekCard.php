@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\View\Components\Admin\ClubEvents\Interclubs;
 
 use Illuminate\View\Component;
+use Illuminate\View\View;
 
 class WeekCard extends Component
 {
@@ -63,7 +64,7 @@ class WeekCard extends Component
             && ! empty($this->matches);
     }
 
-    public function render()
+    public function render(): View
     {
         return view('admin.club-events.interclubs.week-card', [
             'isExpandable' => $this->isExpandable(),

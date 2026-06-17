@@ -9,11 +9,11 @@ use App\Domains\Trainings\Models\TrainingPack;
 
 final class CalculatePriceAction
 {
-    private const COMPETITIVE_PRICE = 125.0;
+    private const float COMPETITIVE_PRICE = 125.0;
 
-    private const DISCOUNT_AMOUNT = 10.0; // €
+    private const float DISCOUNT_AMOUNT = 10.0; // €
 
-    private const RECREATIVE_PRICE = 60.0;
+    private const float RECREATIVE_PRICE = 60.0;
 
     public function __invoke(Subscription $subscription, int $familyMembersCount = 1): Subscription
     {

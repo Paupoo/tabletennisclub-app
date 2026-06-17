@@ -8,12 +8,14 @@ use App\Domains\Bar\Models\BarCategory;
 use App\Domains\Bar\Models\BarOrderItem;
 use App\Domains\Bar\Models\BarProduct;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class BarController extends Controller
 {
-    public function add(Request $request)
+    public function add(Request $request): RedirectResponse
     {
         $cart = session()->get('cart', []);
 
@@ -26,7 +28,7 @@ class BarController extends Controller
         return back();
     }
 
-    public function index()
+    public function index(): View
     {
         $categories = BarCategory::with([
             'products.stockMovements',
@@ -37,7 +39,7 @@ class BarController extends Controller
         $cartCount = array_sum($cart);
 
         $products = BarProduct::whereIn('id', array_keys($cart))->get();
-        $totalPrice = $products->sum(function ($product) use ($cart) {
+        $totalPrice = $products->sum(function (BarProduct $product) use ($cart): int {
             return $product->sale_price * ($cart[$product->id] ?? 0);
         });
 
@@ -56,10 +58,10 @@ class BarController extends Controller
         $favorites = BarProduct::with('stockMovements')
             ->whereIn('id', $favoriteProductIds)
             ->get()
-            ->filter(function ($product) {
+            ->filter(function (BarProduct $product): bool {
                 return (bool) $product->is_available && (int) $product->stock > 0;
             })
-            ->sortBy(function ($product) use ($favoriteProductIds) {
+            ->sortBy(function (BarProduct $product) use ($favoriteProductIds): int {
                 return array_search($product->id, $favoriteProductIds);
             })
             ->values();
@@ -67,7 +69,7 @@ class BarController extends Controller
         return view('bar.index', compact('categories', 'cart', 'cartCount', 'totalPrice', 'favorites'));
     }
 
-    public function remove(Request $request)
+    public function remove(Request $request): RedirectResponse
     {
         $cart = session()->get('cart', []);
 
@@ -86,7 +88,7 @@ class BarController extends Controller
         return back();
     }
 
-    public function show()
+    public function show(): View
     {
         return view('bar.cart');
     }

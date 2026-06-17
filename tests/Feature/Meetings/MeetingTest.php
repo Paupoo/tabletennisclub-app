@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Meetings\Notifications\MeetingCancelledNotification;
@@ -28,7 +29,7 @@ function meetingAdmin(): User
 
 function meetingMember(): User
 {
-    return User::factory()->create(['is_admin' => false, 'is_committee_member' => false, 'is_active' => true]);
+    return User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
 }
 
 function confirmedMeeting(?User $creator = null): Meeting
@@ -43,7 +44,7 @@ describe('Meeting model', function (): void {
     test('quorum percentage calculates correctly', function (): void {
         $admin = meetingAdmin();
         $meeting = Meeting::factory()->generalAssembly()->confirmed()->withQuorum(10)->create(['created_by' => $admin->id]);
-        $members = User::factory()->count(6)->create(['is_active' => true]);
+        $members = User::factory()->count(6)->create([]);
 
         foreach ($members as $member) {
             $meeting->users()->attach($member->id, ['status' => MeetingUserStatusEnum::CONFIRMED->value]);
@@ -57,7 +58,7 @@ describe('Meeting model', function (): void {
     test('quorum is reached when confirmed count >= quorum', function (): void {
         $admin = meetingAdmin();
         $meeting = Meeting::factory()->generalAssembly()->confirmed()->withQuorum(5)->create(['created_by' => $admin->id]);
-        $members = User::factory()->count(5)->create(['is_active' => true]);
+        $members = User::factory()->count(5)->create([]);
 
         foreach ($members as $member) {
             $meeting->users()->attach($member->id, ['status' => MeetingUserStatusEnum::CONFIRMED->value]);
@@ -88,10 +89,6 @@ describe('Meeting model', function (): void {
         expect($meeting->meal_price)->toBe(12.0);
     });
 
-    test('general assembly type isPublic returns true', function (): void {
-        expect(MeetingTypeEnum::GENERAL_ASSEMBLY->isPublic())->toBeTrue()
-            ->and(MeetingTypeEnum::COMMITTEE->isPublic())->toBeFalse();
-    });
 });
 
 // ── Index page ────────────────────────────────────────────────────────────────
@@ -265,7 +262,7 @@ describe('Meeting form — poll mode', function (): void {
         Notification::fake();
 
         $admin = meetingAdmin();
-        $member = User::factory()->create(['is_committee_member' => true, 'is_active' => true]);
+        $member = User::factory()->create(['is_committee_member' => true]);
 
         Livewire::actingAs($admin)
             ->test('pages::club-events.meetings.form')
@@ -434,7 +431,7 @@ describe('SendMeetingInvitationsJob', function (): void {
         Notification::fake();
 
         $admin = meetingAdmin();
-        $member = User::factory()->create(['is_committee_member' => true, 'is_active' => true]);
+        $member = User::factory()->create(['is_committee_member' => true]);
         $meeting = confirmedMeeting($admin);
 
         dispatch_sync(new SendMeetingInvitationsJob($meeting->id));
@@ -449,7 +446,7 @@ describe('SendMeetingInvitationsJob', function (): void {
         Notification::fake();
 
         $admin = meetingAdmin();
-        $member = User::factory()->create(['is_committee_member' => true, 'is_active' => true]);
+        $member = User::factory()->create(['is_committee_member' => true]);
         $meeting = confirmedMeeting($admin);
 
         dispatch_sync(new SendMeetingInvitationsJob($meeting->id));
@@ -463,7 +460,11 @@ describe('SendMeetingInvitationsJob', function (): void {
         Notification::fake();
 
         $admin = meetingAdmin();
-        $members = User::factory()->count(3)->create(['is_active' => true]);
+        $season = makeActiveSeason();
+        $members = User::factory()->count(3)->create([]);
+        foreach ($members as $member) {
+            Subscription::factory()->for($member)->create(['season_id' => $season->id, 'status' => 'confirmed']);
+        }
         $meeting = Meeting::factory()->generalAssembly()->confirmed()->create(['created_by' => $admin->id]);
 
         dispatch_sync(new SendMeetingInvitationsJob($meeting->id));
@@ -533,7 +534,7 @@ describe('Meeting show page', function (): void {
         Notification::fake();
 
         $admin = meetingAdmin();
-        $committee = User::factory()->create(['is_committee_member' => true, 'is_active' => true]);
+        $committee = User::factory()->create(['is_committee_member' => true]);
         $meeting = confirmedMeeting($admin);
 
         Livewire::actingAs($admin)
@@ -567,7 +568,7 @@ describe('Meeting show page', function (): void {
         Notification::fake();
 
         $admin = meetingAdmin();
-        $committee = User::factory()->create(['is_committee_member' => true, 'is_active' => true]);
+        $committee = User::factory()->create(['is_committee_member' => true]);
         $meeting = confirmedMeeting($admin);
 
         Livewire::actingAs($admin)
@@ -640,8 +641,8 @@ describe('Meeting attendance — catering view', function (): void {
         $admin = meetingAdmin();
         $meeting = Meeting::factory()->confirmed()->withMeal('Pizzas', 1200)->create(['created_by' => $admin->id]);
 
-        $reserver = User::factory()->create(['is_active' => true, 'last_name' => 'Aaa']);
-        $skipper = User::factory()->create(['is_active' => true, 'last_name' => 'Bbb']);
+        $reserver = User::factory()->create(['last_name' => 'Aaa']);
+        $skipper = User::factory()->create(['last_name' => 'Bbb']);
 
         $meeting->users()->attach($reserver->id, ['status' => MeetingUserStatusEnum::CONFIRMED->value, 'meal_reserved' => true]);
         $meeting->users()->attach($skipper->id, ['status' => MeetingUserStatusEnum::CONFIRMED->value, 'meal_reserved' => false]);
@@ -666,7 +667,7 @@ describe('Meeting attendance — catering view', function (): void {
     test('the catering banner is hidden when the meeting has no meal', function (): void {
         $admin = meetingAdmin();
         $meeting = Meeting::factory()->confirmed()->create(['created_by' => $admin->id]);
-        $user = User::factory()->create(['is_active' => true]);
+        $user = User::factory()->create([]);
         $meeting->users()->attach($user->id, ['status' => MeetingUserStatusEnum::CONFIRMED->value]);
 
         Livewire::actingAs($admin)

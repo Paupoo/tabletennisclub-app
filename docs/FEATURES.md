@@ -320,3 +320,46 @@
 4. Trésorier valide ou paie manuellement
 5. Payment status → paid / partially_paid / refunded
 
+---
+
+## Site public — Calendrier des activités (homepage)
+
+### Comment fonctionne la section "Horaires" de la page d'accueil ?
+
+La section affiche les `TrainingPack` actifs selon une **chaîne de priorité** :
+
+| Priorité | Condition | Bandeau affiché |
+|----------|-----------|-----------------|
+| 1 | Saison future (non active, `start_at` > maintenant) avec packs | "Ces horaires entrent en vigueur dès le {date}" |
+| 2a | Saison active, pas encore commencée | "Ces horaires entrent en vigueur dès le {date}" |
+| 2b | Saison active, commencée | Aucun bandeau |
+| 3 | Aucune saison active → fallback sur la dernière saison passée avec packs | "Saison terminée – reprise prévue en septembre" |
+
+**Filtres automatiques sur les packs** :
+- `is_active = true`
+- `day_of_week` non nul (les stages ponctuels sont exclus)
+- `pack_end_date` nul ou futur (packs expirés exclus)
+
+### Comment mettre à jour les horaires de la saison suivante ?
+
+1. Créer la nouvelle saison (Admin → Seasons) avec `start_at` = 1er septembre
+2. Créer les `TrainingPack` pour cette saison (même si `is_active = false` sur la saison)
+3. Le site affiche automatiquement ces horaires avec le bandeau "Dès le 1er septembre"
+
+Quand la saison précédente est terminée et qu'aucune saison n'est active, le site bascule automatiquement sur le fallback (saison passée + bandeau "Saison terminée").
+
+### Comment configurer la ligne "Interclubs" du calendrier ?
+
+La ligne Interclubs est configurable depuis **Admin → Club Settings → Interclub Schedule** (section en bas de page).
+
+Paramètres éditables :
+- Activer / désactiver la ligne Interclubs
+- Jour de la semaine
+- Heure début / heure fin
+- Salle
+- Description
+
+**Règle** : la ligne Interclubs n'apparaît que lorsqu'une saison existe (active ou future). Elle est masquée automatiquement hors-saison.
+
+Les valeurs sont stockées dans `AppSetting` avec les clés `interclub_schedule_*`.
+

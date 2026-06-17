@@ -24,7 +24,7 @@ beforeEach(function (): void {
         'category' => 'MEN',
         'season_id' => $season->id,
     ]);
-    $ourClub = Club::factory()->create(['licence' => config('app.club_licence')]);
+    $ourClub = Club::factory()->ownClub()->create();
     Club::factory()->create();
     $room = Room::factory()->create([
         'capacity_for_interclubs' => 2,

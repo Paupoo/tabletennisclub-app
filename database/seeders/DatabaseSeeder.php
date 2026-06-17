@@ -8,6 +8,7 @@ namespace Database\Seeders;
 
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
+use App\Domains\ClubAdmin\Payment\Models\CashRegister;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\League;
@@ -42,7 +43,8 @@ class DatabaseSeeder extends Seeder
         // ── Our club ──────────────────────────────────────────────────────────
         Club::create([
             'name' => 'C.T.T Ottignies-Blocry',
-            'licence' => config('app.club_licence'),
+            'licence' => 'BBW214',
+            'is_own_club' => true,
             'building_name' => 'Centre Sportif J. Demeester',
             'street' => "Rue de l'Invasion 80",
             'city_code' => '1340',
@@ -119,9 +121,7 @@ class DatabaseSeeder extends Seeder
 
         // Create 1 admin
         $admin = User::make([
-            'is_active' => true,
             'is_admin' => true,
-            'is_competitor' => true,
             'email' => 'aurelien.paulus@gmail.com',
             'password' => Hash::make('test1234'),
             'first_name' => 'Aurélien',
@@ -136,7 +136,7 @@ class DatabaseSeeder extends Seeder
             'licence' => '114399',
             'is_committee_member' => true,
             'committee_role' => CommitteeRolesEnum::ADMINISTRATOR,
-        ])->club()->associate(Club::firstWhere('licence', config('app.club_licence')));
+        ])->club()->associate(Club::own());
         $admin->save();
 
         // Create test dream team
@@ -155,9 +155,7 @@ class DatabaseSeeder extends Seeder
         foreach ($players as $player) {
 
             $player = User::make([
-                'is_active' => true,
                 'is_admin' => false,
-                'is_competitor' => true,
                 'email' => $player[4],
                 'email_verified_at' => now(),
                 'password' => $password,
@@ -172,17 +170,15 @@ class DatabaseSeeder extends Seeder
                 'city_name' => fake()->city(),
                 'ranking' => $player[2],
                 'licence' => $player[3],
-            ])->club()->associate(Club::firstWhere('licence', config('app.club_licence')));
+            ])->club()->associate(Club::own());
             $player->save();
         }
 
         // Add some random users
 
         User::make([
-            'is_active' => true,
             'is_admin' => false,
             'is_committee_member' => true,
-            'is_competitor' => true,
             'email' => 'thierry.regnier@test.com',
             'email_verified_at' => now(),
             'password' => $password,
@@ -196,14 +192,13 @@ class DatabaseSeeder extends Seeder
             'city_name' => fake()->city(),
             'ranking' => Ranking::D6->name,
             'licence' => '154856',
+            'has_key' => true,
             'committee_role' => CommitteeRolesEnum::ADMINISTRATOR,
-        ])->club()->associate(Club::firstWhere('licence', config('app.club_licence')))->save();
+        ])->club()->associate(Club::own())->save();
 
         User::make([
-            'is_active' => true,
             'is_admin' => false,
             'is_committee_member' => true,
-            'is_competitor' => true,
             'email' => 'manon.patigny@test.com',
             'email_verified_at' => now(),
             'password' => $password,
@@ -217,14 +212,13 @@ class DatabaseSeeder extends Seeder
             'city_name' => fake()->city(),
             'ranking' => Ranking::D4->name,
             'licence' => '852364',
+            'has_key' => true,
             'committee_role' => CommitteeRolesEnum::SECRETARY,
         ])->club()->associate(Club::first())->save();
 
         User::make([
-            'is_active' => true,
             'is_admin' => false,
             'is_committee_member' => true,
-            'is_competitor' => true,
             'email' => 'olivier.pauwels@test.com',
             'email_verified_at' => now(),
             'password' => $password,
@@ -238,14 +232,13 @@ class DatabaseSeeder extends Seeder
             'city_name' => fake()->city(),
             'ranking' => Ranking::B6->name,
             'licence' => '852398',
+            'has_key' => true,
             'committee_role' => CommitteeRolesEnum::PRESIDENT,
         ])->club()->associate(Club::first())->save();
 
         User::make([
-            'is_active' => true,
             'is_admin' => false,
             'is_committee_member' => true,
-            'is_competitor' => true,
             'email' => 'gilles.herpigny@test.com',
             'email_verified_at' => now(),
             'password' => $password,
@@ -259,8 +252,15 @@ class DatabaseSeeder extends Seeder
             'city_name' => fake()->city(),
             'ranking' => Ranking::D2->name,
             'licence' => '768398',
+            'has_key' => true,
             'committee_role' => CommitteeRolesEnum::TREASURER,
         ])->club()->associate(Club::first())->save();
+
+        $gilles = User::where('email', 'gilles.herpigny@test.com')->first();
+        CashRegister::create([
+            'name' => 'Caisse du club',
+            'held_by_user_id' => $gilles?->id,
+        ]);
 
         User::factory()->isNotCompetitor()->count(5)->create();
 
@@ -331,8 +331,6 @@ class DatabaseSeeder extends Seeder
 
         $this->call(SubscriptionSeeder::class);
 
-        $this->call(PaymentSeeder::class);
-
         // 1-3: teams, divisions, opponents, Interclub fixtures (observer creates empty results)
         $this->call(InterclubScheduleSeeder::class);
 
@@ -343,6 +341,18 @@ class DatabaseSeeder extends Seeder
 
         $this->call(TournamentSeeder::class);
 
+        $this->call(MeetingSeeder::class);
+
+        $this->call(TreasurySeeder::class);
+
         $this->call(TrainingPackSeeder::class);
+
+        $this->call(NewsPostSeeder::class);
+
+        $this->call(InterclubSettingsSeeder::class);
+
+        $this->call(EmailTemplateSeeder::class);
+
+        $this->call(DirectedTrainingDemoSeeder::class);
     }
 }

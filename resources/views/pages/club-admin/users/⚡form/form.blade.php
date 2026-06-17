@@ -230,9 +230,6 @@
             </div>
             <div class="col-span-6 md:col-span-4">
                 <x-checkbox
-                    :hint="__('An active member is up to date with his or her membership fees and is authorized to participate in all club activities')"
-                    :label="__('Is Active')" wire:model="is_active" />
-                <x-checkbox
                     :hint="__('Committee Members are granted most accesses like creating, updating and deleting objects (Users, teams, tournaments...)')"
                     :label="__('Is a committee member')" wire:model.live="is_committee_member" />
                 @if ($is_committee_member)
@@ -247,7 +244,31 @@
                     :label="__('Is an administrator')" wire:model="is_admin" />
             </div>
 
-            
+            <!-- Section Équipements confiés -->
+            <div class="col-span-6">
+                <x-menu-separator />
+            </div>
+            <div class="col-span-6 md:col-span-2">
+                <x-header :subtitle="__('Physical items entrusted to this member')"
+                    :title="__('Entrusted equipment')" />
+            </div>
+            <div class="col-span-6 md:col-span-4">
+                <x-checkbox :hint="__('Member holds a key to open and close the venue')"
+                    :label="__('Has a key')" wire:model="has_key" />
+                @if ($user && $user->heldCashRegisters->isNotEmpty())
+                    <div class="mt-4">
+                        <p class="text-sm font-semibold mb-2">{{ __('Held cash registers') }}</p>
+                        <ul class="space-y-1">
+                            @foreach ($user->heldCashRegisters as $register)
+                                <li class="flex items-center gap-2 text-sm">
+                                    <x-icon name="o-banknotes" class="w-4 h-4 text-base-content/40" />
+                                    {{ $register->name }}
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+            </div>
 
             @if ($user && ($user->medical_certificate_path || $user->parental_consent_path))
                 <div class="col-span-6">

@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace App\Domains\Bar\Models;
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Traits\HasAuditLog;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -17,14 +20,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $is_available
  * @property int|null $created_by
  * @property int|null $modified_by
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Domains\Bar\Models\BarCategory $category
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read BarCategory $category
  * @property-read User|null $createdBy
  * @property-read int $stock
  * @property-read User|null $modifiedBy
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Domains\Bar\Models\BarStockMovement> $stockMovements
+ * @property-read Collection<int, BarStockMovement> $stockMovements
  * @property-read int|null $stock_movements_count
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BarProduct newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BarProduct newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BarProduct query()
@@ -37,10 +41,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BarProduct whereName($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BarProduct whereSalePrice($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BarProduct whereUpdatedAt($value)
+ *
  * @mixin \Eloquent
  */
 class BarProduct extends Model
 {
+    use HasAuditLog;
+
     protected $fillable = [
         'name',
         'sale_price',
@@ -89,12 +96,12 @@ class BarProduct extends Model
 
     protected static function booted(): void
     {
-        static::creating(function ($model) {
+        static::creating(function (self $model): void {
             $userId = auth()->id();
             $model->created_by = $userId;
         });
 
-        static::updating(function ($model) {
+        static::updating(function (self $model): void {
             $model->modified_by = auth()->id();
         });
     }

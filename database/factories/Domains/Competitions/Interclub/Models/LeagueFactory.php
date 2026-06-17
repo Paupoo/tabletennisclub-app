@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Database\Factories\Domains\Competitions\Interclub\Models;
 
-use App\Domains\Shared\Enums\LeagueCategory;
-use App\Domains\Shared\Enums\LeagueLevel;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Shared\Enums\LeagueCategory;
+use App\Domains\Shared\Enums\LeagueLevel;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Interclub;
@@ -70,10 +71,10 @@ class InterclubSeeder extends Seeder
             ]
         );
 
-        $this->club = Club::firstWhere('licence', config('app.club_licence'));
+        $this->club = Club::own();
 
         if (! $this->club) {
-            $this->command->warn('No club found with licence ' . config('app.club_licence') . '. Skipping InterclubSeeder.');
+            $this->command->warn('No own club found. Skipping InterclubSeeder.');
 
             return;
         }
@@ -117,7 +118,7 @@ class InterclubSeeder extends Seeder
 
         InterclubResult::where('season_id', $seasonId)->delete();
 
-        $ourTeamIds = Team::whereHas('club', fn ($q) => $q->where('licence', config('app.club_licence')))
+        $ourTeamIds = Team::whereHas('club', fn ($q) => $q->where('is_own_club', true))
             ->where('season_id', $seasonId)
             ->pluck('id');
 
@@ -129,14 +130,11 @@ class InterclubSeeder extends Seeder
 
     private function createCaptain(string $firstName, string $lastName): User
     {
-        return User::firstOrCreate(
+        $user = User::firstOrCreate(
             ['email' => strtolower($firstName . '.' . $lastName) . '@demo.ctt.be'],
             [
                 'first_name' => $firstName,
                 'last_name' => $lastName,
-                'is_competitor' => true,
-                'is_active' => true,
-                'has_paid' => true,
                 'email_verified_at' => now(),
                 'password' => bcrypt('password'),
                 'club_id' => $this->club->id,
@@ -144,6 +142,20 @@ class InterclubSeeder extends Seeder
                 'ranking' => 'B4',
             ]
         );
+
+        $seasonId = Season::current()?->id;
+        if ($seasonId !== null && ! Subscription::where('user_id', $user->id)->where('season_id', $seasonId)->exists()) {
+            Subscription::create([
+                'user_id' => $user->id,
+                'season_id' => $seasonId,
+                'is_competitive' => true,
+                'status' => 'paid',
+                'amount_due' => 0,
+                'amount_paid' => 0,
+            ]);
+        }
+
+        return $user;
     }
 
     private function createInterclub(Team $ourTeam, Team $opponentTeam, string $dateTime, bool $isHome): Interclub

@@ -20,6 +20,7 @@ use App\Http\Requests\UpdateTrainingRequest;
 use App\Support\Breadcrumb;
 use Exception;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Collection;
 
@@ -116,7 +117,7 @@ class TrainingController extends Controller
         $seasons = $this->getAdjacentSeasons();
         $types = TrainingType::cases();
         $users = User::all();
-        $notSubscribedUsers = User::whereDoesntHave('trainings', function ($query) use ($training): void {
+        $notSubscribedUsers = User::whereDoesntHave('trainings', function (Builder $query) use ($training): void {
             $query->where('training_id', $training->id);
         })->get();
         $trainingPacks = TrainingPack::with(['room', 'trainer'])->get();
@@ -169,7 +170,7 @@ class TrainingController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Training $training)
+    public function show(Training $training): void
     {
         // TODO
     }

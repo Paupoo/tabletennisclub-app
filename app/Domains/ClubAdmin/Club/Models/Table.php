@@ -7,6 +7,7 @@ namespace App\Domains\ClubAdmin\Club\Models;
 use App\Domains\Competitions\Tournament\Models\TableTournament;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentMatch;
+use App\Domains\Shared\Traits\HasAuditLog;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -28,6 +29,7 @@ use Illuminate\Support\Carbon;
  * @property-read TableTournament|null $pivot
  * @property-read Collection<int, Tournament> $tournaments
  * @property-read int|null $tournaments_count
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Table newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Table newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Table query()
@@ -38,19 +40,23 @@ use Illuminate\Support\Carbon;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Table whereRoomId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Table whereState($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Table whereUpdatedAt($value)
+ *
  * @property string|null $state_description
  * @property string|null $brand
  * @property string|null $model
  * @property bool|null $is_available
+ *
  * @method static \Database\Factories\Domains\ClubAdmin\Club\Models\TableFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Table whereBrand($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Table whereIsAvailable($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Table whereModel($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Table whereStateDescription($value)
+ *
  * @mixin \Eloquent
  */
 class Table extends Model
 {
+    use HasAuditLog;
     use HasFactory;
 
     protected $casts = [

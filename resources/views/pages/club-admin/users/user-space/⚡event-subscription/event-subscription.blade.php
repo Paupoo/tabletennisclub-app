@@ -360,11 +360,11 @@
                 </div>
                 <div class="flex items-center justify-between py-2">
                     <span class="opacity-60">IBAN</span>
-                    <span class="font-mono text-xs">BE23 7323 3320 8791</span>
+                    <span class="font-mono text-xs">{{ $this->ourClub->bank_account }}</span>
                 </div>
                 <div class="flex items-center justify-between py-2">
                     <span class="opacity-60">BIC</span>
-                    <span class="font-mono text-xs">CREGBEBB</span>
+                    <span class="font-mono text-xs">{{ $this->ourClub->bic }}</span>
                 </div>
             </div>
         </div>

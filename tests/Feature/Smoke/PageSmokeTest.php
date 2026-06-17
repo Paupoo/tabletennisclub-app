@@ -29,7 +29,7 @@ beforeEach(function (): void {
     $this->admin = User::factory()
         ->isAdmin()
         ->isCommitteeMember()
-        ->create(['is_active' => true]);
+        ->create([]);
 
     // Minimal realistic baseline so index pages relying on a season render.
     makeActiveSeason();

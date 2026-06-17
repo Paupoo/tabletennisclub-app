@@ -6,6 +6,7 @@ namespace App\Domains\Competitions\Tournament\Models;
 
 use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Traits\HasAuditLog;
 use Database\Factories\Domains\Competitions\Tournament\Models\TournamentMatchFactory;
 use Eloquent;
 use Illuminate\Database\Eloquent\Builder;
@@ -47,6 +48,7 @@ use Illuminate\Support\Carbon;
  * @property-read int|null $table_count
  * @property-read Tournament|null $tournament
  * @property-read User|null $winner
+ *
  * @method static TournamentMatchFactory factory($count = null, $state = [])
  * @method static Builder<static>|TournamentMatch fromBracket()
  * @method static Builder<static>|TournamentMatch fromPools()
@@ -74,21 +76,26 @@ use Illuminate\Support\Carbon;
  * @method static Builder<static>|TournamentMatch whereTournamentId($value)
  * @method static Builder<static>|TournamentMatch whereUpdatedAt($value)
  * @method static Builder<static>|TournamentMatch whereWinnerId($value)
+ *
  * @property int|null $pair1_id
  * @property int|null $pair2_id
  * @property int|null $referee_id
  * @property bool $is_forfeit
- * @property-read \App\Domains\Competitions\Tournament\Models\TournamentPair|null $pair1
- * @property-read \App\Domains\Competitions\Tournament\Models\TournamentPair|null $pair2
+ * @property-read TournamentPair|null $pair1
+ * @property-read TournamentPair|null $pair2
  * @property-read User|null $referee
+ *
  * @method static Builder<static>|TournamentMatch whereIsForfeit($value)
  * @method static Builder<static>|TournamentMatch wherePair1Id($value)
  * @method static Builder<static>|TournamentMatch wherePair2Id($value)
  * @method static Builder<static>|TournamentMatch whereRefereeId($value)
+ *
  * @mixin Eloquent
  */
 class TournamentMatch extends Model
 {
+    use HasAuditLog;
+
     //
     use HasFactory;
 

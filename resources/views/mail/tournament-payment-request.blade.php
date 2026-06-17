@@ -22,5 +22,7 @@ Pour finaliser votre inscription, veuillez effectuer le virement de **{{ number_
 
 *Sans paiement dans les 72h, votre inscription sera annulée et la place proposée au suivant sur la liste d'attente.*
 
+*{{ __('If you have already paid by the time you receive this message, please ignore this reminder.') }}*
+
 À bientôt sur les tables !
 </x-mail::message>

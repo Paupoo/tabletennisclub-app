@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Http\Middleware\VerifyCsrfToken;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Mail;
 
@@ -68,9 +70,10 @@ describe('Contact Form - Public Submission', function (): void {
 // ─────────────────────────────────────────────────────────────
 
 describe('Contact Form validations', function (): void {
+    uses(RefreshDatabase::class);
+
     beforeEach(function (): void {
-        // Club notification email is unset in the test env; fake mail so the
-        // happy path doesn't try to send to an empty recipient and throw.
+        Club::factory()->create(['is_own_club' => true, 'email_contact' => 'club@test.com']);
         Mail::fake();
         $this->withoutMiddleware(VerifyCsrfToken::class);
         $this->withoutMiddleware(ThrottleRequests::class);

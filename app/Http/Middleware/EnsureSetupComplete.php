@@ -17,7 +17,11 @@ class EnsureSetupComplete
             return $next($request);
         }
 
-        if (AppSetting::get('setup_completed') !== '1') {
+        try {
+            if (AppSetting::get('setup_completed') !== '1') {
+                return redirect()->route('setup');
+            }
+        } catch (\Exception) {
             return redirect()->route('setup');
         }
 

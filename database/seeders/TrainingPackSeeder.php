@@ -26,7 +26,7 @@ class TrainingPackSeeder extends Seeder
     public function run(): void
     {
         $password = Hash::make('password');
-        $ourClub = Club::firstWhere('licence', config('app.club_licence'));
+        $ourClub = Club::own();
         $season = Season::where('is_active', true)->first();
 
         if (! $season) {
@@ -47,8 +47,6 @@ class TrainingPackSeeder extends Seeder
                 'first_name' => 'Aloïse',
                 'last_name' => 'Lejeune',
                 'password' => $password,
-                'is_active' => false,
-                'is_competitor' => false,
                 'gender' => Gender::WOMEN->name,
                 'ranking' => Ranking::D4->name,
                 'phone_number' => '047' . fake()->randomNumber(7, true),
@@ -68,8 +66,6 @@ class TrainingPackSeeder extends Seeder
                 'first_name' => 'Éric',
                 'last_name' => 'Filée',
                 'password' => $password,
-                'is_active' => true,
-                'is_competitor' => true,
                 'is_coach' => true,
                 'gender' => Gender::MEN->name,
                 'ranking' => Ranking::C6->name,
@@ -102,8 +98,6 @@ class TrainingPackSeeder extends Seeder
                 'first_name' => 'Jean-Pierre',
                 'last_name' => 'Fikani',
                 'password' => $password,
-                'is_active' => false,
-                'is_competitor' => false,
                 'gender' => Gender::MEN->name,
                 'ranking' => Ranking::B6->name,
                 'phone_number' => '047' . fake()->randomNumber(7, true),

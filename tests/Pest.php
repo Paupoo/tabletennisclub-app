@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
@@ -27,6 +28,12 @@ uses(
     TestCase::class,
     RefreshDatabase::class,
 )->in('Feature', 'Unit', 'Browser', '../resources/views');
+
+pest()->browser()->timeout(15_000);
+
+beforeEach(function () {
+    Club::forgetOwnClub();
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -124,7 +131,6 @@ function smokeSkippedRouteNames(): array
         'clubEvents.interclubs.seasons.index' => 'TODO legacy: missing view, superseded by admin.seasons.index',
         'clubEvents.interclubs.seasons.create' => 'TODO legacy: missing view',
         'clubAdmin.registrations.index' => 'TODO legacy: missing view, superseded by admin.users.registrations',
-        'clubAdmin.subscriptions.index' => 'TODO legacy: missing view',
         'admin.payments.index' => 'TODO legacy: missing view, superseded by admin.treasury.payments',
         'admin.transactions.add ' => 'TODO legacy: missing view (note: route name has a trailing space)',
         'admin.transactions.index' => 'TODO legacy: missing view, superseded by admin.treasury.transactions',

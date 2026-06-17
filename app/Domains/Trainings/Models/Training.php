@@ -8,6 +8,8 @@ use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\TrainingCancellationType;
+use App\Domains\Shared\Traits\HasAuditLog;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -31,10 +33,11 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $cancelled_at
  * @property-read Room $room
  * @property-read Season|null $season
- * @property-read \Illuminate\Database\Eloquent\Collection<int, User> $trainees
+ * @property-read Collection<int, User> $trainees
  * @property-read int|null $trainees_count
  * @property-read User|null $trainer
- * @property-read \App\Domains\Trainings\Models\TrainingPack|null $trainingPack
+ * @property-read TrainingPack|null $trainingPack
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Training newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Training newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Training query()
@@ -52,10 +55,12 @@ use Illuminate\Support\Carbon;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereTrainingPackId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereType($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Training whereUpdatedAt($value)
+ *
  * @mixin \Eloquent
  */
 class Training extends Model
 {
+    use HasAuditLog;
     use HasFactory;
 
     protected $casts = [

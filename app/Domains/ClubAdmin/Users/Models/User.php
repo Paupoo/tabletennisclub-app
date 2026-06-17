@@ -6,6 +6,8 @@ namespace App\Domains\ClubAdmin\Users\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 
+use App\Domains\ClubAdmin\Contact\Models\Contact;
+use App\Domains\ClubAdmin\Payment\Models\CashRegister;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubPosts\Models\NewsPost;
 use App\Domains\Competitions\Interclub\Models\Club;
@@ -17,7 +19,9 @@ use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Gender;
+use App\Domains\Shared\Traits\HasAuditLog;
 use App\Domains\Trainings\Models\Training;
+use App\Http\Controllers\ClubAdmin\DashboardController;
 use App\Observers\UserObserver;
 use Carbon\Carbon;
 use Database\Factories\Domains\ClubAdmin\Users\Models\UserFactory;
@@ -44,11 +48,9 @@ use Laravel\Sanctum\PersonalAccessToken;
  * @property int $id
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
- * @property bool $is_active
  * @property bool $is_admin
  * @property bool $is_committee_member
- * @property bool $is_competitor
- * @property bool $has_paid
+ * @property bool $is_selector
  * @property string $email
  * @property string|null $email_verified_at
  * @property string $password
@@ -82,6 +84,7 @@ use Laravel\Sanctum\PersonalAccessToken;
  * @property-read int|null $tournaments_count
  * @property-read Collection<int, Training> $trainings
  * @property-read int|null $trainings_count
+ *
  * @method static UserFactory factory($count = null, $state = [])
  * @method static EloquentBuilder<static>|User newModelQuery()
  * @method static EloquentBuilder<static>|User newQuery()
@@ -99,10 +102,8 @@ use Laravel\Sanctum\PersonalAccessToken;
  * @method static EloquentBuilder<static>|User whereForceList($value)
  * @method static EloquentBuilder<static>|User whereHasDebt($value)
  * @method static EloquentBuilder<static>|User whereId($value)
- * @method static EloquentBuilder<static>|User whereIsActive($value)
  * @method static EloquentBuilder<static>|User whereIsAdmin($value)
  * @method static EloquentBuilder<static>|User whereIsCommitteeMember($value)
- * @method static EloquentBuilder<static>|User whereIsCompetitor($value)
  * @method static EloquentBuilder<static>|User whereLastName($value)
  * @method static EloquentBuilder<static>|User whereLicence($value)
  * @method static EloquentBuilder<static>|User wherePassword($value)
@@ -112,6 +113,7 @@ use Laravel\Sanctum\PersonalAccessToken;
  * @method static EloquentBuilder<static>|User whereSex($value)
  * @method static EloquentBuilder<static>|User whereStreet($value)
  * @method static EloquentBuilder<static>|User whereUpdatedAt($value)
+ *
  * @property string|null $avatar_url
  * @property Gender $gender
  * @property int $emails_notifications
@@ -137,10 +139,12 @@ use Laravel\Sanctum\PersonalAccessToken;
  * @property-read int|null $seasons_count
  * @property-read Collection<int, Subscription> $subscriptions
  * @property-read int|null $subscriptions_count
+ *
  * @method static EloquentBuilder<static>|User affiliatedForCurrentSeason()
- * @method static EloquentBuilder<static>|User hasPaid()
- * @method static EloquentBuilder<static>|User isActive()
- * @method static EloquentBuilder<static>|User isCompetitor()
+ * @method static EloquentBuilder<static>|User active()
+ * @method static EloquentBuilder<static>|User paid()
+ * @method static EloquentBuilder<static>|User unpaid()
+ * @method static EloquentBuilder<static>|User competitor()
  * @method static EloquentBuilder<static>|User searchTerms(string $search)
  * @method static EloquentBuilder<static>|User whereAvatarUrl($value)
  * @method static EloquentBuilder<static>|User whereCommitteeRole($value)
@@ -148,7 +152,6 @@ use Laravel\Sanctum\PersonalAccessToken;
  * @method static EloquentBuilder<static>|User whereFamilyId($value)
  * @method static EloquentBuilder<static>|User whereGender($value)
  * @method static EloquentBuilder<static>|User whereGuardianPhoneNumber($value)
- * @method static EloquentBuilder<static>|User whereHasPaid($value)
  * @method static EloquentBuilder<static>|User whereIban($value)
  * @method static EloquentBuilder<static>|User whereIsCoach($value)
  * @method static EloquentBuilder<static>|User whereIsFamilyOwner($value)
@@ -156,12 +159,13 @@ use Laravel\Sanctum\PersonalAccessToken;
  * @method static EloquentBuilder<static>|User whereParentalConsentPath($value)
  * @method static EloquentBuilder<static>|User wherePhoto($value)
  * @method static EloquentBuilder<static>|User whereTheme($value)
+ *
  * @mixin Eloquent
  */
 #[ObservedBy(UserObserver::class)]
 class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
+    use HasApiTokens, HasAuditLog, HasFactory, Notifiable, SoftDeletes;
 
     /**
      * The attributes that should be cast.
@@ -169,12 +173,11 @@ class User extends Authenticatable implements MustVerifyEmail
      * @var array<string, string>
      */
     protected $casts = [
-        'is_active' => 'boolean',
         'is_admin' => 'boolean',
         'is_committee_member' => 'boolean',
-        'is_competitor' => 'boolean',
-        'has_paid' => 'boolean',
+        'is_selector' => 'boolean',
         'is_coach' => 'boolean',
+        'has_key' => 'boolean',
         'email' => 'string',
         'password' => 'hashed',
         'first_name' => 'string',
@@ -210,11 +213,9 @@ class User extends Authenticatable implements MustVerifyEmail
         'city_name',
         'email',
         'first_name',
-        'has_paid',
-        'is_active',
         'is_admin',
         'is_committee_member',
-        'is_competitor',
+        'is_selector',
         'last_name',
         'licence',
         'password',
@@ -230,6 +231,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'committee_role',
         'force_list',
         'is_coach',
+        'has_key',
         'medical_certificate_path',
         'parental_consent_path',
         'updated_by',
@@ -252,6 +254,40 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(NewsPost::class);
     }
 
+    /**
+     * Whether the user belongs to the club-admin management group.
+     *
+     * Mirrors the `showSecretary` rule used in {@see DashboardController}:
+     * full admins plus the secretary/president/vice-president committee roles may
+     * manage club-admin operations (contact triage, templates, …). Other committee
+     * members can only view.
+     */
+    public function canManageClubAdmin(): bool
+    {
+        return $this->is_admin || in_array($this->committee_role, [
+            CommitteeRolesEnum::SECRETARY,
+            CommitteeRolesEnum::PRESIDENT,
+            CommitteeRolesEnum::VICE_PRESIDENT,
+        ], true);
+    }
+
+    /**
+     * Whether the user may read the club-wide audit log.
+     *
+     * Full platform admins plus the president, vice-president, secretary and
+     * treasurer committee roles. The plain administrator committee role does
+     * not grant access on its own.
+     */
+    public function canViewAuditLog(): bool
+    {
+        return $this->is_admin || in_array($this->committee_role, [
+            CommitteeRolesEnum::PRESIDENT,
+            CommitteeRolesEnum::VICE_PRESIDENT,
+            CommitteeRolesEnum::SECRETARY,
+            CommitteeRolesEnum::TREASURER,
+        ], true);
+    }
+
     public function captainOf(): HasOne
     {
         return $this->hasOne(Team::class, 'captain_id');
@@ -267,6 +303,49 @@ class User extends Authenticatable implements MustVerifyEmail
         return "{$this->first_name} {$this->last_name}";
     }
 
+    public function getHasPaidAttribute(): bool
+    {
+        if (array_key_exists('has_paid', $this->attributes)) {
+            return (bool) $this->attributes['has_paid'];
+        }
+
+        $seasonId = Season::current()?->id;
+
+        if ($this->relationLoaded('subscriptions')) {
+            return $this->subscriptions
+                ->where('season_id', $seasonId)
+                ->where('status', 'paid')
+                ->isNotEmpty();
+        }
+
+        return $this->subscriptions()
+            ->where('season_id', $seasonId)
+            ->where('status', 'paid')
+            ->exists();
+    }
+
+    public function getIsCompetitorAttribute(): bool
+    {
+        // Use pre-loaded exists value (e.g. from ->withExists(['subscriptions as is_competitor' => ...])) if available
+        if (array_key_exists('is_competitor', $this->attributes)) {
+            return (bool) $this->attributes['is_competitor'];
+        }
+
+        $seasonId = Season::current()?->id;
+
+        if ($this->relationLoaded('subscriptions')) {
+            return $this->subscriptions
+                ->where('season_id', $seasonId)
+                ->where('is_competitive', true)
+                ->isNotEmpty();
+        }
+
+        return $this->subscriptions()
+            ->where('season_id', $seasonId)
+            ->where('is_competitive', true)
+            ->exists();
+    }
+
     public function guardians(): BelongsToMany
     {
         return $this->belongsToMany(Guardian::class, 'guardian_user');
@@ -275,6 +354,11 @@ class User extends Authenticatable implements MustVerifyEmail
     public function hasGuardian(): bool
     {
         return $this->guardians()->exists();
+    }
+
+    public function heldCashRegisters(): HasMany
+    {
+        return $this->hasMany(CashRegister::class, 'held_by_user_id');
     }
 
     public function interclubs(): BelongsToMany
@@ -325,6 +409,17 @@ class User extends Authenticatable implements MustVerifyEmail
             ->withTimestamps();
     }
 
+    /**
+     * Retrieve the contact this user was onboarded from, if any.
+     *
+     * Phase 2 uses this to recover the carry-over seed via
+     * {@see Contact::subscriptionSeed()} when pre-filling the first subscription.
+     */
+    public function originatingContact(): ?Contact
+    {
+        return Contact::where('user_id', $this->id)->latest()->first();
+    }
+
     public function pools(): BelongsToMany
     {
         return $this->belongsToMany(Pool::class, 'pool_user');
@@ -333,6 +428,16 @@ class User extends Authenticatable implements MustVerifyEmail
     public function requiresGuardian(): bool
     {
         return $this->isMinor() && ! $this->hasGuardian();
+    }
+
+    public function scopeActive(EloquentBuilder $query): EloquentBuilder
+    {
+        $seasonId = Season::current()?->id;
+
+        return $query->whereHas('subscriptions', fn (EloquentBuilder $q) => $q
+            ->where('season_id', $seasonId)
+            ->whereIn('status', ['confirmed', 'paid'])
+        );
     }
 
     public function scopeAffiliatedForCurrentSeason(EloquentBuilder $query): EloquentBuilder
@@ -345,19 +450,24 @@ class User extends Authenticatable implements MustVerifyEmail
         );
     }
 
-    public function scopeHasPaid(Builder $query): Builder
+    public function scopeCompetitor(EloquentBuilder $query): EloquentBuilder
     {
-        return $query->where('has_paid', true);
+        $seasonId = Season::current()?->id;
+
+        return $query->whereHas('subscriptions', fn (EloquentBuilder $q) => $q
+            ->where('season_id', $seasonId)
+            ->where('is_competitive', true)
+        );
     }
 
-    public function scopeIsActive(Builder $query): Builder
+    public function scopePaid(EloquentBuilder $query): EloquentBuilder
     {
-        return $query->where('is_active', true);
-    }
+        $seasonId = Season::current()?->id;
 
-    public function scopeIsCompetitor(EloquentBuilder $query): Builder
-    {
-        return $query->where('is_competitor', true);
+        return $query->whereHas('subscriptions', fn (EloquentBuilder $q) => $q
+            ->where('season_id', $seasonId)
+            ->where('status', 'paid')
+        );
     }
 
     /** Scopes */
@@ -382,18 +492,39 @@ class User extends Authenticatable implements MustVerifyEmail
             ->filter();
 
         foreach ($terms as $term) {
-            $query->where(function ($subQuery) use ($term): void {
+            $query->where(function (EloquentBuilder $subQuery) use ($term): void {
                 $subQuery->whereRaw('LOWER(first_name) LIKE ?', ["%{$term}%"])
                     ->orWhereRaw('LOWER(last_name) LIKE ?', ["%{$term}%"]);
             });
         }
     }
 
-    public function scopeUnregisteredUsers(Builder $query, Tournament $tournament)
+    public function scopeUnpaid(EloquentBuilder $query): EloquentBuilder
     {
-        return $query->whereDoesntHave('tournaments', function ($query) use ($tournament): void {
+        $seasonId = Season::current()?->id;
+
+        return $query->whereDoesntHave('subscriptions', fn (EloquentBuilder $q) => $q
+            ->where('season_id', $seasonId)
+            ->where('status', 'paid')
+        );
+    }
+
+    public function scopeUnregisteredUsers(Builder $query, Tournament $tournament): Builder
+    {
+        return $query->whereDoesntHave('tournaments', function (Builder $query) use ($tournament): void {
             $query->where('tournaments.id', $tournament->id);
         })->orderBy('last_name')->orderBy('first_name');
+    }
+
+    public function scopeWithIncompleteProfile(Builder $query): Builder
+    {
+        return $query->where(fn (Builder $q) => $q
+            ->whereNull('phone_number')
+            ->orWhereNull('street')
+            ->orWhereNull('city_code')
+            ->orWhereNull('city_name')
+            ->orWhereNull('birthdate')
+        );
     }
 
     public function seasons(): BelongsToMany

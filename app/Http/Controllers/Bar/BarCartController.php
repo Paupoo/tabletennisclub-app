@@ -12,8 +12,9 @@ use Illuminate\View\View;
 
 class BarCartController extends Controller
 {
-    private const ACTION_VALIDATE = 'validate';
     private const ACTION_PAY_NOW = 'pay_now';
+
+    private const ACTION_VALIDATE = 'validate';
 
     public function __construct(private readonly BarCartService $cartService)
     {
@@ -32,6 +33,13 @@ class BarCartController extends Controller
         return back()->with($result['status'], $result['message']);
     }
 
+    public function clear(): RedirectResponse
+    {
+        $this->cartService->clearSessionCart();
+
+        return back()->with('success', 'Panier vidé avec succès.');
+    }
+
     public function remove(Request $request): RedirectResponse
     {
         $validated = $request->validate([
@@ -48,13 +56,6 @@ class BarCartController extends Controller
         $data = $this->cartService->getCartViewData();
 
         return view('bar.carts.index', $data);
-    }
-
-    public function clear(): RedirectResponse
-    {
-        $this->cartService->clearSessionCart();
-
-        return back()->with('success', 'Panier vidé avec succès.');
     }
 
     public function validateOrder(Request $request): RedirectResponse

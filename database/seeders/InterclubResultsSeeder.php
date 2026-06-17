@@ -40,7 +40,7 @@ class InterclubResultsSeeder extends Seeder
                     ->whereDate('match_date', $match['date'])
                     ->where('opponent_name', $match['opponent'])
                     ->update([
-                        'score'  => $match['score'],
+                        'score' => $match['score'],
                         'result' => $match['result']?->value,
                     ]);
             }

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Database\Factories\Domains\ClubPosts\Models;
 
 use App\Domains\ClubPosts\Models\EventPost;
+use App\Domains\Shared\Enums\ClubEventTypeEnum;
+use App\Domains\Shared\Enums\EventPostStatusEnum;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -16,14 +18,13 @@ class EventPostFactory extends Factory
 
     public function definition(): array
     {
-        $categories = array_keys(EventPost::CATEGORIES);
-        $category = $this->faker->randomElement($categories);
+        $type = $this->faker->randomElement(ClubEventTypeEnum::cases());
 
         return [
             'title' => $this->faker->sentence(3),
             'description' => $this->faker->paragraph(2),
-            'category' => $category,
-            'status' => $this->faker->randomElement(['draft', 'published', 'archived']),
+            'type' => $type,
+            'status' => $this->faker->randomElement(EventPostStatusEnum::cases()),
             'event_date' => $this->faker->dateTimeBetween('now', '+6 months'),
             'start_time' => $this->faker->time('H:i'),
             'end_time' => $this->faker->optional(0.7)->time('H:i'),
@@ -42,10 +43,10 @@ class EventPostFactory extends Factory
                 'Nourriture incluse',
                 'Prix de saison',
             ]),
-            'icon' => EventPost::ICONS[$category] ?? '📅',
+            'icon' => $type->getIcon(),
             'max_participants' => $this->faker->optional(0.4)->numberBetween(8, 100),
             'notes' => $this->faker->optional(0.3)->sentence(),
-            'featured' => $this->faker->boolean(10), // 10% de chance d'être mis en avant
+            'featured' => $this->faker->boolean(10),
         ];
     }
 
@@ -59,7 +60,7 @@ class EventPostFactory extends Factory
     public function published(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => 'published',
+            'status' => EventPostStatusEnum::PUBLISHED,
         ]);
     }
 

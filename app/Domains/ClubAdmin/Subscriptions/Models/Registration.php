@@ -6,11 +6,14 @@ namespace App\Domains\ClubAdmin\Subscriptions\Models;
 
 use App\Contracts\PayableInterface;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\Shared\Traits\HasAuditLog;
 use Database\Factories\Domains\ClubAdmin\Subscriptions\Models\RegistrationFactory;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -19,10 +22,11 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
  * @property float $amount_due
  * @property int $amount_paid
  * @property string $status
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, Payment> $payments
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Collection<int, Payment> $payments
  * @property-read int|null $payments_count
+ *
  * @method static \Database\Factories\Domains\ClubAdmin\Subscriptions\Models\RegistrationFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Registration newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Registration newQuery()
@@ -35,10 +39,13 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Registration whereStatus($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Registration whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Registration whereUserId($value)
+ *
  * @mixin \Eloquent
  */
 class Registration extends Model implements PayableInterface
 {
+    use HasAuditLog;
+
     /** @use HasFactory<RegistrationFactory> */
     use HasFactory;
 

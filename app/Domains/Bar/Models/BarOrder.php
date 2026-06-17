@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace App\Domains\Bar\Models;
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Traits\HasAuditLog;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -17,11 +20,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $payment_method
  * @property int|null $created_by
  * @property int|null $modified_by
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * @property-read User|null $createdBy
- * @property-read \Illuminate\Database\Eloquent\Collection<int, \App\Domains\Bar\Models\BarOrderItem> $items
+ * @property-read Collection<int, BarOrderItem> $items
  * @property-read int|null $items_count
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BarOrder newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BarOrder newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BarOrder query()
@@ -34,10 +38,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BarOrder wherePaymentMethod($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BarOrder whereTotalPrice($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|BarOrder whereUpdatedAt($value)
+ *
  * @mixin \Eloquent
  */
 class BarOrder extends Model
 {
+    use HasAuditLog;
+
     protected $fillable = [
         'created_by',
         'total_price',

@@ -6,6 +6,7 @@ namespace App\Mail;
 
 use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
@@ -21,9 +22,9 @@ class TournamentPaymentRequestMail extends Mailable
 
     public string $beneficiary = 'CTT Ottignies-Blocry ASBL';
 
-    public string $BIC = 'CREGBEBB';
+    public string $BIC;
 
-    public string $IBAN = 'BE23 7323 3320 8791';
+    public string $IBAN;
 
     public string $qrCode;
 
@@ -33,6 +34,8 @@ class TournamentPaymentRequestMail extends Mailable
         public Carbon $deadline,
     ) {
         $this->qrCode = (new GeneratePaymentQR)($payment);
+        $this->BIC = Club::ourClub()->first()->bic;
+        $this->IBAN = Club::ourClub()->first()->bank_account;
     }
 
     public function content(): Content

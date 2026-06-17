@@ -16,11 +16,14 @@ class ClubSeeder extends Seeder
     {
         Club::create([
             'name' => 'C.T.T Ottignies-Blocry',
-            'licence' => config('app.club_licence'),
+            'licence' => 'BBW214',
+            'is_own_club' => true,
             'building_name' => 'Centre Sportif J. Demeester',
             'street' => "Rue de l'Invasion 80",
             'city_code' => '1340',
             'city_name' => 'Ottignies',
+            'bic' => 'CREGBEBB',
+            'bank_account' => 'BE23732333208791',
         ]);
     }
 }

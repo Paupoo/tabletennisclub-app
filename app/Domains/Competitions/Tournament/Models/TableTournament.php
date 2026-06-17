@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Competitions\Tournament\Models;
 
+use App\Domains\Shared\Traits\HasAuditLog;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\Pivot;
 use Illuminate\Support\Carbon;
@@ -18,6 +19,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $match_ended_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TableTournament newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TableTournament newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TableTournament query()
@@ -30,11 +32,15 @@ use Illuminate\Support\Carbon;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TableTournament whereTournamentId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TableTournament whereTournamentMatchId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TableTournament whereUpdatedAt($value)
- * @property-read \App\Domains\Competitions\Tournament\Models\TournamentMatch|null $currentMatch
+ *
+ * @property-read TournamentMatch|null $currentMatch
+ *
  * @mixin \Eloquent
  */
 class TableTournament extends Pivot
 {
+    use HasAuditLog;
+
     protected $casts = [
         'match_started_at' => 'datetime:Y-m-d\TH:i',
     ];

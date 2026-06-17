@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Domains\ClubAdmin\Payment\Models;
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Traits\HasAuditLog;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -19,11 +21,12 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * @property int|null $payable_id
  * @property int $recorded_by_id
  * @property string|null $notes
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Domains\ClubAdmin\Payment\Models\CashRegister $cashRegister
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read CashRegister $cashRegister
  * @property-read Model|\Eloquent|null $payable
  * @property-read User $recordedBy
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CashRegisterEntry newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CashRegisterEntry newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CashRegisterEntry query()
@@ -37,10 +40,12 @@ use Illuminate\Database\Eloquent\Relations\MorphTo;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CashRegisterEntry whereReason($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CashRegisterEntry whereRecordedById($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|CashRegisterEntry whereUpdatedAt($value)
+ *
  * @mixin \Eloquent
  */
 class CashRegisterEntry extends Model
 {
+    use HasAuditLog;
     use HasFactory;
 
     protected $casts = [

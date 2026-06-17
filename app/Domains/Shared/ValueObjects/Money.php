@@ -10,6 +10,11 @@ class Money
 {
     private function __construct(private readonly int $cents) {}
 
+    public function __toString(): string
+    {
+        return number_format($this->euros(), 2, ',', ' ') . '€';
+    }
+
     public static function fromCents(int $cents): self
     {
         if ($cents < 0) {
@@ -21,17 +26,7 @@ class Money
 
     public static function fromEuros(float $euros): self
     {
-        return self::fromCents((int)round($euros * 100));
-    }
-
-    public function cents(): int
-    {
-        return $this->cents;
-    }
-
-    public function euros(): float
-    {
-        return round($this->cents / 100, 2);
+        return self::fromCents((int) round($euros * 100));
     }
 
     public function add(Money $other): Money
@@ -39,19 +34,19 @@ class Money
         return new self($this->cents + $other->cents);
     }
 
-    public function subtract(Money $other): Money
+    public function cents(): int
     {
-        return self::fromCents($this->cents - $other->cents);
+        return $this->cents;
     }
 
-    public function multiply(float $factor): Money
+    public function equals(Money $other): bool
     {
-        return self::fromCents((int)round($this->cents * $factor));
+        return $this->cents === $other->cents;
     }
 
-    public function isZero(): bool
+    public function euros(): float
     {
-        return $this->cents === 0;
+        return round($this->cents / 100, 2);
     }
 
     public function isGreaterThan(Money $other): bool
@@ -64,13 +59,18 @@ class Money
         return $this->cents < $other->cents;
     }
 
-    public function equals(Money $other): bool
+    public function isZero(): bool
     {
-        return $this->cents === $other->cents;
+        return $this->cents === 0;
     }
 
-    public function __toString(): string
+    public function multiply(float $factor): Money
     {
-        return number_format($this->euros(), 2, ',', ' ') . '€';
+        return self::fromCents((int) round($this->cents * $factor));
+    }
+
+    public function subtract(Money $other): Money
+    {
+        return self::fromCents($this->cents - $other->cents);
     }
 }

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\ClubEvents\Training;
 
+use App\Domains\Trainings\Models\TrainingPack;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreTrainingPackRequest;
 use App\Http\Requests\UpdateTrainingPackRequest;
-use App\Domains\Trainings\Models\TrainingPack;
 use App\Support\Breadcrumb;
 use Illuminate\View\View;
 
@@ -16,7 +16,7 @@ class TrainingPackController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(): void
     {
         // TODO
     }
@@ -24,7 +24,7 @@ class TrainingPackController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(TrainingPack $trainingPack)
+    public function destroy(TrainingPack $trainingPack): void
     {
         // TODO
     }
@@ -32,7 +32,7 @@ class TrainingPackController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(TrainingPack $trainingPack)
+    public function edit(TrainingPack $trainingPack): void
     {
         // TODO
     }
@@ -58,7 +58,7 @@ class TrainingPackController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(TrainingPack $trainingPack)
+    public function show(TrainingPack $trainingPack): void
     {
         // TODO
     }
@@ -66,7 +66,7 @@ class TrainingPackController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreTrainingPackRequest $request)
+    public function store(StoreTrainingPackRequest $request): void
     {
         // TODO
     }
@@ -74,7 +74,7 @@ class TrainingPackController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateTrainingPackRequest $request, TrainingPack $trainingPack)
+    public function update(UpdateTrainingPackRequest $request, TrainingPack $trainingPack): void
     {
         // TODO
     }

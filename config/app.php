@@ -65,6 +65,8 @@ return [
 
     'asset_url' => env('ASSET_URL'),
 
+    'club_licence' => env('APP_CLUB_LICENCE'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone
@@ -206,24 +208,5 @@ return [
     */
 
     'version' => env('APP_VERSION', '1.0.0'),
-
-    /*
-     |--------------------------------------------------------------------------
-     | Club Licence
-     |--------------------------------------------------------------------------
-     |
-     | This string represent the unique licence that identifies of the club
-     | using this website. Just copy the licence of your club here to
-     | distinguish your club from other clubs in the code.
-     |
-     */
-    'club_licence' => env('APP_CLUB_LICENCE', 'BBW214'),
-    'club_building_name' => env('APP_CLUB_BUILDING_NAME', 'Centre Sportif du village'),
-    'club_street' => env('APP_CLUB_STREET', 'Rue de la Station 1'),
-    'club_zip_code' => env('APP_CLUB_ZIP_CODE', '7700'),
-    'club_city' => env('APP_CLUB_CITY', 'Léglise'),
-    'club_osm_link' => env('APP_CLUB_OSM_LINK', 'https://www.openstreetmap.org/?#map=12/50.0360/4.2783'),
-    'club_email' => env('APP_CLUB_EMAIL', 'cttottigniesblocry@gmail.com'),
-    'club_phone_number' => env('APP_CLUB_PHONE_NUMBER', '+32 499 01 02 03'),
 
 ];

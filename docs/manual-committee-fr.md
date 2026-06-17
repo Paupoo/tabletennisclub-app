@@ -23,6 +23,8 @@ Ce manuel couvre tout ce qu'un membre du comité (et un administrateur) peut fai
 | Gérer le contenu du site web | ✅ | ✅ |
 | Gérer la trésorerie | ✅ | ✅ |
 
+> **Groupe gestionnaire** : certaines fonctions récentes — gérer les contacts (qualifier, répondre, intégrer) et les modèles d'email, **éditer** le roster de saison, **composer/importer** dans le tableau de planification — sont réservées aux administrateurs et aux membres du comité ayant le rôle **secrétaire, président ou vice-président**. Les autres membres du comité conservent l'accès en **consultation** (voir et exporter).
+
 ---
 
 ## 1. Gestion des membres
@@ -112,12 +114,28 @@ Un tuteur peut couvrir plusieurs frères et sœurs. Un tuteur qui est également
 
 Allez dans **Site web → Contacts**. Les contacts soumis via le formulaire public du site du club apparaissent ici.
 
+> **Qui peut gérer ?** La consultation des contacts est ouverte à tout le comité. En revanche, **gérer** un contact (qualifier le profil, envoyer un email, intégrer comme membre, supprimer) est réservé au **groupe gestionnaire** : administrateurs et membres du comité ayant le rôle **secrétaire, président ou vice-président**. Les autres membres du comité voient les contacts mais n'ont pas les boutons d'action.
+
 ### Statuts des contacts
 
 - **Nouveau** — vient d'arriver, pas encore traité
 - **En cours** — en cours de traitement (suivi en cours)
 - **Traité** — pris en charge
 - **Refusé** — décliné
+
+### Qualifier un contact (profil)
+
+L'objectif est de **noter petit à petit** ce qu'on apprend au fil des échanges, sans rien imposer. Ouvrez le panneau de détail d'un contact : le bloc **Profil** propose des champs **tous optionnels**, à remplir quand l'information arrive :
+
+- **Catégorie d'âge** — enfant / adolescent / adulte
+- **Expérience** — n'a jamais joué / quelques mois / quelques années / joueur classé
+- **Souhaite la compétition** — oui / non / non renseigné
+- **La famille peut conduire** — utile pour le covoiturage interclubs
+- **Jours souhaités** — créneaux d'entraînement envisagés
+
+Chaque champ se sauvegarde au fil de l'eau. Ces qualifications servent à **trier l'inbox** (filtres par âge, expérience, envie de compétition) et à **retrouver les bons profils** pour composer des groupes homogènes. Quand le contact devient membre (intégration), ces informations sont **reportées** sur sa première inscription — pas de double saisie.
+
+> **Astuce** : certains modèles d'email sont des *questionnaires* conçus pour **récolter** justement ces informations manquantes (voir « Modèles d'email » ci-dessous).
 
 ### Intégrer un contact comme membre
 
@@ -134,9 +152,24 @@ Cela élimine la double saisie — le secrétariat vérifie et confirme, sans av
 
 ### Envoyer des emails aux contacts
 
-Depuis le panneau de détail du contact :
-- **Emails avec modèle** : choisissez un modèle pré-rédigé (info, bienvenue, refus, etc.) — envoyé immédiatement
-- **Email personnalisé** : rédigez un objet et un corps de message ; envoyez-vous éventuellement une copie
+Depuis le panneau de détail du contact, bloc **Envoyer un email** :
+
+- **Choisir un modèle** dans la liste déroulante → l'éditeur s'ouvre **automatiquement, pré-rempli** avec l'objet et le corps du modèle, les variables déjà résolues (prénom, intérêt, nom du club…). Vous **relisez/ajustez** le texte, puis envoyez. Vous pouvez vous envoyer une copie.
+- **Email personnalisé…** → ouvre l'éditeur **vierge** pour rédiger librement.
+
+Certains modèles appliquent **automatiquement un statut** au contact lors de l'envoi (par ex. le modèle de refus passe le contact en *Refusé*, un modèle de bienvenue en *Traité*).
+
+### Modèles d'email
+
+Allez dans **Site web → Modèles d'email** (réservé au groupe gestionnaire). Vous y créez et modifiez librement les modèles de réponse, sans dépendre d'un développeur :
+
+- **Nom**, **clé**, **objet**, **corps** du message
+- **Variables** disponibles à insérer dans l'objet/corps : `{{first_name}}`, `{{last_name}}`, `{{full_name}}`, `{{interest}}`, `{{club_name}}`
+- **Statut appliqué** (optionnel) : statut donné au contact quand le modèle est envoyé
+- **Questionnaire d'information** : marque les modèles destinés à *récolter* des informations manquantes
+- **Actif/inactif** : un modèle inactif n'apparaît plus dans la liste d'envoi
+
+Quelques modèles « système » de départ existent (bienvenue, infos cotisation, demande d'infos, refus poli, questionnaire, invitation à l'essai) ; leur **clé** est verrouillée mais leur texte reste entièrement modifiable.
 
 ### Mettre à jour le statut d'un contact
 
@@ -263,6 +296,20 @@ Lorsqu'un membre demande à s'inscrire à un pack d'entraînement, une notificat
 
 Si un pack d'entraînement est complet, les membres rejoignent la liste d'attente. Lorsqu'une place se libère (annulation), le premier membre en attente reçoit automatiquement une offre de place par email.
 
+### Tableau de planification (board)
+
+Allez dans **Planification → Tableau de planification**. C'est un **outil d'aide à la décision** pour composer les groupes d'entraînement de la saison et **visualiser les tensions** (effectif vs capacité) — sans toucher aux inscriptions réelles.
+
+**Important : un plan est un brouillon de réflexion.** Rien de ce que vous y faites n'est appliqué aux vrais packs ni aux inscriptions des membres. Une fois la décision prise en comité, vous créez/ajustez les vrais packs via l'écran des entraînements.
+
+- **Créer un plan** : donnez-lui un nom et cliquez sur **Créer depuis la saison**. Le plan est initialisé à partir de la saison active : il copie les packs actifs et place les inscrits dans leur pack (ou dans la colonne **Pool** s'ils ne sont inscrits à aucun).
+- **Composer par glisser-déposer** : déplacez les cartes membres d'une colonne (pack) à l'autre, ou vers/depuis le **Pool**. Chaque carte montre le **classement**, la **catégorie d'âge**, et les pastilles *compétitif / conduit / capitaine / bénévole* — pour viser des groupes homogènes.
+- **Tensions** : l'en-tête de chaque colonne affiche l'effectif sur la capacité ; une colonne **au-dessus de la capacité** est signalée — repérez d'un coup d'œil les créneaux sous tension et si l'offre est trop large ou trop juste.
+- **Modéliser l'offre** : ajoutez un **groupe hypothétique** (« + Ajouter un groupe »), modifiez son nom/niveau/jour/capacité, ou supprimez-le. Supprimer un groupe **renvoie ses membres au Pool** (personne n'est perdu). Vous pouvez ainsi tester « et si on ouvrait un 2ᵉ créneau ado ? ».
+- **Exporter / Importer** : exportez un plan en **CSV, ODS ou XLSX** pour le partager au comité ou le retravailler dans un tableur, puis **réimportez un CSV** (correspondance par licence, sinon par email) pour réinjecter la répartition. L'import ne modifie que le plan.
+
+**Permissions** : tout le comité peut **consulter** un plan et l'exporter ; **composer, modéliser l'offre et importer** sont réservés au **groupe gestionnaire** (admin, secrétaire, président, vice-président).
+
 ---
 
 ## 7. Contenu du site web
@@ -348,6 +395,26 @@ Allez dans **Trésorerie → Caisse**. Gérez les commandes du bar, la feuille d
 ## 11. Inscriptions
 
 Allez dans **Administration club → Inscriptions**. Consultez et gérez toutes les demandes d'affiliation en attente pour la saison en cours. Approuvez ou refusez les affiliations. Filtrez par statut.
+
+### Implication du membre dans la saison
+
+Au moment de l'inscription, chaque membre (ou le secrétariat pour lui) peut indiquer, **pour la saison** :
+
+- **Compétitif** — souhaite jouer en interclubs/compétition
+- **Peut conduire** (+ nombre de places) — pour organiser le covoiturage
+- **Veut être capitaine** — volontaire pour porter une équipe
+- **Aide bénévole** — disponible pour aider (tournois, buvette, arbitrage…)
+
+Si le membre vient d'un contact intégré, ces champs sont **pré-remplis** à partir de ce qui avait été noté sur le contact.
+
+### Roster de saison
+
+Allez dans **Administration club → Roster de saison**. C'est la vue d'ensemble des inscrits de la saison active, une ligne par membre, avec : **classement**, **catégorie d'âge** (calculée depuis la date de naissance), **compétitif**, **conduite** (+ places), **capitaine**, **bénévole**.
+
+- **Filtrez et triez** (par classement, catégorie d'âge, compétitif, conduite, capitaine, bénévole) pour préparer la composition des groupes et des équipes.
+- **Édition rapide** : basculez directement conduite / capitaine / bénévole et ajustez le nombre de places, sans ouvrir chaque fiche.
+
+Tout le comité peut **consulter** le roster ; l'**édition** est réservée au groupe gestionnaire (admin, secrétaire, président, vice-président).
 
 ---
 

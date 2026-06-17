@@ -1,99 +1,64 @@
-<div >
-    <!-- Filtres -->
-    <div class="bg-white border-b sticky top-16 z-40">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-4 lg:space-y-0">
-                <!-- Filtres par date -->
-                <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
-                    <div class="flex items-center space-x-2">
-                        <label for="year" class="text-sm font-medium text-gray-700">{{ __('Year:') }}</label>
-                        <select wire:model.live="year" id="year"
-                                class="px-3 text-xs pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
-                            <option value="">{{ __('All years') }}</option>
-                            @foreach($years as $yearOption)
-                                <option value="{{ $yearOption }}">{{ $yearOption }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-    
-                    <div class="flex items-center space-x-2">
-                        <label for="month" class="text-sm font-medium text-gray-700">Mois:</label>
-                        <select wire:model.live="month" id="month"
-                                class="text-xs px-3 py-2 pr-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
-                            <option value="">Tous les mois</option>
-                            @foreach($months as $monthValue => $monthName)
-                                <option value="{{ $monthValue }}">{{ $monthName }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-    
-                    <div class="flex items-center space-x-2">
-                        <label for="category" class="text-sm font-medium text-gray-700">{{ __('Category:') }}</label>
-                        <select wire:model.live="category" id="category"
-                                class="text-xs px-3 py-2 pr-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent">
-                            <option value="">Toutes les catégories</option>
-                            @foreach($categories as $categoryOption)
-                                <option value="{{ $categoryOption }}">{{ $categoryOption }}</option>
-                            @endforeach
-                        </select>
-                    </div>
+<div>
+    @if($articles->total() > 0 || $activeFiltersCount > 0)
+        <x-public.filter-bar :count="trans_choice(':count article found|:count articles found', $articles->total())">
+            <x-slot:filters>
+                <div class="flex items-center gap-2">
+                    <label for="season" class="text-sm font-medium text-gray-600">{{ __('Season:') }}</label>
+                    <x-public.filter-select wire:model.live="seasonId" id="season">
+                        <option value="0">{{ __('All seasons') }}</option>
+                        @foreach($seasons as $season)
+                            <option value="{{ $season->id }}">{{ $season->name }}</option>
+                        @endforeach
+                    </x-public.filter-select>
                 </div>
-    
-                <!-- Résultats et tri -->
-                <div class="flex items-center space-x-4">
-                    <span class="text-sm text-gray-600">
-                        {{ $articles->total() }} article{{ $articles->total() > 1 ? 's' : '' }} trouvé{{ $articles->total() > 1 ? 's' : '' }}
-                    </span>
-                    <select wire:model.live="sort"
-                            class="text-xs px-3 py-2 pr-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-club-blue focus:border-transparent text-sm">
-                        <option value="desc">{{ __('Most recent') }}</option>
-                        <option value="asc">Plus ancien</option>
-                    </select>
+
+                <div class="flex items-center gap-2">
+                    <label for="category" class="text-sm font-medium text-gray-600">{{ __('Category:') }}</label>
+                    <x-public.filter-select wire:model.live="category" id="category">
+                        <option value="">{{ __('All categories') }}</option>
+                        @foreach($categories as $categoryOption)
+                            <option value="{{ $categoryOption }}">{{ $categoryOption }}</option>
+                        @endforeach
+                    </x-public.filter-select>
                 </div>
-            </div>
-    
-            <!-- Filtres actifs -->
+            </x-slot:filters>
+
+            <x-slot:sort>
+                <x-public.filter-select wire:model.live="sort">
+                    <option value="desc">{{ __('Most recent') }}</option>
+                    <option value="asc">{{ __('Oldest') }}</option>
+                </x-public.filter-select>
+            </x-slot:sort>
+
             @if($activeFiltersCount > 0)
-                <div class="mt-4 flex flex-wrap gap-2">
-                    <span class="text-sm text-gray-600">Filtres actifs:</span>
-    
-                    @if($year)
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-club-blue text-white">
-                            Année: {{ $year }}
-                            <button wire:click="clearFilter('year')" class="ml-2 hover:text-club-yellow">×</button>
-                        </span>
-                    @endif
-    
-                    @if($month)
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-club-blue text-white">
-                            Mois: {{ $months[$month] }}
-                            <button wire:click="clearFilter('month')" class="ml-2 hover:text-club-yellow">×</button>
-                        </span>
-                    @endif
-    
-                    @if($category)
-                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-club-blue text-white">
-                            {{ $category }}
-                            <button wire:click="clearFilter('category')" class="ml-2 hover:text-club-yellow">×</button>
-                        </span>
-                    @endif
-    
-                    <button wire:click="clearAllFilters" class="text-xs text-club-blue hover:text-club-blue-light font-medium">
-                        Effacer tous les filtres
-                    </button>
-                </div>
+                <x-slot:chips>
+                    <div class="mt-3 flex flex-wrap items-center gap-2">
+                        <span class="text-sm text-gray-600">{{ __('Active filters:') }}</span>
+
+                        @if($seasonId !== $defaultSeasonId && $seasons->firstWhere('id', $seasonId))
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-club-blue text-white">
+                                {{ $seasons->firstWhere('id', $seasonId)->name }}
+                                <button wire:click="clearFilter('seasonId')" class="ml-2 hover:text-club-yellow">×</button>
+                            </span>
+                        @endif
+
+                        @if($category)
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-club-blue text-white">
+                                {{ $category }}
+                                <button wire:click="clearFilter('category')" class="ml-2 hover:text-club-yellow">×</button>
+                            </span>
+                        @endif
+
+                        <button wire:click="clearAllFilters" class="text-xs text-club-blue hover:text-club-blue-light font-medium">
+                            {{ __('Clear all filters') }}
+                        </button>
+                    </div>
+                </x-slot:chips>
             @endif
-        </div>
-    </div>
+        </x-public.filter-bar>
+    @endif
 
-    <!-- Loading indicator -->
-    <div wire:loading class="fixed top-0 left-0 right-0 bg-club-blue bg-opacity-75 z-50">
-        <div class="flex justify-center items-center h-2">
-            <div class="animate-pulse bg-club-yellow h-2 w-full"></div>
-        </div>
-    </div>
-
-    <!-- Articles -->
+    {{-- Articles --}}
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         @if($articles->count() > 0)
             <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -101,24 +66,36 @@
                     <x-public.news-card-full :article="$article" :index="$index" />
                 @endforeach
             </div>
-    
-            <!-- Pagination -->
+
             <div class="mt-12">
                 {{ $articles->links() }}
             </div>
-        @else
-            <!-- Aucun résultat -->
-            <div class="text-center py-16">
-                <div class="w-24 h-24 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
-                    <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9.5a2.5 2.5 0 00-2.5-2.5H15"></path>
-                    </svg>
+        @elseif($activeFiltersCount > 0)
+            <div class="flex flex-col items-center justify-center gap-6 rounded-2xl bg-gray-50 px-6 py-20 text-center">
+                <span class="text-6xl">🔍</span>
+                <div class="max-w-md">
+                    <h3 class="mb-2 text-xl font-semibold text-gray-900">{{ __('No articles found') }}</h3>
+                    <p class="text-gray-500">{{ __('Try adjusting your search criteria or browse all news.') }}</p>
                 </div>
-                <h3 class="text-xl font-semibold text-gray-900 mb-2">{{ __('No articles found') }}</h3>
-                <p class="text-gray-600 mb-6">{{ __('Try adjusting your search criteria or browse all news.') }}</p>
-                <button wire:click="clearAllFilters" class="bg-club-blue text-white px-6 py-3 rounded-lg hover:bg-club-blue-light transition-colors">
-                    Voir toutes les actualités
+                <button wire:click="clearAllFilters" class="rounded-lg bg-club-blue px-8 py-3 font-semibold text-white transition-colors hover:bg-club-blue-light">
+                    {{ __('View all news') }}
                 </button>
+            </div>
+        @else
+            <div class="flex flex-col items-center justify-center gap-6 rounded-2xl bg-gray-50 px-6 py-20 text-center">
+                <span class="text-6xl">📰</span>
+                <div class="max-w-md">
+                    <h2 class="mb-2 text-2xl font-bold text-gray-900">{{ __('No articles published yet') }}</h2>
+                    <p class="text-gray-500">{{ __("Club news coming soon — check back, there's always something happening!") }}</p>
+                </div>
+                <div class="flex flex-col gap-3 sm:flex-row">
+                    <a href="{{ route('home') }}#join" class="rounded-lg bg-club-yellow px-8 py-3 font-semibold text-club-blue transition-colors hover:bg-club-yellow-light">
+                        {{ __('Become a member') }}
+                    </a>
+                    <a href="{{ route('home') }}#contact" class="rounded-lg border-2 border-club-blue px-8 py-3 font-semibold text-club-blue transition-colors hover:bg-club-blue hover:text-white">
+                        {{ __('Contact us') }}
+                    </a>
+                </div>
             </div>
         @endif
     </div>

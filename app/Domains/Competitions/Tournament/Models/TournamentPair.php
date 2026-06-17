@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Competitions\Tournament\Models;
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Traits\HasAuditLog;
 use Database\Factories\Domains\Competitions\Tournament\Models\TournamentPairFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -40,6 +41,8 @@ use Illuminate\Support\Carbon;
  */
 class TournamentPair extends Model
 {
+    use HasAuditLog;
+
     /** @use HasFactory<TournamentPairFactory> */
     use HasFactory;
 
@@ -54,7 +57,7 @@ class TournamentPair extends Model
     {
         $rankings = collect([$this->player1->ranking, $this->player2->ranking])
             ->filter()
-            ->map(fn ($r) => (int) $r);
+            ->map(fn (string $r) => (int) $r);
 
         if ($rankings->isEmpty()) {
             return 'NC';

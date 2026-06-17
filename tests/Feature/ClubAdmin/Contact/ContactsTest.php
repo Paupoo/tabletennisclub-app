@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Contact\Models\Contact;
+use App\Domains\ClubAdmin\Contact\Models\EmailTemplate;
 use App\Domains\ClubAdmin\Users\Models\User;
-use App\Services\ClubAdmin\Contact\ContactEmailService;
 use Livewire\Livewire;
 
 beforeEach(function (): void {
@@ -74,20 +74,22 @@ describe('Contacts index', function (): void {
         expect(Contact::find($contact->id))->toBeNull();
     });
 
-    it('sends template email via ContactEmailService', function (): void {
-        $contact = Contact::factory()->create(['status' => 'new']);
-
-        $mock = Mockery::mock(ContactEmailService::class);
-        $mock->shouldReceive('sendTemplate')
-            ->once()
-            ->with(Mockery::on(fn ($c) => $c->id === $contact->id), 'welcome')
-            ->andReturn('Email welcome successfully sent');
-
-        $this->app->instance(ContactEmailService::class, $mock);
+    it('prefills the editor from a template instead of sending directly', function (): void {
+        $contact = Contact::factory()->create(['first_name' => 'Léa', 'status' => 'new']);
+        $template = EmailTemplate::factory()->create([
+            'key' => 'welcome',
+            'subject' => 'Bonjour {{first_name}}',
+            'body' => 'Coucou {{first_name}}',
+        ]);
 
         Livewire::actingAs($this->admin)
             ->test('pages::website.contacts.index')
             ->set('selectedContactId', $contact->id)
-            ->call('sendTemplateEmail', 'welcome');
+            ->set('selectedTemplateKey', $template->key)
+            ->call('applyTemplate')
+            ->assertSet('emailSubject', 'Bonjour Léa')
+            ->assertSet('emailModal', true);
+
+        expect($contact->fresh()->status)->toBe('new');
     });
 });

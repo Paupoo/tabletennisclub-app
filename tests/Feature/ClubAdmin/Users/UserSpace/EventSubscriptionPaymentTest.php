@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Meetings\Models\Meeting;
@@ -84,6 +85,9 @@ describe('pendingPayments', function (): void {
 // ── openPaymentModal ──────────────────────────────────────────────────────────
 
 describe('openPaymentModal', function (): void {
+    beforeEach(function (): void {
+        Club::factory()->ownClub()->create();
+    });
     it('opens the modal and stores the payment id', function (): void {
         $user = User::factory()->create();
         $tournament = paymentTournament();

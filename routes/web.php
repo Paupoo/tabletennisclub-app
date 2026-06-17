@@ -2,22 +2,15 @@
 
 declare(strict_types=1);
 
-use App\Actions\ClubAdmin\Payments\GeneratePayment;
-use App\Actions\ClubAdmin\Subscriptions\CancelSubscriptionAction;
-use App\Actions\ClubAdmin\Subscriptions\ConfirmSubscriptionAction;
-use App\Actions\ClubAdmin\Subscriptions\MarkPaidSubscriptionAction;
-use App\Actions\ClubAdmin\Subscriptions\MarkRefundSubscriptionAction;
 use App\Actions\ClubAdmin\Subscriptions\SubscribeToSeasonAction;
-use App\Actions\ClubAdmin\Subscriptions\UnconfirmSubscriptionAction;
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Http\Controllers\ClubAdmin\Contact\ContactController;
 use App\Http\Controllers\ClubAdmin\Contact\InvitationController;
+use App\Http\Controllers\ClubAdmin\DashboardController;
 use App\Http\Controllers\ClubAdmin\Payment\PaymentController;
-use App\Http\Controllers\ClubAdmin\Payment\TransactionController;
 use App\Http\Controllers\ClubAdmin\Subscription\RegistrationController;
-use App\Http\Controllers\ClubAdmin\Subscription\SubscriptionController;
 use App\Http\Controllers\ClubEvents\Interclub\ResultsController;
 use App\Http\Controllers\ClubEvents\Interclub\SeasonController;
 use App\Http\Controllers\ClubEvents\Meeting\MeetingPollController;
@@ -98,13 +91,32 @@ Route::prefix('admin/club-admin/users/')
         Route::livewire('registrations', 'pages::club-admin.users.registrations')->name('admin.users.registrations');
         // Legacy redirect — kept for backward compatibility
         Route::get('payments', fn () => redirect()->route('admin.treasury.payments'))->name('admin.users.payments');
+
+        // Season roster — visible to the whole committee, editing reserved to managers (decision #18).
+        Route::middleware('committee')->group(function (): void {
+            Route::livewire('roster', 'pages::club-admin.subscriptions.roster')->name('admin.subscriptions.roster');
+        });
     });
+// Season planning board — visible to the whole committee, mutations reserved to managers (decision #18).
+Route::prefix('admin/club-admin/planning/')
+    ->middleware(['auth', 'verified', 'committee'])
+    ->group(function (): void {
+        Route::livewire('board', 'pages::club-admin.planning.board')->name('admin.planning.board');
+    });
+
 Route::prefix('admin/treasury/')
     ->middleware(['auth', 'verified'])
     ->group(function (): void {
         Route::livewire('payments', 'pages::club-admin.treasury.payments')->name('admin.treasury.payments');
         Route::livewire('transactions', 'pages::club-admin.treasury.transactions')->name('admin.treasury.transactions');
         Route::livewire('cash-register', 'pages::club-admin.treasury.cash-register')->name('admin.treasury.cash');
+    });
+
+// Audit log — readable by platform admins and the management committee (decision: audit access).
+Route::prefix('admin/club-admin/audit/')
+    ->middleware(['auth', 'verified', 'can:view-audit-log'])
+    ->group(function (): void {
+        Route::livewire('list', 'pages::club-admin.audit.index')->name('admin.audit.index');
     });
 
 Route::prefix('admin/club-admin/')
@@ -240,35 +252,9 @@ Route::post('/invitation/accept/{user}', [InvitationController::class, 'store'])
 |
 */
 
-/**
- * Dashboard with sample of most data (to implement, it's a mock (active) for now)
- */
-Route::get('/admin/dashboard', function () {
-    return view('clubAdmin.dashboard_v4_personas', [
-        'members_total' => 42,
-        'members_active' => 38,
-        'members_inactive' => 4,
-        'members_competitors' => 24,
-        'members_unpaid' => 3,
-        'rooms_count' => 3,
-        'teams_count' => 4,
-        'trainings_count' => 6,
-        'interclubs_pending' => 2,
-        'payments_pending' => 18,
-        'affiliations_pending' => 5,
-        'events_count' => 1,
-        'recent_activity' => [
-            ['type' => 'member',    'label' => 'Jean Dupont a rejoint le club',        'time' => '1h'],
-            ['type' => 'contact',   'label' => 'Nouveau message de Pierre V.',         'time' => '3h'],
-            ['type' => 'match',     'label' => 'Match BBW114 vs BBW210 planifié',      'time' => '5h'],
-            ['type' => 'payment',   'label' => 'Cotisation payée par Marie L.',        'time' => '1j'],
-            ['type' => 'news',      'label' => 'Article "Résultats printemps" publié', 'time' => '1j'],
-            ['type' => 'selection', 'label' => 'Sélection équipe A envoyée',           'time' => '2j'],
-            ['type' => 'meeting',   'label' => 'CR réunion comité du 22 mai ajouté',  'time' => '3j'],
-            ['type' => 'member',    'label' => 'Sophie Martin inscrite',               'time' => '4j'],
-        ],
-    ]);
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/admin/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
 // Tournament email registration / waitlist actions (signed URLs, no auth required)
 Route::get('/tournament/{tournament}/join/{user}', [TournamentController::class, 'registerViaEmail'])
@@ -299,6 +285,9 @@ Route::prefix('admin/website')->middleware(['auth', 'verified', 'committee'])->g
     Route::livewire('/articles/create', 'pages::website.articles.edit')->name('admin.website.articles.create');
     Route::livewire('/articles/{newsPost}/edit', 'pages::website.articles.edit')->name('admin.website.articles.edit');
     Route::livewire('/contacts', 'pages::website.contacts.index')->name('admin.website.contacts.index');
+    Route::livewire('/contacts/email-templates', 'pages::website.contacts.email-templates')
+        ->middleware('can:manage-contacts')
+        ->name('admin.website.contacts.email-templates');
     Route::livewire('/spams', 'pages::website.spams.index')->name('admin.website.spams.index');
     Route::livewire('/events', 'pages::website.events.index')->name('admin.website.events.index');
 });
@@ -315,28 +304,8 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
 Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::resource('seasons', SeasonController::class)->names('clubEvents.interclubs.seasons');
     Route::resource('registrations', RegistrationController::class)->names('clubAdmin.registrations');
-    Route::resource('subscriptions', SubscriptionController::class)->names('clubAdmin.subscriptions')->except(['show']);
     Route::resource('payments', PaymentController::class)->names('admin.payments');
     Route::post('seasons/{season}/subscribe/', SubscribeToSeasonAction::class)->name('clubEvents.interclubs.seasons.subscribe');
-    Route::post('seasons/{season}/unsubscribe', [SubscriptionController::class, 'unsubscribe'])->name('clubAdmin.subscriptions.unsubscribe');
-    Route::post('subscriptions/sendPaymentInvite/', [PaymentController::class, 'sendInvite'])->name('clubAdmin.subscriptions.sendPaymentInvite');
-    Route::post('subscriptions/{subscription}/confirm', ConfirmSubscriptionAction::class)->name('clubAdmin.subscriptions.confirm');
-    Route::post('subscriptions/{subscription}/unconfirm', UnconfirmSubscriptionAction::class)->name('clubAdmin.subscriptions.unconfirm');
-    Route::post('subscriptions/{subscription}/cancel', CancelSubscriptionAction::class)->name('clubAdmin.subscriptions.cancel');
-    Route::post('subscriptions/{subscription}/markPaid', MarkPaidSubscriptionAction::class)->name('clubAdmin.subscriptions.markPaid');
-    Route::post('subscriptions/{subscription}/markRefunded', MarkRefundSubscriptionAction::class)->name('clubAdmin.subscriptions.markRefunded');
-    Route::post('payments/{subscription}/generate', GeneratePayment::class)->name('admin.subscription.generatePayment');
-    Route::post('subscription/{subscription}/addTrainingPack', [SubscriptionController::class, 'syncTrainingPacks'])->name('clubAdmin.subscriptions.addTrainingPack');
-    Route::get('/admin/subscriptions/{subscription}', [SubscriptionController::class, 'show'])
-        ->name('clubAdmin.subscriptions.show');
-});
-
-Route::prefix('admin/transactions')->middleware(['auth', 'verified'])->group(function (): void {
-    Route::get('add', [TransactionController::class, 'add'])->name('admin.transactions.add ');
-    Route::post('upload', [TransactionController::class, 'upload'])->name('admin.transactions.upload');
-    Route::get('/', [TransactionController::class, 'index'])->name('admin.transactions.index');
-    Route::get('/reconcile', [TransactionController::class, 'reconcile'])->name('admin.transactions.reconcile');
-    Route::post('/reconcile', [TransactionController::class, 'reconcileStore'])->name('admin.transactions.reconcile.store');
 });
 
 require __DIR__ . '/auth.php';

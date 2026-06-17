@@ -8,6 +8,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Http\Controllers\Controller;
 use App\Support\Breadcrumb;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -24,7 +25,7 @@ class SeasonController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(string $id): void
     {
         // TODO
     }
@@ -32,7 +33,7 @@ class SeasonController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
+    public function edit(string $id): void
     {
         // TODO
     }
@@ -73,7 +74,7 @@ class SeasonController extends Controller
             ->toArray();
         $subscriptions = $season->subscriptions->load('payments');
         $trainingPacks = $season->trainingPacks()->get();
-        $notSubscribedUsers = User::whereDoesntHave('subscriptions', function ($query) use ($season): void {
+        $notSubscribedUsers = User::whereDoesntHave('subscriptions', function (Builder $query) use ($season): void {
             $query->where('season_id', $season->id);
         })->get();
 
@@ -105,7 +106,7 @@ class SeasonController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, string $id): void
     {
         // TODO
     }

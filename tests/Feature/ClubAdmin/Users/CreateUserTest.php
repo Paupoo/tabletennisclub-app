@@ -18,7 +18,7 @@ beforeEach(function (): void {
         'email' => 'aurelien.paulus@gmail.com',
         'licence' => '999888',
     ]);
-    Club::factory()->create(['licence' => config('app.club_licence')]);
+    Club::factory()->ownClub()->create();
 });
 
 test('create method returning expected view and data', function (): void {
@@ -32,7 +32,7 @@ test('create method returning expected view and data', function (): void {
 
 test('new nember created is automatically linked to the club', function (): void {
     $user = User::factory()->create();
-    $club = Club::firstWhere('licence', config('app.club_licence'));
+    $club = Club::own();
     expect($user->club_id)->toEqual($club->id);
 });
 

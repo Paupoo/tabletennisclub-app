@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Subscriptions\Notifications;
 
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
+use App\Domains\Trainings\Models\TrainingPack;
 use Illuminate\Bus\Queueable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -70,7 +71,7 @@ class SubscriptionCreatedNotification extends Notification
     {
         $basePrice = $this->subscription->is_competitive ? 125.0 : 60.0;
 
-        $packTotal = $trainingPacks->sum(fn ($pack) => (float) $pack->price);
+        $packTotal = $trainingPacks->sum(fn (TrainingPack $pack) => (float) $pack->price);
 
         return $basePrice + $packTotal;
     }

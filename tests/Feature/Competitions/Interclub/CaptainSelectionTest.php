@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Season;
@@ -21,10 +22,13 @@ beforeEach(function (): void {
     $this->player2 = User::factory()->isCompetitor()->create();
     $this->outsider = User::factory()->isCompetitor()->create();
 
+    $this->ownClub = Club::factory()->ownClub()->create();
+
     $this->team = Team::factory()->create([
         'season_id' => $this->season->id,
         'league_id' => $this->league->id,
         'captain_id' => $this->captain->id,
+        'club_id' => $this->ownClub->id,
     ]);
 
     $this->team->users()->attach([$this->captain->id, $this->player1->id, $this->player2->id]);
@@ -122,6 +126,124 @@ it('openSelection silently ignores past interclubs', function (): void {
         ->call('openSelection', $past->id)
         ->assertSet('drawerSelection', false)
         ->assertSet('selectedInterclubId', null);
+});
+
+it('is_selector user can access the captain selection page and sees all teams', function (): void {
+    $selector = User::factory()->create(['is_selector' => true]);
+
+    $this->actingAs($selector)
+        ->get(route('admin.interclubs.captain-selection'))
+        ->assertOk();
+});
+
+it('matchDayMap scopes week numbers to own club teams only', function (): void {
+    $otherTeam = Team::factory()->create([
+        'season_id' => $this->season->id,
+        'league_id' => $this->league->id,
+    ]);
+
+    // Interclub for own team — week 10
+    Interclub::factory()->create([
+        'season_id' => $this->season->id,
+        'league_id' => $this->league->id,
+        'visited_team_id' => $this->team->id,
+        'week_number' => 10,
+        'start_date_time' => now()->addDays(7),
+    ]);
+
+    // Interclub for other team only — week 20
+    Interclub::factory()->create([
+        'season_id' => $this->season->id,
+        'league_id' => $this->league->id,
+        'visited_team_id' => $otherTeam->id,
+        'week_number' => 20,
+        'start_date_time' => now()->addDays(14),
+    ]);
+
+    $map = Interclub::matchDayMap(
+        $this->season->id,
+        [$this->team->id]
+    );
+
+    expect($map)->toHaveKey(10)
+        ->and($map)->not->toHaveKey(20);
+});
+
+// ── Status logic tests ──────────────────────────────────────────────────────
+
+/** Helper: render the captain-selection component and return status for a given match */
+function matchStatus(int $interclubId, User $captain, int $teamId): string
+{
+    $component = Livewire::actingAs($captain)
+        ->test('pages::club-events.interclubs.captain-selection');
+
+    $teamsData = $component->viewData('teamsData');
+    $teamData = collect($teamsData)->firstWhere('id', $teamId);
+    $match = collect($teamData['matches'])->firstWhere('id', $interclubId);
+
+    return $match['status'];
+}
+
+it('returns past status for a match in the past', function (): void {
+    $interclub = Interclub::factory()->create([
+        'season_id' => $this->season->id,
+        'league_id' => $this->league->id,
+        'visited_team_id' => $this->team->id,
+        'total_players' => 4,
+        'start_date_time' => now()->subDays(1),
+    ]);
+
+    expect(matchStatus($interclub->id, $this->captain, $this->team->id))->toBe('past');
+});
+
+it('returns future status when match is beyond 14 days and no availability or selection', function (): void {
+    $interclub = Interclub::factory()->create([
+        'season_id' => $this->season->id,
+        'league_id' => $this->league->id,
+        'visited_team_id' => $this->team->id,
+        'total_players' => 4,
+        'start_date_time' => now()->addDays(20),
+    ]);
+
+    expect(matchStatus($interclub->id, $this->captain, $this->team->id))->toBe('future');
+});
+
+it('returns urgent status when match is within 14 days and not enough available players', function (): void {
+    // $this->interclub: +7 days, 3 team members, 0 available → urgent
+    expect(matchStatus($this->interclub->id, $this->captain, $this->team->id))->toBe('urgent');
+});
+
+it('returns actionable status when enough players are available even if no selection made', function (): void {
+    $interclub = Interclub::factory()->create([
+        'season_id' => $this->season->id,
+        'league_id' => $this->league->id,
+        'visited_team_id' => $this->team->id,
+        'total_players' => 2,
+        'start_date_time' => now()->addDays(20),
+    ]);
+
+    $interclub->markAvailability($this->player1, InterclubAvailability::AVAILABLE);
+    $interclub->markAvailability($this->player2, InterclubAvailability::AVAILABLE);
+
+    expect(matchStatus($interclub->id, $this->captain, $this->team->id))->toBe('actionable');
+});
+
+it('returns actionable status when selection is complete but not yet confirmed', function (): void {
+    // +7 days (urgent zone), but selection is complete → actionable takes priority
+    $this->interclub->select($this->player1);
+    $this->interclub->select($this->player2);
+    $this->interclub->update(['total_players' => 2]);
+
+    expect(matchStatus($this->interclub->id, $this->captain, $this->team->id))->toBe('actionable');
+});
+
+it('returns confirmed status when selection_confirmed_at is set', function (): void {
+    $this->interclub->users()->attach($this->player1->id, [
+        'is_selected' => true,
+        'selection_confirmed_at' => now(),
+    ]);
+
+    expect(matchStatus($this->interclub->id, $this->captain, $this->team->id))->toBe('confirmed');
 });
 
 it('has_played flag counts as a played match in matchesPlayedCount', function (): void {

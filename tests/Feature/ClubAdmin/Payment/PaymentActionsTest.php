@@ -8,10 +8,21 @@ use App\Actions\ClubAdmin\Payments\ProcessPaymentAction;
 use App\Actions\ClubAdmin\Payments\SendPayementInvite;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Club;
+use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
+use App\Domains\Meetings\Models\Meeting;
+use App\Domains\Shared\Enums\MeetingUserStatusEnum;
+use App\Jobs\SendPaymentReminderJob;
 use App\Mail\PaymentInvitationEmail;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
+
+beforeEach(function (): void {
+    Club::factory()->ownClub()->create();
+});
 
 // ============================================================
 // GeneratePaymentQR
@@ -254,5 +265,187 @@ describe('ProcessPaymentAction', function (): void {
         expect(fn () => (new ProcessPaymentAction)->execute($subscription, 'TXN-1', 150.0))
             ->toThrow(DomainException::class, 'No pending payment found');
     })->group('payments', 'process');
+
+})->group('payments');
+
+// ============================================================
+// SendPaymentReminderJob
+// ============================================================
+
+describe('SendPaymentReminderJob', function (): void {
+
+    test('sends PaymentInvitationEmail for a pending subscription payment', function (): void {
+        Mail::fake();
+
+        $user = User::factory()->create();
+        $subscription = Subscription::factory()->create([
+            'user_id' => $user->id,
+            'status' => 'confirmed',
+            'amount_due' => 125,
+        ]);
+        $payment = $subscription->payments()->create([
+            'reference' => '100/2505/00501',
+            'amount_due' => 125,
+            'amount_paid' => 0,
+            'status' => 'pending',
+            'invitation_counter' => 0,
+        ]);
+
+        (new SendPaymentReminderJob($payment->id))->handle();
+
+        Mail::assertSent(PaymentInvitationEmail::class, fn ($mail) => $mail->hasTo($user->email));
+        expect($payment->fresh()->invitation_counter)->toBe(1);
+    })->group('payments', 'reminder');
+
+    test('sends PaymentInvitationEmail for a pending tournament registration payment', function (): void {
+        Mail::fake();
+
+        $user = User::factory()->create();
+        $tournament = Tournament::factory()->create();
+        $tournament->users()->attach($user->id, ['registration_status' => 'registered']);
+
+        $registration = TournamentRegistration::where('tournament_id', $tournament->id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        $payment = $registration->payment()->create([
+            'reference' => 'TSY/2026/00501',
+            'amount_due' => 10,
+            'amount_paid' => 0,
+            'status' => 'pending',
+            'invitation_counter' => 0,
+        ]);
+
+        (new SendPaymentReminderJob($payment->id))->handle();
+
+        Mail::assertSent(PaymentInvitationEmail::class, fn ($mail) => $mail->hasTo($user->email));
+        expect($payment->fresh()->invitation_counter)->toBe(1);
+    })->group('payments', 'reminder');
+
+    test('does nothing if payment is not pending', function (): void {
+        Mail::fake();
+        Notification::fake();
+
+        $user = User::factory()->create();
+        $subscription = Subscription::factory()->create([
+            'user_id' => $user->id,
+            'status' => 'paid',
+            'amount_due' => 125,
+        ]);
+        $payment = $subscription->payments()->create([
+            'reference' => '100/2505/00601',
+            'amount_due' => 125,
+            'amount_paid' => 125,
+            'status' => 'paid',
+            'invitation_counter' => 0,
+        ]);
+
+        (new SendPaymentReminderJob($payment->id))->handle();
+
+        Mail::assertNothingSent();
+        Notification::assertNothingSent();
+        expect($payment->fresh()->invitation_counter)->toBe(0);
+    })->group('payments', 'reminder');
+
+    test('sends PaymentInvitationEmail for a pending meeting payment', function (): void {
+        Mail::fake();
+
+        $user = User::factory()->create();
+        $meeting = Meeting::factory()->confirmed()->create();
+        $meeting->users()->attach($user->id, ['status' => MeetingUserStatusEnum::CONFIRMED->value]);
+        $meetingUser = $meeting->users()->where('users.id', $user->id)->first()->registration;
+        $payment = $meetingUser->payment()->create([
+            'reference' => 'MTG/2026/00601',
+            'amount_due' => 12,
+            'amount_paid' => 0,
+            'status' => 'pending',
+            'invitation_counter' => 0,
+        ]);
+
+        (new SendPaymentReminderJob($payment->id))->handle();
+
+        Mail::assertSent(PaymentInvitationEmail::class, fn ($mail) => $mail->hasTo($user->email));
+        expect($payment->fresh()->invitation_counter)->toBe(1);
+    })->group('payments', 'reminder');
+
+})->group('payments');
+
+// ============================================================
+// PaymentInvitationEmail — content
+// ============================================================
+
+describe('PaymentInvitationEmail content', function (): void {
+
+    test('renders subscription label with season name', function (): void {
+        $user = User::factory()->create();
+        $subscription = Subscription::factory()->create(['user_id' => $user->id, 'status' => 'confirmed']);
+        $payment = $subscription->payments()->create([
+            'reference' => 'INV/2026/00101',
+            'amount_due' => 125,
+            'amount_paid' => 0,
+            'status' => 'pending',
+        ]);
+
+        $mailable = new PaymentInvitationEmail($payment->load('payable.season'));
+
+        $mailable->assertSeeInHtml('Cotisation');
+        $mailable->assertSeeInHtml($subscription->season->name);
+    })->group('payments', 'mail-content');
+
+    test('renders tournament label with tournament name', function (): void {
+        $user = User::factory()->create();
+        $tournament = Tournament::factory()->create(['name' => 'Open de Printemps 2026']);
+        $tournament->users()->attach($user->id, ['registration_status' => 'registered']);
+        $registration = TournamentRegistration::where('tournament_id', $tournament->id)
+            ->where('user_id', $user->id)
+            ->first();
+        $payment = $registration->payment()->create([
+            'reference' => 'INV/2026/00201',
+            'amount_due' => 10,
+            'amount_paid' => 0,
+            'status' => 'pending',
+        ]);
+
+        $mailable = new PaymentInvitationEmail($payment->load('payable.tournament'));
+
+        $mailable->assertSeeInHtml('Tournoi');
+        $mailable->assertSeeInHtml('Open de Printemps 2026');
+    })->group('payments', 'mail-content');
+
+    test('renders meeting label with meeting title', function (): void {
+        $user = User::factory()->create();
+        $meeting = Meeting::factory()->confirmed()->create(['title' => 'AG 2026']);
+        $meeting->users()->attach($user->id, ['status' => MeetingUserStatusEnum::CONFIRMED->value]);
+        $meetingUser = $meeting->users()->where('users.id', $user->id)->first()->registration;
+        $payment = $meetingUser->payment()->create([
+            'reference' => 'INV/2026/00301',
+            'amount_due' => 12,
+            'amount_paid' => 0,
+            'status' => 'pending',
+        ]);
+
+        $mailable = new PaymentInvitationEmail($payment->load('payable.meeting'));
+
+        $mailable->assertSeeInHtml('Réunion');
+        $mailable->assertSeeInHtml('AG 2026');
+    })->group('payments', 'mail-content');
+
+    test('reminder shows "dès que possible" when instructions passed', function (): void {
+        $user = User::factory()->create();
+        $subscription = Subscription::factory()->create(['user_id' => $user->id, 'status' => 'confirmed']);
+        $payment = $subscription->payments()->create([
+            'reference' => 'INV/2026/00401',
+            'amount_due' => 125,
+            'amount_paid' => 0,
+            'status' => 'pending',
+        ]);
+
+        $mailable = new PaymentInvitationEmail(
+            $payment->load('payable.season'),
+            __('Please settle your payment as soon as possible.')
+        );
+
+        $mailable->assertSeeInHtml('dès que possible');
+    })->group('payments', 'mail-content');
 
 })->group('payments');

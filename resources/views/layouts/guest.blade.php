@@ -7,6 +7,10 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>{{ $title ?? 'CTT Ottignies-Blocry' }}</title>
+    <link rel="icon" type="image/svg+xml" href="{{ asset('images/logo-club.svg') }}">
+    @if(!empty($description ?? null))
+        <meta name="description" content="{{ $description }}">
+    @endif
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
     @if(app()->environment('production'))

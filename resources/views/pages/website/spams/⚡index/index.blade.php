@@ -1,45 +1,67 @@
-<div>
+<div x-data="{ mobileSearchOpen: false, mobileActionsOpen: false }">
     <x-slot:breadcrumbs>
         <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
     </x-slot:breadcrumbs>
 
     <x-header progress-indicator separator title="Spam">
         <x-slot:middle>
-            <x-input class="w-full" clearable icon="o-magnifying-glass"
-                :placeholder="__('Search by IP or user agent…')"
-                wire:model.live.debounce.300ms="search" />
+            <div class="hidden w-full lg:block">
+                <x-input class="w-full" clearable icon="o-magnifying-glass"
+                    :placeholder="__('Search by IP or user agent…')"
+                    wire:model.live.debounce.300ms="search" />
+            </div>
         </x-slot:middle>
         <x-slot:actions>
-            <x-button class="btn-ghost {{ $this->activeFiltersCount > 0 ? 'btn-active' : '' }}"
-                wire:click="$toggle('showFilters')">
-                <x-icon name="o-funnel" class="h-5 w-5" />
-                {{ __('Filters') }}
-                @if ($this->activeFiltersCount > 0)
-                    <x-badge class="badge-sm badge-primary" value="{{ $this->activeFiltersCount }}" />
-                @endif
-            </x-button>
+            {{-- Mobile: 🔍 · filter · ☰ --}}
+            <div class="flex items-center gap-1 lg:hidden">
+                <button class="btn btn-ghost btn-circle btn-sm" @click="mobileSearchOpen = true">
+                    <x-icon name="o-magnifying-glass" class="h-5 w-5" />
+                </button>
+                <button class="btn btn-ghost btn-circle btn-sm relative {{ count($filterChips) > 0 ? 'btn-active' : '' }}"
+                    wire:click="$set('filterDrawer', true)">
+                    <x-icon name="o-funnel" class="h-5 w-5" />
+                    @if (count($filterChips) > 0)
+                        <span class="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-bold leading-none text-primary-content">{{ count($filterChips) }}</span>
+                    @endif
+                </button>
+                <button class="btn btn-primary btn-circle btn-sm" @click="mobileActionsOpen = true">
+                    <x-icon name="o-bars-3" class="h-5 w-5" />
+                </button>
+            </div>
+            {{-- Desktop: full buttons --}}
+            <div class="hidden items-center gap-2 lg:flex">
+                <x-button class="btn-ghost {{ count($filterChips) > 0 ? 'btn-active' : '' }}"
+                    icon="o-funnel" :label="__('Filters')"
+                    wire:click="$set('filterDrawer', true)">
+                    @if (count($filterChips) > 0)
+                        <x-badge class="badge-sm badge-primary" value="{{ count($filterChips) }}" />
+                    @endif
+                </x-button>
+            </div>
         </x-slot:actions>
     </x-header>
 
-    {{-- ── Filtres ────────────────────────────────────────────────────── --}}
-    <x-admin.shared.filter-bar :active-filters-count="$this->activeFiltersCount" :show="$showFilters">
-        <x-slot:filters>
-            <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
-                    {{ __('Period') }}
-                </p>
-                <x-select :options="$periodOptions" :placeholder="__('All periods')"
-                    wire:model.live="period" class="w-full" />
+    {{-- Mobile search bar --}}
+    <div class="border-b border-base-200 lg:hidden" x-show="mobileSearchOpen"
+        x-transition:enter="transition ease-out duration-150"
+        x-transition:enter-start="opacity-0 -translate-y-1"
+        x-transition:enter-end="opacity-100 translate-y-0"
+        style="display:none">
+        <div class="flex items-center gap-2 px-4 py-2.5">
+            <div class="flex flex-1 items-center gap-2 rounded-xl bg-base-200 px-3 py-2">
+                <x-icon name="o-magnifying-glass" class="h-4 w-4 shrink-0 text-base-content/40" />
+                <input wire:model.live.debounce.300ms="search"
+                    class="flex-1 bg-transparent text-sm outline-none placeholder:text-base-content/40"
+                    placeholder="{{ __('Search by IP or user agent…') }}" />
             </div>
-            <div>
-                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
-                    {{ __('Type') }}
-                </p>
-                <x-select :options="$userAgentOptions" :placeholder="__('All types')"
-                    wire:model.live="userAgentType" class="w-full" />
-            </div>
-        </x-slot:filters>
-    </x-admin.shared.filter-bar>
+            <button @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm">
+                <x-icon name="o-x-mark" class="h-5 w-5" />
+            </button>
+        </div>
+    </div>
+
+    {{-- ── Active filter chips ──────────────────────────────────────────────── --}}
+    <x-admin.shared.filter-chips :chips="$filterChips" />
 
     {{-- ── Cartes stats ──────────────────────────────────────────────── --}}
     <div class="mb-6 grid grid-cols-3 gap-4">
@@ -61,7 +83,7 @@
                 </div>
                 <div>
                     <p class="text-2xl font-bold text-warning">{{ $stats['today'] }}</p>
-                    <p class="text-xs text-base-content/40">{{ __("Today") }}</p>
+                    <p class="text-xs text-base-content/40">{{ __('Today') }}</p>
                 </div>
             </div>
         </x-card>
@@ -78,18 +100,7 @@
         </x-card>
     </div>
 
-    {{-- ── Bulk bar ───────────────────────────────────────────────────── --}}
-    @if (count($selected) > 0)
-        <x-admin.shared.bulk-bar :selected="$selected">
-            <x-slot:actions>
-                <x-button class="btn-error btn-sm" icon="o-trash"
-                    :label="__('Delete selection')"
-                    wire:click="$set('bulkDeleteModal', true)" />
-            </x-slot:actions>
-        </x-admin.shared.bulk-bar>
-    @endif
-
-    {{-- ── Vue mobile (cards) ─────────────────────────────────────────── --}}
+    {{-- ── Vue mobile ───────────────────────────────────────────────── --}}
     <div class="grid grid-cols-1 gap-3 lg:hidden">
         @forelse ($spams as $spam)
             @php
@@ -102,6 +113,14 @@
             @endphp
             <x-list-item :item="$spam" class="bg-base-100 rounded-lg border"
                 wire:key="mobile-spam-{{ $spam->id }}">
+                <x-slot:avatar>
+                    @if ($selectionModeActive)
+                        <input type="checkbox"
+                            class="checkbox checkbox-primary checkbox-sm"
+                            value="{{ $spam->id }}"
+                            wire:model.live="selected" />
+                    @endif
+                </x-slot:avatar>
                 <x-slot:value>
                     <span class="font-mono text-sm">{{ $spam->ip }}</span>
                 </x-slot:value>
@@ -114,14 +133,16 @@
                     </div>
                 </x-slot:sub-value>
                 <x-slot:actions>
-                    <x-admin.shared.row-actions>
-                        <x-button class="btn-ghost btn-sm btn-circle" icon="o-eye"
-                            :tooltip="__('View')"
-                            wire:click="openDetail({{ $spam->id }})" />
-                        <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
-                            :tooltip="__('Delete')"
-                            wire:click="confirmDelete({{ $spam->id }})" />
-                    </x-admin.shared.row-actions>
+                    @if (! $selectionModeActive)
+                        <x-admin.shared.row-actions>
+                            <x-button class="btn-ghost btn-sm btn-circle" icon="o-eye"
+                                :tooltip="__('View')"
+                                wire:click="openDetail({{ $spam->id }})" />
+                            <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-trash"
+                                :tooltip="__('Delete')"
+                                wire:click="confirmDelete({{ $spam->id }})" />
+                        </x-admin.shared.row-actions>
+                    @endif
                 </x-slot:actions>
             </x-list-item>
         @empty
@@ -132,7 +153,7 @@
         @endforelse
     </div>
 
-    {{-- ── Vue desktop (table) ────────────────────────────────────────── --}}
+    {{-- ── Vue desktop ────────────────────────────────────────────────── --}}
     <div class="hidden lg:block">
         <x-card>
             @if ($spams->isEmpty())
@@ -188,6 +209,38 @@
         </x-card>
     </div>
 
+    {{-- ── Floating Pill — bulk actions ───────────────────────────────── --}}
+    <x-admin.shared.selection-pill
+        :selected="$selected"
+        :total="$this->getTotalMatchingCount()"
+        :selecting-all-results="$selectingAllResults"
+        :select-all="$selectAll">
+        <x-slot:actions>
+            <x-button class="btn-ghost btn-sm text-error" icon="o-trash" :label="__('Delete')"
+                wire:click="confirmBulkDelete" />
+        </x-slot:actions>
+    </x-admin.shared.selection-pill>
+
+    {{-- ── Filter drawer ────────────────────────────────────────────────────── --}}
+    <x-admin.shared.filter-drawer :title="__('Filters')">
+        <x-slot:filters>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    {{ __('Period') }}
+                </p>
+                <x-select :options="$periodOptions" :placeholder="__('All periods')"
+                    wire:model.live="period" class="w-full" />
+            </div>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    {{ __('Type') }}
+                </p>
+                <x-select :options="$userAgentOptions" :placeholder="__('All types')"
+                    wire:model.live="userAgentType" class="w-full" />
+            </div>
+        </x-slot:filters>
+    </x-admin.shared.filter-drawer>
+
     {{-- ── Modal détail spam ─────────────────────────────────────────── --}}
     <x-modal wire:model="detailModal" :title="__('Spam detail')">
         @if ($detailSpam)
@@ -221,13 +274,13 @@
         </x-slot:actions>
     </x-modal>
 
-    {{-- ── Modal suppression ─────────────────────────────────────────── --}}
+    {{-- ── Modal suppression unitaire ───────────────────────────────── --}}
     <x-confirm-modal model="deleteModal" :title="__('Delete this spam?')"
         :confirmLabel="__('Delete')" confirmAction="delete">
         <p>{{ __('This action is irreversible.') }}</p>
     </x-confirm-modal>
 
-    {{-- ── Modal bulk delete ─────────────────────────────────────────── --}}
+    {{-- ── Modal suppression bulk ───────────────────────────────────── --}}
     <x-confirm-modal model="bulkDeleteModal" :title="__('Delete selection?')"
         :confirmLabel="__('Delete')" confirmAction="bulkDelete">
         <p>
@@ -235,4 +288,13 @@
             {{ __('will be permanently deleted.') }}
         </p>
     </x-confirm-modal>
+
+    {{-- ── Mobile action sheet ─────────────────────────────────────────── --}}
+    <x-admin.shared.mobile-actions>
+        <x-admin.shared.mobile-action-item
+            icon="o-check-circle" color="base"
+            :label="__('Select')"
+            :description="__('Bulk actions on multiple entries')"
+            @click="mobileActionsOpen = false; $wire.call('toggleSelectionMode')" />
+    </x-admin.shared.mobile-actions>
 </div>

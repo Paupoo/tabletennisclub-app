@@ -27,9 +27,9 @@
 **{{ __('Amount due') }}:** {{ number_format($payment->amount_due, 2, ',', ' ') }} €
 
 <x-mail::panel>
-- {{ __('Beneficiary') }}: CTT Ottignies-Blocry ASBL
-- IBAN: BE23 7323 3320 8791
-- BIC: CREGBEBB
+- {{ __('Beneficiary') }}: {{ $club->name }}
+- IBAN: {{ $club->bank_account }}
+- BIC: {{ $club->bic }}
 - {{ __('Reference') }}: **{{ $payment->reference }}**
 </x-mail::panel>
 

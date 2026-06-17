@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Actions\User;
 
 use App\Data\User\UpdateUserData;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Season;
 use Illuminate\Support\Facades\Hash;
 
 class UpdateUserAction
@@ -26,11 +28,10 @@ class UpdateUserAction
             'birthdate' => $data->birthdate,
             'guardian_phone_number' => $data->guardian_phone_number,
             'iban' => $data->iban,
-            'is_active' => $data->is_active,
-            'is_competitor' => $data->is_competitor,
             'is_committee_member' => $data->is_committee_member,
             'is_admin' => $data->is_admin,
             'is_coach' => $data->is_coach,
+            'has_key' => $data->has_key,
             'licence' => $data->licence,
             'ranking' => $data->ranking ?? 'NA',
             'committee_role' => $data->committee_role,
@@ -44,6 +45,13 @@ class UpdateUserAction
         $user->update($attributes);
 
         $user->guardians()->sync($data->guardianIds);
+
+        $seasonId = Season::current()?->id;
+        if ($seasonId !== null) {
+            Subscription::where('user_id', $user->id)
+                ->where('season_id', $seasonId)
+                ->update(['is_competitive' => $data->is_competitor]);
+        }
 
         // A changed email must be re-verified (email_verified_at is not mass-assignable).
         // Nulling the timestamp is the enforcement (the `verified` middleware blocks

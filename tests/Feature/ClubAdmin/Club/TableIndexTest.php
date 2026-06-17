@@ -41,7 +41,7 @@ describe('TableIndex Livewire Component', function (): void {
         // Vérifier que les groupes ont la bonne structure
         $grouped->each(function ($group): void {
             expect($group)->toHaveKeys(['room', 'room_display', 'tables']);
-            expect($group['tables'])->toBeInstanceOf(\Illuminate\Database\Eloquent\Collection::class);
+            expect($group['tables'])->toBeInstanceOf(Illuminate\Database\Eloquent\Collection::class);
         });
 
         // Vérifier que le groupement est correct

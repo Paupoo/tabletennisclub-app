@@ -8,8 +8,12 @@ use App\Domains\Bar\Models\BarCategory;
 use App\Domains\Bar\Models\BarProduct;
 use App\Domains\Bar\Services\StockService;
 use App\Http\Controllers\Controller;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class BarProductController extends Controller
 {
@@ -21,9 +25,20 @@ class BarProductController extends Controller
         $this->stockService = $stockService;
     }
 
-    public function index()
+    public function destroy(BarProduct $product): RedirectResponse
     {
-        $categories = BarCategory::with(['products' => function ($q) {
+        if ((int) $product->stock > 0) {
+            return back()->with('error', 'Impossible de supprimer : stock non nul.');
+        }
+
+        $product->delete();
+
+        return back()->with('success', 'Produit supprimé avec succès.');
+    }
+
+    public function index(): View
+    {
+        $categories = BarCategory::with(['products' => function (HasMany $q): void {
             $q->orderBy('name');
         }])
             ->orderBy('name')
@@ -35,7 +50,7 @@ class BarProductController extends Controller
         return view('bar.products.index', compact('categories', 'savedForm'));
     }
 
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'category_id' => 'required|exists:bar_categories,id',
@@ -56,7 +71,7 @@ class BarProductController extends Controller
 
         DB::transaction(function () use ($validated, $initialStock) {
             $product = BarProduct::create($validated);
-            
+
             if ($initialStock > 0) {
                 $this->stockService->addIncomingStock(
                     (int) $product->id,
@@ -73,7 +88,7 @@ class BarProductController extends Controller
         return back()->with('success', 'Product created');
     }
 
-    public function storeState(Request $request)
+    public function storeState(Request $request): Response
     {
         $validated = $request->validate([
             'product_name' => 'nullable|string|max:150',
@@ -82,7 +97,7 @@ class BarProductController extends Controller
             'is_available' => 'nullable|boolean',
             'category_id' => 'nullable|exists:bar_categories,id',
         ]);
-        
+
         session([
             'product_form' => $validated,
         ]);
@@ -90,7 +105,7 @@ class BarProductController extends Controller
         return response()->noContent();
     }
 
-    public function update(Request $request, BarProduct $product)
+    public function update(Request $request, BarProduct $product): RedirectResponse
     {
         $validated = $request->validate([
             'product_name' => ['sometimes', 'string', 'max:150', 'unique:bar_products,name,' . $product->id],
@@ -104,10 +119,10 @@ class BarProductController extends Controller
             if (array_key_exists('stock', $validated)) {
                 $newStock = (int) $validated['stock'];
                 unset($validated['stock']);
-                
+
                 $currentStock = (int) $product->stock;
                 $delta = $newStock - $currentStock;
-                
+
                 if ($delta > 0) {
                     $this->stockService->addIncomingStock(
                         (int) $product->id,
@@ -126,16 +141,16 @@ class BarProductController extends Controller
                     );
                 }
             }
-            
+
             if (array_key_exists('sale_price', $validated)) {
                 $validated['sale_price'] = cents($validated['sale_price']);
             }
-            
+
             if (array_key_exists('product_name', $validated)) {
                 $validated['name'] = $validated['product_name'];
                 unset($validated['product_name']);
             }
-            
+
             if (! empty($validated)) {
                 $product->update($validated);
             }

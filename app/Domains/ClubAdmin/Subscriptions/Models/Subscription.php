@@ -15,16 +15,21 @@ use App\Domains\Shared\States\Payments\PaidState;
 use App\Domains\Shared\States\Payments\PendingState;
 use App\Domains\Shared\States\Payments\RefundedState;
 use App\Domains\Shared\States\Payments\ValidatedState;
+use App\Domains\Shared\Traits\HasAuditLog;
 use App\Domains\Trainings\Models\TrainingPack;
+use App\Observers\SubscriptionObserver;
 use Database\Factories\Domains\ClubAdmin\Subscriptions\Models\SubscriptionFactory;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -34,20 +39,29 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property bool $is_competitive
  * @property bool $has_other_family_members
  * @property int $trainings_count
+ * @property bool $can_drive
+ * @property int|null $seats_available
+ * @property bool $wants_to_be_captain
+ * @property bool $volunteer_help
+ * @property bool $wants_directed_training
  * @property float $subscription_price
  * @property float $training_unit_price
  * @property float $amount_due
  * @property float $amount_paid
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \Illuminate\Database\Eloquent\Collection<int, Payment> $payments
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Collection<int, Payment> $payments
  * @property-read int|null $payments_count
  * @property-read Season $season
- * @property-read \Illuminate\Database\Eloquent\Collection<int, TrainingPack> $trainingPacks
+ * @property-read Collection<int, TrainingPack> $trainingPacks
  * @property-read int|null $training_packs_count
  * @property-read User $user
+ *
  * @method static Builder<static>|Subscription active()
+ * @method static Builder<static>|Subscription captainVolunteers()
+ * @method static Builder<static>|Subscription drivers()
+ * @method static Builder<static>|Subscription wantsDirectedTraining()
  * @method static \Database\Factories\Domains\ClubAdmin\Subscriptions\Models\SubscriptionFactory factory($count = null, $state = [])
  * @method static Builder<static>|Subscription forSeason(\App\Domains\Competitions\Interclub\Models\Season|int $season)
  * @method static Builder<static>|Subscription newModelQuery()
@@ -57,24 +71,33 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @method static Builder<static>|Subscription query()
  * @method static Builder<static>|Subscription whereAmountDue($value)
  * @method static Builder<static>|Subscription whereAmountPaid($value)
+ * @method static Builder<static>|Subscription whereCanDrive($value)
  * @method static Builder<static>|Subscription whereCreatedAt($value)
  * @method static Builder<static>|Subscription whereDeletedAt($value)
  * @method static Builder<static>|Subscription whereHasOtherFamilyMembers($value)
  * @method static Builder<static>|Subscription whereId($value)
  * @method static Builder<static>|Subscription whereIsCompetitive($value)
  * @method static Builder<static>|Subscription whereSeasonId($value)
+ * @method static Builder<static>|Subscription whereSeatsAvailable($value)
  * @method static Builder<static>|Subscription whereStatus($value)
  * @method static Builder<static>|Subscription whereSubscriptionPrice($value)
  * @method static Builder<static>|Subscription whereTrainingUnitPrice($value)
  * @method static Builder<static>|Subscription whereTrainingsCount($value)
  * @method static Builder<static>|Subscription whereUpdatedAt($value)
  * @method static Builder<static>|Subscription whereUserId($value)
+ * @method static Builder<static>|Subscription whereVolunteerHelp($value)
+ * @method static Builder<static>|Subscription whereWantsDirectedTraining($value)
+ * @method static Builder<static>|Subscription whereWantsToBeCaptain($value)
  * @method static Builder<static>|Subscription withTrashed(bool $withTrashed = true)
  * @method static Builder<static>|Subscription withoutTrashed()
+ *
  * @mixin \Eloquent
  */
+#[ObservedBy(SubscriptionObserver::class)]
 class Subscription extends Model implements DescribesPayment, PayableInterface
 {
+    use HasAuditLog;
+
     /** @use HasFactory<SubscriptionFactory> */
     use HasFactory, SoftDeletes;
 
@@ -82,6 +105,11 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
         'is_competitive' => 'boolean',
         'has_other_family_members' => 'boolean',
         'trainings_count' => 'integer',
+        'can_drive' => 'boolean',
+        'seats_available' => 'integer',
+        'wants_to_be_captain' => 'boolean',
+        'volunteer_help' => 'boolean',
+        'wants_directed_training' => 'boolean',
     ];
 
     protected $fillable = [
@@ -90,6 +118,11 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
         'is_competitive',
         'has_other_family_members',
         'trainings_count',
+        'can_drive',
+        'seats_available',
+        'wants_to_be_captain',
+        'volunteer_help',
+        'wants_directed_training',
         'amount_due',
         'amount_paid',
         'subscription_price',
@@ -227,6 +260,22 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
     // ==================== Scopes ====================
 
     /**
+     * Scope pour récupérer les inscriptions dont le membre se porte volontaire comme capitaine d'équipe.
+     */
+    public function scopeCaptainVolunteers(Builder $query): Builder
+    {
+        return $query->where('wants_to_be_captain', true);
+    }
+
+    /**
+     * Scope pour récupérer les inscriptions dont le membre peut conduire (covoiturage).
+     */
+    public function scopeDrivers(Builder $query): Builder
+    {
+        return $query->where('can_drive', true);
+    }
+
+    /**
      * Scope pour récupérer les subscriptions d'une saison
      */
     public function scopeForSeason(Builder $query, int|Season $season): Builder
@@ -242,6 +291,14 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
     public function scopePendingPayment(Builder $query): Builder
     {
         return $query->whereIn('status', ['pending', 'confirmed']);
+    }
+
+    /**
+     * Scope pour récupérer les inscriptions dont le membre souhaite un entraînement dirigé (avec coach).
+     */
+    public function scopeWantsDirectedTraining(Builder $query): Builder
+    {
+        return $query->where('wants_directed_training', true);
     }
 
     // ==================== Relations ====================

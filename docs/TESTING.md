@@ -10,7 +10,7 @@
 ```bash
 php artisan test --parallel --compact
 ```
-Résultat attendu: **1316 tests passing**.
+Résultat attendu: **1536 tests passing** (3 TranslationCoverageTest exclus — nl_BE incomplet, pré-existant).
 
 ### Tests filtrés
 ```bash
@@ -35,6 +35,35 @@ php artisan test --verbose
 # Arrête après N failures
 php artisan test --bail
 ```
+
+---
+
+## Couverture de code
+
+### Code coverage (outil dev, pas de gate CI)
+```bash
+php artisan test --coverage --parallel --memory-limit=512M
+```
+La couverture de code sert à **explorer les zones sous-couvertes** (outil de développement). Elle n'est pas gatée en CI — objectif de 80% visé, mais non bloquant.
+
+### Type coverage (gate à 100%)
+```bash
+php artisan test --type-coverage --min=100 --parallel --memory-limit=512M
+```
+**Tous les fichiers PHP doivent avoir 100% de type coverage.** Cette règle est adoptée après que tous les fichiers aient été mis en conformité. Les types concernés :
+- `rt` — return type manquant
+- `pa` — paramètre non typé (y compris closures)
+- `pr` — propriété de classe non typée
+- `co` — constante de classe non typée
+
+**Conventions pour les closures :**
+- Closures d'eager loading `with()` / `loadMissing()` : utiliser `\Illuminate\Database\Eloquent\Relations\Relation $q`
+- Closures `whereHas()` / `where()` : utiliser `\Illuminate\Database\Eloquent\Builder $q`
+- Closures `whereIn()` subquery : utiliser `\Illuminate\Database\Query\Builder $q`
+- Closures `array_map` / `array_filter` sur données inconnues : utiliser `mixed $v`
+
+### Mutation testing (prochaine étape)
+Le plugin `pestphp/pest-plugin-mutate` n'est pas encore installé. C'est la prochaine étape naturelle pour mesurer la qualité des assertions au-delà de la couverture de ligne.
 
 ---
 
@@ -214,6 +243,31 @@ test('validates team name on save', function () {
 });
 ```
 
+#### Assertions de messages Laravel (`__()`)
+Utiliser `__('...')` uniquement pour les messages de validation Laravel standard (pas pour les messages custom de l'application) :
+```php
+// ✅ Pour les messages Laravel standard
+$component->assertHasErrors(['email' => __('validation.required')]);
+
+// ❌ Pas pour les messages custom (asserter la clé suffit)
+$component->assertHasErrors(['name']);
+```
+
+---
+
+## Tests Browser (smoke JS)
+
+L'application utilise une approche smoke test JS (via `BrowserLogsTest`) qui vérifie que chaque page :
+1. Répond HTTP 200
+2. Ne génère aucune erreur JavaScript dans la console
+
+```bash
+# Lancer les smoke tests
+php artisan test --filter=BrowserLogsTest
+```
+
+Pas de tests Dusk (E2E complets) — l'approche smoke JS + tests Livewire couvre les cas critiques.
+
 ---
 
 ## Helpers utiles
@@ -244,8 +298,8 @@ $response->assertSessionHasErrors(['email' => 'The email field is required']);
 
 ## Checklist avant commit
 
-- [ ] `php artisan test --parallel --compact` ✅ 1316/1316 passing
+- [ ] `php artisan test --parallel --compact` ✅ tous les tests passent
+- [ ] `php artisan test --type-coverage --min=100 --parallel --memory-limit=512M` ✅ 100%
 - [ ] Pas de warnings/skipped tests inattendus
 - [ ] Aucune modification de database/factories/ par pint
 - [ ] Tests reflètent la logique métier, pas juste "does it exist"
-

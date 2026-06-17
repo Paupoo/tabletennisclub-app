@@ -7,7 +7,7 @@ namespace App\Domains\Shared\Enums;
 enum PaymentMethod: string
 {
     case CASH = 'Cash';
-    case WIRE = 'Wire';
-    case QRCODE = 'QRCode';
     case OFFERED = 'Offered';
+    case QRCODE = 'QRCode';
+    case WIRE = 'Wire';
 }

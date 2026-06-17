@@ -5,18 +5,17 @@ declare(strict_types=1);
 namespace Resources\views\Pages\ClubEvents\Interclubs\Teams\Builder;
 
 use App\Actions\User\RecalculateForceListAction;
-use App\Domains\Shared\Enums\Gender;
-use App\Domains\Shared\Enums\LeagueCategory;
-use App\Domains\Shared\Enums\LeagueLevel;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
-use Illuminate\Database\Eloquent\Builder;
+use App\Domains\Shared\Enums\Gender;
+use App\Domains\Shared\Enums\LeagueCategory;
+use App\Domains\Shared\Enums\LeagueLevel;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
-use Illuminate\Support\Collection;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Component;
@@ -24,19 +23,9 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast, HasBreadcrumbs;
-
-    // ── Étape 1 : paramètres ─────────────────────────────────────────────────
-    public int $step = 1;
-
-    public ?int $seasonId = null;
+    use HasBreadcrumbs, Toast;
 
     public int $nucleusSize = 6;
-
-    /** 'MEN' | 'WOMEN' | 'VETERANS' */
-    public string $teamCategory = 'MEN';
-
-    public bool $showComputingModal = false;
 
     // ── Étape 2 : distribution proposée ─────────────────────────────────────
     /**
@@ -46,6 +35,16 @@ new class extends Component
      */
     public array $proposedTeams = [];
 
+    public ?int $seasonId = null;
+
+    public bool $showComputingModal = false;
+
+    // ── Étape 1 : paramètres ─────────────────────────────────────────────────
+    public int $step = 1;
+
+    /** 'MEN' | 'WOMEN' | 'VETERANS' */
+    public string $teamCategory = 'MEN';
+
     /**
      * Joueurs sans équipe (surplus).
      *
@@ -53,40 +52,11 @@ new class extends Component
      */
     public array $unassigned = [];
 
-    public function mount(): void
+    public function backToStep1(): void
     {
-        abort_unless(Auth::user()->is_admin || Auth::user()->is_committee_member, 403);
-
-        $this->seasonId = Season::current()?->id;
-    }
-
-
-    protected function breadcrumbChain(): Breadcrumb
-    {
-        return Breadcrumb::make()
-            ->home()
-            ->current(__("Teams Builder"));
-    }
-
-        public function render(): View
-    {
-        return $this->view();
-    }
-
-    // ── Étape 1 → 2 : calcul de la distribution ──────────────────────────────
-
-    public function startComputing(): void
-    {
-        $this->validate([
-            'seasonId'    => ['required', 'exists:seasons,id'],
-            'nucleusSize' => ['required', 'integer', 'min:5', 'max:20'],
-        ], [
-            'seasonId.required' => __('Please select a season.'),
-            'nucleusSize.min'   => 'Le noyau minimum est de 5 joueurs.',
-        ]);
-
-        $this->showComputingModal = true;
-        $this->js('$wire.computeDistribution()');
+        $this->step = 1;
+        $this->proposedTeams = [];
+        $this->unassigned = [];
     }
 
     public function computeDistribution(): void
@@ -94,7 +64,7 @@ new class extends Component
         RecalculateForceListAction::handle();
 
         $competitors = $this->buildEligibleQuery()->get();
-        $totalTeams  = intdiv($competitors->count(), $this->nucleusSize);
+        $totalTeams = intdiv($competitors->count(), $this->nucleusSize);
 
         if ($totalTeams === 0) {
             $this->error("Pas assez de compétiteurs éligibles ({$competitors->count()}) pour former une équipe de {$this->nucleusSize}.");
@@ -102,81 +72,32 @@ new class extends Component
             return;
         }
 
-        $names        = $this->teamNameSequence($totalTeams);
+        $names = $this->teamNameSequence($totalTeams);
         $playerChunks = $competitors->chunk($this->nucleusSize);
 
         $this->proposedTeams = collect($names)->values()->map(fn (string $name, int $i) => [
-            'letter'    => $name,
-            'players'   => $playerChunks->get($i)?->pluck('id')->toArray() ?? [],
+            'letter' => $name,
+            'players' => $playerChunks->get($i)?->pluck('id')->toArray() ?? [],
             'captainId' => null,
-            'category'  => $this->teamCategory,
-            'level'     => '',
-            'division'  => '',
+            'category' => $this->teamCategory,
+            'level' => '',
+            'division' => '',
         ])->toArray();
 
-        $assignedIds      = collect($this->proposedTeams)->flatMap(fn ($t) => $t['players'])->toArray();
+        $assignedIds = collect($this->proposedTeams)->flatMap(fn ($t) => $t['players'])->toArray();
         $this->unassigned = $competitors->whereNotIn('id', $assignedIds)->pluck('id')->toArray();
 
         $this->sortAllTeams();
 
         $this->showComputingModal = false;
-        $this->step               = 2;
+        $this->step = 2;
     }
 
-    // ── Nommage des équipes ──────────────────────────────────────────────────
-
-    /**
-     * Generates team name sequence: A–Z, then 1, 2, 3 … for counts above 26.
-     *
-     * @return string[]
-     */
-    private function teamNameSequence(int $count): array
+    public function mount(): void
     {
-        $letters = array_map(fn (int $i) => chr(ord('A') + $i), range(0, 25));
-        $numbers = array_map(fn (int $i) => (string) $i, range(1, max(0, $count - 26)));
+        abort_unless(Auth::user()->is_admin || Auth::user()->is_committee_member, 403);
 
-        return array_slice(array_merge($letters, $numbers), 0, $count);
-    }
-
-    // ── Tri par classement ───────────────────────────────────────────────────
-
-    /**
-     * Trie un tableau d'IDs par classement (ordre alphabétique : A1 → NC).
-     *
-     * @param  int[]  $playerIds
-     * @return int[]
-     */
-    private function sortByRanking(array $playerIds): array
-    {
-        if (count($playerIds) < 2) {
-            return $playerIds;
-        }
-
-        $rankings = User::whereIn('id', $playerIds)->pluck('ranking', 'id');
-
-        usort($playerIds, fn (int $a, int $b) => strcmp(
-            $rankings[$a] ?? 'ZZ',
-            $rankings[$b] ?? 'ZZ'
-        ));
-
-        return $playerIds;
-    }
-
-    private function sortAllTeams(): void
-    {
-        foreach ($this->proposedTeams as &$team) {
-            $team['players'] = $this->sortByRanking($team['players']);
-        }
-
-        $this->unassigned = $this->sortByRanking($this->unassigned);
-    }
-
-    // ── Capitaine ────────────────────────────────────────────────────────────
-
-    public function setCaptainInTeam(int $teamIndex, int $userId): void
-    {
-        $current = $this->proposedTeams[$teamIndex]['captainId'] ?? null;
-        $this->proposedTeams[$teamIndex]['captainId'] = ($current === $userId) ? null : $userId;
+        $this->seasonId = Season::current()?->id;
     }
 
     // ── Déplacement d'un joueur entre équipes (drag & drop) ──────────────────
@@ -221,38 +142,43 @@ new class extends Component
         $this->unassigned = $this->sortByRanking($this->unassigned);
     }
 
+    public function render(): View
+    {
+        return $this->view();
+    }
+
     // ── Sauvegarde ────────────────────────────────────────────────────────────
 
     public function save(): void
     {
         $this->validate([
-            'seasonId'                      => ['required', 'exists:seasons,id'],
-            'proposedTeams'                 => ['required', 'array', 'min:1'],
-            'proposedTeams.*.letter'        => ['required', 'string'],
-            'proposedTeams.*.category'      => ['required', 'string'],
-            'proposedTeams.*.level'         => ['required', 'string'],
-            'proposedTeams.*.division'      => ['required', 'string'],
+            'seasonId' => ['required', 'exists:seasons,id'],
+            'proposedTeams' => ['required', 'array', 'min:1'],
+            'proposedTeams.*.letter' => ['required', 'string'],
+            'proposedTeams.*.category' => ['required', 'string'],
+            'proposedTeams.*.level' => ['required', 'string'],
+            'proposedTeams.*.division' => ['required', 'string'],
         ], [
             'proposedTeams.*.category.required' => __('Set the category for each team.'),
-            'proposedTeams.*.level.required'    => __('Set the level for each team.'),
+            'proposedTeams.*.level.required' => __('Set the level for each team.'),
             'proposedTeams.*.division.required' => __('Set the division for each team.'),
         ]);
 
-        $ourClub = Club::where('licence', config('app.club_licence'))->first();
+        $ourClub = Club::own();
 
         foreach ($this->proposedTeams as $data) {
             $league = League::firstOrCreate([
-                'category'  => $data['category'],
-                'level'     => $data['level'],
-                'division'  => $data['division'],
+                'category' => $data['category'],
+                'level' => $data['level'],
+                'division' => $data['division'],
                 'season_id' => $this->seasonId,
             ]);
 
             $team = Team::create([
-                'name'       => $data['letter'],
-                'season_id'  => $this->seasonId,
-                'league_id'  => $league->id,
-                'club_id'    => $ourClub?->id,
+                'name' => $data['letter'],
+                'season_id' => $this->seasonId,
+                'league_id' => $league->id,
+                'club_id' => $ourClub?->id,
                 'captain_id' => $data['captainId'] ?? null,
             ]);
 
@@ -266,18 +192,69 @@ new class extends Component
         );
     }
 
-    public function backToStep1(): void
+    // ── Capitaine ────────────────────────────────────────────────────────────
+
+    public function setCaptainInTeam(int $teamIndex, int $userId): void
     {
-        $this->step          = 1;
-        $this->proposedTeams = [];
-        $this->unassigned    = [];
+        $current = $this->proposedTeams[$teamIndex]['captainId'] ?? null;
+        $this->proposedTeams[$teamIndex]['captainId'] = ($current === $userId) ? null : $userId;
+    }
+
+    // ── Étape 1 → 2 : calcul de la distribution ──────────────────────────────
+
+    public function startComputing(): void
+    {
+        $this->validate([
+            'seasonId' => ['required', 'exists:seasons,id'],
+            'nucleusSize' => ['required', 'integer', 'min:5', 'max:20'],
+        ], [
+            'seasonId.required' => __('Please select a season.'),
+            'nucleusSize.min' => 'Le noyau minimum est de 5 joueurs.',
+        ]);
+
+        $this->showComputingModal = true;
+        $this->js('$wire.computeDistribution()');
+    }
+
+    public function with(): array
+    {
+        $allCompetitors = User::competitor()
+            ->orderBy('force_list')
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->get()
+            ->keyBy('id');
+
+        return [
+            'breadcrumbs' => Breadcrumb::make()
+                ->home()
+                ->add('Interclubs', '#')
+                ->add('Équipes', route('admin.interclubs.teams'))
+                ->current('Compositeur')
+                ->toArray(),
+            'seasons' => Season::orderByDesc('start_at')->get(),
+            'competitors' => $allCompetitors,
+            'eligibleCount' => $this->buildEligibleQuery()->count(),
+            'missingBirthdateCount' => $this->teamCategory === 'VETERANS'
+                ? User::competitor()->whereNull('birthdate')->count()
+                : 0,
+            'categoryOptions' => collect(LeagueCategory::cases())->map(fn ($c) => ['id' => $c->name, 'name' => $c->value]),
+            'levelOptions' => collect(LeagueLevel::cases())->map(fn ($l) => ['id' => $l->name, 'name' => $l->value]),
+        ];
+    }
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__('Teams Builder'));
     }
 
     // ── Données pour la vue ───────────────────────────────────────────────────
 
     private function buildEligibleQuery(): Builder
     {
-        $query = User::where('is_competitor', true)
+        $query = User::competitor()
             // force_list (admin override) en premier quand défini, sinon tri par classement
             ->orderByRaw('CASE WHEN force_list IS NULL THEN 1 ELSE 0 END')
             ->orderBy('force_list')
@@ -301,30 +278,51 @@ new class extends Component
         return $query;
     }
 
-    public function with(): array
+    private function sortAllTeams(): void
     {
-        $allCompetitors = User::where('is_competitor', true)
-            ->orderBy('force_list')
-            ->orderBy('last_name')
-            ->orderBy('first_name')
-            ->get()
-            ->keyBy('id');
+        foreach ($this->proposedTeams as &$team) {
+            $team['players'] = $this->sortByRanking($team['players']);
+        }
 
-        return [
-            'breadcrumbs' => Breadcrumb::make()
-                ->home()
-                ->add('Interclubs', '#')
-                ->add('Équipes', route('admin.interclubs.teams'))
-                ->current('Compositeur')
-                ->toArray(),
-            'seasons'           => Season::orderByDesc('start_at')->get(),
-            'competitors'       => $allCompetitors,
-            'eligibleCount'          => $this->buildEligibleQuery()->count(),
-            'missingBirthdateCount'  => $this->teamCategory === 'VETERANS'
-                ? User::where('is_competitor', true)->whereNull('birthdate')->count()
-                : 0,
-            'categoryOptions'   => collect(LeagueCategory::cases())->map(fn ($c) => ['id' => $c->name, 'name' => $c->value]),
-            'levelOptions'      => collect(LeagueLevel::cases())->map(fn ($l) => ['id' => $l->name, 'name' => $l->value]),
-        ];
+        $this->unassigned = $this->sortByRanking($this->unassigned);
+    }
+
+    // ── Tri par classement ───────────────────────────────────────────────────
+
+    /**
+     * Trie un tableau d'IDs par classement (ordre alphabétique : A1 → NC).
+     *
+     * @param  int[]  $playerIds
+     * @return int[]
+     */
+    private function sortByRanking(array $playerIds): array
+    {
+        if (count($playerIds) < 2) {
+            return $playerIds;
+        }
+
+        $rankings = User::whereIn('id', $playerIds)->pluck('ranking', 'id');
+
+        usort($playerIds, fn (int $a, int $b) => strcmp(
+            $rankings[$a] ?? 'ZZ',
+            $rankings[$b] ?? 'ZZ'
+        ));
+
+        return $playerIds;
+    }
+
+    // ── Nommage des équipes ──────────────────────────────────────────────────
+
+    /**
+     * Generates team name sequence: A–Z, then 1, 2, 3 … for counts above 26.
+     *
+     * @return string[]
+     */
+    private function teamNameSequence(int $count): array
+    {
+        $letters = array_map(fn (int $i) => chr(ord('A') + $i), range(0, 25));
+        $numbers = array_map(fn (int $i) => (string) $i, range(1, max(0, $count - 26)));
+
+        return array_slice(array_merge($letters, $numbers), 0, $count);
     }
 };

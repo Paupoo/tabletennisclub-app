@@ -2,15 +2,16 @@
 
 declare(strict_types=1);
 
-use App\Domains\Shared\Models\AppSetting;
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Shared\Models\AppSetting;
 use App\Domains\Shared\Rules\ValidIban;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Livewire\Component;
 use Mary\Traits\Toast;
@@ -21,7 +22,11 @@ new class extends Component
 
     public int $activeRoomIndex = 0;
 
+    // ── Step 3 — Club info ───────────────────────────────────────────────────
+
     public string $clubBankAccount = '';
+
+    public string $clubBic = '';
 
     public string $clubBuildingName = '';
 
@@ -36,8 +41,6 @@ new class extends Component
     // ── Persisted IDs ────────────────────────────────────────────────────────
 
     public ?int $clubId = null;
-
-    // ── Step 4 — Club info ───────────────────────────────────────────────────
 
     public string $clubName = '';
 
@@ -54,8 +57,6 @@ new class extends Component
     public string $firstName = '';
 
     public string $lastName = '';
-
-    // ── Step 3 — Club licence ────────────────────────────────────────────────
 
     public string $licence = '';
 
@@ -80,7 +81,7 @@ new class extends Component
 
     public string $roomName = '';
 
-    // ── Step 6 — Rooms ───────────────────────────────────────────────────────
+    // ── Step 5 — Rooms ───────────────────────────────────────────────────────
 
     /** @var array<int, array<string, mixed>> */
     public array $rooms = [];
@@ -91,7 +92,7 @@ new class extends Component
 
     public string $seasonEndAt = '';
 
-    // ── Step 5 — Season ──────────────────────────────────────────────────────
+    // ── Step 4 — Season ──────────────────────────────────────────────────────
 
     public string $seasonName = '';
 
@@ -113,12 +114,12 @@ new class extends Component
 
     public string $tableName = '';
 
-    // ── Step 7 — Tables ──────────────────────────────────────────────────────
+    // ── Step 6 — Tables ──────────────────────────────────────────────────────
 
     /** @var array<int, array<int, array<string, mixed>>> Keyed by room index */
     public array $tables = [];
 
-    // ── Step 6 — Rooms ───────────────────────────────────────────────────────
+    // ── Step 5 — Rooms ───────────────────────────────────────────────────────
 
     public function addRoom(): void
     {
@@ -169,12 +170,11 @@ new class extends Component
         $this->resetValidation(['tableName', 'tableBrand']);
     }
 
-    // ── Step 8 — Complete ────────────────────────────────────────────────────
+    // ── Step 7 — Complete ────────────────────────────────────────────────────
 
     public function completeSetup(): void
     {
         AppSetting::set('setup_completed', '1');
-        $this->updateEnvFile('APP_CLUB_LICENCE', $this->licence);
 
         $this->redirectRoute('dashboard', navigate: true);
     }
@@ -214,31 +214,57 @@ new class extends Component
 
         Auth::login($user);
 
-        $user->sendEmailVerificationNotification();
-
         $this->password = '';
         $this->passwordConfirmation = '';
-
         $this->submittedStep = max($this->submittedStep, 2);
         $this->maxReachable = max($this->maxReachable, 3);
         $this->step = '3';
     }
 
-    // ── Step 3 — Club licence ────────────────────────────────────────────────
+    // ── Step 3 — Club licence + info (merged) ────────────────────────────────
 
     public function completeStep3(): void
     {
         $this->validate([
-            'licence' => 'required|string|regex:/^[A-Z]{3}[0-9]{3}$/',
+            'licence' => ['required', 'string', 'regex:/^[A-Z]{3}[0-9]{3}$/', Rule::unique('clubs', 'licence')->ignore($this->clubId)],
+            'clubName' => 'required|string|max:100',
+            'clubStreet' => 'required|string|max:255',
+            'clubCityCode' => 'required|integer|between:1000,9999',
+            'clubCityName' => 'required|string|max:100',
+            'clubBuildingName' => 'nullable|string|max:100',
+            'clubEmailContact' => 'required|email:rfc|max:100',
+            'clubPhoneContact' => 'nullable|string|max:50',
+            'clubBic' => ['nullable', 'string', 'regex:/^[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3})?$/'],
+            'clubBankAccount' => ['nullable', 'string', new ValidIban],
+            'clubEnterpriseNumber' => 'nullable|string|max:20',
+            'clubWebsiteUrl' => 'nullable|url|max:255',
         ]);
 
-        // S'il existe un club, le mettre à jour. Sinon, en créer un.
+        Club::where('is_own_club', true)->update(['is_own_club' => false]);
+        Club::forgetOwnClub();
+
+        $clubData = [
+            'licence' => $this->licence,
+            'name' => $this->clubName,
+            'is_own_club' => true,
+            'street' => $this->clubStreet,
+            'city_code' => $this->clubCityCode,
+            'city_name' => $this->clubCityName,
+            'building_name' => $this->clubBuildingName ?: null,
+            'email_contact' => $this->clubEmailContact ?: null,
+            'phone_contact' => $this->clubPhoneContact ?: null,
+            'bic' => $this->clubBic ?: null,
+            'bank_account' => $this->clubBankAccount ?: null,
+            'enterprise_number' => $this->clubEnterpriseNumber ?: null,
+            'website_url' => $this->clubWebsiteUrl ?: null,
+        ];
+
         $club = Club::first();
 
         if ($club) {
-            $club->update(['licence' => $this->licence, 'name' => $this->licence]);
+            $club->update($clubData);
         } else {
-            $club = Club::create(['licence' => $this->licence, 'name' => $this->licence]);
+            $club = Club::create($clubData);
         }
 
         $this->clubId = $club->id;
@@ -252,44 +278,9 @@ new class extends Component
         $this->step = '4';
     }
 
-    // ── Step 4 — Club info ───────────────────────────────────────────────────
+    // ── Step 4 — Season ──────────────────────────────────────────────────────
 
     public function completeStep4(): void
-    {
-        $this->validate([
-            'clubName' => 'required|string|max:100',
-            'clubStreet' => 'required|string|max:255',
-            'clubCityCode' => 'required|integer|between:1000,9999',
-            'clubCityName' => 'required|string|max:100',
-            'clubBuildingName' => 'nullable|string|max:100',
-            'clubEmailContact' => 'nullable|email:rfc|max:100',
-            'clubPhoneContact' => 'nullable|string|max:50',
-            'clubBankAccount' => ['nullable', 'string', new ValidIban],
-            'clubEnterpriseNumber' => 'nullable|string|max:20',
-            'clubWebsiteUrl' => 'nullable|url|max:255',
-        ]);
-
-        Club::find($this->clubId)?->update([
-            'name' => $this->clubName,
-            'street' => $this->clubStreet,
-            'city_code' => $this->clubCityCode,
-            'city_name' => $this->clubCityName,
-            'building_name' => $this->clubBuildingName ?: null,
-            'email_contact' => $this->clubEmailContact ?: null,
-            'phone_contact' => $this->clubPhoneContact ?: null,
-            'bank_account' => $this->clubBankAccount ?: null,
-            'enterprise_number' => $this->clubEnterpriseNumber ?: null,
-            'website_url' => $this->clubWebsiteUrl ?: null,
-        ]);
-
-        $this->submittedStep = max($this->submittedStep, 4);
-        $this->maxReachable = max($this->maxReachable, 5);
-        $this->step = '5';
-    }
-
-    // ── Step 5 — Season ──────────────────────────────────────────────────────
-
-    public function completeStep5(): void
     {
         $this->validate([
             'seasonName' => 'required|string|max:50',
@@ -317,12 +308,14 @@ new class extends Component
 
         $season->activate();
 
-        $this->submittedStep = max($this->submittedStep, 5);
-        $this->maxReachable = max($this->maxReachable, 6);
-        $this->step = '6';
+        $this->submittedStep = max($this->submittedStep, 4);
+        $this->maxReachable = max($this->maxReachable, 5);
+        $this->step = '5';
     }
 
-    public function completeStep6(): void
+    // ── Step 5 — Rooms ───────────────────────────────────────────────────────
+
+    public function completeStep5(): void
     {
         foreach ($this->rooms as $index => $roomData) {
             $room = Room::create($roomData);
@@ -331,16 +324,18 @@ new class extends Component
             $this->tables[$index] ??= [];
         }
 
-        $this->submittedStep = max($this->submittedStep, 6);
-        $this->maxReachable = max($this->maxReachable, 7);
-        $this->step = count($this->rooms) > 0 ? '7' : '8';
+        $this->submittedStep = max($this->submittedStep, 5);
+        $this->maxReachable = max($this->maxReachable, 6);
+        $this->step = count($this->rooms) > 0 ? '6' : '7';
 
         if (count($this->rooms) === 0) {
-            $this->maxReachable = max($this->maxReachable, 8);
+            $this->maxReachable = max($this->maxReachable, 7);
         }
     }
 
-    public function completeStep7(): void
+    // ── Step 6 — Tables ──────────────────────────────────────────────────────
+
+    public function completeStep6(): void
     {
         foreach ($this->tables as $roomIndex => $roomTables) {
             $roomId = $this->roomIds[$roomIndex] ?? null;
@@ -353,9 +348,9 @@ new class extends Component
             }
         }
 
-        $this->submittedStep = max($this->submittedStep, 7);
-        $this->maxReachable = max($this->maxReachable, 8);
-        $this->step = '8';
+        $this->submittedStep = max($this->submittedStep, 6);
+        $this->maxReachable = max($this->maxReachable, 7);
+        $this->step = '7';
     }
 
     public function goToStep(string $target): void
@@ -369,6 +364,19 @@ new class extends Component
 
     public function mount(): void
     {
+        if (Auth::check()) {
+            $club = Club::own();
+
+            if ($club) {
+                $this->clubId = $club->id;
+                $this->maxReachable = max($this->maxReachable, 4);
+                $this->step = '4';
+            } else {
+                $this->maxReachable = max($this->maxReachable, 3);
+                $this->step = '3';
+            }
+        }
+
         $year = now()->year;
         $month = now()->month;
 
@@ -382,8 +390,6 @@ new class extends Component
             $this->seasonEndAt = "{$year}-06-30";
         }
     }
-
-    // ── Step 7 — Tables ──────────────────────────────────────────────────────
 
     public function openTableForm(int $roomIndex): void
     {
@@ -411,19 +417,18 @@ new class extends Component
         return $this->view()->layout('layouts.setup');
     }
 
+    public function skipStep5(): void
+    {
+        $this->submittedStep = max($this->submittedStep, 5);
+        $this->maxReachable = max($this->maxReachable, 7);
+        $this->step = '7';
+    }
+
     public function skipStep6(): void
     {
         $this->submittedStep = max($this->submittedStep, 6);
         $this->maxReachable = max($this->maxReachable, 7);
-        $this->step = '8';
-        $this->maxReachable = max($this->maxReachable, 8);
-    }
-
-    public function skipStep7(): void
-    {
-        $this->submittedStep = max($this->submittedStep, 7);
-        $this->maxReachable = max($this->maxReachable, 8);
-        $this->step = '8';
+        $this->step = '7';
     }
 
     // ── Navigation ───────────────────────────────────────────────────────────
@@ -432,21 +437,5 @@ new class extends Component
     {
         $this->maxReachable = max($this->maxReachable, 2);
         $this->step = '2';
-    }
-
-    // ── Helpers ──────────────────────────────────────────────────────────────
-
-    private function updateEnvFile(string $key, string $value): void
-    {
-        $path = base_path('.env');
-        $content = file_get_contents($path);
-
-        if (str_contains($content, "{$key}=")) {
-            $content = preg_replace("/^{$key}=.*/m", "{$key}={$value}", $content);
-        } else {
-            $content .= "\n{$key}={$value}";
-        }
-
-        file_put_contents($path, $content);
     }
 };

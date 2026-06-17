@@ -9,6 +9,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use Illuminate\Support\Facades\DB;
+use Livewire\Livewire;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -48,7 +49,7 @@ function makeTournamentWithPendingPayment(User $user, float $amount = 25.0): arr
 
 // ── Polymorphic dispatch: TournamentRegistration ──────────────────────────────
 
-describe('reconcileStore — TournamentRegistration payable', function (): void {
+describe('confirmReconcile — TournamentRegistration payable', function (): void {
 
     it('sets has_paid to true on the tournament_user pivot', function (): void {
         $admin = User::factory()->isAdmin()->create();
@@ -60,12 +61,12 @@ describe('reconcileStore — TournamentRegistration payable', function (): void 
             'transaction' => $transaction,
         ] = makeTournamentWithPendingPayment($user);
 
-        $this->actingAs($admin)
-            ->post(route('admin.transactions.reconcile.store'), [
-                'transaction_id' => $transaction->id,
-                'payment_id' => $payment->id,
-            ])
-            ->assertRedirect(route('admin.transactions.reconcile'));
+        Livewire::actingAs($admin)
+            ->test('pages::club-admin.treasury.payments')
+            ->set('reconcilePaymentId', $payment->id)
+            ->set('selectedTransactionId', $transaction->id)
+            ->call('confirmReconcile')
+            ->assertHasNoErrors();
 
         expect($payment->fresh()->status)->toBe('paid');
         expect($payment->fresh()->transaction_id)->toEqual($transaction->id);
@@ -91,10 +92,11 @@ describe('reconcileStore — TournamentRegistration payable', function (): void 
             'has_paid' => false,
         ]);
 
-        $this->actingAs($admin)->post(route('admin.transactions.reconcile.store'), [
-            'transaction_id' => $transaction->id,
-            'payment_id' => $payment->id,
-        ]);
+        Livewire::actingAs($admin)
+            ->test('pages::club-admin.treasury.payments')
+            ->set('reconcilePaymentId', $payment->id)
+            ->set('selectedTransactionId', $transaction->id)
+            ->call('confirmReconcile');
 
         expect(
             DB::table('tournament_user')
@@ -104,25 +106,27 @@ describe('reconcileStore — TournamentRegistration payable', function (): void 
         )->toBe(0);
     })->group('reconciliation', 'tournament');
 
-    it('returns a success flash after reconciling a tournament payment', function (): void {
+    it('dispatches a success toast after reconciling a tournament payment', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $user = User::factory()->create();
 
         ['payment' => $payment, 'transaction' => $transaction] = makeTournamentWithPendingPayment($user);
 
-        $this->actingAs($admin)
-            ->post(route('admin.transactions.reconcile.store'), [
-                'transaction_id' => $transaction->id,
-                'payment_id' => $payment->id,
-            ])
-            ->assertSessionHas('success');
+        Livewire::actingAs($admin)
+            ->test('pages::club-admin.treasury.payments')
+            ->set('reconcilePaymentId', $payment->id)
+            ->set('selectedTransactionId', $transaction->id)
+            ->call('confirmReconcile')
+            ->assertHasNoErrors();
+
+        expect($payment->fresh()->status)->toBe('paid');
     })->group('reconciliation', 'tournament');
 
 })->group('payments');
 
 // ── Polymorphic dispatch: Subscription payable (regression) ──────────────────
 
-describe('reconcileStore — Subscription payable (regression)', function (): void {
+describe('confirmReconcile — Subscription payable (regression)', function (): void {
 
     it('still marks the subscription as paid when payable_type is Subscription', function (): void {
         $admin = User::factory()->isAdmin()->create();
@@ -147,12 +151,12 @@ describe('reconcileStore — Subscription payable (regression)', function (): vo
             'description' => 'Annual subscription',
         ]);
 
-        $this->actingAs($admin)
-            ->post(route('admin.transactions.reconcile.store'), [
-                'transaction_id' => $transaction->id,
-                'payment_id' => $payment->id,
-            ])
-            ->assertRedirect(route('admin.transactions.reconcile'));
+        Livewire::actingAs($admin)
+            ->test('pages::club-admin.treasury.payments')
+            ->set('reconcilePaymentId', $payment->id)
+            ->set('selectedTransactionId', $transaction->id)
+            ->call('confirmReconcile')
+            ->assertHasNoErrors();
 
         expect($payment->fresh()->status)->toBe('paid');
         expect($subscription->fresh()->status)->toBe('paid');
@@ -174,7 +178,6 @@ describe('reconcileStore — Subscription payable (regression)', function (): vo
             'status' => 'pending',
         ]);
 
-        // Transaction with a different amount (partial payment)
         $transaction = Transaction::create([
             'date' => now()->toDateString(),
             'amount' => 60.0,
@@ -183,12 +186,12 @@ describe('reconcileStore — Subscription payable (regression)', function (): vo
             'description' => 'Partial payment',
         ]);
 
-        $this->actingAs($admin)
-            ->post(route('admin.transactions.reconcile.store'), [
-                'transaction_id' => $transaction->id,
-                'payment_id' => $payment->id,
-            ])
-            ->assertRedirect(route('admin.transactions.reconcile'));
+        Livewire::actingAs($admin)
+            ->test('pages::club-admin.treasury.payments')
+            ->set('reconcilePaymentId', $payment->id)
+            ->set('selectedTransactionId', $transaction->id)
+            ->call('confirmReconcile')
+            ->assertHasNoErrors();
 
         expect($payment->fresh()->status)->toBe('paid');
     })->group('reconciliation', 'subscription');
@@ -197,9 +200,9 @@ describe('reconcileStore — Subscription payable (regression)', function (): vo
 
 // ── Validation ────────────────────────────────────────────────────────────────
 
-describe('reconcileStore — validation', function (): void {
+describe('confirmReconcile — validation', function (): void {
 
-    it('rejects missing transaction_id', function (): void {
+    it('does nothing when no transaction is selected', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $subscription = Subscription::factory()->create(['status' => 'confirmed', 'amount_due' => 50]);
         $payment = $subscription->payments()->create([
@@ -209,30 +212,15 @@ describe('reconcileStore — validation', function (): void {
             'status' => 'pending',
         ]);
 
-        $this->actingAs($admin)
-            ->post(route('admin.transactions.reconcile.store'), ['payment_id' => $payment->id])
-            ->assertSessionHasErrors('transaction_id');
+        Livewire::actingAs($admin)
+            ->test('pages::club-admin.treasury.payments')
+            ->set('reconcilePaymentId', $payment->id)
+            ->call('confirmReconcile');
+
+        expect($payment->fresh()->status)->toBe('pending');
     })->group('reconciliation', 'validation');
 
-    it('rejects non-existent transaction_id', function (): void {
-        $admin = User::factory()->isAdmin()->create();
-        $subscription = Subscription::factory()->create(['status' => 'confirmed', 'amount_due' => 50]);
-        $payment = $subscription->payments()->create([
-            'reference' => '100/2506/00012',
-            'amount_due' => 50,
-            'amount_paid' => 0,
-            'status' => 'pending',
-        ]);
-
-        $this->actingAs($admin)
-            ->post(route('admin.transactions.reconcile.store'), [
-                'transaction_id' => 999999,
-                'payment_id' => $payment->id,
-            ])
-            ->assertSessionHasErrors('transaction_id');
-    })->group('reconciliation', 'validation');
-
-    it('rejects missing payment_id', function (): void {
+    it('does nothing when no payment is selected', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $transaction = Transaction::create([
             'date' => now()->toDateString(),
@@ -241,9 +229,12 @@ describe('reconcileStore — validation', function (): void {
             'description' => 'Test',
         ]);
 
-        $this->actingAs($admin)
-            ->post(route('admin.transactions.reconcile.store'), ['transaction_id' => $transaction->id])
-            ->assertSessionHasErrors('payment_id');
+        Livewire::actingAs($admin)
+            ->test('pages::club-admin.treasury.payments')
+            ->set('selectedTransactionId', $transaction->id)
+            ->call('confirmReconcile');
+
+        expect($transaction->fresh()->payment)->toBeNull();
     })->group('reconciliation', 'validation');
 
 })->group('payments');

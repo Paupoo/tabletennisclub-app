@@ -13,8 +13,8 @@
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <x-input icon="o-trophy" :label="__('Club Name')" placeholder="E.g. CTT Ottignies"
                         wire:model="name" required />
-                    <x-input icon="o-identification" :label="__('Club ID / Licence')" placeholder="E.g. BBW042"
-                        wire:model="licence" required />
+                    <x-input icon="o-identification" :label="__('Club ID / Licence')"
+                        wire:model="licence" readonly disabled />
                 </div>
 
             </div>
@@ -34,13 +34,14 @@
         {{-- Contact --}}
         <x-admin.shared.form-section :separator="true" :subtitle="__('Information to facilitate people to contact us.')" :title="__('Contact Details')">
                     <x-input icon="o-phone" :label="__('Phone Contact')" wire:model="phone_contact" />
-                    <x-input icon="o-envelope-open" :label="__('Email Contact')" wire:model="email_contact" />
+                    <x-input icon="o-envelope-open" :label="__('Email Contact')" wire:model="email_contact" required/>
                     <x-input :label="__('Website URL')" prefix="https://" wire:model="website_url" />
         </x-admin.shared.form-section>
 
         {{-- Accounting --}}
         <x-admin.shared.form-section :separator="true" :subtitle="__('Banking and accounting data')" :title="__('Accounting')">
-            <x-input icon="o-currency-euro" :label="__('Bank Account')" wire:model="bank_account" />
+            <x-input icon="o-finger-print" :label="__('BIC Code')" wire:model="bic" />
+            <x-input icon="o-currency-euro" :label="__('Bank Account (IBAN)')" wire:model="bank_account" />
             <x-input icon="o-identification" :label="__('Enterprise Number (Optional)')" wire:model="enterprise_number" />
         </x-admin.shared.form-section>
                 
@@ -90,6 +91,71 @@
                 <div class="text-info flex items-center gap-2 text-xs italic">
                     <x-icon class="h-4 w-4" name="o-information-circle" />
                     {{ __('Roles defined here will be visible on the "Contact" page.') }}
+                </div>
+            </div>
+        </x-admin.shared.form-section>
+
+        {{-- Interclub Schedule --}}
+        <x-admin.shared.form-section :separator="true" :subtitle="__('Configure the interclub match entry displayed on the public schedule.')" :title="__('Interclub Schedule')">
+            <x-toggle :label="__('Show interclub matches in the public schedule')" wire:model="interclubEnabled" />
+            <x-select
+                :label="__('Day of week')"
+                icon="o-calendar"
+                wire:model="interclubDay"
+                :options="[
+                    ['id' => 'Lundi',     'name' => __('Monday')],
+                    ['id' => 'Mardi',     'name' => __('Tuesday')],
+                    ['id' => 'Mercredi',  'name' => __('Wednesday')],
+                    ['id' => 'Jeudi',     'name' => __('Thursday')],
+                    ['id' => 'Vendredi',  'name' => __('Friday')],
+                    ['id' => 'Samedi',    'name' => __('Saturday')],
+                    ['id' => 'Dimanche',  'name' => __('Sunday')],
+                ]"
+            />
+            <div class="col-span-6 grid grid-cols-1 gap-4 md:col-span-4 md:grid-cols-2">
+                <x-input icon="o-clock" :label="__('Start time (HH:MM)')" wire:model="interclubTimeStart" placeholder="19:00" />
+                <x-input icon="o-clock" :label="__('End time (HH:MM)')" wire:model="interclubTimeEnd" placeholder="23:30" />
+            </div>
+            <x-input icon="o-map-pin" :label="__('Location')" wire:model="interclubLocation" />
+            <x-input icon="o-information-circle" :label="__('Description')" wire:model="interclubDescription" />
+        </x-admin.shared.form-section>
+
+        <x-admin.shared.form-section :separator="true" :subtitle="__('Members who hold club equipment')" :title="__('Equipment holders')">
+            <div class="col-span-6 md:col-span-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+                {{-- Key holders --}}
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-widest opacity-50 mb-3">
+                        {{ __('Key holders') }}
+                    </p>
+                    @forelse($keyHolders as $holder)
+                        <div class="flex items-center gap-2 py-1">
+                            <x-icon name="o-key" class="w-4 h-4 text-base-content/40 shrink-0" />
+                            <span class="text-sm">{{ $holder->first_name }} {{ $holder->last_name }}</span>
+                        </div>
+                    @empty
+                        <p class="text-sm italic text-base-content/40">{{ __('None') }}</p>
+                    @endforelse
+                </div>
+
+                {{-- Cash register holders --}}
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-widest opacity-50 mb-3">
+                        {{ __('Cash register holders') }}
+                    </p>
+                    @forelse($cashRegisterHolders as $register)
+                        <div class="flex items-center gap-2 py-1">
+                            <x-icon name="o-banknotes" class="w-4 h-4 text-base-content/40 shrink-0" />
+                            <span class="text-sm font-medium">{{ $register->name }}</span>
+                            <span class="text-sm text-base-content/50">→</span>
+                            @if($register->heldBy)
+                                <span class="text-sm">{{ $register->heldBy->first_name }} {{ $register->heldBy->last_name }}</span>
+                            @else
+                                <span class="text-sm italic text-base-content/40">{{ __('None') }}</span>
+                            @endif
+                        </div>
+                    @empty
+                        <p class="text-sm italic text-base-content/40">{{ __('None') }}</p>
+                    @endforelse
                 </div>
             </div>
         </x-admin.shared.form-section>

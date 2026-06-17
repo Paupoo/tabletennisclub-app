@@ -228,6 +228,37 @@
                 </div>
             </x-card>
             @endif
+
+            {{-- Website promotion --}}
+            @if ($this->canManage)
+            <x-card :title="__('Website')" separator>
+                <x-slot:menu>
+                    @if ($meeting->eventPost?->status === \App\Domains\Shared\Enums\EventPostStatusEnum::PUBLISHED)
+                        <x-badge class="badge-success badge-sm" icon="o-globe-alt" value="{{ __('Published') }}" />
+                    @elseif ($meeting->eventPost)
+                        <x-badge class="badge-warning badge-sm" icon="o-document-text" value="{{ __('Draft') }}" />
+                    @endif
+                </x-slot:menu>
+
+                @if ($meeting->scheduled_at)
+                    <livewire:admin.shared.event-post-button
+                        :model-class="\App\Domains\Meetings\Models\Meeting::class"
+                        :model-id="$meeting->id"
+                        event-type="MEETING"
+                        icon="📋"
+                        :event-date="$meeting->scheduled_at?->toDateString()"
+                        :start-time="$meeting->scheduled_at?->format('H:i:s')"
+                        :end-time="$meeting->ends_at?->format('H:i:s')"
+                        :default-title="$meeting->title"
+                        :can-publish="true"
+                        wire:key="ep-show-meeting-{{ $meeting->id }}" />
+                @else
+                    <p class="text-sm text-base-content/50 italic">
+                        {{ __('Set a confirmed date before publishing this meeting on the website.') }}
+                    </p>
+                @endif
+            </x-card>
+            @endif
         </div>
     </div>
 

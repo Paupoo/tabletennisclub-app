@@ -5,17 +5,17 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Meetings\Models\Meeting;
+use App\Domains\Meetings\Models\MeetingActionItem;
+use App\Domains\Meetings\Models\MeetingAgendaItem;
+use App\Domains\Meetings\Models\MeetingDateProposal;
+use App\Domains\Meetings\Models\MeetingDateVote;
+use App\Domains\Meetings\Models\MeetingMinutes;
 use App\Domains\Shared\Enums\MeetingDateVoteEnum;
 use App\Domains\Shared\Enums\MeetingFormatEnum;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\MeetingTypeEnum;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
-use App\Models\ClubEvents\Meeting\Meeting;
-use App\Models\ClubEvents\Meeting\MeetingActionItem;
-use App\Models\ClubEvents\Meeting\MeetingAgendaItem;
-use App\Models\ClubEvents\Meeting\MeetingDateProposal;
-use App\Models\ClubEvents\Meeting\MeetingDateVote;
-use App\Models\ClubEvents\Meeting\MeetingMinutes;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 
@@ -30,7 +30,7 @@ class MeetingSeeder extends Seeder
         $committeeMembers = User::where(fn ($q) => $q->where('is_admin', true)->orWhere('is_committee_member', true))
             ->get();
 
-        $allActiveMembers = User::where('is_active', true)->take(30)->get();
+        $allActiveMembers = User::inRandomOrder()->take(30)->get();
 
         // ── 1. Completed past AG — season closing ─────────────────────────
         $agPast = Meeting::create([
@@ -38,7 +38,6 @@ class MeetingSeeder extends Seeder
             'type' => MeetingTypeEnum::GENERAL_ASSEMBLY,
             'status' => MeetingStatusEnum::COMPLETED,
             'format' => MeetingFormatEnum::PHYSICAL,
-            'is_public' => true,
             'description' => 'Assemblée générale annuelle de clôture de la saison. Bilan sportif, financier et élection du nouveau comité.',
             'scheduled_at' => Carbon::parse('2025-05-20 19:30:00'),
             'ends_at' => Carbon::parse('2025-05-20 21:30:00'),
@@ -89,7 +88,6 @@ class MeetingSeeder extends Seeder
             'type' => MeetingTypeEnum::GENERAL_ASSEMBLY,
             'status' => MeetingStatusEnum::CONFIRMED,
             'format' => MeetingFormatEnum::PHYSICAL,
-            'is_public' => true,
             'description' => 'Assemblée générale annuelle de rentrée. Présentation du programme sportif de la saison, approbation du budget et informations pratiques.',
             'scheduled_at' => Carbon::parse('2025-09-16 19:30:00'),
             'ends_at' => Carbon::parse('2025-09-16 21:00:00'),
@@ -118,7 +116,6 @@ class MeetingSeeder extends Seeder
             'type' => MeetingTypeEnum::COMMITTEE,
             'status' => MeetingStatusEnum::COMPLETED,
             'format' => MeetingFormatEnum::PHYSICAL,
-            'is_public' => false,
             'description' => 'Réunion mensuelle du comité. Points : résultats interclubs, logistique tournoi interne, trésorerie.',
             'scheduled_at' => Carbon::parse('2024-10-08 19:00:00'),
             'ends_at' => Carbon::parse('2024-10-08 21:00:00'),
@@ -164,7 +161,6 @@ class MeetingSeeder extends Seeder
             'type' => MeetingTypeEnum::COMMITTEE,
             'status' => MeetingStatusEnum::COMPLETED,
             'format' => MeetingFormatEnum::VIRTUAL,
-            'is_public' => false,
             'description' => 'Réunion de début d\'année. Bilan mi-saison et planification du second semestre.',
             'scheduled_at' => Carbon::parse('2025-01-14 19:30:00'),
             'ends_at' => Carbon::parse('2025-01-14 21:00:00'),
@@ -202,7 +198,6 @@ class MeetingSeeder extends Seeder
             'type' => MeetingTypeEnum::COMMITTEE,
             'status' => MeetingStatusEnum::CONFIRMED,
             'format' => MeetingFormatEnum::PHYSICAL,
-            'is_public' => false,
             'description' => 'Première réunion de la nouvelle saison. Mise en place du comité, définition des priorités.',
             'scheduled_at' => Carbon::parse('2025-09-30 19:00:00'),
             'ends_at' => Carbon::parse('2025-09-30 21:00:00'),
@@ -228,7 +223,6 @@ class MeetingSeeder extends Seeder
             'type' => MeetingTypeEnum::COMMITTEE,
             'status' => MeetingStatusEnum::PLANNING,
             'format' => MeetingFormatEnum::VIRTUAL,
-            'is_public' => false,
             'description' => 'Réunion mensuelle du comité. Sondage de disponibilités en cours.',
             'scheduled_at' => null,
             'meeting_link' => null,

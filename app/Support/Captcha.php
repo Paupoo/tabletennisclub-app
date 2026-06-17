@@ -22,11 +22,11 @@ class Captcha
 
     public function validate(array $captcha, int $userResult): bool
     {
-        if (!isset($captcha['a'], $captcha['b'], $captcha['operation'])) {
+        if (! isset($captcha['a'], $captcha['b'], $captcha['operation'])) {
             return false;
         }
 
-        if (!is_int($captcha['a']) || !is_int($captcha['b'])) {
+        if (! is_int($captcha['a']) || ! is_int($captcha['b'])) {
             throw new \TypeError('Captcha values must be integers');
         }
 
@@ -34,7 +34,7 @@ class Captcha
             throw new \InvalidArgumentException('Captcha values must be between 0 and 10');
         }
 
-        if (!in_array($captcha['operation'], ['+', '*'])) {
+        if (! in_array($captcha['operation'], ['+', '*'])) {
             throw new \InvalidArgumentException('Invalid captcha operation');
         }
 

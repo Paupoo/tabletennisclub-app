@@ -10,105 +10,94 @@ use App\Actions\User\SendInvitationAction;
 use App\Actions\User\SoftDeleteUserAction;
 use App\Data\User\CreateUserData;
 use App\Domains\ClubAdmin\Users\Models\User;
-use App\Domains\Shared\Enums\Gender;
-use Illuminate\Validation\Rule as ValidationRule;
+use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
+use App\Domains\Shared\Enums\Gender;
 use App\Livewire\Concerns\HasBreadcrumbs;
+use App\Livewire\Concerns\HasBulkActions;
+use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule as ValidationRule;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast, HasBreadcrumbs;
-    use WithPagination;
+    use HasBreadcrumbs, Toast, WithPagination;
+    use HasBulkActions, HasFilterDrawer;
 
-    public array $categories = [];
+    public bool $addToTeamModal = false;
 
-    // ── Quick invite ─────────────────────────────────────────────────────────
-    public bool $quickInviteDrawer = false;
+    public string $anonymizeConfirmText = '';
 
     // ── Anonymize modal ───────────────────────────────────────────────────────
     public bool $anonymizeModal = false;
 
     public ?int $anonymizeUserId = null;
 
-    public string $anonymizeConfirmText = '';
+    /** @var array<int, string> */
+    #[Url]
+    public array $categories = [];
+
+    public bool $confirmArchiveModal = false;
+
+    // ── Modals ───────────────────────────────────────────────────────────────
+    public bool $deleteModal = false;
+
+    #[Url]
+    public bool $hasCashRegister = false;
+
+    #[Url]
+    public bool $hasKey = false;
+
+    #[Url]
+    public bool $incompleteProfile = false;
+
+    public string $inviteEmail = '';
 
     public string $inviteFirstName = '';
 
     public string $inviteLastName = '';
 
-    public string $inviteEmail = '';
+    // ── Quick invite ─────────────────────────────────────────────────────────
+    public bool $quickInviteDrawer = false;
 
-    // ── Modales ──────────────────────────────────────────────────────────────
-    public bool $deleteModal = false;
-
-    public bool $deleteSelectedModal = false;
-
-    public ?int $event_id = null;
-
-    public array $licenceTypes = [];   // ex: ['competitive', 'recreational']
-
-    public bool $showArchived = false;
-
-    public bool $showInactiveUsers = false;
-
-    // ── Recherche & tri ──────────────────────────────────────────────────────
+    // ── Filters & sort ───────────────────────────────────────────────────────
+    #[Url]
     public string $search = '';
 
-    // ── Sélection bulk ───────────────────────────────────────────────────────
-    public array $selected = [];
-
+    #[Url]
     public string $selectedLicenceType = 'both';
 
-    // ── Filtres ──────────────────────────────────────────────────────────────
-    public bool $showFilters = false;
+    #[Url]
+    public bool $showArchived = false;
 
+    /** @var array{column: string, direction: string} */
+    #[Url]
     public array $sortBy = ['column' => 'last_name', 'direction' => 'asc'];
+
+    public bool $subscribeModal = false;
 
     public ?string $subscription_id = null;
 
     public ?int $team_id = null;
 
+    /** @var array<int, int> */
+    #[Url]
     public array $team_ids = [];
 
-    public ?int $training_id = null;
+    #[Url]
+    public bool $unpaidSubscription = false;
 
     public ?int $userToDelete = null;
 
-    // ────────────────────────────────────────────────────────────────────────
-    // Computed
-    // ────────────────────────────────────────────────────────────────────────
-
-    /**
-     * Nombre de filtres actifs — utilisé pour le badge sur le bouton.
-     */
-    #[Computed]
-    public function activeFiltersCount(): int
-    {
-        return ($this->selectedLicenceType !== 'both' ? 1 : 0)
-            + count($this->categories)
-            + ($this->showInactiveUsers ? 1 : 0);
-    }
-
-    // ────────────────────────────────────────────────────────────────────────
-    // Bulk — activation
-    // ────────────────────────────────────────────────────────────────────────
-
-    public function bulkActivate(): void
-    {
-        User::whereIn('id', $this->selected)->update(['is_active' => true]);
-        $this->success(__('Users activated.'));
-    }
-
-    // ────────────────────────────────────────────────────────────────────────
-    // Bulk — équipe
-    // ────────────────────────────────────────────────────────────────────────
+    // ── Bulk actions ──────────────────────────────────────────────────────────
 
     public function bulkAddToTeam(): void
     {
@@ -116,15 +105,31 @@ new class extends Component
             return;
         }
 
-        // TODO: logique réelle quand le modèle Team existera
+        // TODO: real logic when Team model is complete
         $this->team_id = null;
+        $this->addToTeamModal = false;
+        $this->clearSelection();
         $this->success(__('Users added to the team.'));
     }
 
-    public function bulkDeactivate(): void
+    public function bulkArchive(): void
     {
-        User::whereIn('id', $this->selected)->update(['is_active' => false]);
-        $this->success(__('Users deactivated.'));
+        abort_unless(Auth::user()->is_admin, 403);
+
+        $selfIncluded = in_array((string) Auth::id(), array_map('strval', $this->selected));
+
+        User::whereIn('id', $this->selected)
+            ->where('id', '!=', Auth::id())
+            ->each(fn (User $user) => SoftDeleteUserAction::handle($user));
+
+        $this->confirmArchiveModal = false;
+        $this->clearSelection();
+
+        if ($selfIncluded) {
+            $this->warning(__('Users archived. Your own account was excluded from the selection.'));
+        } else {
+            $this->success(__('Selected users archived.'));
+        }
     }
 
     public function bulkSubscribe(): void
@@ -133,76 +138,23 @@ new class extends Component
             return;
         }
 
-        // TODO: logique réelle quand les modèles Event/Training existeront
+        // TODO: real logic when Event/Training models are complete
         $this->subscription_id = null;
+        $this->subscribeModal = false;
+        $this->clearSelection();
         $this->success(__('Users subscribed.'));
     }
 
-    // ────────────────────────────────────────────────────────────────────────
-    // Bulk — suppression
-    // ────────────────────────────────────────────────────────────────────────
-
-    public function confirmBulkDelete(): void
+    public function clearFilters(): void
     {
-        $this->deleteSelectedModal = true;
-    }
-
-    // ────────────────────────────────────────────────────────────────────────
-    // Suppression simple
-    // ────────────────────────────────────────────────────────────────────────
-
-    public function recalculateForceList(): void
-    {
-        abort_unless(Auth::user()->is_admin || Auth::user()->is_committee_member, 403);
-
-        RecalculateForceListAction::handle();
-
-        $this->success(__('Force list recalculated.'));
-    }
-
-    public function quickInvite(): void
-    {
-        $this->validate([
-            'inviteFirstName' => ['required', 'string', 'max:255'],
-            'inviteLastName'  => ['required', 'string', 'max:255'],
-            'inviteEmail'     => ['required', 'email', ValidationRule::unique('users', 'email')],
-        ]);
-
-        $email = $this->inviteEmail;
-
-        CreateUserAction::handle(
-            new CreateUserData(
-                first_name: $this->inviteFirstName,
-                last_name: $this->inviteLastName,
-                email: $email,
-                gender: Gender::MEN,
-            ),
-            Auth::user()
-        );
-
-        $this->reset(['inviteFirstName', 'inviteLastName', 'inviteEmail']);
-        $this->quickInviteDrawer = false;
-
-        $this->success(__('Invitation sent to :email.', ['email' => $email]));
-    }
-
-    public function sendInvitation(int $userId): void
-    {
-        $user = User::findOrFail($userId);
-
-        SendInvitationAction::handle($user);
-
-        $this->success(__('Invitation sent to :email.', ['email' => $user->email]));
-    }
-
-    public function openAnonymizeModal(int $userId): void
-    {
-        $user = User::findOrFail($userId);
-        $this->authorize('anonymize', $user);
-
-        $this->anonymizeUserId = $userId;
-        $this->anonymizeConfirmText = '';
-        $this->anonymizeModal = true;
+        $this->selectedLicenceType = 'both';
+        $this->categories = [];
+        $this->incompleteProfile = false;
+        $this->unpaidSubscription = false;
+        $this->hasKey = false;
+        $this->hasCashRegister = false;
+        $this->team_ids = [];
+        $this->resetPage();
     }
 
     public function confirmAnonymize(): void
@@ -223,6 +175,11 @@ new class extends Component
         $this->anonymizeConfirmText = '';
 
         $this->success(__('User anonymized (GDPR). All personal data has been erased.'));
+    }
+
+    public function confirmBulkArchive(): void
+    {
+        $this->confirmArchiveModal = true;
     }
 
     public function confirmDelete(int $userId): void
@@ -251,24 +208,164 @@ new class extends Component
         $this->success(__('User archived.'));
     }
 
-    public function deleteSelected(): void
+    /** @return array<int, array{key: string, label: string}> */
+    #[Computed]
+    public function filterChips(): array
     {
-        abort_unless(Auth::user()->is_admin, 403);
+        return $this->getFilterChips();
+    }
 
-        $selfIncluded = in_array((string) Auth::id(), array_map('strval', $this->selected));
+    // ── HasFilterDrawer ───────────────────────────────────────────────────────
 
-        User::whereIn('id', $this->selected)
-            ->where('id', '!=', Auth::id())
-            ->each(fn (User $user) => SoftDeleteUserAction::handle($user));
+    /** @return array<int, array{key: string, label: string}> */
+    public function getFilterChips(): array
+    {
+        $chips = [];
 
-        $this->selected = [];
-        $this->deleteSelectedModal = false;
-
-        if ($selfIncluded) {
-            $this->warning(__('Users archived. Your own account was excluded from the selection.'));
-        } else {
-            $this->success(__('Selected users archived.'));
+        if ($this->selectedLicenceType !== 'both') {
+            $chips[] = [
+                'key' => 'selectedLicenceType',
+                'label' => $this->selectedLicenceType === 'competitive' ? __('Competitive') : __('Recreational'),
+            ];
         }
+
+        foreach (Gender::cases() as $gender) {
+            if (in_array($gender->value, $this->categories, true)) {
+                $chips[] = [
+                    'key' => "categories_{$gender->value}",
+                    'label' => $gender->getLabel(),
+                ];
+            }
+        }
+
+        if ($this->incompleteProfile) {
+            $chips[] = ['key' => 'incompleteProfile', 'label' => __('Incomplete profile')];
+        }
+
+        if ($this->unpaidSubscription) {
+            $chips[] = ['key' => 'unpaidSubscription', 'label' => __('Unpaid subscription')];
+        }
+
+        if ($this->hasKey) {
+            $chips[] = ['key' => 'hasKey', 'label' => __('Has a key')];
+        }
+
+        if ($this->hasCashRegister) {
+            $chips[] = ['key' => 'hasCashRegister', 'label' => __('Has a cash register')];
+        }
+
+        if (! empty($this->team_ids)) {
+            $chips[] = [
+                'key' => 'team_ids',
+                'label' => trans_choice('{1} 1 team|[2,*] :count teams', count($this->team_ids), ['count' => count($this->team_ids)]),
+            ];
+        }
+
+        return $chips;
+    }
+
+    public function getTotalMatchingCount(): int
+    {
+        return $this->users->total();
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    #[Computed]
+    public function headers(): array
+    {
+        return [
+            ['key' => 'photo',          'label' => '',            'sortable' => false],
+            ['key' => 'name',           'label' => __('Name'),    'sortable' => true],
+            ['key' => 'email',          'label' => __('Email'),   'sortable' => true],
+            ['key' => 'is_competitive', 'label' => __('Licence'), 'sortable' => true],
+            ['key' => 'ranking',        'label' => __('Ranking'), 'sortable' => true],
+        ];
+    }
+
+    /** @return array<int, array{id: string, name: string}> */
+    #[Computed]
+    public function licenceTypes(): array
+    {
+        return [
+            ['id' => 'both',        'name' => __('Both')],
+            ['id' => 'competitive', 'name' => __('Competitive')],
+            ['id' => 'recreative',  'name' => __('Recreative')],
+        ];
+    }
+
+    public function openAnonymizeModal(int $userId): void
+    {
+        $user = User::findOrFail($userId);
+        $this->authorize('anonymize', $user);
+
+        $this->anonymizeUserId = $userId;
+        $this->anonymizeConfirmText = '';
+        $this->anonymizeModal = true;
+    }
+
+    public function quickInvite(): void
+    {
+        $this->validate([
+            'inviteFirstName' => ['required', 'string', 'max:255'],
+            'inviteLastName' => ['required', 'string', 'max:255'],
+            'inviteEmail' => ['required', 'email', ValidationRule::unique('users', 'email')],
+        ]);
+
+        $email = $this->inviteEmail;
+
+        CreateUserAction::handle(
+            new CreateUserData(
+                first_name: $this->inviteFirstName,
+                last_name: $this->inviteLastName,
+                email: $email,
+                gender: Gender::MEN,
+            ),
+            Auth::user()
+        );
+
+        $this->reset(['inviteFirstName', 'inviteLastName', 'inviteEmail']);
+        $this->quickInviteDrawer = false;
+
+        $this->success(__('Invitation sent to :email.', ['email' => $email]));
+    }
+
+    // ── Single-record actions ─────────────────────────────────────────────────
+
+    public function recalculateForceList(): void
+    {
+        abort_unless(Auth::user()->is_admin || Auth::user()->is_committee_member, 403);
+
+        RecalculateForceListAction::handle();
+
+        $this->success(__('Force list recalculated.'));
+    }
+
+    public function removeFilter(string $key): void
+    {
+        if (str_starts_with($key, 'categories_')) {
+            $value = substr($key, strlen('categories_'));
+            $this->categories = array_values(
+                array_filter($this->categories, fn (string $v) => $v !== $value)
+            );
+        } else {
+            $this->reset([$key]);
+        }
+
+        $this->resetPage();
+    }
+
+    public function render()
+    {
+        return $this->view([
+            'users' => $this->users,
+            'headers' => $this->headers,
+            'teams' => $this->teams,
+            'subscriptions' => $this->subscriptions,
+            'breadcrumbs' => $this->getBreadcrumbs(),
+            'filterChips' => $this->filterChips,
+            'licenceTypes' => $this->licenceTypes,
+            'stats' => $this->stats,
+        ]);
     }
 
     public function restoreUser(int $userId): void
@@ -281,91 +378,43 @@ new class extends Component
         $this->success(__('User restored.'));
     }
 
-    /**
-     * En-têtes de la table.
-     */
+    public function sendInvitation(int $userId): void
+    {
+        $user = User::findOrFail($userId);
+
+        SendInvitationAction::handle($user);
+
+        $this->success(__('Invitation sent to :email.', ['email' => $user->email]));
+    }
+
+    // ── Computed ──────────────────────────────────────────────────────────────
+
+    /** @return array<string, int> */
     #[Computed]
-    public function headers(): array
+    public function stats(): array
     {
         return [
-            ['key' => 'photo',      'label' => '',              'sortable' => false],
-            ['key' => 'name',  'label' => __('Name'),      'sortable' => true],
-            ['key' => 'email',      'label' => __('Email'),     'sortable' => true],
-            ['key' => 'is_competitive', 'label' => __('Licence'),  'sortable' => true],
-            ['key' => 'ranking',    'label' => __('Ranking'),   'sortable' => true],
+            'total' => User::count(),
+            'registered' => User::affiliatedForCurrentSeason()->count(),
+            'competitive' => User::competitor()->count(),
+            'unregistered' => User::count() - User::affiliatedForCurrentSeason()->count(),
         ];
     }
 
-    public function mount(): void
-    {
-        $this->licenceTypes = [
-            [
-                'id' => 'both',
-                'name' => __('Both'),
-            ],
-            [
-                'id' => 'competitive',
-                'name' => __('Competitive'),
-            ],
-            [
-                'id' => 'recreative',
-                'name' => __('Recreative'),
-            ],
-        ];
-    }
-
-    // ────────────────────────────────────────────────────────────────────────
-    // Render
-    // ────────────────────────────────────────────────────────────────────────
-
-    protected function breadcrumbChain(): Breadcrumb
-    {
-        return Breadcrumb::make()
-            ->home()
-            ->users()
-            ->current(__('List'));
-    }
-
-    public function render()
-    {
-        return $this->view([
-            'users' => $this->users,
-            'headers' => $this->headers,
-            'teams' => $this->teams,
-            'subscriptions' => $this->subscriptions,
-            'breadcrumbs' => $this->getBreadcrumbs(),
-            'activeFiltersCount' => $this->activeFiltersCount,
-            'stats'              => $this->stats,
-        ]);
-    }
-
-    // ────────────────────────────────────────────────────────────────────────
-    // Filtres
-    // ────────────────────────────────────────────────────────────────────────
-
-    public function resetFilters(): void
-    {
-        $this->selectedLicenceType = 'both';
-        $this->categories = [];
-        $this->showInactiveUsers = false;
-        $this->resetPage();
-    }
-
+    /** @return Collection<int, array<string, mixed>> */
     #[Computed]
     public function subscriptions(): Collection
     {
         return collect([
-            ['id' => 'event-1',    'name' => 'Tournoi printemps',   'group' => __('Events')],
-            ['id' => 'event-2',    'name' => 'Coupe régionale',     'group' => __('Events')],
-            ['id' => 'event-3',    'name' => 'Championnat été',     'group' => __('Events')],
-            ['id' => 'training-1', 'name' => 'Entraînement lundi',  'group' => __('Trainings')],
+            ['id' => 'event-1',    'name' => 'Tournoi printemps',     'group' => __('Events')],
+            ['id' => 'event-2',    'name' => 'Coupe régionale',       'group' => __('Events')],
+            ['id' => 'event-3',    'name' => 'Championnat été',       'group' => __('Events')],
+            ['id' => 'training-1', 'name' => 'Entraînement lundi',    'group' => __('Trainings')],
             ['id' => 'training-2', 'name' => 'Entraînement mercredi', 'group' => __('Trainings')],
         ]);
     }
 
-    /**
-     * Liste des équipes pour le select bulk.
-     */
+    /** @return Collection<int, array<string, mixed>> */
     #[Computed]
     public function teams(): Collection
     {
@@ -379,17 +428,24 @@ new class extends Component
             ]);
     }
 
+    // ── Pagination hooks ──────────────────────────────────────────────────────
+
     public function updatedCategories(): void
     {
         $this->resetPage();
     }
 
-    public function updatedShowArchived(): void
+    public function updatedHasCashRegister(): void
     {
         $this->resetPage();
     }
 
-    public function updatedShowInactiveUsers(): void
+    public function updatedHasKey(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedIncompleteProfile(): void
     {
         $this->resetPage();
     }
@@ -404,22 +460,18 @@ new class extends Component
         $this->resetPage();
     }
 
-    #[Computed]
-    public function stats(): array
+    public function updatedShowArchived(): void
     {
-        return [
-            'total'       => User::count(),
-            'active'      => User::where('is_active', true)->count(),
-            'competitive' => User::where('is_competitor', true)->count(),
-            'inactive'    => User::where('is_active', false)->count(),
-        ];
+        $this->resetPage();
     }
 
-    /**
-     * Données de la table avec filtres appliqués.
-     */
+    public function updatedUnpaidSubscription(): void
+    {
+        $this->resetPage();
+    }
+
     #[Computed]
-    public function users()
+    public function users(): LengthAwarePaginator
     {
         $query = $this->showArchived
             ? User::onlyTrashed()
@@ -433,19 +485,18 @@ new class extends Component
             ))
             ->when(
                 ! $this->showArchived && $this->selectedLicenceType === 'competitive',
-                fn ($q) => $q->where('is_competitor', true)
+                fn ($q) => $q->competitor()
             )
             ->when(
                 ! $this->showArchived && $this->selectedLicenceType === 'recreative',
-                fn ($q) => $q->where('is_competitor', false)
+                fn ($q) => $q->whereDoesntHave('subscriptions', fn ($s) => $s
+                    ->where('season_id', Season::current()?->id)
+                    ->where('is_competitive', true)
+                )
             )
             ->when(
                 $this->categories,
                 fn ($q) => $q->whereIn('gender', $this->categories)
-            )
-            ->when(
-                ! $this->showArchived && ! $this->showInactiveUsers,
-                fn ($q) => $q->where('is_active', true)
             )
             ->when(
                 count($this->team_ids) > 0,
@@ -454,7 +505,30 @@ new class extends Component
                     fn ($teamQuery) => $teamQuery->whereIn('teams.id', $this->team_ids)
                 )
             )
+            ->when($this->incompleteProfile, fn ($q) => $q->withIncompleteProfile())
+            ->when($this->unpaidSubscription, fn ($q) => $q->unpaid())
+            ->when($this->hasKey, fn ($q) => $q->where('has_key', true))
+            ->when($this->hasCashRegister, fn ($q) => $q->whereHas('heldCashRegisters'))
             ->orderBy($this->sortBy['column'], $this->sortBy['direction'])
             ->paginate(15);
+    }
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->users()
+            ->current(__('List'));
+    }
+
+    // ── HasBulkActions ────────────────────────────────────────────────────────
+
+    /** @return array<int, string> */
+    protected function getPageIds(): array
+    {
+        return $this->users
+            ->pluck('id')
+            ->map(fn (int $id) => (string) $id)
+            ->toArray();
     }
 };

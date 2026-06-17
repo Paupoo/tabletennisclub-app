@@ -35,10 +35,7 @@ function wizardTournament(array $overrides = []): Tournament
 
 function competitiveUsers(int $count): Collection
 {
-    return User::factory($count)->create([
-        'is_active' => true,
-        'is_competitor' => true,
-    ]);
+    return User::factory($count)->create();
 }
 
 // ── sendInvitations ───────────────────────────────────────────────────────────

@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Domains\Meetings\Models;
 
+use App\Domains\Shared\Traits\HasAuditLog;
 use Database\Factories\Domains\Meetings\Models\MeetingAgendaItemFactory;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
@@ -16,9 +18,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $sort_order
  * @property string $title
  * @property string|null $description
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \App\Domains\Meetings\Models\Meeting $meeting
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Meeting $meeting
+ *
  * @method static \Database\Factories\Domains\Meetings\Models\MeetingAgendaItemFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingAgendaItem newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingAgendaItem newQuery()
@@ -30,11 +33,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingAgendaItem whereSortOrder($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingAgendaItem whereTitle($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MeetingAgendaItem whereUpdatedAt($value)
+ *
  * @mixin \Eloquent
  */
 #[UseFactory(MeetingAgendaItemFactory::class)]
 class MeetingAgendaItem extends Model
 {
+    use HasAuditLog;
     use HasFactory;
 
     protected $casts = [

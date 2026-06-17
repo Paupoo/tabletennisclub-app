@@ -1,6 +1,6 @@
 @props(['title', 'subtitle', 'separator' => true])
 <div class="col-span-6 md:col-span-2">
-    <x-header title="{{ $title }}" subtitle="{{ $subtitle }}" size="md" />
+    <x-header :title="$title" :subtitle="$subtitle" size="md" />
 </div>
 
 <div class="col-span-6 md:col-span-4 grid gap-2">

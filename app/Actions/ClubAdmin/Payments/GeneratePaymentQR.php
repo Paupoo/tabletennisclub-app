@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\ClubAdmin\Payments;
 
 use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\Competitions\Interclub\Models\Club;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Encoding\Encoding;
 use Endroid\QrCode\ErrorCorrectionLevel;
@@ -23,10 +24,9 @@ class GeneratePaymentQR
      */
     public function __invoke(Payment $payment): string
     {
-        $IBAN = 'BE23732333208791';
-        $BIC = 'CREGBEBB';
-        // $amount = $payment->amount_due;
-        $amount = $amount = number_format((float) $payment->amount_due, 2, '.', '');
+        $BIC = Club::ourClub()->first()->bic;
+        $IBAN = Club::ourClub()->first()->bank_account;
+        $amount = number_format((float) $payment->amount_due, 2, '.', '');
         $currency = 'EUR';
         $beneficiary = 'CTT Ottignies-Blocry ASBL';
         $reference = $payment->reference; // votre référence / communication

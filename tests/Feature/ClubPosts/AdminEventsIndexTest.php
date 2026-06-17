@@ -89,15 +89,14 @@ describe('filtres', function (): void {
             ->assertDontSee('Stage été');
     });
 
-    it('réinitialise les filtres via resetFilters()', function (): void {
+    it('réinitialise les filtres via clearFilters()', function (): void {
         $admin = User::factory()->isAdmin()->create();
         adminEventsEvent(['title' => 'Brouillon', 'status' => EventPostStatusEnum::DRAFT->value]);
 
         eventsAdminIndexAs($admin)
             ->set('status', EventPostStatusEnum::PUBLISHED->value)
-            ->call('resetFilters')
+            ->call('clearFilters')
             ->assertSet('status', '')
-            ->assertSet('search', '')
             ->assertSet('type', '');
     });
 })->group('EventAdmin');

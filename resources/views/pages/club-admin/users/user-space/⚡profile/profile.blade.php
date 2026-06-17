@@ -368,7 +368,7 @@
                         <x-input :label="__('City')" wire:model="city_name" />
                         <x-input :label="__('IBAN')" wire:model="iban"
                             placeholder="BE00 0000 0000 0000"
-                            :hint="__('Used for refunds. Format: BE23 7323 3320 8791')" />
+                            :hint="__('payment.iban_format_hint')" />
                         <div>
                             <div wire:key="photo-container-{{ $imageKey }}">
                                 <x-file :label="__('Photo')" wire:model="photo"

@@ -6,6 +6,7 @@ namespace App\Domains\Meetings\Notifications;
 
 use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Meetings\Models\Meeting;
 use App\Services\IcsGenerator;
 use Illuminate\Bus\Queueable;
@@ -53,6 +54,7 @@ class MeetingRsvpConfirmationNotification extends Notification implements Should
                 'meeting' => $meeting,
                 'payment' => $this->payment,
                 'qrCode' => $qrCode,
+                'club' => Club::ourClub()->first(),
             ])
             ->subject(__('Attendance confirmed: :title', ['title' => $meeting->title]))
             ->attachData($ics, 'meeting.ics', ['mime' => 'text/calendar']);

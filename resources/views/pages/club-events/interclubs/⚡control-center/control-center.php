@@ -18,7 +18,11 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use Toast, HasBreadcrumbs;
+    use HasBreadcrumbs, Toast;
+
+    public string $captainMessage = '';
+
+    public ?int $drawerInterclubId = null;
 
     public bool $drawerSelection = false;
 
@@ -26,31 +30,16 @@ new class extends Component
 
     public bool $modalMessage = false;
 
-    public string $captainMessage = '';
+    public string $search = '';
 
-    public ?int $drawerInterclubId = null;
+    /** @var array<int, int> */
+    public array $selectedPlayerIds = [];
 
     public ?int $selectedSeasonId = null;
 
     public ?int $selectedTeam = null;
 
     public ?int $selectedWeek = null;
-
-    /** @var array<int, int> */
-    public array $selectedPlayerIds = [];
-
-    public string $search = '';
-
-    public function mount(): void
-    {
-        $this->selectedSeasonId = Season::current()?->id;
-    }
-
-    public function updatedSelectedSeasonId(): void
-    {
-        $this->selectedWeek = null;
-        $this->selectedTeam = null;
-    }
 
     public function confirmAndSend(InterclubAvailabilityService $service): void
     {
@@ -69,6 +58,11 @@ new class extends Component
             __('Players have received their invitation.'),
             icon: 'o-paper-airplane'
         );
+    }
+
+    public function mount(): void
+    {
+        $this->selectedSeasonId = Season::current()?->id;
     }
 
     public function nextWeek(): void
@@ -108,15 +102,7 @@ new class extends Component
         }
     }
 
-
-    protected function breadcrumbChain(): Breadcrumb
-    {
-        return Breadcrumb::make()
-            ->home()
-            ->current(__("Control Center"));
-    }
-
-        public function render(): View
+    public function render(): View
     {
         return $this->view();
     }
@@ -165,6 +151,12 @@ new class extends Component
             }
             $this->selectedPlayerIds[] = $userId;
         }
+    }
+
+    public function updatedSelectedSeasonId(): void
+    {
+        $this->selectedWeek = null;
+        $this->selectedTeam = null;
     }
 
     public function with(): array
@@ -243,7 +235,7 @@ new class extends Component
 
         $searchResults = [];
         if (strlen($this->search) >= 2 && $this->drawerInterclubId) {
-            $searchResults = User::where('is_competitor', true)
+            $searchResults = User::competitor()
                 ->where(function ($q): void {
                     $q->where('first_name', 'like', '%' . $this->search . '%')
                         ->orWhere('last_name', 'like', '%' . $this->search . '%');
@@ -260,7 +252,7 @@ new class extends Component
 
         $drawerInterclub = $this->drawerInterclubId ? Interclub::with(['visitedTeam.users', 'visitingTeam.users'])->find($this->drawerInterclubId) : null;
         $drawerTeam = $drawerInterclub
-            ? ($drawerInterclub->visitedTeam?->club?->licence === config('app.club_licence')
+            ? ($drawerInterclub->visitedTeam?->club?->is_own_club
                 ? $drawerInterclub->visitedTeam
                 : $drawerInterclub->visitingTeam)
             : null;
@@ -294,6 +286,13 @@ new class extends Component
             'searchResults' => $searchResults,
             'matchDayMap' => $matchDayMap,
         ];
+    }
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__('Control Center'));
     }
 
     /** @param \Illuminate\Database\Eloquent\Collection<int, Team> $teams */

@@ -30,8 +30,11 @@ test('subscription created event triggers notification', function (): void {
 test('meeting created event notifies all members for general assembly', function (): void {
     Notification::fake();
 
-    $user1 = User::factory()->create(['is_active' => true]);
-    $user2 = User::factory()->create(['is_active' => true]);
+    $season = makeActiveSeason();
+    $user1 = User::factory()->create([]);
+    $user2 = User::factory()->create([]);
+    Subscription::factory()->for($user1)->create(['season_id' => $season->id, 'status' => 'confirmed']);
+    Subscription::factory()->for($user2)->create(['season_id' => $season->id, 'status' => 'confirmed']);
 
     $meeting = Meeting::factory()->create(['type' => MeetingTypeEnum::GENERAL_ASSEMBLY]);
 
@@ -44,8 +47,8 @@ test('meeting created event notifies all members for general assembly', function
 test('meeting created event notifies committee only for committee meeting', function (): void {
     Notification::fake();
 
-    $member = User::factory()->create(['is_committee_member' => true, 'is_active' => true]);
-    $regular = User::factory()->create(['is_committee_member' => false, 'is_active' => true]);
+    $member = User::factory()->create(['is_committee_member' => true]);
+    $regular = User::factory()->create(['is_committee_member' => false]);
 
     $meeting = Meeting::factory()->create(['type' => MeetingTypeEnum::COMMITTEE]);
 
@@ -59,8 +62,8 @@ test('team created event notifies admins', function (): void {
     Notification::fake();
 
     $season = Season::factory()->create();
-    $admin = User::factory()->create(['is_admin' => true, 'is_active' => true]);
-    $regular = User::factory()->create(['is_admin' => false, 'is_active' => true]);
+    $admin = User::factory()->create(['is_admin' => true]);
+    $regular = User::factory()->create(['is_admin' => false]);
 
     $team = Team::factory()->for($season)->create();
 

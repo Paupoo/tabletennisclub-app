@@ -21,7 +21,7 @@ class InterclubAvailabilityService
     {
         $interclub->loadMissing(['visitedTeam', 'visitingTeam', 'visitedTeam.club', 'visitingTeam.club']);
 
-        $ourTeam = $interclub->visitedTeam?->club?->licence === config('app.club_licence')
+        $ourTeam = $interclub->visitedTeam?->club?->is_own_club
             ? $interclub->visitedTeam
             : $interclub->visitingTeam;
 

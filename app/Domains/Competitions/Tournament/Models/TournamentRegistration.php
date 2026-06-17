@@ -7,26 +7,29 @@ namespace App\Domains\Competitions\Tournament\Models;
 use App\Contracts\DescribesPayment;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Traits\HasAuditLog;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\Relations\Pivot;
+use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
  * @property int|null $user_id
  * @property int|null $tournament_id
  * @property bool $has_paid
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * @property string $registration_status
  * @property int|null $waitlist_position
- * @property \Illuminate\Support\Carbon|null $confirmation_deadline
- * @property \Illuminate\Support\Carbon|null $payment_deadline
+ * @property Carbon|null $confirmation_deadline
+ * @property Carbon|null $payment_deadline
  * @property int|null $payment_id
  * @property bool $qr_confirmed
  * @property-read Payment|null $payment
- * @property-read \App\Domains\Competitions\Tournament\Models\Tournament|null $tournament
+ * @property-read Tournament|null $tournament
  * @property-read User|null $user
+ *
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentRegistration newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentRegistration newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentRegistration query()
@@ -42,10 +45,13 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentRegistration whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentRegistration whereUserId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|TournamentRegistration whereWaitlistPosition($value)
+ *
  * @mixin \Eloquent
  */
 class TournamentRegistration extends Pivot implements DescribesPayment
 {
+    use HasAuditLog;
+
     public $incrementing = true;
 
     protected $casts = [

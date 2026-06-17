@@ -6,6 +6,7 @@ namespace App\Mail;
 
 use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\Competitions\Interclub\Models\Club;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;
@@ -20,18 +21,20 @@ class PaymentInvitationEmail extends Mailable
 
     public string $beneficiary = 'CTT Ottignies-Blocry ASBL';
 
-    public string $BIC = 'CREGBEBB';
+    public string $BIC;
 
-    public string $IBAN = 'BE23732333208791';
+    public string $IBAN;
 
     public string $qrCode;
 
-    /**
-     * To do
-     */
-    public function __construct(public Payment $payment)
-    {
+    public function __construct(
+        public Payment $payment,
+        public ?string $instructions = null,
+    ) {
+        $this->BIC = Club::ourClub()->first()->bic;
+        $this->IBAN = Club::ourClub()->first()->bank_account;
         $this->qrCode = (new GeneratePaymentQR)($payment);
+        $this->instructions ??= __('Veuillez effectuer le versement avant le ' . today()->addDays(30)->format('d/m/Y'));
     }
 
     /**
@@ -44,17 +47,9 @@ class PaymentInvitationEmail extends Mailable
         return [];
     }
 
-    /**
-     * Get the message content definition.
-     */
     public function content(): Content
     {
-        return new Content(
-            markdown: 'mail.payment-invitation',
-            with: [
-                'instructions' => __('Veuillez effectuer le versement avant le ' . today()->addDays(30)->format('d/m/Y')),
-            ],
-        );
+        return new Content(markdown: 'mail.payment-invitation');
     }
 
     /**

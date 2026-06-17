@@ -2,16 +2,15 @@
 
 declare(strict_types=1);
 
-use App\Domains\Shared\Enums\InterclubAvailability;
-use App\Domains\Shared\Enums\MeetingStatusEnum;
-use App\Domains\Shared\Enums\MeetingUserStatusEnum;
-use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
-use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Meetings\Models\Meeting;
+use App\Domains\Shared\Enums\InterclubAvailability;
+use App\Domains\Shared\Enums\MeetingStatusEnum;
+use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\Trainings\Models\Training;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
@@ -22,13 +21,13 @@ use Livewire\Component;
 new class extends Component
 {
     use HasBreadcrumbs;
-    
-    public User $user;
 
     /** @var string[] */
     public array $selectedCategories = [];
 
     public bool $showAllEvents = false;
+
+    public User $user;
 
     #[Computed]
     public function calendarData(): array
@@ -52,14 +51,14 @@ new class extends Component
                 ->orderBy('start_date')
                 ->get()
                 ->map(fn ($t) => [
-                    'startDateTime'      => $t->start_date->format('Y-m-d H:i:s'),
-                    'title'              => $t->name,
-                    'type'               => 'tournament',
-                    'tournamentId'       => $t->id,
+                    'startDateTime' => $t->start_date->format('Y-m-d H:i:s'),
+                    'title' => $t->name,
+                    'type' => 'tournament',
+                    'tournamentId' => $t->id,
                     'registrationStatus' => $t->users->first()?->pivot->registration_status,
-                    'waitlistPosition'   => $t->users->first()?->pivot->waitlist_position,
-                    'confirmDeadline'    => $t->users->first()?->pivot->confirmation_deadline?->format('Y-m-d H:i:s'),
-                    'monthKey'           => $t->start_date->translatedFormat('F Y'),
+                    'waitlistPosition' => $t->users->first()?->pivot->waitlist_position,
+                    'confirmDeadline' => $t->users->first()?->pivot->confirmation_deadline?->format('Y-m-d H:i:s'),
+                    'monthKey' => $t->start_date->translatedFormat('F Y'),
                 ]);
 
             $events = $events->merge($tournaments);
@@ -77,15 +76,15 @@ new class extends Component
                         ->orderBy('start')
                         ->get()
                         ->map(fn ($s) => [
-                            'startDateTime'      => $s->start->format('Y-m-d H:i:s'),
-                            'endTime'            => $s->end?->format('H:i'),
-                            'title'              => $s->trainingPack?->name ?? __('Training'),
-                            'type'               => 'training',
-                            'room'               => $s->room?->name,
-                            'level'              => $s->trainingPack?->level?->value,
-                            'coach'              => $s->trainer ? trim($s->trainer->first_name . ' ' . $s->trainer->last_name) : null,
+                            'startDateTime' => $s->start->format('Y-m-d H:i:s'),
+                            'endTime' => $s->end?->format('H:i'),
+                            'title' => $s->trainingPack?->name ?? __('Training'),
+                            'type' => 'training',
+                            'room' => $s->room?->name,
+                            'level' => $s->trainingPack?->level?->value,
+                            'coach' => $s->trainer ? trim($s->trainer->first_name . ' ' . $s->trainer->last_name) : null,
                             'registrationStatus' => null,
-                            'monthKey'           => $s->start->translatedFormat('F Y'),
+                            'monthKey' => $s->start->translatedFormat('F Y'),
                         ]);
 
                     $events = $events->merge($sessions);
@@ -102,8 +101,8 @@ new class extends Component
                     foreach ($subs as $sub) {
                         foreach ($sub->trainingPacks as $pack) {
                             $packStatusMap[$pack->id] = [
-                                'status'            => $pack->pivot->status,
-                                'deadline'          => $pack->pivot->confirmation_deadline,
+                                'status' => $pack->pivot->status,
+                                'deadline' => $pack->pivot->confirmation_deadline,
                                 'waitlist_position' => $pack->pivot->waitlist_position,
                             ];
                         }
@@ -142,19 +141,19 @@ new class extends Component
                             ->orderBy('start')
                             ->get()
                             ->map(fn ($s) => [
-                                'startDateTime'      => $s->start->format('Y-m-d H:i:s'),
-                                'endTime'            => $s->end?->format('H:i'),
-                                'title'              => $s->trainingPack?->name ?? __('Training'),
-                                'type'               => 'training',
-                                'room'               => $s->room?->name,
-                                'level'              => $s->trainingPack?->level?->value,
-                                'coach'              => $s->trainer ? trim($s->trainer->first_name . ' ' . $s->trainer->last_name) : null,
+                                'startDateTime' => $s->start->format('Y-m-d H:i:s'),
+                                'endTime' => $s->end?->format('H:i'),
+                                'title' => $s->trainingPack?->name ?? __('Training'),
+                                'type' => 'training',
+                                'room' => $s->room?->name,
+                                'level' => $s->trainingPack?->level?->value,
+                                'coach' => $s->trainer ? trim($s->trainer->first_name . ' ' . $s->trainer->last_name) : null,
                                 'registrationStatus' => null,
-                                'packId'               => $s->training_pack_id,
-                                'packStatus'           => $packStatusMap[$s->training_pack_id]['status'] ?? 'enrolled',
-                                'confirmDeadline'      => $packStatusMap[$s->training_pack_id]['deadline'] ?? null,
+                                'packId' => $s->training_pack_id,
+                                'packStatus' => $packStatusMap[$s->training_pack_id]['status'] ?? 'enrolled',
+                                'confirmDeadline' => $packStatusMap[$s->training_pack_id]['deadline'] ?? null,
                                 'packWaitlistPosition' => $packStatusMap[$s->training_pack_id]['waitlist_position'] ?? null,
-                                'monthKey'           => $s->start->translatedFormat('F Y'),
+                                'monthKey' => $s->start->translatedFormat('F Y'),
                             ]);
 
                         $events = $events->merge($sessions);
@@ -177,15 +176,15 @@ new class extends Component
                 ->orderBy('scheduled_at')
                 ->get()
                 ->map(fn ($m) => [
-                    'startDateTime'      => $m->scheduled_at->format('Y-m-d H:i:s'),
-                    'title'              => $m->title,
-                    'type'               => 'meeting',
-                    'meetingId'          => $m->id,
-                    'format'             => $m->format->value,
-                    'location'           => $m->location,
-                    'meetingLink'        => $m->meeting_link,
+                    'startDateTime' => $m->scheduled_at->format('Y-m-d H:i:s'),
+                    'title' => $m->title,
+                    'type' => 'meeting',
+                    'meetingId' => $m->id,
+                    'format' => $m->format->value,
+                    'location' => $m->location,
+                    'meetingLink' => $m->meeting_link,
                     'registrationStatus' => $m->users->first()?->registration?->status?->value,
-                    'monthKey'           => $m->scheduled_at->translatedFormat('F Y'),
+                    'monthKey' => $m->scheduled_at->translatedFormat('F Y'),
                 ]);
 
             $events = $events->merge($meetings);
@@ -233,18 +232,11 @@ new class extends Component
             ->all();
     }
 
-    protected function breadcrumbChain(): Breadcrumb
-    {
-        return Breadcrumb::make()
-            ->home()
-            ->current(__('Calendar'));
-    }
-
     public function with(): array
     {
         return [
             'breadcrumbs' => $this->getBreadcrumbs(),
-            'calendar'   => $this->calendarData,
+            'calendar' => $this->calendarData,
             'categories' => [
                 ['id' => 'tournament', 'name' => __('Tournament')],
                 ['id' => 'training',   'name' => __('Training')],
@@ -253,6 +245,13 @@ new class extends Component
             ],
             'selectedCategories' => $this->selectedCategories,
         ];
+    }
+
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__('Calendar'));
     }
 
     private function formatInterclub(Interclub $ic, array $ourTeamIds, array $userTeamIds): array
@@ -266,19 +265,19 @@ new class extends Component
         $availability = $pivot?->availability ? InterclubAvailability::from($pivot->availability) : null;
 
         return [
-            'startDateTime'   => $ic->start_date_time->format('Y-m-d H:i:s'),
-            'title'           => ($ourTeam?->name ?? '') . ' vs ' . $opponent,
-            'type'            => 'interclub',
-            'isHome'          => $isHome,
-            'opponent'        => $opponent,
-            'teamName'        => $ourTeam?->name ?? '—',
-            'division'        => $ic->league?->division ?? '',
-            'address'         => $ic->address ?? '—',
-            'isUserInTeam'    => in_array($ourTeam?->id, $userTeamIds),
-            'availability'    => $availability,
-            'isSelected'      => (bool) $pivot?->is_selected,
+            'startDateTime' => $ic->start_date_time->format('Y-m-d H:i:s'),
+            'title' => ($ourTeam?->name ?? '') . ' vs ' . $opponent,
+            'type' => 'interclub',
+            'isHome' => $isHome,
+            'opponent' => $opponent,
+            'teamName' => $ourTeam?->name ?? '—',
+            'division' => $ic->league?->division ?? '',
+            'address' => $ic->address ?? '—',
+            'isUserInTeam' => in_array($ourTeam?->id, $userTeamIds),
+            'availability' => $availability,
+            'isSelected' => (bool) $pivot?->is_selected,
             'registrationStatus' => null,
-            'monthKey'        => $ic->start_date_time->translatedFormat('F Y'),
+            'monthKey' => $ic->start_date_time->translatedFormat('F Y'),
         ];
     }
 };

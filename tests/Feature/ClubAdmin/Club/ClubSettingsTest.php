@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Livewire\Livewire;
@@ -37,24 +38,11 @@ describe('Test Club Settings', function (): void {
                 ->assertStatus(200);
         });
 
-        it('initialises properties from the club app defined in the .env', function (): void {
-            // The component reads env('APP_CLUB_LICENCE') at runtime. The .env already
-            // populated $_ENV with an empty value, which shadows putenv(), so $_ENV/$_SERVER
-            // must be set too for env() to pick the test value up.
-            $testValue = 'ABC123';
-            $original = $_ENV['APP_CLUB_LICENCE'] ?? '';
-            $_ENV['APP_CLUB_LICENCE'] = $testValue;
-            $_SERVER['APP_CLUB_LICENCE'] = $testValue;
-            putenv("APP_CLUB_LICENCE={$testValue}");
+        it('initialises licence from the own club in the database', function (): void {
+            Club::factory()->ownClub()->create(['licence' => 'ABC123']);
 
-            try {
-                Livewire::test(clubSettingsComponent())
-                    ->assertSet('licence', $testValue);
-            } finally {
-                $_ENV['APP_CLUB_LICENCE'] = $original;
-                $_SERVER['APP_CLUB_LICENCE'] = $original;
-                putenv("APP_CLUB_LICENCE={$original}");
-            }
+            Livewire::test(clubSettingsComponent())
+                ->assertSet('licence', 'ABC123');
         });
 
         it('displays committee members in the view', function (): void {

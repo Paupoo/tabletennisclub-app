@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Domains\Meetings\Models\Meeting;
+use App\Domains\Meetings\Models\MeetingAgendaItem;
 use App\Domains\Shared\Enums\MeetingFormatEnum;
 use Illuminate\Support\Carbon;
 
@@ -27,7 +28,7 @@ class IcsGenerator
                 : null,
             $meeting->agendaItems->isNotEmpty()
                 ? __('Agenda:') . '\n' . $meeting->agendaItems
-                    ->map(fn ($item, $i) => ($i + 1) . '. ' . $item->title)
+                    ->map(fn (MeetingAgendaItem $item, int $i) => ($i + 1) . '. ' . $item->title)
                     ->implode('\n')
                 : null,
         ])->filter()->implode('\n\n');

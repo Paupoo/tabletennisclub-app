@@ -11,6 +11,13 @@ class SpamFactory extends Factory
 {
     protected $model = Spam::class;
 
+    public function blocked(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'is_blocked' => true,
+        ]);
+    }
+
     public function definition(): array
     {
         return [

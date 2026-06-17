@@ -354,5 +354,7 @@ class DatabaseSeeder extends Seeder
         $this->call(EmailTemplateSeeder::class);
 
         $this->call(DirectedTrainingDemoSeeder::class);
+
+        $this->call(SpamSeeder::class);
     }
 }

@@ -27,8 +27,10 @@ return new class extends Migration
             $table->timestamps();
 
             // A member appears at most once per plan (pool or a single pack).
-            $table->unique(['training_plan_id', 'user_id']);
-            $table->index(['training_plan_id', 'training_plan_pack_id']);
+            // Explicit short index names: the auto-generated ones exceed MySQL's
+            // 64-char identifier limit (SQLite has no such limit, so tests pass).
+            $table->unique(['training_plan_id', 'user_id'], 'tpa_plan_user_unique');
+            $table->index(['training_plan_id', 'training_plan_pack_id'], 'tpa_plan_pack_index');
         });
     }
 };

@@ -25,7 +25,9 @@ return new class extends Migration
             $table->string('amount_str')->nullable()->after('description');
         });
 
-        DB::update('UPDATE transactions SET amount_str = CAST(CAST(amount AS REAL) / 100 AS TEXT)');
+        // Portable: integer cents -> decimal euros string. The 100.0 divisor forces
+        // float division (SQLite would do integer division with a plain 100).
+        DB::update('UPDATE transactions SET amount_str = amount / 100.0');
 
         Schema::table('transactions', function (Blueprint $table) {
             $table->dropColumn('amount');
@@ -55,8 +57,9 @@ return new class extends Migration
             $table->bigInteger('amount_cents')->default(0)->after('description');
         });
 
-        // Convert existing string amounts to integer cents
-        DB::update('UPDATE transactions SET amount_cents = CAST(ROUND(CAST(amount AS REAL) * 100) AS INTEGER)');
+        // Convert existing string amounts (euros) to integer cents. Portable
+        // standard SQL: the string amount is coerced to a number for arithmetic.
+        DB::update('UPDATE transactions SET amount_cents = ROUND(amount * 100)');
 
         // Drop old string amount column
         Schema::table('transactions', function (Blueprint $table) {

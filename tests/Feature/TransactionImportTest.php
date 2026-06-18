@@ -160,6 +160,26 @@ describe('Transaction import', function (): void {
         expect(strlen($transaction->import_fingerprint))->toBe(64);
     });
 
+    it('reads accented headers and values from an ISO-8859-1 encoded file', function (): void {
+        $admin = adminUser();
+
+        $header = 'Date;Montant;Description;Nom contrepartie;Numéro de compte contrepartie;Communication structurée;Communication libre';
+        $row = '01/06/2026;125,00;Cotisation;Chloé Luyten;BE12345678901234;018/0626/08860;';
+        $latin1Content = iconv('UTF-8', 'ISO-8859-1', implode("\n", [$header, $row]));
+
+        $file = UploadedFile::fake()->createWithContent('bank_latin1.csv', $latin1Content);
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-admin.treasury.transactions')
+            ->set('importFile', $file)
+            ->call('processImport');
+
+        $transaction = Transaction::first();
+
+        expect($transaction->counterparty_name)->toBe('Chloé Luyten');
+        expect($transaction->structured_reference)->toBe('018/0626/08860');
+    });
+
     it('links transactions to their BankImport', function (): void {
         $admin = adminUser();
         $rows = [

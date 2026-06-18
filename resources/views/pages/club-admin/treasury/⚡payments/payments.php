@@ -29,6 +29,7 @@ use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 use Mary\Traits\Toast;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Reader\Csv;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 
 new class extends Component
@@ -537,7 +538,11 @@ new class extends Component
         $path = $this->importFile->getRealPath();
 
         try {
-            $spreadsheet = IOFactory::load($path);
+            $reader = IOFactory::createReaderForFile($path);
+            if ($reader instanceof Csv) {
+                $reader->setInputEncoding(Csv::GUESS_ENCODING);
+            }
+            $spreadsheet = $reader->load($path);
             $sheet = $spreadsheet->getActiveSheet();
             $rows = $sheet->toArray(null, true, true, true);
 

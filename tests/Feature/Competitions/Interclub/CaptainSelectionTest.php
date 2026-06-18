@@ -279,3 +279,70 @@ it('has_played flag counts as a played match in matchesPlayedCount', function ()
         'has_played' => false,
     ]);
 });
+
+// ── saveSelection: completeness + update-mode detection ─────────────────────
+
+it('does not open the notify modal when saving an incomplete selection', function (): void {
+    $this->interclub->update(['total_players' => 2]);
+
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', $this->interclub->id)
+        ->call('togglePlayer', $this->player1->id)
+        ->call('saveSelection')
+        ->assertSet('modalMessage', false)
+        ->assertSet('isUpdateMode', false);
+
+    $this->assertDatabaseHas('interclub_user', [
+        'interclub_id' => $this->interclub->id,
+        'user_id' => $this->player1->id,
+        'is_selected' => true,
+    ]);
+});
+
+it('opens the notify modal when saving a complete first-time selection', function (): void {
+    $this->interclub->update(['total_players' => 2]);
+
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', $this->interclub->id)
+        ->call('togglePlayer', $this->player1->id)
+        ->call('togglePlayer', $this->player2->id)
+        ->call('saveSelection')
+        ->assertSet('modalMessage', true)
+        ->assertSet('isUpdateMode', false);
+});
+
+it('detects added and removed players when editing an already confirmed selection', function (): void {
+    $this->interclub->update(['total_players' => 2]);
+    $this->interclub->select($this->player1);
+    $this->interclub->select($this->player2);
+    $this->interclub->users()->updateExistingPivot($this->player1->id, ['selection_confirmed_at' => now()]);
+    $this->interclub->users()->updateExistingPivot($this->player2->id, ['selection_confirmed_at' => now()]);
+
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', $this->interclub->id)
+        ->call('togglePlayer', $this->player1->id)
+        ->call('togglePlayer', $this->outsider->id)
+        ->call('saveSelection')
+        ->assertSet('isUpdateMode', true)
+        ->assertSet('pendingAddedIds', [$this->outsider->id])
+        ->assertSet('pendingRemovedIds', [$this->player1->id])
+        ->assertSet('modalMessage', true);
+});
+
+it('does not reopen the modal when re-saving an unchanged confirmed selection', function (): void {
+    $this->interclub->update(['total_players' => 2]);
+    $this->interclub->select($this->player1);
+    $this->interclub->select($this->player2);
+    $this->interclub->users()->updateExistingPivot($this->player1->id, ['selection_confirmed_at' => now()]);
+    $this->interclub->users()->updateExistingPivot($this->player2->id, ['selection_confirmed_at' => now()]);
+
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', $this->interclub->id)
+        ->call('saveSelection')
+        ->assertSet('modalMessage', false)
+        ->assertSet('isUpdateMode', false);
+});

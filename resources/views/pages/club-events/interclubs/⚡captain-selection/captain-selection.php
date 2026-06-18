@@ -16,6 +16,7 @@ use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Url;
@@ -33,7 +34,15 @@ new class extends Component
 
     public bool $drawerSelection = false;
 
+    public bool $isUpdateMode = false;
+
     public bool $modalMessage = false;
+
+    /** @var array<int, int> */
+    public array $pendingAddedIds = [];
+
+    /** @var array<int, int> */
+    public array $pendingRemovedIds = [];
 
     public string $search = '';
 
@@ -176,20 +185,52 @@ new class extends Component
             return;
         }
 
-        foreach ($this->selectedPlayerIds as $userId) {
-            if (in_array($userId, $existingIds)) {
-                $interclub->users()->updateExistingPivot($userId, ['is_selected' => true]);
-            } else {
-                $interclub->users()->attach($userId, ['is_selected' => true]);
-            }
-        }
+        $previouslyConfirmedIds = $interclub->users()
+            ->wherePivot('is_selected', true)
+            ->wherePivotNotNull('selection_confirmed_at')
+            ->pluck('users.id')
+            ->toArray();
 
-        $toDeselect = array_diff($existingIds, $this->selectedPlayerIds);
-        foreach ($toDeselect as $userId) {
-            $interclub->users()->updateExistingPivot($userId, ['is_selected' => false]);
-        }
+        DB::transaction(function () use ($interclub, $existingIds): void {
+            foreach ($this->selectedPlayerIds as $userId) {
+                if (in_array($userId, $existingIds, true)) {
+                    $interclub->users()->updateExistingPivot($userId, ['is_selected' => true]);
+                } else {
+                    $interclub->users()->attach($userId, ['is_selected' => true]);
+                }
+            }
+
+            $toDeselect = array_diff($existingIds, $this->selectedPlayerIds);
+            foreach ($toDeselect as $userId) {
+                $interclub->users()->updateExistingPivot($userId, ['is_selected' => false]);
+            }
+        });
 
         $this->drawerSelection = false;
+
+        if ($previouslyConfirmedIds === []) {
+            if ($interclub->isSelectionComplete()) {
+                $this->isUpdateMode = false;
+                $this->modalMessage = true;
+            } else {
+                $this->success(__('Selection saved.'), position: 'toast-bottom toast-end');
+            }
+
+            return;
+        }
+
+        $added = array_values(array_diff($this->selectedPlayerIds, $previouslyConfirmedIds));
+        $removed = array_values(array_diff($previouslyConfirmedIds, $this->selectedPlayerIds));
+
+        if ($added === [] && $removed === []) {
+            $this->success(__('Selection saved.'), position: 'toast-bottom toast-end');
+
+            return;
+        }
+
+        $this->pendingAddedIds = $added;
+        $this->pendingRemovedIds = $removed;
+        $this->isUpdateMode = true;
         $this->modalMessage = true;
     }
 
@@ -201,10 +242,13 @@ new class extends Component
             return;
         }
 
-        $service->confirmSelection($interclub, $this->captainMeetupInfo);
+        if ($this->isUpdateMode) {
+            $service->notifySelectionChange($interclub, $this->pendingAddedIds, $this->pendingRemovedIds, $this->captainMeetupInfo);
+        } else {
+            $service->confirmSelection($interclub, $this->captainMeetupInfo);
+        }
 
-        $this->modalMessage = false;
-        $this->captainMeetupInfo = '';
+        $this->resetSendModal();
 
         $this->success(
             __('Lineup sent to the whole team!'),
@@ -215,8 +259,7 @@ new class extends Component
 
     public function skipSending(): void
     {
-        $this->modalMessage = false;
-        $this->captainMeetupInfo = '';
+        $this->resetSendModal();
         $this->success(__('Selection saved.'), position: 'toast-bottom toast-end');
     }
 
@@ -355,6 +398,33 @@ new class extends Component
             }
         }
 
+        // Modal data: pending change summary for the "Notify the team" modal
+        $pendingAddedNames = [];
+        $pendingRemovedNames = [];
+        $modalIsComplete = true;
+
+        if ($this->modalMessage && $this->selectedInterclubId) {
+            $modalInterclub = $drawerInterclub ?? Interclub::find($this->selectedInterclubId);
+
+            if ($modalInterclub) {
+                $maxPlayers = $modalInterclub->total_players;
+                $modalIsComplete = $modalInterclub->isSelectionComplete();
+            }
+
+            if ($this->isUpdateMode) {
+                $pendingAddedNames = User::whereIn('id', $this->pendingAddedIds)
+                    ->get()
+                    ->map(fn (User $u) => $u->last_name . ' ' . $u->first_name)
+                    ->values()
+                    ->all();
+                $pendingRemovedNames = User::whereIn('id', $this->pendingRemovedIds)
+                    ->get()
+                    ->map(fn (User $u) => $u->last_name . ' ' . $u->first_name)
+                    ->values()
+                    ->all();
+            }
+        }
+
         $searchResults = collect();
         if ($canSearchSubstitute && strlen($this->search) >= 2) {
             $selectedTeam = $teams->firstWhere('id', $this->selectedTeamId);
@@ -407,6 +477,9 @@ new class extends Component
             'matchDayMap' => $matchDayMap,
             'zoomedTeamId' => $this->zoomedTeamId,
             'filterChips' => $this->getFilterChips(),
+            'pendingAddedNames' => $pendingAddedNames,
+            'pendingRemovedNames' => $pendingRemovedNames,
+            'modalIsComplete' => $modalIsComplete,
         ];
     }
 
@@ -625,6 +698,15 @@ new class extends Component
                 ->where('users.id', $userId)
                 ->where('interclub_user.is_selected', 1))
             ->count();
+    }
+
+    private function resetSendModal(): void
+    {
+        $this->modalMessage = false;
+        $this->captainMeetupInfo = '';
+        $this->isUpdateMode = false;
+        $this->pendingAddedIds = [];
+        $this->pendingRemovedIds = [];
     }
 
     private function selectedInterclub(): ?Interclub

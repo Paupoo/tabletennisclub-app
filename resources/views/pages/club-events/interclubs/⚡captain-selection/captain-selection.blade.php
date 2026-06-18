@@ -355,43 +355,83 @@
     </x-drawer>
 
     {{-- ── MODAL LINEUP / MESSAGE ─────────────────────────────────────── --}}
-    <x-modal separator :title="__('Notify the team')" wire:model="modalMessage">
+    <x-modal separator :title="$isUpdateMode ? __('Update the team') : __('Notify the team')" wire:model="modalMessage">
         <div class="space-y-4">
+            @if ($isUpdateMode)
+                {{-- Diff summary: only added/removed players are notified --}}
+                @if (! empty($pendingRemovedNames))
+                    <div class="bg-error/5 border border-error/20 rounded-xl p-3">
+                        <div class="mb-2 text-[10px] font-black uppercase tracking-widest text-error/70">
+                            {{ __('Removed — will always be notified') }}
+                        </div>
+                        <div class="flex flex-wrap gap-1.5">
+                            @foreach ($pendingRemovedNames as $name)
+                                <x-badge class="badge-error badge-soft badge-sm font-bold" :value="$name" />
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
 
-            {{-- Selected lineup summary --}}
-            @php
-                $drawerIc = $drawerInterclub;
-                $currentIcId = $selectedInterclubId;
-                $currentTd = $teamsData->firstWhere('id', $selectedTeamId);
-                $currentMatch = $currentTd ? collect($currentTd['matches'])->firstWhere('id', $currentIcId) : null;
-                $selCount = count($selectedPlayerIds);
-                $maxP = $maxPlayers;
-            @endphp
+                @if (! empty($pendingAddedNames))
+                    <div class="bg-base-200/50 rounded-xl p-3">
+                        <div class="mb-2 text-[10px] font-black uppercase tracking-widest opacity-40">
+                            {{ __('Added') }}
+                        </div>
+                        <div class="flex flex-wrap gap-1.5">
+                            @foreach ($pendingAddedNames as $name)
+                                <x-badge class="badge-primary badge-soft badge-sm font-bold" :value="$name" />
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
 
-            <div class="bg-base-200/50 rounded-xl p-3">
-                <div class="mb-2 text-[10px] font-black uppercase tracking-widest opacity-40">
-                    {{ __('Selected lineup (:n/:max)', ['n' => $selCount, 'max' => $maxP]) }}
+                @if (! $modalIsComplete)
+                    <div class="rounded-xl border border-warning/30 bg-warning/5 p-3 text-xs text-warning">
+                        <div class="flex items-center gap-1.5 font-semibold">
+                            <x-icon name="o-exclamation-triangle" class="h-3.5 w-3.5" />
+                            {{ __('Selection incomplete: only the removed players will be notified for now.') }}
+                        </div>
+                    </div>
+                @endif
+
+                <x-textarea
+                    class="border-none bg-base-200/50 focus:ring-primary"
+                    :label="__('Meetup info (optional)')"
+                    :placeholder="__('E.g. Meet at 18:45 at the club entrance, bring your club shirt...')"
+                    rows="4"
+                    wire:model="captainMeetupInfo" />
+            @else
+                {{-- Selected lineup summary --}}
+                @php
+                    $selCount = count($selectedPlayerIds);
+                    $maxP = $maxPlayers;
+                @endphp
+
+                <div class="bg-base-200/50 rounded-xl p-3">
+                    <div class="mb-2 text-[10px] font-black uppercase tracking-widest opacity-40">
+                        {{ __('Selected lineup (:n/:max)', ['n' => $selCount, 'max' => $maxP]) }}
+                    </div>
+                    <div class="flex flex-wrap gap-1.5">
+                        @foreach ($roster->filter(fn ($p) => in_array($p['id'], $selectedPlayerIds)) as $p)
+                            <x-badge class="badge-primary badge-soft badge-sm font-bold" :value="$p['name']" />
+                        @endforeach
+                    </div>
                 </div>
-                <div class="flex flex-wrap gap-1.5">
-                    @foreach ($roster->filter(fn ($p) => in_array($p['id'], $selectedPlayerIds)) as $p)
-                        <x-badge class="badge-primary badge-soft badge-sm font-bold" :value="$p['name']" />
-                    @endforeach
-                </div>
-            </div>
 
-            <x-textarea
-                class="border-none bg-base-200/50 focus:ring-primary"
-                :label="__('Meetup info (optional)')"
-                :placeholder="__('E.g. Meet at 18:45 at the club entrance, bring your club shirt...')"
-                rows="4"
-                wire:model="captainMeetupInfo" />
+                <x-textarea
+                    class="border-none bg-base-200/50 focus:ring-primary"
+                    :label="__('Meetup info (optional)')"
+                    :placeholder="__('E.g. Meet at 18:45 at the club entrance, bring your club shirt...')"
+                    rows="4"
+                    wire:model="captainMeetupInfo" />
 
-            <div class="rounded-xl border border-info/20 bg-info/5 p-3 text-xs text-info">
-                <div class="flex items-center gap-1.5 font-semibold">
-                    <x-icon name="o-information-circle" class="h-3.5 w-3.5" />
-                    {{ __('All team members will be notified. Selected players receive a calendar invite (ICS).') }}
+                <div class="rounded-xl border border-info/20 bg-info/5 p-3 text-xs text-info">
+                    <div class="flex items-center gap-1.5 font-semibold">
+                        <x-icon name="o-information-circle" class="h-3.5 w-3.5" />
+                        {{ __('All team members will be notified. Selected players receive a calendar invite (ICS).') }}
+                    </div>
                 </div>
-            </div>
+            @endif
         </div>
 
         <x-slot:actions>

@@ -55,7 +55,7 @@ new class extends Component
             $ids = $this->allMatchingTransactionIds();
         }
 
-        Transaction::whereIn('id', $ids)->delete();
+        Transaction::whereIn('id', $ids)->get()->each(fn (Transaction $transaction) => $transaction->delete());
 
         $this->confirmDeleteModal = false;
         $this->reconciledInSelection = 0;

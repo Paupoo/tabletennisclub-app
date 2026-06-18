@@ -129,6 +129,76 @@ it('logs a created activity when an audited model is created', function () {
         ->and($activity->subject->id)->toBe($room->id);
 });
 
+it('logs a deleted activity for each transaction when bulk-deleted', function () {
+    $admin = User::factory()->create(['is_admin' => true]);
+    $transactions = collect([
+        Transaction::create(['date' => '2026-06-01', 'description' => 'A', 'amount' => 10]),
+        Transaction::create(['date' => '2026-06-02', 'description' => 'B', 'amount' => 20]),
+    ]);
+
+    Livewire::actingAs($admin)
+        ->test('pages::club-admin.treasury.transactions')
+        ->set('selected', $transactions->pluck('id')->map(fn ($id) => (string) $id)->all())
+        ->call('bulkDelete');
+
+    expect(Activity::query()->where('subject_type', Transaction::class)->where('description', 'deleted')->count())
+        ->toBe(2);
+});
+
+it('logs a deleted activity for each contact when bulk-deleted', function () {
+    $admin = User::factory()->create(['is_admin' => true]);
+    $contacts = Contact::factory()->count(2)->create();
+
+    Livewire::actingAs($admin)
+        ->test('pages::website.contacts.index')
+        ->set('selected', $contacts->pluck('id')->map(fn ($id) => (string) $id)->all())
+        ->call('bulkDelete');
+
+    expect(Activity::query()->where('subject_type', Contact::class)->where('description', 'deleted')->count())
+        ->toBe(2);
+});
+
+it('logs a deleted activity for each spam entry when bulk-deleted', function () {
+    $admin = User::factory()->create(['is_admin' => true]);
+    $spams = Spam::factory()->count(2)->create();
+
+    Livewire::actingAs($admin)
+        ->test('pages::website.spams.index')
+        ->set('selected', $spams->pluck('id')->map(fn ($id) => (string) $id)->all())
+        ->call('bulkDelete');
+
+    expect(Activity::query()->where('subject_type', Spam::class)->where('description', 'deleted')->count())
+        ->toBe(2);
+});
+
+it('never bulk-deletes an audited model via whereIn()->delete(), which bypasses the audit log', function () {
+    $shortNames = array_unique(array_map(fn (string $class): string => class_basename($class), auditedModels()));
+    $violations = [];
+
+    foreach ([app_path(), resource_path('views/pages')] as $directory) {
+        $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory));
+
+        foreach ($files as $file) {
+            if (! $file->isFile() || $file->getExtension() !== 'php') {
+                continue;
+            }
+
+            $content = file_get_contents($file->getRealPath());
+
+            foreach ($shortNames as $shortName) {
+                if (preg_match('/\b' . preg_quote($shortName, '/') . '::whereIn\([^)]*\)\s*->\s*delete\(\)/', $content)) {
+                    $violations[] = "{$file->getRealPath()} bulk-deletes {$shortName} via whereIn()->delete()";
+                }
+            }
+        }
+    }
+
+    expect($violations)->toBeEmpty(
+        "Mass deletes bypass Eloquent events and the audit log:\n" . implode("\n", $violations)
+        . "\nUse Model::whereIn('id', \$ids)->get()->each(fn (\$m) => \$m->delete()) instead."
+    );
+});
+
 it('applies the audit trait to every model in the agreed scope', function (string $modelClass) {
     expect(in_array(HasAuditLog::class, class_uses_recursive($modelClass), true))
         ->toBeTrue("{$modelClass} should use HasAuditLog");

@@ -50,7 +50,9 @@ new class extends Component
             return;
         }
 
-        $count = Spam::whereIn('id', $this->selected)->delete();
+        $spams = Spam::whereIn('id', $this->selected)->get();
+        $count = $spams->count();
+        $spams->each(fn (Spam $spam) => $spam->delete());
         $this->bulkDeleteModal = false;
         $this->clearSelection();
         $this->error(trans_choice('selectedCount', $count, ['count' => $count]) . ' ' . __('deleted.'));

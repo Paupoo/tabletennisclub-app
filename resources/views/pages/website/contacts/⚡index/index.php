@@ -120,8 +120,9 @@ new class extends Component
 
     public function bulkDelete(): void
     {
-        $count = count($this->selected);
-        Contact::whereIn('id', $this->selected)->delete();
+        $contacts = Contact::whereIn('id', $this->selected)->get();
+        $count = $contacts->count();
+        $contacts->each(fn (Contact $contact) => $contact->delete());
         $this->confirmBulkDeleteModal = false;
         $this->clearSelection();
         $this->error(trans_choice('selectedCount', $count, ['count' => $count]) . ' ' . __('deleted.'));

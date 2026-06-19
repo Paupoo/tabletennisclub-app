@@ -16,16 +16,17 @@
             {{-- Desktop: full buttons --}}
             <div class="hidden items-center gap-2 lg:flex">
                 <x-admin.shared.filters-button :count="count($filterChips)" />
+                <x-dropdown :label="__('More actions')" icon="o-ellipsis-vertical" right class="btn-ghost btn-sm">
+                    <x-menu-item
+                        :icon="$this->registrationClosed ? 'o-lock-open' : 'o-lock-closed'"
+                        :title="$this->registrationClosed ? __('Open Registrations') : __('Close Registrations')"
+                        wire:click="toggleRegistrations" />
+                </x-dropdown>
                 @if (! $this->registrationClosed)
                     <x-button :label="__('Register a member')" icon="o-user-plus"
                         class="btn-primary btn-sm"
                         @click="$wire.memberDrawer = true" />
                 @endif
-                <x-button
-                    :label="$this->registrationClosed ? __('Open Registrations') : __('Close Registrations')"
-                    :icon="$this->registrationClosed ? 'o-lock-open' : 'o-lock-closed'"
-                    class="btn-outline btn-sm"
-                    wire:click="toggleRegistrations" />
             </div>
         </x-slot:actions>
     </x-header>

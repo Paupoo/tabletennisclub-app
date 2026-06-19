@@ -99,7 +99,7 @@
                     @if ($meeting->has_meal)
                         <div id="meal-block" class="rounded-xl border border-warning/30 bg-warning/5 p-4 space-y-3" style="display:none">
                             <div class="flex items-center gap-2 text-sm font-semibold">
-                                <x-icon name="o-cake" class="h-4 w-4 text-warning" />
+                                <x-icon name="o-cake" class="h-4 w-4 text-warning-content" />
                                 {{ __('Meal') }}
                                 @if ($meeting->meal_price)
                                     <span class="text-base-content/60">— {{ number_format($meeting->meal_price, 2) }} €/{{ __('person') }}</span>

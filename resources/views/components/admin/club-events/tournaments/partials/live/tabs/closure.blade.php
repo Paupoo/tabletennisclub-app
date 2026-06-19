@@ -24,7 +24,7 @@
             <x-slot:title>
                 <div class="flex items-center gap-2">
                     <x-icon name="{{ $this->allMatchesComplete ? 'o-check-circle' : 'o-clock' }}"
-                        class="w-5 h-5 {{ $this->allMatchesComplete ? 'text-success' : 'text-warning' }}" />
+                        class="w-5 h-5 {{ $this->allMatchesComplete ? 'text-success' : 'text-warning-content' }}" />
                     {{ __('Tournament status') }}
                 </div>
             </x-slot:title>
@@ -40,8 +40,8 @@
                         ->whereIn('status', ['scheduled', 'in_progress'])->count();
                 @endphp
                 <div class="flex items-center gap-3 rounded-lg bg-warning/10 border border-warning/20 px-4 py-3">
-                    <x-icon name="o-exclamation-triangle" class="w-5 h-5 text-warning shrink-0" />
-                    <span class="text-sm font-medium text-warning">
+                    <x-icon name="o-exclamation-triangle" class="w-5 h-5 text-warning-content shrink-0" />
+                    <span class="text-sm font-medium text-warning-content">
                         {{ trans_choice(':n match remaining|:n matches remaining', $remaining, ['n' => $remaining]) }}
                     </span>
                 </div>
@@ -194,8 +194,8 @@
                 @else
                     <div class="rounded-xl border border-warning/30 bg-warning/5 overflow-hidden">
                         <div class="flex items-center gap-2 px-4 py-2.5 bg-warning/10 border-b border-warning/20">
-                            <x-icon name="o-exclamation-circle" class="w-4 h-4 text-warning shrink-0" />
-                            <span class="text-xs font-bold text-warning">
+                            <x-icon name="o-exclamation-circle" class="w-4 h-4 text-warning-content shrink-0" />
+                            <span class="text-xs font-bold text-warning-content">
                                 {{ trans_choice(':n participant has not paid|:n participants have not paid', $this->unpaidParticipants->count(), ['n' => $this->unpaidParticipants->count()]) }}
                             </span>
                         </div>

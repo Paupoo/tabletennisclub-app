@@ -270,7 +270,7 @@
                     <x-button class="btn-ghost btn-sm text-success" icon="o-arrow-uturn-left"
                         :label="__('Restore')" wire:click="bulkUnarchive" />
                 @else
-                    <x-button class="btn-ghost btn-sm text-warning" icon="o-x-circle" :label="__('Cancel')"
+                    <x-button class="btn-ghost btn-sm text-warning-content" icon="o-x-circle" :label="__('Cancel')"
                         wire:click="confirmBulkCancel" />
                     <x-button class="btn-ghost btn-sm" icon="o-archive-box"
                         :label="__('Archive')" wire:click="bulkArchive" />

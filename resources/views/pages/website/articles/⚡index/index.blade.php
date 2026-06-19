@@ -92,10 +92,10 @@
         <x-card class="shadow-sm">
             <div class="flex items-center gap-3">
                 <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-warning/10">
-                    <x-icon name="o-pencil-square" class="h-5 w-5 text-warning" />
+                    <x-icon name="o-pencil-square" class="h-5 w-5 text-warning-content" />
                 </div>
                 <div>
-                    <p class="text-2xl font-bold text-warning">{{ $stats->draft ?? 0 }}</p>
+                    <p class="text-2xl font-bold text-warning-content">{{ $stats->draft ?? 0 }}</p>
                     <p class="text-xs text-base-content/40">{{ __('Drafts') }}</p>
                 </div>
             </div>
@@ -256,7 +256,7 @@
             <x-button class="btn-ghost btn-sm" icon="o-check-circle" :label="__('Publish')"
                 wire:click="bulkPublish" spinner="bulkPublish" />
             <span class="text-base-content/20">|</span>
-            <x-button class="btn-ghost btn-sm text-warning" icon="o-archive-box" :label="__('Archive')"
+            <x-button class="btn-ghost btn-sm text-warning-content" icon="o-archive-box" :label="__('Archive')"
                 wire:click="confirmBulkArchive" />
         </x-slot:actions>
     </x-admin.shared.selection-pill>

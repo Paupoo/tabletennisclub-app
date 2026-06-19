@@ -87,7 +87,7 @@
                                                 <span
                                                     @class([
                                                         'text-success' => $presenceRate >= 70,
-                                                        'text-warning' => $presenceRate >= 40 && $presenceRate < 70,
+                                                        'text-warning-content' => $presenceRate >= 40 && $presenceRate < 70,
                                                         'text-error' => $presenceRate < 40,
                                                     ])>
                                                     {{ $presenceRate }}% {{ __('presence') }}
@@ -103,7 +103,7 @@
                                             @endif
 
                                             @if ($isMinor && $guardian)
-                                                <span class="text-warning">
+                                                <span class="text-warning-content">
                                                     {{ __('Guardian') }}:
                                                     {{ $guardian->guardian_phone_number ?? $guardian->phone_number }}
                                                 </span>
@@ -201,7 +201,7 @@
                     'border-warning bg-warning/10' => $cancelType === 'FREE',
                     'border-base-200' => $cancelType !== 'FREE',
                 ]) wire:click="$set('cancelType', 'FREE')">
-                    <x-icon class="mx-auto mb-1 h-6 w-6 text-warning" name="o-sun" />
+                    <x-icon class="mx-auto mb-1 h-6 w-6 text-warning-content" name="o-sun" />
                     <p class="text-sm font-semibold">{{ __('Free practice') }}</p>
                     <p class="text-xs text-base-content/60">{{ __('Room open, no coach') }}</p>
                 </div>

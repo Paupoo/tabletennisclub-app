@@ -197,7 +197,7 @@
                                             </span>
                                         @endif
                                         @if ($card['wants_to_be_captain'])
-                                            <span title="{{ __('Captain') }}"><x-icon name="o-megaphone" class="h-3.5 w-3.5 text-warning" /></span>
+                                            <span title="{{ __('Captain') }}"><x-icon name="o-megaphone" class="h-3.5 w-3.5 text-warning-content" /></span>
                                         @endif
                                         @if ($card['volunteer_help'])
                                             <span title="{{ __('Volunteer') }}"><x-icon name="o-hand-raised" class="h-3.5 w-3.5" /></span>

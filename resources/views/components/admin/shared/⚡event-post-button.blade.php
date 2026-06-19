@@ -106,7 +106,7 @@ new class extends Component
         @class([
             'btn-ghost btn-sm btn-circle',
             'text-success'                  => $eventStatus === 'PUBLISHED',
-            'text-warning'                  => $eventPostId !== null && $eventStatus !== 'PUBLISHED',
+            'text-warning-content'                  => $eventPostId !== null && $eventStatus !== 'PUBLISHED',
             'opacity-30 cursor-not-allowed' => ! $canPublish,
         ])
         icon="o-globe-alt"

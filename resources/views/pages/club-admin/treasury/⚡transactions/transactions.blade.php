@@ -102,7 +102,7 @@
                     <div class="text-2xl font-black mt-1">{{ $this->stats['unreconciled'] }}</div>
                     <div class="text-xs opacity-60 mt-0.5">{{ __('incoming, no match yet') }}</div>
                 </div>
-                <x-icon name="o-clock" class="w-10 h-10 text-warning opacity-40" />
+                <x-icon name="o-clock" class="w-10 h-10 text-warning-content opacity-40" />
             </div>
         </x-card>
     </div>
@@ -262,7 +262,7 @@
             </p>
             @if ($reconciledInSelection > 0)
             <div class="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm">
-                <x-icon name="o-exclamation-triangle" class="w-4 h-4 text-warning shrink-0 mt-0.5" />
+                <x-icon name="o-exclamation-triangle" class="w-4 h-4 text-warning-content shrink-0 mt-0.5" />
                 <span>
                     {{ trans_choice(
                         '{1} :count of the selected transactions is already reconciled with a payment and will be unlinked.|[2,*] :count of the selected transactions are already reconciled with payments and will be unlinked.',

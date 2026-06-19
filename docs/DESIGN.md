@@ -30,6 +30,18 @@ daisyUI theme colors (use these for component styling):
 
 Transparency variants work with `/`: `bg-primary/10`, `text-base-content/60`.
 
+**Text on a tinted background — always use the `-content` variant.** `warning`, `success`, `error` and `info` are tuned as light/vivid *background* swatches (e.g. `--color-warning` is 82% lightness). Used directly as text color (`text-warning`), they're illegible on light backgrounds. Use the matching `-content` token instead, which is tuned for contrast against `base-100`:
+
+```blade
+{{-- Alert pill / tinted badge --}}
+<span class="bg-warning/10 text-warning-content border-warning/20 ...">...</span>
+
+{{-- Wrong: text-warning is a background swatch, not a text color --}}
+<span class="bg-warning/10 text-warning ...">...</span>
+```
+
+Plain `text-X` (without `-content`) is only correct for icons/text placed directly on a *solid* `bg-X` fill (e.g. `bg-warning text-warning-content` is the pairing for a solid badge — the bg uses the swatch, the text uses content).
+
 ---
 
 ## Typography

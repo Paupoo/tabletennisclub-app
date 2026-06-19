@@ -95,7 +95,7 @@
                     <div class="text-2xl font-black mt-1">{{ number_format($this->stats['pending_total'], 2, ',', ' ') }} €</div>
                     <div class="text-xs opacity-60 mt-0.5">{{ $this->stats['pending_count'] }} {{ __('payment(s) awaiting reconciliation') }}</div>
                 </div>
-                <x-icon name="o-clock" class="w-10 h-10 text-warning opacity-40" />
+                <x-icon name="o-clock" class="w-10 h-10 text-warning-content opacity-40" />
             </div>
         </x-card>
 
@@ -404,7 +404,7 @@
                         @elseif($score === 'reference')
                         <span class="shrink-0 text-[10px] font-bold uppercase tracking-wide text-info bg-info/15 px-1.5 py-0.5 rounded">{{ __('Ref. match') }}</span>
                         @elseif($score === 'amount')
-                        <span class="shrink-0 text-[10px] font-bold uppercase tracking-wide text-warning bg-warning/15 px-1.5 py-0.5 rounded">{{ __('Amount match') }}</span>
+                        <span class="shrink-0 text-[10px] font-bold uppercase tracking-wide text-warning-content bg-warning/15 px-1.5 py-0.5 rounded">{{ __('Amount match') }}</span>
                         @endif
                     </div>
                     @if($transaction->structured_reference)
@@ -557,7 +557,7 @@
                         @elseif($score === 'iban')
                         <span class="shrink-0 text-[10px] font-bold uppercase tracking-wide text-info bg-info/15 px-1.5 py-0.5 rounded">{{ __('IBAN match') }}</span>
                         @elseif($score === 'amount')
-                        <span class="shrink-0 text-[10px] font-bold uppercase tracking-wide text-warning bg-warning/15 px-1.5 py-0.5 rounded">{{ __('Amount match') }}</span>
+                        <span class="shrink-0 text-[10px] font-bold uppercase tracking-wide text-warning-content bg-warning/15 px-1.5 py-0.5 rounded">{{ __('Amount match') }}</span>
                         @endif
                     </div>
                     @if($transaction->counterparty_bank_account)

@@ -81,7 +81,7 @@
         @php
             $statCards = [
                 ['label' => __('Total'),     'key' => 'total',     'icon' => 'o-users',       'bg' => 'bg-base-200',    'color' => 'text-base-content/60'],
-                ['label' => __('Pending'),   'key' => 'pending',   'icon' => 'o-clock',       'bg' => 'bg-warning/10',  'color' => 'text-warning'],
+                ['label' => __('Pending'),   'key' => 'pending',   'icon' => 'o-clock',       'bg' => 'bg-warning/10',  'color' => 'text-warning-content'],
                 ['label' => __('Confirmed'), 'key' => 'confirmed', 'icon' => 'o-check-circle','bg' => 'bg-info/10',     'color' => 'text-info'],
                 ['label' => __('Paid'),      'key' => 'paid',      'icon' => 'o-banknotes',   'bg' => 'bg-success/10',  'color' => 'text-success'],
             ];
@@ -107,8 +107,8 @@
     @if ($totalPending > 0)
         <div class="mb-6">
             <div class="mb-3 flex items-center gap-2">
-                <x-icon name="o-clock" class="h-4 w-4 text-warning" />
-                <span class="text-sm font-bold uppercase tracking-widest text-warning">{{ __('Pending Requests') }}</span>
+                <x-icon name="o-clock" class="h-4 w-4 text-warning-content" />
+                <span class="text-sm font-bold uppercase tracking-widest text-warning-content">{{ __('Pending Requests') }}</span>
                 <x-badge value="{{ $totalPending }}" class="badge-warning badge-sm" />
                 <div class="flex-1 border-t border-warning/30"></div>
             </div>
@@ -219,7 +219,7 @@
                             <div>
                                 <span class="text-sm font-bold">{{ number_format($req->amount_due, 2) }} €</span>
                                 @if ($req->payment_status === 'pending')
-                                    <div class="text-xs text-warning opacity-70">{{ __('Awaiting payment') }}</div>
+                                    <div class="text-xs text-warning-content opacity-70">{{ __('Awaiting payment') }}</div>
                                 @elseif ($req->payment_status === 'paid')
                                     <div class="text-xs text-success opacity-70">{{ __('Paid') }}</div>
                                 @endif
@@ -295,7 +295,7 @@
                             @endforeach
                             @foreach ($currentRequest->pending_packs as $pack)
                                 <div class="flex items-center gap-3 rounded-lg border border-warning/20 bg-warning/5 p-2.5 text-sm">
-                                    <x-icon name="o-academic-cap" class="h-3.5 w-3.5 shrink-0 text-warning opacity-60" />
+                                    <x-icon name="o-academic-cap" class="h-3.5 w-3.5 shrink-0 text-warning-content opacity-60" />
                                     <span class="flex-1">{{ $pack->name }}</span>
                                     <x-badge value="{{ __('Awaiting validation') }}" class="badge-warning badge-xs" />
                                     <span class="text-xs font-semibold opacity-50">{{ number_format((float) $pack->price, 2) }} €</span>
@@ -422,7 +422,7 @@
                     </div>
                 </div>
                 <div class="flex gap-2 rounded-lg border border-warning/20 bg-warning/10 p-3 text-xs">
-                    <x-icon name="o-exclamation-triangle" class="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+                    <x-icon name="o-exclamation-triangle" class="mt-0.5 h-4 w-4 shrink-0 text-warning-content" />
                     <span class="opacity-80">{{ __('Always include the structured reference when making your transfer so your payment is automatically matched.') }}</span>
                 </div>
                 <div class="flex items-center gap-3 rounded-xl border border-base-300 bg-base-200/50 p-3 text-sm">
@@ -548,7 +548,7 @@
 
                     <div class="mt-3 flex justify-between border-t border-base-200 pt-3 text-sm">
                         <span class="opacity-50">{{ __('Expected additional payment') }}</span>
-                        <span class="font-bold text-warning">{{ number_format($this->trainingRequestEstimatedDelta, 2) }} €</span>
+                        <span class="font-bold text-warning-content">{{ number_format($this->trainingRequestEstimatedDelta, 2) }} €</span>
                     </div>
                 </div>
             </div>
@@ -721,7 +721,7 @@
                     </div>
                 @else
                     <div class="flex items-center gap-2 rounded-lg border border-warning/20 bg-warning/10 p-3 text-sm">
-                        <x-icon name="o-exclamation-triangle" class="h-4 w-4 shrink-0 text-warning" />
+                        <x-icon name="o-exclamation-triangle" class="h-4 w-4 shrink-0 text-warning-content" />
                         <span>{{ __('No IBAN on file — you will need to handle the refund manually.') }}</span>
                     </div>
                 @endif

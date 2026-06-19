@@ -55,7 +55,7 @@
                         <x-button icon="o-check" class="btn-ghost btn-sm text-success"
                             tooltip-left="{{ __('Confirm presence') }}"
                             wire:click="confirmPresence({{ $row['id'] }})" wire:loading.attr="disabled" />
-                        <x-button icon="o-no-symbol" class="btn-ghost btn-sm text-warning"
+                        <x-button icon="o-no-symbol" class="btn-ghost btn-sm text-warning-content"
                             tooltip-left="{{ __('No show') }}"
                             wire:click="markNoShow({{ $row['id'] }})" />
                         <x-button icon="o-trash" class="btn-ghost btn-sm text-error"
@@ -98,7 +98,7 @@
                     @foreach ($this->waitlist as $entry)
                         <div wire:key="waitlist-{{ $entry['id'] }}"
                             class="flex items-center gap-2 border-b border-base-300/30 py-2 px-2 hover:bg-base-200/40 text-sm">
-                            <span class="w-6 text-center font-mono font-bold text-warning">{{ $entry['position'] }}</span>
+                            <span class="w-6 text-center font-mono font-bold text-warning-content">{{ $entry['position'] }}</span>
                             <span class="flex-1 font-medium truncate">{{ $entry['name'] }}</span>
                             <span class="w-16 text-right font-mono text-xs opacity-60">{{ $entry['ranking'] }}</span>
                             <span class="w-28 text-right text-xs opacity-50">
@@ -151,7 +151,7 @@
     {{-- ── Open registrations modal ──────────────────────────────── --}}
     <x-modal wire:model="showOpenRegistrationsModal" :title="__('Reopen registrations?')" class="backdrop-blur">
         <div class="p-4 bg-warning/10 border border-warning/20 rounded-xl flex items-start gap-3 text-sm">
-            <x-icon name="o-information-circle" class="w-5 h-5 shrink-0 mt-0.5 text-warning" />
+            <x-icon name="o-information-circle" class="w-5 h-5 shrink-0 mt-0.5 text-warning-content" />
             <p>{{ __('Reopening registrations will set the tournament back to "published" status. The tournament cannot be started until registrations are closed again.') }}</p>
         </div>
 

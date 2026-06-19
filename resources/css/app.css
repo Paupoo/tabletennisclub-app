@@ -123,6 +123,7 @@
   --color-base-100: oklch(25% 0 0);
   --color-base-200: oklch(20% 0 0);
   --color-base-content: oklch(95% 0 0); /* Texte clair sur fond sombre */
+  --color-warning-content: oklch(82% 0.189 84.429); /* Texte lisible sur fond sombre (sinon trop proche de base-100) */
   --radius-box: 1rem; /* On garde la même cohérence que le light */
 }
 

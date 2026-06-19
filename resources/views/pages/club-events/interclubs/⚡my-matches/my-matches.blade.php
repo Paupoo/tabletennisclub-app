@@ -157,7 +157,7 @@
                                                 wire:click="markAvailability({{ $match['id'] }}, '{{ \App\Domains\Shared\Enums\InterclubAvailability::MAYBE->value }}')"
                                                 :title="__('Maybe')"
                                                 icon="o-question-mark-circle"
-                                                class="text-warning" />
+                                                class="text-warning-content" />
 
                                             <x-menu-item
                                                 wire:click="markAvailability({{ $match['id'] }}, '{{ \App\Domains\Shared\Enums\InterclubAvailability::UNAVAILABLE->value }}')"

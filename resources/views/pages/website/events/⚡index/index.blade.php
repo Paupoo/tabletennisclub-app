@@ -69,7 +69,7 @@
             $statCards = [
                 ['label' => __('Total'),     'key' => 'total',     'icon' => 'o-calendar-days', 'bg' => 'bg-base-200',   'color' => 'text-base-content/60'],
                 ['label' => __('Published'), 'key' => 'published', 'icon' => 'o-check-circle',  'bg' => 'bg-success/10', 'color' => 'text-success'],
-                ['label' => __('Draft'),     'key' => 'draft',     'icon' => 'o-pencil-square',  'bg' => 'bg-warning/10', 'color' => 'text-warning'],
+                ['label' => __('Draft'),     'key' => 'draft',     'icon' => 'o-pencil-square',  'bg' => 'bg-warning/10', 'color' => 'text-warning-content'],
                 ['label' => __('Archived'),  'key' => 'archived',  'icon' => 'o-archive-box',   'bg' => 'bg-base-200',   'color' => 'text-base-content/30'],
             ];
         @endphp
@@ -176,7 +176,7 @@
                         <div>
                             <span class="font-medium">{{ $event->title }}</span>
                             @if ($event->featured)
-                                <x-icon name="o-star" class="ml-1 inline h-3.5 w-3.5 text-warning" />
+                                <x-icon name="o-star" class="ml-1 inline h-3.5 w-3.5 text-warning-content" />
                             @endif
                         </div>
                     @endscope
@@ -210,7 +210,7 @@
                             @if ($event->featured_until && $event->featured_until->isPast())
                                 <span class="text-xs text-base-content/30 italic">{{ __('Expired') }}</span>
                             @else
-                                <x-icon name="o-star" class="h-4 w-4 text-warning" />
+                                <x-icon name="o-star" class="h-4 w-4 text-warning-content" />
                                 @if ($event->featured_until)
                                     <span class="ml-1 text-xs text-base-content/40">
                                         {{ __('until') }} {{ $event->featured_until->translatedFormat('d M') }}
@@ -261,7 +261,7 @@
             <x-button class="btn-ghost btn-sm" icon="o-check-circle" :label="__('Publish')"
                 wire:click="bulkPublish" spinner="bulkPublish" />
             <span class="text-base-content/20">|</span>
-            <x-button class="btn-ghost btn-sm text-warning" icon="o-archive-box" :label="__('Archive')"
+            <x-button class="btn-ghost btn-sm text-warning-content" icon="o-archive-box" :label="__('Archive')"
                 wire:click="confirmBulkArchive" />
         </x-slot:actions>
     </x-admin.shared.selection-pill>

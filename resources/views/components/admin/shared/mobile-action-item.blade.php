@@ -18,7 +18,7 @@
         'primary' => 'text-primary',
         'info'    => 'text-info',
         'error'   => 'text-error',
-        'warning' => 'text-warning',
+        'warning' => 'text-warning-content',
         'success' => 'text-success',
         default   => 'text-base-content/60',
     };

@@ -59,9 +59,9 @@
                                         class="{{ $isPool ? 'badge-ghost' : 'badge-warning' }} badge-xs uppercase font-bold" />
                                 </div>
                                 <div class="flex flex-col">
-                                    <span @class(['font-bold text-sm truncate', 'text-warning line-through' => $p1Busy])>{{ $side1Name }}</span>
+                                    <span @class(['font-bold text-sm truncate', 'text-warning-content line-through' => $p1Busy])>{{ $side1Name }}</span>
                                     <span class="text-[10px] opacity-30 italic font-black my-0.5">VS</span>
-                                    <span @class(['font-bold text-sm truncate', 'text-warning line-through' => $p2Busy])>{{ $side2Name }}</span>
+                                    <span @class(['font-bold text-sm truncate', 'text-warning-content line-through' => $p2Busy])>{{ $side2Name }}</span>
                                 </div>
                                 @if ($refereeName)
                                     <div class="mt-1.5 flex items-center gap-1 text-xs opacity-50">
@@ -73,7 +73,7 @@
 
                             <div class="ml-4 shrink-0">
                                 @if ($hasConflict)
-                                    <x-icon name="o-exclamation-triangle" class="w-5 h-5 text-warning" />
+                                    <x-icon name="o-exclamation-triangle" class="w-5 h-5 text-warning-content" />
                                 @else
                                     <x-button icon="o-play"
                                         class="btn-circle {{ $isFirst ? 'btn-primary' : 'btn-ghost' }} btn-sm"

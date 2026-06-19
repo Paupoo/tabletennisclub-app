@@ -258,7 +258,7 @@
                     <x-select :options="$trainerOptions" :label="__('Coach')" wire:model="formTrainerId"
                         :placeholder="__('No coach')" />
                     @if ($formType && $formType !== \App\Domains\Shared\Enums\TrainingType::FREE->value && ! $formTrainerId)
-                        <p class="mt-1 text-xs text-warning">
+                        <p class="mt-1 text-xs text-warning-content">
                             <x-icon class="inline h-3 w-3" name="o-exclamation-triangle" />
                             {{ __('A coach is required for this training type.') }}
                         </p>
@@ -482,7 +482,7 @@
                     'border-warning bg-warning/10' => $cancelType === 'FREE',
                     'border-base-200' => $cancelType !== 'FREE',
                 ]) wire:click="$set('cancelType', 'FREE')">
-                    <x-icon class="mx-auto mb-1 h-6 w-6 text-warning" name="o-sun" />
+                    <x-icon class="mx-auto mb-1 h-6 w-6 text-warning-content" name="o-sun" />
                     <p class="text-sm font-semibold">{{ __('Free practice') }}</p>
                     <p class="text-xs text-base-content/60">{{ __('Room open, no coach') }}</p>
                 </div>

@@ -157,7 +157,7 @@
                                         <span class="text-[10px] font-black uppercase">{{ __('Complete') }}</span>
                                     </div>
                                 @elseif($team['status'] === 'pending')
-                                    <div class="flex items-center gap-1 text-warning">
+                                    <div class="flex items-center gap-1 text-warning-content">
                                         <x-icon name="o-clock" class="h-4 w-4" />
                                         <span class="text-[10px] font-black uppercase">{{ __('Incomplete') }}</span>
                                     </div>

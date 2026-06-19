@@ -45,7 +45,7 @@
             {{-- Paiements en attente --}}
             @if ($this->pendingPayments->isNotEmpty())
                 <x-card class="border border-warning/30 bg-warning/5" shadow>
-                    <div class="mb-3 text-[10px] font-bold uppercase tracking-wider text-warning">
+                    <div class="mb-3 text-[10px] font-bold uppercase tracking-wider text-warning-content">
                         {{ __('Payments due') }}
                     </div>
                     <div class="space-y-3">
@@ -395,7 +395,7 @@
                     <div x-show="$wire.rsvpAttendance === 'confirmed'"
                         class="rounded-xl border border-warning/30 bg-warning/5 p-3 space-y-2">
                         <div class="flex items-center gap-2 text-sm font-semibold">
-                            <x-icon name="o-cake" class="h-4 w-4 text-warning" />
+                            <x-icon name="o-cake" class="h-4 w-4 text-warning-content" />
                             {{ __('Meal') }}
                             @if ($rsvpMeeting->meal_price)
                                 <span class="text-base-content/60">— {{ number_format($rsvpMeeting->meal_price, 2) }} €</span>

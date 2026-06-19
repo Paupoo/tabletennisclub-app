@@ -201,7 +201,7 @@
                             class="{{ $reached ? 'badge-success badge-soft' : 'badge-warning badge-soft' }}" />
                     </div>
                     <div class="flex items-baseline gap-2">
-                        <span class="text-3xl font-bold {{ $reached ? 'text-success' : 'text-warning' }}">
+                        <span class="text-3xl font-bold {{ $reached ? 'text-success' : 'text-warning-content' }}">
                             {{ $confirmed }}
                         </span>
                         <span class="text-base-content/50">/ {{ $quorum }}</span>
@@ -307,7 +307,7 @@
                         <span class="flex items-center gap-1 text-success">
                             <x-icon name="o-check-circle" class="h-4 w-4" /> {{ $available }}
                         </span>
-                        <span class="flex items-center gap-1 text-warning">
+                        <span class="flex items-center gap-1 text-warning-content">
                             <x-icon name="o-question-mark-circle" class="h-4 w-4" /> {{ $maybe }}
                         </span>
                         <span class="flex items-center gap-1 text-error">
@@ -366,7 +366,7 @@
     @if ($meeting->has_meal)
         <div class="mb-3 flex flex-wrap items-center gap-x-6 gap-y-1 rounded-xl border border-warning/30 bg-warning/5 px-4 py-3 text-sm">
             <span class="flex items-center gap-2 font-semibold">
-                <x-icon name="o-cake" class="h-4 w-4 text-warning" />
+                <x-icon name="o-cake" class="h-4 w-4 text-warning-content" />
                 {{ __('Catering') }}
             </span>
             <span><span class="font-semibold">{{ $meeting->mealReservedCount() }}</span> {{ __('reserved') }}</span>

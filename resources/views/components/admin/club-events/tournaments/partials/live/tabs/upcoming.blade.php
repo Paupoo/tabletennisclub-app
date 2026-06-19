@@ -58,7 +58,7 @@
                                 <x-badge :value="$label"
                                     class="{{ $isPool ? 'badge-ghost' : 'badge-warning' }} badge-xs uppercase font-bold" />
                                 @if ($hasConflict)
-                                    <span class="flex items-center gap-1 text-[10px] font-bold text-warning">
+                                    <span class="flex items-center gap-1 text-[10px] font-bold text-warning-content">
                                         <x-icon name="o-exclamation-triangle" class="w-3 h-3 shrink-0" />
                                         {{ __('Player busy') }}
                                     </span>

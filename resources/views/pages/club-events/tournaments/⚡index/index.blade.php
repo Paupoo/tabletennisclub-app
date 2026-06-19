@@ -219,7 +219,7 @@
                             {{ $active }}@if ($max > 0) / {{ $max }}@endif
                         </span>
                         @if ($waiting > 0)
-                            <span class="ml-1 text-xs text-warning">(+{{ $waiting }})</span>
+                            <span class="ml-1 text-xs text-warning-content">(+{{ $waiting }})</span>
                         @endif
                     @endscope
 
@@ -291,7 +291,7 @@
             :selecting-all-results="$selectingAllResults"
             :select-all="$selectAll">
             <x-slot:actions>
-                <x-button class="btn-ghost btn-sm text-warning" icon="o-x-circle" :label="__('Cancel')"
+                <x-button class="btn-ghost btn-sm text-warning-content" icon="o-x-circle" :label="__('Cancel')"
                     wire:click="confirmBulkCancel" />
             </x-slot:actions>
         </x-admin.shared.selection-pill>

@@ -55,7 +55,7 @@
                             @if($currentEntry && $currentEntry['status'] !== 'cancelled')
                                 @if($currentEntry['status'] === 'pending')
                                     <div class="flex items-start gap-3 p-4 rounded-xl border border-warning/30 bg-warning/10">
-                                        <x-icon name="o-clock" class="w-5 h-5 text-warning shrink-0 mt-0.5" />
+                                        <x-icon name="o-clock" class="w-5 h-5 text-warning-content shrink-0 mt-0.5" />
                                         <div class="flex-1">
                                             <div class="font-bold text-sm">{{ __('Registration submitted — awaiting club validation') }}</div>
                                             <div class="text-xs opacity-70 mt-0.5">{{ __('You will be notified once it is validated.') }}</div>
@@ -141,10 +141,10 @@
                                                 <div class="px-4 pt-3 pb-1 text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Additional payments') }}</div>
                                                 @foreach($currentEntry['pending_payments'] as $payment)
                                                     <div class="flex items-center gap-3 px-4 py-3">
-                                                        <x-icon name="o-credit-card" class="w-4 h-4 text-warning opacity-60 shrink-0" />
+                                                        <x-icon name="o-credit-card" class="w-4 h-4 text-warning-content opacity-60 shrink-0" />
                                                         <div class="flex-1 min-w-0">
                                                             <div class="font-mono text-xs opacity-60">{{ $payment['reference'] }}</div>
-                                                            <div class="font-black text-base text-warning">{{ number_format($payment['amount_due'], 2) }} €</div>
+                                                            <div class="font-black text-base text-warning-content">{{ number_format($payment['amount_due'], 2) }} €</div>
                                                         </div>
                                                         <x-button
                                                             :label="__('Pay')"
@@ -179,7 +179,7 @@
 
                                     @if($canReAffiliate)
                                         <div class="flex items-center gap-2 p-3 rounded-lg border border-warning/30 bg-warning/10 text-sm mb-4">
-                                            <x-icon name="o-arrow-path" class="w-4 h-4 text-warning shrink-0" />
+                                            <x-icon name="o-arrow-path" class="w-4 h-4 text-warning-content shrink-0" />
                                             <span class="opacity-70">{{ __('Your previous registration was rejected. You can submit a new one below.') }}</span>
                                         </div>
                                     @endif
@@ -487,7 +487,7 @@
                                                 {{ __('View') }}
                                             </a>
                                         @else
-                                            <x-icon name="o-exclamation-triangle" class="w-6 h-6 text-warning shrink-0" />
+                                            <x-icon name="o-exclamation-triangle" class="w-6 h-6 text-warning-content shrink-0" />
                                             <div class="flex-1 min-w-0">
                                                 <div class="text-sm font-semibold">{{ __('Medical Certificate') }}</div>
                                                 <div class="text-xs opacity-60">{{ __('Missing — required for registration') }}</div>
@@ -524,7 +524,7 @@
                                                     {{ __('View') }}
                                                 </a>
                                             @else
-                                                <x-icon name="o-exclamation-triangle" class="w-6 h-6 text-warning shrink-0" />
+                                                <x-icon name="o-exclamation-triangle" class="w-6 h-6 text-warning-content shrink-0" />
                                                 <div class="flex-1 min-w-0">
                                                     <div class="text-sm font-semibold">{{ __('Parental Consent') }}</div>
                                                     <div class="text-xs opacity-60">{{ __('Required for members under 18') }}</div>
@@ -630,7 +630,7 @@
             </div>
 
             <div class="flex gap-2 p-3 rounded-lg bg-warning/10 border border-warning/20 text-xs">
-                <x-icon name="o-exclamation-triangle" class="w-4 h-4 text-warning shrink-0 mt-0.5" />
+                <x-icon name="o-exclamation-triangle" class="w-4 h-4 text-warning-content shrink-0 mt-0.5" />
                 <span class="opacity-80">{{ __('Always include the structured reference when making your transfer so your payment is automatically matched.') }}</span>
             </div>
         </div>

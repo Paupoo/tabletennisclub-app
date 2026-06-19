@@ -32,7 +32,7 @@
 <x-modal wire:model="showRequireCloseRegistrationsModal" :title="__('Registrations are still open')" class="backdrop-blur">
     <div class="space-y-4">
         <div class="flex items-start gap-3 p-4 bg-warning/10 border border-warning/20 rounded-xl text-sm">
-            <x-icon name="o-exclamation-triangle" class="w-5 h-5 shrink-0 mt-0.5 text-warning" />
+            <x-icon name="o-exclamation-triangle" class="w-5 h-5 shrink-0 mt-0.5 text-warning-content" />
             <div class="space-y-1">
                 <p class="font-semibold">{{ __('You must close registrations before launching.') }}</p>
                 <p class="text-base-content/70">{{ __('Closing registrations will remove any players still on the waiting list. This cannot be undone.') }}</p>

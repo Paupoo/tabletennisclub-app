@@ -18,7 +18,7 @@
         <div class="flex flex-wrap gap-2 items-center">
             @if($members_unpaid > 0)
             <a href="#" class="inline-flex items-center gap-1.5 bg-warning/15 hover:bg-warning/25 text-warning-content border border-warning/30 rounded-full px-3 py-1 text-xs font-medium transition-colors">
-                <x-icon name="o-exclamation-triangle" class="w-3.5 h-3.5 text-warning" />
+                <x-icon name="o-exclamation-triangle" class="w-3.5 h-3.5 text-warning-content" />
                 {{ $members_unpaid }} cotisations impayées
             </a>
             @endif

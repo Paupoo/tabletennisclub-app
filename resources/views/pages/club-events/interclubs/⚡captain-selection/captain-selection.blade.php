@@ -208,7 +208,7 @@
                     <span @class([
                         'font-black',
                         'text-success' => count($selectedPlayerIds) == $maxPlayers,
-                        'text-warning' => count($selectedPlayerIds) > 0 && count($selectedPlayerIds) < $maxPlayers,
+                        'text-warning-content' => count($selectedPlayerIds) > 0 && count($selectedPlayerIds) < $maxPlayers,
                         'text-base-content/40' => count($selectedPlayerIds) === 0,
                     ])>{{ count($selectedPlayerIds) }} / {{ $maxPlayers }}</span>
                 </div>
@@ -386,7 +386,7 @@
                 @endif
 
                 @if (! $modalIsComplete)
-                    <div class="rounded-xl border border-warning/30 bg-warning/5 p-3 text-xs text-warning">
+                    <div class="rounded-xl border border-warning/30 bg-warning/5 p-3 text-xs text-warning-content">
                         <div class="flex items-center gap-1.5 font-semibold">
                             <x-icon name="o-exclamation-triangle" class="h-3.5 w-3.5" />
                             {{ __('Selection incomplete: only the removed players will be notified for now.') }}

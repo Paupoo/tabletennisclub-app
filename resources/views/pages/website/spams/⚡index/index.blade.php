@@ -79,10 +79,10 @@
         <x-card class="shadow-sm">
             <div class="flex items-center gap-3">
                 <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-warning/10">
-                    <x-icon name="o-calendar-days" class="h-5 w-5 text-warning" />
+                    <x-icon name="o-calendar-days" class="h-5 w-5 text-warning-content" />
                 </div>
                 <div>
-                    <p class="text-2xl font-bold text-warning">{{ $stats['today'] }}</p>
+                    <p class="text-2xl font-bold text-warning-content">{{ $stats['today'] }}</p>
                     <p class="text-xs text-base-content/40">{{ __('Today') }}</p>
                 </div>
             </div>

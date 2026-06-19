@@ -5,7 +5,7 @@
         'pending'   => ['bg' => 'bg-primary/10',  'text' => 'text-primary',          'badge' => 'badge-primary',  'label' => __('Live')],
         'published' => ['bg' => 'bg-success/10',  'text' => 'text-success',          'badge' => 'badge-success',  'label' => __('Published')],
         'setup'     => ['bg' => 'bg-info/10',     'text' => 'text-info',             'badge' => 'badge-info',     'label' => __('Setup')],
-        'locked'    => ['bg' => 'bg-warning/10',  'text' => 'text-warning',          'badge' => 'badge-warning',  'label' => __('Locked')],
+        'locked'    => ['bg' => 'bg-warning/10',  'text' => 'text-warning-content',          'badge' => 'badge-warning',  'label' => __('Locked')],
         'closed'    => ['bg' => 'bg-base-200',    'text' => 'text-base-content/50',  'badge' => 'badge-ghost',    'label' => __('Closed')],
         'cancelled' => ['bg' => 'bg-error/10',    'text' => 'text-error',            'badge' => 'badge-error',    'label' => __('Cancelled')],
         'draft'     => ['bg' => 'bg-base-300',    'text' => 'text-base-content/40',  'badge' => 'badge-outline',  'label' => __('Draft')],
@@ -80,7 +80,7 @@
                     @endif
                 </span>
                 @if ($waitingCount > 0)
-                    <span class="text-[11px] font-medium text-warning">(+{{ $waitingCount }} {{ __('waiting') }})</span>
+                    <span class="text-[11px] font-medium text-warning-content">(+{{ $waitingCount }} {{ __('waiting') }})</span>
                 @endif
             </div>
 

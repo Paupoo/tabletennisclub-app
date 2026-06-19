@@ -7,7 +7,7 @@
 
             <div
                 class="w-20 h-20 mx-auto flex items-center justify-center rounded-full bg-warning/10 mb-6">
-                <x-icon name="o-sparkles" class="w-10 h-10 text-warning" />
+                <x-icon name="o-sparkles" class="w-10 h-10 text-warning-content" />
             </div>
 
             <h2 class="text-3xl font-bold">
@@ -34,7 +34,7 @@
                         3 {{ __('Abs.') }}
                     </span>
                     •
-                    <span class="text-warning">
+                    <span class="text-warning-content">
                         5 {{ __('Last min. reg.') }}
                     </span>
                 </x-slot:description>

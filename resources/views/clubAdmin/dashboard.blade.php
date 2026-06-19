@@ -19,9 +19,9 @@
             @php
                 $pillClass = match($alert['type']) {
                     'error'   => 'bg-error/10 text-error border-error/20 hover:bg-error/20',
-                    'warning' => 'bg-warning/10 text-warning border-warning/20 hover:bg-warning/20',
+                    'warning' => 'bg-warning/10 text-warning-content border-warning/20 hover:bg-warning/20',
                     'info'    => 'bg-info/10 text-info border-info/20 hover:bg-info/20',
-                    default   => 'bg-warning/10 text-warning border-warning/20 hover:bg-warning/20',
+                    default   => 'bg-warning/10 text-warning-content border-warning/20 hover:bg-warning/20',
                 };
             @endphp
             <a href="{{ $alert['route'] }}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border {{ $pillClass }} transition-colors">

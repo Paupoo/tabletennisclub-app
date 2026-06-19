@@ -27,8 +27,8 @@
             'bg' => 'bg-warning/10',
             'badge' => 'badge-warning',
             'border' => 'border-l-warning',
-            'header_text' => 'text-warning',
-            'header_sub' => 'text-warning/80',
+            'header_text' => 'text-warning-content',
+            'header_sub' => 'text-warning-content/80',
         ],
     ];
 

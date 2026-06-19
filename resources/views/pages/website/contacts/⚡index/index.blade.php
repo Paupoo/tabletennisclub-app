@@ -68,7 +68,7 @@
         @php
             $statCards = [
                 ['label' => __('New'),       'key' => 'totalNew',       'bg' => 'bg-info/10',    'color' => 'text-info'],
-                ['label' => __('Pending'),   'key' => 'totalPending',   'bg' => 'bg-warning/10', 'color' => 'text-warning'],
+                ['label' => __('Pending'),   'key' => 'totalPending',   'bg' => 'bg-warning/10', 'color' => 'text-warning-content'],
                 ['label' => __('Processed'), 'key' => 'totalProcessed', 'bg' => 'bg-success/10', 'color' => 'text-success'],
                 ['label' => __('Rejected'),  'key' => 'totalRejected',  'bg' => 'bg-error/10',   'color' => 'text-error'],
             ];

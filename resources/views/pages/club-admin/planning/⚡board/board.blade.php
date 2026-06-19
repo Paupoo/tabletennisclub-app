@@ -89,28 +89,28 @@
             :subtitle="$season?->name">
             <x-slot:actions>
                 <div class="flex w-full flex-wrap items-center justify-end gap-2">
+                    <x-button class="btn-ghost btn-sm mr-auto" icon="o-arrow-left"
+                        :label="__('Back to plans')" wire:click="closePlan" />
                     @if ($overCapacityCount > 0)
                         <x-badge class="badge-error gap-1"
                             :value="$overCapacityCount . ' ' . __('over capacity')" />
                     @endif
+                    <x-dropdown :label="__('More actions')" icon="o-ellipsis-vertical" right class="btn-ghost btn-sm">
+                        @if ($canManage)
+                            <x-menu-item icon="o-sparkles" :title="__('Suggest a layout')"
+                                wire:click="optimize" spinner="optimize" />
+                        @endif
+                        <x-menu-item icon="o-arrow-down-tray" :title="__('Export CSV')" wire:click="export('csv')" />
+                        <x-menu-item icon="o-arrow-down-tray" :title="__('Export ODS')" wire:click="export('ods')" />
+                        <x-menu-item icon="o-arrow-down-tray" :title="__('Export XLSX')" wire:click="export('xlsx')" />
+                        @if ($canManage)
+                            <x-menu-item icon="o-arrow-up-tray" :title="__('Import CSV')" wire:click="openImport" />
+                        @endif
+                    </x-dropdown>
                     @if ($canManage)
-                        <x-button class="btn-secondary btn-sm" icon="o-sparkles"
-                            :label="__('Suggest a layout')" wire:click="optimize"
-                            spinner="optimize" />
                         <x-button class="btn-primary btn-sm" icon="o-plus"
                             :label="__('Add a group')" wire:click="openAddPack" />
                     @endif
-                    <x-dropdown :label="__('Export')" icon="o-arrow-down-tray" class="btn-ghost btn-sm">
-                        <x-menu-item :title="__('CSV')" wire:click="export('csv')" />
-                        <x-menu-item :title="__('ODS')" wire:click="export('ods')" />
-                        <x-menu-item :title="__('XLSX')" wire:click="export('xlsx')" />
-                    </x-dropdown>
-                    @if ($canManage)
-                        <x-button class="btn-ghost btn-sm" icon="o-arrow-up-tray"
-                            :label="__('Import CSV')" wire:click="openImport" />
-                    @endif
-                    <x-button class="btn-ghost btn-sm" icon="o-arrow-left"
-                        :label="__('Back to plans')" wire:click="closePlan" />
                 </div>
             </x-slot:actions>
         </x-header>

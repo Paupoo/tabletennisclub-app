@@ -18,11 +18,29 @@
         <x-header separator :subtitle="$viewSeason?->name ?? __('Select a season')"
             :title="__('Trainings')">
             <x-slot:actions>
-                <x-select class="select-sm w-44" :options="$seasonOptions" wire:model.live="viewSeasonId"
-                    :placeholder="__('Season…')" />
+                <x-admin.shared.mobile-header-actions :filter-count="count($filterChips)" :show-search="false" :show-more="false" />
+                <div class="hidden items-center gap-2 lg:flex">
+                    <x-admin.shared.filters-button :count="count($filterChips)" />
+                </div>
                 <x-button class="btn-primary" icon="o-plus" :label="__('New pack')" wire:click="openCreate" />
             </x-slot:actions>
         </x-header>
+
+        {{-- ── Active filter chips ──────────────────────────────────────────── --}}
+        <x-admin.shared.filter-chips :chips="$filterChips" />
+
+        {{-- ── Filter drawer ──────────────────────────────────────────────────── --}}
+        <x-admin.shared.filter-drawer :title="__('Filters')">
+            <x-slot:filters>
+                <div>
+                    <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                        {{ __('Season') }}
+                    </p>
+                    <x-select :options="$seasonOptions" wire:model.live="viewSeasonId"
+                        :placeholder="__('Season…')" class="w-full" />
+                </div>
+            </x-slot:filters>
+        </x-admin.shared.filter-drawer>
     @endif
 
     {{-- ── Season guard ────────────────────────────────────────────────────── --}}

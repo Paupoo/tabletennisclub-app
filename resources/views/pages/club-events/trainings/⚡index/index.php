@@ -14,6 +14,7 @@ use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Trainings\Notifications\TrainingSessionCancelledNotification;
 use App\Domains\Trainings\Services\TrainingDateGenerator;
 use App\Livewire\Concerns\HasBreadcrumbs;
+use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
@@ -24,6 +25,7 @@ use Mary\Traits\Toast;
 new class extends Component
 {
     use HasBreadcrumbs;
+    use HasFilterDrawer;
     use Toast;
 
     // ── Cancellation modal ────────────────────────────────────────────────────
@@ -171,9 +173,47 @@ new class extends Component
             ->toArray();
     }
 
+    public function clearFilters(): void
+    {
+        $this->viewSeasonId = Season::where('is_active', true)->value('id') ?? 0;
+    }
+
+    /** @return array<int, array{key: string, label: string}> */
+    #[Computed]
+    public function filterChips(): array
+    {
+        return $this->getFilterChips();
+    }
+
+    /** @return array<int, array{key: string, label: string}> */
+    public function getFilterChips(): array
+    {
+        $chips = [];
+
+        $activeSeasonId = Season::where('is_active', true)->value('id') ?? 0;
+
+        if ($this->viewSeasonId !== $activeSeasonId) {
+            $seasonName = Season::find($this->viewSeasonId)?->name ?? __('All seasons');
+            $chips[] = ['key' => 'viewSeasonId', 'label' => __('Season') . ': ' . $seasonName];
+        }
+
+        return $chips;
+    }
+
     public function mount(): void
     {
         $this->viewSeasonId = Season::where('is_active', true)->value('id') ?? 0;
+    }
+
+    public function removeFilter(string $key): void
+    {
+        if ($key === 'viewSeasonId') {
+            $this->viewSeasonId = Season::where('is_active', true)->value('id') ?? 0;
+
+            return;
+        }
+
+        $this->reset([$key]);
     }
 
     public function nextStep(): void
@@ -536,6 +576,7 @@ new class extends Component
     {
         return [
             'activeSeason' => $this->activeSeason,
+            'filterChips' => $this->filterChips,
             'viewSeason' => $this->viewSeason,
             'packs' => $this->packs,
             'selectedPack' => $this->selectedPack,

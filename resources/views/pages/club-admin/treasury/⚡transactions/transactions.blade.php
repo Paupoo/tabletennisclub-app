@@ -4,13 +4,11 @@
 
 <div x-data="{ mobileSearchOpen: false, mobileActionsOpen: false }">
     <x-header :title="__('Bank Transactions')" :subtitle="__('Imported bank statements')" separator progress-indicator>
-        <x-slot:middle class="!justify-end">
-            <div class="hidden lg:block">
-                <x-input
+        <x-slot:middle>
+            <div class="hidden w-full lg:block">
+                <x-input class="w-full" clearable icon="o-magnifying-glass"
                     :placeholder="__('Search counterparty, reference...')"
-                    wire:model.live.debounce.300ms="search"
-                    icon="o-magnifying-glass"
-                    class="border-none bg-base-200 w-64" />
+                    wire:model.live.debounce.300ms="search" />
             </div>
         </x-slot:middle>
         <x-slot:actions>

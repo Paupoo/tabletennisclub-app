@@ -1,31 +1,56 @@
-<div>
+<div x-data="{ mobileSearchOpen: false }">
     <x-slot:breadcrumbs>
         <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
     </x-slot:breadcrumbs>
     <x-header progress-indicator separator :title="__('Teams')">
-        <x-slot:middle class="justify-end!">
-            <x-select
-                :options="$seasons"
-                option-label="name"
-                option-value="id"
-                wire:model.live="selectedSeasonId"
-                :placeholder="__('Select a season')" />
+        <x-slot:middle>
+            <div class="hidden w-full lg:block">
+                <x-input class="w-full" clearable icon="o-magnifying-glass"
+                    :placeholder="__('Search...')"
+                    wire:model.live.debounce.300ms="search" />
+            </div>
         </x-slot:middle>
         <x-slot:actions>
-            <x-input class="max-w-xs border-none" clearable icon="o-magnifying-glass" placeholder="Rechercher..."
-                wire:model.live.debounce.300ms="search" />
-            @if ($isAdminOrCommittee)
-                <x-button class="btn-ghost" link="{{ route('admin.interclubs.teams.builder') }}" icon="o-squares-plus"
-                    :label="__('Build teams')" />
-                <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('New team')"
-                    wire:click="$set('createModal', true)" />
-                @if ($teamsCount > 0)
-                    <x-button class="btn-ghost text-error" icon="o-trash"
-                        label="Tout supprimer" wire:click="$set('deleteAllModal', true)" />
+            {{-- Mobile: 🔍 · filter --}}
+            <x-admin.shared.mobile-header-actions :filter-count="count($filterChips)" :show-more="false" />
+            {{-- Desktop: full buttons --}}
+            <div class="hidden items-center gap-2 lg:flex">
+                <x-admin.shared.filters-button :count="count($filterChips)" />
+                @if ($isAdminOrCommittee)
+                    <x-button class="btn-ghost" link="{{ route('admin.interclubs.teams.builder') }}" icon="o-squares-plus"
+                        :label="__('Build teams')" />
+                    <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('New team')"
+                        wire:click="$set('createModal', true)" />
+                    @if ($teamsCount > 0)
+                        <x-button class="btn-ghost text-error" icon="o-trash"
+                            label="Tout supprimer" wire:click="$set('deleteAllModal', true)" />
+                    @endif
                 @endif
-            @endif
+            </div>
         </x-slot:actions>
     </x-header>
+
+    {{-- Mobile search bar --}}
+    <div class="border-b border-base-200 lg:hidden" x-show="mobileSearchOpen"
+        x-transition:enter="transition ease-out duration-150"
+        x-transition:enter-start="opacity-0 -translate-y-1"
+        x-transition:enter-end="opacity-100 translate-y-0"
+        style="display:none">
+        <div class="flex items-center gap-2 px-4 py-2.5">
+            <div class="flex flex-1 items-center gap-2 rounded-xl bg-base-200 px-3 py-2">
+                <x-icon name="o-magnifying-glass" class="h-4 w-4 shrink-0 text-base-content/40" />
+                <input wire:model.live.debounce.300ms="search"
+                    class="flex-1 bg-transparent text-sm outline-none placeholder:text-base-content/40"
+                    placeholder="{{ __('Search...') }}" />
+            </div>
+            <button @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm">
+                <x-icon name="o-x-mark" class="h-5 w-5" />
+            </button>
+        </div>
+    </div>
+
+    {{-- ── Active filter chips ──────────────────────────────────────────────── --}}
+    <x-admin.shared.filter-chips :chips="$filterChips" />
 
     @if ($teams->isEmpty())
         <x-card class="border-none">
@@ -94,4 +119,22 @@
             {{ __('for the current season? This action is irreversible and will also remove all players from their teams.') }}
         </p>
     </x-confirm-modal>
+
+    {{-- ── Filter drawer ────────────────────────────────────────────────────── --}}
+    <x-admin.shared.filter-drawer :title="__('Filters')">
+        <x-slot:filters>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    {{ __('Season') }}
+                </p>
+                <x-select
+                    :options="$seasons"
+                    option-label="name"
+                    option-value="id"
+                    wire:model.live="selectedSeasonId"
+                    :placeholder="__('Select a season')"
+                    class="w-full" />
+            </div>
+        </x-slot:filters>
+    </x-admin.shared.filter-drawer>
 </div>

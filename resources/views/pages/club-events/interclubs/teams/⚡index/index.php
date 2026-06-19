@@ -13,16 +13,18 @@ use App\Domains\Shared\Enums\LeagueCategory;
 use App\Domains\Shared\Enums\LeagueLevel;
 use App\Domains\Shared\Enums\TeamName;
 use App\Livewire\Concerns\HasBreadcrumbs;
+use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use HasBreadcrumbs, Toast;
+    use HasBreadcrumbs, HasFilterDrawer, Toast;
 
     public bool $createModal = false;
 
@@ -108,6 +110,42 @@ new class extends Component
         $this->deleteModal = false;
 
         $this->success('Équipe supprimée.');
+    }
+
+    public function clearFilters(): void
+    {
+        $this->selectedSeasonId = Season::current()?->id;
+    }
+
+    /** @return array<int, array{key: string, label: string}> */
+    #[Computed]
+    public function filterChips(): array
+    {
+        return $this->getFilterChips();
+    }
+
+    /** @return array<int, array{key: string, label: string}> */
+    public function getFilterChips(): array
+    {
+        $chips = [];
+
+        if ($this->selectedSeasonId !== Season::current()?->id) {
+            $seasonName = Season::find($this->selectedSeasonId)?->name ?? __('All seasons');
+            $chips[] = ['key' => 'selectedSeasonId', 'label' => __('Season') . ': ' . $seasonName];
+        }
+
+        return $chips;
+    }
+
+    public function removeFilter(string $key): void
+    {
+        if ($key === 'selectedSeasonId') {
+            $this->selectedSeasonId = Season::current()?->id;
+
+            return;
+        }
+
+        $this->reset([$key]);
     }
 
     public function deleteAll(): void
@@ -222,6 +260,7 @@ new class extends Component
                 ->add('Interclubs', '#')
                 ->current(__('Our teams'))
                 ->toArray(),
+            'filterChips' => $this->filterChips,
             'teams' => $teams,
             'season' => $selectedSeason,
             'seasons' => Season::orderBy('start_at')->get(),

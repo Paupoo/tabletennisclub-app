@@ -17,7 +17,7 @@
             {{-- Desktop: full buttons --}}
             <div class="hidden items-center gap-2 lg:flex">
                 <x-admin.shared.filters-button :count="count($filterChips)" />
-                <x-button class="btn-primary" icon="o-plus" :label="__('New article')"
+                <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('New article')"
                     link="{{ route('admin.website.articles.create') }}" />
             </div>
         </x-slot:actions>

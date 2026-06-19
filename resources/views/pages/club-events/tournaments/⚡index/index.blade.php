@@ -18,7 +18,7 @@
             <div class="hidden items-center gap-2 lg:flex">
                 <x-admin.shared.filters-button :count="count($filterChips)" />
                 @if ($this->canManage)
-                    <x-button class="btn-primary" icon="o-plus" :label="__('Create')"
+                    <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('Create')"
                         link="{{ route('admin.tournaments.wizard') }}" />
                 @endif
             </div>

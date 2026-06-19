@@ -7,7 +7,7 @@
     <x-header :title="__('Rooms')" separator progress-indicator>
         <x-slot:actions>
             @can('create', \App\Domains\ClubAdmin\Club\Models\Room::class)
-                <x-button :label="__('Create')" icon="o-plus" class="btn-primary" link="{{ route('admin.rooms.create') }}" />
+                <x-button :label="__('Create')" icon="o-plus" class="btn-primary btn-sm" link="{{ route('admin.rooms.create') }}" />
             @endcan
         </x-slot:actions>
     </x-header>

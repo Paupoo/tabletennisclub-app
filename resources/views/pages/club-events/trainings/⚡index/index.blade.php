@@ -22,7 +22,7 @@
                 <div class="hidden items-center gap-2 lg:flex">
                     <x-admin.shared.filters-button :count="count($filterChips)" />
                 </div>
-                <x-button class="btn-primary" icon="o-plus" :label="__('New pack')" wire:click="openCreate" />
+                <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('New pack')" wire:click="openCreate" />
             </x-slot:actions>
         </x-header>
 

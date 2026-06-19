@@ -18,7 +18,7 @@
             <div class="hidden items-center gap-2 lg:flex">
                 <x-admin.shared.filters-button :count="count($filterChips)" />
                 @if ($this->canManage)
-                    <x-button class="btn-primary" icon="o-plus" :label="__('New meeting')"
+                    <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('New meeting')"
                         link="{{ route('admin.meetings.create') }}" />
                 @endif
             </div>

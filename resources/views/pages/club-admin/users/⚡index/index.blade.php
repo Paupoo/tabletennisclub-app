@@ -23,7 +23,7 @@
                 @endif
                 <x-button class="btn-ghost" icon="o-envelope" :label="__('Quick invite')"
                     wire:click="$set('quickInviteDrawer', true)" />
-                <x-button class="btn-primary" icon="o-plus" :label="__('Create')"
+                <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('Create')"
                     link="{{ route('admin.users.create') }}" />
             </div>
         </x-slot:actions>

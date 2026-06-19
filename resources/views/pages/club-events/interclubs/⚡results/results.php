@@ -11,18 +11,20 @@ use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\InterclubResultEnum;
 use App\Domains\Shared\Enums\LeagueCategory;
 use App\Livewire\Concerns\HasBreadcrumbs;
+use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use HasBreadcrumbs, Toast;
+    use HasBreadcrumbs, HasFilterDrawer, Toast;
 
     // Modal state
     public bool $deleteModal = false;
@@ -58,10 +60,46 @@ new class extends Component
 
     public bool $teamForfeitModal = false;
 
+    public function clearFilters(): void
+    {
+        $this->seasonId = Season::current()?->id;
+    }
+
     public function confirmDelete(int $matchResultId): void
     {
         $this->deletingInterclubResultId = $matchResultId;
         $this->deleteModal = true;
+    }
+
+    /** @return array<int, array{key: string, label: string}> */
+    #[Computed]
+    public function filterChips(): array
+    {
+        return $this->getFilterChips();
+    }
+
+    /** @return array<int, array{key: string, label: string}> */
+    public function getFilterChips(): array
+    {
+        $chips = [];
+
+        if ($this->seasonId !== Season::current()?->id) {
+            $seasonName = Season::find($this->seasonId)?->name ?? __('All seasons');
+            $chips[] = ['key' => 'seasonId', 'label' => __('Season') . ': ' . $seasonName];
+        }
+
+        return $chips;
+    }
+
+    public function removeFilter(string $key): void
+    {
+        if ($key === 'seasonId') {
+            $this->seasonId = Season::current()?->id;
+
+            return;
+        }
+
+        $this->reset([$key]);
     }
 
     public function declareTeamForfeit(): void
@@ -269,6 +307,7 @@ new class extends Component
         $matchDayMap = $this->seasonId ? Interclub::matchDayMap($this->seasonId) : [];
 
         return [
+            'filterChips' => $this->filterChips,
             'seasons' => Season::orderBy('start_at')->get(),
             'teamsByCategory' => $teamsByCategory,
             'stats' => $stats,

@@ -5,6 +5,11 @@
 <div>
     <x-header :title="__('Cash Register')" :subtitle="__('In-person cash management')" separator progress-indicator>
         <x-slot:actions>
+            <x-button
+                :label="__('New register')"
+                icon="o-building-library"
+                class="btn-outline btn-sm"
+                wire:click="$set('createRegisterModal', true)" />
             @if($this->register)
             <x-button
                 :label="__('Add entry')"
@@ -12,11 +17,6 @@
                 class="btn-primary btn-sm"
                 wire:click="openManualEntry" />
             @endif
-            <x-button
-                :label="__('New register')"
-                icon="o-building-library"
-                class="btn-outline btn-sm"
-                wire:click="$set('createRegisterModal', true)" />
         </x-slot:actions>
     </x-header>
 

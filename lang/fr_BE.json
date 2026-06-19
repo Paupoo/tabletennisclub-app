@@ -3290,6 +3290,7 @@
     "Meeting deleted": "Réunion supprimée",
     "Meeting restored": "Réunion restaurée",
     "Show archived meetings": "Afficher les réunions archivées",
+    "Show archived members": "Afficher les membres archivés",
     "Delete selected meetings?": "Supprimer les réunions sélectionnées ?",
     "Only meetings that have not taken place and have no invitations sent will be deleted. This action is irreversible.": "Seules les réunions qui n'ont pas eu lieu et sans invitation envoyée seront supprimées. Cette action est irréversible.",
     "Delete meeting": "Supprimer la réunion",

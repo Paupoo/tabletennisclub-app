@@ -76,22 +76,6 @@
         @endforeach
     </div>
 
-    {{-- ── Onglets Actifs / Archivés (admin) ───────────────────────── --}}
-    @if (Auth::user()->is_admin)
-        <div class="mb-4 flex gap-2">
-            <x-button
-                class="btn-sm {{ ! $showArchived ? 'btn-primary' : 'btn-ghost' }}"
-                icon="o-users"
-                :label="__('Active members')"
-                wire:click="$set('showArchived', false)" />
-            <x-button
-                class="btn-sm {{ $showArchived ? 'btn-warning' : 'btn-ghost' }}"
-                icon="o-archive-box"
-                :label="__('Archived')"
-                wire:click="$set('showArchived', true)" />
-        </div>
-    @endif
-
     {{-- ── Vue mobile ───────────────────────────────────────────────── --}}
     <div class="grid grid-cols-1 gap-3 lg:hidden">
         @forelse ($users as $user)
@@ -302,6 +286,11 @@
                 <x-choices :options="$teams" class="w-full" clearable :placeholder="__('Select a team...')"
                     wire:model.live="team_ids" />
             </div>
+            @if (Auth::user()->is_admin)
+                <div class="border-t border-base-200 pt-4">
+                    <x-toggle wire:model.live="showArchived" :label="__('Show archived members')" right />
+                </div>
+            @endif
         </x-slot:filters>
     </x-admin.shared.filter-drawer>
 

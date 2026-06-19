@@ -154,6 +154,7 @@ new class extends Component
         $this->hasKey = false;
         $this->hasCashRegister = false;
         $this->team_ids = [];
+        $this->showArchived = false;
         $this->resetPage();
     }
 
@@ -259,6 +260,10 @@ new class extends Component
                 'key' => 'team_ids',
                 'label' => trans_choice('{1} 1 team|[2,*] :count teams', count($this->team_ids), ['count' => count($this->team_ids)]),
             ];
+        }
+
+        if ($this->showArchived) {
+            $chips[] = ['key' => 'showArchived', 'label' => __('Archived')];
         }
 
         return $chips;

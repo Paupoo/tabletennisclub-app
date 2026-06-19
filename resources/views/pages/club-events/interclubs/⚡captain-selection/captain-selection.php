@@ -65,35 +65,36 @@ new class extends Component
 
     public function clearFilters(): void
     {
+        $this->selectedSeasonId = Season::current()?->id;
+
         $user = Auth::user();
-        $season = $this->selectedSeasonId ? Season::find($this->selectedSeasonId) : Season::current();
-        $this->selectedTeamId = $this->loadAccessibleTeams($user, $season)->first()?->id;
+        $this->selectedTeamId = $this->loadAccessibleTeams($user, Season::current())->first()?->id;
     }
 
     /** @return array<int, array{key: string, label: string}> */
     public function getFilterChips(): array
     {
+        $chips = [];
+
+        if ($this->selectedSeasonId !== Season::current()?->id) {
+            $seasonName = Season::find($this->selectedSeasonId)?->name ?? __('All seasons');
+            $chips[] = ['key' => 'selectedSeasonId', 'label' => __('Season') . ': ' . $seasonName];
+        }
+
         $user = Auth::user();
         $season = $this->selectedSeasonId ? Season::find($this->selectedSeasonId) : Season::current();
         $teams = $this->loadAccessibleTeams($user, $season);
 
-        if ($teams->count() <= 1 || ! $this->selectedTeamId) {
-            return [];
+        if ($teams->count() > 1 && $this->selectedTeamId && $this->selectedTeamId !== $teams->first()?->id) {
+            $team = $teams->firstWhere('id', $this->selectedTeamId);
+
+            if ($team) {
+                $label = $team->name . ($team->league?->category ? ' · ' . $this->categoryLabel($team->league->category) : '');
+                $chips[] = ['key' => 'selectedTeamId', 'label' => $label];
+            }
         }
 
-        if ($this->selectedTeamId === $teams->first()?->id) {
-            return [];
-        }
-
-        $team = $teams->firstWhere('id', $this->selectedTeamId);
-
-        if (! $team) {
-            return [];
-        }
-
-        $label = $team->name . ($team->league?->category ? ' · ' . $this->categoryLabel($team->league->category) : '');
-
-        return [['key' => 'selectedTeamId', 'label' => $label]];
+        return $chips;
     }
 
     public function mount(): void
@@ -127,9 +128,15 @@ new class extends Component
         $this->drawerSelection = true;
     }
 
-    public function removeFilter(string $_key): void
+    public function removeFilter(string $key): void
     {
-        $this->clearFilters();
+        if ($key === 'selectedSeasonId') {
+            $this->selectedSeasonId = Season::current()?->id;
+        }
+
+        $user = Auth::user();
+        $season = $this->selectedSeasonId ? Season::find($this->selectedSeasonId) : Season::current();
+        $this->selectedTeamId = $this->loadAccessibleTeams($user, $season)->first()?->id;
     }
 
     public function render(): View

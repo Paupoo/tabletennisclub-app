@@ -190,6 +190,18 @@ new class extends Component
     public function clearFilters(): void
     {
         $this->statusFilter = '';
+        $this->selectedSeasonId = Season::current()?->id;
+    }
+
+    public function removeFilter(string $key): void
+    {
+        if ($key === 'selectedSeasonId') {
+            $this->selectedSeasonId = Season::current()?->id;
+
+            return;
+        }
+
+        $this->reset([$key]);
     }
 
     public function confirmRefund(): void
@@ -262,6 +274,11 @@ new class extends Component
     public function getFilterChips(): array
     {
         $chips = [];
+
+        if ($this->selectedSeasonId !== Season::current()?->id) {
+            $seasonName = Season::find($this->selectedSeasonId)?->name ?? __('All seasons');
+            $chips[] = ['key' => 'selectedSeasonId', 'label' => __('Season') . ': ' . $seasonName];
+        }
 
         if (filled($this->statusFilter)) {
             $label = match ($this->statusFilter) {

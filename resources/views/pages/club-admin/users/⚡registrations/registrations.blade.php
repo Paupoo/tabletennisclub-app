@@ -4,21 +4,17 @@
     </x-slot:breadcrumbs>
     <x-header :title="__('Registrations')" :subtitle="__('All affiliations by season')" separator progress-indicator>
         <x-slot:middle>
-            <x-select
-                wire:model.live="selectedSeasonId"
-                :options="$this->seasonOptions"
-                :placeholder="__('All seasons')"
-                icon="o-calendar"
-                class="w-full" />
+            <div class="hidden w-full lg:block">
+                <x-input class="w-full" clearable icon="o-magnifying-glass"
+                    :placeholder="__('Search a member...')"
+                    wire:model.live.debounce.300ms="search" />
+            </div>
         </x-slot:middle>
         <x-slot:actions>
             {{-- Mobile: 🔍 · filter · ☰ --}}
             <x-admin.shared.mobile-header-actions :filter-count="count($filterChips)" />
             {{-- Desktop: full buttons --}}
             <div class="hidden items-center gap-2 lg:flex">
-                <x-input class="input-sm w-48" clearable icon="o-magnifying-glass"
-                    :placeholder="__('Search a member...')"
-                    wire:model.live.debounce.300ms="search" />
                 <x-admin.shared.filters-button :count="count($filterChips)" />
                 @if (! $this->registrationClosed)
                     <x-button :label="__('Register a member')" icon="o-user-plus"
@@ -665,6 +661,17 @@
     {{-- ── Filter drawer ────────────────────────────────────────────────────── --}}
     <x-admin.shared.filter-drawer :title="__('Filters')">
         <x-slot:filters>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    {{ __('Season') }}
+                </p>
+                <x-select
+                    wire:model.live="selectedSeasonId"
+                    :options="$this->seasonOptions"
+                    :placeholder="__('All seasons')"
+                    icon="o-calendar"
+                    class="w-full" />
+            </div>
             <div>
                 <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
                     {{ __('Status') }}

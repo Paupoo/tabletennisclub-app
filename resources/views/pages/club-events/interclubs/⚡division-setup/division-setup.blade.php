@@ -5,15 +5,34 @@
 
     <x-header progress-indicator separator :title="__('Division Setup')">
         <x-slot:subtitle>{{ __('Define the opponent teams for each division, once per season.') }}</x-slot:subtitle>
-        <x-slot:middle class="justify-end!">
-            <x-select
-                :options="$seasons"
-                option-label="name"
-                option-value="id"
-                wire:model.live="seasonId"
-                :placeholder="__('Select a season')" />
-        </x-slot:middle>
+        <x-slot:actions>
+            <x-admin.shared.mobile-header-actions :filter-count="count($filterChips)" :show-search="false" :show-more="false" />
+            <div class="hidden items-center gap-2 lg:flex">
+                <x-admin.shared.filters-button :count="count($filterChips)" />
+            </div>
+        </x-slot:actions>
     </x-header>
+
+    {{-- ── Active filter chips ──────────────────────────────────────────────── --}}
+    <x-admin.shared.filter-chips :chips="$filterChips" />
+
+    {{-- ── Filter drawer ────────────────────────────────────────────────────── --}}
+    <x-admin.shared.filter-drawer :title="__('Filters')">
+        <x-slot:filters>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    {{ __('Season') }}
+                </p>
+                <x-select
+                    :options="$seasons"
+                    option-label="name"
+                    option-value="id"
+                    wire:model.live="seasonId"
+                    :placeholder="__('Select a season')"
+                    class="w-full" />
+            </div>
+        </x-slot:filters>
+    </x-admin.shared.filter-drawer>
 
     @if (! $seasonId)
         <x-card class="mt-4 border-none">

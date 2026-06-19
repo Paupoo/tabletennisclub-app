@@ -18,27 +18,18 @@
             <x-admin.shared.mobile-header-actions :filter-count="count($filterChips)" />
             {{-- Desktop: full buttons --}}
             <div class="hidden items-center gap-2 lg:flex">
-                @if($statusFilter === 'to_refund')
-                <x-button
-                    :label="__('Auto-match refunds')"
-                    icon="o-sparkles"
-                    class="btn-error btn-sm"
-                    wire:click="previewBatchRefundMatch"
-                    spinner />
-                @else
-                <x-button
-                    :label="__('Auto-match')"
-                    icon="o-sparkles"
-                    class="btn-primary btn-sm"
-                    wire:click="previewBatchMatch"
-                    spinner />
-                @endif
                 <x-admin.shared.filters-button :count="count($filterChips)" />
-                <x-button
-                    :label="__('Import CSV')"
-                    icon="o-arrow-up-tray"
-                    class="btn-outline btn-sm"
-                    wire:click="$set('importModal', true)" />
+                <x-dropdown :label="__('More actions')" icon="o-ellipsis-vertical" right class="btn-ghost btn-sm">
+                    @if($statusFilter === 'to_refund')
+                        <x-menu-item icon="o-sparkles" :title="__('Auto-match refunds')"
+                            wire:click="previewBatchRefundMatch" spinner="previewBatchRefundMatch" />
+                    @else
+                        <x-menu-item icon="o-sparkles" :title="__('Auto-match')"
+                            wire:click="previewBatchMatch" spinner="previewBatchMatch" />
+                    @endif
+                    <x-menu-item icon="o-arrow-up-tray" :title="__('Import CSV')"
+                        wire:click="$set('importModal', true)" />
+                </x-dropdown>
             </div>
         </x-slot:actions>
     </x-header>

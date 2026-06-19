@@ -4,33 +4,23 @@
     </x-slot:breadcrumbs>
 
     <x-header progress-indicator separator :title="__('Interclubs Schedule')">
-        <x-slot:middle class="justify-end!">
-            <x-select
-                :options="$seasons"
-                option-label="name"
-                option-value="id"
-                wire:model.live="seasonId"
-                :placeholder="__('Select a season')" />
-        </x-slot:middle>
         <x-slot:actions>
-            {{-- Mobile: ☰ --}}
+            {{-- Mobile: filter · ☰ --}}
+            <x-admin.shared.mobile-header-actions :filter-count="count($filterChips)" :show-search="false" :show-more="false" />
             <button class="btn btn-primary btn-circle btn-sm lg:hidden" @click="mobileActionsOpen = true">
                 <x-icon name="o-bars-3" class="h-5 w-5" />
             </button>
-            {{-- Desktop: team filter + New match --}}
+            {{-- Desktop: Filters + New match --}}
             <div class="hidden items-center gap-2 lg:flex">
-                <x-select
-                    :options="[['id' => null, 'name' => __('All teams')], ...$ourTeamOptions]"
-                    option-label="name"
-                    option-value="id"
-                    wire:model.live="selectedTeamId"
-                    :placeholder="__('Filter by team')"
-                    class="max-w-xs border-none" />
+                <x-admin.shared.filters-button :count="count($filterChips)" />
                 <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('New match')"
                     wire:click="openCreateModal" />
             </div>
         </x-slot:actions>
     </x-header>
+
+    {{-- ── Active filter chips ──────────────────────────────────────────────── --}}
+    <x-admin.shared.filter-chips :chips="$filterChips" />
 
     @if (! $seasonId)
         <x-card class="mt-4 border-none">
@@ -193,18 +183,35 @@
             :label="__('New match')"
             :description="__('Add a match to the schedule')"
             @click="mobileActionsOpen = false; $wire.call('openCreateModal')" />
-        <div class="my-1 h-px bg-base-200"></div>
-        <div class="px-1 py-2">
-            <p class="mb-2 text-xs font-semibold uppercase tracking-widest text-base-content/40">
-                {{ __('Filter by team') }}
-            </p>
-            <x-select
-                :options="[['id' => null, 'name' => __('All teams')], ...$ourTeamOptions]"
-                option-label="name"
-                option-value="id"
-                wire:model.live="selectedTeamId"
-                :placeholder="__('All teams')"
-                class="w-full" />
-        </div>
     </x-admin.shared.mobile-actions>
+
+    {{-- ── Filter drawer ────────────────────────────────────────────────────── --}}
+    <x-admin.shared.filter-drawer :title="__('Filters')">
+        <x-slot:filters>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    {{ __('Season') }}
+                </p>
+                <x-select
+                    :options="$seasons"
+                    option-label="name"
+                    option-value="id"
+                    wire:model.live="seasonId"
+                    :placeholder="__('Select a season')"
+                    class="w-full" />
+            </div>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    {{ __('Team') }}
+                </p>
+                <x-select
+                    :options="[['id' => null, 'name' => __('All teams')], ...$ourTeamOptions]"
+                    option-label="name"
+                    option-value="id"
+                    wire:model.live="selectedTeamId"
+                    :placeholder="__('All teams')"
+                    class="w-full" />
+            </div>
+        </x-slot:filters>
+    </x-admin.shared.filter-drawer>
 </div>

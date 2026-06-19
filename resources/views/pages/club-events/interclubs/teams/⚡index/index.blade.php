@@ -1,4 +1,4 @@
-<div x-data="{ mobileSearchOpen: false }">
+<div x-data="{ mobileSearchOpen: false, mobileActionsOpen: false }">
     <x-slot:breadcrumbs>
         <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
     </x-slot:breadcrumbs>
@@ -11,20 +11,22 @@
             </div>
         </x-slot:middle>
         <x-slot:actions>
-            {{-- Mobile: 🔍 · filter --}}
-            <x-admin.shared.mobile-header-actions :filter-count="count($filterChips)" :show-more="false" />
+            {{-- Mobile: 🔍 · filter · ☰ --}}
+            <x-admin.shared.mobile-header-actions :filter-count="count($filterChips)" />
             {{-- Desktop: full buttons --}}
             <div class="hidden items-center gap-2 lg:flex">
                 <x-admin.shared.filters-button :count="count($filterChips)" />
                 @if ($isAdminOrCommittee)
-                    <x-button class="btn-ghost" link="{{ route('admin.interclubs.teams.builder') }}" icon="o-squares-plus"
-                        :label="__('Build teams')" />
+                    <x-dropdown :label="__('More actions')" icon="o-ellipsis-vertical" right class="btn-ghost btn-sm">
+                        <x-menu-item icon="o-squares-plus" :title="__('Build teams')"
+                            link="{{ route('admin.interclubs.teams.builder') }}" />
+                        @if ($teamsCount > 0)
+                            <x-menu-item icon="o-trash" :title="__('Delete all teams')"
+                                wire:click="$set('deleteAllModal', true)" />
+                        @endif
+                    </x-dropdown>
                     <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('New team')"
                         wire:click="$set('createModal', true)" />
-                    @if ($teamsCount > 0)
-                        <x-button class="btn-ghost text-error" icon="o-trash"
-                            label="Tout supprimer" wire:click="$set('deleteAllModal', true)" />
-                    @endif
                 @endif
             </div>
         </x-slot:actions>
@@ -137,4 +139,27 @@
             </div>
         </x-slot:filters>
     </x-admin.shared.filter-drawer>
+
+    {{-- ── Mobile action sheet ─────────────────────────────────────────── --}}
+    @if ($isAdminOrCommittee)
+        <x-admin.shared.mobile-actions>
+            <x-admin.shared.mobile-action-item
+                icon="o-plus" color="primary"
+                :label="__('New team')"
+                :description="__('Create a single team')"
+                @click="mobileActionsOpen = false; $wire.set('createModal', true)" />
+            <x-admin.shared.mobile-action-item
+                icon="o-squares-plus" color="base"
+                :label="__('Build teams')"
+                :description="__('Auto-assign players to teams')"
+                @click="mobileActionsOpen = false; window.location.href = '{{ route('admin.interclubs.teams.builder') }}'" />
+            @if ($teamsCount > 0)
+                <x-admin.shared.mobile-action-item
+                    icon="o-trash" color="error"
+                    :label="__('Delete all teams')"
+                    :description="__('Remove every team for the current season')"
+                    @click="mobileActionsOpen = false; $wire.set('deleteAllModal', true)" />
+            @endif
+        </x-admin.shared.mobile-actions>
+    @endif
 </div>

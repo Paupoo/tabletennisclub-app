@@ -16,13 +16,14 @@
             {{-- Desktop: full buttons --}}
             <div class="hidden items-center gap-2 lg:flex">
                 <x-admin.shared.filters-button :count="count($filterChips)" />
-                @if (Auth::user()->is_admin || Auth::user()->is_committee_member)
-                    <x-button class="btn-ghost btn-sm btn-circle" icon="o-arrow-path"
-                        :tooltip="__('Recalculate force list')"
-                        wire:click="recalculateForceList" spinner="recalculateForceList" />
-                @endif
-                <x-button class="btn-ghost" icon="o-envelope" :label="__('Quick invite')"
-                    wire:click="$set('quickInviteDrawer', true)" />
+                <x-dropdown :label="__('More actions')" icon="o-ellipsis-vertical" right class="btn-ghost btn-sm">
+                    @if (Auth::user()->is_admin || Auth::user()->is_committee_member)
+                        <x-menu-item icon="o-arrow-path" :title="__('Recalculate force list')"
+                            wire:click="recalculateForceList" spinner="recalculateForceList" />
+                    @endif
+                    <x-menu-item icon="o-envelope" :title="__('Quick invite')"
+                        wire:click="$set('quickInviteDrawer', true)" />
+                </x-dropdown>
                 <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('Create')"
                     link="{{ route('admin.users.create') }}" />
             </div>
@@ -377,6 +378,13 @@
             :label="__('Quick invite')"
             :description="__('Send an invitation by email')"
             @click="mobileActionsOpen = false; $wire.set('quickInviteDrawer', true)" />
+        @if (Auth::user()->is_admin || Auth::user()->is_committee_member)
+            <x-admin.shared.mobile-action-item
+                icon="o-arrow-path" color="base"
+                :label="__('Recalculate force list')"
+                :description="__('Update player rankings used for team assignment')"
+                @click="mobileActionsOpen = false; $wire.call('recalculateForceList')" />
+        @endif
         <div class="my-1 h-px bg-base-200"></div>
         <x-admin.shared.mobile-action-item
             icon="o-check-circle" color="base"

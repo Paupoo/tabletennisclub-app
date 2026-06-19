@@ -10,15 +10,17 @@ use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Competitions\Interclub\Services\InterclubAvailabilityService;
 use App\Livewire\Concerns\HasBreadcrumbs;
+use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Collection;
 use Illuminate\View\View;
+use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use HasBreadcrumbs, Toast;
+    use HasBreadcrumbs, HasFilterDrawer, Toast;
 
     public string $captainMessage = '';
 
@@ -41,6 +43,12 @@ new class extends Component
 
     public ?int $selectedWeek = null;
 
+    public function clearFilters(): void
+    {
+        $this->selectedSeasonId = Season::current()?->id;
+        $this->filterAlerts = false;
+    }
+
     public function confirmAndSend(InterclubAvailabilityService $service): void
     {
         if (! $this->drawerInterclubId) {
@@ -60,9 +68,44 @@ new class extends Component
         );
     }
 
+    /** @return array<int, array{key: string, label: string}> */
+    #[Computed]
+    public function filterChips(): array
+    {
+        return $this->getFilterChips();
+    }
+
+    /** @return array<int, array{key: string, label: string}> */
+    public function getFilterChips(): array
+    {
+        $chips = [];
+
+        if ($this->selectedSeasonId !== Season::current()?->id) {
+            $seasonName = Season::find($this->selectedSeasonId)?->name ?? __('All seasons');
+            $chips[] = ['key' => 'selectedSeasonId', 'label' => __('Season') . ': ' . $seasonName];
+        }
+
+        if ($this->filterAlerts) {
+            $chips[] = ['key' => 'filterAlerts', 'label' => __('Show issues only')];
+        }
+
+        return $chips;
+    }
+
     public function mount(): void
     {
         $this->selectedSeasonId = Season::current()?->id;
+    }
+
+    public function removeFilter(string $key): void
+    {
+        if ($key === 'selectedSeasonId') {
+            $this->selectedSeasonId = Season::current()?->id;
+
+            return;
+        }
+
+        $this->reset([$key]);
     }
 
     public function nextWeek(): void
@@ -271,6 +314,7 @@ new class extends Component
 
         return [
             'breadcrumbs' => $this->getBreadcrumbs(),
+            'filterChips' => $this->filterChips,
             'headers' => $headers,
             'categories' => $categories,
             'seasons_list' => $seasons->map(fn ($s) => ['id' => $s->id, 'name' => $s->name]),

@@ -7,10 +7,17 @@
         subtitle="{{ __('Season') }} {{ $current_season?->name ?? '—' }}"
         separator>
         <x-slot:actions>
+            <x-admin.shared.mobile-header-actions :filter-count="count($filterChips)" :show-search="false" :show-more="false" />
+            <div class="hidden lg:block">
+                <x-admin.shared.filters-button :count="count($filterChips)" />
+            </div>
             <x-button :label="__('Captain Dashboard')" icon="o-user" class="btn-sm btn-ghost"
                 :link="route('admin.interclubs.captain-selection')" />
         </x-slot:actions>
     </x-header>
+
+    {{-- ── Active filter chips ──────────────────────────────────────────────── --}}
+    <x-admin.shared.filter-chips :chips="$filterChips" />
 
     <div class="grid grid-cols-1 gap-8 lg:grid-cols-4">
 
@@ -18,12 +25,6 @@
         <div class="space-y-4">
             <x-admin.shared.side-card :title="__('Navigation')" shadow class="mt-16">
                 <div class="space-y-4">
-                    <x-select
-                        :label="__('Season')"
-                        wire:model.live="selectedSeasonId"
-                        :options="$seasons_list"
-                        class="select-sm border-none bg-base-200/50 font-bold" />
-
                     <div>
                         <label
                             class="mb-4 block text-[10px] font-black italic uppercase tracking-widest opacity-40">{{ __('Competition week') }}</label>
@@ -39,10 +40,6 @@
 
                     <x-choices :label="__('Focus on a team')" wire:model.live="selectedTeam" :options="$teams_list"
                         single searchable class="choices-sm" />
-
-                    <div class="space-y-2 border-t border-base-100 pt-2">
-                        <x-checkbox :label="__('Show issues only')" wire:model.live="filterAlerts" tight />
-                    </div>
                 </div>
             </x-admin.shared.side-card>
 
@@ -300,4 +297,22 @@
                 icon="o-paper-airplane" />
         </x-slot:actions>
     </x-modal>
+
+    {{-- ── Filter drawer ────────────────────────────────────────────────────── --}}
+    <x-admin.shared.filter-drawer :title="__('Filters')">
+        <x-slot:filters>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    {{ __('Season') }}
+                </p>
+                <x-select
+                    wire:model.live="selectedSeasonId"
+                    :options="$seasons_list"
+                    class="w-full" />
+            </div>
+            <div>
+                <x-toggle :label="__('Show issues only')" wire:model.live="filterAlerts" />
+            </div>
+        </x-slot:filters>
+    </x-admin.shared.filter-drawer>
 </div>

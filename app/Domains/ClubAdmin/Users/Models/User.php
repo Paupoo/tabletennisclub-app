@@ -167,6 +167,8 @@ class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, HasAuditLog, HasFactory, Notifiable, SoftDeletes;
 
+    public const int INVITATION_LINK_VALIDITY_DAYS = 7;
+
     /**
      * The attributes that should be cast.
      *
@@ -400,7 +402,7 @@ class User extends Authenticatable implements MustVerifyEmail
             return 'not_invited';
         }
 
-        return $this->last_invited_at->greaterThan(now()->subHours(48))
+        return $this->last_invited_at->greaterThan(now()->subDays(self::INVITATION_LINK_VALIDITY_DAYS))
             ? 'pending'
             : 'expired';
     }

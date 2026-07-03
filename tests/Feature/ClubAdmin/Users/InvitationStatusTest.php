@@ -13,19 +13,19 @@ test('user with email verified is active', function (): void {
     expect($user->invitationStatus())->toBe('active');
 });
 
-test('user invited within 48h without verification is pending', function (): void {
+test('user invited within the validity window without verification is pending', function (): void {
     $user = User::factory()->create([
         'email_verified_at' => null,
-        'last_invited_at' => now()->subHours(12),
+        'last_invited_at' => now()->subDays(6),
     ]);
 
     expect($user->invitationStatus())->toBe('pending');
 });
 
-test('user invited more than 48h ago without verification is expired', function (): void {
+test('user invited beyond the validity window without verification is expired', function (): void {
     $user = User::factory()->create([
         'email_verified_at' => null,
-        'last_invited_at' => now()->subHours(72),
+        'last_invited_at' => now()->subDays(8),
     ]);
 
     expect($user->invitationStatus())->toBe('expired');

@@ -15,7 +15,7 @@ class SendInvitationAction
     {
         $link = URL::temporarySignedRoute(
             'invitation.accept',
-            now()->addHours(48),
+            now()->addDays(User::INVITATION_LINK_VALIDITY_DAYS),
             ['user' => $user->id]
         );
 

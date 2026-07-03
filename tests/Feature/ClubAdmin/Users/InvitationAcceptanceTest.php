@@ -18,7 +18,7 @@ function signedInvitationUrl(User $user): string
 {
     return URL::temporarySignedRoute(
         'invitation.accept',
-        now()->addHours(48),
+        now()->addDays(User::INVITATION_LINK_VALIDITY_DAYS),
         ['user' => $user->id]
     );
 }
@@ -82,12 +82,21 @@ test('signed post for an already activated account redirects to login without to
     $this->assertGuest();
 });
 
+test('invitation link is still valid on day 6', function (): void {
+    $user = invitedUser();
+    $url = signedInvitationUrl($user);
+
+    $this->travel(6)->days();
+
+    $this->get($url)->assertSuccessful();
+});
+
 test('expired signature is rejected', function (): void {
     $user = invitedUser();
     $originalPassword = $user->fresh()->password;
     $url = signedInvitationUrl($user);
 
-    $this->travel(49)->hours();
+    $this->travel(8)->days();
 
     $this->get($url)->assertForbidden();
     $this->post($url, [

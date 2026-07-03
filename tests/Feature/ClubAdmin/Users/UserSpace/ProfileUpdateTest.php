@@ -57,7 +57,7 @@ test('user can update gender and birthdate', function (): void {
 });
 
 test('user can upload a medical certificate', function (): void {
-    Storage::fake('public');
+    Storage::fake('local');
     $user = User::factory()->create();
 
     Livewire::actingAs($user)
@@ -67,11 +67,11 @@ test('user can upload a medical certificate', function (): void {
 
     $path = $user->fresh()->medical_certificate_path;
     expect($path)->not->toBeNull();
-    Storage::disk('public')->assertExists(str_replace('/storage/', '', $path));
+    Storage::disk('local')->assertExists($path);
 });
 
 test('user can upload a parental consent', function (): void {
-    Storage::fake('public');
+    Storage::fake('local');
     $user = User::factory()->create();
 
     Livewire::actingAs($user)
@@ -81,7 +81,7 @@ test('user can upload a parental consent', function (): void {
 
     $path = $user->fresh()->parental_consent_path;
     expect($path)->not->toBeNull();
-    Storage::disk('public')->assertExists(str_replace('/storage/', '', $path));
+    Storage::disk('local')->assertExists($path);
 });
 
 test('parental consent field is shown for minors', function (): void {

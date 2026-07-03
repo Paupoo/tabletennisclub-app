@@ -482,7 +482,7 @@
                                                 <div class="text-sm font-semibold">{{ __('Medical Certificate') }}</div>
                                                 <div class="text-xs opacity-60">{{ __('Uploaded') }}</div>
                                             </div>
-                                            <a href="{{ asset($reg['medical_certificate_path']) }}" target="_blank" class="btn btn-ghost btn-xs gap-1">
+                                            <a href="{{ route('admin.user.documents.download', [$reg['user_id'], 'medical']) }}" target="_blank" class="btn btn-ghost btn-xs gap-1">
                                                 <x-icon name="o-eye" class="w-3.5 h-3.5" />
                                                 {{ __('View') }}
                                             </a>
@@ -519,7 +519,7 @@
                                                     <div class="text-sm font-semibold">{{ __('Parental Consent') }}</div>
                                                     <div class="text-xs opacity-60">{{ __('Uploaded') }}</div>
                                                 </div>
-                                                <a href="{{ asset($reg['parental_consent_path']) }}" target="_blank" class="btn btn-ghost btn-xs gap-1">
+                                                <a href="{{ route('admin.user.documents.download', [$reg['user_id'], 'parental_consent']) }}" target="_blank" class="btn btn-ghost btn-xs gap-1">
                                                     <x-icon name="o-eye" class="w-3.5 h-3.5" />
                                                     {{ __('View') }}
                                                 </a>

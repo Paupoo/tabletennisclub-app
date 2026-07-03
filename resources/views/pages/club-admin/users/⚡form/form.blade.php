@@ -286,7 +286,7 @@
                         <div class="flex-1 min-w-0">
                             <div class="text-sm font-semibold">{{ __('Medical Certificate') }}</div>
                         </div>
-                        <a href="{{ asset($user->medical_certificate_path) }}" target="_blank" class="btn btn-ghost btn-sm gap-1">
+                        <a href="{{ route('admin.user.documents.download', [$user, 'medical']) }}" target="_blank" class="btn btn-ghost btn-sm gap-1">
                             <x-icon name="o-arrow-down-tray" class="w-4 h-4" />
                             {{ __('Download') }}
                         </a>
@@ -298,7 +298,7 @@
                         <div class="flex-1 min-w-0">
                             <div class="text-sm font-semibold">{{ __('Parental Consent') }}</div>
                         </div>
-                        <a href="{{ asset($user->parental_consent_path) }}" target="_blank" class="btn btn-ghost btn-sm gap-1">
+                        <a href="{{ route('admin.user.documents.download', [$user, 'parental_consent']) }}" target="_blank" class="btn btn-ghost btn-sm gap-1">
                             <x-icon name="o-arrow-down-tray" class="w-4 h-4" />
                             {{ __('Download') }}
                         </a>

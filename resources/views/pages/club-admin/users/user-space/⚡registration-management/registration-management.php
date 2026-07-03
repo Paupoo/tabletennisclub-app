@@ -6,6 +6,7 @@ use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
 use App\Actions\ClubAdmin\Subscriptions\CreateSubscriptionAction;
 use App\Actions\ClubAdmin\Subscriptions\EnrollInTrainingPackAction;
 use App\Actions\ClubAdmin\Subscriptions\LeaveTrainingPackAction;
+use App\Actions\User\StoreUserDocumentAction;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
@@ -19,7 +20,6 @@ use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Rule;
 use Livewire\Component;
@@ -441,6 +441,8 @@ new class extends Component
 
     public function uploadMedicalCertificate(int $userId): void
     {
+        abort_unless(array_key_exists($userId, $this->registrations), 403);
+
         $this->validate([
             'medicalCertificate' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
         ]);
@@ -450,21 +452,17 @@ new class extends Component
             return;
         }
 
-        if ($user->medical_certificate_path) {
-            Storage::disk('public')->delete(str_replace('/storage/', '', $user->medical_certificate_path));
-        }
+        $path = StoreUserDocumentAction::handle($user, $this->medicalCertificate, 'medical');
 
-        $extension = $this->medicalCertificate->getClientOriginalExtension();
-        $path = $this->medicalCertificate->storeAs("documents/{$userId}", "medical.{$extension}", 'public');
-
-        $user->update(['medical_certificate_path' => "/storage/{$path}"]);
-        $this->registrations[$userId]['medical_certificate_path'] = "/storage/{$path}";
+        $this->registrations[$userId]['medical_certificate_path'] = $path;
         $this->medicalCertificate = null;
         $this->success(__('Medical certificate uploaded successfully.'));
     }
 
     public function uploadParentalConsent(int $userId): void
     {
+        abort_unless(array_key_exists($userId, $this->registrations), 403);
+
         $this->validate([
             'parentalConsent' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
         ]);
@@ -474,15 +472,9 @@ new class extends Component
             return;
         }
 
-        if ($user->parental_consent_path) {
-            Storage::disk('public')->delete(str_replace('/storage/', '', $user->parental_consent_path));
-        }
+        $path = StoreUserDocumentAction::handle($user, $this->parentalConsent, 'parental_consent');
 
-        $extension = $this->parentalConsent->getClientOriginalExtension();
-        $path = $this->parentalConsent->storeAs("documents/{$userId}", "parental_consent.{$extension}", 'public');
-
-        $user->update(['parental_consent_path' => "/storage/{$path}"]);
-        $this->registrations[$userId]['parental_consent_path'] = "/storage/{$path}";
+        $this->registrations[$userId]['parental_consent_path'] = $path;
         $this->parentalConsent = null;
         $this->success(__('Parental consent uploaded successfully.'));
     }

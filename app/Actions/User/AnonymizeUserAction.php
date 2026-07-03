@@ -10,6 +10,10 @@ class AnonymizeUserAction
 {
     public static function handle(User $user): void
     {
+        // Physically remove private documents (health/minor data), not just the paths.
+        StoreUserDocumentAction::deleteExisting($user, 'medical');
+        StoreUserDocumentAction::deleteExisting($user, 'parental_consent');
+
         $user->update([
             'first_name' => 'Anonymized',
             'last_name' => 'User',

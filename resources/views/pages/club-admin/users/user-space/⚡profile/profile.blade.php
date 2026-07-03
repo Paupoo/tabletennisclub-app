@@ -401,7 +401,7 @@
                             accept="image/png, image/jpeg, application/pdf"
                             :hint="__('JPG, PNG or PDF — max 4 MB')" />
                         @if ($user->medical_certificate_path)
-                            <a href="{{ asset($user->medical_certificate_path) }}" target="_blank"
+                            <a href="{{ route('admin.user.documents.download', [$user, 'medical']) }}" target="_blank"
                                 class="btn btn-ghost btn-xs gap-1 mt-1">
                                 <x-icon name="o-arrow-down-tray" class="w-3 h-3" />
                                 {{ __('View current') }}
@@ -415,7 +415,7 @@
                                 accept="image/png, image/jpeg, application/pdf"
                                 :hint="__('Required for minors — JPG, PNG or PDF, max 4 MB')" />
                             @if ($user->parental_consent_path)
-                                <a href="{{ asset($user->parental_consent_path) }}" target="_blank"
+                                <a href="{{ route('admin.user.documents.download', [$user, 'parental_consent']) }}" target="_blank"
                                     class="btn btn-ghost btn-xs gap-1 mt-1">
                                     <x-icon name="o-arrow-down-tray" class="w-3 h-3" />
                                     {{ __('View current') }}

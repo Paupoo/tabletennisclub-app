@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\User\StoreUserDocumentAction;
 use App\Actions\User\UpdateUserAction;
 use App\Data\User\UpdateUserData;
 use App\Domains\ClubAdmin\Users\Models\User;
@@ -12,7 +13,6 @@ use App\Livewire\Concerns\HasPhotoUpload;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule as ValidationRule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -215,26 +215,12 @@ new class extends Component
     protected function handleDocumentUploads(User $user): void
     {
         if ($this->medicalCertificate !== null) {
-            if ($user->medical_certificate_path) {
-                Storage::disk('public')->delete(str_replace('/storage/', '', $user->medical_certificate_path));
-            }
-
-            $extension = $this->medicalCertificate->getClientOriginalExtension();
-            $path = $this->medicalCertificate->storeAs("documents/{$user->id}", "medical.{$extension}", 'public');
-
-            $user->update(['medical_certificate_path' => "/storage/{$path}"]);
+            StoreUserDocumentAction::handle($user, $this->medicalCertificate, 'medical');
             $this->medicalCertificate = null;
         }
 
         if ($this->parentalConsent !== null) {
-            if ($user->parental_consent_path) {
-                Storage::disk('public')->delete(str_replace('/storage/', '', $user->parental_consent_path));
-            }
-
-            $extension = $this->parentalConsent->getClientOriginalExtension();
-            $path = $this->parentalConsent->storeAs("documents/{$user->id}", "parental_consent.{$extension}", 'public');
-
-            $user->update(['parental_consent_path' => "/storage/{$path}"]);
+            StoreUserDocumentAction::handle($user, $this->parentalConsent, 'parental_consent');
             $this->parentalConsent = null;
         }
     }

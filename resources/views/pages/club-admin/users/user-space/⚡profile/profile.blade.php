@@ -231,7 +231,7 @@
             </x-card>
 
             {{-- Historique --}}
-            <x-card :title="__('Individual History')" icon="o-presentation-chart-line" shadow separator>
+            {{-- <x-card :title="__('Individual History')" icon="o-presentation-chart-line" shadow separator>
                 <div class="space-y-6">
                     @php
                         $history = [
@@ -322,7 +322,7 @@
                 <x-slot:actions>
                     <x-button :label="__('See all results')" class="btn-ghost btn-sm text-xs opacity-50" />
                 </x-slot:actions>
-            </x-card>
+            </x-card> --}}
 
         </div>
     </div>

@@ -84,6 +84,28 @@ test('signed post for an already activated account redirects to login without to
     $this->assertGuest();
 });
 
+test('a 7-character password is rejected', function (): void {
+    $user = invitedUser();
+
+    $this->post(signedInvitationUrl($user), [
+        'password' => 'short12',
+        'password_confirmation' => 'short12',
+    ])->assertSessionHasErrors('password');
+
+    $this->assertGuest();
+});
+
+test('an 8-character password is accepted', function (): void {
+    $user = invitedUser();
+
+    $this->post(signedInvitationUrl($user), [
+        'password' => 'longer12',
+        'password_confirmation' => 'longer12',
+    ])->assertSessionHasNoErrors();
+
+    $this->assertAuthenticatedAs($user);
+});
+
 test('invitation link is still valid on day 6', function (): void {
     $user = invitedUser();
     $url = signedInvitationUrl($user);

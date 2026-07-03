@@ -182,6 +182,23 @@ test('resend for an unknown user returns the same response', function (): void {
     Mail::assertNothingQueued();
 });
 
+test('invitation mail renders the member name, login and signed link', function (): void {
+    $user = invitedUser();
+    $link = signedInvitationUrl($user);
+
+    $mail = new InviteNewUserMail($user, $link);
+    $html = $mail->render();
+
+    expect($html)
+        ->toContain(e($user->first_name . ' ' . $user->last_name))
+        ->toContain($user->email)
+        ->toContain(e($link))
+        ->toContain(__('Finaliser mon inscription'));
+
+    expect($mail->envelope()->subject)
+        ->toBe(__('Welcome to :app – Finalize your registration', ['app' => config('app.name')]));
+});
+
 test('resend is throttled to 3 attempts per hour', function (): void {
     Mail::fake();
 

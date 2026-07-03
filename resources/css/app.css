@@ -8,6 +8,14 @@
 @source '../**/*.blade.php';
 @source '../**/*.js';
 
+/*
+  Classes Tailwind définies côté PHP (enums, modèles, classes Livewire v4 des
+  dossiers ⚡) : ces fichiers ne matchent pas *.blade.php, on scanne donc
+  aussi les .php de resources/views et tout app/.
+*/
+@source '../views/**/*.php';
+@source '../../app';
+
 @theme {
   --font-sans:
     Figtree, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',

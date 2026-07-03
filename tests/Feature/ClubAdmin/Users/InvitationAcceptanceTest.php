@@ -55,7 +55,7 @@ test('signed post sets the password, verifies the email and logs the user in', f
         'password_confirmation' => 'new-password-123',
     ]);
 
-    $response->assertRedirect(route('dashboard'));
+    $response->assertRedirect(route('admin.user.profile', $user));
 
     $user->refresh();
     expect($user->email_verified_at)->not->toBeNull()

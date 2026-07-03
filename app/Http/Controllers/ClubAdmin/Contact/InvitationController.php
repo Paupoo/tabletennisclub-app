@@ -61,7 +61,8 @@ class InvitationController extends Controller
 
         event(new Registered($user));
 
-        return redirect()->route('dashboard')->with('success', __('Welcome!'));
+        return redirect()->route('admin.user.profile', $user)
+            ->with('success', __('Welcome! Take a moment to complete your personal information.'));
     }
 
     private function redirectAlreadyActivated(): RedirectResponse

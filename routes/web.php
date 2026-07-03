@@ -237,9 +237,10 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
  */
 Route::get('/invitation/accept/{user}', [InvitationController::class, 'showForm'])
     ->name('invitation.accept')
-    ->middleware('signed');
+    ->middleware(['signed', 'throttle:6,1']);
 Route::post('/invitation/accept/{user}', [InvitationController::class, 'store'])
-    ->name('invitation.store');
+    ->name('invitation.store')
+    ->middleware(['signed', 'throttle:6,1']);
 
 /*
 |--------------------------------------------------------------------------

@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Mail\InviteNewUserMail;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 
 function invitedUser(): User
@@ -91,18 +93,81 @@ test('invitation link is still valid on day 6', function (): void {
     $this->get($url)->assertSuccessful();
 });
 
-test('expired signature is rejected', function (): void {
+test('expired signature shows the dedicated expired page with a resend button', function (): void {
     $user = invitedUser();
     $originalPassword = $user->fresh()->password;
     $url = signedInvitationUrl($user);
 
     $this->travel(8)->days();
 
-    $this->get($url)->assertForbidden();
+    $this->get($url)
+        ->assertForbidden()
+        ->assertSee(__('This invitation link has expired.'))
+        ->assertSee(__('Receive a new link'));
     $this->post($url, [
         'password' => 'new-password-123',
         'password_confirmation' => 'new-password-123',
     ])->assertForbidden();
 
     expect($user->fresh()->password)->toBe($originalPassword);
+});
+
+test('expired link for an activated account shows a neutral message without resend button', function (): void {
+    $user = User::factory()->create();
+    $url = signedInvitationUrl($user);
+
+    $this->travel(8)->days();
+
+    $this->get($url)
+        ->assertForbidden()
+        ->assertSee(__('Please contact the club to receive a new invitation.'))
+        ->assertDontSee(__('Receive a new link'));
+});
+
+test('resend sends a new invitation to a pending user', function (): void {
+    Mail::fake();
+
+    $user = invitedUser();
+    $user->update(['last_invited_at' => now()->subDays(10)]);
+
+    $response = $this->post(route('invitation.resend', ['user' => $user->id]));
+
+    $response->assertRedirect(route('login'))
+        ->assertSessionHas('status', __('If your account is awaiting activation, a new link has just been sent.'));
+    Mail::assertQueued(InviteNewUserMail::class, fn (InviteNewUserMail $mail): bool => $mail->hasTo($user->email));
+    expect($user->fresh()->last_invited_at->isSameDay(now()))->toBeTrue();
+});
+
+test('resend for an activated account sends nothing but returns the same response', function (): void {
+    Mail::fake();
+
+    $user = User::factory()->create();
+
+    $this->post(route('invitation.resend', ['user' => $user->id]))
+        ->assertRedirect(route('login'))
+        ->assertSessionHas('status', __('If your account is awaiting activation, a new link has just been sent.'));
+
+    Mail::assertNothingQueued();
+});
+
+test('resend for an unknown user returns the same response', function (): void {
+    Mail::fake();
+
+    $this->post(route('invitation.resend', ['user' => 999999]))
+        ->assertRedirect(route('login'))
+        ->assertSessionHas('status', __('If your account is awaiting activation, a new link has just been sent.'));
+
+    Mail::assertNothingQueued();
+});
+
+test('resend is throttled to 3 attempts per hour', function (): void {
+    Mail::fake();
+
+    $user = invitedUser();
+
+    foreach (range(1, 3) as $attempt) {
+        $this->post(route('invitation.resend', ['user' => $user->id]))->assertRedirect(route('login'));
+    }
+
+    $this->post(route('invitation.resend', ['user' => $user->id]))->assertTooManyRequests();
 });

@@ -241,6 +241,9 @@ Route::get('/invitation/accept/{user}', [InvitationController::class, 'showForm'
 Route::post('/invitation/accept/{user}', [InvitationController::class, 'store'])
     ->name('invitation.store')
     ->middleware(['signed', 'throttle:6,1']);
+Route::post('/invitation/resend/{user}', [InvitationController::class, 'resend'])
+    ->name('invitation.resend')
+    ->middleware('throttle:3,60');
 
 /*
 |--------------------------------------------------------------------------

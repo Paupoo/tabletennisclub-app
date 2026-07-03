@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Support\Breadcrumb;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
 new class extends Component
@@ -38,6 +40,11 @@ new class extends Component
             'messages_count' => 0,
         ],
     ];
+
+    public function mount(User $user): void
+    {
+        abort_unless(Auth::user()->is($user), 403);
+    }
 
     public function openChatDrawer(int $week): void
     {

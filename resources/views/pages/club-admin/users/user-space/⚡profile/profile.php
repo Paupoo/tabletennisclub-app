@@ -82,6 +82,8 @@ new class extends Component
 
     public function mount(User $user): void
     {
+        abort_unless(Auth::user()->is($user), 403);
+
         $this->user = $user;
         $this->first_name = $user->first_name ?? '';
         $this->last_name = $user->last_name ?? '';
@@ -144,11 +146,7 @@ new class extends Component
     {
         $actor = Auth::user();
 
-        if (! ($actor->is($this->user) || $actor->is_admin || $actor->is_committee_member)) {
-            $this->error(__('Unauthorized.'));
-
-            return;
-        }
+        abort_unless($actor->is($this->user), 403);
 
         try {
             $this->validate();

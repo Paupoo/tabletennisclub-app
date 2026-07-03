@@ -15,6 +15,7 @@ use App\Domains\Trainings\Models\Training;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
@@ -230,6 +231,13 @@ new class extends Component
             ->groupBy('monthKey')
             ->map(fn ($group) => $group->values()->all())
             ->all();
+    }
+
+    public function mount(User $user): void
+    {
+        abort_unless(Auth::user()->is($user), 403);
+
+        $this->user = $user;
     }
 
     public function with(): array

@@ -23,6 +23,7 @@ use App\Support\Breadcrumb;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Mary\Traits\Toast;
@@ -133,6 +134,13 @@ new class extends Component
             ->whereIn('meeting_id', $meetingIds)
             ->get()
             ->keyBy('meeting_id');
+    }
+
+    public function mount(User $user): void
+    {
+        abort_unless(Auth::user()->is($user), 403);
+
+        $this->user = $user;
     }
 
     #[Computed]

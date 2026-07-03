@@ -116,22 +116,21 @@ test('user cannot update another users profile', function (): void {
 
     Livewire::actingAs($user)
         ->test('pages::club-admin.users.user-space.profile', ['user' => $other])
-        ->set('email', 'hacked@example.com')
-        ->call('save');
+        ->assertForbidden();
 
     expect($other->fresh()->email)->toBe('other@example.com');
 });
 
-test('admin can update any users profile', function (): void {
+test('admin cannot update another users profile via my-space', function (): void {
+    // My-space is strictly self-only: admins manage members via admin.users.edit.
     $admin = $this->createFakeAdmin();
     $user = User::factory()->create(['phone_number' => '0470000000']);
 
     Livewire::actingAs($admin)
         ->test('pages::club-admin.users.user-space.profile', ['user' => $user])
-        ->set('phone_number', '0479111111')
-        ->call('save');
+        ->assertForbidden();
 
-    expect($user->fresh()->phone_number)->toBe('0479111111');
+    expect($user->fresh()->phone_number)->toBe('0470000000');
 });
 
 test('email must be unique across users', function (): void {

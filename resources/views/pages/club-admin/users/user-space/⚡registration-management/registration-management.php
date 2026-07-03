@@ -404,9 +404,11 @@ new class extends Component
         $this->leavePackModal = false;
     }
 
-    public function mount(): void
+    public function mount(User $user): void
     {
-        $this->user = Auth::user();
+        abort_unless(Auth::user()->is($user), 403);
+
+        $this->user = $user;
         $this->addRegistrationTab($this->user);
         $this->selectedTab = 'tab-' . $this->user->id;
     }

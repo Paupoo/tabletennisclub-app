@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rules\Password;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -36,6 +37,13 @@ new #[Title('My settings')] class extends Component
 
     public User $user;
 
+    public function mount(User $user): void
+    {
+        abort_unless(Auth::user()->is($user), 403);
+
+        $this->user = $user;
+    }
+
     public function rules(): array
     {
         return [
@@ -50,11 +58,11 @@ new #[Title('My settings')] class extends Component
 
     public function save(): void
     {
+        abort_unless(Auth::user()->is($this->user), 403);
+
         $validated = $this->validate();
 
-        if (! empty($validated['password'])) {
-            Hash::make($validated['password']);
-        } else {
+        if (empty($validated['password'])) {
             unset($validated['password']);
         }
 

@@ -585,7 +585,7 @@ new class extends Component
         Mail::to($payment->payable->user)->send(new PaymentInvitationEmail($payment));
 
         $payment->increment('invitation_counter');
-        $this->paymentData['invitation_counter'] = $payment->invitation_counter + 1;
+        $this->paymentData['invitation_counter'] = $payment->invitation_counter;
 
         $this->success(__('Payment invitation sent to :email.', ['email' => $payment->payable->user->email]));
     }

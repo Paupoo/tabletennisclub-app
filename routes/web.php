@@ -125,6 +125,13 @@ Route::prefix('admin/club-admin/audit/')
         Route::livewire('list', 'pages::club-admin.audit.index')->name('admin.audit.index');
     });
 
+// Queue monitoring — pending/failed jobs and worker health, for admins and the committee.
+Route::prefix('admin/club-admin/queue/')
+    ->middleware(['auth', 'verified', 'can:view-queue-monitoring'])
+    ->group(function (): void {
+        Route::livewire('list', 'pages::club-admin.queue.index')->name('admin.queue.index');
+    });
+
 Route::prefix('admin/club-admin/')
     ->middleware(['auth', 'verified', 'can:update,App\Models\ClubEvents\Interclub\Club'])
     ->group(function (): void {

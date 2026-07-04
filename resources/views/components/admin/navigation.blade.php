@@ -123,4 +123,12 @@
     />
     @endif
 
+    @can('view-queue-monitoring')
+    <x-menu-item
+        icon="o-queue-list"
+        link="{{ route('admin.queue.index') }}"
+        :title="__('Queue monitoring')"
+    />
+    @endcan
+
 </x-menu>

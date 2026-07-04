@@ -18,6 +18,7 @@ use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\Trainings\Models\Training;
 use App\Http\Controllers\Controller;
+use App\Support\QueueHealth;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 
@@ -229,6 +230,29 @@ class DashboardController extends Controller
                     'icon' => 'o-clipboard-document-check',
                     'label' => $pendingSelections === 1 ? '1 sélection manquante' : "{$pendingSelections} sélections manquantes",
                     'route' => route('admin.interclubs.captain-selection'),
+                ];
+            }
+        }
+
+        // Queue health (admins + committee): a dead worker silently blocks
+        // every outgoing email, surface it prominently.
+        if ($isAdmin || $user->is_committee_member) {
+            if (QueueHealth::isStalled()) {
+                $alerts[] = [
+                    'type' => 'error',
+                    'icon' => 'o-queue-list',
+                    'label' => "File d'attente bloquée — aucun email ne part, worker probablement arrêté",
+                    'route' => route('admin.queue.index'),
+                ];
+            }
+
+            $failedJobs = QueueHealth::failedCount();
+            if ($failedJobs > 0) {
+                $alerts[] = [
+                    'type' => 'warning',
+                    'icon' => 'o-queue-list',
+                    'label' => $failedJobs === 1 ? '1 tâche en échec dans la file d\'attente' : "{$failedJobs} tâches en échec dans la file d'attente",
+                    'route' => route('admin.queue.index'),
                 ];
             }
         }

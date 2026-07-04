@@ -39,5 +39,9 @@ class Kernel extends ConsoleKernel
         // On July 1st, ensure the upcoming two seasons are provisioned (+1 and +2).
         // Safe to run any time — idempotent, creates only what is missing.
         $schedule->command('season:provision')->yearlyOn(7, 1, '06:00');
+
+        // Alert the admins by synchronous email when the queue worker looks
+        // down (the scheduler keeps running even when the worker is dead).
+        $schedule->command('queue:check-health')->hourly();
     }
 }

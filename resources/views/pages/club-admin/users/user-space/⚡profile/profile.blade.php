@@ -458,12 +458,18 @@
                                 {{ __('Send a deletion request to the administrator. Your data will be anonymized. Note: requests with pending payments may be delayed.') }}
                             </p>
                         </div>
-                        <x-button
-                            class="btn-error btn-soft btn-sm shrink-0"
-                            icon="o-trash"
-                            :label="__('Request deletion')"
-                            wire:click="requestErasure"
-                            spinner="requestErasure" />
+                        @if ($user->gdpr_erasure_requested_at)
+                            <x-badge
+                                :value="__('Request sent on :date', ['date' => $user->gdpr_erasure_requested_at->format('d/m/Y')])"
+                                class="badge-warning badge-soft shrink-0" />
+                        @else
+                            <x-button
+                                class="btn-error btn-soft btn-sm shrink-0"
+                                icon="o-trash"
+                                :label="__('Request deletion')"
+                                wire:click="requestErasure"
+                                spinner="requestErasure" />
+                        @endif
                     </div>
                 </x-card>
             </div>

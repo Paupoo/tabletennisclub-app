@@ -6,6 +6,8 @@ use App\Actions\User\StoreUserDocumentAction;
 use App\Actions\User\UpdateUserAction;
 use App\Data\User\UpdateUserData;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\ClubAdmin\Users\Notifications\GdprErasureRequestedNotification;
+use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Rules\ValidIban;
 use App\Livewire\Concerns\HasBreadcrumbs;
@@ -13,6 +15,7 @@ use App\Livewire\Concerns\HasPhotoUpload;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rule as ValidationRule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -108,7 +111,24 @@ new class extends Component
     {
         abort_unless(Auth::user()->is($this->user), 403);
 
+        // Idempotent: one request = one notification, keep the original request date.
+        if ($this->user->gdpr_erasure_requested_at) {
+            $this->success(__('Erasure request sent. The admin will process it shortly.'));
+
+            return;
+        }
+
         $this->user->update(['gdpr_erasure_requested_at' => now()]);
+
+        $recipients = User::query()
+            ->where('id', '!=', $this->user->id)
+            ->where(function ($query): void {
+                $query->where('is_admin', true)
+                    ->orWhere('committee_role', CommitteeRolesEnum::SECRETARY->value);
+            })
+            ->get();
+
+        Notification::send($recipients, new GdprErasureRequestedNotification($this->user));
 
         $this->success(__('Erasure request sent. The admin will process it shortly.'));
     }

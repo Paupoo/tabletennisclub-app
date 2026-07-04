@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Actions\User;
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\ClubAdmin\Users\Notifications\GdprErasureRequestedNotification;
+use Illuminate\Notifications\DatabaseNotification;
 
 class AnonymizeUserAction
 {
@@ -34,6 +36,12 @@ class AnonymizeUserAction
         ]);
 
         $user->guardians()->detach();
+
+        // Drop the now-obsolete in-app erasure notifications for every recipient.
+        DatabaseNotification::query()
+            ->where('type', GdprErasureRequestedNotification::class)
+            ->where('data->member_id', $user->id)
+            ->delete();
 
         $user->delete();
     }

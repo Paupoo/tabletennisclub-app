@@ -7,6 +7,7 @@ namespace App\Http;
 use App\Http\Middleware\Authenticate;
 use App\Http\Middleware\CommitteeMemberMiddelware;
 use App\Http\Middleware\EncryptCookies;
+use App\Http\Middleware\EnsureProfileIsComplete;
 use App\Http\Middleware\EnsureSetupComplete;
 use App\Http\Middleware\EnsureSetupNotComplete;
 use App\Http\Middleware\PreventRequestsDuringMaintenance;
@@ -66,6 +67,7 @@ class Kernel extends HttpKernel
         'cache.headers' => SetCacheHeaders::class,
         'can' => Authorize::class,
         'committee' => CommitteeMemberMiddelware::class,
+        'profile.complete' => EnsureProfileIsComplete::class,
         'setup.complete' => EnsureSetupComplete::class,
         'setup.not_complete' => EnsureSetupNotComplete::class,
         'guest' => RedirectIfAuthenticated::class,
@@ -90,6 +92,7 @@ class Kernel extends HttpKernel
             VerifyCsrfToken::class,
             SubstituteBindings::class,
             EnsureSetupComplete::class,
+            EnsureProfileIsComplete::class,
         ],
 
         'api' => [

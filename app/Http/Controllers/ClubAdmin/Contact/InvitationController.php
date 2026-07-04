@@ -62,7 +62,7 @@ class InvitationController extends Controller
 
         event(new Registered($user));
 
-        return redirect()->route('admin.user.profile', $user)
+        return redirect()->route('admin.user.onboarding')
             ->with('success', __('Welcome! Take a moment to complete your personal information.'));
     }
 

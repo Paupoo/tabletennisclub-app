@@ -92,7 +92,7 @@ describe('DashboardController', function (): void {
             ->assertSee('profil');
     });
 
-    it('shows personal incomplete profile alert when own profile is missing fields', function (): void {
+    it('redirects a member with an incomplete profile to the onboarding wizard', function (): void {
         $user = User::factory()->create([
             'phone_number' => null,
             'street' => null,
@@ -100,8 +100,7 @@ describe('DashboardController', function (): void {
 
         $this->actingAs($user)
             ->get(route('dashboard'))
-            ->assertOk()
-            ->assertSee('incomplet');
+            ->assertRedirect(route('admin.user.onboarding'));
     });
 
     it('shows personal affiliation alert when user has no subscription for current season', function (): void {

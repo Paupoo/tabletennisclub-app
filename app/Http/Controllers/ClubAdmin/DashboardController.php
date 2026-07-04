@@ -137,15 +137,9 @@ class DashboardController extends Controller
             ];
         }
 
-        // Personal alert: incomplete own profile (all users)
-        if (! $user->phone_number || ! $user->street || ! $user->city_code || ! $user->city_name || ! $user->birthdate) {
-            $alerts[] = [
-                'type' => 'warning',
-                'icon' => 'o-user-circle',
-                'label' => 'Votre profil est incomplet — merci de le compléter',
-                'route' => route('admin.user.profile', $user),
-            ];
-        }
+        // No personal "incomplete profile" alert here: the profile.complete
+        // middleware sends those members to the onboarding wizard before they
+        // can ever reach the dashboard.
 
         // Personal alert: not affiliated for current season (all users)
         if ($currentSeason) {

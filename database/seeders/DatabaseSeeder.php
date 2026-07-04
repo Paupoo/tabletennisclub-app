@@ -23,6 +23,7 @@ use App\Domains\Shared\Enums\Ranking;
 use App\Domains\Shared\Models\AppSetting;
 use App\Services\ForceList;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
@@ -49,6 +50,8 @@ class DatabaseSeeder extends Seeder
             'street' => "Rue de l'Invasion 80",
             'city_code' => '1340',
             'city_name' => 'Ottignies',
+            'bic' => 'CREGBEBB',
+            'bank_account' => 'BE23732333208791',
         ]);
 
         // ── Opponent clubs (FRBTT/BBW 2025-2026) ─────────────────────────────
@@ -84,6 +87,10 @@ class DatabaseSeeder extends Seeder
         Club::create(['name' => 'CTT TOURINNES',                 'licence' => 'BBW350', 'building_name' => 'Centre sportif de Walhain',        'street' => 'Rue Chapelle Ste Anne 14',     'city_code' => '1457', 'city_name' => 'Walhain']);
 
         Season::factory(10)->create();
+
+        // Drop any stale cached season from a previous seed run so factories
+        // resolve Season::current() against the freshly-seeded rows.
+        Cache::forget('season.current');
 
         League::create([
             'division' => '4B',

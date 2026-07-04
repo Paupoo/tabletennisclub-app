@@ -20,9 +20,9 @@
 ---
 
 **{{ __('Selected lineup') }}**
-
+@php $selectedPlayers->sortBy('force_list') @endphp
 @foreach($selectedPlayers as $player)
-- {{ $player->full_name }}
+- {{ $player->full_name . '(' . $player->force_list . ')' }}
 @endforeach
 
 @if($captainMessage)

@@ -328,6 +328,15 @@
                                 </span>
                             </x-alert>
                         </div>
+                        @if ($user->hasPendingPayments())
+                            <div class="col-span-6">
+                                <x-alert icon="o-banknotes" class="alert-error">
+                                    <span class="text-sm">
+                                        {{ __('This member still has a subscription awaiting payment — reconcile the finances before anonymizing.') }}
+                                    </span>
+                                </x-alert>
+                            </div>
+                        @endif
                     @endif
                     <div class="col-span-6">
                         <x-card class="border border-error/20 bg-error/5">

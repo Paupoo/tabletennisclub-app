@@ -395,6 +395,15 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->guardians()->exists();
     }
 
+    /**
+     * Whether the member still has a subscription awaiting payment.
+     * Signals the committee to reconcile finances before anonymizing.
+     */
+    public function hasPendingPayments(): bool
+    {
+        return $this->subscriptions()->pendingPayment()->exists();
+    }
+
     public function heldCashRegisters(): HasMany
     {
         return $this->hasMany(CashRegister::class, 'held_by_user_id');

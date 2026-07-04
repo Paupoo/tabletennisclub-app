@@ -1064,6 +1064,8 @@
     "Review the request": "Examiner la demande",
     "Reminder: you have one month to process an erasure request.": "Rappel : vous disposez d'un mois pour traiter une demande d'effacement.",
     "Request sent on :date": "Demande envoyée le :date",
+    "This member still has a subscription awaiting payment — reconcile the finances before anonymizing.": "Ce membre a encore une inscription en attente de paiement — réconciliez les finances avant d'anonymiser.",
+    "⚠️ This member still has a subscription awaiting payment — reconcile the finances before anonymizing.": "⚠️ Ce membre a encore une inscription en attente de paiement — réconciliez les finances avant d'anonymiser.",
     "Gender": "Genre",
     "General Assembly": "Assemblée générale",
     "General forfeit declared for this team.": "Forfait général déclaré pour cette équipe.",

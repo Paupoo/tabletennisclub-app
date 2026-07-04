@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\User\AnonymizeUserAction;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\ClubAdmin\Users\Notifications\GdprErasureRequestedNotification;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
@@ -98,6 +99,24 @@ describe('self-service erasure request', function () {
         $mail = (new GdprErasureRequestedNotification($member))->toMail($this->admin);
 
         expect((string) $mail->render())->toContain('Jean Dupont');
+    });
+
+    it('detects a subscription awaiting payment', function () {
+        $member = User::factory()->create();
+        expect($member->hasPendingPayments())->toBeFalse();
+
+        Subscription::factory()->create(['user_id' => $member->id, 'status' => 'pending']);
+
+        expect($member->fresh()->hasPendingPayments())->toBeTrue();
+    });
+
+    it('flags pending payments in the erasure mail', function () {
+        $member = User::factory()->create();
+        Subscription::factory()->create(['user_id' => $member->id, 'status' => 'pending']);
+
+        $mail = (new GdprErasureRequestedNotification($member->fresh()))->toMail($this->admin);
+
+        expect((string) $mail->render())->toContain('⚠️');
     });
 
     it('drops the in-app erasure notification once the member is anonymized', function () {

@@ -13,11 +13,20 @@ beforeEach(function (): void {
 });
 
 describe('Room index tests', function (): void {
-    // 1. Tester que la page est accessible
-    it('renders the rooms index page', function (): void {
-        $this->actingAs($this->user)
-            ->get(route('admin.rooms.index')) // Ajuste le nom de la route si besoin
+    // 1. Tester que la page est accessible au comité
+    it('renders the rooms index page for the committee', function (): void {
+        $committee = User::factory()->create(['is_committee_member' => true]);
+
+        $this->actingAs($committee)
+            ->get(route('admin.rooms.index'))
             ->assertStatus(200);
+    });
+
+    // 1b. Un membre lambda n'a pas accès à la page (réservée au comité)
+    it('forbids a plain member from the rooms index page', function (): void {
+        $this->actingAs($this->user)
+            ->get(route('admin.rooms.index'))
+            ->assertForbidden();
     });
 
     // 2. Tester la visibilité des boutons selon les Policies

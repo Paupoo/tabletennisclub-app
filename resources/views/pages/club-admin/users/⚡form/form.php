@@ -324,6 +324,10 @@ new class extends Component
 
     public function mount(?User $user): void
     {
+        // Defense in depth: the route already gates this behind the committee
+        // middleware, but guard the component itself in case it is mounted elsewhere.
+        Gate::authorize($user?->exists ? 'update' : 'create', $user ?? User::class);
+
         if ($user && $user->exists) {
             $this->first_name = $user->first_name ?? '';
             $this->last_name = $user->last_name ?? '';
@@ -456,6 +460,8 @@ new class extends Component
 
     public function save(): void
     {
+        Gate::authorize($this->user?->exists ? 'update' : 'create', $this->user ?? User::class);
+
         try {
             $validated = $this->validate();
         } catch (ValidationException $e) {

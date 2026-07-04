@@ -87,21 +87,20 @@ Route::prefix('admin/my-space/')
         Route::get('{user}/documents/{type}', [UserDocumentController::class, 'download'])->name('admin.user.documents.download');
     });
 
+// Members administration — reserved to the management committee (admins + committee members).
+// Directly reachable by URL, so the whole group is gated here (the nav only hides the links).
 Route::prefix('admin/club-admin/users/')
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth', 'verified', 'committee'])
     ->group(function (): void {
         // Users admin
         Route::livewire('list', 'pages::club-admin.users.index')->name('admin.users.index');
         Route::livewire('create', 'pages::club-admin.users.form')->name('admin.users.create');
         Route::livewire('{user}/edit', 'pages::club-admin.users.form')->name('admin.users.edit');
         Route::livewire('registrations', 'pages::club-admin.users.registrations')->name('admin.users.registrations');
+        // Season roster — visible to the whole committee, editing reserved to managers (decision #18).
+        Route::livewire('roster', 'pages::club-admin.subscriptions.roster')->name('admin.subscriptions.roster');
         // Legacy redirect — kept for backward compatibility
         Route::get('payments', fn () => redirect()->route('admin.treasury.payments'))->name('admin.users.payments');
-
-        // Season roster — visible to the whole committee, editing reserved to managers (decision #18).
-        Route::middleware('committee')->group(function (): void {
-            Route::livewire('roster', 'pages::club-admin.subscriptions.roster')->name('admin.subscriptions.roster');
-        });
     });
 // Season planning board — visible to the whole committee, mutations reserved to managers (decision #18).
 Route::prefix('admin/club-admin/planning/')
@@ -113,8 +112,12 @@ Route::prefix('admin/club-admin/planning/')
 Route::prefix('admin/treasury/')
     ->middleware(['auth', 'verified'])
     ->group(function (): void {
-        Route::livewire('payments', 'pages::club-admin.treasury.payments')->name('admin.treasury.payments');
-        Route::livewire('transactions', 'pages::club-admin.treasury.transactions')->name('admin.treasury.transactions');
+        // Member payments & bank transactions — committee only.
+        Route::middleware('committee')->group(function (): void {
+            Route::livewire('payments', 'pages::club-admin.treasury.payments')->name('admin.treasury.payments');
+            Route::livewire('transactions', 'pages::club-admin.treasury.transactions')->name('admin.treasury.transactions');
+        });
+        // Cash register (bar) — access intentionally left broad for now (Xavier's domain).
         Route::livewire('cash-register', 'pages::club-admin.treasury.cash-register')->name('admin.treasury.cash');
     });
 
@@ -145,7 +148,7 @@ Route::prefix('admin/club-admin/seasons/')
     });
 
 Route::prefix('admin/club-admin/rooms/')
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth', 'verified', 'committee'])
     ->group(function (): void {
         Route::livewire('list', 'pages::club-admin.rooms.index')->name('admin.rooms.index');
 
@@ -161,7 +164,7 @@ Route::prefix('admin/club-admin/rooms/')
     });
 
 Route::prefix('admin/club-admin/tables/')
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth', 'verified', 'committee'])
     ->group(function (): void {
         Route::livewire('list', 'pages::club-admin.tables.index')->name('admin.tables.index');
 
@@ -176,14 +179,16 @@ Route::prefix('admin/club-admin/tables/')
             });
     });
 
+// Training packs administration — committee only.
 Route::prefix('admin/club-events/interclubs/')
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth', 'verified', 'committee'])
     ->group(function (): void {
         Route::livewire('trainings', 'pages::club-events.trainings.index')->name('admin.trainings.index');
     });
 
+// Coach's personal sessions — coaches (and admins for oversight).
 Route::prefix('coach')
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth', 'verified', 'can:access-coach-area'])
     ->group(function (): void {
         Route::livewire('trainings', 'pages::club-events.trainings.coach')->name('coach.trainings');
     });
@@ -211,31 +216,39 @@ Route::post('/meetings/{meeting}/rsvp/{user}', [MeetingRsvpController::class, 's
     ->name('meetings.rsvp.submit')
     ->middleware('signed');
 
+// Tournament administration (events) — committee only.
 Route::prefix('admin/club-events/tournaments')
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth', 'verified', 'committee'])
     ->group(function (): void {
         Route::livewire('/', 'pages::club-events.tournaments.index')->name('admin.tournaments.index');
         Route::livewire('{tournament}/live-center', 'pages::club-events.tournaments.live-center')->name('admin.tournaments.live-center');
-        Route::middleware('committee')->group(function (): void {
-            Route::livewire('wizard', 'pages::club-events.tournaments.wizard')->name('admin.tournaments.wizard');
-            Route::livewire('{tournament}/wizard', 'pages::club-events.tournaments.wizard')->name('admin.tournaments.wizard.edit');
-        });
+        Route::livewire('wizard', 'pages::club-events.tournaments.wizard')->name('admin.tournaments.wizard');
+        Route::livewire('{tournament}/wizard', 'pages::club-events.tournaments.wizard')->name('admin.tournaments.wizard.edit');
     });
 
 Route::prefix('admin/club-events/interclubs/')
     ->middleware(['auth', 'verified'])
     ->group(function (): void {
-        Route::livewire('captain-selection', 'pages::club-events.interclubs.captain-selection')->name('admin.interclubs.captain-selection');
-        Route::livewire('control-center', 'pages::club-events.interclubs.control-center')->name('admin.interclubs.control-center');
+        // Personal matches — self-scoped, left broad for any player for now.
         Route::livewire('my-matches', 'pages::club-events.interclubs.my-matches')->name('admin.interclubs.my-matches');
-        Route::livewire('teams', 'pages::club-events.interclubs.teams.index')->name('admin.interclubs.teams');
-        Route::livewire('teams/builder', 'pages::club-events.interclubs.teams.builder')->name('admin.interclubs.teams.builder');
-        Route::livewire('teams/{team}', 'pages::club-events.interclubs.teams.show')->name('admin.interclubs.teams.show');
-        Route::livewire('teams/{team}/edit', 'pages::club-events.interclubs.teams.edit')->name('admin.interclubs.teams.edit');
+
+        // Selections & results — committee, team captains (and selectors for
+        // selection). Authorization is enforced inside each component's mount(),
+        // which carries the finer per-role rules, so no route gate is added here.
+        Route::livewire('captain-selection', 'pages::club-events.interclubs.captain-selection')->name('admin.interclubs.captain-selection');
         Route::livewire('results', 'pages::club-events.interclubs.results')->name('admin.interclubs.results');
-        Route::livewire('interclubs', 'pages::club-events.interclubs.interclubs')->name('admin.interclubs.interclubs');
-        Route::livewire('division-setup', 'pages::club-events.interclubs.division-setup')->name('admin.interclubs.division-setup');
-        Route::livewire('clubs', 'pages::club-events.interclubs.clubs')->name('admin.interclubs.clubs');
+
+        // Interclub configuration & control — committee only.
+        Route::middleware('committee')->group(function (): void {
+            Route::livewire('control-center', 'pages::club-events.interclubs.control-center')->name('admin.interclubs.control-center');
+            Route::livewire('teams', 'pages::club-events.interclubs.teams.index')->name('admin.interclubs.teams');
+            Route::livewire('teams/builder', 'pages::club-events.interclubs.teams.builder')->name('admin.interclubs.teams.builder');
+            Route::livewire('teams/{team}', 'pages::club-events.interclubs.teams.show')->name('admin.interclubs.teams.show');
+            Route::livewire('teams/{team}/edit', 'pages::club-events.interclubs.teams.edit')->name('admin.interclubs.teams.edit');
+            Route::livewire('interclubs', 'pages::club-events.interclubs.interclubs')->name('admin.interclubs.interclubs');
+            Route::livewire('division-setup', 'pages::club-events.interclubs.division-setup')->name('admin.interclubs.division-setup');
+            Route::livewire('clubs', 'pages::club-events.interclubs.clubs')->name('admin.interclubs.clubs');
+        });
     });
 
 /**

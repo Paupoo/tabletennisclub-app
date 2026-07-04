@@ -39,10 +39,10 @@ test('unlogged user is redirected to login', function (): void {
         ->assertRedirect('/login');
 });
 
-test('member can access team list page but cannot see create button', function (): void {
+test('member cannot access team list page', function (): void {
     $this->actingAs($this->user)
         ->get(route('admin.interclubs.teams'))
-        ->assertStatus(200);
+        ->assertForbidden();
 });
 
 test('admin can validate team creation fields via Livewire', function (): void {

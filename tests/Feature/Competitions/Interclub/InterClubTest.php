@@ -63,12 +63,12 @@ test('captains are able to store an interclub', function (): void {
 test('invalid request', function (): void {
     // to do
 })->todo();
-test('route control-center accessible to users', function (): void {
+test('control-center is not accessible to plain members', function (): void {
     $user = $this->createFakeUser();
 
     $this->actingAs($user)
         ->get(route('admin.interclubs.control-center'))
-        ->assertOk();
+        ->assertForbidden();
 });
 
 describe('control-center filter drawer', function (): void {

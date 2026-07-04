@@ -6,7 +6,10 @@ use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
 use App\Actions\ClubAdmin\Payments\GeneratePaymentReference;
 use App\Actions\ClubAdmin\Subscriptions\ApproveTrainingPacksAction;
 use App\Actions\ClubAdmin\Subscriptions\CalculatePriceAction;
+use App\Actions\ClubAdmin\Subscriptions\CancelSubscriptionWithRefundAction;
 use App\Actions\ClubAdmin\Subscriptions\CreateSubscriptionAction;
+use App\Actions\ClubAdmin\Subscriptions\LeaveTrainingPackAction;
+use App\Actions\ClubAdmin\Subscriptions\RequestSubscriptionRefundAction;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
@@ -32,6 +35,14 @@ new class extends Component
 
     /** @var int[] Pack IDs that admin wants to approve (pre-checked = all pending) */
     public array $approvedPackIds = [];
+
+    public string $cancelMessage = '';
+
+    public bool $cancelModal = false;
+
+    public ?float $cancelRefundAmount = null;
+
+    public ?int $cancelSubscriptionId = null;
 
     public ?int $currentRequestId = null;
 
@@ -193,6 +204,55 @@ new class extends Component
         $this->selectedSeasonId = Season::current()?->id;
     }
 
+    public function confirmCancelSubscription(): void
+    {
+        $subscription = Subscription::with(['user', 'season', 'trainingPacks', 'payments'])->find($this->cancelSubscriptionId);
+        if (! $subscription || ! in_array($subscription->status, ['confirmed', 'paid'], true)) {
+            return;
+        }
+
+        $totalPaid = $subscription->totalPaid();
+        $refundAmount = $totalPaid > 0 ? (float) ($this->cancelRefundAmount ?? 0) : 0.0;
+
+        if ($totalPaid > 0 && ($refundAmount <= 0 || $refundAmount > $totalPaid)) {
+            $this->error(__('The refund amount must be between 0 and the total paid (:total €).', [
+                'total' => number_format($totalPaid, 2),
+            ]));
+
+            return;
+        }
+
+        (new CancelSubscriptionWithRefundAction)($subscription, $refundAmount, $this->cancelMessage);
+
+        $this->cancelModal = false;
+        $this->reviewModal = false;
+        $this->cancelSubscriptionId = null;
+        $this->cancelRefundAmount = null;
+        $this->cancelMessage = '';
+        $this->currentRequestId = null;
+
+        $userName = $subscription->user->first_name . ' ' . $subscription->user->last_name;
+
+        if ($refundAmount <= 0) {
+            $this->warning(__('Subscription of :user cancelled.', ['user' => $userName]));
+
+            return;
+        }
+
+        if ($subscription->user->iban) {
+            $this->success(__('Subscription of :user cancelled. Refund of :amount € to be issued to :iban.', [
+                'user' => $userName,
+                'amount' => number_format($refundAmount, 2),
+                'iban' => $subscription->user->iban,
+            ]));
+        } else {
+            $this->warning(__('Subscription of :user cancelled. Refund of :amount € required — no IBAN on file, please handle manually.', [
+                'user' => $userName,
+                'amount' => number_format($refundAmount, 2),
+            ]));
+        }
+    }
+
     public function confirmRefund(): void
     {
         $subscription = Subscription::with(['user', 'season', 'trainingPacks', 'payments'])->find($this->refundSubscriptionId);
@@ -214,18 +274,14 @@ new class extends Component
 
         $packPrice = (float) $pack->price;
 
-        $subscription->trainingPacks()->detach($pack->id);
+        // Detach + price recalculation + waitlist promotion for the freed spot
+        (new LeaveTrainingPackAction)($subscription, $pack, $subscription->has_other_family_members ? 2 : 1, notifyUser: false);
 
-        (new CalculatePriceAction)($subscription);
-
-        // Create a refund payment record so the treasurer knows a refund is owed
-        $subscription->payments()->create([
-            'reference' => (new GeneratePaymentReference)(),
-            'amount_due' => -$packPrice,   // negative = amount to refund
-            'amount_paid' => 0,
-            'status' => 'pending',
-            'payment_method' => 'refund',
-        ]);
+        // Refund enters the treasury workflow (to_refund) and notifies the treasurer & secretary
+        (new RequestSubscriptionRefundAction)($subscription, $packPrice, __(':member has been removed from :pack after having paid.', [
+            'member' => $subscription->user->first_name . ' ' . $subscription->user->last_name,
+            'pack' => $pack->name,
+        ]));
 
         $this->refundModal = false;
         $this->refundSubscriptionId = null;
@@ -274,6 +330,7 @@ new class extends Component
                 'pending' => __('To process'),
                 'confirmed' => __('Confirmed'),
                 'paid' => __('Paid'),
+                'refunded' => __('Refunded'),
                 'cancelled' => __('Cancelled'),
                 default => $this->statusFilter,
             };
@@ -297,6 +354,21 @@ new class extends Component
     public function mount(): void
     {
         $this->selectedSeasonId = Season::current()?->id;
+    }
+
+    public function openCancelModal(int $subscriptionId): void
+    {
+        $subscription = Subscription::with('payments')->find($subscriptionId);
+        if (! $subscription || ! in_array($subscription->status, ['confirmed', 'paid'], true)) {
+            return;
+        }
+
+        $totalPaid = $subscription->totalPaid();
+
+        $this->cancelSubscriptionId = $subscriptionId;
+        $this->cancelRefundAmount = $totalPaid > 0 ? $totalPaid : null;
+        $this->cancelMessage = '';
+        $this->cancelModal = true;
     }
 
     public function openRefundModal(int $subscriptionId, int $packId): void
@@ -365,7 +437,7 @@ new class extends Component
 
     public function registrations(): Collection
     {
-        $statusOrder = ['pending' => 1, 'confirmed' => 2, 'paid' => 3, 'cancelled' => 4];
+        $statusOrder = ['pending' => 1, 'confirmed' => 2, 'paid' => 3, 'refunded' => 4, 'cancelled' => 5];
 
         return Subscription::with(['user', 'trainingPacks', 'payments'])
             ->when($this->selectedSeasonId, fn ($q) => $q->where('season_id', $this->selectedSeasonId))
@@ -393,6 +465,7 @@ new class extends Component
                 'type' => $sub->is_competitive ? __('Compétition') : __('Récréative'),
                 'status' => $sub->status,
                 'amount_due' => $sub->amount_due,
+                'total_paid' => (float) $sub->payments->whereIn('status', ['paid', 'refunded'])->sum('amount_paid'),
                 'trainings_count' => $sub->trainings_count,
                 'pending_packs' => $sub->trainingPacks->filter(fn ($p) => $p->pivot->status === 'pending'),
                 'enrolled_packs' => $sub->trainingPacks->filter(fn ($p) => $p->pivot->status === 'enrolled'),
@@ -484,11 +557,13 @@ new class extends Component
                 'pending' => (clone $statsBase)->where('status', 'pending')->count(),
                 'confirmed' => (clone $statsBase)->where('status', 'confirmed')->count(),
                 'paid' => (clone $statsBase)->where('status', 'paid')->count(),
+                'refunded' => (clone $statsBase)->where('status', 'refunded')->count(),
             ],
             'statusOptions' => [
                 ['id' => 'pending',   'name' => __('To process')],
                 ['id' => 'confirmed', 'name' => __('Confirmed')],
                 ['id' => 'paid',      'name' => __('Paid')],
+                ['id' => 'refunded',  'name' => __('Refunded')],
                 ['id' => 'cancelled', 'name' => __('Cancelled')],
             ],
         ]);
@@ -588,6 +663,16 @@ new class extends Component
         $this->paymentData['invitation_counter'] = $payment->invitation_counter;
 
         $this->success(__('Payment invitation sent to :email.', ['email' => $payment->payable->user->email]));
+    }
+
+    #[Computed]
+    public function subscriptionToCancel(): ?Subscription
+    {
+        if (! $this->cancelSubscriptionId) {
+            return null;
+        }
+
+        return Subscription::with(['user', 'payments'])->find($this->cancelSubscriptionId);
     }
 
     public function toggleRegistrations(): void

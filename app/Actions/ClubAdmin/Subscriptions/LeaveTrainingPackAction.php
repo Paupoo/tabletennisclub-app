@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
 
 class LeaveTrainingPackAction
 {
-    public function __invoke(Subscription $subscription, TrainingPack $pack, int $familyMembersCount = 1): void
+    public function __invoke(Subscription $subscription, TrainingPack $pack, int $familyMembersCount = 1, bool $notifyUser = true): void
     {
         $pivot = DB::table('subscription_training_pack')
             ->where('subscription_id', $subscription->id)
@@ -27,7 +27,7 @@ class LeaveTrainingPackAction
 
         $subscription->trainingPacks()->detach($pack->id);
 
-        if ($wasPending) {
+        if ($wasPending && $notifyUser) {
             $subscription->user->notify(new TrainingPackCancelledNotification($pack, $subscription));
         }
 

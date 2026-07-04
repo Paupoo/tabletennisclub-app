@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Payment\Models\Payment;
+use App\Domains\ClubAdmin\Payment\Notifications\RefundRequestedNotification;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
@@ -216,6 +217,29 @@ describe('cancelRegistration', function (): void {
         (new TournamentService)->cancelRegistration($tournament, $user);
 
         expect($payment->fresh()->status)->toBe('to_refund');
+    });
+
+    it('renders the treasurer refund email with a link to the member profile', function (): void {
+        $tournament = paymentTournament(['price' => 10, 'max_users' => 10]);
+        $member = User::factory()->create();
+        $treasurer = User::factory()->isCommitteeMember()->create();
+        $tournament->users()->attach($member->id, ['registration_status' => 'registered']);
+
+        $registration = TournamentRegistration::where('tournament_id', $tournament->id)
+            ->where('user_id', $member->id)
+            ->firstOrFail();
+
+        $payment = $registration->payment()->create([
+            'reference' => 'TEST/003',
+            'amount_due' => 1000,
+            'amount_paid' => 1000,
+            'status' => 'to_refund',
+        ]);
+
+        $mail = (new RefundRequestedNotification($payment, $member, $tournament))->toMail($treasurer);
+        $html = $mail->render()->__toString();
+
+        expect($html)->toContain(route('admin.users.edit', $member->id));
     });
 });
 

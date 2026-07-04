@@ -54,13 +54,14 @@
     <x-admin.shared.filter-chips :chips="$filterChips" />
 
     {{-- ── Cartes stats ──────────────────────────────────────────────── --}}
-    <div class="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+    <div class="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-5">
         @php
             $statCards = [
-                ['label' => __('Total'),     'key' => 'total',     'icon' => 'o-users',       'bg' => 'bg-base-200',    'color' => 'text-base-content/60'],
-                ['label' => __('Pending'),   'key' => 'pending',   'icon' => 'o-clock',       'bg' => 'bg-warning/10',  'color' => 'text-warning-content'],
-                ['label' => __('Confirmed'), 'key' => 'confirmed', 'icon' => 'o-check-circle','bg' => 'bg-info/10',     'color' => 'text-info'],
-                ['label' => __('Paid'),      'key' => 'paid',      'icon' => 'o-banknotes',   'bg' => 'bg-success/10',  'color' => 'text-success'],
+                ['label' => __('Total'),     'key' => 'total',     'icon' => 'o-users',            'bg' => 'bg-base-200',    'color' => 'text-base-content/60'],
+                ['label' => __('Pending'),   'key' => 'pending',   'icon' => 'o-clock',            'bg' => 'bg-warning/10',  'color' => 'text-warning-content'],
+                ['label' => __('Confirmed'), 'key' => 'confirmed', 'icon' => 'o-check-circle',     'bg' => 'bg-info/10',     'color' => 'text-info'],
+                ['label' => __('Paid'),      'key' => 'paid',      'icon' => 'o-banknotes',        'bg' => 'bg-success/10',  'color' => 'text-success'],
+                ['label' => __('Refunded'),  'key' => 'refunded',  'icon' => 'o-arrow-uturn-left', 'bg' => 'bg-error/10',    'color' => 'text-error'],
             ];
         @endphp
         @foreach ($statCards as $card)
@@ -130,6 +131,7 @@
                     'pending'   => ['class' => 'badge-warning badge-soft', 'label' => __('To process')],
                     'confirmed' => ['class' => 'badge-info badge-soft',    'label' => __('Confirmed')],
                     'paid'      => ['class' => 'badge-success badge-soft', 'label' => __('Paid')],
+                    'refunded'  => ['class' => 'badge-error badge-soft',   'label' => __('Refunded')],
                     'cancelled' => ['class' => 'badge-ghost',              'label' => __('Cancelled')],
                     default     => ['class' => 'badge-ghost',              'label' => $req->status],
                 };
@@ -150,8 +152,16 @@
                     </div>
                 </x-slot:sub-value>
                 <x-slot:actions>
-                    <x-button :label="__('Details')" wire:click.stop="review({{ $req->id }})"
-                        class="btn-xs btn-ghost" />
+                    <div class="flex items-center gap-1">
+                        @if (in_array($req->status, ['confirmed', 'paid']))
+                            <x-button icon="o-x-circle"
+                                :tooltip="$req->total_paid > 0 ? __('Cancel & refund') : __('Cancel subscription')"
+                                class="btn-xs btn-ghost text-error"
+                                wire:click.stop="openCancelModal({{ $req->id }})" spinner />
+                        @endif
+                        <x-button :label="__('Details')" wire:click.stop="review({{ $req->id }})"
+                            class="btn-xs btn-ghost" />
+                    </div>
                 </x-slot:actions>
             </x-list-item>
         @empty
@@ -212,6 +222,7 @@
                                 'pending'   => ['class' => 'badge-warning badge-soft', 'label' => __('To process')],
                                 'confirmed' => ['class' => 'badge-info badge-soft',    'label' => __('Confirmed')],
                                 'paid'      => ['class' => 'badge-success badge-soft', 'label' => __('Paid')],
+                                'refunded'  => ['class' => 'badge-error badge-soft',   'label' => __('Refunded')],
                                 'cancelled' => ['class' => 'badge-ghost',              'label' => __('Cancelled')],
                                 default     => ['class' => 'badge-ghost',              'label' => $req->status],
                             };
@@ -220,8 +231,16 @@
                     @endscope
 
                     @scope('actions', $req)
-                        <x-button :label="__('Details')" wire:click="review({{ $req->id }})"
-                            class="btn-xs btn-ghost" />
+                        <div class="flex items-center gap-1">
+                            @if (in_array($req->status, ['confirmed', 'paid']))
+                                <x-button icon="o-x-circle"
+                                    :tooltip="$req->total_paid > 0 ? __('Cancel & refund') : __('Cancel subscription')"
+                                    class="btn-xs btn-ghost text-error"
+                                    wire:click="openCancelModal({{ $req->id }})" spinner />
+                            @endif
+                            <x-button :label="__('Details')" wire:click="review({{ $req->id }})"
+                                class="btn-xs btn-ghost" />
+                        </div>
                     @endscope
                 </x-table>
             @endif
@@ -246,6 +265,8 @@
                             <x-badge value="{{ __('Paid') }}" class="badge-success badge-sm" />
                         @elseif ($currentRequest->status === 'confirmed')
                             <x-badge value="{{ __('Confirmed') }}" class="badge-info badge-sm" />
+                        @elseif ($currentRequest->status === 'refunded')
+                            <x-badge value="{{ __('Refunded') }}" class="badge-error badge-soft badge-sm" />
                         @elseif ($currentRequest->status === 'cancelled')
                             <x-badge value="{{ __('Cancelled') }}" class="badge-ghost badge-sm" />
                         @endif
@@ -293,6 +314,12 @@
                                     <span class="text-sm font-bold">{{ number_format($payment['amount_due'], 2) }} €</span>
                                     @if ($payment['status'] === 'paid')
                                         <x-badge value="{{ __('Paid') }}" class="badge-success badge-xs" />
+                                    @elseif ($payment['status'] === 'to_refund')
+                                        <x-badge value="{{ __('To refund') }}" class="badge-error badge-soft badge-xs" />
+                                    @elseif ($payment['status'] === 'refunded')
+                                        <x-badge value="{{ __('Refunded') }}" class="badge-error badge-soft badge-xs" />
+                                    @elseif ($payment['status'] === 'cancelled')
+                                        <x-badge value="{{ __('Cancelled') }}" class="badge-ghost badge-xs" />
                                     @else
                                         <x-badge value="{{ __('Pending') }}" class="badge-warning badge-xs" />
                                     @endif
@@ -453,6 +480,13 @@
                 <x-button :label="__('Close')" @click="$wire.reviewModal = false" class="btn-ghost" />
                 <x-button :label="__('Send by email')" icon="o-paper-airplane" class="btn-primary" wire:click="sendPaymentEmail" spinner />
             @else
+                @if ($currentRequest && in_array($currentRequest->status, ['confirmed', 'paid']))
+                    <x-button
+                        :label="$currentRequest->total_paid > 0 ? __('Cancel & refund') : __('Cancel subscription')"
+                        icon="o-x-circle"
+                        class="btn-ghost text-error"
+                        wire:click="openCancelModal({{ $currentRequest->id }})" spinner />
+                @endif
                 <x-button :label="__('Close')" @click="$wire.reviewModal = false" class="btn-ghost" />
             @endif
         </x-slot:actions>
@@ -718,6 +752,58 @@
         <x-slot:actions>
             <x-button :label="__('Cancel')" @click="$wire.refundModal = false" class="btn-ghost" />
             <x-button :label="__('Confirm refund')" icon="o-arrow-uturn-left" class="btn-error" wire:click="confirmRefund" spinner />
+        </x-slot:actions>
+    </x-modal>
+
+    {{-- ── Modal d'annulation de cotisation (avec remboursement éventuel) ── --}}
+    <x-modal wire:model="cancelModal" :title="$this->subscriptionToCancel?->totalPaid() > 0 ? __('Cancel & refund') : __('Cancel subscription')" separator class="backdrop-blur-sm">
+        @if ($this->subscriptionToCancel)
+            @php
+                $cancelUser = $this->subscriptionToCancel->user;
+                $cancelTotalPaid = $this->subscriptionToCancel->totalPaid();
+            @endphp
+            <div class="space-y-4">
+                <p class="text-sm">
+                    {{ __('You are about to cancel the :season subscription of :member.', [
+                        'season' => $this->subscriptionToCancel->season?->name ?? '',
+                        'member' => $cancelUser->first_name . ' ' . $cancelUser->last_name,
+                    ]) }}
+                    {{ __('Training packs will be removed and freed spots offered to the waitlist.') }}
+                </p>
+
+                @if ($cancelTotalPaid > 0)
+                    <x-input :label="__('Amount to refund (€)')" wire:model="cancelRefundAmount"
+                        type="number" step="0.01" min="0.01" max="{{ $cancelTotalPaid }}"
+                        :hint="__('Already paid: :amount €', ['amount' => number_format($cancelTotalPaid, 2)])" />
+
+                    @if ($cancelUser->iban)
+                        <div class="flex items-center gap-2 rounded-lg border border-success/20 bg-success/10 p-3 text-sm">
+                            <x-icon name="o-building-library" class="h-4 w-4 shrink-0 text-success" />
+                            <span>{{ __('Refund IBAN:') }} <span class="font-mono font-bold">{{ $cancelUser->iban }}</span></span>
+                        </div>
+                    @else
+                        <div class="flex items-center gap-2 rounded-lg border border-warning/20 bg-warning/10 p-3 text-sm">
+                            <x-icon name="o-exclamation-triangle" class="h-4 w-4 shrink-0 text-warning-content" />
+                            <span>{{ __('No IBAN on file — you will need to handle the refund manually.') }}</span>
+                        </div>
+                    @endif
+                @endif
+
+                <div>
+                    <label class="mb-1 block text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Message to the member (optional)') }}</label>
+                    <textarea wire:model="cancelMessage"
+                        placeholder="{{ __('Optional personal note to the member...') }}"
+                        class="textarea textarea-bordered textarea-sm w-full text-sm" rows="2"></textarea>
+                    <p class="mt-1 text-xs italic opacity-40">{{ __('Included in the cancellation email sent to the member.') }}</p>
+                </div>
+            </div>
+        @endif
+        <x-slot:actions>
+            <x-button :label="__('Back')" @click="$wire.cancelModal = false" class="btn-ghost" />
+            <x-button
+                :label="$this->subscriptionToCancel?->totalPaid() > 0 ? __('Confirm cancellation & refund') : __('Confirm cancellation')"
+                icon="o-x-circle" class="btn-error"
+                wire:click="confirmCancelSubscription" spinner />
         </x-slot:actions>
     </x-modal>
 

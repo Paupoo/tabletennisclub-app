@@ -2,23 +2,22 @@
 
 declare(strict_types=1);
 
-namespace App\Domains\ClubAdmin\Payment\Notifications;
+namespace App\Domains\Subscriptions\Notifications;
 
 use App\Domains\ClubAdmin\Payment\Models\Payment;
-use App\Domains\ClubAdmin\Users\Models\User;
-use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class RefundRequestedNotification extends Notification
+class SubscriptionRefundRequestedNotification extends Notification
 {
     use Queueable;
 
     public function __construct(
-        public Payment $payment,
-        public User $member,
-        public Tournament $tournament,
+        public readonly Payment $payment,
+        public readonly Subscription $subscription,
+        public readonly string $reason = '',
     ) {}
 
     /** @return array<string, mixed> */
@@ -35,20 +34,25 @@ class RefundRequestedNotification extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
+        $member = $this->subscription->user;
         $amount = number_format((float) $this->payment->amount_due, 2);
-        $adminUrl = route('admin.users.edit', $this->member->id);
+        $adminUrl = route('admin.users.edit', $member->id);
+
+        $reasonLine = $this->reason !== ''
+            ? $this->reason
+            : __('The **:season** subscription of :member has been cancelled after money was collected.', [
+                'member' => $member->full_name,
+                'season' => $this->subscription->season->name,
+            ]);
 
         $mail = (new MailMessage)
-            ->subject(__('Refund to process — :name', ['name' => $this->member->full_name]))
+            ->subject(__('Refund to process — :name', ['name' => $member->full_name]))
             ->greeting(__('Hello :name,', ['name' => $notifiable->first_name]))
-            ->line(__(':member has been unregistered from **:tournament** after having paid their entry fee.', [
-                'member' => $this->member->full_name,
-                'tournament' => $this->tournament->name,
-            ]))
+            ->line($reasonLine)
             ->line(__('**Amount to refund: :amount €**', ['amount' => $amount]));
 
-        if ($this->member->iban) {
-            $mail->line(__('**IBAN:** :iban', ['iban' => $this->member->iban]));
+        if ($member->iban) {
+            $mail->line(__('**IBAN:** :iban', ['iban' => $member->iban]));
         } else {
             $mail->line(__('No IBAN on file — please contact the member to obtain their bank details.'));
         }

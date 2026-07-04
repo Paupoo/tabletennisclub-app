@@ -238,6 +238,8 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
 
     /**
      * Tous les paiements associés à cette subscription
+     *
+     * @return MorphMany<Payment, $this>
      */
     public function payments(): MorphMany
     {
@@ -325,15 +327,19 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
     // ==================== Others ====================
 
     /**
-     * Calcule le total payé via tous les payments
+     * Calcule le total payé (en euros) via tous les payments.
+     * La colonne amount_paid est stockée en centimes.
      */
     public function totalPaid(): float
     {
-        return (float) $this->payments()
+        return round(((float) $this->payments()
             ->whereIn('status', ['paid', 'refunded'])
-            ->sum('amount_paid');
+            ->sum('amount_paid')) / 100, 2);
     }
 
+    /**
+     * @return BelongsToMany<TrainingPack, $this>
+     */
     public function trainingPacks(): BelongsToMany
     {
         return $this->belongsToMany(TrainingPack::class)
@@ -346,9 +352,13 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
         $this->getCurrentState()->unconfirm($this);
     }
 
+    /**
+     * Une cotisation est un historique financier : le membre doit rester
+     * résolvable même après un soft delete de son compte.
+     */
     public function user(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class)->withTrashed();
     }
 
     // ==================== Accessors/Mutators ====================

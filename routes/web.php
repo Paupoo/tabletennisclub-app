@@ -74,6 +74,8 @@ Route::post('/contact', [ContactController::class, 'store'])
 Route::prefix('admin/my-space/')
     ->middleware(['auth', 'verified'])
     ->group(function (): void {
+        // Onboarding wizard — always self (no {user} binding), exempt from profile.complete.
+        Route::livewire('onboarding', 'pages::club-admin.users.user-space.onboarding')->name('admin.user.onboarding');
         Route::livewire('{user}/profile', 'pages::club-admin.users.user-space.profile')->name('admin.user.profile');
         Route::livewire('{user}/settings', 'pages::club-admin.users.user-space.settings')->name('admin.user.settings');
         Route::livewire('{user}/teams', 'pages::club-admin.users.user-space.user-teams')->name('admin.user.teams');

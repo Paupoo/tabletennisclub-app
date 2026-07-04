@@ -374,6 +374,22 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsToMany(Guardian::class, 'guardian_user');
     }
 
+    /**
+     * Whether the member filled every profile field the club requires:
+     * birthdate, phone and full address. Gender is NOT NULL in the schema
+     * (invited users get a default the wizard asks them to confirm), so it
+     * cannot signal incompleteness. Incomplete profiles are redirected to
+     * the onboarding wizard by the profile.complete middleware.
+     */
+    public function hasCompleteProfile(): bool
+    {
+        return $this->birthdate !== null
+            && filled($this->phone_number)
+            && filled($this->street)
+            && filled($this->city_code)
+            && filled($this->city_name);
+    }
+
     public function hasGuardian(): bool
     {
         return $this->guardians()->exists();

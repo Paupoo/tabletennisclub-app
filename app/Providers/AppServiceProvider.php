@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Application;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -24,6 +25,12 @@ class AppServiceProvider extends ServiceProvider
         if ($this->app->environment() !== 'production') {
             Model::preventLazyLoading();
         }
+
+        // One password policy for every form. The haveibeenpwned check needs
+        // network access, so it only runs in production.
+        Password::defaults(fn (): Password => $this->app->isProduction()
+            ? Password::min(8)->letters()->numbers()->uncompromised()
+            : Password::min(8)->letters()->numbers());
 
         Paginator::defaultView('custom-paginate');
     }

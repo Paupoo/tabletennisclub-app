@@ -50,7 +50,7 @@ new #[Title('My settings')] class extends Component
             'password' => [
                 'nullable',
                 'confirmed',
-                Password::min(8)->letters()->numbers()->symbols()->uncompromised(),
+                Password::defaults(),
             ],
             'password_confirmation' => 'nullable',
         ];

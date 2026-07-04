@@ -399,7 +399,7 @@ new class extends Component
                     ? 'nullable'
                     : 'required',
                 'confirmed',
-                Password::min(8)->letters()->numbers()->symbols()->uncompromised(),
+                Password::defaults(),
             ],
             'password_confirmation' => [
                 $this->user?->exists

@@ -312,6 +312,30 @@ describe('sorting', function (): void {
         expect(array_search($alice->id, $ids))->toBeLessThan(array_search($bob->id, $ids));
         expect(array_search($bob->id, $ids))->toBeLessThan(array_search($charlie->id, $ids));
     });
+
+    it('sorts by the name column using first name then last name', function (): void {
+        // Same last name to prove first_name is the primary sort key.
+        $anna = User::factory()->create(['first_name' => 'Anna', 'last_name' => 'Dupont']);
+        $bruno = User::factory()->create(['first_name' => 'Bruno', 'last_name' => 'Dupont']);
+
+        $users = Livewire::test(USER_INDEX_COMPONENT)
+            ->set('sortBy', ['column' => 'name', 'direction' => 'asc'])
+            ->get('users');
+
+        $ids = $users->pluck('id')->toArray();
+
+        expect(array_search($anna->id, $ids))->toBeLessThan(array_search($bruno->id, $ids));
+    });
+
+    it('falls back to a safe default when the sort column is unknown', function (): void {
+        User::factory()->count(3)->create();
+
+        // A tampered `sortBy` URL value must not reach orderBy() raw and crash.
+        Livewire::test(USER_INDEX_COMPONENT)
+            ->set('sortBy', ['column' => 'not_a_column', 'direction' => 'asc'])
+            ->assertStatus(200)
+            ->get('users');
+    });
 });
 
 // Actions

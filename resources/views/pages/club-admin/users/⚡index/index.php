@@ -475,12 +475,30 @@ new class extends Component
         $this->resetPage();
     }
 
+    /**
+     * Whitelist of sortable columns. Maps the header key (which may be a virtual
+     * attribute such as `name`) to the real database columns to order by. Any key
+     * not listed here — including a tampered `sortBy` URL value — falls back to a
+     * safe default instead of reaching `orderBy()` with a raw, unknown column.
+     *
+     * @var array<string, array<int, string>>
+     */
+    protected array $sortableColumns = [
+        'name' => ['first_name', 'last_name'],
+        'last_name' => ['last_name', 'first_name'],
+        'email' => ['email'],
+        'is_competitive' => ['is_competitive'],
+        'ranking' => ['ranking'],
+    ];
+
     #[Computed]
     public function users(): LengthAwarePaginator
     {
         $query = $this->showArchived
             ? User::onlyTrashed()
             : User::query();
+
+        $sortColumns = $this->sortableColumns[$this->sortBy['column']] ?? ['first_name', 'last_name'];
 
         return $query
             ->when($this->search, fn ($q) => $q->where(
@@ -514,7 +532,11 @@ new class extends Component
             ->when($this->unpaidSubscription, fn ($q) => $q->unpaid())
             ->when($this->hasKey, fn ($q) => $q->where('has_key', true))
             ->when($this->hasCashRegister, fn ($q) => $q->whereHas('heldCashRegisters'))
-            ->orderBy($this->sortBy['column'], $this->sortBy['direction'])
+            ->tap(function ($query) use ($sortColumns): void {
+                foreach ($sortColumns as $column) {
+                    $query->orderBy($column, $this->sortBy['direction']);
+                }
+            })
             ->paginate(15);
     }
 

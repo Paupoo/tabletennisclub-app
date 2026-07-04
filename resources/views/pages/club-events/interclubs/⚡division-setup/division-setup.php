@@ -78,6 +78,11 @@ new class extends Component
         $this->success(__('Participant added.'));
     }
 
+    public function clearFilters(): void
+    {
+        $this->seasonId = Season::current()?->id;
+    }
+
     public function confirmDelete(int $teamId): void
     {
         $this->deletingTeamId = $teamId;
@@ -111,11 +116,6 @@ new class extends Component
         $this->success(__('Participant removed.'));
     }
 
-    public function clearFilters(): void
-    {
-        $this->seasonId = Season::current()?->id;
-    }
-
     /** @return array<int, array{key: string, label: string}> */
     #[Computed]
     public function filterChips(): array
@@ -136,17 +136,6 @@ new class extends Component
         return $chips;
     }
 
-    public function removeFilter(string $key): void
-    {
-        if ($key === 'seasonId') {
-            $this->seasonId = Season::current()?->id;
-
-            return;
-        }
-
-        $this->reset([$key]);
-    }
-
     public function mount(): void
     {
         abort_unless(Auth::user()->is_admin || Auth::user()->is_committee_member, 403);
@@ -161,6 +150,17 @@ new class extends Component
         $this->formClubStreet = '';
         $this->formTeamLetter = '';
         $this->addModal = true;
+    }
+
+    public function removeFilter(string $key): void
+    {
+        if ($key === 'seasonId') {
+            $this->seasonId = Season::current()?->id;
+
+            return;
+        }
+
+        $this->reset([$key]);
     }
 
     public function render(): View

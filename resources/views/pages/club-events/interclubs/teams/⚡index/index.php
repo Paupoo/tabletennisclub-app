@@ -46,6 +46,11 @@ new class extends Component
 
     public ?int $teamToDelete = null;
 
+    public function clearFilters(): void
+    {
+        $this->selectedSeasonId = Season::current()?->id;
+    }
+
     public function confirmDelete(int $id): void
     {
         abort_unless(Auth::user()->is_admin || Auth::user()->is_committee_member, 403);
@@ -112,42 +117,6 @@ new class extends Component
         $this->success('Équipe supprimée.');
     }
 
-    public function clearFilters(): void
-    {
-        $this->selectedSeasonId = Season::current()?->id;
-    }
-
-    /** @return array<int, array{key: string, label: string}> */
-    #[Computed]
-    public function filterChips(): array
-    {
-        return $this->getFilterChips();
-    }
-
-    /** @return array<int, array{key: string, label: string}> */
-    public function getFilterChips(): array
-    {
-        $chips = [];
-
-        if ($this->selectedSeasonId !== Season::current()?->id) {
-            $seasonName = Season::find($this->selectedSeasonId)?->name ?? __('All seasons');
-            $chips[] = ['key' => 'selectedSeasonId', 'label' => __('Season') . ': ' . $seasonName];
-        }
-
-        return $chips;
-    }
-
-    public function removeFilter(string $key): void
-    {
-        if ($key === 'selectedSeasonId') {
-            $this->selectedSeasonId = Season::current()?->id;
-
-            return;
-        }
-
-        $this->reset([$key]);
-    }
-
     public function deleteAll(): void
     {
         abort_unless(Auth::user()->is_admin || Auth::user()->is_committee_member, 403);
@@ -172,9 +141,40 @@ new class extends Component
         $this->success("{$teams->count()} équipes supprimées.");
     }
 
+    /** @return array<int, array{key: string, label: string}> */
+    #[Computed]
+    public function filterChips(): array
+    {
+        return $this->getFilterChips();
+    }
+
+    /** @return array<int, array{key: string, label: string}> */
+    public function getFilterChips(): array
+    {
+        $chips = [];
+
+        if ($this->selectedSeasonId !== Season::current()?->id) {
+            $seasonName = Season::find($this->selectedSeasonId)?->name ?? __('All seasons');
+            $chips[] = ['key' => 'selectedSeasonId', 'label' => __('Season') . ': ' . $seasonName];
+        }
+
+        return $chips;
+    }
+
     public function mount(): void
     {
         $this->selectedSeasonId = Season::current()?->id;
+    }
+
+    public function removeFilter(string $key): void
+    {
+        if ($key === 'selectedSeasonId') {
+            $this->selectedSeasonId = Season::current()?->id;
+
+            return;
+        }
+
+        $this->reset([$key]);
     }
 
     public function render(): View

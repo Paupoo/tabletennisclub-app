@@ -97,17 +97,6 @@ new class extends Component
         $this->selectedSeasonId = Season::current()?->id;
     }
 
-    public function removeFilter(string $key): void
-    {
-        if ($key === 'selectedSeasonId') {
-            $this->selectedSeasonId = Season::current()?->id;
-
-            return;
-        }
-
-        $this->reset([$key]);
-    }
-
     public function nextWeek(): void
     {
         $weeks = $this->weekNumbersForSelectedSeason();
@@ -143,6 +132,17 @@ new class extends Component
                 $this->selectedWeek = $prev;
             }
         }
+    }
+
+    public function removeFilter(string $key): void
+    {
+        if ($key === 'selectedSeasonId') {
+            $this->selectedSeasonId = Season::current()?->id;
+
+            return;
+        }
+
+        $this->reset([$key]);
     }
 
     public function render(): View

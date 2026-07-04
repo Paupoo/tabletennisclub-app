@@ -193,17 +193,6 @@ new class extends Component
         $this->selectedSeasonId = Season::current()?->id;
     }
 
-    public function removeFilter(string $key): void
-    {
-        if ($key === 'selectedSeasonId') {
-            $this->selectedSeasonId = Season::current()?->id;
-
-            return;
-        }
-
-        $this->reset([$key]);
-    }
-
     public function confirmRefund(): void
     {
         $subscription = Subscription::with(['user', 'season', 'trainingPacks', 'payments'])->find($this->refundSubscriptionId);
@@ -465,6 +454,17 @@ new class extends Component
         $this->rejectionMessage = '';
         $this->rejectionTemplate = '';
         $this->warning(__('Training requests rejected.'));
+    }
+
+    public function removeFilter(string $key): void
+    {
+        if ($key === 'selectedSeasonId') {
+            $this->selectedSeasonId = Season::current()?->id;
+
+            return;
+        }
+
+        $this->reset([$key]);
     }
 
     public function removeFromBasket($userId): void

@@ -71,37 +71,6 @@ new class extends Component
         $this->deleteModal = true;
     }
 
-    /** @return array<int, array{key: string, label: string}> */
-    #[Computed]
-    public function filterChips(): array
-    {
-        return $this->getFilterChips();
-    }
-
-    /** @return array<int, array{key: string, label: string}> */
-    public function getFilterChips(): array
-    {
-        $chips = [];
-
-        if ($this->seasonId !== Season::current()?->id) {
-            $seasonName = Season::find($this->seasonId)?->name ?? __('All seasons');
-            $chips[] = ['key' => 'seasonId', 'label' => __('Season') . ': ' . $seasonName];
-        }
-
-        return $chips;
-    }
-
-    public function removeFilter(string $key): void
-    {
-        if ($key === 'seasonId') {
-            $this->seasonId = Season::current()?->id;
-
-            return;
-        }
-
-        $this->reset([$key]);
-    }
-
     public function declareTeamForfeit(): void
     {
         $this->authorizeTeam($this->forfeitingTeamId);
@@ -128,6 +97,26 @@ new class extends Component
 
         $this->deleteModal = false;
         $this->deletingInterclubResultId = null;
+    }
+
+    /** @return array<int, array{key: string, label: string}> */
+    #[Computed]
+    public function filterChips(): array
+    {
+        return $this->getFilterChips();
+    }
+
+    /** @return array<int, array{key: string, label: string}> */
+    public function getFilterChips(): array
+    {
+        $chips = [];
+
+        if ($this->seasonId !== Season::current()?->id) {
+            $seasonName = Season::find($this->seasonId)?->name ?? __('All seasons');
+            $chips[] = ['key' => 'seasonId', 'label' => __('Season') . ': ' . $seasonName];
+        }
+
+        return $chips;
     }
 
     public function maxPoints(): int
@@ -180,6 +169,17 @@ new class extends Component
     {
         $this->forfeitingTeamId = $teamId;
         $this->teamForfeitModal = true;
+    }
+
+    public function removeFilter(string $key): void
+    {
+        if ($key === 'seasonId') {
+            $this->seasonId = Season::current()?->id;
+
+            return;
+        }
+
+        $this->reset([$key]);
     }
 
     public function render(): View

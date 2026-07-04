@@ -97,6 +97,22 @@ new class extends Component
 
     public ?int $userToDelete = null;
 
+    /**
+     * Whitelist of sortable columns. Maps the header key (which may be a virtual
+     * attribute such as `name`) to the real database columns to order by. Any key
+     * not listed here — including a tampered `sortBy` URL value — falls back to a
+     * safe default instead of reaching `orderBy()` with a raw, unknown column.
+     *
+     * @var array<string, array<int, string>>
+     */
+    protected array $sortableColumns = [
+        'name' => ['first_name', 'last_name'],
+        'last_name' => ['last_name', 'first_name'],
+        'email' => ['email'],
+        'is_competitive' => ['is_competitive'],
+        'ranking' => ['ranking'],
+    ];
+
     // ── Bulk actions ──────────────────────────────────────────────────────────
 
     public function bulkAddToTeam(): void
@@ -474,22 +490,6 @@ new class extends Component
     {
         $this->resetPage();
     }
-
-    /**
-     * Whitelist of sortable columns. Maps the header key (which may be a virtual
-     * attribute such as `name`) to the real database columns to order by. Any key
-     * not listed here — including a tampered `sortBy` URL value — falls back to a
-     * safe default instead of reaching `orderBy()` with a raw, unknown column.
-     *
-     * @var array<string, array<int, string>>
-     */
-    protected array $sortableColumns = [
-        'name' => ['first_name', 'last_name'],
-        'last_name' => ['last_name', 'first_name'],
-        'email' => ['email'],
-        'is_competitive' => ['is_competitive'],
-        'ranking' => ['ranking'],
-    ];
 
     #[Computed]
     public function users(): LengthAwarePaginator

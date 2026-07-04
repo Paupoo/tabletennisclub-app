@@ -47,6 +47,12 @@ new class extends Component
 
     public ?int $selectedTeamId = null;
 
+    public function clearFilters(): void
+    {
+        $this->seasonId = Season::current()?->id;
+        $this->selectedTeamId = null;
+    }
+
     public function confirmDelete(int $interclubId): void
     {
         $this->deletingInterclubId = $interclubId;
@@ -62,12 +68,6 @@ new class extends Component
 
         $this->deleteModal = false;
         $this->deletingInterclubId = null;
-    }
-
-    public function clearFilters(): void
-    {
-        $this->seasonId = Season::current()?->id;
-        $this->selectedTeamId = null;
     }
 
     /** @return array<int, array{key: string, label: string}> */
@@ -93,17 +93,6 @@ new class extends Component
         }
 
         return $chips;
-    }
-
-    public function removeFilter(string $key): void
-    {
-        if ($key === 'seasonId') {
-            $this->seasonId = Season::current()?->id;
-
-            return;
-        }
-
-        $this->reset([$key]);
     }
 
     public function mount(): void
@@ -141,6 +130,17 @@ new class extends Component
         $this->formIsHome = $isHome;
         $this->formAddress = $interclub->address;
         $this->editModal = true;
+    }
+
+    public function removeFilter(string $key): void
+    {
+        if ($key === 'seasonId') {
+            $this->seasonId = Season::current()?->id;
+
+            return;
+        }
+
+        $this->reset([$key]);
     }
 
     public function render(): View

@@ -106,6 +106,11 @@ new class extends Component
         $this->selectedPackId = null;
     }
 
+    public function clearFilters(): void
+    {
+        $this->viewSeasonId = Season::where('is_active', true)->value('id') ?? 0;
+    }
+
     public function closeWizard(): void
     {
         $this->wizardOpen = false;
@@ -165,19 +170,6 @@ new class extends Component
         $this->warning(__('Pack deactivated.'));
     }
 
-    #[Computed]
-    public function levelOptions(): array
-    {
-        return collect(TrainingLevel::cases())
-            ->map(fn ($e) => ['id' => $e->value, 'name' => $e->value])
-            ->toArray();
-    }
-
-    public function clearFilters(): void
-    {
-        $this->viewSeasonId = Season::where('is_active', true)->value('id') ?? 0;
-    }
-
     /** @return array<int, array{key: string, label: string}> */
     #[Computed]
     public function filterChips(): array
@@ -200,20 +192,17 @@ new class extends Component
         return $chips;
     }
 
+    #[Computed]
+    public function levelOptions(): array
+    {
+        return collect(TrainingLevel::cases())
+            ->map(fn ($e) => ['id' => $e->value, 'name' => $e->value])
+            ->toArray();
+    }
+
     public function mount(): void
     {
         $this->viewSeasonId = Season::where('is_active', true)->value('id') ?? 0;
-    }
-
-    public function removeFilter(string $key): void
-    {
-        if ($key === 'viewSeasonId') {
-            $this->viewSeasonId = Season::where('is_active', true)->value('id') ?? 0;
-
-            return;
-        }
-
-        $this->reset([$key]);
     }
 
     public function nextStep(): void
@@ -396,6 +385,17 @@ new class extends Component
     public function refreshPacks(): void
     {
         unset($this->packs);
+    }
+
+    public function removeFilter(string $key): void
+    {
+        if ($key === 'viewSeasonId') {
+            $this->viewSeasonId = Season::where('is_active', true)->value('id') ?? 0;
+
+            return;
+        }
+
+        $this->reset([$key]);
     }
 
     #[Computed]

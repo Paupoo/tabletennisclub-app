@@ -198,10 +198,11 @@ test('a minor is blocked from advancing past the guardian step without a guardia
         ->assertSet('guardianIds', []);
 });
 
-test('linking an existing member as guardian allows the minor to advance', function (): void {
+test('linking an existing member as guardian allows the minor to advance and persists the link', function (): void {
     $adult = User::factory()->create(['first_name' => 'Paul', 'last_name' => 'Durand']);
+    $minor = incompleteUser();
 
-    Livewire::actingAs(incompleteUser())
+    Livewire::actingAs($minor)
         ->test(ONBOARDING_COMPONENT)
         ->set('gender', Gender::WOMEN)
         ->set('birthdate', now()->subYears(15)->format('Y-m-d'))
@@ -211,10 +212,14 @@ test('linking an existing member as guardian allows the minor to advance', funct
         ->call('completeGuardianStep')
         ->assertHasNoErrors()
         ->assertSet('step', 3);
+
+    expect($minor->fresh()->hasGuardian())->toBeTrue();
 });
 
-test('creating a new guardian allows the minor to advance', function (): void {
-    Livewire::actingAs(incompleteUser())
+test('creating a new guardian allows the minor to advance and persists the link', function (): void {
+    $minor = incompleteUser();
+
+    Livewire::actingAs($minor)
         ->test(ONBOARDING_COMPONENT)
         ->set('gender', Gender::WOMEN)
         ->set('birthdate', now()->subYears(15)->format('Y-m-d'))
@@ -227,6 +232,38 @@ test('creating a new guardian allows the minor to advance', function (): void {
         ->call('completeGuardianStep')
         ->assertHasNoErrors()
         ->assertSet('step', 3);
+
+    expect($minor->fresh()->hasGuardian())->toBeTrue();
+});
+
+test('a minor who completes the whole wizard is not sent back to the guardian step', function (): void {
+    $minor = incompleteUser();
+
+    Livewire::actingAs($minor)
+        ->test(ONBOARDING_COMPONENT)
+        ->set('gender', Gender::WOMEN)
+        ->set('birthdate', now()->subYears(15)->format('Y-m-d'))
+        ->set('phone_number', '0470 12 34 56')
+        ->call('completeIdentityStep')
+        ->set('guardianFirstName', 'Marie')
+        ->set('guardianLastName', 'Dupont')
+        ->set('guardianPhone', '0479123456')
+        ->call('createGuardian')
+        ->call('completeGuardianStep')
+        ->set('street', 'Rue de la Station 1')
+        ->set('city_code', '1340')
+        ->set('city_name', 'Ottignies')
+        ->call('completeAddressStep')
+        ->call('finish')
+        ->assertHasNoErrors();
+
+    $minor->refresh();
+    expect($minor->requiresGuardian())->toBeFalse()
+        ->and($minor->hasCompleteProfile())->toBeTrue();
+
+    $this->actingAs($minor)
+        ->get(route('admin.user.profile', $minor))
+        ->assertSuccessful();
 });
 
 test('a minor who onboarded before the guardian requirement is resumed on the guardian step', function (): void {

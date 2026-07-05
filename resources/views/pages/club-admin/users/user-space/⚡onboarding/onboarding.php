@@ -78,6 +78,8 @@ new class extends Component
             return;
         }
 
+        $this->user->guardians()->sync($this->guardianIds);
+
         $this->maxReachable = max($this->maxReachable, 3);
         $this->step = 3;
     }

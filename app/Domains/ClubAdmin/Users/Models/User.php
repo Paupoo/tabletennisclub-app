@@ -408,7 +408,8 @@ class User extends Authenticatable implements MustVerifyEmail
             && filled($this->phone_number)
             && filled($this->street)
             && filled($this->city_code)
-            && filled($this->city_name);
+            && filled($this->city_name)
+            && ! $this->requiresGuardian();
     }
 
     public function hasGuardian(): bool

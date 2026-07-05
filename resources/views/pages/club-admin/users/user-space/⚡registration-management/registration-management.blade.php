@@ -5,6 +5,12 @@
 <div>
     <x-header :title="__('Affiliation and Training')" :subtitle="__('Manage your club membership and training enrollments')" separator />
 
+    @if (count($registrations) <= 1)
+        <p class="text-sm text-base-content/50 italic mb-4">
+            {{ __('To add a family member, please contact the committee.') }}
+        </p>
+    @endif
+
     <x-tabs wire:model="selectedTab">
         @foreach($registrations as $userId => $reg)
         @php

@@ -45,7 +45,7 @@ class UserFactory extends Factory
             'last_name' => fake()->lastName(),
             'gender' => fake()->randomElement(array_column(Gender::cases(), 'name')),
             'phone_number' => fake()->numberBetween(460000000, 499000000),
-            'birthdate' => fake()->dateTimeBetween('-75 years', '- 8 years'),
+            'birthdate' => fake()->dateTimeBetween('-75 years', '-18 years'),
             'street' => fake()->streetAddress(),
             'city_code' => (string) fake()->numberBetween(1000, 9999),
             'city_name' => fake()->city(),
@@ -97,6 +97,13 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes): array => [
             'licence' => null,
+        ]);
+    }
+
+    public function minor(): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'birthdate' => fake()->dateTimeBetween('-17 years', '-8 years'),
         ]);
     }
 

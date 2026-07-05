@@ -56,6 +56,18 @@ test('one guardian can cover multiple siblings', function (): void {
     expect($guardian->users()->count())->toBe(3);
 });
 
+test('the default factory user is an adult', function (): void {
+    $user = User::factory()->create();
+
+    expect($user->isMinor())->toBeFalse();
+});
+
+test('the minor factory state produces a user under 18', function (): void {
+    $user = User::factory()->minor()->create();
+
+    expect($user->isMinor())->toBeTrue();
+});
+
 test('user is considered minor when under 18', function (): void {
     $minor = User::factory()->create(['birthdate' => now()->subYears(15)]);
     $adult = User::factory()->create(['birthdate' => now()->subYears(20)]);
@@ -77,4 +89,28 @@ test('minor with guardian attached is not flagged', function (): void {
     $minor->guardians()->attach($guardian);
 
     expect($minor->hasGuardian())->toBeTrue();
+});
+
+test('a contact-complete minor without a guardian has an incomplete profile', function (): void {
+    $minor = User::factory()->minor()->create([
+        'phone_number' => '0479000000',
+        'street' => 'Rue de la Paix 1',
+        'city_code' => '1340',
+        'city_name' => 'Ottignies',
+    ]);
+
+    expect($minor->hasCompleteProfile())->toBeFalse();
+});
+
+test('a contact-complete minor with a guardian has a complete profile', function (): void {
+    $minor = User::factory()->minor()->create([
+        'phone_number' => '0479000000',
+        'street' => 'Rue de la Paix 1',
+        'city_code' => '1340',
+        'city_name' => 'Ottignies',
+    ]);
+    $guardian = Guardian::factory()->create();
+    $minor->guardians()->attach($guardian);
+
+    expect($minor->hasCompleteProfile())->toBeTrue();
 });

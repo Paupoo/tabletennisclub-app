@@ -9,9 +9,13 @@ use App\Domains\ClubAdmin\Users\Models\User;
 
 class GuardianPolicy
 {
-    public function create(User $user): bool
+    public function create(User $user, ?User $target = null): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        if ($user->is_admin || $user->is_committee_member) {
+            return true;
+        }
+
+        return $target !== null && $user->is($target);
     }
 
     public function delete(User $user, Guardian $guardian): bool

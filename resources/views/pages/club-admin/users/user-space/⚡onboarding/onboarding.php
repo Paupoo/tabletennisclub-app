@@ -7,6 +7,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Rules\ValidIban;
 use App\Livewire\Concerns\HasPhotoUpload;
+use App\Livewire\Concerns\ManagesGuardians;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -17,7 +18,7 @@ use Mary\Traits\Toast;
 
 new class extends Component
 {
-    use HasPhotoUpload, Toast, WithFileUploads;
+    use HasPhotoUpload, ManagesGuardians, Toast, WithFileUploads;
 
     // ── Step 1 — Identity ────────────────────────────────────────────────────
 
@@ -65,6 +66,18 @@ new class extends Component
             'city_name' => $this->city_name,
         ]);
 
+        $this->maxReachable = max($this->maxReachable, 4);
+        $this->step = 4;
+    }
+
+    public function completeGuardianStep(): void
+    {
+        if ($this->guardianIds === []) {
+            $this->error(__('A legal guardian is required before you can continue.'));
+
+            return;
+        }
+
         $this->maxReachable = max($this->maxReachable, 3);
         $this->step = 3;
     }
@@ -83,8 +96,9 @@ new class extends Component
             'phone_number' => $this->phone_number,
         ]);
 
-        $this->maxReachable = max($this->maxReachable, 2);
-        $this->step = 2;
+        $next = $this->isMinor ? 2 : 3;
+        $this->maxReachable = max($this->maxReachable, $next);
+        $this->step = $next;
     }
 
     public function finish(): void
@@ -117,6 +131,10 @@ new class extends Component
 
     public function goToStep(int $target): void
     {
+        if ($target === 2 && ! $this->isMinor) {
+            return;
+        }
+
         if ($target <= $this->maxReachable) {
             $this->step = $target;
         }
@@ -144,14 +162,22 @@ new class extends Component
         $this->city_name = $this->user->city_name ?? '';
         $this->iban = $this->user->iban;
         $this->currentPhoto = $this->user->photo;
+        $this->guardianIds = $this->user->guardians()->pluck('guardians.id')->all();
 
         // Resume where the member left off: already-filled steps stay reachable.
         $identityComplete = $this->user->birthdate !== null
             && filled($this->user->phone_number);
+        $addressComplete = filled($this->user->street)
+            && filled($this->user->city_code)
+            && filled($this->user->city_name);
+        $guardianSatisfied = ! $this->user->requiresGuardian();
 
-        if ($identityComplete) {
-            $this->maxReachable = $this->user->hasCompleteProfile() ? 3 : 2;
-        }
+        $this->maxReachable = match (true) {
+            ! $identityComplete => 1,
+            ! $guardianSatisfied => 2,
+            ! $addressComplete => 3,
+            default => 4,
+        };
 
         $this->step = $this->maxReachable;
     }

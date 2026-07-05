@@ -47,7 +47,7 @@ test('the identity step requires gender, birthdate and phone', function (): void
         ->assertSet('step', 1);
 });
 
-test('completing the identity step persists the fields and advances', function (): void {
+test('completing the identity step persists the fields and advances to address for an adult', function (): void {
     $user = incompleteUser();
 
     Livewire::actingAs($user)
@@ -57,7 +57,7 @@ test('completing the identity step persists the fields and advances', function (
         ->set('phone_number', '0470 12 34 56')
         ->call('completeIdentityStep')
         ->assertHasNoErrors()
-        ->assertSet('step', 2);
+        ->assertSet('step', 3);
 
     $user->refresh();
     expect($user->gender)->toBe(Gender::WOMEN)
@@ -65,10 +65,21 @@ test('completing the identity step persists the fields and advances', function (
         ->and($user->phone_number)->toBe('0470 12 34 56');
 });
 
+test('completing the identity step advances to the guardian step for a minor', function (): void {
+    Livewire::actingAs(incompleteUser())
+        ->test(ONBOARDING_COMPONENT)
+        ->set('gender', Gender::WOMEN)
+        ->set('birthdate', now()->subYears(15)->format('Y-m-d'))
+        ->set('phone_number', '0470 12 34 56')
+        ->call('completeIdentityStep')
+        ->assertHasNoErrors()
+        ->assertSet('step', 2);
+});
+
 test('the address step requires street, postal code and city', function (): void {
     Livewire::actingAs(incompleteUser())
         ->test(ONBOARDING_COMPONENT)
-        ->set('step', 2)
+        ->set('step', 3)
         ->call('completeAddressStep')
         ->assertHasErrors(['street', 'city_code', 'city_name']);
 });
@@ -87,7 +98,7 @@ test('completing the address step makes the profile complete', function (): void
         ->set('city_name', 'Ottignies')
         ->call('completeAddressStep')
         ->assertHasNoErrors()
-        ->assertSet('step', 3);
+        ->assertSet('step', 4);
 
     expect($user->refresh()->hasCompleteProfile())->toBeTrue();
 });
@@ -129,7 +140,7 @@ test('the parental consent upload is shown for minors on the last step', functio
     Livewire::actingAs($minor)
         ->test(ONBOARDING_COMPONENT)
         ->set('birthdate', now()->subYears(15)->format('Y-m-d'))
-        ->set('step', 3)
+        ->set('step', 4)
         ->assertSee(__('Parental consent'));
 });
 
@@ -139,7 +150,7 @@ test('the parental consent upload is hidden for adults on the last step', functi
     Livewire::actingAs($adult)
         ->test(ONBOARDING_COMPONENT)
         ->set('birthdate', now()->subYears(30)->format('Y-m-d'))
-        ->set('step', 3)
+        ->set('step', 4)
         ->assertDontSee(__('Parental consent'));
 });
 
@@ -150,13 +161,82 @@ test('a member with a complete profile resumes on the optional step', function (
 
     Livewire::actingAs($user)
         ->test(ONBOARDING_COMPONENT)
-        ->assertSet('step', 3)
-        ->assertSet('maxReachable', 3);
+        ->assertSet('step', 4)
+        ->assertSet('maxReachable', 4);
 });
 
 test('an unreachable step cannot be forced through goToStep', function (): void {
     Livewire::actingAs(incompleteUser())
         ->test(ONBOARDING_COMPONENT)
-        ->call('goToStep', 3)
+        ->call('goToStep', 4)
         ->assertSet('step', 1);
+});
+
+test('the guardian step is not reachable for an adult via goToStep', function (): void {
+    $user = incompleteUser();
+
+    Livewire::actingAs($user)
+        ->test(ONBOARDING_COMPONENT)
+        ->set('gender', Gender::MEN)
+        ->set('birthdate', now()->subYears(30)->format('Y-m-d'))
+        ->set('phone_number', '0470 00 00 00')
+        ->call('completeIdentityStep')
+        ->assertSet('step', 3)
+        ->call('goToStep', 2)
+        ->assertSet('step', 3);
+});
+
+test('a minor is blocked from advancing past the guardian step without a guardian', function (): void {
+    Livewire::actingAs(incompleteUser())
+        ->test(ONBOARDING_COMPONENT)
+        ->set('gender', Gender::WOMEN)
+        ->set('birthdate', now()->subYears(15)->format('Y-m-d'))
+        ->set('phone_number', '0470 12 34 56')
+        ->call('completeIdentityStep')
+        ->call('completeGuardianStep')
+        ->assertSet('step', 2)
+        ->assertSet('guardianIds', []);
+});
+
+test('linking an existing member as guardian allows the minor to advance', function (): void {
+    $adult = User::factory()->create(['first_name' => 'Paul', 'last_name' => 'Durand']);
+
+    Livewire::actingAs(incompleteUser())
+        ->test(ONBOARDING_COMPONENT)
+        ->set('gender', Gender::WOMEN)
+        ->set('birthdate', now()->subYears(15)->format('Y-m-d'))
+        ->set('phone_number', '0470 12 34 56')
+        ->call('completeIdentityStep')
+        ->call('attachMemberAsGuardian', $adult->id)
+        ->call('completeGuardianStep')
+        ->assertHasNoErrors()
+        ->assertSet('step', 3);
+});
+
+test('creating a new guardian allows the minor to advance', function (): void {
+    Livewire::actingAs(incompleteUser())
+        ->test(ONBOARDING_COMPONENT)
+        ->set('gender', Gender::WOMEN)
+        ->set('birthdate', now()->subYears(15)->format('Y-m-d'))
+        ->set('phone_number', '0470 12 34 56')
+        ->call('completeIdentityStep')
+        ->set('guardianFirstName', 'Marie')
+        ->set('guardianLastName', 'Dupont')
+        ->set('guardianPhone', '0479123456')
+        ->call('createGuardian')
+        ->call('completeGuardianStep')
+        ->assertHasNoErrors()
+        ->assertSet('step', 3);
+});
+
+test('a minor who onboarded before the guardian requirement is resumed on the guardian step', function (): void {
+    $minor = User::factory()->minor()->create();
+
+    $this->actingAs($minor)
+        ->get(route('admin.user.profile', $minor))
+        ->assertRedirect(route('admin.user.onboarding'));
+
+    Livewire::actingAs($minor)
+        ->test(ONBOARDING_COMPONENT)
+        ->assertSet('step', 2);
 });

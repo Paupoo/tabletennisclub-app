@@ -4,6 +4,8 @@
 erDiagram
     Guardian {
     }
+    FamilyGroup {
+    }
     User {
         int id PK
         bool is_admin
@@ -37,10 +39,9 @@ erDiagram
         string medical_certificate_path "nullable"
         string parental_consent_path "nullable"
     }
-    FamilyGroup {
-    }
 
     Guardian }o--o{ User : "users"
+    FamilyGroup }o--o{ User : "users"
     User ||--o{ NewsPost : "articles"
     User ||--o| Team : "captainOf"
     User }o--o{ FamilyGroup : "familyGroups"
@@ -54,5 +55,4 @@ erDiagram
     User }o--o{ Team : "teams"
     User }o--o{ Tournament : "tournaments"
     User }o--o{ Training : "trainings"
-    FamilyGroup }o--o{ User : "users"
 ```

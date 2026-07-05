@@ -27,6 +27,14 @@ test('user can update their own contact fields', function (): void {
         ->and($user->fresh()->phone_number)->toBe('0479999999');
 });
 
+test('profile displays the stored iban grouped by 4 for readability', function (): void {
+    $user = User::factory()->create(['iban' => 'BE12345678901234']);
+
+    Livewire::actingAs($user)
+        ->test('pages::club-admin.users.user-space.profile', ['user' => $user])
+        ->assertSee('BE12 3456 7890 1234');
+});
+
 test('user can update identity fields', function (): void {
     $user = User::factory()->create([
         'first_name' => 'Jean',

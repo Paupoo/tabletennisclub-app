@@ -8,6 +8,7 @@ use App\Domains\ClubAdmin\Payment\Models\CashRegister;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Shared\Models\AppSetting;
+use App\Domains\Shared\Rules\ValidIban;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Validation\Rule as ValidationRule;
@@ -24,7 +25,7 @@ new class extends Component
 
     public bool $addCommitteeMemberModal = false;
 
-    #[Validate('string|max:50')]
+    #[Validate(['required', 'string', 'max:50', new ValidIban])]
     public ?string $bank_account;
 
     #[Validate('string|max:20')]

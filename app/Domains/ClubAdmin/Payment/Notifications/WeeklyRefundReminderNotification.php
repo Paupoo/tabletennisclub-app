@@ -52,7 +52,7 @@ class WeeklyRefundReminderNotification extends Notification
             }
 
             if ($user->iban) {
-                $line .= " — IBAN: {$user->iban}";
+                $line .= " — IBAN: {$user->iban_formatted}";
             } else {
                 $line .= ' — ' . __('no IBAN on file');
             }

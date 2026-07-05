@@ -6,6 +6,8 @@ namespace App\Domains\Competitions\Interclub\Models;
 
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Casts\IbanCast;
+use App\Domains\Shared\Support\IbanNormalizer;
 use App\Domains\Shared\Traits\HasAuditLog;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -88,7 +90,7 @@ class Club extends Model
         'email_contact' => 'string',
         'phone_contact' => 'string',
         'bic' => 'string',
-        'bank_account' => 'string',
+        'bank_account' => IbanCast::class,
         'website_url' => 'string',
         'enterprise_number' => 'string',
     ];
@@ -119,6 +121,11 @@ class Club extends Model
     public static function own(): ?self
     {
         return Cache::rememberForever('own_club', fn () => self::where('is_own_club', true)->first());
+    }
+
+    public function getBankAccountFormattedAttribute(): ?string
+    {
+        return IbanNormalizer::format($this->bank_account);
     }
 
     public function rooms(): BelongsToMany

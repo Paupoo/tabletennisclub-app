@@ -32,7 +32,7 @@ class PaymentInvitationEmail extends Mailable
         public ?string $instructions = null,
     ) {
         $this->BIC = Club::ourClub()->first()->bic;
-        $this->IBAN = Club::ourClub()->first()->bank_account;
+        $this->IBAN = Club::ourClub()->first()->bank_account_formatted;
         $this->qrCode = (new GeneratePaymentQR)($payment);
         $this->instructions ??= __('Veuillez effectuer le versement avant le ' . today()->addDays(30)->format('d/m/Y'));
     }

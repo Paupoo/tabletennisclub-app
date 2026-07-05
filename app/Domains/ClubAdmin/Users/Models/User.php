@@ -17,8 +17,10 @@ use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Competitions\Tournament\Models\Pool;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Meetings\Models\Meeting;
+use App\Domains\Shared\Casts\IbanCast;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Gender;
+use App\Domains\Shared\Support\IbanNormalizer;
 use App\Domains\Shared\Traits\HasAuditLog;
 use App\Domains\Trainings\Models\Training;
 use App\Http\Controllers\ClubAdmin\DashboardController;
@@ -183,6 +185,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'gender' => Gender::class,
         'phone_number' => 'string',
         'guardian_phone_number' => 'string',
+        'iban' => IbanCast::class,
         'photo' => 'string',
         'birthdate' => 'datetime:d-m-Y',
         'street' => 'string',
@@ -345,6 +348,11 @@ class User extends Authenticatable implements MustVerifyEmail
             ->where('season_id', $seasonId)
             ->where('status', 'paid')
             ->exists();
+    }
+
+    public function getIbanFormattedAttribute(): ?string
+    {
+        return IbanNormalizer::format($this->iban);
     }
 
     public function getIsActiveAttribute(): bool

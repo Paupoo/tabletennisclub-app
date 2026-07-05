@@ -48,7 +48,7 @@ class RefundRequestedNotification extends Notification
             ->line(__('**Amount to refund: :amount €**', ['amount' => $amount]));
 
         if ($this->member->iban) {
-            $mail->line(__('**IBAN:** :iban', ['iban' => $this->member->iban]));
+            $mail->line(__('**IBAN:** :iban', ['iban' => $this->member->iban_formatted]));
         } else {
             $mail->line(__('No IBAN on file — please contact the member to obtain their bank details.'));
         }

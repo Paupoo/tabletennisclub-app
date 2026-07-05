@@ -271,6 +271,42 @@ describe('Test Club Settings', function (): void {
     });
 
     // ─────────────────────────────────────────────────────────────────────────────
+    // SAVE (bank_account / IBAN)
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    describe('save(bank_account)', function (): void {
+
+        it('normalizes a bank_account entered with spaces before saving', function (): void {
+            Club::factory()->ownClub()->create(['bank_account' => 'BE23732333208791', 'email_contact' => 'club@example.com']);
+
+            Livewire::test(clubSettingsComponent())
+                ->set('bank_account', 'be68 5390 0754 7034')
+                ->call('save');
+
+            expect(Club::ourClub()->first()->bank_account)->toBe('BE68539007547034');
+        });
+
+        it('rejects a bank_account that fails the IBAN checksum', function (): void {
+            Club::factory()->ownClub()->create(['bank_account' => 'BE23732333208791', 'email_contact' => 'club@example.com']);
+
+            Livewire::test(clubSettingsComponent())
+                ->set('bank_account', 'BE00539007547034')
+                ->call('save')
+                ->assertHasErrors(['bank_account']);
+        });
+
+        it('requires a bank_account', function (): void {
+            Club::factory()->ownClub()->create(['bank_account' => 'BE23732333208791', 'email_contact' => 'club@example.com']);
+
+            Livewire::test(clubSettingsComponent())
+                ->set('bank_account', '')
+                ->call('save')
+                ->assertHasErrors(['bank_account']);
+        });
+
+    });
+
+    // ─────────────────────────────────────────────────────────────────────────────
     // COMMITTEE MEMBERS ORDERING
     // ─────────────────────────────────────────────────────────────────────────────
 

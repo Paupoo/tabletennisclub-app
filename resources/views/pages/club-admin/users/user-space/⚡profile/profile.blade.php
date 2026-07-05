@@ -99,7 +99,7 @@
                     <x-icon name="o-building-library" class="w-4 h-4 opacity-40 shrink-0" />
                     <div class="min-w-0">
                         <div class="text-[10px] opacity-40 uppercase tracking-wider font-black">{{ __('IBAN') }}</div>
-                        <div class="text-sm font-semibold font-mono truncate">{{ $user->iban }}</div>
+                        <div class="text-sm font-semibold font-mono truncate">{{ $user->iban_formatted }}</div>
                     </div>
                 </div>
                 @endif

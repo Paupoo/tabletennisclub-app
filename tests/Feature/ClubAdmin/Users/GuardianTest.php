@@ -26,6 +26,18 @@ test('guardian can store optional iban', function (): void {
     expect($guardian->iban)->toBe('BE68539007547034');
 });
 
+test('guardian normalizes iban on assignment, stripping spaces and uppercasing', function (): void {
+    $guardian = Guardian::factory()->create(['iban' => 'be68 5390 0754 7034']);
+
+    expect($guardian->fresh()->iban)->toBe('BE68539007547034');
+});
+
+test('guardian exposes iban_formatted grouped by 4 for display', function (): void {
+    $guardian = Guardian::factory()->create(['iban' => 'BE68539007547034']);
+
+    expect($guardian->iban_formatted)->toBe('BE68 5390 0754 7034');
+});
+
 test('user has guardians relationship pointing to Guardian model', function (): void {
     $user = User::factory()->create();
     $guardian = Guardian::factory()->create();

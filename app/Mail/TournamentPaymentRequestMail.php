@@ -35,7 +35,7 @@ class TournamentPaymentRequestMail extends Mailable
     ) {
         $this->qrCode = (new GeneratePaymentQR)($payment);
         $this->BIC = Club::ourClub()->first()->bic;
-        $this->IBAN = Club::ourClub()->first()->bank_account;
+        $this->IBAN = Club::ourClub()->first()->bank_account_formatted;
     }
 
     public function content(): Content

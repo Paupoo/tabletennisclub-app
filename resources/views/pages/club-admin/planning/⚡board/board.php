@@ -541,6 +541,9 @@ new class extends Component
 
         /** @var Collection<int|string, Collection<int, TrainingPlanAssignment>> $byPack */
         $byPack = $plan->assignments
+            // Archived members keep their assignment row (soft delete, no cascade)
+            // but drop out of the relation, so skip them here rather than crash.
+            ->filter(fn (TrainingPlanAssignment $a): bool => $a->user !== null)
             ->sortBy('position')
             ->groupBy(fn (TrainingPlanAssignment $a): string => $a->training_plan_pack_id === null
                 ? 'pool'

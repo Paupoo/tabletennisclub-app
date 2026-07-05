@@ -136,6 +136,10 @@ new class extends Component
 
         User::whereIn('id', $this->selected)
             ->where('id', '!=', Auth::id())
+            ->get()
+            // Members with an unresolved subscription for the active season are
+            // skipped: archiving them would silently orphan a live subscription.
+            ->filter(fn (User $user): bool => ! $user->isAffiliatedForCurrentSeason())
             ->each(fn (User $user) => SoftDeleteUserAction::handle($user));
 
         $this->confirmArchiveModal = false;
@@ -220,7 +224,13 @@ new class extends Component
 
         $this->authorize('delete', $user);
 
-        SoftDeleteUserAction::handle($user);
+        try {
+            SoftDeleteUserAction::handle($user);
+        } catch (\DomainException $e) {
+            $this->error($e->getMessage());
+
+            return;
+        }
 
         $this->success(__('User archived.'));
     }

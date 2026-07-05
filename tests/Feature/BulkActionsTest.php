@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -168,5 +169,26 @@ describe('Bulk actions', function (): void {
             ->call('bulkArchive');
 
         expect($this->admin->fresh())->not->toBeNull();
+    });
+
+    it('bulkArchive skips users with an unresolved subscription for the active season', function (): void {
+        $season = makeActiveSeason();
+
+        $blocked = User::factory()->create();
+        Subscription::factory()->create([
+            'user_id' => $blocked->id,
+            'season_id' => $season->id,
+            'status' => 'confirmed',
+        ]);
+
+        $archivable = User::factory()->create();
+
+        Livewire::actingAs($this->admin)
+            ->test(USERS_COMPONENT)
+            ->set('selected', [(string) $blocked->id, (string) $archivable->id])
+            ->call('bulkArchive');
+
+        expect(User::find($blocked->id))->not->toBeNull()
+            ->and(User::find($archivable->id))->toBeNull();
     });
 });

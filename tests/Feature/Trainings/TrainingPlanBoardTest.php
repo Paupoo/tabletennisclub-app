@@ -179,6 +179,37 @@ describe('board rendering', function (): void {
             ->assertSee('Pooled Person')
             ->assertSee('B0');
     });
+
+    it('renders without crashing when an assigned member has been archived', function (): void {
+        $plan = TrainingPlan::factory()->create(['season_id' => $this->season->id]);
+        $pack = TrainingPlanPack::factory()->for($plan, 'plan')->create(['name' => 'Tuesday Advanced']);
+
+        $archived = User::factory()->create(['first_name' => 'Gone', 'last_name' => 'Member']);
+        TrainingPlanAssignment::factory()->for($plan, 'plan')->for($pack, 'pack')->create([
+            'user_id' => $archived->id,
+        ]);
+        $archived->delete();
+
+        $stillHere = User::factory()->create(['first_name' => 'Still', 'last_name' => 'Here']);
+        Subscription::factory()->create([
+            'user_id' => $stillHere->id,
+            'season_id' => $this->season->id,
+            'status' => 'paid',
+        ]);
+        TrainingPlanAssignment::factory()->for($plan, 'plan')->inPool()->create([
+            'user_id' => $stillHere->id,
+        ]);
+
+        $component = Livewire::actingAs($this->manager)
+            ->test(BOARD, ['selectedPlanId' => $plan->id])
+            ->assertOk()
+            ->assertDontSee('Gone Member')
+            ->assertSee('Still Here');
+
+        $packColumn = collect($component->viewData('columns'))->firstWhere('id', 'pack-' . $pack->id);
+        expect($packColumn['cards'])->toHaveCount(0)
+            ->and($packColumn['current_count'])->toBe(0);
+    });
 });
 
 describe('pool ranking series derivation', function (): void {

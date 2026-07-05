@@ -29,8 +29,6 @@ erDiagram
         string avatar_url "nullable"
         Gender gender
         int emails_notifications
-        string family_id FK "nullable"
-        int is_family_owner
         string theme "nullable"
         string guardian_phone_number "nullable"
         string photo "nullable"
@@ -39,10 +37,13 @@ erDiagram
         string medical_certificate_path "nullable"
         string parental_consent_path "nullable"
     }
+    FamilyGroup {
+    }
 
     Guardian }o--o{ User : "users"
     User ||--o{ NewsPost : "articles"
     User ||--o| Team : "captainOf"
+    User }o--o{ FamilyGroup : "familyGroups"
     User }o--o{ Guardian : "guardians"
     User ||--o{ CashRegister : "heldCashRegisters"
     User }o--o{ Interclub : "interclubs"
@@ -53,4 +54,5 @@ erDiagram
     User }o--o{ Team : "teams"
     User }o--o{ Tournament : "tournaments"
     User }o--o{ Training : "trainings"
+    FamilyGroup }o--o{ User : "users"
 ```

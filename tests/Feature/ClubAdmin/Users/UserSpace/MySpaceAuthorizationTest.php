@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\User\SyncFamilyGroupMembersAction;
 use App\Domains\ClubAdmin\Users\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Livewire;
@@ -64,6 +65,25 @@ test('a member cannot change another members password via settings', function ()
         ->assertForbidden();
 
     expect(Hash::check('victim-secret-1', $victim->fresh()->password))->toBeTrue();
+});
+
+test('a member with no linked family member sees a message to contact the committee', function (): void {
+    $user = User::factory()->create();
+
+    Livewire::actingAs($user)
+        ->test('pages::club-admin.users.user-space.registration-management', ['user' => $user])
+        ->assertSee(__('To add a family member, please contact the committee.'));
+});
+
+test('a member with a linked family member sees their tab and no contact message', function (): void {
+    $user = User::factory()->create();
+    $sibling = User::factory()->create(['first_name' => 'Camille', 'last_name' => 'Petit']);
+    SyncFamilyGroupMembersAction::handle($user, [$sibling->id]);
+
+    Livewire::actingAs($user)
+        ->test('pages::club-admin.users.user-space.registration-management', ['user' => $user])
+        ->assertSee('Camille')
+        ->assertDontSee(__('To add a family member, please contact the committee.'));
 });
 
 test('a member can change their own password via settings', function (): void {

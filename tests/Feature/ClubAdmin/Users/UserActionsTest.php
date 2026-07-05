@@ -85,6 +85,25 @@ describe('CreateUserAction', function (): void {
 
         expect($user->last_invited_at)->not->toBeNull();
     });
+
+    it('syncs the linked family members', function (): void {
+        $actor = $this->createFakeAdmin();
+        $sibling = User::factory()->create();
+
+        Mail::fake();
+
+        $data = new CreateUserData(
+            first_name: 'Alice',
+            last_name: 'Dubois',
+            email: 'alice.dubois@example.com',
+            gender: Gender::WOMEN,
+            familyMemberIds: [$sibling->id],
+        );
+
+        $user = CreateUserAction::handle($data, $actor);
+
+        expect($user->familyMembers()->pluck('id')->all())->toBe([$sibling->id]);
+    });
 });
 
 // ── UpdateUserAction ─────────────────────────────────────────────────────────
@@ -169,6 +188,26 @@ describe('UpdateUserAction', function (): void {
 
         expect($user->fresh()->guardians)->toHaveCount(1)
             ->and($user->fresh()->guardians->first()->id)->toBe($guardian->id);
+    });
+
+    it('syncs the linked family members', function (): void {
+        $actor = $this->createFakeAdmin();
+        $user = User::factory()->create();
+        $sibling = User::factory()->create();
+
+        UpdateUserAction::handle(
+            $user,
+            new UpdateUserData(
+                first_name: $user->first_name,
+                last_name: $user->last_name,
+                email: $user->email,
+                gender: Gender::MEN,
+                familyMemberIds: [$sibling->id],
+            ),
+            $actor,
+        );
+
+        expect($user->fresh()->familyMembers()->pluck('id')->all())->toBe([$sibling->id]);
     });
 
     it('requires re-verification and notifies when the email changes', function (): void {

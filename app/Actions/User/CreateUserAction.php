@@ -39,6 +39,8 @@ class CreateUserAction
             $user->guardians()->sync($data->guardianIds);
         }
 
+        SyncFamilyGroupMembersAction::handle($user, $data->familyMemberIds);
+
         // Invitation flow only when the admin did not set a password directly.
         if (! $hasPassword) {
             SendInvitationAction::handle($user);

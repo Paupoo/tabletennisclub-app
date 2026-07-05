@@ -181,6 +181,68 @@
                 <x-menu-separator />
             </div>
 
+            <!-- Section Family -->
+            <div class="col-span-6 md:col-span-2">
+                <x-header :subtitle="__('Members who can see and register each other')" :title="__('Family')" />
+            </div>
+            <div class="col-span-6 md:col-span-4 space-y-4">
+
+                {{-- Linked family members --}}
+                @if ($this->familyMembers->isNotEmpty())
+                    <div class="space-y-2">
+                        @foreach ($this->familyMembers as $member)
+                            <div wire:key="family-member-{{ $member->id }}"
+                                class="flex items-center gap-3 p-3 rounded-lg border border-base-200 bg-base-100">
+                                <x-icon name="o-user" class="w-5 h-5 text-primary shrink-0" />
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-sm font-semibold truncate">
+                                        {{ $member->first_name }} {{ $member->last_name }}
+                                    </div>
+                                </div>
+                                <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-x-mark"
+                                    :tooltip="__('Unlink')" wire:click="detachFamilyMember({{ $member->id }})" />
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+
+                {{-- Search club members --}}
+                <div>
+                    <x-input :label="__('Find a club member')" icon="o-magnifying-glass"
+                        :placeholder="__('Search by name or email…')" wire:model.live.debounce.300ms="familySearch" />
+
+                    @php
+                        $familyResults = $this->familySearchResults;
+                    @endphp
+
+                    @if ($familyResults->isNotEmpty())
+                        <div class="mt-2 space-y-1 rounded-lg border border-base-200 p-1">
+                            <div class="px-3 pt-1 text-[10px] font-black uppercase tracking-wider text-base-content/40">
+                                {{ __('Club members') }}
+                            </div>
+                            @foreach ($familyResults as $result)
+                                <button type="button" wire:key="family-result-{{ $result->id }}"
+                                    wire:click="attachFamilyMember({{ $result->id }})"
+                                    class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-base-200">
+                                    <x-icon name="o-user-plus" class="w-4 h-4 text-primary shrink-0" />
+                                    <span class="flex-1 truncate">
+                                        {{ $result->first_name }} {{ $result->last_name }}
+                                    </span>
+                                </button>
+                            @endforeach
+                        </div>
+                    @elseif (strlen(trim($familySearch)) >= 2)
+                        <p class="mt-2 text-xs text-base-content/50">
+                            {{ __('No member found.') }}
+                        </p>
+                    @endif
+                </div>
+            </div>
+
+            <div class="col-span-6">
+                <x-menu-separator />
+            </div>
+
             <!-- Section Security -->
             <div class="col-span-6 md:col-span-2">
                 <x-header :subtitle="__('Secure your account')" :title="__('Security')" />

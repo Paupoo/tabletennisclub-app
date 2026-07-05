@@ -3,11 +3,7 @@
 </x-slot:breadcrumbs>
 
 <div>
-    <x-header :title="__('Affiliation and Training')" :subtitle="__('Manage your club membership and training enrollments')" separator>
-        <x-slot:actions>
-            <x-button :label="__('Add a family member')" icon="o-plus" class="btn-outline btn-sm" wire:click="$set('addMemberModal', true)" />
-        </x-slot:actions>
-    </x-header>
+    <x-header :title="__('Affiliation and Training')" :subtitle="__('Manage your club membership and training enrollments')" separator />
 
     <x-tabs wire:model="selectedTab">
         @foreach($registrations as $userId => $reg)
@@ -638,80 +634,6 @@
 
         <x-slot:actions>
             <x-button :label="__('Close')" @click="$wire.paymentModal = false" class="btn-ghost" />
-        </x-slot:actions>
-    </x-modal>
-
-    {{-- Modal: Add a family member --}}
-    <x-modal wire:model="addMemberModal" :title="__('Add a family member')" box-class="max-w-md">
-        <div class="flex rounded-xl bg-base-200 p-1 gap-1 mb-5">
-            <button wire:click="$set('memberModalMode', 'search')"
-                @class(['flex-1 rounded-lg py-1.5 text-sm font-semibold transition-all',
-                    'bg-base-100 shadow' => $memberModalMode === 'search',
-                    'opacity-50'        => $memberModalMode !== 'search',
-                ])>
-                {{ __('Find existing') }}
-            </button>
-            <button wire:click="$set('memberModalMode', 'create')"
-                @class(['flex-1 rounded-lg py-1.5 text-sm font-semibold transition-all',
-                    'bg-base-100 shadow' => $memberModalMode === 'create',
-                    'opacity-50'        => $memberModalMode !== 'create',
-                ])>
-                {{ __('Create new') }}
-            </button>
-        </div>
-
-        @if($memberModalMode === 'search')
-            <div class="space-y-3">
-                <x-input
-                    :placeholder="__('Search by name or email…')"
-                    wire:model.live.debounce.250ms="memberSearchQuery"
-                    icon="o-magnifying-glass"
-                    autofocus />
-
-                @if(strlen($memberSearchQuery) >= 2)
-                    @forelse($memberSearchResults as $result)
-                        <div class="flex items-center gap-3 p-3 rounded-xl border border-base-200 hover:border-primary/40 hover:bg-base-200/40 transition-colors cursor-pointer"
-                            wire:click="addExistingMember({{ $result->id }})">
-                            <div class="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0 font-bold text-primary text-sm">
-                                {{ strtoupper(substr($result->first_name, 0, 1)) }}{{ strtoupper(substr($result->last_name, 0, 1)) }}
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="font-semibold text-sm">{{ $result->first_name }} {{ $result->last_name }}</div>
-                                <div class="text-xs opacity-50 truncate">{{ $result->email }}</div>
-                            </div>
-                            <x-icon name="o-plus-circle" class="w-5 h-5 text-primary shrink-0" />
-                        </div>
-                    @empty
-                        <div class="flex flex-col items-center gap-2 py-6 opacity-40">
-                            <x-icon name="o-user-plus" class="w-8 h-8" />
-                            <p class="text-sm italic">{{ __('No member found.') }}</p>
-                        </div>
-                        <div class="text-center">
-                            <x-button :label="__('Create a new profile instead')" icon="o-plus" class="btn-ghost btn-sm" wire:click="$set('memberModalMode', 'create')" />
-                        </div>
-                    @endforelse
-                @else
-                    <p class="text-xs opacity-40 text-center py-4">{{ __('Type at least 2 characters to search.') }}</p>
-                @endif
-            </div>
-        @endif
-
-        @if($memberModalMode === 'create')
-            <div class="space-y-4">
-                <x-input :label="__('First Name')" wire:model="new_first_name" />
-                <x-input :label="__('Last Name')" wire:model="new_last_name" />
-                <x-datetime :label="__('Birthdate')" wire:model="new_birthdate" />
-                <x-group :label="__('Gender')" wire:model="new_gender" :options="$genders" inline class="btn-soft" />
-                <x-input :label="__('Email')" wire:model="new_email" />
-                <x-input :label="__('Phone Number')" wire:model="new_phone_number" />
-            </div>
-        @endif
-
-        <x-slot:actions>
-            <x-button :label="__('Cancel')" @click="$wire.addMemberModal = false; $wire.memberModalMode = 'search'; $wire.memberSearchQuery = ''" class="btn-ghost" />
-            @if($memberModalMode === 'create')
-                <x-button :label="__('Create and add')" wire:click="createFamilyMember" class="btn-primary" spinner />
-            @endif
         </x-slot:actions>
     </x-modal>
 

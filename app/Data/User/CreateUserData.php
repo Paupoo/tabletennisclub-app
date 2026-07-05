@@ -13,6 +13,7 @@ readonly class CreateUserData
      * @param  string|null  $password  Plain password set by an admin; when null/empty the
      *                                 user is created password-less and an invitation is sent.
      * @param  array<int>  $guardianIds  Guardian ids to link to the new user.
+     * @param  array<int>  $familyMemberIds  Other user ids to sync into the new user's family group.
      */
     public function __construct(
         public string $first_name,
@@ -33,5 +34,6 @@ readonly class CreateUserData
         public ?CommitteeRolesEnum $committee_role = null,
         public ?string $password = null,
         public array $guardianIds = [],
+        public array $familyMemberIds = [],
     ) {}
 }

@@ -8,6 +8,7 @@ use App\Actions\User\SendInvitationAction;
 use App\Actions\User\UpdateUserAction;
 use App\Data\User\CreateUserData;
 use App\Data\User\UpdateUserData;
+use App\Domains\ClubAdmin\Users\Models\FamilyGroup;
 use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
@@ -54,6 +55,15 @@ new class extends Component
 
     #[Rule('required|email')]
     public string $email = '';
+
+    public ?int $existingFamilyGroupId = null;
+
+    // Family
+
+    public string $familySearch = '';
+
+    /** @var array<int> Linked family member ids (source of truth, synced on save). */
+    public array $familyMemberIds = [];
 
     // Personal Info
 
@@ -129,6 +139,24 @@ new class extends Component
     public string $street = '';
 
     public ?User $user = null;
+
+    public function attachFamilyMember(int $userId): void
+    {
+        $candidate = User::findOrFail($userId);
+
+        if (FamilyGroup::conflictsWith($candidate, $this->existingFamilyGroupId)) {
+            $this->error(__(':name is already part of another family. Remove them from their current family first.', ['name' => $candidate->first_name . ' ' . $candidate->last_name]));
+
+            return;
+        }
+
+        if (! in_array($userId, $this->familyMemberIds, true)) {
+            $this->familyMemberIds[] = $userId;
+        }
+
+        $this->familySearch = '';
+        unset($this->familyMembers, $this->familySearchResults);
+    }
 
     public function attachGuardian(int $guardianId): void
     {
@@ -229,6 +257,15 @@ new class extends Component
         $this->success(__('Guardian added and linked.'));
     }
 
+    public function detachFamilyMember(int $userId): void
+    {
+        $this->familyMemberIds = array_values(
+            array_filter($this->familyMemberIds, fn (int $id): bool => $id !== $userId)
+        );
+
+        unset($this->familyMembers, $this->familySearchResults);
+    }
+
     public function detachGuardian(int $guardianId): void
     {
         $this->guardianIds = array_values(
@@ -236,6 +273,49 @@ new class extends Component
         );
 
         unset($this->linkedGuardians, $this->guardianSearchResults, $this->memberSearchResults);
+    }
+
+    /**
+     * Family members currently linked to the user (from in-memory selection).
+     *
+     * @return Collection<int, User>
+     */
+    #[Computed()]
+    public function familyMembers(): Collection
+    {
+        if ($this->familyMemberIds === []) {
+            return collect();
+        }
+
+        return User::whereIn('id', $this->familyMemberIds)->get();
+    }
+
+    /**
+     * Club members matching the family search box, excluding the member being
+     * edited and already-linked family members. Any age is eligible.
+     *
+     * @return Collection<int, User>
+     */
+    #[Computed()]
+    public function familySearchResults(): Collection
+    {
+        $term = trim($this->familySearch);
+
+        if (mb_strlen($term) < 2) {
+            return collect();
+        }
+
+        return User::query()
+            ->when($this->user?->exists, fn ($query) => $query->whereKeyNot($this->user->id))
+            ->whereNotIn('id', $this->familyMemberIds)
+            ->where(function ($query) use ($term): void {
+                $query->where('first_name', 'like', "%{$term}%")
+                    ->orWhere('last_name', 'like', "%{$term}%")
+                    ->orWhere('email', 'like', "%{$term}%");
+            })
+            ->orderBy('last_name')
+            ->limit(8)
+            ->get();
     }
 
     /**
@@ -340,6 +420,8 @@ new class extends Component
             $this->birthdate = $user->birthdate?->format('Y-m-d');
             $this->iban = $user->iban;
             $this->guardianIds = $user->guardians()->pluck('guardians.id')->all();
+            $this->existingFamilyGroupId = $user->familyGroups()->first()?->id;
+            $this->familyMemberIds = $user->familyMembers()->pluck('id')->all();
             $this->currentPhoto = $user->photo;
             $this->licence_type = $user->is_competitor ? 'competitive' : 'recreative';
             $this->licence = $user->licence;
@@ -478,6 +560,16 @@ new class extends Component
             );
         }
 
+        foreach ($this->familyMemberIds as $familyMemberId) {
+            $candidate = User::find($familyMemberId);
+
+            if ($candidate && FamilyGroup::conflictsWith($candidate, $this->existingFamilyGroupId)) {
+                $this->error(__(':name is already part of another family. Remove them from their current family first.', ['name' => $candidate->first_name . ' ' . $candidate->last_name]));
+
+                return;
+            }
+        }
+
         $minorWithoutGuardian = $this->isMinor && $this->guardianIds === [];
 
         $actor = Auth::user();
@@ -514,6 +606,7 @@ new class extends Component
                     committee_role: $committeeRole,
                     password: $this->password !== '' ? $this->password : null,
                     guardianIds: $this->guardianIds,
+                    familyMemberIds: $this->familyMemberIds,
                 ),
                 $actor,
             );
@@ -546,6 +639,7 @@ new class extends Component
                     committee_role: $committeeRole,
                     password: $this->password !== '' ? $this->password : null,
                     guardianIds: $this->guardianIds,
+                    familyMemberIds: $this->familyMemberIds,
                 ),
                 $actor,
             );

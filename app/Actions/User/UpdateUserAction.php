@@ -45,6 +45,7 @@ class UpdateUserAction
         $user->update($attributes);
 
         $user->guardians()->sync($data->guardianIds);
+        SyncFamilyGroupMembersAction::handle($user, $data->familyMemberIds);
 
         $seasonId = Season::current()?->id;
         if ($seasonId !== null) {

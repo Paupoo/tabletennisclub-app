@@ -32,6 +32,7 @@ erDiagram
     %% ClubAdmin/Users
     Guardian
     User
+    FamilyGroup
 
     %% ClubPosts
     EventPost
@@ -94,6 +95,7 @@ erDiagram
     Guardian }o--o{ User : "users"
     User ||--o{ NewsPost : "articles"
     User ||--o| Team : "captainOf"
+    User }o--o{ FamilyGroup : "familyGroups"
     User }o--o{ Guardian : "guardians"
     User ||--o{ CashRegister : "heldCashRegisters"
     User }o--o{ Interclub : "interclubs"
@@ -104,6 +106,7 @@ erDiagram
     User }o--o{ Team : "teams"
     User }o--o{ Tournament : "tournaments"
     User }o--o{ Training : "trainings"
+    FamilyGroup }o--o{ User : "users"
     Interclub ||--o| InterclubResult : "interclubResult"
     Interclub ||--o{ Team : "teams"
     Interclub }o--o{ User : "users"

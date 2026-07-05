@@ -117,8 +117,6 @@ use Laravel\Sanctum\PersonalAccessToken;
  * @property string|null $avatar_url
  * @property Gender $gender
  * @property int $emails_notifications
- * @property string|null $family_id
- * @property int $is_family_owner
  * @property string|null $theme
  * @property string|null $guardian_phone_number
  * @property string|null $photo
@@ -149,12 +147,10 @@ use Laravel\Sanctum\PersonalAccessToken;
  * @method static EloquentBuilder<static>|User whereAvatarUrl($value)
  * @method static EloquentBuilder<static>|User whereCommitteeRole($value)
  * @method static EloquentBuilder<static>|User whereEmailsNotifications($value)
- * @method static EloquentBuilder<static>|User whereFamilyId($value)
  * @method static EloquentBuilder<static>|User whereGender($value)
  * @method static EloquentBuilder<static>|User whereGuardianPhoneNumber($value)
  * @method static EloquentBuilder<static>|User whereIban($value)
  * @method static EloquentBuilder<static>|User whereIsCoach($value)
- * @method static EloquentBuilder<static>|User whereIsFamilyOwner($value)
  * @method static EloquentBuilder<static>|User whereMedicalCertificatePath($value)
  * @method static EloquentBuilder<static>|User whereParentalConsentPath($value)
  * @method static EloquentBuilder<static>|User wherePhoto($value)
@@ -298,6 +294,31 @@ class User extends Authenticatable implements MustVerifyEmail
     public function club(): BelongsTo
     {
         return $this->belongsTo(Club::class);
+    }
+
+    public function familyGroups(): BelongsToMany
+    {
+        return $this->belongsToMany(FamilyGroup::class, 'family_group_user');
+    }
+
+    /**
+     * Other users sharing any of this user's family groups, excluding themself.
+     *
+     * @return Collection<int, User>
+     */
+    public function familyMembers(): Collection
+    {
+        $groupIds = $this->familyGroups()->pluck('family_groups.id');
+
+        if ($groupIds->isEmpty()) {
+            return new Collection;
+        }
+
+        return self::query()
+            ->whereHas('familyGroups', fn (EloquentBuilder $query) => $query->whereIn('family_groups.id', $groupIds))
+            ->whereKeyNot($this->id)
+            ->distinct()
+            ->get();
     }
 
     public function getFullNameAttribute(): string

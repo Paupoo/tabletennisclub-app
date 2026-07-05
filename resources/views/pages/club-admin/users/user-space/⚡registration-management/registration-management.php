@@ -12,16 +12,12 @@ use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
-use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Subscriptions\Notifications\SubscriptionCreatedNotification;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
-use Livewire\Attributes\Rule;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Mary\Traits\Toast;
@@ -29,9 +25,6 @@ use Mary\Traits\Toast;
 new class extends Component
 {
     use HasBreadcrumbs, Toast, WithFileUploads;
-
-    // --- Modal "Ajouter un membre" ---
-    public bool $addMemberModal = false;
 
     // --- Modal confirmation annulation affiliation ---
     public bool $cancelAffiliationModal = false;
@@ -51,28 +44,6 @@ new class extends Component
     public int $leavePackUserId = 0;
 
     public $medicalCertificate = null;
-
-    public string $memberModalMode = 'search';
-
-    public string $memberSearchQuery = '';
-
-    #[Rule('required|string')]
-    public string $new_birthdate = '';
-
-    #[Rule('required|string|email')]
-    public string $new_email = '';
-
-    #[Rule('required|string')]
-    public string $new_first_name = '';
-
-    #[Rule('required|string')]
-    public string $new_gender = '';
-
-    #[Rule('required|string')]
-    public string $new_last_name = '';
-
-    #[Rule('nullable|string')]
-    public string $new_phone_number = '';
 
     public $parentalConsent = null;
 
@@ -94,19 +65,6 @@ new class extends Component
     public string $selectedTab = '';
 
     public User $user;
-
-    public function addExistingMember(int $userId): void
-    {
-        $user = User::find($userId);
-        if (! $user) {
-            return;
-        }
-
-        $this->addRegistrationTab($user);
-        $this->reset(['addMemberModal', 'memberSearchQuery']);
-        $this->memberModalMode = 'search';
-        $this->success(__(':name added to the registration.', ['name' => $user->first_name]));
-    }
 
     // ──────────────────────────────────────────────────────────────────────────
     // Member management
@@ -290,32 +248,6 @@ new class extends Component
         $this->success(__('Spot confirmed!'));
     }
 
-    public function createFamilyMember(): void
-    {
-        $this->validate();
-
-        $newMember = User::firstOrCreate(
-            ['email' => $this->new_email],
-            [
-                'first_name' => $this->new_first_name,
-                'last_name' => $this->new_last_name,
-                'email' => $this->new_email,
-                'birthdate' => $this->new_birthdate,
-                'gender' => $this->new_gender,
-                'phone_number' => $this->new_phone_number ?: null,
-                'street' => Auth::user()->street,
-                'city_code' => Auth::user()->city_code,
-                'city_name' => Auth::user()->city_name,
-                'password' => Hash::make(Str::random(16)),
-            ]
-        );
-
-        $this->addRegistrationTab($newMember);
-        $this->reset(['new_first_name', 'new_last_name', 'new_birthdate', 'new_gender', 'new_email', 'new_phone_number', 'addMemberModal', 'memberSearchQuery']);
-        $this->memberModalMode = 'search';
-        $this->success(__('Member added successfully!'));
-    }
-
     // ──────────────────────────────────────────────────────────────────────────
     // Training enrollment
     // ──────────────────────────────────────────────────────────────────────────
@@ -410,6 +342,11 @@ new class extends Component
 
         $this->user = $user;
         $this->addRegistrationTab($this->user);
+
+        foreach ($this->user->familyMembers() as $member) {
+            $this->addRegistrationTab($member);
+        }
+
         $this->selectedTab = 'tab-' . $this->user->id;
     }
 
@@ -487,7 +424,6 @@ new class extends Component
     {
         $season = Season::current();
         $userIds = array_keys($this->registrations);
-        $alreadyAddedIds = $userIds;
 
         // Current season subscriptions (keyed by user_id, excludes cancelled)
         $currentSubs = $season
@@ -603,18 +539,7 @@ new class extends Component
             'currentSeasonName' => $season?->name ?? '—',
             'subscriptionHistory' => $subscriptionHistory,
             'availablePacks' => $availablePacks,
-            'memberSearchResults' => strlen($this->memberSearchQuery) >= 2
-                ? User::where(function ($q): void {
-                    $q->where('first_name', 'like', "%{$this->memberSearchQuery}%")
-                        ->orWhere('last_name', 'like', "%{$this->memberSearchQuery}%")
-                        ->orWhere('email', 'like', "%{$this->memberSearchQuery}%");
-                })
-                    ->whereNotIn('id', $alreadyAddedIds)
-                    ->limit(6)
-                    ->get()
-                : collect(),
             'breadcrumbs' => $this->getBreadcrumbs(),
-            'genders' => Gender::options(),
         ];
     }
 

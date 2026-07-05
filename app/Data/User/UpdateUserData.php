@@ -12,6 +12,7 @@ readonly class UpdateUserData
     /**
      * @param  array<int>  $guardianIds  Guardian ids to sync onto the user.
      * @param  string|null  $password  Plain password; null/empty leaves it unchanged.
+     * @param  array<int>  $familyMemberIds  Other user ids to sync into the user's family group.
      */
     public function __construct(
         public string $first_name,
@@ -36,5 +37,6 @@ readonly class UpdateUserData
         public ?CommitteeRolesEnum $committee_role = null,
         public ?string $password = null,
         public array $guardianIds = [],
+        public array $familyMemberIds = [],
     ) {}
 }

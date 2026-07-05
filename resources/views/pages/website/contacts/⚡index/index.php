@@ -7,6 +7,7 @@ namespace Resources\views\Pages\Website\Contacts\Index;
 use App\Actions\User\OnboardFromContactAction;
 use App\Domains\ClubAdmin\Contact\Models\Contact;
 use App\Domains\ClubAdmin\Contact\Models\EmailTemplate;
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\AgeCategoryEnum;
 use App\Domains\Shared\Enums\ContactReasonEnum;
 use App\Domains\Shared\Enums\PlayerExperienceEnum;
@@ -36,6 +37,8 @@ new class extends Component
 
     public bool $confirmBulkDeleteModal = false;
 
+    public bool $confirmLinkModal = false;
+
     public bool $deleteModal = false;
 
     public ?int $deletingId = null;
@@ -57,6 +60,8 @@ new class extends Component
 
     #[Url]
     public string $interest = '';
+
+    public ?int $linkTargetContactId = null;
 
     public ?string $pendingApplyStatus = null;
 
@@ -246,11 +251,70 @@ new class extends Component
         return $this->contacts->total();
     }
 
+    public function cancelLink(): void
+    {
+        $this->confirmLinkModal = false;
+        $this->linkTargetContactId = null;
+        $this->warning(__('Contact left unprocessed. A member account can only have one email address — fix the contact\'s email or resolve the match manually before onboarding.'));
+    }
+
+    public function matchedUserFor(Contact $contact): ?User
+    {
+        if ($contact->status === 'processed') {
+            return null;
+        }
+
+        return OnboardFromContactAction::matchExistingUser($contact->email);
+    }
+
+    public function trashedMatchFor(Contact $contact): ?User
+    {
+        if ($contact->status === 'processed') {
+            return null;
+        }
+
+        return OnboardFromContactAction::matchTrashedUser($contact->email);
+    }
+
+    public function linkToExistingUser(): void
+    {
+        $this->authorizeManagement();
+
+        $contact = Contact::findOrFail($this->linkTargetContactId);
+        $existingUser = OnboardFromContactAction::matchExistingUser($contact->email);
+
+        $this->confirmLinkModal = false;
+        $this->linkTargetContactId = null;
+
+        if ($existingUser === null) {
+            return;
+        }
+
+        OnboardFromContactAction::linkToExisting($contact, $existingUser);
+
+        $this->success(__('Contact linked to existing account for :email.', ['email' => $contact->email]));
+    }
+
     public function onboardContact(int $id): void
     {
         $this->authorizeManagement();
 
         $contact = Contact::findOrFail($id);
+
+        if (OnboardFromContactAction::matchTrashedUser($contact->email) !== null) {
+            $this->error(__('This email belongs to a former member account. Resolve this manually before onboarding.'));
+
+            return;
+        }
+
+        $existingUser = OnboardFromContactAction::matchExistingUser($contact->email);
+
+        if ($existingUser !== null) {
+            $this->linkTargetContactId = $id;
+            $this->confirmLinkModal = true;
+
+            return;
+        }
 
         OnboardFromContactAction::handle($contact, Auth::user());
 
@@ -440,6 +504,14 @@ new class extends Component
             ? Contact::find($this->selectedContactId)
             : null;
 
+        $linkTargetContact = $this->linkTargetContactId
+            ? Contact::find($this->linkTargetContactId)
+            : null;
+
+        $linkTargetUser = $linkTargetContact
+            ? OnboardFromContactAction::matchExistingUser($linkTargetContact->email)
+            : null;
+
         $headers = [
             ['key' => 'full_name',  'label' => __('Name'),     'sortable' => false],
             ['key' => 'email',      'label' => __('Email'),     'class' => 'hidden sm:table-cell', 'sortable' => false],
@@ -461,6 +533,7 @@ new class extends Component
             'templateOptions' => $templateOptions,
             'canManage' => $canManage,
             'selectedContact' => $selectedContact,
+            'linkTargetUser' => $linkTargetUser,
             'headers' => $headers,
             'filterChips' => $this->filterChips,
         ];

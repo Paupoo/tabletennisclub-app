@@ -125,6 +125,9 @@
                     <div class="mt-0.5 flex items-center gap-2">
                         <x-badge :value="$statusLabel" class="{{ $badgeClass }} badge-sm" />
                         <span class="text-xs text-base-content/40">{{ $contact->email }}</span>
+                        @if ($this->matchedUserFor($contact))
+                            <x-badge :value="__('Already a member')" class="badge-success badge-soft badge-sm" />
+                        @endif
                     </div>
                 </x-slot:sub-value>
                 <x-slot:actions>
@@ -161,6 +164,9 @@
                     @endscope
                     @scope('cell_email', $contact)
                         <span class="text-sm text-base-content/60">{{ $contact->email }}</span>
+                        @if ($this->matchedUserFor($contact))
+                            <x-badge :value="__('Already a member')" class="badge-success badge-soft badge-sm ml-1" />
+                        @endif
                     @endscope
                     @scope('cell_interest', $contact)
                         @if ($contact->interest)
@@ -350,10 +356,16 @@
 
                     @if (in_array($selectedContact->interest?->value, ['JOIN_US', 'TRIAL']) && $selectedContact->status !== 'processed')
                         <div class="border-base-200 border-t pt-3">
-                            <x-button class="btn-primary btn-sm w-full" icon="o-user-plus"
-                                :label="__('Onboard as member')"
-                                wire:click="onboardContact({{ $selectedContact->id }})"
-                                spinner />
+                            @if ($this->trashedMatchFor($selectedContact))
+                                <p class="text-warning text-xs">
+                                    {{ __('This email belongs to a former member account. Resolve this manually before onboarding.') }}
+                                </p>
+                            @else
+                                <x-button class="btn-primary btn-sm w-full" icon="o-user-plus"
+                                    :label="$this->matchedUserFor($selectedContact) ? __('Link to existing account') : __('Onboard as member')"
+                                    wire:click="onboardContact({{ $selectedContact->id }})"
+                                    spinner />
+                            @endif
                         </div>
                     @endif
 
@@ -388,6 +400,20 @@
     <x-confirm-modal model="deleteModal" :title="__('Delete this contact?')"
         :confirmLabel="__('Delete')" confirmAction="delete">
         <p>{{ __('This action is irreversible.') }}</p>
+    </x-confirm-modal>
+
+    {{-- ── Modal confirmation de lien vers un compte existant ──────────── --}}
+    <x-confirm-modal model="confirmLinkModal" :title="__('Link to existing account?')"
+        :confirmLabel="__('Link to existing account')" confirmClass="btn-primary" confirmAction="linkToExistingUser"
+        cancelAction="cancelLink">
+        @if ($linkTargetUser ?? null)
+            <p>
+                {{ __('This email matches an existing member: :name.', ['name' => $linkTargetUser->first_name . ' ' . $linkTargetUser->last_name]) }}
+            </p>
+            <p class="mt-2 text-xs opacity-60">
+                {{ __('A member account can only have one email address. Make sure this is the same person before linking.') }}
+            </p>
+        @endif
     </x-confirm-modal>
 
     {{-- ── Modal suppression bulk ───────────────────────────────────── --}}

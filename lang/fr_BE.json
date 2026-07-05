@@ -3394,5 +3394,13 @@
     "Delete selected meetings?": "Supprimer les réunions sélectionnées ?",
     "Only meetings that have not taken place and have no invitations sent will be deleted. This action is irreversible.": "Seules les réunions qui n'ont pas eu lieu et sans invitation envoyée seront supprimées. Cette action est irréversible.",
     "Delete meeting": "Supprimer la réunion",
-    "This meeting will be permanently deleted. This action is irreversible.": "Cette réunion sera définitivement supprimée. Cette action est irréversible."
+    "This meeting will be permanently deleted. This action is irreversible.": "Cette réunion sera définitivement supprimée. Cette action est irréversible.",
+    "Already a member": "Déjà membre",
+    "Link to existing account": "Lier au compte existant",
+    "Link to existing account?": "Lier au compte existant ?",
+    "This email belongs to a former member account. Resolve this manually before onboarding.": "Cet email correspond à un ancien compte membre. Résolvez ceci manuellement avant d'intégrer ce contact.",
+    "A member account can only have one email address. Make sure this is the same person before linking.": "Un compte membre ne peut avoir qu'une seule adresse email. Assurez-vous qu'il s'agit bien de la même personne avant de lier.",
+    "This email matches an existing member: :name.": "Cet email correspond à un membre existant : :name.",
+    "Contact linked to existing account for :email.": "Contact lié au compte existant pour :email.",
+    "Contact left unprocessed. A member account can only have one email address — fix the contact's email or resolve the match manually before onboarding.": "Contact laissé non traité. Un compte membre ne peut avoir qu'une seule adresse email — corrigez l'email du contact ou résolvez la correspondance manuellement avant d'intégrer."
 }

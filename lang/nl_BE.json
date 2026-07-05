@@ -3394,5 +3394,13 @@
     "Delete selected meetings?": "Geselecteerde vergaderingen verwijderen?",
     "Only meetings that have not taken place and have no invitations sent will be deleted. This action is irreversible.": "Alleen vergaderingen die nog niet hebben plaatsgevonden en waarvoor geen uitnodigingen zijn verstuurd, worden verwijderd. Deze actie is onomkeerbaar.",
     "Delete meeting": "Vergadering verwijderen",
-    "This meeting will be permanently deleted. This action is irreversible.": "Deze vergadering wordt definitief verwijderd. Deze actie is onomkeerbaar."
+    "This meeting will be permanently deleted. This action is irreversible.": "Deze vergadering wordt definitief verwijderd. Deze actie is onomkeerbaar.",
+    "Already a member": "Al lid",
+    "Link to existing account": "Koppelen aan bestaand account",
+    "Link to existing account?": "Koppelen aan bestaand account?",
+    "This email belongs to a former member account. Resolve this manually before onboarding.": "Dit e-mailadres hoort bij een voormalig lidaccount. Los dit handmatig op voordat je dit contact opneemt.",
+    "A member account can only have one email address. Make sure this is the same person before linking.": "Een lidaccount kan maar één e-mailadres hebben. Zorg dat het om dezelfde persoon gaat voordat je koppelt.",
+    "This email matches an existing member: :name.": "Dit e-mailadres komt overeen met een bestaand lid: :name.",
+    "Contact linked to existing account for :email.": "Contact gekoppeld aan bestaand account voor :email.",
+    "Contact left unprocessed. A member account can only have one email address — fix the contact's email or resolve the match manually before onboarding.": "Contact niet verwerkt gelaten. Een lidaccount kan maar één e-mailadres hebben — corrigeer het e-mailadres van het contact of los de overeenkomst handmatig op voordat je onboardt."
 }

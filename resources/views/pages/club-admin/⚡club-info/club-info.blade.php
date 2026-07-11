@@ -1,170 +1,276 @@
 <x-slot:breadcrumbs>
-    <x-breadcrumbs :items="[['label' => __('Admin')], ['label' => __('Club Settings')]]" separator="o-slash" />
+    <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
 </x-slot:breadcrumbs>
 
-<div>
-    <x-header separator :subtitle="__('Configure your club identity and management team')"
-        :title="__('Club Info')" />
-
-    <x-form wire:submit="save">
-        {{-- Name & ID --}}
-        <x-admin.shared.form-section :separator="true" :subtitle="__('Official name and federal affiliation')" :title="__('Club Identity')">
-            <div class="col-span-6 grid gap-4 md:col-span-4">
-                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <x-input icon="o-trophy" :label="__('Club Name')" placeholder="E.g. CTT Ottignies"
-                        wire:model="name" required />
-                    <x-input icon="o-identification" :label="__('Club ID / Licence')"
-                        wire:model="licence" readonly disabled />
-                </div>
-
+<div x-data="{ mobileSearchOpen: false }">
+    <x-header :title="__('Audit')" :subtitle="__('Everything that happens in the admin')" separator progress-indicator>
+        <x-slot:middle>
+            <div class="hidden w-full lg:block">
+                <x-input class="w-full" clearable icon="o-magnifying-glass"
+                    :placeholder="__('Search...')"
+                    wire:model.live.debounce.300ms="search" />
             </div>
-        </x-admin.shared.form-section>
-        
-        {{-- Location --}}
-        <x-admin.shared.form-section :separator="true" :subtitle="__('Information to help members and visitors to find our club.')" :title="__('Location Details')">
-            <x-input icon="o-map-pin" :label="__('Street')" wire:model="street" required/>
-            <x-input icon="o-map-pin" :label="__('City Code')" wire:model="city_code" required/>
-            <x-input icon="o-map-pin" :label="__('City Name')" wire:model="city_name" required/>
-            <x-input icon="o-building-office" :label="__('Building Name (Optional)')" wire:model="building_name"/>
-            <x-input icon="o-map-pin" :label="__('Latitude (Optional)')" wire:model="latitude" numeric/>
-            <x-input icon="o-map-pin" :label="__('Longitude (Optional)')" wire:model="longitude" numeric/>
-            
-        </x-admin.shared.form-section>
-        
-        {{-- Contact --}}
-        <x-admin.shared.form-section :separator="true" :subtitle="__('Information to facilitate people to contact us.')" :title="__('Contact Details')">
-                    <x-input icon="o-phone" :label="__('Phone Contact (Optional)')" wire:model="phone_contact" />
-                    <x-input icon="o-envelope-open" :label="__('Email Contact')" wire:model="email_contact" required/>
-                    <x-input :label="__('Website URL')" prefix="https://" wire:model="website_url" />
-        </x-admin.shared.form-section>
-
-        {{-- Accounting --}}
-        <x-admin.shared.form-section :separator="true" :subtitle="__('Banking and accounting data')" :title="__('Accounting')">
-            <x-input icon="o-finger-print" :label="__('BIC Code')" wire:model="bic" required />
-            <x-input icon="o-currency-euro" :label="__('Bank Account (IBAN)')" wire:model="bank_account" required/>
-            <x-input icon="o-identification" :label="__('Enterprise Number (Optional)')" wire:model="enterprise_number" />
-        </x-admin.shared.form-section>
-                
-        {{-- Committee --}}
-        <x-admin.shared.form-section :separator="true" :subtitle="__('Manage board members and their roles')" :title="__('Committee')">
-            <div class="col-span-6 md:col-span-4">
-                <div class="bg-base-200/50 border-base-300 mb-4 rounded-xl border p-4">
-                    <div class="mb-4 flex items-center justify-between">
-                        <span
-                            class="text-xs font-bold uppercase tracking-widest opacity-60">{{ __('Board Members') }}</span>
-                        @if($committeeMembers->count() > 0)
-                        <x-button @click="$dispatch('open-committee-modal')" class="btn-xs btn-outline"
-                            icon="o-plus" :label="__('Add Member')" />
-                        @endif
-                    </div>
-
-                    <div class="divide-base-300/50 divide-y">
-                        @forelse($committeeMembers as $index => $member)
-                            <div class="flex items-center justify-between py-3">
-                                <div class="flex items-center gap-3">
-                                    <x-avatar class="!w-8 !rounded-lg"
-                                        placeholder="{{ mb_substr($member->first_name, 0, 1) }}{{ mb_substr($member->last_name, 0,1) }}" />
-                                    <div>
-                                        <div class="text-sm font-bold">{{ $member->first_name }} {{ $member->last_name }}</div>
-                                            <div class="badge badge-outline text-[10px] opacity-70">
-                                                {{ __($member->committee_role
-                                                    ? $member->committee_role->label() 
-                                                    : 'Unknown role') }}
-                                            </div>
-                                    </div>
-                                </div>
-                                <x-button class="btn-circle btn-ghost btn-xs text-error" icon="o-trash"
-                                    wire:click="removeMember({{ $member->id }})" />
-                            </div>
-                        @empty
-                            <x-admin.shared.empty
-                                icon="o-users"
-                                :title="__('No committee members defined yet.')"
-                                :subtitle="__('Add your first board member using the button above.')"
-                                action="{{ __('Add Member') }}"
-                                wireClick="$dispatch('open-committee-modal')"
-                            />
-                        @endforelse
-                    </div>
-                </div>
-
-                <div class="text-info flex items-center gap-2 text-xs italic">
-                    <x-icon class="h-4 w-4" name="o-information-circle" />
-                    {{ __('Roles defined here will be visible on the "Contact" page.') }}
-                </div>
+        </x-slot:middle>
+        <x-slot:actions>
+            {{-- Mobile: 🔍 · filter --}}
+            <div class="flex items-center gap-1 lg:hidden">
+                <button class="btn btn-ghost btn-circle btn-sm" @click="mobileSearchOpen = true">
+                    <x-icon name="o-magnifying-glass" class="h-5 w-5" />
+                </button>
+                <button class="btn btn-ghost btn-circle btn-sm relative {{ count($filterChips) > 0 ? 'btn-active' : '' }}"
+                    wire:click="$set('filterDrawer', true)">
+                    <x-icon name="o-funnel" class="h-5 w-5" />
+                    @if (count($filterChips) > 0)
+                        <span class="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-bold leading-none text-primary-content">{{ count($filterChips) }}</span>
+                    @endif
+                </button>
             </div>
-        </x-admin.shared.form-section>
-
-        {{-- Interclub Schedule --}}
-        <x-admin.shared.form-section :separator="true" :subtitle="__('Configure the interclub match entry displayed on the public schedule.')" :title="__('Interclub Schedule')">
-            <x-toggle :label="__('Show interclub matches in the public schedule')" wire:model="interclubEnabled" />
-            <x-select
-                :label="__('Day of week')"
-                icon="o-calendar"
-                wire:model="interclubDay"
-                :options="[
-                    ['id' => 'Lundi',     'name' => __('Monday')],
-                    ['id' => 'Mardi',     'name' => __('Tuesday')],
-                    ['id' => 'Mercredi',  'name' => __('Wednesday')],
-                    ['id' => 'Jeudi',     'name' => __('Thursday')],
-                    ['id' => 'Vendredi',  'name' => __('Friday')],
-                    ['id' => 'Samedi',    'name' => __('Saturday')],
-                    ['id' => 'Dimanche',  'name' => __('Sunday')],
-                ]"
-            />
-            <div class="col-span-6 grid grid-cols-1 gap-4 md:col-span-4 md:grid-cols-2">
-                <x-input icon="o-clock" :label="__('Start time (HH:MM)')" wire:model="interclubTimeStart" placeholder="19:00" />
-                <x-input icon="o-clock" :label="__('End time (HH:MM)')" wire:model="interclubTimeEnd" placeholder="23:30" />
+            {{-- Desktop --}}
+            <div class="hidden items-center gap-2 lg:flex">
+                <x-button class="btn-ghost {{ count($filterChips) > 0 ? 'btn-active' : '' }}"
+                    icon="o-funnel" :label="__('Filters')"
+                    wire:click="$set('filterDrawer', true)">
+                    @if (count($filterChips) > 0)
+                        <x-badge class="badge-sm badge-primary" value="{{ count($filterChips) }}" />
+                    @endif
+                </x-button>
             </div>
-            <x-input icon="o-map-pin" :label="__('Location')" wire:model="interclubLocation" />
-            <x-input icon="o-information-circle" :label="__('Description')" wire:model="interclubDescription" />
-        </x-admin.shared.form-section>
+        </x-slot:actions>
+    </x-header>
 
-        <x-admin.shared.form-section :separator="true" :subtitle="__('Members who hold club equipment')" :title="__('Equipment holders')">
-            <div class="col-span-6 md:col-span-4 grid grid-cols-1 md:grid-cols-2 gap-6">
-                {{-- Key holders --}}
-                <div>
-                    <p class="text-xs font-semibold uppercase tracking-widest opacity-50 mb-3">
-                        {{ __('Key holders') }}
-                    </p>
-                    @forelse($keyHolders as $holder)
-                        <div class="flex items-center gap-2 py-1">
-                            <x-icon name="o-key" class="w-4 h-4 text-base-content/40 shrink-0" />
-                            <span class="text-sm">{{ $holder->first_name }} {{ $holder->last_name }}</span>
-                        </div>
-                    @empty
-                        <p class="text-sm italic text-base-content/40">{{ __('None') }}</p>
-                    @endforelse
-                </div>
-
-                {{-- Cash register holders --}}
-                <div>
-                    <p class="text-xs font-semibold uppercase tracking-widest opacity-50 mb-3">
-                        {{ __('Cash register holders') }}
-                    </p>
-                    @forelse($cashRegisterHolders as $register)
-                        <div class="flex items-center gap-2 py-1">
-                            <x-icon name="o-banknotes" class="w-4 h-4 text-base-content/40 shrink-0" />
-                            <span class="text-sm font-medium">{{ $register->name }}</span>
-                            <span class="text-sm text-base-content/50">→</span>
-                            @if($register->heldBy)
-                                <span class="text-sm">{{ $register->heldBy->first_name }} {{ $register->heldBy->last_name }}</span>
-                            @else
-                                <span class="text-sm italic text-base-content/40">{{ __('None') }}</span>
-                            @endif
-                        </div>
-                    @empty
-                        <p class="text-sm italic text-base-content/40">{{ __('None') }}</p>
-                    @endforelse
-                </div>
+    {{-- Mobile search bar --}}
+    <div class="border-b border-base-200 lg:hidden" x-show="mobileSearchOpen"
+        x-transition:enter="transition ease-out duration-150"
+        x-transition:enter-start="opacity-0 -translate-y-1"
+        x-transition:enter-end="opacity-100 translate-y-0"
+        style="display:none">
+        <div class="flex items-center gap-2 px-4 py-2.5">
+            <div class="flex flex-1 items-center gap-2 rounded-xl bg-base-200 px-3 py-2">
+                <x-icon name="o-magnifying-glass" class="h-4 w-4 shrink-0 text-base-content/40" />
+                <input wire:model.live.debounce.300ms="search"
+                    class="flex-1 bg-transparent text-sm outline-none placeholder:text-base-content/40"
+                    placeholder="{{ __('Search...') }}" />
             </div>
-        </x-admin.shared.form-section>
-
-        <div class="col-span-6 mt-6 flex justify-end gap-3">
-            <x-button :label="__('Cancel')" />
-            <x-button class="btn-primary" :label="__('Save Changes')" spinner="save" type="submit" />
+            <button @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm">
+                <x-icon name="o-x-mark" class="h-5 w-5" />
+            </button>
         </div>
-    </x-form>
+    </div>
 
-   <livewire:club-admin.committee-modal />
+    {{-- Active filter chips --}}
+    <x-admin.shared.filter-chips :chips="$filterChips" />
+
+    {{-- ========================================== --}}
+    {{-- Mobile view — one card per activity        --}}
+    {{-- ========================================== --}}
+    <div class="mt-6 grid grid-cols-1 gap-3 lg:hidden">
+        @forelse ($activities as $activity)
+            @php
+                $event = $activity->event ?? $activity->description;
+                $changes = $activity->attribute_changes;
+                $subjectName = $subjectLabels[$activity->subject_type] ?? \Illuminate\Support\Str::afterLast($activity->subject_type, '\\');
+                $formatValue = fn ($value) => \Illuminate\Support\Str::limit(is_array($value) ? json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : (string) $value, 60);
+            @endphp
+            <x-card class="border border-base-200 bg-base-100 shadow-sm" wire:key="mobile-activity-{{ $activity->id }}">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="flex min-w-0 flex-wrap items-center gap-2">
+                        @if ($event === 'created')
+                            <x-badge :value="__('Created')" class="badge-success badge-sm badge-soft" />
+                        @elseif ($event === 'updated')
+                            <x-badge :value="__('Modified')" class="badge-info badge-sm badge-soft" />
+                        @elseif ($event === 'deleted')
+                            <x-badge :value="__('Deleted')" class="badge-error badge-sm badge-soft" />
+                        @else
+                            <x-badge :value="$activity->description" class="badge-ghost badge-sm" />
+                        @endif
+                        <span class="text-sm font-semibold">{{ $subjectName }}</span>
+                        <span class="font-mono text-xs opacity-40">#{{ $activity->subject_id }}</span>
+                    </div>
+                    <span class="shrink-0 text-xs tabular-nums opacity-50">{{ $activity->created_at->format('d/m/Y H:i') }}</span>
+                </div>
+
+                <div class="mt-2 flex items-center gap-1.5 text-xs text-base-content/60">
+                    <x-icon name="o-user" class="h-3.5 w-3.5 shrink-0 opacity-50" />
+                    @if ($activity->causer)
+                        <span class="font-medium">{{ $activity->causer->first_name }} {{ $activity->causer->last_name }}</span>
+                    @else
+                        <span class="italic opacity-70">{{ __('System') }}</span>
+                    @endif
+                </div>
+
+                @if ($changes && isset($changes['attributes']))
+                    <div x-data="{ open: {{ $event === 'created' ? 'false' : 'true' }} }" class="mt-3 border-t border-base-200 pt-2">
+                        <button type="button" @click="open = !open"
+                            class="flex w-full items-center justify-between text-xs font-semibold text-base-content/60">
+                            <span class="flex items-center gap-1.5">
+                                <x-icon name="o-pencil-square" class="h-3.5 w-3.5 opacity-60" />
+                                {{ __('Details') }}
+                                <x-badge value="{{ count($changes['attributes']) }}" class="badge-ghost badge-xs" />
+                            </span>
+                            <x-icon name="o-chevron-down" class="h-4 w-4 transition-transform" x-bind:class="open && 'rotate-180'" />
+                        </button>
+                        <div x-show="open" x-transition style="{{ $event === 'created' ? 'display:none' : '' }}" class="mt-2 space-y-1">
+                            @foreach ($changes['attributes'] as $field => $newValue)
+                                <div class="text-xs">
+                                    <span class="font-semibold opacity-70">{{ $field }}:</span>
+                                    @if ($event !== 'created' && isset($changes['old'][$field]) && $changes['old'][$field] !== null && $changes['old'][$field] !== '')
+                                        <span class="text-error/70 line-through">{{ $formatValue($changes['old'][$field]) }}</span>
+                                        <span class="opacity-40">→</span>
+                                    @endif
+                                    <span class="break-all text-success/80">{{ $formatValue($newValue) ?: '—' }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+            </x-card>
+        @empty
+            <x-empty-state icon="o-document-magnifying-glass" :message="__('No activity recorded yet.')" />
+        @endforelse
+
+        @if ($activities->hasPages())
+            <div class="mt-2">
+                {{ $activities->links() }}
+            </div>
+        @endif
+    </div>
+
+    {{-- ========================================== --}}
+    {{-- Desktop view — full table                  --}}
+    {{-- ========================================== --}}
+    <x-card class="bg-base-100 border-none shadow-sm mt-6 hidden lg:block">
+        <x-table :headers="$headers" :rows="$activities" :sort-by="$sortBy" hover>
+
+            @scope('cell_created_at', $activity)
+            <span class="text-sm tabular-nums whitespace-nowrap">{{ $activity->created_at->format('d/m/Y H:i') }}</span>
+            @endscope
+
+            @scope('cell_causer', $activity)
+            @if ($activity->causer)
+            <span class="text-sm font-medium">{{ $activity->causer->first_name }} {{ $activity->causer->last_name }}</span>
+            @else
+            <span class="text-sm italic opacity-50">{{ __('System') }}</span>
+            @endif
+            @endscope
+
+            @scope('cell_event', $activity)
+            @php($event = $activity->event ?? $activity->description)
+            @if ($event === 'created')
+            <x-badge :value="__('Created')" class="badge-success badge-sm badge-soft" />
+            @elseif ($event === 'updated')
+            <x-badge :value="__('Modified')" class="badge-info badge-sm badge-soft" />
+            @elseif ($event === 'deleted')
+            <x-badge :value="__('Deleted')" class="badge-error badge-sm badge-soft" />
+            @else
+            <x-badge :value="$activity->description" class="badge-ghost badge-sm" />
+            @endif
+            @endscope
+
+            @scope('cell_subject', $activity, $subjectLabels)
+            <div>
+                <div class="text-sm font-medium">{{ $subjectLabels[$activity->subject_type] ?? \Illuminate\Support\Str::afterLast($activity->subject_type, '\\') }}</div>
+                <div class="font-mono text-xs opacity-40">#{{ $activity->subject_id }}</div>
+            </div>
+            @endscope
+
+            @scope('cell_changes', $activity)
+            @php($changes = $activity->attribute_changes)
+            @php($event = $activity->event ?? $activity->description)
+            @php($formatValue = fn ($value) => \Illuminate\Support\Str::limit(is_array($value) ? json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : (string) $value, 40))
+            @if ($changes && isset($changes['attributes']))
+                @if ($event === 'created')
+                {{-- Création : repliée par défaut (sinon mur de champs) --}}
+                <div x-data="{ open: false }" class="text-xs">
+                    <button type="button" @click="open = !open"
+                        class="inline-flex items-center gap-1 text-primary hover:underline">
+                        <x-icon name="o-eye" class="h-3.5 w-3.5" />
+                        <span x-show="!open">{{ trans_choice('{1} :count field set|[2,*] :count fields set', count($changes['attributes']), ['count' => count($changes['attributes'])]) }}</span>
+                        <span x-show="open" style="display:none">{{ __('Hide details') }}</span>
+                    </button>
+                    <div x-show="open" x-transition style="display:none" class="mt-1 space-y-0.5">
+                        @foreach ($changes['attributes'] as $field => $newValue)
+                        <div>
+                            <span class="font-semibold opacity-70">{{ $field }}:</span>
+                            <span class="text-success/80">{{ $formatValue($newValue) ?: '—' }}</span>
+                        </div>
+                        @endforeach
+                    </div>
+                </div>
+                @else
+                {{-- Modification / suppression : diff inline --}}
+                <div class="space-y-0.5">
+                    @foreach ($changes['attributes'] as $field => $newValue)
+                    <div class="text-xs">
+                        <span class="font-semibold opacity-70">{{ $field }}:</span>
+                        @if (isset($changes['old'][$field]) && $changes['old'][$field] !== null && $changes['old'][$field] !== '')
+                        <span class="text-error/70 line-through">{{ $formatValue($changes['old'][$field]) }}</span>
+                        <span class="opacity-40">→</span>
+                        @endif
+                        <span class="text-success/80">{{ $formatValue($newValue) ?: '—' }}</span>
+                    </div>
+                    @endforeach
+                </div>
+                @endif
+            @else
+            <span class="opacity-30">—</span>
+            @endif
+            @endscope
+
+        </x-table>
+
+        @if ($activities->total() === 0)
+        <div class="flex flex-col items-center justify-center py-12 opacity-40">
+            <x-icon name="o-document-magnifying-glass" class="w-12 h-12 mb-4" />
+            <p class="text-sm italic">{{ __('No activity recorded yet.') }}</p>
+        </div>
+        @endif
+
+        <div class="mt-4">
+            {{ $activities->links() }}
+        </div>
+    </x-card>
+
+    {{-- ========================================== --}}
+    {{-- Filter drawer                              --}}
+    {{-- ========================================== --}}
+    <x-admin.shared.filter-drawer :title="__('Filters')">
+        <x-slot:filters>
+            <x-select
+                :label="__('Item type')"
+                wire:model.live="modelFilter"
+                :options="$modelOptions"
+                option-value="id"
+                option-label="name"
+                :placeholder="__('All')"
+                clearable />
+
+            <x-select
+                :label="__('Author')"
+                wire:model.live="causerFilter"
+                :options="$causerOptions"
+                option-value="id"
+                option-label="name"
+                :placeholder="__('All')"
+                clearable />
+
+            <x-select
+                :label="__('Action')"
+                wire:model.live="eventFilter"
+                :options="$eventOptions"
+                option-value="id"
+                option-label="name"
+                :placeholder="__('All')"
+                clearable />
+
+            <x-input
+                :label="__('From')"
+                wire:model.live="dateFrom"
+                type="date" />
+
+            <x-input
+                :label="__('To')"
+                wire:model.live="dateTo"
+                type="date" />
+        </x-slot:filters>
+    </x-admin.shared.filter-drawer>
 </div>

@@ -2,8 +2,6 @@
 
 ```mermaid
 erDiagram
-    Guardian {
-    }
     FamilyGroup {
     }
     User {
@@ -39,8 +37,9 @@ erDiagram
         string medical_certificate_path "nullable"
         string parental_consent_path "nullable"
     }
+    Guardian {
+    }
 
-    Guardian }o--o{ User : "users"
     FamilyGroup }o--o{ User : "users"
     User ||--o{ NewsPost : "articles"
     User ||--o| Team : "captainOf"
@@ -55,4 +54,5 @@ erDiagram
     User }o--o{ Team : "teams"
     User }o--o{ Tournament : "tournaments"
     User }o--o{ Training : "trainings"
+    Guardian }o--o{ User : "users"
 ```

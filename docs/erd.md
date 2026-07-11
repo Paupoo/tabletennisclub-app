@@ -30,9 +30,9 @@ erDiagram
     Subscription
 
     %% ClubAdmin/Users
-    Guardian
     FamilyGroup
     User
+    Guardian
 
     %% ClubPosts
     EventPost
@@ -92,7 +92,6 @@ erDiagram
     Registration ||--o{ Payment : "payments"
     Subscription ||--o{ Payment : "payments"
     Subscription }o--o{ TrainingPack : "trainingPacks"
-    Guardian }o--o{ User : "users"
     FamilyGroup }o--o{ User : "users"
     User ||--o{ NewsPost : "articles"
     User ||--o| Team : "captainOf"
@@ -107,6 +106,7 @@ erDiagram
     User }o--o{ Team : "teams"
     User }o--o{ Tournament : "tournaments"
     User }o--o{ Training : "trainings"
+    Guardian }o--o{ User : "users"
     Interclub ||--o| InterclubResult : "interclubResult"
     Interclub ||--o{ Team : "teams"
     Interclub }o--o{ User : "users"

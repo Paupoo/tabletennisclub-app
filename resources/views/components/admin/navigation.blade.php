@@ -14,6 +14,9 @@
 
         <x-menu-item icon="o-user" link="{{ route('admin.user.profile', $user) }}"
             :title="__('My profile')" />
+        @if($user->is_competitor)
+            <x-menu-item icon="o-calendar" link="{{ route('admin.interclubs.my-matches') }}" :title="__('My matches')" />
+        @endif
         <x-menu-item icon="o-users" link="{{ route('admin.user.teams', $user) }}" :title="__('My team(s)')" />
         <x-menu-item icon="o-star" link="{{ route('admin.user.event-subscription', $user) }}" :title="__('My registrations')" />
         <x-menu-item icon="o-calendar-days" link="{{ route('admin.user.calendar', $user) }}" :title="__('My Calendar')" />
@@ -76,9 +79,7 @@
     </x-menu-sub>
 
     <x-menu-sub icon="o-calendar-days" link="#" :title="__('Interclubs')">
-        @if($user->is_competitor)
-        <x-menu-item icon="o-calendar" link="{{ route('admin.interclubs.my-matches') }}" :title="__('My matches')" />
-        @endif
+        
         @if($user->is_admin || $user->is_committee_member || $user->captainOf)
         <x-menu-item icon="o-user-group" link="{{ route('admin.interclubs.captain-selection') }}" :title="__('Selections')" />
         <x-menu-item icon="o-squares-2x2" link="{{ route('admin.interclubs.results') }}" :title="__('Results')" />

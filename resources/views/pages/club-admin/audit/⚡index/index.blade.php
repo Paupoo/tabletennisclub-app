@@ -43,7 +43,81 @@
     {{-- Active filter chips --}}
     <x-admin.shared.filter-chips :chips="$filterChips" />
 
-    <x-card class="bg-base-100 border-none shadow-sm mt-6">
+    {{-- ── Vue mobile ───────────────────────────────────────────────── --}}
+    <div class="mt-6 grid grid-cols-1 gap-3 lg:hidden">
+        @forelse ($activities as $activity)
+            @php
+                $event = $activity->event ?? $activity->description;
+                $changes = $activity->attribute_changes;
+                $subjectName = $subjectLabels[$activity->subject_type] ?? \Illuminate\Support\Str::afterLast($activity->subject_type, '\\');
+                $formatValue = fn ($value) => \Illuminate\Support\Str::limit(is_array($value) ? json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : (string) $value, 60);
+            @endphp
+            <x-card class="border border-base-200 bg-base-100 shadow-sm" wire:key="mobile-activity-{{ $activity->id }}">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="flex min-w-0 flex-wrap items-center gap-2">
+                        @if ($event === 'created')
+                            <x-badge :value="__('Created')" class="badge-success badge-sm badge-soft" />
+                        @elseif ($event === 'updated')
+                            <x-badge :value="__('Modified')" class="badge-info badge-sm badge-soft" />
+                        @elseif ($event === 'deleted')
+                            <x-badge :value="__('Deleted')" class="badge-error badge-sm badge-soft" />
+                        @else
+                            <x-badge :value="$activity->description" class="badge-ghost badge-sm" />
+                        @endif
+                        <span class="text-sm font-semibold">{{ $subjectName }}</span>
+                        <span class="font-mono text-xs opacity-40">#{{ $activity->subject_id }}</span>
+                    </div>
+                    <span class="shrink-0 text-xs tabular-nums opacity-50">{{ $activity->created_at->format('d/m/Y H:i') }}</span>
+                </div>
+
+                <div class="mt-2 flex items-center gap-1.5 text-xs text-base-content/60">
+                    <x-icon name="o-user" class="h-3.5 w-3.5 shrink-0 opacity-50" />
+                    @if ($activity->causer)
+                        <span class="font-medium">{{ $activity->causer->first_name }} {{ $activity->causer->last_name }}</span>
+                    @else
+                        <span class="italic opacity-70">{{ __('System') }}</span>
+                    @endif
+                </div>
+
+                @if ($changes && isset($changes['attributes']))
+                    <div x-data="{ open: {{ $event === 'created' ? 'false' : 'true' }} }" class="mt-3 border-t border-base-200 pt-2">
+                        <button type="button" @click="open = !open"
+                            class="flex w-full items-center justify-between text-xs font-semibold text-base-content/60">
+                            <span class="flex items-center gap-1.5">
+                                <x-icon name="o-pencil-square" class="h-3.5 w-3.5 opacity-60" />
+                                {{ __('Details') }}
+                                <x-badge value="{{ count($changes['attributes']) }}" class="badge-ghost badge-xs" />
+                            </span>
+                            <x-icon name="o-chevron-down" class="h-4 w-4 transition-transform" x-bind:class="open && 'rotate-180'" />
+                        </button>
+                        <div x-show="open" x-transition style="{{ $event === 'created' ? 'display:none' : '' }}" class="mt-2 space-y-1">
+                            @foreach ($changes['attributes'] as $field => $newValue)
+                                <div class="text-xs">
+                                    <span class="font-semibold opacity-70">{{ $field }}:</span>
+                                    @if ($event !== 'created' && isset($changes['old'][$field]) && $changes['old'][$field] !== null && $changes['old'][$field] !== '')
+                                        <span class="text-error/70 line-through">{{ $formatValue($changes['old'][$field]) }}</span>
+                                        <span class="opacity-40">→</span>
+                                    @endif
+                                    <span class="break-all text-success/80">{{ $formatValue($newValue) ?: '—' }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
+            </x-card>
+        @empty
+            <x-empty-state icon="o-document-magnifying-glass" :message="__('No activity recorded yet.')" />
+        @endforelse
+
+        @if ($activities->hasPages())
+            <div class="mt-2">
+                {{ $activities->links() }}
+            </div>
+        @endif
+    </div>
+
+    {{-- ── Vue desktop ────────────────────────────────────────────────── --}}
+    <x-card class="bg-base-100 border-none shadow-sm mt-6 hidden lg:block">
         <x-table :headers="$headers" :rows="$activities" :sort-by="$sortBy" hover>
 
             @scope('cell_created_at', $activity)

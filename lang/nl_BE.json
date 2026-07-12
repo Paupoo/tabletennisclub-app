@@ -3579,5 +3579,7 @@
     "Poll sent on :date": "Peiling verstuurd op :date",
     "Poll sent — waiting for votes": "Peiling verstuurd — wachten op stemmen",
     "resend possible 48h after the last one": "opnieuw versturen kan 48 u na de laatste verzending",
-    "Resend the poll": "Peiling opnieuw versturen"
+    "Resend the poll": "Peiling opnieuw versturen",
+    "Fermer": "Sluiten",
+    "Voir toutes les notifications": "Alle meldingen bekijken"
 }

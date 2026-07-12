@@ -3579,5 +3579,7 @@
     "Poll sent on :date": "Sondage envoyé le :date",
     "Poll sent — waiting for votes": "Sondage envoyé — en attente de votes",
     "resend possible 48h after the last one": "renvoi possible 48 h après le dernier envoi",
-    "Resend the poll": "Renvoyer le sondage"
+    "Resend the poll": "Renvoyer le sondage",
+    "Fermer": "Fermer",
+    "Voir toutes les notifications": "Voir toutes les notifications"
 }

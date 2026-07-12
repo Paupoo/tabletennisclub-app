@@ -20,7 +20,10 @@
     @endif
 </head>
 
-<body class="bg-base-200 min-h-screen font-sans antialiased" x-data="{
+{{-- overflow-x-hidden: any page content wider than the screen must clip, not create
+horizontal scroll — otherwise Firefox mobile widens the layout viewport and every
+position:fixed overlay (notification sheet, drawers) gets cropped on the right. --}}
+<body class="bg-base-200 min-h-screen overflow-x-hidden font-sans antialiased" x-data="{
     dbTheme: '{{ $user->theme ?? 'auto' }}',
     init() {
         let currentTheme = localStorage.getItem('theme') || this.dbTheme;

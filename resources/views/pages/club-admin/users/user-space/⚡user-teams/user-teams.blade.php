@@ -3,6 +3,8 @@
 </x-slot:breadcrumbs>
 
 <div>
+    <x-admin.shared.member-space-nav :user="$user" />
+
     <x-header separator
         :title="$team?->fullName() ?? __('My team(s)')"
         :subtitle="$team ? collect([$categoryLabel, $team->league?->division, $team->season?->name])->filter()->implode(' · ') : null">

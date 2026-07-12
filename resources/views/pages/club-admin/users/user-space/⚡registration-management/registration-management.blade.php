@@ -3,6 +3,8 @@
 </x-slot:breadcrumbs>
 
 <div>
+    <x-admin.shared.member-space-nav :user="$user" />
+
     <x-header :title="__('Affiliation and Training')" :subtitle="__('Manage your club membership and training enrollments')" separator />
 
     @if (count($registrations) <= 1)
@@ -22,6 +24,7 @@
             $currentEntry     = collect($userHistory)->firstWhere('is_current_season', true);
             $pastEntries      = collect($userHistory)->where('is_current_season', false)->values();
             $selectedPacks    = $pendingPackIds[$userId] ?? [];
+            $isRegistering    = (! $currentEntry || ($currentEntry['status'] ?? null) === 'cancelled') && ($registrationsOpen || $canReAffiliate);
         @endphp
 
         <x-tab name="tab-{{ $userId }}" label="{{ $reg['name'] }}">
@@ -163,21 +166,7 @@
                             @else
                                 {{-- No active subscription for current season (or was cancelled) --}}
                                 @if($registrationsOpen || $canReAffiliate)
-                                    @php
-                                        $formula       = $reg['formula'] ?? 'recreative';
-                                        $formulaPrice  = $formula === 'competitive' ? 125.0 : 60.0;
-                                        $packsData     = collect($availablePacks)->whereIn('id', $selectedPacks)->values();
-                                        $discountable  = $packsData->filter(fn($p) => $p['allow_discount']);
-                                        $applyDiscount = $discountable->count() > 1;
-                                        $trainingTotal = $packsData->reduce(function ($carry, $p) use ($applyDiscount) {
-                                            $price = (float) $p['price'];
-                                            if ($p['allow_discount'] && $applyDiscount) {
-                                                $price = max(0.0, $price - 10.0);
-                                            }
-                                            return $carry + $price;
-                                        }, 0.0);
-                                        $estimatedTotal = $formulaPrice + $trainingTotal;
-                                    @endphp
+                                    @php $formula = $reg['formula'] ?? 'recreative'; @endphp
 
                                     @if($canReAffiliate)
                                         <div class="flex items-center gap-2 p-3 rounded-lg border border-warning/30 bg-warning/10 text-sm mb-4">
@@ -228,78 +217,7 @@
                                             </div>
                                         </div>
 
-                                        {{-- Price estimate --}}
-                                        <div class="rounded-xl border border-base-200 bg-base-50 p-4 space-y-2">
-                                            <div class="text-xs font-bold uppercase tracking-wide opacity-60 mb-3">{{ __('Price estimate') }}</div>
-                                            <div class="flex justify-between text-sm">
-                                                <span class="opacity-70">{{ $formula === 'competitive' ? __('Competition licence') : __('Recreational licence') }}</span>
-                                                <span class="font-semibold">{{ number_format($formulaPrice, 2) }} €</span>
-                                            </div>
-                                            @foreach($packsData as $packItem)
-                                                @php
-                                                    $packPrice = (float) $packItem['price'];
-                                                    $packDiscount = $packItem['allow_discount'] && $applyDiscount ? 10.0 : 0.0;
-                                                    $packFinal = max(0.0, $packPrice - $packDiscount);
-                                                @endphp
-                                                <div class="flex justify-between text-sm">
-                                                    <span class="opacity-70">{{ $packItem['name'] }}</span>
-                                                    <span class="font-semibold">
-                                                        @if($packDiscount > 0)
-                                                            <span class="line-through opacity-40 mr-1">{{ number_format($packPrice, 2) }}</span>
-                                                        @endif
-                                                        {{ number_format($packFinal, 2) }} €
-                                                    </span>
-                                                </div>
-                                            @endforeach
-                                            @if($applyDiscount)
-                                                <div class="text-xs opacity-50 italic">{{ __('Multi-pack discount applied (−10€/pack)') }}</div>
-                                            @endif
-                                            <div class="flex justify-between text-base font-bold pt-2 border-t border-base-200">
-                                                <span>{{ __('Total') }}</span>
-                                                <span class="text-primary">{{ number_format($estimatedTotal, 2) }} €</span>
-                                            </div>
-                                            <div class="text-xs opacity-40 italic">{{ __('Indicative — the club may adjust training prices upon validation.') }}</div>
-                                        </div>
 
-                                        {{-- Season involvement --}}
-                                        <div class="rounded-xl border border-base-200 bg-base-50 p-4 space-y-4">
-                                            <div class="text-xs font-bold uppercase tracking-wide opacity-60">{{ __('Getting involved this season') }}</div>
-                                            <p class="text-xs opacity-60 -mt-2">{{ __('Optional — help us organise the season. You can update these anytime.') }}</p>
-
-                                            <x-toggle
-                                                wire:model.live="registrations.{{ $userId }}.can_drive"
-                                                :label="__('I can drive to away matches')"
-                                                :hint="__('Carpooling helps the whole club.')" />
-
-                                            @if($reg['can_drive'] ?? false)
-                                                <x-input
-                                                    type="number"
-                                                    min="1"
-                                                    max="8"
-                                                    wire:model="registrations.{{ $userId }}.seats_available"
-                                                    :label="__('Seats available (incl. driver)')"
-                                                    icon="o-user-group" />
-                                            @endif
-
-                                            <x-toggle
-                                                wire:model="registrations.{{ $userId }}.wants_to_be_captain"
-                                                :label="__('I would like to be a team captain')" />
-
-                                            <x-toggle
-                                                wire:model="registrations.{{ $userId }}.volunteer_help"
-                                                :label="__('I am willing to help as a volunteer')" />
-
-                                            <x-toggle
-                                                wire:model="registrations.{{ $userId }}.wants_directed_training"
-                                                :label="__('I would like directed training (with a coach)')" />
-                                        </div>
-
-                                        <x-button
-                                            :label="__('Submit my registration')"
-                                            icon="o-paper-airplane"
-                                            class="btn-primary"
-                                            wire:click="confirmAffiliation({{ $userId }})"
-                                            spinner />
                                     </div>
                                 @else
                                     <div class="flex items-start gap-3 p-4 rounded-xl border border-error/30 bg-error/10">
@@ -465,6 +383,110 @@
                                         </div>
                                     @endif
                                 </div>
+
+                            {{-- ── RÉCAPITULATIF & ENVOI (inscription en cours) ────── --}}
+                            @if($isRegistering)
+                                <div class="mt-6 pt-6 border-t border-base-200">
+                                    <div class="flex items-center gap-2 mb-4">
+                                        <div class="flex items-center gap-1.5">
+                                            <x-icon name="o-paper-airplane" class="w-4 h-4 text-base-content/40" />
+                                            <span class="text-xs font-bold uppercase tracking-wide text-base-content/50">{{ __('Summary and submit') }}</span>
+                                        </div>
+                                        <div class="flex-1 border-t border-base-200"></div>
+                                    </div>
+
+                                    @php
+                                        $formula       = $reg['formula'] ?? 'recreative';
+                                        $formulaPrice  = $formula === 'competitive' ? 125.0 : 60.0;
+                                        $packsData     = collect($availablePacks)->whereIn('id', $selectedPacks)->values();
+                                        $discountable  = $packsData->filter(fn($p) => $p['allow_discount']);
+                                        $applyDiscount = $discountable->count() > 1;
+                                        $trainingTotal = $packsData->reduce(function ($carry, $p) use ($applyDiscount) {
+                                            $price = (float) $p['price'];
+                                            if ($p['allow_discount'] && $applyDiscount) {
+                                                $price = max(0.0, $price - 10.0);
+                                            }
+                                            return $carry + $price;
+                                        }, 0.0);
+                                        $estimatedTotal = $formulaPrice + $trainingTotal;
+                                    @endphp
+
+                                    <div class="space-y-5">
+                                        {{-- Price estimate --}}
+                                        <div class="rounded-xl border border-base-200 bg-base-50 p-4 space-y-2">
+                                            <div class="text-xs font-bold uppercase tracking-wide opacity-60 mb-3">{{ __('Price estimate') }}</div>
+                                            <div class="flex justify-between text-sm">
+                                                <span class="opacity-70">{{ $formula === 'competitive' ? __('Competition licence') : __('Recreational licence') }}</span>
+                                                <span class="font-semibold">{{ number_format($formulaPrice, 2) }} €</span>
+                                            </div>
+                                            @foreach($packsData as $packItem)
+                                                @php
+                                                    $packPrice = (float) $packItem['price'];
+                                                    $packDiscount = $packItem['allow_discount'] && $applyDiscount ? 10.0 : 0.0;
+                                                    $packFinal = max(0.0, $packPrice - $packDiscount);
+                                                @endphp
+                                                <div class="flex justify-between text-sm">
+                                                    <span class="opacity-70">{{ $packItem['name'] }}</span>
+                                                    <span class="font-semibold">
+                                                        @if($packDiscount > 0)
+                                                            <span class="line-through opacity-40 mr-1">{{ number_format($packPrice, 2) }}</span>
+                                                        @endif
+                                                        {{ number_format($packFinal, 2) }} €
+                                                    </span>
+                                                </div>
+                                            @endforeach
+                                            @if($applyDiscount)
+                                                <div class="text-xs opacity-50 italic">{{ __('Multi-pack discount applied (−10€/pack)') }}</div>
+                                            @endif
+                                            <div class="flex justify-between text-base font-bold pt-2 border-t border-base-200">
+                                                <span>{{ __('Total') }}</span>
+                                                <span class="text-primary">{{ number_format($estimatedTotal, 2) }} €</span>
+                                            </div>
+                                            <div class="text-xs opacity-40 italic">{{ __('Indicative — the club may adjust training prices upon validation.') }}</div>
+                                        </div>
+
+                                        {{-- Season involvement --}}
+                                        <div class="rounded-xl border border-base-200 bg-base-50 p-4 space-y-4">
+                                            <div class="text-xs font-bold uppercase tracking-wide opacity-60">{{ __('Getting involved this season') }}</div>
+                                            <p class="text-xs opacity-60 -mt-2">{{ __('Optional — help us organise the season. You can update these anytime.') }}</p>
+
+                                            <x-toggle
+                                                wire:model.live="registrations.{{ $userId }}.can_drive"
+                                                :label="__('I can drive to away matches')"
+                                                :hint="__('Carpooling helps the whole club.')" />
+
+                                            @if($reg['can_drive'] ?? false)
+                                                <x-input
+                                                    type="number"
+                                                    min="1"
+                                                    max="8"
+                                                    wire:model="registrations.{{ $userId }}.seats_available"
+                                                    :label="__('Seats available (incl. driver)')"
+                                                    icon="o-user-group" />
+                                            @endif
+
+                                            <x-toggle
+                                                wire:model="registrations.{{ $userId }}.wants_to_be_captain"
+                                                :label="__('I would like to be a team captain')" />
+
+                                            <x-toggle
+                                                wire:model="registrations.{{ $userId }}.volunteer_help"
+                                                :label="__('I am willing to help as a volunteer')" />
+
+                                            <x-toggle
+                                                wire:model="registrations.{{ $userId }}.wants_directed_training"
+                                                :label="__('I would like directed training (with a coach)')" />
+                                        </div>
+
+                                        <x-button
+                                            :label="__('Submit my registration')"
+                                            icon="o-paper-airplane"
+                                            class="btn-primary"
+                                            wire:click="confirmAffiliation({{ $userId }})"
+                                            spinner />
+                                    </div>
+                                </div>
+                            @endif
 
                             {{-- ── DOCUMENTS (saison courante) ───────────────────────── --}}
                             <div class="mt-6 pt-6 border-t border-base-200">

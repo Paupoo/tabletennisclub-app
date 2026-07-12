@@ -3,6 +3,8 @@
 </x-slot:breadcrumbs>
 
 <div>
+    <x-admin.shared.member-space-nav :user="auth()->user()" />
+
     <x-header :title="__('My Matches')" :subtitle="__('Manage your availability for upcoming interclubs')"
         separator />
 

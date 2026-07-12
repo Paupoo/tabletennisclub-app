@@ -3,6 +3,8 @@
 </x-slot:breadcrumbs>
 
 <div>
+    <x-admin.shared.member-space-nav :user="$user" />
+
     <x-header separator :subtitle="__('Upcoming club activities')" :title="__('Calendar')" />
 
     <div class="grid grid-cols-1 gap-8 lg:grid-cols-4">

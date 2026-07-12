@@ -657,7 +657,6 @@ describe('Meeting attendance — catering view', function (): void {
 
         Livewire::actingAs($admin)
             ->test('pages::club-events.meetings.show', ['meeting' => $meeting])
-            ->set('activeTab', 'attendance')
             ->assertSee(__('Catering'))
             ->assertSee('12,00')
             ->assertSee(__('Meal · pending'))
@@ -672,7 +671,6 @@ describe('Meeting attendance — catering view', function (): void {
 
         Livewire::actingAs($admin)
             ->test('pages::club-events.meetings.show', ['meeting' => $meeting])
-            ->set('activeTab', 'attendance')
             ->assertDontSee(__('Catering'));
     });
 });

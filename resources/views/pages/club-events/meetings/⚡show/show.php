@@ -10,6 +10,7 @@ use App\Domains\Meetings\Models\MeetingMinutes;
 use App\Domains\Meetings\Models\MeetingUser;
 use App\Domains\Meetings\Notifications\MeetingCancelledNotification;
 use App\Domains\Meetings\Notifications\MeetingDatePollNotification;
+use App\Domains\Meetings\Notifications\MeetingInvitationNotification;
 use App\Domains\Meetings\Notifications\MeetingMinutesNotification;
 use App\Domains\Meetings\Notifications\MeetingPostponedNotification;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
@@ -34,8 +35,6 @@ new class extends Component
     /** @var array<int, array{title: string, description: string, assigned_to_id: string, due_date: string, is_completed: bool}> */
     public array $actionItems = [];
 
-    public string $activeTab = 'overview';
-
     // Cancel / postpone
     public string $cancellationNote = '';
 
@@ -59,10 +58,6 @@ new class extends Component
     public bool $showCancelModal = false;
 
     public bool $showDeleteModal = false;
-
-    public bool $showInviteModal = false;
-
-    public bool $showPollModal = false;
 
     public bool $showPostponeModal = false;
 
@@ -233,6 +228,122 @@ new class extends Component
         $this->loadActionItems();
     }
 
+    /** True once at least one invitation left the building. */
+    #[Computed]
+    public function invitationsSent(): bool
+    {
+        return $this->meeting->users->contains(fn (User $u) => $u->registration->invitation_sent_at !== null);
+    }
+
+    /** Invitees who have not answered yet. */
+    #[Computed]
+    public function pendingInviteesCount(): int
+    {
+        return $this->meeting->users
+            ->filter(fn (User $u) => $u->registration->status === MeetingUserStatusEnum::INVITED)
+            ->count();
+    }
+
+    /**
+     * The single next action suggested by the meeting lifecycle, or null when nothing is pending.
+     *
+     * @return array{title: string, description: string|null, action: string|null, label: string|null}|null
+     */
+    #[Computed]
+    public function nextStep(): ?array
+    {
+        $meeting = $this->meeting;
+
+        if ($meeting->isArchived() || $meeting->status === MeetingStatusEnum::CANCELLED) {
+            return null;
+        }
+
+        if ($meeting->status === MeetingStatusEnum::POSTPONED) {
+            return [
+                'title' => __('Meeting postponed — pick a new date'),
+                'description' => __('Edit the meeting to schedule it again.'),
+                'action' => null,
+                'label' => null,
+            ];
+        }
+
+        if ($meeting->status === MeetingStatusEnum::PLANNING) {
+            if ($meeting->dateProposals->isEmpty()) {
+                return [
+                    'title' => __('No date yet'),
+                    'description' => __('Edit the meeting to set a date or propose options to the committee.'),
+                    'action' => null,
+                    'label' => null,
+                ];
+            }
+
+            $votes = $meeting->dateProposals->sum(fn (MeetingDateProposal $p) => $p->votes->count());
+
+            if ($votes === 0) {
+                return [
+                    'title' => __('Send the date poll to the committee'),
+                    'description' => __('Members will vote on their availability for each proposed date.'),
+                    'action' => 'sendDatePoll',
+                    'label' => __('Send the poll'),
+                ];
+            }
+
+            return [
+                'title' => __(':n votes received — pick the final date', ['n' => $votes]),
+                'description' => __('Select the winning date below to confirm the meeting.'),
+                'action' => null,
+                'label' => null,
+            ];
+        }
+
+        if ($meeting->status === MeetingStatusEnum::CONFIRMED) {
+            if ($meeting->scheduled_at?->isPast()) {
+                return [
+                    'title' => __('This meeting took place'),
+                    'description' => __('Record attendance below, then mark the meeting completed.'),
+                    'action' => 'markCompleted',
+                    'label' => __('Mark completed'),
+                ];
+            }
+
+            if (! $this->invitationsSent) {
+                return [
+                    'title' => __('Date confirmed — invite the members'),
+                    'description' => __('Official invitations with a calendar file (.ics) will be sent.'),
+                    'action' => 'sendInvitations',
+                    'label' => __('Send invitations'),
+                ];
+            }
+
+            if ($this->pendingInviteesCount > 0) {
+                return [
+                    'title' => trans_choice(':n member has not answered yet|:n members have not answered yet', $this->pendingInviteesCount, ['n' => $this->pendingInviteesCount]),
+                    'description' => __('A reminder resends the invitation, at most once every 48 hours.'),
+                    'action' => 'remindPendingInvitees',
+                    'label' => __('Send a reminder'),
+                ];
+            }
+
+            return [
+                'title' => __('Everyone answered — you are all set'),
+                'description' => __(':n confirmed attendees', ['n' => $meeting->confirmedCount()]),
+                'action' => null,
+                'label' => null,
+            ];
+        }
+
+        if ($meeting->status === MeetingStatusEnum::COMPLETED && ! $meeting->minutes?->is_published) {
+            return [
+                'title' => __('Write and publish the minutes'),
+                'description' => __('Attendees are waiting for the meeting report.'),
+                'action' => null,
+                'label' => null,
+            ];
+        }
+
+        return null;
+    }
+
     public function postponeMeeting(): void
     {
         abort_unless($this->canManage, 403);
@@ -271,6 +382,34 @@ new class extends Component
         ]);
 
         $this->toast(type: 'success', title: __('Minutes published'));
+        unset($this->meeting);
+    }
+
+    /** Resend the invitation to invitees who never responded, at most once every 48 hours. */
+    public function remindPendingInvitees(): void
+    {
+        abort_unless($this->canManage, 403);
+        $meeting = $this->meeting;
+
+        $recipients = $meeting->users()
+            ->wherePivot('status', MeetingUserStatusEnum::INVITED->value)
+            ->wherePivotNotNull('invitation_sent_at')
+            ->wherePivot('invitation_sent_at', '<=', now()->subHours(48))
+            ->get();
+
+        if ($recipients->isEmpty()) {
+            $this->toast(type: 'info', title: __('Nobody to remind — everyone answered or was reminded less than 48h ago'));
+
+            return;
+        }
+
+        foreach ($recipients as $recipient) {
+            $meeting->users()->updateExistingPivot($recipient->id, ['invitation_sent_at' => now()]);
+        }
+
+        Notification::send($recipients, new MeetingInvitationNotification($meeting));
+
+        $this->toast(type: 'success', title: __(':n reminders sent', ['n' => $recipients->count()]));
         unset($this->meeting);
     }
 

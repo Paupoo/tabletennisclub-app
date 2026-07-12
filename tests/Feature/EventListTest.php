@@ -146,6 +146,78 @@ describe('EventList', function (): void {
             ->assertSee(__('Registered'));
     });
 
+    it('shows events dated in the gap between two seasons under the active season', function (): void {
+        Season::factory()->create([
+            'is_active' => false,
+            'start_at' => now()->subYear(),
+            'end_at' => now()->subMonths(8),
+        ]);
+        Season::factory()->create([
+            'is_active' => true,
+            'start_at' => now()->subMonths(6),
+            'end_at' => now()->addMonths(6),
+        ]);
+
+        EventPost::factory()->create([
+            'title' => 'Summer Break Event',
+            'status' => EventPostStatusEnum::PUBLISHED,
+            'event_date' => now()->subMonths(7),
+        ]);
+
+        Livewire::test(EventList::class)
+            ->assertSee('Summer Break Event');
+    });
+
+    it('shows events dated after the active season ends under both the active and the next season', function (): void {
+        Season::factory()->create([
+            'is_active' => true,
+            'start_at' => now()->subMonths(6),
+            'end_at' => now()->addMonths(1),
+        ]);
+        $nextSeason = Season::factory()->create([
+            'is_active' => false,
+            'start_at' => now()->addMonths(3),
+            'end_at' => now()->addMonths(15),
+        ]);
+
+        EventPost::factory()->create([
+            'title' => 'Summer Camp',
+            'status' => EventPostStatusEnum::PUBLISHED,
+            'event_date' => now()->addMonths(2),
+        ]);
+
+        Livewire::test(EventList::class)
+            ->assertSee('Summer Camp')
+            ->set('seasonId', $nextSeason->id)
+            ->assertSee('Summer Camp');
+    });
+
+    it('shows a break message with season navigation when the active season has no events', function (): void {
+        Season::factory()->create([
+            'is_active' => false,
+            'start_at' => now()->subYears(2),
+            'end_at' => now()->subYear(),
+        ]);
+        Season::factory()->create([
+            'is_active' => true,
+            'start_at' => now()->subMonths(6),
+            'end_at' => now()->addMonths(6),
+        ]);
+
+        Livewire::test(EventList::class)
+            ->assertSee(__("It's break time!"))
+            ->assertSee(__('View last season'));
+    });
+
+    it('can switch season via viewSeason', function (): void {
+        Season::factory()->create(['is_active' => true, 'start_at' => now()->subYear(), 'end_at' => now()->addYear()]);
+        $otherSeason = Season::factory()->create(['is_active' => false, 'start_at' => now()->subYears(3), 'end_at' => now()->subYears(2)]);
+
+        Livewire::test(EventList::class)
+            ->call('viewSeason', $otherSeason->id)
+            ->assertSet('seasonId', $otherSeason->id);
+    });
+
     it('does not show register button for past events', function (): void {
         Season::factory()->create(['is_active' => true, 'start_at' => now()->subYear(), 'end_at' => now()->addYear()]);
         $user = User::factory()->create();

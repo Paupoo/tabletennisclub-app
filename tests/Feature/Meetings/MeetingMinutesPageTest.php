@@ -79,7 +79,145 @@ describe('Minutes page — drafting', function (): void {
     });
 });
 
+describe('Minutes page — note-taking lock', function (): void {
+    test('the first committee member to open the page takes the lock', function (): void {
+        $admin = minutesAdmin();
+        $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $admin->id]);
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting]);
+
+        expect($meeting->fresh()->minutes_editor_id)->toBe($admin->id);
+    });
+
+    test('a second member sees who takes notes and their edits are not persisted', function (): void {
+        $holder = minutesAdmin();
+        $other = minutesAdmin();
+        $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $holder->id]);
+        $meeting->acquireMinutesLock($holder);
+
+        Livewire::actingAs($other)
+            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting])
+            ->assertSeeText(__(':name is taking notes', ['name' => $holder->full_name]))
+            ->set('notes', 'tentative pirate');
+
+        expect($meeting->fresh()->minutes?->notes)->not->toBe('tentative pirate')
+            ->and($meeting->fresh()->minutes_editor_id)->toBe($holder->id);
+    });
+
+    test('taking over transfers the lock and allows writing', function (): void {
+        $holder = minutesAdmin();
+        $other = minutesAdmin();
+        $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $holder->id]);
+        $meeting->acquireMinutesLock($holder);
+
+        Livewire::actingAs($other)
+            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting])
+            ->call('takeOver')
+            ->set('notes', 'notes reprises');
+
+        $fresh = $meeting->fresh();
+        expect($fresh->minutes_editor_id)->toBe($other->id)
+            ->and($fresh->minutes->notes)->toBe('notes reprises');
+    });
+
+    test('a stale lock is taken over automatically on open', function (): void {
+        $away = minutesAdmin();
+        $arriving = minutesAdmin();
+        $meeting = Meeting::factory()->committee()->completed()->create([
+            'created_by' => $away->id,
+            'minutes_editor_id' => $away->id,
+            'minutes_editor_at' => now()->subMinutes(20),
+        ]);
+
+        Livewire::actingAs($arriving)
+            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting]);
+
+        expect($meeting->fresh()->minutes_editor_id)->toBe($arriving->id);
+    });
+});
+
+describe('Minutes page — live reading', function (): void {
+    test('a read-only viewer picks up the note taker changes on each poll tick', function (): void {
+        $holder = minutesAdmin();
+        $viewer = minutesAdmin();
+        $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $holder->id]);
+        $meeting->acquireMinutesLock($holder);
+        $meeting->minutes()->create(['notes' => 'version initiale']);
+
+        $component = Livewire::actingAs($viewer)
+            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting])
+            ->assertSet('notes', 'version initiale');
+
+        // The note taker keeps writing from their own session.
+        $meeting->minutes->update(['notes' => 'version en direct', 'decisions' => ['Décision live']]);
+
+        $component->call('syncDraft')
+            ->assertSet('notes', 'version en direct')
+            ->assertSet('decisions', ['Décision live']);
+    });
+
+    test('the note taker own draft is never overwritten by the poll', function (): void {
+        $holder = minutesAdmin();
+        $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $holder->id]);
+        $meeting->minutes()->create(['notes' => 'ancienne version']);
+
+        Livewire::actingAs($holder)
+            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting])
+            ->set('notes', 'je tape en ce moment')
+            ->call('syncDraft')
+            ->assertSet('notes', 'je tape en ce moment');
+    });
+});
+
+describe('Minutes page — live reading (holder side)', function (): void {
+    test('a holder who lost the pen sees the new note taker on the next poll tick', function (): void {
+        $holder = minutesAdmin();
+        $usurper = minutesAdmin();
+        $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $holder->id]);
+
+        $component = Livewire::actingAs($holder)
+            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting])
+            ->assertSeeText(__('You are taking the notes'));
+
+        // Someone takes over from another session.
+        $meeting->fresh()->acquireMinutesLock($usurper, force: true);
+
+        $component->call('syncDraft')
+            ->assertSeeText(__(':name is taking notes', ['name' => $usurper->full_name]));
+    });
+});
+
+describe('Minutes page — live agenda', function (): void {
+    test('an agenda item can be ticked as discussed and unticked', function (): void {
+        $admin = minutesAdmin();
+        $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $admin->id]);
+        $item = $meeting->agendaItems()->create(['sort_order' => 0, 'title' => 'Budget']);
+
+        $component = Livewire::actingAs($admin)
+            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting])
+            ->call('toggleDiscussed', $item->id);
+
+        expect($item->fresh()->discussed_at)->not->toBeNull();
+
+        $component->call('toggleDiscussed', $item->id);
+        expect($item->fresh()->discussed_at)->toBeNull();
+    });
+});
+
 describe('Minutes page — publish & send', function (): void {
+    test('minutes of a meeting that has not started yet cannot be published', function (): void {
+        $admin = minutesAdmin();
+        $meeting = Meeting::factory()->committee()->confirmed()->create(['created_by' => $admin->id]);
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting])
+            ->set('decisions', ['Décision anticipée'])
+            ->call('publishMinutes');
+
+        expect($meeting->fresh()->minutes?->is_published ?? false)->toBeFalse();
+    });
+
     test('publishing persists the draft and marks it published', function (): void {
         $admin = minutesAdmin();
         $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $admin->id]);

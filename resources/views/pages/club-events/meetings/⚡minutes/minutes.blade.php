@@ -24,11 +24,55 @@
         </x-slot:actions>
     </x-header>
 
-    <div class="mx-auto max-w-2xl space-y-6 pb-24">
+    {{-- Everyone polls: viewers pull the latest draft, the holder finds out when the pen changes hands. --}}
+    <div class="mx-auto max-w-2xl space-y-6 pb-24" wire:poll.3s="syncDraft">
         @if ($minutes?->is_published)
             <x-alert icon="o-check-circle" class="alert-success alert-soft"
                 :title="__('Published on :date', ['date' => $minutes->published_at?->translatedFormat('d M Y')])" />
         @endif
+
+        {{-- ── Note-taking lock ──────────────────────────────────────── --}}
+        @if ($this->holdsLock)
+            <div class="flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-4 py-2.5 text-sm">
+                <x-icon name="o-pencil" class="h-4 w-4 text-primary" />
+                {{ __('You are taking the notes') }}
+            </div>
+        @elseif ($this->lockHolder)
+            <div class="flex flex-col gap-3 rounded-xl border border-base-300 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <div class="flex items-center gap-2 text-sm">
+                    <x-icon name="o-pencil" class="h-4 w-4 text-base-content/50" />
+                    <span class="font-medium">{{ __(':name is taking notes', ['name' => $this->lockHolder->full_name]) }}</span>
+                    <span class="text-base-content/50">— {{ __('you are in read-only mode') }}</span>
+                </div>
+                <x-button icon="o-hand-raised" :label="__('Take over the notes')"
+                    class="btn-outline btn-sm shrink-0"
+                    wire:click="takeOver" spinner="takeOver" />
+            </div>
+        @endif
+
+        {{-- ── Agenda checklist (live) ───────────────────────────────── --}}
+        @if ($meeting->agendaItems->isNotEmpty())
+            <x-card :title="__('Agenda')" :subtitle="__('Tick each point as the meeting moves along.')">
+                <ul class="space-y-1.5">
+                    @foreach ($meeting->agendaItems as $i => $item)
+                        <li wire:key="agenda-live-{{ $item->id }}">
+                            <button type="button"
+                                class="flex w-full items-start gap-3 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-base-200/50 disabled:pointer-events-none"
+                                wire:click="toggleDiscussed({{ $item->id }})"
+                                @disabled(! $this->holdsLock)>
+                                <x-icon :name="$item->discussed_at ? 'o-check-circle' : 'o-minus-circle'"
+                                    @class(['mt-0.5 h-5 w-5 shrink-0', 'text-primary' => $item->discussed_at, 'text-base-content/25' => ! $item->discussed_at]) />
+                                <span @class(['text-sm', 'text-base-content/40 line-through' => $item->discussed_at])>
+                                    {{ $i + 1 }}. {{ $item->title }}
+                                </span>
+                            </button>
+                        </li>
+                    @endforeach
+                </ul>
+            </x-card>
+        @endif
+
+        <fieldset class="contents" @disabled(! $this->holdsLock)>
 
         {{-- ── 1. Attendance ─────────────────────────────────────────── --}}
         @if ($meeting->users->isNotEmpty())
@@ -106,12 +150,14 @@
                                 <x-textarea wire:model.blur="actionItems.{{ $i }}.description"
                                     rows="2" :placeholder="__('Details…')" />
                                 <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                    {{-- .live: discrete pickers lose focus on selection — a .blur value
+                                         still pending when the poll ticks would be wiped by the morph. --}}
                                     <x-select :label="__('Assigned to')"
                                         :options="$this->usersForAssignment"
-                                        wire:model.blur="actionItems.{{ $i }}.assigned_to_id"
+                                        wire:model.live="actionItems.{{ $i }}.assigned_to_id"
                                         :placeholder="__('Nobody')" />
                                     <x-datepicker :label="__('Due date')"
-                                        wire:model.blur="actionItems.{{ $i }}.due_date" />
+                                        wire:model.live="actionItems.{{ $i }}.due_date" />
                                 </div>
                             </div>
                             <x-button icon="o-trash" class="btn-ghost btn-xs btn-circle mt-1"
@@ -130,11 +176,18 @@
                 :placeholder="__('Free-form notes, observations…')" />
         </x-card>
 
+        </fieldset>
+
         {{-- ── Publish / send ────────────────────────────────────────── --}}
         <div class="flex flex-wrap items-center justify-end gap-2 border-t border-base-200 pt-4">
-            @if (! $minutes?->is_published)
+            @if (! $meeting->scheduled_at?->isPast())
+                <p class="text-sm italic text-base-content/50">
+                    {{ __('This meeting has not taken place yet — publish once it is over') }}
+                </p>
+            @elseif (! $minutes?->is_published)
                 <x-button icon="o-eye" :label="__('Publish minutes')"
-                    class="btn-primary" wire:click="publishMinutes" spinner="publishMinutes" />
+                    class="btn-primary" wire:click="publishMinutes" spinner="publishMinutes"
+                    :disabled="! $this->holdsLock" />
             @else
                 <x-button icon="o-paper-airplane"
                     :label="__('Send to committee')"

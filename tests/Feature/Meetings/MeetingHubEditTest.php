@@ -79,8 +79,12 @@ describe('Hub card editing — practical details', function (): void {
 
     test('setting a date on a postponed meeting re-confirms it', function (): void {
         $admin = hubEditAdmin();
+        // Fixed dates: the factory definition randomizes scheduled_at/ends_at from a random
+        // status, which can leave a stale ends_at behind the status override.
         $meeting = Meeting::factory()->committee()->create([
             'status' => MeetingStatusEnum::POSTPONED,
+            'scheduled_at' => now()->addDays(3),
+            'ends_at' => now()->addDays(3)->addHours(2),
             'created_by' => $admin->id,
         ]);
 
@@ -88,6 +92,7 @@ describe('Hub card editing — practical details', function (): void {
             ->test('pages::club-events.meetings.show', ['meeting' => $meeting])
             ->call('editDetails')
             ->set('detailsScheduledAt', now()->addWeek()->format('Y-m-d\TH:i'))
+            ->set('detailsEndsAt', now()->addWeek()->addHours(2)->format('Y-m-d\TH:i'))
             ->call('saveDetails');
 
         expect($meeting->fresh()->status)->toBe(MeetingStatusEnum::CONFIRMED);

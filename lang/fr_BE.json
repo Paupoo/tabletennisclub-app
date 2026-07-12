@@ -3564,5 +3564,14 @@
     "Open the minutes": "Ouvrir le compte rendu",
     "Saved at :time": "Enregistré à :time",
     "Tasks that need follow-up after the meeting.": "Tâches à suivre après la réunion.",
-    "Write the minutes": "Rédiger le compte rendu"
+    "Write the minutes": "Rédiger le compte rendu",
+    ":name is taking notes": ":name prend les notes",
+    "Prepare the minutes": "Préparer le compte rendu",
+    "Take over the notes": "Reprendre la main",
+    "Take over the notes before publishing": "Reprenez la main avant de publier",
+    "This meeting has not taken place yet — publish once it is over": "Cette réunion n'a pas encore eu lieu — publiez une fois qu'elle est terminée",
+    "Tick each point as the meeting moves along.": "Cochez chaque point au fil de la réunion.",
+    "you are in read-only mode": "vous êtes en lecture seule",
+    "You are taking the notes": "Vous prenez les notes",
+    "You are taking the notes now": "Vous prenez la main sur les notes"
 }

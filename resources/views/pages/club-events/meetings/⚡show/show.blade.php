@@ -7,8 +7,10 @@
         $meeting = $this->meeting;
         $isPast = $meeting->scheduled_at?->isPast() ?? false;
         $showAttendance = $meeting->users->isNotEmpty();
+        // Minutes are preparable as soon as the date is confirmed; publishing stays
+        // locked until the meeting actually took place (guard on the minutes page).
         $showMinutes = $meeting->status === \App\Domains\Shared\Enums\MeetingStatusEnum::COMPLETED
-            || ($meeting->status === \App\Domains\Shared\Enums\MeetingStatusEnum::CONFIRMED && $isPast)
+            || $meeting->status === \App\Domains\Shared\Enums\MeetingStatusEnum::CONFIRMED
             || $meeting->minutes !== null;
         $showPoll = $meeting->status === \App\Domains\Shared\Enums\MeetingStatusEnum::PLANNING
             && $meeting->dateProposals->isNotEmpty();
@@ -440,7 +442,7 @@
                                 @endif
                             </p>
                             <x-button icon="o-document-text"
-                                :label="$minutes ? __('Open the minutes') : __('Write the minutes')"
+                                :label="$minutes ? __('Open the minutes') : ($isPast ? __('Write the minutes') : __('Prepare the minutes'))"
                                 class="btn-outline btn-sm shrink-0"
                                 link="{{ route('admin.meetings.minutes', $meeting) }}" />
                         </div>

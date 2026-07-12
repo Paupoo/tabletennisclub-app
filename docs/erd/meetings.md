@@ -11,13 +11,6 @@ erDiagram
         datetime due_date "nullable"
         bool is_completed
     }
-    MeetingAgendaItem {
-        int id PK
-        int meeting_id FK
-        int sort_order
-        string title
-        string description "nullable"
-    }
     MeetingDateProposal {
         int id PK
         int meeting_id FK
@@ -51,6 +44,14 @@ erDiagram
         datetime response_at "nullable"
         bool meal_reserved "nullable"
         datetime meal_responded_at "nullable"
+    }
+    MeetingAgendaItem {
+        int id PK
+        int meeting_id FK
+        int sort_order
+        string title
+        string description "nullable"
+        datetime discussed_at "nullable"
     }
     Meeting {
         int id PK

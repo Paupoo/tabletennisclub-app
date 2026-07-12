@@ -3564,5 +3564,14 @@
     "Open the minutes": "Verslag openen",
     "Saved at :time": "Opgeslagen om :time",
     "Tasks that need follow-up after the meeting.": "Taken die opvolging vragen na de vergadering.",
-    "Write the minutes": "Verslag schrijven"
+    "Write the minutes": "Verslag schrijven",
+    ":name is taking notes": ":name neemt de notities",
+    "Prepare the minutes": "Verslag voorbereiden",
+    "Take over the notes": "Notities overnemen",
+    "Take over the notes before publishing": "Neem de notities over vóór het publiceren",
+    "This meeting has not taken place yet — publish once it is over": "Deze vergadering heeft nog niet plaatsgevonden — publiceer zodra ze voorbij is",
+    "Tick each point as the meeting moves along.": "Vink elk punt af naarmate de vergadering vordert.",
+    "you are in read-only mode": "u bent in alleen-lezen modus",
+    "You are taking the notes": "U neemt de notities",
+    "You are taking the notes now": "U neemt nu de notities over"
 }

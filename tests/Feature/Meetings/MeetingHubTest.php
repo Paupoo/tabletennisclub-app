@@ -77,6 +77,15 @@ describe('Meeting hub — next step banner', function (): void {
             ->assertSeeText(__('This meeting took place'));
     });
 
+    test('a confirmed future meeting already offers to prepare the minutes', function (): void {
+        $admin = hubAdmin();
+        $meeting = Meeting::factory()->committee()->confirmed()->create(['created_by' => $admin->id]);
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-events.meetings.show', ['meeting' => $meeting])
+            ->assertSeeText(__('Prepare the minutes'));
+    });
+
     test('a completed meeting without published minutes suggests writing them', function (): void {
         $admin = hubAdmin();
         $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $admin->id]);

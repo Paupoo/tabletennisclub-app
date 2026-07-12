@@ -57,11 +57,11 @@ erDiagram
 
     %% Meetings
     MeetingActionItem
-    MeetingAgendaItem
     MeetingDateProposal
     MeetingDateVote
     MeetingMinutes
     MeetingUser
+    MeetingAgendaItem
     Meeting
 
     %% Shared

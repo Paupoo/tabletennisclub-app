@@ -13,12 +13,14 @@ use App\Domains\Meetings\Notifications\MeetingDatePollNotification;
 use App\Domains\Meetings\Notifications\MeetingInvitationNotification;
 use App\Domains\Meetings\Notifications\MeetingMinutesNotification;
 use App\Domains\Meetings\Notifications\MeetingPostponedNotification;
+use App\Domains\Shared\Enums\MeetingFormatEnum;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\MeetingTypeEnum;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
 use App\Jobs\SendMeetingInvitationsJob;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\View\View;
@@ -34,6 +36,41 @@ new class extends Component
     // Action items editor
     /** @var array<int, array{title: string, description: string, assigned_to_id: string, due_date: string, is_completed: bool}> */
     public array $actionItems = [];
+
+    // Card being edited in place: 'title' | 'details' | 'agenda' | 'meal' | 'quorum' | null
+    public ?string $editing = null;
+
+    // ── Card drafts ───────────────────────────────────────────────────
+    /** @var array<int, array{id: int|null, title: string, description: string}> */
+    public array $agendaDraft = [];
+
+    public string $detailsDescription = '';
+
+    public ?string $detailsEndsAt = null;
+
+    public string $detailsFormat = 'physical';
+
+    public string $detailsLocation = '';
+
+    public string $detailsMeetingLink = '';
+
+    public ?string $detailsRsvpDeadline = null;
+
+    public ?string $detailsScheduledAt = null;
+
+    public bool $mealHasDraft = false;
+
+    public string $mealDescriptionDraft = '';
+
+    public string $mealPriceDraft = '';
+
+    public ?string $newProposalAt = null;
+
+    public ?int $quorumDraft = null;
+
+    public string $titleDraft = '';
+
+    public string $typeDraft = 'committee';
 
     // Cancel / postpone
     public string $cancellationNote = '';
@@ -56,6 +93,8 @@ new class extends Component
 
     // Modals
     public bool $showCancelModal = false;
+
+    public bool $showTitleModal = false;
 
     public bool $showDeleteModal = false;
 
@@ -139,6 +178,108 @@ new class extends Component
     {
         return User::where(fn ($q) => $q->where('is_admin', true)->orWhere('is_committee_member', true))
             ->orderBy('last_name')->get();
+    }
+
+    public function addProposal(): void
+    {
+        abort_unless($this->canManage, 403);
+        $this->validate(['newProposalAt' => 'required|date']);
+
+        $this->meeting->dateProposals()->create(['proposed_at' => $this->newProposalAt]);
+
+        $this->newProposalAt = null;
+        $this->toast(type: 'success', title: __('Date option added'));
+        unset($this->meeting);
+    }
+
+    public function removeProposal(int $proposalId): void
+    {
+        abort_unless($this->canManage, 403);
+
+        $proposal = $this->meeting->dateProposals()->findOrFail($proposalId);
+
+        if ($proposal->votes()->exists()) {
+            $this->toast(type: 'error', title: __('This date already has votes — it cannot be removed'));
+
+            return;
+        }
+
+        $proposal->delete();
+        unset($this->meeting);
+    }
+
+    public function addAgendaDraftItem(): void
+    {
+        $this->agendaDraft[] = ['id' => null, 'title' => '', 'description' => ''];
+    }
+
+    public function cancelEditing(): void
+    {
+        $this->editing = null;
+    }
+
+    // ── Card editing ──────────────────────────────────────────────────
+    public function editAgenda(): void
+    {
+        abort_unless($this->canManage, 403);
+
+        $this->agendaDraft = $this->meeting->agendaItems
+            ->map(fn ($item) => [
+                'id' => $item->id,
+                'title' => $item->title,
+                'description' => $item->description ?? '',
+            ])
+            ->values()
+            ->toArray();
+
+        if ($this->agendaDraft === []) {
+            $this->addAgendaDraftItem();
+        }
+
+        $this->editing = 'agenda';
+    }
+
+    public function editDetails(): void
+    {
+        abort_unless($this->canManage, 403);
+        $meeting = $this->meeting;
+
+        $this->detailsFormat = $meeting->format->value;
+        $this->detailsScheduledAt = $meeting->scheduled_at?->format('Y-m-d\TH:i');
+        $this->detailsEndsAt = $meeting->ends_at?->format('Y-m-d\TH:i');
+        $this->detailsLocation = $meeting->location ?? '';
+        $this->detailsMeetingLink = $meeting->meeting_link ?? '';
+        $this->detailsRsvpDeadline = $meeting->rsvp_deadline?->format('Y-m-d');
+        $this->detailsDescription = $meeting->description ?? '';
+
+        $this->editing = 'details';
+    }
+
+    public function editMeal(): void
+    {
+        abort_unless($this->canManage, 403);
+        $meeting = $this->meeting;
+
+        $this->mealHasDraft = $meeting->has_meal;
+        $this->mealDescriptionDraft = $meeting->meal_description ?? '';
+        $this->mealPriceDraft = $meeting->meal_price !== null ? (string) $meeting->meal_price : '';
+
+        $this->editing = 'meal';
+    }
+
+    public function editQuorum(): void
+    {
+        abort_unless($this->canManage, 403);
+        $this->quorumDraft = $this->meeting->quorum;
+        $this->editing = 'quorum';
+    }
+
+    public function editTitle(): void
+    {
+        abort_unless($this->canManage, 403);
+        $this->titleDraft = $this->meeting->title;
+        $this->typeDraft = $this->meeting->type->value;
+        $this->showTitleModal = true;
     }
 
     public function deleteMeeting(): void
@@ -245,6 +386,32 @@ new class extends Component
     }
 
     /**
+     * What still has to be filled in before invitations may be sent.
+     *
+     * @return array<int, string>
+     */
+    #[Computed]
+    public function sendChecklist(): array
+    {
+        $meeting = $this->meeting;
+        $missing = [];
+
+        if ($meeting->agendaItems->isEmpty()) {
+            $missing[] = __('Add at least one agenda item');
+        }
+
+        if ($meeting->format === MeetingFormatEnum::PHYSICAL && blank($meeting->location)) {
+            $missing[] = __('Set the location');
+        }
+
+        if ($meeting->format === MeetingFormatEnum::VIRTUAL && blank($meeting->meeting_link)) {
+            $missing[] = __('Set the meeting link');
+        }
+
+        return $missing;
+    }
+
+    /**
      * The single next action suggested by the meeting lifecycle, or null when nothing is pending.
      *
      * @return array{title: string, description: string|null, action: string|null, label: string|null}|null
@@ -261,7 +428,7 @@ new class extends Component
         if ($meeting->status === MeetingStatusEnum::POSTPONED) {
             return [
                 'title' => __('Meeting postponed — pick a new date'),
-                'description' => __('Edit the meeting to schedule it again.'),
+                'description' => __('Set the new date from the practical info card.'),
                 'action' => null,
                 'label' => null,
             ];
@@ -271,7 +438,7 @@ new class extends Component
             if ($meeting->dateProposals->isEmpty()) {
                 return [
                     'title' => __('No date yet'),
-                    'description' => __('Edit the meeting to set a date or propose options to the committee.'),
+                    'description' => __('Set a date from the practical info card.'),
                     'action' => null,
                     'label' => null,
                 ];
@@ -307,6 +474,15 @@ new class extends Component
             }
 
             if (! $this->invitationsSent) {
+                if ($this->sendChecklist !== []) {
+                    return [
+                        'title' => __('Complete the meeting before inviting'),
+                        'description' => implode(' · ', $this->sendChecklist),
+                        'action' => null,
+                        'label' => null,
+                    ];
+                }
+
                 return [
                     'title' => __('Date confirmed — invite the members'),
                     'description' => __('Official invitations with a calendar file (.ics) will be sent.'),
@@ -410,6 +586,170 @@ new class extends Component
         Notification::send($recipients, new MeetingInvitationNotification($meeting));
 
         $this->toast(type: 'success', title: __(':n reminders sent', ['n' => $recipients->count()]));
+        unset($this->meeting);
+    }
+
+    public function removeAgendaDraftItem(int $i): void
+    {
+        array_splice($this->agendaDraft, $i, 1);
+    }
+
+    /** wire:sort handler on the read view — persists the new agenda order immediately. */
+    public function reorderAgenda(int $id, int $position): void
+    {
+        abort_unless($this->canManage, 403);
+
+        $ids = $this->meeting->agendaItems->pluck('id')->all();
+        $from = array_search($id, $ids, true);
+
+        if ($from === false) {
+            return;
+        }
+
+        array_splice($ids, $from, 1);
+        array_splice($ids, $position, 0, [$id]);
+
+        foreach ($ids as $order => $itemId) {
+            $this->meeting->agendaItems()->where('id', $itemId)->update(['sort_order' => $order]);
+        }
+
+        unset($this->meeting);
+    }
+
+    public function saveAgenda(): void
+    {
+        abort_unless($this->canManage, 403);
+        $this->validate([
+            'agendaDraft.*.title' => 'required|string|max:255',
+            'agendaDraft.*.description' => 'nullable|string',
+        ]);
+
+        $meeting = $this->meeting;
+        $keptIds = [];
+
+        foreach (array_values($this->agendaDraft) as $order => $item) {
+            if (blank($item['title'])) {
+                continue;
+            }
+
+            $attributes = [
+                'sort_order' => $order,
+                'title' => $item['title'],
+                'description' => filled($item['description']) ? $item['description'] : null,
+            ];
+
+            $existing = $item['id'] ? $meeting->agendaItems()->find($item['id']) : null;
+
+            if ($existing) {
+                $existing->update($attributes);
+                $keptIds[] = $existing->id;
+            } else {
+                $keptIds[] = $meeting->agendaItems()->create($attributes)->id;
+            }
+        }
+
+        $meeting->agendaItems()->whereNotIn('id', $keptIds)->delete();
+
+        $this->editing = null;
+        $this->toast(type: 'success', title: __('Agenda updated'));
+        unset($this->meeting);
+    }
+
+    public function saveDetails(): void
+    {
+        abort_unless($this->canManage, 403);
+        $this->validate([
+            'detailsFormat' => 'required|string|in:' . implode(',', array_column(MeetingFormatEnum::cases(), 'value')),
+            'detailsScheduledAt' => 'nullable|date',
+            'detailsEndsAt' => 'nullable|date|after_or_equal:detailsScheduledAt',
+            'detailsLocation' => $this->detailsFormat === 'physical' ? 'nullable|string|max:500' : 'nullable|string|max:500',
+            'detailsMeetingLink' => 'nullable|url|max:500',
+            'detailsRsvpDeadline' => 'nullable|date',
+            'detailsDescription' => 'nullable|string',
+        ]);
+
+        $meeting = $this->meeting;
+        $isPhysical = $this->detailsFormat === 'physical';
+        $scheduledAt = filled($this->detailsScheduledAt) ? Carbon::parse($this->detailsScheduledAt) : null;
+
+        $data = [
+            'format' => $this->detailsFormat,
+            'scheduled_at' => $scheduledAt,
+            'ends_at' => $scheduledAt
+                ? (filled($this->detailsEndsAt) ? $this->detailsEndsAt : $scheduledAt->copy()->addHours(2))
+                : null,
+            'location' => $isPhysical && filled($this->detailsLocation) ? $this->detailsLocation : null,
+            'meeting_link' => ! $isPhysical && filled($this->detailsMeetingLink) ? $this->detailsMeetingLink : null,
+            'rsvp_deadline' => filled($this->detailsRsvpDeadline) ? $this->detailsRsvpDeadline : null,
+            'description' => filled($this->detailsDescription) ? $this->detailsDescription : null,
+        ];
+
+        if ($scheduledAt && in_array($meeting->status, [MeetingStatusEnum::PLANNING, MeetingStatusEnum::POSTPONED], true)) {
+            $data['status'] = MeetingStatusEnum::CONFIRMED;
+        }
+
+        $meeting->update($data);
+
+        $this->editing = null;
+        $this->toast(type: 'success', title: __('Meeting updated'));
+        unset($this->meeting);
+    }
+
+    public function saveMeal(): void
+    {
+        abort_unless($this->canManage, 403);
+
+        if ($this->mealHasDraft) {
+            $this->validate([
+                'mealDescriptionDraft' => 'required|string|max:255',
+                'mealPriceDraft' => 'nullable|numeric|min:0',
+            ]);
+        }
+
+        $this->meeting->update([
+            'has_meal' => $this->mealHasDraft,
+            'meal_description' => $this->mealHasDraft && filled($this->mealDescriptionDraft) ? $this->mealDescriptionDraft : null,
+            'meal_price_cents' => $this->mealHasDraft && filled($this->mealPriceDraft)
+                ? (int) round((float) $this->mealPriceDraft * 100)
+                : null,
+        ]);
+
+        $this->editing = null;
+        $this->toast(type: 'success', title: __('Meeting updated'));
+        unset($this->meeting);
+    }
+
+    public function saveQuorum(): void
+    {
+        abort_unless($this->canManage, 403);
+        $this->validate(['quorumDraft' => 'nullable|integer|min:1']);
+
+        $this->meeting->update(['quorum' => $this->quorumDraft]);
+
+        $this->editing = null;
+        $this->toast(type: 'success', title: __('Meeting updated'));
+        unset($this->meeting);
+    }
+
+    public function saveTitle(): void
+    {
+        abort_unless($this->canManage, 403);
+        $this->validate([
+            'titleDraft' => 'required|string|max:255',
+            'typeDraft' => 'required|string|in:' . implode(',', array_column(MeetingTypeEnum::cases(), 'value')),
+        ]);
+
+        $data = ['title' => $this->titleDraft];
+
+        // The type drives the invitee audience — freeze it once invitations left.
+        if (! $this->invitationsSent) {
+            $data['type'] = $this->typeDraft;
+        }
+
+        $this->meeting->update($data);
+
+        $this->showTitleModal = false;
+        $this->toast(type: 'success', title: __('Meeting updated'));
         unset($this->meeting);
     }
 
@@ -522,6 +862,12 @@ new class extends Component
 
         if ($this->meeting->status !== MeetingStatusEnum::CONFIRMED) {
             $this->toast(type: 'error', title: __('Confirm the date before sending invitations'));
+
+            return;
+        }
+
+        if ($this->sendChecklist !== []) {
+            $this->toast(type: 'error', title: __('Complete the meeting before inviting'));
 
             return;
         }

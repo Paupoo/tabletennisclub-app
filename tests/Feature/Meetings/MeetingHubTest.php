@@ -41,7 +41,8 @@ describe('Meeting hub — next step banner', function (): void {
 
     test('a confirmed future meeting without invitations suggests sending them', function (): void {
         $admin = hubAdmin();
-        $meeting = Meeting::factory()->committee()->confirmed()->create(['created_by' => $admin->id]);
+        $meeting = Meeting::factory()->committee()->confirmed()->physical()->create(['created_by' => $admin->id]);
+        $meeting->agendaItems()->create(['sort_order' => 0, 'title' => 'Budget']);
 
         Livewire::actingAs($admin)
             ->test('pages::club-events.meetings.show', ['meeting' => $meeting])

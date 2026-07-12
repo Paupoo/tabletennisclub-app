@@ -81,12 +81,11 @@ it('renders table edit', function (): void {
     smokeGet('admin.tables.edit', $table)->assertOk();
 });
 
-it('renders meeting show and edit', function (string $routeName): void {
+it('renders meeting show', function (string $routeName): void {
     $meeting = Meeting::factory()->create();
     smokeGet($routeName, $meeting)->assertOk();
 })->with([
     'admin.meetings.show',
-    'admin.meetings.edit',
 ]);
 
 it('renders tournament pages', function (string $routeName): void {

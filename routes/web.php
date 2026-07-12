@@ -197,9 +197,8 @@ Route::prefix('admin/club-events/meetings')
     ->middleware(['auth', 'verified', 'committee'])
     ->group(function (): void {
         Route::livewire('/', 'pages::club-events.meetings.index')->name('admin.meetings.index');
-        Route::livewire('/create', 'pages::club-events.meetings.form')->name('admin.meetings.create');
+        Route::livewire('/create', 'pages::club-events.meetings.create')->name('admin.meetings.create');
         Route::livewire('/{meeting}', 'pages::club-events.meetings.show')->name('admin.meetings.show');
-        Route::livewire('/{meeting}/edit', 'pages::club-events.meetings.form')->name('admin.meetings.edit');
     });
 
 // Meeting signed-URL actions (no auth required)

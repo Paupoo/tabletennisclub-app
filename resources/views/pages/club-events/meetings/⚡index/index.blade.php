@@ -118,9 +118,6 @@
                                 :tooltip="__('View')"
                                 link="{{ route('admin.meetings.show', $meeting) }}" />
                             @if ($this->canManage)
-                                <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil-square"
-                                    :tooltip="__('Edit')"
-                                    link="{{ route('admin.meetings.edit', $meeting) }}" />
                                 <livewire:admin.shared.event-post-button
                                     :model-class="\App\Domains\Meetings\Models\Meeting::class"
                                     :model-id="$meeting->id"
@@ -225,11 +222,6 @@
                             <x-button class="btn-ghost btn-sm btn-circle" icon="o-eye"
                                 :tooltip="__('View')"
                                 link="{{ route('admin.meetings.show', $meeting) }}" />
-                            @if ($this->canManage)
-                                <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil-square"
-                                    :tooltip="__('Edit')"
-                                    link="{{ route('admin.meetings.edit', $meeting) }}" />
-                            @endif
                         </x-admin.shared.row-actions>
                     @endscope
                 </x-table>

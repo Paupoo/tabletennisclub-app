@@ -28,10 +28,9 @@
         </x-slot:subtitle>
         <x-slot:actions>
             @if ($this->canManage)
-                <x-button :label="__('Edit')" icon="o-pencil-square"
-                    class="btn-outline btn-sm"
-                    link="{{ route('admin.meetings.edit', $meeting) }}" />
                 <x-dropdown icon="o-ellipsis-vertical" right class="btn-ghost btn-sm">
+                    <x-menu-item icon="o-pencil-square" :title="__('Rename')"
+                        wire:click="editTitle" />
                     @if (! in_array($meeting->status->value, ['cancelled', 'completed']))
                         <x-menu-item icon="o-arrow-path" :title="__('Postpone')"
                             wire:click="$set('showPostponeModal', true)" />
@@ -89,7 +88,42 @@
         <div class="space-y-6 lg:col-span-2">
 
             {{-- Practical info --}}
-            <x-card>
+            <x-card :title="__('Practical info')">
+                @if ($this->canManage)
+                    <x-slot:menu>
+                        @if ($editing !== 'details')
+                            <x-button icon="o-pencil-square" class="btn-ghost btn-xs btn-circle"
+                                :tooltip="__('Edit')" wire:click="editDetails" />
+                        @endif
+                    </x-slot:menu>
+                @endif
+
+                @if ($editing === 'details')
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <x-datetime type="datetime-local" :label="__('Date & time')" wire:model="detailsScheduledAt" />
+                            <x-datetime type="datetime-local" :label="__('End time')" wire:model="detailsEndsAt" />
+                        </div>
+                        <x-select :label="__('Format')" wire:model.live="detailsFormat"
+                            :options="\App\Domains\Shared\Enums\MeetingFormatEnum::getOptions()" />
+                        @if ($detailsFormat === 'physical')
+                            <x-input :label="__('Location')" wire:model="detailsLocation"
+                                icon="o-map-pin" :placeholder="__('Club room, bar address…')" />
+                        @else
+                            <x-input :label="__('Meeting link')" wire:model="detailsMeetingLink"
+                                icon="o-video-camera" placeholder="https://meet.google.com/…" />
+                        @endif
+                        <x-datepicker :label="__('RSVP deadline')" wire:model="detailsRsvpDeadline"
+                            :placeholder="__('Optional')" />
+                        <x-textarea :label="__('Description')" wire:model="detailsDescription"
+                            :placeholder="__('Optional context for attendees')" rows="3" />
+                        <div class="flex justify-end gap-2">
+                            <x-button :label="__('Cancel')" class="btn-ghost btn-sm" wire:click="cancelEditing" />
+                            <x-button :label="__('Save')" icon="o-check" class="btn-primary btn-sm"
+                                wire:click="saveDetails" spinner="saveDetails" />
+                        </div>
+                    </div>
+                @else
                 <div class="space-y-3 text-sm">
                     @if ($meeting->scheduled_at)
                         <div class="flex items-start gap-3">
@@ -145,25 +179,73 @@
                         </div>
                     @endif
                 </div>
+                @endif
             </x-card>
 
             {{-- Agenda --}}
-            @if ($meeting->agendaItems->isNotEmpty())
+            @if ($meeting->agendaItems->isNotEmpty() || $this->canManage)
                 <x-card :title="__('Agenda')">
-                    <ol class="space-y-2">
-                        @foreach ($meeting->agendaItems as $i => $item)
-                            <li class="flex gap-3" wire:key="agenda-{{ $item->id }}">
-                                <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full
-                                    bg-base-200 text-xs font-bold text-base-content/60">{{ $i + 1 }}</span>
-                                <div>
-                                    <p class="text-sm font-medium">{{ $item->title }}</p>
-                                    @if ($item->description)
-                                        <p class="mt-0.5 text-xs text-base-content/60">{{ $item->description }}</p>
-                                    @endif
+                    @if ($this->canManage)
+                        <x-slot:menu>
+                            @if ($editing !== 'agenda')
+                                <x-button icon="o-pencil-square" class="btn-ghost btn-xs btn-circle"
+                                    :tooltip="__('Edit')" wire:click="editAgenda" />
+                            @endif
+                        </x-slot:menu>
+                    @endif
+
+                    @if ($editing === 'agenda')
+                        <div class="space-y-3">
+                            @foreach ($agendaDraft as $i => $item)
+                                <div class="flex items-start gap-2 rounded-lg border border-base-200 p-3"
+                                    wire:key="agenda-draft-{{ $i }}">
+                                    <div class="flex-1 space-y-2">
+                                        <x-input wire:model="agendaDraft.{{ $i }}.title"
+                                            :placeholder="__('Point :n', ['n' => $i + 1])" />
+                                        <x-textarea wire:model="agendaDraft.{{ $i }}.description"
+                                            :placeholder="__('Optional details…')" rows="2" />
+                                    </div>
+                                    <x-button icon="o-trash" class="btn-ghost btn-xs btn-circle mt-1"
+                                        wire:click="removeAgendaDraftItem({{ $i }})" />
                                 </div>
-                            </li>
-                        @endforeach
-                    </ol>
+                            @endforeach
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <x-button icon="o-plus" :label="__('Add item')"
+                                    class="btn-ghost btn-sm" wire:click="addAgendaDraftItem" />
+                                <div class="flex gap-2">
+                                    <x-button :label="__('Cancel')" class="btn-ghost btn-sm" wire:click="cancelEditing" />
+                                    <x-button :label="__('Save')" icon="o-check" class="btn-primary btn-sm"
+                                        wire:click="saveAgenda" spinner="saveAgenda" />
+                                </div>
+                            </div>
+                        </div>
+                    @elseif ($meeting->agendaItems->isEmpty())
+                        <p class="text-sm italic text-base-content/50">
+                            {{ __('No agenda yet — add the points to discuss.') }}
+                        </p>
+                    @else
+                        <ol class="space-y-2" @if ($this->canManage) wire:sort="reorderAgenda" @endif>
+                            @foreach ($meeting->agendaItems as $i => $item)
+                                <li class="flex items-start gap-3" wire:key="agenda-{{ $item->id }}"
+                                    @if ($this->canManage) wire:sort:item="{{ $item->id }}" @endif>
+                                    @if ($this->canManage)
+                                        <span wire:sort:handle
+                                            class="mt-0.5 cursor-grab text-base-content/30 hover:text-base-content/60">
+                                            <x-icon name="o-bars-3" class="h-4 w-4" />
+                                        </span>
+                                    @endif
+                                    <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full
+                                        bg-base-200 text-xs font-bold text-base-content/60">{{ $i + 1 }}</span>
+                                    <div>
+                                        <p class="text-sm font-medium">{{ $item->title }}</p>
+                                        @if ($item->description)
+                                            <p class="mt-0.5 text-xs text-base-content/60">{{ $item->description }}</p>
+                                        @endif
+                                    </div>
+                                </li>
+                            @endforeach
+                        </ol>
+                    @endif
                 </x-card>
             @endif
 
@@ -224,9 +306,25 @@
                                             </div>
                                         @endforeach
                                     </div>
+                                @elseif ($this->canManage)
+                                    <div class="mt-3 border-t border-base-200 pt-2">
+                                        <x-button icon="o-trash" :label="__('Remove this option')"
+                                            class="btn-ghost btn-xs"
+                                            wire:click="removeProposal({{ $proposal->id }})" />
+                                    </div>
                                 @endif
                             </div>
                         @endforeach
+
+                        @if ($this->canManage)
+                            <div class="flex flex-col gap-2 border-t border-base-200 pt-4 sm:flex-row sm:items-end">
+                                <x-datetime type="datetime-local" :label="__('Add date option')"
+                                    wire:model="newProposalAt" class="flex-1" />
+                                <x-button icon="o-plus" :label="__('Add')"
+                                    class="btn-outline btn-sm"
+                                    wire:click="addProposal" spinner="addProposal" />
+                            </div>
+                        @endif
                     </div>
                 </x-card>
             @endif
@@ -468,35 +566,93 @@
         {{-- ════════════ Side column ════════════ --}}
         <div class="space-y-6">
             {{-- Quorum (AG only) --}}
-            @if ($meeting->quorum)
-                @php
-                    $confirmed = $meeting->confirmedCount();
-                    $quorum    = $meeting->quorum;
-                    $pct       = $meeting->quorumPercentage();
-                    $reached   = $meeting->isQuorumReached();
-                @endphp
+            @if ($meeting->quorum || ($this->canManage && $meeting->type === \App\Domains\Shared\Enums\MeetingTypeEnum::GENERAL_ASSEMBLY))
                 <x-card :title="__('Quorum')">
                     <x-slot:menu>
-                        @unless ($reached)
+                        @if ($meeting->quorum && ! $meeting->isQuorumReached())
                             <x-badge :value="__('Not reached')" class="badge-warning badge-soft badge-sm" />
-                        @endunless
+                        @endif
+                        @if ($this->canManage && $editing !== 'quorum')
+                            <x-button icon="o-pencil-square" class="btn-ghost btn-xs btn-circle"
+                                :tooltip="__('Edit')" wire:click="editQuorum" />
+                        @endif
                     </x-slot:menu>
-                    <div class="space-y-3">
-                        <div class="flex items-baseline gap-2">
-                            <span class="text-3xl font-bold">{{ $confirmed }}</span>
-                            <span class="text-base-content/50">/ {{ $quorum }}</span>
-                            <span class="ml-auto text-sm text-base-content/40">{{ $pct }}%</span>
+
+                    @if ($editing === 'quorum')
+                        <div class="space-y-3">
+                            <x-input type="number" :label="__('Quorum (optional)')" wire:model="quorumDraft"
+                                min="1" icon="o-users"
+                                :hint="__('Minimum number of confirmed members required')" />
+                            <div class="flex justify-end gap-2">
+                                <x-button :label="__('Cancel')" class="btn-ghost btn-sm" wire:click="cancelEditing" />
+                                <x-button :label="__('Save')" icon="o-check" class="btn-primary btn-sm"
+                                    wire:click="saveQuorum" spinner="saveQuorum" />
+                            </div>
                         </div>
-                        <div class="h-2 overflow-hidden rounded-full bg-base-200">
-                            <div class="h-full rounded-full {{ $reached ? 'bg-primary' : 'bg-warning' }} transition-all duration-500"
-                                style="width: {{ $pct }}%"></div>
+                    @elseif ($meeting->quorum)
+                        @php
+                            $confirmed = $meeting->confirmedCount();
+                            $quorum    = $meeting->quorum;
+                            $pct       = $meeting->quorumPercentage();
+                            $reached   = $meeting->isQuorumReached();
+                        @endphp
+                        <div class="space-y-3">
+                            <div class="flex items-baseline gap-2">
+                                <span class="text-3xl font-bold">{{ $confirmed }}</span>
+                                <span class="text-base-content/50">/ {{ $quorum }}</span>
+                                <span class="ml-auto text-sm text-base-content/40">{{ $pct }}%</span>
+                            </div>
+                            <div class="h-2 overflow-hidden rounded-full bg-base-200">
+                                <div class="h-full rounded-full {{ $reached ? 'bg-primary' : 'bg-warning' }} transition-all duration-500"
+                                    style="width: {{ $pct }}%"></div>
+                            </div>
+                            @unless ($reached)
+                                <p class="text-xs text-base-content/40">
+                                    {{ __(':n more needed', ['n' => max(0, $quorum - $confirmed)]) }}
+                                </p>
+                            @endunless
                         </div>
-                        @unless ($reached)
-                            <p class="text-xs text-base-content/40">
-                                {{ __(':n more needed', ['n' => max(0, $quorum - $confirmed)]) }}
-                            </p>
-                        @endunless
-                    </div>
+                    @else
+                        <p class="text-sm italic text-base-content/50">{{ __('No quorum set') }}</p>
+                    @endif
+                </x-card>
+            @endif
+
+            {{-- Meal --}}
+            @if ($this->canManage)
+                <x-card :title="__('Meal')">
+                    <x-slot:menu>
+                        @if ($editing !== 'meal')
+                            <x-button icon="o-pencil-square" class="btn-ghost btn-xs btn-circle"
+                                :tooltip="__('Edit')" wire:click="editMeal" />
+                        @endif
+                    </x-slot:menu>
+
+                    @if ($editing === 'meal')
+                        <div class="space-y-3">
+                            <x-toggle :label="__('This meeting includes a meal')"
+                                wire:model.live="mealHasDraft" />
+                            @if ($mealHasDraft)
+                                <x-input :label="__('Meal description')" wire:model="mealDescriptionDraft"
+                                    :placeholder="__('e.g. Pizzas, 3-course menu…')" />
+                                <x-input type="number" :label="__('Price per person (€)')"
+                                    wire:model="mealPriceDraft" min="0" step="0.50" />
+                            @endif
+                            <div class="flex justify-end gap-2">
+                                <x-button :label="__('Cancel')" class="btn-ghost btn-sm" wire:click="cancelEditing" />
+                                <x-button :label="__('Save')" icon="o-check" class="btn-primary btn-sm"
+                                    wire:click="saveMeal" spinner="saveMeal" />
+                            </div>
+                        </div>
+                    @elseif ($meeting->has_meal)
+                        <p class="text-sm">{{ $meeting->meal_description }}
+                            @if ($meeting->meal_price)
+                                <span class="text-base-content/60">— {{ number_format($meeting->meal_price, 2) }} €/{{ __('person') }}</span>
+                            @endif
+                        </p>
+                    @else
+                        <p class="text-sm italic text-base-content/50">{{ __('No meal planned') }}</p>
+                    @endif
                 </x-card>
             @endif
 
@@ -582,6 +738,26 @@
             <x-button :label="__('Back')" wire:click="$set('showPostponeModal', false)" />
             <x-button :label="__('Postpone')" icon="o-arrow-path"
                 class="btn-warning" wire:click="postponeMeeting" spinner="postponeMeeting" />
+        </x-slot:actions>
+    </x-modal>
+
+    {{-- ── Rename modal ──────────────────────────────────────────────── --}}
+    <x-modal wire:model="showTitleModal" :title="__('Rename')" class="backdrop-blur">
+        <div class="space-y-4">
+            <x-input :label="__('Title')" wire:model="titleDraft" required />
+            @if (! $this->invitationsSent)
+                <x-select :label="__('Type')" wire:model="typeDraft"
+                    :options="\App\Domains\Shared\Enums\MeetingTypeEnum::getOptions()" />
+            @else
+                <p class="text-xs text-base-content/50">
+                    {{ __('The type can no longer change — invitations were already sent.') }}
+                </p>
+            @endif
+        </div>
+        <x-slot:actions>
+            <x-button :label="__('Cancel')" wire:click="$set('showTitleModal', false)" />
+            <x-button :label="__('Save')" icon="o-check"
+                class="btn-primary" wire:click="saveTitle" spinner="saveTitle" />
         </x-slot:actions>
     </x-modal>
 

@@ -79,6 +79,10 @@
                     class="btn-primary btn-sm shrink-0"
                     wire:click="{{ $this->nextStep['action'] }}"
                     spinner="{{ $this->nextStep['action'] }}" />
+            @elseif ($this->nextStep['link'] ?? null)
+                <x-button :label="$this->nextStep['label']"
+                    class="btn-primary btn-sm shrink-0"
+                    link="{{ $this->nextStep['link'] }}" />
             @endif
         </div>
     @endif
@@ -423,68 +427,22 @@
                             @endif
                         </x-slot:menu>
 
-                        <div class="space-y-5">
-                            <div>
-                                <p class="mb-2 text-sm font-semibold">{{ __('Announcements') }}</p>
-                                <div class="space-y-2">
-                                    @foreach ($minutesAnnouncements as $i => $ann)
-                                        <div class="flex items-start gap-2" wire:key="ann-{{ $i }}">
-                                            <x-textarea wire:model="minutesAnnouncements.{{ $i }}"
-                                                :placeholder="__('Announcement :n', ['n' => $i + 1])"
-                                                rows="2" class="flex-1" />
-                                            <x-button icon="o-trash" class="btn-ghost btn-xs btn-circle mt-2"
-                                                wire:click="removeAnnouncement({{ $i }})" />
-                                        </div>
-                                    @endforeach
-                                    <x-button icon="o-plus" :label="__('Add announcement')"
-                                        class="btn-ghost btn-sm" wire:click="addAnnouncement" />
-                                </div>
-                            </div>
-
-                            <div>
-                                <p class="mb-2 text-sm font-semibold">{{ __('Decisions') }}</p>
-                                <div class="space-y-2">
-                                    @foreach ($minutesDecisions as $i => $dec)
-                                        <div class="flex items-start gap-2" wire:key="dec-{{ $i }}">
-                                            <x-textarea wire:model="minutesDecisions.{{ $i }}"
-                                                :placeholder="__('Decision :n', ['n' => $i + 1])"
-                                                rows="2" class="flex-1" />
-                                            <x-button icon="o-trash" class="btn-ghost btn-xs btn-circle mt-2"
-                                                wire:click="removeDecision({{ $i }})" />
-                                        </div>
-                                    @endforeach
-                                    <x-button icon="o-plus" :label="__('Add decision')"
-                                        class="btn-ghost btn-sm" wire:click="addDecision" />
-                                </div>
-                            </div>
-
-                            <div>
-                                <p class="mb-2 text-sm font-semibold">{{ __('Additional notes') }}</p>
-                                <x-textarea wire:model="minutesNotes" rows="4"
-                                    :placeholder="__('Free-form notes, observations…')" />
-                            </div>
-
-                            <div class="flex flex-wrap gap-2 border-t border-base-200 pt-4">
-                                <x-button icon="o-archive-box" :label="__('Save draft')"
-                                    class="btn-ghost btn-sm" wire:click="saveMinutes" spinner="saveMinutes" />
-                                @if (! $minutes?->is_published)
-                                    <x-button icon="o-eye" :label="__('Publish minutes')"
-                                        class="btn-outline btn-sm" wire:click="publishMinutes" spinner="publishMinutes" />
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <p class="text-sm text-base-content/60">
+                                @if ($minutes)
+                                    {{ __(':a announcements · :d decisions · :t action items', [
+                                        'a' => count($minutes->announcements ?? []),
+                                        'd' => count($minutes->decisions ?? []),
+                                        't' => $meeting->actionItems->count(),
+                                    ]) }}
                                 @else
-                                    <x-button icon="o-paper-airplane"
-                                        :label="__('Send to committee')"
-                                        class="btn-outline btn-sm"
-                                        wire:click="sendMinutes(false)" spinner="sendMinutes(false)"
-                                        :disabled="(bool) $minutes?->sent_to_committee_at" />
-                                    @if ($meeting->type === \App\Domains\Shared\Enums\MeetingTypeEnum::GENERAL_ASSEMBLY)
-                                        <x-button icon="o-paper-airplane"
-                                            :label="__('Send to all members')"
-                                            class="btn-outline btn-sm"
-                                            wire:click="sendMinutes(true)" spinner="sendMinutes(true)"
-                                            :disabled="(bool) $minutes?->sent_to_all_at" />
-                                    @endif
+                                    {{ __('Nothing written yet.') }}
                                 @endif
-                            </div>
+                            </p>
+                            <x-button icon="o-document-text"
+                                :label="$minutes ? __('Open the minutes') : __('Write the minutes')"
+                                class="btn-outline btn-sm shrink-0"
+                                link="{{ route('admin.meetings.minutes', $meeting) }}" />
                         </div>
                     </x-card>
                 @elseif ($minutes?->is_published)
@@ -521,46 +479,6 @@
                 @endif
             @endif
 
-            {{-- ── Action items ───────────────────────────────────────── --}}
-            @if ($showMinutes && $this->canManage)
-                <x-card :title="__('Action items')">
-                    <div class="space-y-3">
-                        @foreach ($actionItems as $i => $item)
-                            <div class="rounded-xl border border-base-200 p-4"
-                                wire:key="action-{{ $i }}">
-                                <div class="flex items-start gap-2">
-                                    <x-checkbox wire:model="actionItems.{{ $i }}.is_completed" class="mt-1" />
-                                    <div class="flex-1 space-y-2">
-                                        <x-input wire:model="actionItems.{{ $i }}.title"
-                                            :placeholder="__('Action to take…')"
-                                            @class(['line-through opacity-60' => $item['is_completed']]) />
-                                        <x-textarea wire:model="actionItems.{{ $i }}.description"
-                                            rows="2" :placeholder="__('Details…')" />
-                                        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                                            <x-select :label="__('Assigned to')"
-                                                :options="$this->usersForAssignment"
-                                                wire:model="actionItems.{{ $i }}.assigned_to_id"
-                                                :placeholder="__('Nobody')" />
-                                            <x-datepicker :label="__('Due date')"
-                                                wire:model="actionItems.{{ $i }}.due_date" />
-                                        </div>
-                                    </div>
-                                    <x-button icon="o-trash" class="btn-ghost btn-xs btn-circle mt-1"
-                                        wire:click="removeActionItem({{ $i }})" />
-                                </div>
-                            </div>
-                        @endforeach
-                        <div class="flex gap-2">
-                            <x-button icon="o-plus" :label="__('Add action item')"
-                                class="btn-ghost btn-sm" wire:click="addActionItem" />
-                            @if (count($actionItems) > 0)
-                                <x-button icon="o-archive-box" :label="__('Save')"
-                                    class="btn-outline btn-sm" wire:click="saveActionItems" spinner="saveActionItems" />
-                            @endif
-                        </div>
-                    </div>
-                </x-card>
-            @endif
         </div>
 
         {{-- ════════════ Side column ════════════ --}}

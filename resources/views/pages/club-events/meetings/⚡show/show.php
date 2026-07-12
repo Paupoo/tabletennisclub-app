@@ -33,9 +33,6 @@ new class extends Component
 {
     use HasBreadcrumbs, Toast;
 
-    // Action items editor
-    /** @var array<int, array{title: string, description: string, assigned_to_id: string, due_date: string, is_completed: bool}> */
-    public array $actionItems = [];
 
     // Card being edited in place: 'title' | 'details' | 'agenda' | 'meal' | 'quorum' | null
     public ?string $editing = null;
@@ -78,14 +75,8 @@ new class extends Component
     #[Locked]
     public int $meetingId;
 
-    // Minutes editor
-    /** @var array<int, string> */
-    public array $minutesAnnouncements = [];
 
-    /** @var array<int, string> */
-    public array $minutesDecisions = [];
 
-    public string $minutesNotes = '';
 
     public string $postponedNote = '';
 
@@ -101,30 +92,10 @@ new class extends Component
     public bool $showPostponeModal = false;
 
     // ── Action items ──────────────────────────────────────────────────
-    public function addActionItem(): void
-    {
-        $this->actionItems[] = [
-            'title' => '', 'description' => '',
-            'assigned_to_id' => '', 'due_date' => '', 'is_completed' => false,
-        ];
-    }
 
     // ── Minutes ───────────────────────────────────────────────────────
-    public function addAnnouncement(): void
-    {
-        $this->minutesAnnouncements[] = '';
-    }
 
-    public function addDecision(): void
-    {
-        $this->minutesDecisions[] = '';
-    }
 
-    #[Computed]
-    public function allMembers(): Illuminate\Database\Eloquent\Collection
-    {
-        return User::active()->orderBy('last_name')->get();
-    }
 
     public function archiveMeeting(): void
     {
@@ -365,8 +336,6 @@ new class extends Component
     public function mount(Meeting $meeting): void
     {
         $this->meetingId = $meeting->id;
-        $this->loadMinutes();
-        $this->loadActionItems();
     }
 
     /** True once at least one invitation left the building. */
@@ -414,7 +383,7 @@ new class extends Component
     /**
      * The single next action suggested by the meeting lifecycle, or null when nothing is pending.
      *
-     * @return array{title: string, description: string|null, action: string|null, label: string|null}|null
+     * @return array{title: string, description: string|null, action: string|null, label: string|null, link?: string}|null
      */
     #[Computed]
     public function nextStep(): ?array
@@ -513,7 +482,8 @@ new class extends Component
                 'title' => __('Write and publish the minutes'),
                 'description' => __('Attendees are waiting for the meeting report.'),
                 'action' => null,
-                'label' => null,
+                'label' => __('Write the minutes'),
+                'link' => route('admin.meetings.minutes', $meeting),
             ];
         }
 
@@ -545,21 +515,6 @@ new class extends Component
         unset($this->meeting);
     }
 
-    public function publishMinutes(): void
-    {
-        abort_unless($this->canManage, 403);
-        $this->saveMinutes();
-
-        $minutes = $this->meeting->minutes;
-        $minutes->update([
-            'is_published' => true,
-            'published_at' => now(),
-            'published_by' => auth()->id(),
-        ]);
-
-        $this->toast(type: 'success', title: __('Minutes published'));
-        unset($this->meeting);
-    }
 
     /** Resend the invitation to invitees who never responded, at most once every 48 hours. */
     public function remindPendingInvitees(): void
@@ -753,66 +708,15 @@ new class extends Component
         unset($this->meeting);
     }
 
-    public function removeActionItem(int $i): void
-    {
-        array_splice($this->actionItems, $i, 1);
-    }
 
-    public function removeAnnouncement(int $i): void
-    {
-        array_splice($this->minutesAnnouncements, $i, 1);
-    }
 
-    public function removeDecision(int $i): void
-    {
-        array_splice($this->minutesDecisions, $i, 1);
-    }
 
     public function render(): View
     {
         return $this->view();
     }
 
-    public function saveActionItems(): void
-    {
-        abort_unless($this->canManage, 403);
-        $this->validate([
-            'actionItems.*.title' => 'required|string|max:255',
-        ]);
 
-        $meeting = $this->meeting;
-        $meeting->actionItems()->delete();
-
-        foreach ($this->actionItems as $item) {
-            if (filled($item['title'])) {
-                $meeting->actionItems()->create([
-                    'title' => $item['title'],
-                    'description' => filled($item['description']) ? $item['description'] : null,
-                    'assigned_to_id' => filled($item['assigned_to_id']) ? (int) $item['assigned_to_id'] : null,
-                    'due_date' => filled($item['due_date']) ? $item['due_date'] : null,
-                    'is_completed' => $item['is_completed'],
-                ]);
-            }
-        }
-
-        $this->toast(type: 'success', title: __('Action items saved'));
-        unset($this->meeting);
-        $this->loadActionItems();
-    }
-
-    public function saveMinutes(): void
-    {
-        abort_unless($this->canManage, 403);
-
-        $minutes = $this->meeting->minutes ?? new MeetingMinutes(['meeting_id' => $this->meetingId]);
-        $minutes->announcements = array_values(array_filter($this->minutesAnnouncements, fn ($v) => filled($v)));
-        $minutes->decisions = array_values(array_filter($this->minutesDecisions, fn ($v) => filled($v)));
-        $minutes->notes = filled($this->minutesNotes) ? $this->minutesNotes : null;
-        $minutes->save();
-
-        $this->toast(type: 'success', title: __('Minutes saved'));
-        unset($this->meeting);
-    }
 
     public function selectDateProposal(int $proposalId): void
     {
@@ -878,30 +782,6 @@ new class extends Component
         unset($this->meeting);
     }
 
-    public function sendMinutes(bool $toAll = false): void
-    {
-        abort_unless($this->canManage, 403);
-        $meeting = $this->meeting;
-        $minutes = $meeting->minutes;
-
-        if (! $minutes?->is_published) {
-            $this->toast(type: 'error', title: __('Publish the minutes first'));
-
-            return;
-        }
-
-        $recipients = $toAll
-            ? User::active()->get()
-            : $this->committeeUsers;
-
-        Notification::send($recipients, new MeetingMinutesNotification($meeting));
-
-        $field = $toAll ? 'sent_to_all_at' : 'sent_to_committee_at';
-        $minutes->update([$field => now()]);
-
-        $this->toast(type: 'success', title: __('Minutes sent to :n members', ['n' => $recipients->count()]));
-        unset($this->meeting);
-    }
 
     public function unarchiveMeeting(): void
     {
@@ -913,13 +793,6 @@ new class extends Component
         unset($this->meeting);
     }
 
-    #[Computed]
-    public function usersForAssignment(): array
-    {
-        return $this->committeeUsers
-            ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->full_name])
-            ->toArray();
-    }
 
     public function with(): array
     {
@@ -935,29 +808,7 @@ new class extends Component
             ->current(__('Meeting Details'));
     }
 
-    private function loadActionItems(): void
-    {
-        $this->actionItems = $this->meeting->actionItems
-            ->map(fn ($item) => [
-                'id' => $item->id,
-                'title' => $item->title,
-                'description' => $item->description ?? '',
-                'assigned_to_id' => (string) ($item->assigned_to_id ?? ''),
-                'due_date' => $item->due_date?->format('Y-m-d') ?? '',
-                'is_completed' => $item->is_completed,
-            ])
-            ->toArray();
-    }
 
-    private function loadMinutes(): void
-    {
-        $minutes = $this->meeting->minutes;
-        if ($minutes) {
-            $this->minutesAnnouncements = $minutes->announcements ?? [];
-            $this->minutesDecisions = $minutes->decisions ?? [];
-            $this->minutesNotes = $minutes->notes ?? '';
-        }
-    }
 
     // ── Cancel / postpone ─────────────────────────────────────────────
 

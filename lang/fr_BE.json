@@ -3556,5 +3556,13 @@
     "The type can no longer change — invitations were already sent.": "Le type ne peut plus changer — les invitations ont déjà été envoyées.",
     "This date already has votes — it cannot be removed": "Cette date a déjà des votes — elle ne peut pas être retirée",
     "Title, type, date — everything else is set up from the meeting page.": "Titre, type, date — tout le reste se règle depuis la page de la réunion.",
-    "Practical info": "Infos pratiques"
+    "Practical info": "Infos pratiques",
+    ":a announcements · :d decisions · :t action items": ":a annonces · :d décisions · :t actions à suivre",
+    "Back to meeting": "Retour à la réunion",
+    "Check who was actually there.": "Cochez qui était réellement présent.",
+    "Nothing written yet.": "Rien de rédigé pour l'instant.",
+    "Open the minutes": "Ouvrir le compte rendu",
+    "Saved at :time": "Enregistré à :time",
+    "Tasks that need follow-up after the meeting.": "Tâches à suivre après la réunion.",
+    "Write the minutes": "Rédiger le compte rendu"
 }

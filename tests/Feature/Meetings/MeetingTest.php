@@ -319,41 +319,6 @@ describe('Meeting show page', function (): void {
     });
 });
 
-// ── Minutes ───────────────────────────────────────────────────────────────────
-describe('Meeting minutes', function (): void {
-    test('admin can publish minutes', function (): void {
-        $admin = meetingAdmin();
-        $meeting = confirmedMeeting($admin);
-
-        Livewire::actingAs($admin)
-            ->test('pages::club-events.meetings.show', ['meeting' => $meeting])
-            ->set('minutesAnnouncements', ['Annonce test'])
-            ->set('minutesDecisions', ['Décision A', 'Décision B'])
-            ->set('minutesNotes', 'Notes libres')
-            ->call('publishMinutes');
-
-        $minutes = $meeting->fresh()->minutes;
-        expect($minutes)->not->toBeNull()
-            ->and($minutes->is_published)->toBeTrue()
-            ->and($minutes->announcements)->toContain('Annonce test')
-            ->and($minutes->decisions)->toHaveCount(2);
-    });
-
-    test('minutes cannot be sent before being published', function (): void {
-        Notification::fake();
-
-        $admin = meetingAdmin();
-        $meeting = confirmedMeeting($admin);
-
-        Livewire::actingAs($admin)
-            ->test('pages::club-events.meetings.show', ['meeting' => $meeting])
-            ->call('sendMinutes', false);
-
-        expect($meeting->fresh()->minutes?->sent_to_committee_at)->toBeNull();
-        Notification::assertNothingSent();
-    });
-});
-
 describe('Meeting attendance — catering view', function (): void {
     test('the attendance tab shows the catering banner and per-attendee meal badges', function (): void {
         $admin = meetingAdmin();

@@ -3556,5 +3556,13 @@
     "The type can no longer change — invitations were already sent.": "Het type kan niet meer wijzigen — de uitnodigingen zijn al verstuurd.",
     "This date already has votes — it cannot be removed": "Deze datum heeft al stemmen — ze kan niet verwijderd worden",
     "Title, type, date — everything else is set up from the meeting page.": "Titel, type, datum — al de rest regel je vanaf de vergaderpagina.",
-    "Practical info": "Praktische info"
+    "Practical info": "Praktische info",
+    ":a announcements · :d decisions · :t action items": ":a mededelingen · :d beslissingen · :t actiepunten",
+    "Back to meeting": "Terug naar de vergadering",
+    "Check who was actually there.": "Vink aan wie er echt aanwezig was.",
+    "Nothing written yet.": "Nog niets geschreven.",
+    "Open the minutes": "Verslag openen",
+    "Saved at :time": "Opgeslagen om :time",
+    "Tasks that need follow-up after the meeting.": "Taken die opvolging vragen na de vergadering.",
+    "Write the minutes": "Verslag schrijven"
 }

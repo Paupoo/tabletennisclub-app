@@ -47,31 +47,6 @@
     {{-- ── Active filter chips ──────────────────────────────────────────────── --}}
     <x-admin.shared.filter-chips :chips="$filterChips" />
 
-    {{-- ── Stat cards ────────────────────────────────────────────────── --}}
-    <div class="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        @php
-            $statCards = [
-                ['label' => __('Total'),     'key' => 'total',     'icon' => 'o-calendar-days',  'bg' => 'bg-base-200',   'color' => 'text-base-content/60'],
-                ['label' => __('Upcoming'),  'key' => 'upcoming',  'icon' => 'o-clock',          'bg' => 'bg-success/10', 'color' => 'text-success'],
-                ['label' => __('Planning'),  'key' => 'planning',  'icon' => 'o-pencil-square',  'bg' => 'bg-info/10',    'color' => 'text-info'],
-                ['label' => __('Completed'), 'key' => 'completed', 'icon' => 'o-check-circle',   'bg' => 'bg-base-200',   'color' => 'text-base-content/40'],
-            ];
-        @endphp
-        @foreach ($statCards as $card)
-            <x-card class="shadow-sm">
-                <div class="flex items-center gap-3">
-                    <div class="flex h-10 w-10 items-center justify-center rounded-xl {{ $card['bg'] }}">
-                        <x-icon name="{{ $card['icon'] }}" class="h-5 w-5 {{ $card['color'] }}" />
-                    </div>
-                    <div>
-                        <p class="text-2xl font-bold {{ $card['color'] }}">{{ $stats[$card['key']] ?? 0 }}</p>
-                        <p class="text-xs text-base-content/40">{{ $card['label'] }}</p>
-                    </div>
-                </div>
-            </x-card>
-        @endforeach
-    </div>
-
     {{-- ── Mobile list ───────────────────────────────────────────────── --}}
     @php
         $hasActiveFilters = count($filterChips) > 0 || filled($search);
@@ -99,9 +74,9 @@
                 </x-slot:value>
                 <x-slot:sub-value>
                     <div class="mt-0.5 flex flex-wrap items-center gap-2">
-                        <x-badge :value="$meeting->type->getLabel()" class="badge-ghost badge-sm" />
                         <x-badge :value="$meeting->status->getLabel()"
                             class="{{ $meeting->status->getBadgeClass() }} badge-sm" />
+                        <span class="text-xs text-base-content/50">{{ $meeting->type->getLabel() }}</span>
                         @if ($meeting->scheduled_at)
                             <span class="text-xs text-base-content/40">
                                 {{ $meeting->scheduled_at->translatedFormat('d M Y · H\hi') }}
@@ -117,21 +92,6 @@
                             <x-button class="btn-ghost btn-sm btn-circle" icon="o-eye"
                                 :tooltip="__('View')"
                                 link="{{ route('admin.meetings.show', $meeting) }}" />
-                            @if ($this->canManage)
-                                <livewire:admin.shared.event-post-button
-                                    :model-class="\App\Domains\Meetings\Models\Meeting::class"
-                                    :model-id="$meeting->id"
-                                    event-type="MEETING"
-                                    icon="📋"
-                                    :event-date="$meeting->scheduled_at?->toDateString()"
-                                    :start-time="$meeting->scheduled_at?->format('H:i:s')"
-                                    :end-time="$meeting->ends_at?->format('H:i:s')"
-                                    :default-title="$meeting->title"
-                                    :can-publish="$meeting->scheduled_at !== null"
-                                    :cannot-publish-reason="__('Set a confirmed date before publishing')"
-                                    wire:key="ep-mob-meeting-{{ $meeting->id }}"
-                                    @event-post-saved.window="$wire.refreshMeetings()" />
-                            @endif
                         </x-admin.shared.row-actions>
                     @endif
                 </x-slot:actions>
@@ -161,7 +121,7 @@
                     @endscope
 
                     @scope('cell_type', $meeting)
-                        <x-badge :value="$meeting->type->getLabel()" class="badge-ghost badge-sm" />
+                        <span class="text-sm text-base-content/60">{{ $meeting->type->getLabel() }}</span>
                     @endscope
 
                     @scope('cell_scheduled_at', $meeting)
@@ -197,24 +157,6 @@
                     @scope('cell_status', $meeting)
                         <x-badge :value="$meeting->status->getLabel()"
                             class="{{ $meeting->status->getBadgeClass() }}" />
-                    @endscope
-
-                    @scope('cell_event', $meeting)
-                        @if ($this->canManage)
-                            <livewire:admin.shared.event-post-button
-                                :model-class="\App\Domains\Meetings\Models\Meeting::class"
-                                :model-id="$meeting->id"
-                                event-type="MEETING"
-                                icon="📋"
-                                :event-date="$meeting->scheduled_at?->toDateString()"
-                                :start-time="$meeting->scheduled_at?->format('H:i:s')"
-                                :end-time="$meeting->ends_at?->format('H:i:s')"
-                                :default-title="$meeting->title"
-                                :can-publish="$meeting->scheduled_at !== null"
-                                :cannot-publish-reason="__('Set a confirmed date before publishing')"
-                                wire:key="ep-desk-meeting-{{ $meeting->id }}"
-                                @event-post-saved.window="$wire.refreshMeetings()" />
-                        @endif
                     @endscope
 
                     @scope('actions', $meeting)

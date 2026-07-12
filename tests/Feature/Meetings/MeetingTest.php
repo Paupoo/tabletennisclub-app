@@ -129,6 +129,16 @@ describe('Meeting index page', function (): void {
             ->assertSeeText('No meetings yet');
     });
 
+    test('index shows no stat cards and no per-row web button', function (): void {
+        $admin = meetingAdmin();
+        confirmedMeeting($admin);
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-events.meetings.index')
+            ->assertDontSeeText(__('Upcoming'))
+            ->assertDontSee('event-post-button');
+    });
+
     test('index filters by type', function (): void {
         $admin = meetingAdmin();
         $committee = Meeting::factory()->committee()->confirmed()->create(['created_by' => $admin->id]);

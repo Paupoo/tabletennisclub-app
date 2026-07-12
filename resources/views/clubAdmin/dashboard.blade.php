@@ -126,7 +126,6 @@
                         ['icon' => 'o-clock',             'label' => 'Entraînements', 'sub' => 'Séances programmées',     'href' => route('admin.trainings.index'),   'color' => 'teal'],
                         ['icon' => 'o-calendar-days',     'label' => 'Saisons',       'sub' => 'Gestion des périodes',    'href' => route('admin.seasons.index'),     'color' => 'violet'],
                         ['icon' => 'o-trophy',            'label' => 'Tournois',      'sub' => 'Compétitions internes',   'href' => route('admin.tournaments.index'), 'color' => 'amber'],
-                        ['icon' => 'o-bell',              'label' => 'Notifications', 'sub' => 'Envoi de messages',       'href' => route('notifications.index'),     'color' => 'rose'],
                     ];
                 @endphp
                 <x-section-accordion

@@ -10,6 +10,7 @@ use App\Data\User\CreateUserData;
 use App\Data\User\UpdateUserData;
 use App\Domains\ClubAdmin\Users\Models\FamilyGroup;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Rules\ValidIban;
@@ -213,6 +214,28 @@ new class extends Component
             ->orderBy('last_name')
             ->limit(8)
             ->get();
+    }
+
+    /**
+     * Whether the competitive/recreative toggle can be persisted. The licence
+     * type is stored on the member's subscription for the active season (see
+     * UpdateUserAction), so without such a subscription there is nowhere to
+     * save it and the toggle must be locked. Creation always allows it.
+     */
+    #[Computed()]
+    public function canEditLicenceType(): bool
+    {
+        if (! $this->user?->exists) {
+            return true;
+        }
+
+        $seasonId = Season::current()?->id;
+
+        if ($seasonId === null) {
+            return false;
+        }
+
+        return $this->user->subscriptions()->where('season_id', $seasonId)->exists();
     }
 
     /**

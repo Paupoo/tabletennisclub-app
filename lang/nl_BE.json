@@ -371,6 +371,7 @@
     "Take part in organized events": "Deelnemen aan georganiseerde evenementen",
     "The **:season** subscription of :member has been cancelled after money was collected.": "Het lidmaatschap **:season** van :member werd geannuleerd na betaling.",
     "The committee of :app": "Het comité van :app",
+    "The competitive/recreative status is set on the member's subscription. This member has no subscription for the current season, so it cannot be changed here.": "De competitieve/recreatieve status wordt ingesteld op het lidmaatschap van het lid. Dit lid heeft geen inschrijving voor het huidige seizoen, dus dit kan hier niet worden gewijzigd.",
     "The oldest pending job has been waiting for :minutes minutes — the queue worker is probably down.": "De oudste wachtende taak wacht al :minutes minuten — de worker van de wachtrij is waarschijnlijk gestopt.",
     "The refund amount must be between 0 and the total paid (:total €).": "Het terugbetalingsbedrag moet tussen 0 en het betaalde totaal liggen (:total €).",
     "To finish creating your account and fill in your personal information, please click the button below:": "Om het aanmaken van uw account te voltooien en uw persoonlijke gegevens in te vullen, klik op de knop hieronder:",

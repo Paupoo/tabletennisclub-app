@@ -274,11 +274,21 @@
             </div>
 
             <div class="col-span-6 md:col-span-4">
-                <x-group :options="$licence_types" class="btn-soft" inline :label="__('Licence Type')"
-                    wire:model.live="licence_type" />
-                @if ($licence_type == 'competitive')
-                    <x-input :label="__('Licence *')" mandatory numeric wire:model.live.debounce="licence" />
-                    <x-select :options="$rankings" icon="o-scale" :label="__('Ranking')" wire:model.live="ranking" />
+                @if ($this->canEditLicenceType)
+                    <x-group :options="$licence_types" class="btn-soft" inline :label="__('Licence Type')"
+                        wire:model.live="licence_type" />
+                    @if ($licence_type == 'competitive')
+                        <x-input :label="__('Licence *')" mandatory numeric wire:model.live.debounce="licence" />
+                        <x-select :options="$rankings" icon="o-scale" :label="__('Ranking')" wire:model.live="ranking" />
+                    @endif
+                @else
+                    <x-group :options="$licence_types->map(fn ($type) => $type + ['disabled' => true])"
+                        class="btn-soft" inline :label="__('Licence Type')" wire:model="licence_type" />
+                    <x-alert icon="o-information-circle" class="alert-info mt-2">
+                        <span class="text-sm">
+                            {{ __('The competitive/recreative status is set on the member\'s subscription. This member has no subscription for the current season, so it cannot be changed here.') }}
+                        </span>
+                    </x-alert>
                 @endif
             </div>
             <div class="col-span-6">

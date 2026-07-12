@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -128,4 +129,46 @@ describe('admin role guards — last admin protection', function (): void {
 
         expect($this->admin->fresh()->is_admin)->toBeFalse();
     })->skip('save() non déclenché via ->call() en contexte PHPUnit — à investiguer');
+});
+
+describe('licence type — bound to the active-season subscription', function (): void {
+    it('locks the licence type toggle when the member has no subscription for the active season', function (): void {
+        makeActiveSeason();
+        $user = User::factory()->create(['is_coach' => false]);
+
+        $component = Livewire::test(USER_FORM_COMPONENT, ['user' => $user]);
+
+        expect($component->instance()->canEditLicenceType())->toBeFalse();
+        $component->assertSee('saison en cours');
+    });
+
+    it('keeps the toggle editable when the member is subscribed to the active season', function (): void {
+        $season = makeActiveSeason();
+        $user = User::factory()->create(['is_coach' => false]);
+        Subscription::factory()->for($user)->create(['season_id' => $season->id]);
+
+        $component = Livewire::test(USER_FORM_COMPONENT, ['user' => $user]);
+
+        expect($component->instance()->canEditLicenceType())->toBeTrue();
+        $component->assertDontSee('saison en cours');
+    });
+
+    it('persists the competitive status onto the active-season subscription on save', function (): void {
+        $season = makeActiveSeason();
+        $user = User::factory()->create(['is_coach' => false]);
+        $subscription = Subscription::factory()->for($user)->create([
+            'season_id' => $season->id,
+            'is_competitive' => false,
+        ]);
+
+        Livewire::test(USER_FORM_COMPONENT, ['user' => $user])
+            ->set('licence_type', 'competitive')
+            ->set('licence', '123456')
+            ->set('ranking', 'D6')
+            ->set('password', '')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        expect($subscription->fresh()->is_competitive)->toBeTrue();
+    });
 });

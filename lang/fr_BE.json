@@ -3573,5 +3573,11 @@
     "Tick each point as the meeting moves along.": "Cochez chaque point au fil de la réunion.",
     "you are in read-only mode": "vous êtes en lecture seule",
     "You are taking the notes": "Vous prenez les notes",
-    "You are taking the notes now": "Vous prenez la main sur les notes"
+    "You are taking the notes now": "Vous prenez la main sur les notes",
+    "Leading option": "Option en tête",
+    "Poll already sent on :date": "Sondage déjà envoyé le :date",
+    "Poll sent on :date": "Sondage envoyé le :date",
+    "Poll sent — waiting for votes": "Sondage envoyé — en attente de votes",
+    "resend possible 48h after the last one": "renvoi possible 48 h après le dernier envoi",
+    "Resend the poll": "Renvoyer le sondage"
 }

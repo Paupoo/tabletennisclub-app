@@ -3573,5 +3573,11 @@
     "Tick each point as the meeting moves along.": "Vink elk punt af naarmate de vergadering vordert.",
     "you are in read-only mode": "u bent in alleen-lezen modus",
     "You are taking the notes": "U neemt de notities",
-    "You are taking the notes now": "U neemt nu de notities over"
+    "You are taking the notes now": "U neemt nu de notities over",
+    "Leading option": "Beste optie",
+    "Poll already sent on :date": "Peiling al verstuurd op :date",
+    "Poll sent on :date": "Peiling verstuurd op :date",
+    "Poll sent — waiting for votes": "Peiling verstuurd — wachten op stemmen",
+    "resend possible 48h after the last one": "opnieuw versturen kan 48 u na de laatste verzending",
+    "Resend the poll": "Peiling opnieuw versturen"
 }

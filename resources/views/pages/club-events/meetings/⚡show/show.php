@@ -416,6 +416,18 @@ new class extends Component
             $votes = $meeting->dateProposals->sum(fn (MeetingDateProposal $p) => $p->votes->count());
 
             if ($votes === 0) {
+                if ($meeting->poll_sent_at) {
+                    $canResend = $meeting->poll_sent_at->lte(now()->subHours(48));
+
+                    return [
+                        'title' => __('Poll sent — waiting for votes'),
+                        'description' => __('Poll sent on :date', ['date' => $meeting->poll_sent_at->translatedFormat('d M · H\hi')])
+                            . ($canResend ? '' : ' · ' . __('resend possible 48h after the last one')),
+                        'action' => $canResend ? 'sendDatePoll' : null,
+                        'label' => $canResend ? __('Resend the poll') : null,
+                    ];
+                }
+
                 return [
                     'title' => __('Send the date poll to the committee'),
                     'description' => __('Members will vote on their availability for each proposed date.'),
@@ -751,9 +763,17 @@ new class extends Component
             return;
         }
 
+        // Anti-spam: one poll blast per 48h window.
+        if ($meeting->poll_sent_at?->gt(now()->subHours(48))) {
+            $this->toast(type: 'info', title: __('Poll already sent on :date', ['date' => $meeting->poll_sent_at->translatedFormat('d M · H\hi')]));
+
+            return;
+        }
+
         $recipients = $this->committeeUsers;
 
         Notification::send($recipients, new MeetingDatePollNotification($meeting));
+        $meeting->update(['poll_sent_at' => now()]);
 
         $this->toast(type: 'success', title: __('Poll sent to :n committee members', ['n' => $recipients->count()]));
         unset($this->meeting);

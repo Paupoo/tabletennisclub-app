@@ -258,6 +258,9 @@
             {{-- ── Date poll (planning phase only) ────────────────────── --}}
             @if ($showPoll)
                 <x-card :title="__('Date poll')">
+                    @php
+                        $bestAvailable = $meeting->dateProposals->max(fn ($p) => $p->availableCount());
+                    @endphp
                     <div class="space-y-4">
                         @foreach ($meeting->dateProposals as $proposal)
                             @php
@@ -265,20 +268,27 @@
                                 $maybe       = $proposal->maybeCount();
                                 $unavailable = $proposal->unavailableCount();
                                 $total       = $available + $maybe + $unavailable;
+                                $isLeading   = $bestAvailable > 0 && $available === $bestAvailable;
                             @endphp
                             <div @class([
                                     'rounded-xl border p-4',
                                     'border-primary' => $proposal->is_selected,
-                                    'border-base-200' => ! $proposal->is_selected,
+                                    'border-primary/40 bg-primary/5' => ! $proposal->is_selected && $isLeading,
+                                    'border-base-200' => ! $proposal->is_selected && ! $isLeading,
                                 ])
                                 wire:key="proposal-{{ $proposal->id }}">
                                 <div class="flex flex-wrap items-start justify-between gap-3">
                                     <div>
-                                        <p class="flex items-center gap-2 font-semibold">
+                                        <p class="flex flex-wrap items-center gap-2 font-semibold">
                                             @if ($proposal->is_selected)
                                                 <x-icon name="o-check-circle" class="h-5 w-5 text-primary" />
                                             @endif
                                             {{ $proposal->proposed_at->translatedFormat('l d M Y · H\hi') }}
+                                            @if ($isLeading && ! $proposal->is_selected)
+                                                <span class="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                                                    {{ __('Leading option') }}
+                                                </span>
+                                            @endif
                                         </p>
                                         <div class="mt-2 flex items-center gap-4 text-sm text-base-content/60">
                                             <span class="flex items-center gap-1">

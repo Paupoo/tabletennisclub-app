@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Meetings\Models\Meeting;
+use App\Domains\Meetings\Notifications\MeetingDatePollNotification;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 
 uses(RefreshDatabase::class);
@@ -26,6 +28,75 @@ describe('Meeting hub — next step banner', function (): void {
             ->test('pages::club-events.meetings.show', ['meeting' => $meeting])
             ->assertSeeText(__('Next step'))
             ->assertSeeText(__('Send the date poll to the committee'));
+    });
+
+    test('sending the poll records it and shows a discreet sent state', function (): void {
+        Notification::fake();
+
+        $admin = hubAdmin();
+        $meeting = Meeting::factory()->committee()->planning()->create(['created_by' => $admin->id]);
+        $meeting->dateProposals()->create(['proposed_at' => now()->addWeek()]);
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-events.meetings.show', ['meeting' => $meeting])
+            ->call('sendDatePoll')
+            ->assertSeeText(__('Poll sent on :date', ['date' => now()->translatedFormat('d M · H\hi')]));
+
+        expect($meeting->fresh()->poll_sent_at)->not->toBeNull();
+    });
+
+    test('the poll cannot be re-sent within 48 hours', function (): void {
+        Notification::fake();
+
+        $admin = hubAdmin();
+        $meeting = Meeting::factory()->committee()->planning()->create([
+            'created_by' => $admin->id,
+            'poll_sent_at' => now()->subDay(),
+        ]);
+        $meeting->dateProposals()->create(['proposed_at' => now()->addWeek()]);
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-events.meetings.show', ['meeting' => $meeting])
+            ->call('sendDatePoll');
+
+        Notification::assertNothingSent();
+    });
+
+    test('the poll can be re-sent after 48 hours', function (): void {
+        Notification::fake();
+
+        $admin = hubAdmin();
+        $meeting = Meeting::factory()->committee()->planning()->create([
+            'created_by' => $admin->id,
+            'poll_sent_at' => now()->subDays(3),
+        ]);
+        $meeting->dateProposals()->create(['proposed_at' => now()->addWeek()]);
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-events.meetings.show', ['meeting' => $meeting])
+            ->call('sendDatePoll');
+
+        Notification::assertSentTo(
+            $admin,
+            MeetingDatePollNotification::class,
+        );
+    });
+
+    test('the leading date proposal is subtly highlighted', function (): void {
+        $admin = hubAdmin();
+        $voterA = hubAdmin();
+        $voterB = hubAdmin();
+        $meeting = Meeting::factory()->committee()->planning()->create(['created_by' => $admin->id]);
+        $leading = $meeting->dateProposals()->create(['proposed_at' => now()->addWeek()]);
+        $trailing = $meeting->dateProposals()->create(['proposed_at' => now()->addWeeks(2)]);
+
+        $leading->votes()->create(['user_id' => $voterA->id, 'vote' => 'available']);
+        $leading->votes()->create(['user_id' => $voterB->id, 'vote' => 'available']);
+        $trailing->votes()->create(['user_id' => $voterA->id, 'vote' => 'unavailable']);
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-events.meetings.show', ['meeting' => $meeting])
+            ->assertSeeText(__('Leading option'));
     });
 
     test('a planning meeting with votes suggests picking the final date', function (): void {

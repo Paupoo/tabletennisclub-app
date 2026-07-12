@@ -115,6 +115,7 @@ class Meeting extends Model
         'postponed_to' => 'datetime',
         'archived_at' => 'datetime',
         'minutes_editor_at' => 'datetime',
+        'poll_sent_at' => 'datetime',
     ];
 
     protected $fillable = [
@@ -139,6 +140,7 @@ class Meeting extends Model
         'created_by',
         'minutes_editor_id',
         'minutes_editor_at',
+        'poll_sent_at',
     ];
 
     /**

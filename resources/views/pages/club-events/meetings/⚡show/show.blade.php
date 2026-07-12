@@ -630,6 +630,8 @@
                             :start-time="$meeting->scheduled_at?->format('H:i:s')"
                             :end-time="$meeting->ends_at?->format('H:i:s')"
                             :default-title="$meeting->title"
+                            :default-location="$meeting->format === \App\Domains\Shared\Enums\MeetingFormatEnum::PHYSICAL ? $meeting->location : $meeting->meeting_link"
+                            :default-description="$meeting->description"
                             :can-publish="true"
                             wire:key="ep-show-meeting-{{ $meeting->id }}" />
                     @else

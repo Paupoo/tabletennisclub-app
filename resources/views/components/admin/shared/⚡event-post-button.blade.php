@@ -40,6 +40,10 @@ new class extends Component
 
     public string $defaultTitle = '';
 
+    public ?string $defaultLocation = null;
+
+    public ?string $defaultDescription = null;
+
     // ── Gate ──────────────────────────────────────────────────────────────
     #[Locked]
     public bool $canPublish = true;
@@ -58,7 +62,7 @@ new class extends Component
         /** @var EventPost|null $ep */
         $ep = $model->eventPost;
 
-        $this->initEventPost($ep, $this->defaultTitle);
+        $this->initEventPost($ep, $this->defaultTitle, $this->defaultLocation, $this->defaultDescription);
     }
 
     public function open(): void

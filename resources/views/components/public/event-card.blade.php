@@ -47,12 +47,12 @@
         @if(!($event['is_past'] ?? false))
             @auth
                 @if($event['is_registered'])
-                    <a href="{{ route('clubAdmin.registrations.index') }}"
+                    <a href="{{ route('admin.user.event-subscription', auth()->user()) }}"
                        class="inline-flex items-center justify-center gap-2 rounded-lg border-2 border-green-600 px-4 py-2 text-sm font-semibold text-green-700 transition-colors hover:bg-green-50">
                         <span>✓</span> {{ __('Registered') }}
                     </a>
                 @else
-                    <a href="{{ route('clubAdmin.registrations.index') }}"
+                    <a href="{{ route('admin.user.event-subscription', auth()->user()) }}"
                        class="inline-flex items-center justify-center rounded-lg bg-club-blue px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-club-blue-light">
                         {{ __('Register') }}
                     </a>

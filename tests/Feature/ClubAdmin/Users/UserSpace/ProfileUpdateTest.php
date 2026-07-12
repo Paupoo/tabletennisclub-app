@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\Gender;
 use Illuminate\Http\UploadedFile;
@@ -160,4 +161,53 @@ test('user can request GDPR erasure', function (): void {
         ->call('requestErasure');
 
     expect($user->fresh())->not->toBeNull();
+});
+
+describe('profile shows real season data — no prototype leftovers', function (): void {
+    it('shows the affiliation status and membership start derived from subscriptions', function (): void {
+        $season = makeActiveSeason();
+        $user = User::factory()->create();
+        Subscription::factory()->for($user)->create([
+            'season_id' => $season->id,
+            'status' => 'paid',
+        ]);
+
+        Livewire::actingAs($user)
+            ->test('pages::club-admin.users.user-space.profile', ['user' => $user])
+            ->assertSee('Affilié · saison ' . $season->name)
+            ->assertSee('Membre depuis ' . $season->start_at->translatedFormat('F Y'));
+    });
+
+    it('shows a pending affiliation as awaiting validation', function (): void {
+        $season = makeActiveSeason();
+        $user = User::factory()->create();
+        Subscription::factory()->for($user)->create([
+            'season_id' => $season->id,
+            'status' => 'pending',
+        ]);
+
+        Livewire::actingAs($user)
+            ->test('pages::club-admin.users.user-space.profile', ['user' => $user])
+            ->assertSee('Affiliation en attente de validation');
+    });
+
+    it('tells a non-affiliated member so, and falls back to the account creation date', function (): void {
+        makeActiveSeason();
+        $user = User::factory()->create();
+
+        Livewire::actingAs($user)
+            ->test('pages::club-admin.users.user-space.profile', ['user' => $user])
+            ->assertSee('Non affilié cette saison')
+            ->assertSee('Membre depuis ' . $user->created_at->translatedFormat('F Y'));
+    });
+
+    it('no longer renders hardcoded prototype stats', function (): void {
+        makeActiveSeason();
+        $user = User::factory()->create();
+
+        Livewire::actingAs($user)
+            ->test('pages::club-admin.users.user-space.profile', ['user' => $user])
+            ->assertDontSee('65%')
+            ->assertDontSee('+142');
+    });
 });

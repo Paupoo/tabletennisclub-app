@@ -93,7 +93,7 @@ test('a member can change their own password via settings', function (): void {
         ->test('pages::club-admin.users.user-space.settings', ['user' => $user])
         ->set('password', 'CttBlocry#2026!vK9')
         ->set('password_confirmation', 'CttBlocry#2026!vK9')
-        ->call('save')
+        ->call('updatePassword')
         ->assertHasNoErrors();
 
     expect(Hash::check('CttBlocry#2026!vK9', $user->fresh()->password))->toBeTrue();

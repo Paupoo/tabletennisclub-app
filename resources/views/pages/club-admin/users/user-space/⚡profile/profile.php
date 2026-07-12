@@ -5,8 +5,10 @@ declare(strict_types=1);
 use App\Actions\User\StoreUserDocumentAction;
 use App\Actions\User\UpdateUserAction;
 use App\Data\User\UpdateUserData;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\ClubAdmin\Users\Notifications\GdprErasureRequestedNotification;
+use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Rules\ValidIban;
@@ -214,11 +216,24 @@ new class extends Component
 
     public function with(): array
     {
-        $this->user->loadMissing('teams.league', 'teams.users', 'teams.club', 'teams.season');
+        $this->user->loadMissing('teams.league', 'teams.users', 'teams.club', 'teams.season', 'subscriptions.season');
+
+        $activeSubscriptions = $this->user->subscriptions
+            ->whereIn('status', ['pending', 'confirmed', 'paid']);
+
+        $currentSeason = Season::current();
 
         return [
             'genders' => Gender::options(),
             'breadcrumbs' => $this->getBreadcrumbs(),
+            'memberSince' => $activeSubscriptions
+                ->map(fn (Subscription $subscription) => $subscription->season?->start_at)
+                ->filter()
+                ->min() ?? $this->user->created_at,
+            'currentSeason' => $currentSeason,
+            'currentSubscription' => $currentSeason
+                ? $activeSubscriptions->firstWhere('season_id', $currentSeason->id)
+                : null,
         ];
     }
 

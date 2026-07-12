@@ -15,25 +15,9 @@ new #[Title('My settings')] class extends Component
 {
     use HasBreadcrumbs, Toast;
 
-    public bool $notification_match = true;
+    public string $password = '';
 
-    public bool $notification_new_training = true;
-
-    public bool $notification_news_events = false;
-
-    public bool $notification_team_result = false;
-
-    public bool $notification_waiting_list = true;
-
-    public string $password;
-
-    public string $password_confirmation;
-
-    public bool $public_email = false;
-
-    public bool $public_phone_number = false;
-
-    public bool $public_profile = true;
+    public string $password_confirmation = '';
 
     public User $user;
 
@@ -48,34 +32,25 @@ new #[Title('My settings')] class extends Component
     {
         return [
             'password' => [
-                'nullable',
+                'required',
                 'confirmed',
                 Password::defaults(),
             ],
-            'password_confirmation' => 'nullable',
+            'password_confirmation' => 'required',
         ];
     }
 
-    public function save(): void
+    public function updatePassword(): void
     {
         abort_unless(Auth::user()->is($this->user), 403);
 
         $validated = $this->validate();
 
-        if (empty($validated['password'])) {
-            unset($validated['password']);
-        }
+        $this->user->update(['password' => $validated['password']]);
 
-        unset($validated['password_confirmation']);
+        $this->reset(['password', 'password_confirmation']);
 
-        $this->user->update($validated);
-
-        $this->reset([
-            'password',
-            'password_confirmation',
-        ]);
-
-        $this->success(__('Your settings have been updated.'));
+        $this->success(__('Your password has been updated.'));
     }
 
     public function with(): array

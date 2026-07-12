@@ -3,11 +3,7 @@
 </x-slot:breadcrumbs>
 
 <div>
-    <x-header separator :subtitle="__('Upcoming club activities')" :title="__('Calendar')">
-        <x-slot:actions>
-            <x-button class="btn-outline btn-sm" icon="o-arrow-path" :label="__('Sync to Google/iCal')" />
-        </x-slot:actions>
-    </x-header>
+    <x-header separator :subtitle="__('Upcoming club activities')" :title="__('Calendar')" />
 
     <div class="grid grid-cols-1 gap-8 lg:grid-cols-4">
 

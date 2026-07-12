@@ -1494,6 +1494,7 @@
     "Coming soon": "Binnenkort beschikbaar",
     "Notification preferences (match reminders, waitlist alerts, club news) and privacy options are on their way. They will appear here as soon as they are ready.": "Notificatievoorkeuren (wedstrijdherinneringen, wachtlijstmeldingen, clubnieuws) en privacyopties zijn onderweg. Ze verschijnen hier zodra ze klaar zijn.",
     "Password Confirmation": "Bevestiging van het wachtwoord",
+    ":count team|:count teams": ":count ploeg|:count ploegen",
     "Member since": "Lid sinds",
     "Member since Sept 2024": "Lid sinds sept. 2024",
     "Members": "Leden",

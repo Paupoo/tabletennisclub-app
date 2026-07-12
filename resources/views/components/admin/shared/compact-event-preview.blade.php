@@ -21,12 +21,16 @@
     ];
 
     $borderClass = $colors[$type] ?? 'border-gray-300';
+
+    // Un événement sans page de détail reste un simple bloc : pas de lien mort.
+    $isLink = filled($link) && $link !== '#';
+    $tag = $isLink ? 'a' : 'div';
 @endphp
 
-<a {{ $attributes->merge([
+<{{ $tag }} {{ $attributes->merge([
     'class' => "group relative isolate overflow-hidden my-4 flex justify-between items-center border-l-4 $borderClass pl-3 py-2 transition-all hover:rounded-r-lg hover:shadow-sm",
 ]) }}
-    href="{{ $link }}">
+    @if ($isLink) href="{{ $link }}" @endif>
 
     {{-- Fond au survol --}}
     <div
@@ -74,4 +78,4 @@
             {{ $actions }}
         </div>
     @endif
-</a>
+</{{ $tag }}>

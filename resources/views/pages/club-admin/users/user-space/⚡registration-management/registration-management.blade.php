@@ -32,7 +32,7 @@
                     <div class="flex items-center gap-2 mb-4">
                         <div class="flex items-center gap-1.5">
                             <x-icon name="o-identification" class="w-4 h-4 text-base-content/40" />
-                            <span class="text-xs font-bold uppercase tracking-widest text-base-content/40">{{ __('Club Membership') }}</span>
+                            <span class="text-xs font-bold uppercase tracking-wide text-base-content/50">{{ __('Club Membership') }}</span>
                         </div>
                         <div class="flex-1 border-t border-base-200"></div>
                     </div>
@@ -95,7 +95,7 @@
                                                         <x-icon name="o-credit-card" class="w-4 h-4 text-info opacity-60 shrink-0" />
                                                         <div class="flex-1 min-w-0">
                                                             <div class="font-mono text-xs opacity-60">{{ $payment['reference'] }}</div>
-                                                            <div class="font-black text-base text-info">{{ number_format($payment['amount_due'], 2) }} €</div>
+                                                            <div class="font-bold text-base text-info">{{ number_format($payment['amount_due'], 2) }} €</div>
                                                         </div>
                                                         <x-button
                                                             :label="__('Pay')"
@@ -115,7 +115,7 @@
                                                 <x-icon name="o-check-badge" class="w-5 h-5 text-success" />
                                             </div>
                                             <div class="flex-1">
-                                                <div class="font-black text-sm">{{ __('Affiliation paid — season confirmed!') }}</div>
+                                                <div class="font-bold text-sm">{{ __('Affiliation paid — season confirmed!') }}</div>
                                             </div>
                                             <x-badge value="{{ __('Paid') }}" class="badge-success shrink-0" />
                                         </div>
@@ -140,13 +140,13 @@
                                         {{-- Supplementary payments from mid-season training additions --}}
                                         @if(!empty($currentEntry['pending_payments']))
                                             <div class="border-t border-success/15 divide-y divide-success/10">
-                                                <div class="px-4 pt-3 pb-1 text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Additional payments') }}</div>
+                                                <div class="px-4 pt-3 pb-1 text-xs font-bold uppercase tracking-wide opacity-60">{{ __('Additional payments') }}</div>
                                                 @foreach($currentEntry['pending_payments'] as $payment)
                                                     <div class="flex items-center gap-3 px-4 py-3">
                                                         <x-icon name="o-credit-card" class="w-4 h-4 text-warning-content opacity-60 shrink-0" />
                                                         <div class="flex-1 min-w-0">
                                                             <div class="font-mono text-xs opacity-60">{{ $payment['reference'] }}</div>
-                                                            <div class="font-black text-base text-warning-content">{{ number_format($payment['amount_due'], 2) }} €</div>
+                                                            <div class="font-bold text-base text-warning-content">{{ number_format($payment['amount_due'], 2) }} €</div>
                                                         </div>
                                                         <x-button
                                                             :label="__('Pay')"
@@ -203,7 +203,7 @@
                                                         <x-badge value="{{ __('Selected') }}" class="badge-primary" />
                                                     @endif
                                                 </div>
-                                                <div class="mt-4 font-black text-lg">{{ __('Competition') }}</div>
+                                                <div class="mt-4 font-bold text-lg">{{ __('Competition') }}</div>
                                                 <div class="text-sm opacity-70">{{ __('Official matches, ranking, and advanced coaching.') }}</div>
                                                 <div class="mt-4 text-xl font-bold">125&nbsp;€ <span class="text-xs font-normal">/ season</span></div>
                                             </div>
@@ -222,7 +222,7 @@
                                                         <x-badge value="{{ __('Selected') }}" class="badge-secondary" />
                                                     @endif
                                                 </div>
-                                                <div class="mt-4 font-black text-lg">{{ __('Recreational') }}</div>
+                                                <div class="mt-4 font-bold text-lg">{{ __('Recreational') }}</div>
                                                 <div class="text-sm opacity-70">{{ __('Free play and social events. No official matches.') }}</div>
                                                 <div class="mt-4 text-xl font-bold">60&nbsp;€ <span class="text-xs font-normal">/ season</span></div>
                                             </div>
@@ -230,7 +230,7 @@
 
                                         {{-- Price estimate --}}
                                         <div class="rounded-xl border border-base-200 bg-base-50 p-4 space-y-2">
-                                            <div class="text-xs font-bold uppercase tracking-widest opacity-40 mb-3">{{ __('Price estimate') }}</div>
+                                            <div class="text-xs font-bold uppercase tracking-wide opacity-60 mb-3">{{ __('Price estimate') }}</div>
                                             <div class="flex justify-between text-sm">
                                                 <span class="opacity-70">{{ $formula === 'competitive' ? __('Competition licence') : __('Recreational licence') }}</span>
                                                 <span class="font-semibold">{{ number_format($formulaPrice, 2) }} €</span>
@@ -254,7 +254,7 @@
                                             @if($applyDiscount)
                                                 <div class="text-xs opacity-50 italic">{{ __('Multi-pack discount applied (−10€/pack)') }}</div>
                                             @endif
-                                            <div class="flex justify-between text-base font-black pt-2 border-t border-base-200">
+                                            <div class="flex justify-between text-base font-bold pt-2 border-t border-base-200">
                                                 <span>{{ __('Total') }}</span>
                                                 <span class="text-primary">{{ number_format($estimatedTotal, 2) }} €</span>
                                             </div>
@@ -263,7 +263,7 @@
 
                                         {{-- Season involvement --}}
                                         <div class="rounded-xl border border-base-200 bg-base-50 p-4 space-y-4">
-                                            <div class="text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Getting involved this season') }}</div>
+                                            <div class="text-xs font-bold uppercase tracking-wide opacity-60">{{ __('Getting involved this season') }}</div>
                                             <p class="text-xs opacity-60 -mt-2">{{ __('Optional — help us organise the season. You can update these anytime.') }}</p>
 
                                             <x-toggle
@@ -317,7 +317,7 @@
                                     <div class="flex items-center gap-2 mb-4">
                                         <div class="flex items-center gap-1.5">
                                             <x-icon name="o-academic-cap" class="w-4 h-4 text-base-content/40" />
-                                            <span class="text-xs font-bold uppercase tracking-widest text-base-content/40">{{ __('Training') }}</span>
+                                            <span class="text-xs font-bold uppercase tracking-wide text-base-content/50">{{ __('Training') }}</span>
                                         </div>
                                         @if(!$hasActiveSub && ($registrationsOpen || $canReAffiliate))
                                             <span class="text-xs opacity-50 italic shrink-0">{{ __('Optional — tick to include in your registration') }}</span>
@@ -471,7 +471,7 @@
                                 <div class="flex items-center gap-2 mb-4">
                                     <div class="flex items-center gap-1.5">
                                         <x-icon name="o-document-text" class="w-4 h-4 text-base-content/40" />
-                                        <span class="text-xs font-bold uppercase tracking-widest text-base-content/40">{{ __('Documents') }}</span>
+                                        <span class="text-xs font-bold uppercase tracking-wide text-base-content/50">{{ __('Documents') }}</span>
                                     </div>
                                     <div class="flex-1 border-t border-base-200"></div>
                                 </div>
@@ -627,7 +627,7 @@
                 </div>
                 <div class="flex justify-between items-center pt-1 border-t border-base-200">
                     <span class="font-bold">{{ __('Amount') }}</span>
-                    <span class="text-lg font-black text-primary">{{ $paymentDetails['amount_due'] }} €</span>
+                    <span class="text-lg font-bold text-primary">{{ $paymentDetails['amount_due'] }} €</span>
                 </div>
             </div>
 

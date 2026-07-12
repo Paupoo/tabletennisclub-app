@@ -51,7 +51,7 @@
                     @if (in_array($currentSubscription?->status, ['confirmed', 'paid'], true))
                         <x-icon name="o-shield-check" class="w-4 h-4 text-success shrink-0" />
                         <div class="min-w-0">
-                            <div class="text-[10px] opacity-40 uppercase tracking-wider font-black">{{ __('Status') }}</div>
+                            <div class="text-xs opacity-60 uppercase tracking-wide font-semibold">{{ __('Status') }}</div>
                             <div class="text-sm font-semibold text-success truncate">
                                 {{ __('Affiliated · season :season', ['season' => $currentSeason->name]) }}
                             </div>
@@ -59,7 +59,7 @@
                     @elseif ($currentSubscription?->status === 'pending')
                         <x-icon name="o-clock" class="w-4 h-4 text-warning-content shrink-0" />
                         <div class="min-w-0">
-                            <div class="text-[10px] opacity-40 uppercase tracking-wider font-black">{{ __('Status') }}</div>
+                            <div class="text-xs opacity-60 uppercase tracking-wide font-semibold">{{ __('Status') }}</div>
                             <div class="text-sm font-semibold text-warning-content truncate">
                                 {{ __('Affiliation awaiting validation') }}
                             </div>
@@ -67,7 +67,7 @@
                     @else
                         <x-icon name="o-shield-exclamation" class="w-4 h-4 opacity-40 shrink-0" />
                         <div class="min-w-0">
-                            <div class="text-[10px] opacity-40 uppercase tracking-wider font-black">{{ __('Status') }}</div>
+                            <div class="text-xs opacity-60 uppercase tracking-wide font-semibold">{{ __('Status') }}</div>
                             <div class="text-sm font-semibold truncate">
                                 <a href="{{ route('admin.user.registration-management', $user) }}" class="link link-hover">
                                     {{ __('Not affiliated this season') }}
@@ -80,7 +80,7 @@
                     <div class="flex items-center gap-3 px-4 py-3">
                         <x-icon name="o-chevron-double-up" class="w-4 h-4 opacity-40 shrink-0" />
                         <div class="min-w-0">
-                            <div class="text-[10px] opacity-40 uppercase tracking-wider font-black">{{ __('Ranking') }}</div>
+                            <div class="text-xs opacity-60 uppercase tracking-wide font-semibold">{{ __('Ranking') }}</div>
                             <div class="text-sm font-semibold truncate">{{ $user->ranking }}</div>
                         </div>
                     </div>
@@ -88,7 +88,7 @@
                 <div class="flex items-center gap-3 px-4 py-3">
                     <x-icon name="o-identification" class="w-4 h-4 opacity-40 shrink-0" />
                     <div class="min-w-0">
-                        <div class="text-[10px] opacity-40 uppercase tracking-wider font-black">{{ __('Licence') }}</div>
+                        <div class="text-xs opacity-60 uppercase tracking-wide font-semibold">{{ __('Licence') }}</div>
                         <div class="text-sm font-semibold truncate">
                             {{ $user->is_competitor ? __('Competitor') : __('Recreative') }}
                         </div>
@@ -97,7 +97,7 @@
                 <div class="flex items-center gap-3 px-4 py-3">
                     <x-icon name="o-map-pin" class="w-4 h-4 opacity-40 shrink-0" />
                     <div class="min-w-0">
-                        <div class="text-[10px] opacity-40 uppercase tracking-wider font-black">{{ __('Address') }}</div>
+                        <div class="text-xs opacity-60 uppercase tracking-wide font-semibold">{{ __('Address') }}</div>
                         <div class="text-sm font-semibold truncate">{{ $user->street }}</div>
                         <div class="text-sm font-semibold truncate">{{ $user->city_name }}</div>
                     </div>
@@ -105,14 +105,14 @@
                 <div class="flex items-center gap-3 px-4 py-3">
                     <x-icon name="o-envelope" class="w-4 h-4 opacity-40 shrink-0" />
                     <div class="min-w-0">
-                        <div class="text-[10px] opacity-40 uppercase tracking-wider font-black">{{ __('Email') }}</div>
+                        <div class="text-xs opacity-60 uppercase tracking-wide font-semibold">{{ __('Email') }}</div>
                         <div class="text-sm font-semibold truncate">{{ $user->email }}</div>
                     </div>
                 </div>
                 <div class="flex items-center gap-3 px-4 py-3">
                     <x-icon name="o-phone" class="w-4 h-4 opacity-40 shrink-0" />
                     <div class="min-w-0">
-                        <div class="text-[10px] opacity-40 uppercase tracking-wider font-black">{{ __('Phone') }}</div>
+                        <div class="text-xs opacity-60 uppercase tracking-wide font-semibold">{{ __('Phone') }}</div>
                         <div class="text-sm font-semibold truncate">{{ $user->phone_number }}</div>
                     </div>
                 </div>
@@ -120,7 +120,7 @@
                 <div class="flex items-center gap-3 px-4 py-3">
                     <x-icon name="o-building-library" class="w-4 h-4 opacity-40 shrink-0" />
                     <div class="min-w-0">
-                        <div class="text-[10px] opacity-40 uppercase tracking-wider font-black">{{ __('IBAN') }}</div>
+                        <div class="text-xs opacity-60 uppercase tracking-wide font-semibold">{{ __('IBAN') }}</div>
                         <div class="text-sm font-semibold font-mono truncate">{{ $user->iban_formatted }}</div>
                     </div>
                 </div>
@@ -129,7 +129,7 @@
                     <div class="flex items-center gap-3 px-4 py-3">
                         <x-icon name="o-phone" class="w-4 h-4 opacity-40 shrink-0" />
                         <div class="min-w-0">
-                            <div class="text-[10px] opacity-40 uppercase tracking-wider font-black">{{ __('Parent / Tutor') }}</div>
+                            <div class="text-xs opacity-60 uppercase tracking-wide font-semibold">{{ __('Parent / Tutor') }}</div>
                             <div class="text-sm font-semibold truncate">{{ $user->guardian_phone_number }}</div>
                         </div>
                     </div>
@@ -152,18 +152,10 @@
                         <p class="text-sm text-gray-400">{{ __('You are not part of any team this season.') }}</p>
                     </div>
                 @else
-                    @php
-                        $categoryLabels = [
-                            'MEN'      => 'Hommes',
-                            'VETERANS' => 'Vétérans',
-                            'WOMEN'    => 'Dames',
-                        ];
-                    @endphp
                     <x-tabs wire:model="activeTeamTab">
                         @foreach($user->teams as $team)
                             @php
-                                $rawCategory  = $team->league?->category ?? '';
-                                $frenchCat    = $categoryLabels[$rawCategory] ?? $rawCategory;
+                                $frenchCat    = \App\Domains\Shared\Enums\LeagueCategory::fromName($team->league?->category)?->label() ?? '';
                                 $tabLabel     = $team->name . ($frenchCat ? ' — ' . $frenchCat : '');
                                 $clubName     = $team->club?->name ?? '';
                                 $seasonName   = $team->season?->name ?? '';
@@ -200,12 +192,12 @@
                                                             {{ $mate->first_name }} {{ $mate->last_name }}
                                                         </span>
                                                         @if ($isYou)
-                                                            <span class="text-[9px] font-black uppercase tracking-widest opacity-40">
+                                                            <span class="text-xs uppercase tracking-wide opacity-60">
                                                                 {{ __('(you)') }}
                                                             </span>
                                                         @endif
                                                     </div>
-                                                    <span class="text-[10px] opacity-40 font-black uppercase">
+                                                    <span class="text-xs opacity-60 uppercase">
                                                         {{ $mate->ranking }}
                                                     </span>
                                                 </div>

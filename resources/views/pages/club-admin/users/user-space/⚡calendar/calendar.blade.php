@@ -89,14 +89,14 @@
                                     @endphp
                                     <div class="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-base-200/30">
                                         <div class="{{ $typeColors[$event['type']] ?? 'bg-base-300' }} h-1.5 w-1.5 shrink-0 rounded-full"></div>
-                                        <span class="min-w-[52px] text-[11px] font-bold text-base-content/50">{{ $dt->translatedFormat('d M') }}</span>
+                                        <span class="min-w-[52px] text-xs font-bold text-base-content/50">{{ $dt->translatedFormat('d M') }}</span>
                                         <div class="flex min-w-0 flex-1 flex-col">
                                             <span class="truncate text-xs font-medium">{{ $event['title'] }}</span>
                                             @if ($event['type'] === 'training' && ! empty($event['coach']))
-                                                <span class="truncate text-[10px] text-base-content/40">{{ $event['coach'] }}</span>
+                                                <span class="truncate text-xs text-base-content/50">{{ $event['coach'] }}</span>
                                             @endif
                                         </div>
-                                        <span class="shrink-0 text-[11px] text-base-content/40">
+                                        <span class="shrink-0 text-xs text-base-content/50">
                                             {{ $dt->format('H:i') }}{{ $event['type'] === 'training' && ! empty($event['endTime']) ? '–' . $event['endTime'] : '' }}
                                         </span>
                                         @if ($userWaiting)
@@ -157,11 +157,11 @@
                                             @endif
                                             @if ($event['isUserInTeam'])
                                                 @if ($event['isSelected'])
-                                                    <x-badge class="badge-primary badge-sm font-bold" value="{{ __('Selected') }}" icon="o-check" />
+                                                    <x-admin.shared.status-badge status="selected" />
                                                 @elseif ($event['availability'])
                                                     <x-badge :class="$event['availability']->color() . ' badge-sm font-bold'" :value="$event['availability']->label()" />
                                                 @else
-                                                    <x-badge class="badge-ghost badge-sm" value="{{ __('No response') }}" />
+                                                    <x-admin.shared.status-badge status="no_response" />
                                                 @endif
                                             @endif
                                         @elseif ($isTraining)
@@ -175,15 +175,14 @@
                                                     {{ __('Confirm attendance') }}
                                                 </span>
                                                 @if (!empty($event['confirmDeadline']))
-                                                    <span class="text-[10px] text-base-content/40">{{ \Carbon\Carbon::parse($event['confirmDeadline'])->format('d/m') }}</span>
+                                                    <span class="text-xs text-base-content/50">{{ \Carbon\Carbon::parse($event['confirmDeadline'])->format('d/m') }}</span>
                                                 @endif
                                             @elseif ($packStatus === 'pending')
-                                                <x-badge class="badge-warning badge-sm" value="{{ __('Awaiting validation') }}" />
+                                                <x-admin.shared.status-badge status="pending" />
                                             @elseif ($packStatus === 'waiting')
-                                                <x-badge class="badge-warning badge-soft badge-sm"
-                                                    value="{{ __('Waitlist') }}{{ !empty($event['packWaitlistPosition']) ? ' #' . $event['packWaitlistPosition'] : '' }}" />
+                                                <x-admin.shared.status-badge status="waiting" :detail="$event['packWaitlistPosition'] ?? null" />
                                             @else
-                                                <x-badge class="badge-success badge-sm" value="{{ __('Enrolled') }}" />
+                                                <x-admin.shared.status-badge status="enrolled" />
                                             @endif
                                         @elseif ($isSpotOffered)
                                             <span class="flex items-center gap-1.5 text-xs font-semibold text-success">
@@ -191,13 +190,12 @@
                                                 {{ __('Confirm attendance') }}
                                             </span>
                                             @if (!empty($event['confirmDeadline']))
-                                                <span class="text-[10px] text-base-content/40">{{ \Carbon\Carbon::parse($event['confirmDeadline'])->format('d/m') }}</span>
+                                                <span class="text-xs text-base-content/50">{{ \Carbon\Carbon::parse($event['confirmDeadline'])->format('d/m') }}</span>
                                             @endif
                                         @elseif ($isActive)
-                                            <x-badge class="badge-success badge-sm" value="{{ __('Registered') }}" />
+                                            <x-admin.shared.status-badge status="registered" />
                                         @elseif ($isWaiting)
-                                            <x-badge class="badge-warning badge-soft badge-sm"
-                                                value="{{ __('Waitlist') }}{{ ! empty($event['waitlistPosition']) ? ' #' . $event['waitlistPosition'] : '' }}" />
+                                            <x-admin.shared.status-badge status="waiting" :detail="$event['waitlistPosition'] ?? null" />
                                         @else
                                             <a class="btn btn-primary btn-outline btn-xs"
                                                 href="{{ route('admin.user.event-subscription', $user) }}">

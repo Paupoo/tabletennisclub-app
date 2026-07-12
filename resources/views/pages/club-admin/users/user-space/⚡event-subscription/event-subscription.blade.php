@@ -23,10 +23,10 @@
             @php $nextTournament = $this->upcomingTournaments->first(); @endphp
             @if ($nextTournament)
                 <x-card class="border border-primary/10 bg-primary/5" shadow>
-                    <div class="mb-1 text-[10px] font-bold uppercase tracking-wider opacity-50">
+                    <div class="mb-1 text-xs font-bold uppercase tracking-wide opacity-60">
                         {{ __('Next tournament') }}
                     </div>
-                    <div class="font-black text-primary">{{ $nextTournament->name }}</div>
+                    <div class="font-bold text-primary">{{ $nextTournament->name }}</div>
                     <div class="mt-0.5 text-xs opacity-70">
                         {{ $nextTournament->start_date->translatedFormat('d M Y') }}
                     </div>
@@ -45,7 +45,7 @@
             {{-- Paiements en attente --}}
             @if ($this->pendingPayments->isNotEmpty())
                 <x-card class="border border-warning/30 bg-warning/5" shadow>
-                    <div class="mb-3 text-[10px] font-bold uppercase tracking-wider text-warning-content">
+                    <div class="mb-3 text-xs font-bold uppercase tracking-wide text-warning-content">
                         {{ __('Payments due') }}
                     </div>
                     <div class="space-y-3">
@@ -56,7 +56,7 @@
                             <div class="flex items-center justify-between gap-2">
                                 <div class="min-w-0">
                                     <div class="truncate text-xs font-semibold">{{ $eventName }}</div>
-                                    <div class="text-[10px] opacity-60">
+                                    <div class="text-xs opacity-60">
                                         {{ number_format($payment->amount_due, 2, ',', ' ') }} €
                                     </div>
                                 </div>
@@ -97,7 +97,6 @@
                         :location="null"
                         :remainingSlots="$remaining"
                         :startDateTime="$tournament->start_date->format('Y-m-d H:i:s')"
-                        link="#"
                         name="{{ $tournament->name }}"
                         type="tournament"
                     >
@@ -105,7 +104,7 @@
 
                             {{-- Statut inscription --}}
                             @if ($isActive)
-                                <x-badge class="badge-success badge-sm" value="{{ __('Registered') }}" />
+                                <x-admin.shared.status-badge status="registered" />
                                 @if ($reg->payment_id && ! $reg->has_paid)
                                     <x-button
                                         class="btn-warning btn-xs"
@@ -152,7 +151,7 @@
                                 />
                             @elseif ($isSpotOffered)
                                 @if ($reg->confirmation_deadline)
-                                    <span class="hidden text-[10px] text-base-content/40 sm:inline">
+                                    <span class="hidden text-xs text-base-content/50 sm:inline">
                                         {{ $reg->confirmation_deadline->format('d/m H:i') }}
                                     </span>
                                 @endif
@@ -175,7 +174,7 @@
                                     wire:click="openCancelConfirm({{ $tournament->id }})"
                                 />
                             @elseif ($isWaiting)
-                                <x-badge class="badge-warning badge-soft badge-sm" value="{{ __('Waitlist') }}{{ $reg->waitlist_position ? ' #' . $reg->waitlist_position : '' }}" />
+                                <x-admin.shared.status-badge status="waiting" :detail="$reg->waitlist_position" />
                                 <x-button
                                     class="btn-ghost btn-xs text-error/70"
                                     icon="o-x-mark"
@@ -184,7 +183,7 @@
                                     wire:click="openCancelConfirm({{ $tournament->id }})"
                                 />
                             @elseif ($isFull)
-                                <x-badge class="badge-ghost badge-sm" value="{{ __('Full') }}" />
+                                <x-admin.shared.status-badge status="full" />
                                 <x-button
                                     class="btn-outline btn-sm btn-warning px-4"
                                     :label="__('Join waitlist')"
@@ -224,8 +223,7 @@
                         <x-admin.shared.compact-event-preview
                             :location="$meeting->format === \App\Domains\Shared\Enums\MeetingFormatEnum::PHYSICAL ? $meeting->location : null"
                             :startDateTime="$meeting->scheduled_at->format('Y-m-d H:i:s')"
-                            link="#"
-                            name="{{ $meeting->title }}"
+                                name="{{ $meeting->title }}"
                             type="meeting"
                         >
                             <x-slot:actions>
@@ -278,7 +276,7 @@
                             <div class="flex items-center justify-between rounded-lg border border-base-200 px-3 py-2">
                                 <div class="flex items-center gap-3">
                                     <div class="text-center">
-                                        <div class="text-[10px] font-bold uppercase text-base-content/40">
+                                        <div class="text-xs font-bold uppercase text-base-content/50">
                                             {{ $session->start->translatedFormat('M') }}
                                         </div>
                                         <div class="text-lg font-bold leading-none">
@@ -340,7 +338,7 @@
         <div class="flex flex-col items-center gap-5">
             @if ($eventName)
                 <div class="w-full rounded-xl bg-primary/5 border border-primary/10 px-4 py-3 text-center">
-                    <div class="text-[10px] font-bold uppercase tracking-wider opacity-50 mb-0.5">{{ $eventType }}</div>
+                    <div class="text-xs font-bold uppercase tracking-wide opacity-60 mb-0.5">{{ $eventType }}</div>
                     <div class="font-bold text-sm text-primary">{{ $eventName }}</div>
                 </div>
             @endif

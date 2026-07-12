@@ -20,8 +20,8 @@
     ])
 
     @if ($teamsData->isEmpty())
-        <x-empty-state icon="o-user-group" :title="__('No team assigned')"
-            :description="__('You are not captain of any team this season.')" />
+        <x-empty-state icon="o-user-group" :heading="__('No team assigned')"
+            :message="__('You are not captain of any team this season.')" />
     @else
 
         {{-- ── ALERT BANNER ───────────────────────────────────────────── --}}
@@ -71,7 +71,7 @@
 
                 {{-- Match list --}}
                 @if (empty($td['matches']))
-                    <x-empty-state icon="o-calendar" :title="__('No matches scheduled.')" />
+                    <x-empty-state icon="o-calendar" :heading="__('No matches scheduled.')" />
                 @else
                     <div class="divide-y divide-base-200 overflow-hidden rounded-xl border border-base-200">
                         @foreach ($td['matches'] as $ic)

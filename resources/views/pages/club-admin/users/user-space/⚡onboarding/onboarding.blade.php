@@ -112,7 +112,7 @@
                 @if ($hasResults)
                     <div class="mt-2 space-y-1 rounded-lg border border-base-200 p-1">
                         @if ($guardianResults->isNotEmpty())
-                            <div class="px-3 pt-1 text-[10px] font-black uppercase tracking-wider text-base-content/40">
+                            <div class="px-3 pt-1 text-xs font-semibold uppercase tracking-wide text-base-content/50">
                                 {{ __('Existing guardians') }}
                             </div>
                             @foreach ($guardianResults as $result)
@@ -129,7 +129,7 @@
                         @endif
 
                         @if ($memberResults->isNotEmpty())
-                            <div class="px-3 pt-1 text-[10px] font-black uppercase tracking-wider text-base-content/40">
+                            <div class="px-3 pt-1 text-xs font-semibold uppercase tracking-wide text-base-content/50">
                                 {{ __('Club members') }}
                             </div>
                             @foreach ($memberResults as $member)

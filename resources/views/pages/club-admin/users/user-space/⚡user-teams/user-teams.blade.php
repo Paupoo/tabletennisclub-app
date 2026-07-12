@@ -84,7 +84,7 @@
                                                 <x-badge :value="__('Away')" class="badge-ghost badge-xs border border-base-300 font-bold" />
                                             @endif
                                             @if ($match['is_selected'])
-                                                <x-badge :value="__('Selected')" icon="o-check" class="badge-primary badge-sm font-bold" />
+                                                <x-admin.shared.status-badge status="selected" />
                                             @endif
                                         </div>
                                         <div class="mt-0.5 flex items-center gap-2 text-xs text-base-content/50">

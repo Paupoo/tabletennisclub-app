@@ -6,6 +6,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\InterclubAvailability;
+use App\Domains\Shared\Enums\LeagueCategory;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -52,17 +53,11 @@ new class extends Component
     }
 
     /**
-     * Human label for the team's league category. Local mapping until the
-     * shared TeamCategory enum lands (design-system increment 2).
+     * Human label for the team's league category.
      */
     private function categoryLabel(Team $team): ?string
     {
-        return match ($team->league?->category) {
-            'MEN' => __('Men'),
-            'VETERANS' => __('Veterans'),
-            'WOMEN' => __('Women'),
-            default => null,
-        };
+        return LeagueCategory::fromName($team->league?->category)?->label();
     }
 
     /**

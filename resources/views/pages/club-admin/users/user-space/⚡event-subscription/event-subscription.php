@@ -127,7 +127,10 @@ new class extends Component
     #[Computed]
     public function meetingRegistrations(): Illuminate\Support\Collection
     {
-        $meetingIds = $this->upcomingMeetings->pluck('id');
+        // Use the unfiltered base list: depending on the filtered
+        // upcomingMeetings would create a circular computed dependency
+        // when the "to pay only" filter is active.
+        $meetingIds = $this->baseUpcomingMeetings()->pluck('id');
 
         if ($meetingIds->isEmpty()) {
             return collect();
@@ -314,14 +317,23 @@ new class extends Component
         $this->success(__('Your participation has been updated.'), icon: 'o-calendar-days');
     }
 
-    #[Computed]
-    public function upcomingMeetings(): Collection
+    /**
+     * User's upcoming confirmed meetings, unfiltered — the base list shared by
+     * both {@see upcomingMeetings()} and {@see meetingRegistrations()}.
+     */
+    private function baseUpcomingMeetings(): Collection
     {
         return $this->user->meetings()
             ->where('meetings.status', MeetingStatusEnum::CONFIRMED->value)
             ->where('scheduled_at', '>=', now())
             ->orderBy('scheduled_at')
-            ->get()
+            ->get();
+    }
+
+    #[Computed]
+    public function upcomingMeetings(): Collection
+    {
+        return $this->baseUpcomingMeetings()
             ->when($this->onlyPayable, fn (Collection $meetings) => $meetings
                 ->filter(function ($meeting): bool {
                     $payment = $this->meetingRegistrations->get($meeting->id)?->payment;

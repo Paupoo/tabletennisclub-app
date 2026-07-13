@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Meetings\Models\Meeting;
+use App\Domains\Shared\Enums\MeetingUserStatusEnum;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -58,4 +60,43 @@ it('keeps only payable tournaments when the filter is on', function (): void {
         ->test(EVENT_SUB_COMPONENT, ['user' => $user])
         ->set('onlyPayable', true)
         ->assertDontSee('Tournoi sans dette');
+});
+
+it('renders meetings with the payable filter on without erroring', function (): void {
+    // Regression: upcomingMeetings and meetingRegistrations used to reference
+    // each other, causing an undefined-property crash under the "to pay only"
+    // filter.
+    makeActiveSeason();
+    $user = User::factory()->create();
+    $admin = User::factory()->create(['is_admin' => true]);
+
+    $payable = Meeting::factory()->confirmed()->withMeal('Pizzas', 1200)->create([
+        'created_by' => $admin->id,
+        'title' => 'Réunion avec repas',
+        'scheduled_at' => now()->addWeek(),
+        'ends_at' => now()->addWeek()->addHours(2),
+    ]);
+    $payable->users()->attach($user->id, ['status' => MeetingUserStatusEnum::CONFIRMED->value, 'meal_reserved' => true]);
+    $registration = $payable->users()->where('users.id', $user->id)->first()->registration;
+    $registration->payment()->create([
+        'reference' => '001/2026/00009',
+        'amount_due' => 12,
+        'amount_paid' => 0,
+        'status' => 'pending',
+    ]);
+
+    $free = Meeting::factory()->confirmed()->create([
+        'created_by' => $admin->id,
+        'title' => 'Réunion sans repas',
+        'scheduled_at' => now()->addWeek(),
+        'ends_at' => now()->addWeek()->addHours(2),
+    ]);
+    $free->users()->attach($user->id, ['status' => MeetingUserStatusEnum::CONFIRMED->value]);
+
+    Livewire::actingAs($user)
+        ->test(EVENT_SUB_COMPONENT, ['user' => $user])
+        ->set('onlyPayable', true)
+        ->assertOk()
+        ->assertSee('Réunion avec repas')
+        ->assertDontSee('Réunion sans repas');
 });

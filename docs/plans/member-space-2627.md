@@ -96,10 +96,12 @@ Dépendances : 2 précède 4 ; 3 sert 4 ; 5 précède 6 (l'amende surface dans l
 
 **Objectif.** Dans `⚡settings`, permettre au membre d'autoriser (opt-in) l'affichage de chacune de ses coordonnées aux autres membres.
 
+**✅ LIVRÉ 2026-07-13.** Migration à jouer sur le dev/prod MariaDB (`php artisan migrate`).
+
 **Modèle de données.**
-- [ ] Migration : `users.contact_visibility` JSON **nullable** (DB-agnostique — cf. mémoire migrations). `null` = tout caché.
-- [ ] `User` : cast `array`, `contact_visibility` en `$fillable`.
-- [ ] Helper centralisé (source de vérité T4) :
+- [x] Migration : `users.contact_visibility` JSON **nullable** (DB-agnostique). `null` = tout caché.
+- [x] `User` : cast `array`, `contact_visibility` en `$fillable`.
+- [x] Helpers `sharesContact()` + `contactVisibleTo()` (source de vérité T4) :
   ```php
   // Champs : 'phone' | 'email' | 'address'
   public function sharesContact(string $field): bool
@@ -118,17 +120,18 @@ Dépendances : 2 précède 4 ; 3 sert 4 ; 5 précède 6 (l'amende surface dans l
   ```
 
 **UI (`settings.php` / `.blade.php`).**
-- [ ] 3 toggles (tel, email, adresse) dans une carte « Confidentialité / Visibilité de mes coordonnées », **auto-save** au flip (même pattern que les toggles notifications, `updated()`), toast discret.
-- [ ] Texte d'aide : « Visible par les autres membres du club » + rappel que comité/capitaines gardent accès pour l'organisation.
-- [ ] `abort_unless(Auth::user()->is($this->user), 403)` conservé.
-- [ ] i18n FR+NL.
+- [x] Section « Contact visibility » : 3 toggles (tel, email, adresse), **auto-save** au flip via `updated()` (prefix `share`), toast « Privacy preferences saved. ».
+- [x] Texte d'aide + rappel comité/capitaine gardent l'accès.
+- [x] `abort_unless(Auth::user()->is($this->user), 403)` en tête de `updated()`.
+- [x] i18n FR+NL (8 clés).
 
-**Tests.**
-- [ ] `sharesContact()` / `contactVisibleTo()` : matrice (soi, comité, admin, autre membre partagé/non partagé) — **unit**.
-- [ ] Toggle persiste dans `contact_visibility` et re-render reflète l'état.
-- [ ] Défaut : nouvel utilisateur → tout `false` (rien partagé).
+**Tests.** ✅ `ContactVisibilityTest` (10) :
+- [x] `sharesContact()` / `contactVisibleTo()` : matrice (soi, comité, admin, autre membre partagé/non partagé).
+- [x] Toggle persiste dans `contact_visibility`.
+- [x] Défaut : nouvel utilisateur → tout `false`.
+- [x] Cross-user (attacker/victim) → 403 au mount.
 
-**Risques.** Bien garder l'opt-in comme défaut (pas de fuite). Vérifier que `contact_visibility` n'est pas exposé par une API/resource publique.
+**Risques traités.** Opt-in par défaut (aucune fuite). ⚠️ **À faire au chantier 4** : filtrer les coordonnées **côté serveur** dans l'annuaire (jamais de fuite en HTML masqué CSS).
 
 ---
 
@@ -271,7 +274,8 @@ Dépendances : 2 précède 4 ; 3 sert 4 ; 5 précède 6 (l'amende surface dans l
 | Date | Chantier | Agent | Fait |
 |------|----------|-------|------|
 | 2026-07-13 | — | Claude | Grilling complet (16 décisions transverses), plans rédigés. |
-| 2026-07-13 | 1 — Règlement | Claude | ✅ Livré en TDD : route + Volt component + page brandée (bandeau, TOC, 4 chapitres), nav, 25 clés i18n FR+NL. Tests verts (ReglementTest + matrice authz + smoke + coverage). Non commité. |
+| 2026-07-13 | 1 — Règlement | Claude | ✅ Livré + commité (`4d61c0a6`). Menu déplacé hors espace perso (après Notifications). |
+| 2026-07-13 | 2 — Confidentialité | Claude | ✅ Livré en TDD : migration `contact_visibility`, helpers `sharesContact`/`contactVisibleTo`, 3 toggles auto-save dans settings, 8 clés i18n. `ContactVisibilityTest` (10) + 140 tests UserSpace verts. **Migration à jouer sur MariaDB.** Non commité. |
 
 ---
 

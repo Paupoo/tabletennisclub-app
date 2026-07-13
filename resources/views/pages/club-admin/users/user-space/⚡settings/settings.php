@@ -25,6 +25,13 @@ new #[Title('My settings')] class extends Component
 
     public string $password_confirmation = '';
 
+    // ── Contact visibility (opt-in per field)
+    public bool $shareAddress = false;
+
+    public bool $shareEmail = false;
+
+    public bool $sharePhone = false;
+
     public User $user;
 
     public function mount(User $user): void
@@ -35,6 +42,9 @@ new #[Title('My settings')] class extends Component
         $this->notifyNewTournaments = $user->wantsNotification('new_tournaments');
         $this->notifyAvailabilityRequests = $user->wantsNotification('availability_requests');
         $this->notifyInterclubSelections = $user->wantsNotification('interclub_selections');
+        $this->sharePhone = $user->sharesContact('phone');
+        $this->shareEmail = $user->sharesContact('email');
+        $this->shareAddress = $user->sharesContact('address');
     }
 
     /**
@@ -43,21 +53,33 @@ new #[Title('My settings')] class extends Component
      */
     public function updated(string $property): void
     {
-        if (! str_starts_with($property, 'notify')) {
+        abort_unless(Auth::user()->is($this->user), 403);
+
+        if (str_starts_with($property, 'notify')) {
+            $this->user->update([
+                'notification_preferences' => [
+                    'new_tournaments' => $this->notifyNewTournaments,
+                    'availability_requests' => $this->notifyAvailabilityRequests,
+                    'interclub_selections' => $this->notifyInterclubSelections,
+                ],
+            ]);
+
+            $this->success(__('Notification preferences saved.'), position: 'toast-bottom toast-end');
+
             return;
         }
 
-        abort_unless(Auth::user()->is($this->user), 403);
+        if (str_starts_with($property, 'share')) {
+            $this->user->update([
+                'contact_visibility' => [
+                    'phone' => $this->sharePhone,
+                    'email' => $this->shareEmail,
+                    'address' => $this->shareAddress,
+                ],
+            ]);
 
-        $this->user->update([
-            'notification_preferences' => [
-                'new_tournaments' => $this->notifyNewTournaments,
-                'availability_requests' => $this->notifyAvailabilityRequests,
-                'interclub_selections' => $this->notifyInterclubSelections,
-            ],
-        ]);
-
-        $this->success(__('Notification preferences saved.'), position: 'toast-bottom toast-end');
+            $this->success(__('Privacy preferences saved.'), position: 'toast-bottom toast-end');
+        }
     }
 
     public function rules(): array

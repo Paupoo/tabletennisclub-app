@@ -202,6 +202,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'email_verified_at' => 'datetime',
         'gdpr_erasure_requested_at' => 'datetime',
         'notification_preferences' => 'array',
+        'contact_visibility' => 'array',
     ];
 
     /**
@@ -240,6 +241,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'last_invited_at',
         'gdpr_erasure_requested_at',
         'notification_preferences',
+        'contact_visibility',
     ];
 
     /**
@@ -299,6 +301,22 @@ class User extends Authenticatable implements MustVerifyEmail
     public function club(): BelongsTo
     {
         return $this->belongsTo(Club::class);
+    }
+
+    /**
+     * Central rule for whether $viewer may see this member's contact $field:
+     * the member themself, any admin/committee member, or anyone once the
+     * member has opted in. The captain exception lives in the selection screen,
+     * intentionally outside this method.
+     *
+     * @param  'phone'|'email'|'address'  $field
+     */
+    public function contactVisibleTo(User $viewer, string $field): bool
+    {
+        return $viewer->is($this)
+            || $viewer->is_admin
+            || $viewer->is_committee_member
+            || $this->sharesContact($field);
     }
 
     public function familyGroups(): BelongsToMany
@@ -646,6 +664,17 @@ class User extends Authenticatable implements MustVerifyEmail
         $cleaned_name = mb_convert_case($value, MB_CASE_TITLE);
 
         return $this->attributes['last_name'] = $cleaned_name;
+    }
+
+    /**
+     * Whether this member has opted in to sharing a contact field with the wider
+     * membership. Opt-in model: a missing key means hidden.
+     *
+     * @param  'phone'|'email'|'address'  $field
+     */
+    public function sharesContact(string $field): bool
+    {
+        return (bool) ($this->contact_visibility[$field] ?? false);
     }
 
     public function subscriptions(): HasMany

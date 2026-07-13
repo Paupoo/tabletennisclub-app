@@ -4,80 +4,56 @@
 
 <div>
     <x-header separator :subtitle="__('Tournaments, dinners, and club meetings')"
-        :title="__('Events and Activities')" />
+        :title="__('Events and Activities')">
+        <x-slot:actions>
+            <x-admin.shared.mobile-header-actions :filter-count="count($this->getFilterChips())"
+                :show-search="false" :show-more="false" />
+            <div class="hidden items-center gap-2 lg:flex">
+                <x-admin.shared.filters-button :count="count($this->getFilterChips())" />
+            </div>
+        </x-slot:actions>
+    </x-header>
 
-    <div class="grid grid-cols-1 gap-8 lg:grid-cols-4">
+    <x-admin.shared.filter-chips :chips="$this->getFilterChips()" />
 
-        {{-- ── Sidebar filtres ──────────────────────────────────────────────── --}}
-        <div class="space-y-4">
-
-            <x-card class="border border-primary/10 bg-primary/5" shadow :title="__('Filters')">
-                <x-checkbox
-                    class="mt-2"
-                    :label="__('Only upcoming')"
-                    tight
-                    wire:model.live="onlyUpcoming"
-                />
-            </x-card>
-
-            @php $nextTournament = $this->upcomingTournaments->first(); @endphp
-            @if ($nextTournament)
-                <x-card class="border border-primary/10 bg-primary/5" shadow>
-                    <div class="mb-1 text-xs font-bold uppercase tracking-wide opacity-60">
-                        {{ __('Next tournament') }}
-                    </div>
-                    <div class="font-bold text-primary">{{ $nextTournament->name }}</div>
-                    <div class="mt-0.5 text-xs opacity-70">
-                        {{ $nextTournament->start_date->translatedFormat('d M Y') }}
-                    </div>
-                    @php $reg = $nextTournament->users->first()?->pivot; @endphp
-                    @if (! $reg || ! in_array($reg->registration_status, ['registered', 'confirmed', 'spot_offered', 'waiting']))
+    {{-- Paiements en attente — seule zone teintée de la page (alerte actionnable) --}}
+    @if ($this->pendingPayments->isNotEmpty())
+        <div class="mb-6 rounded-xl border border-warning/40 bg-warning/10">
+            <div class="flex items-center gap-3 px-4 py-3">
+                <x-icon name="o-credit-card" class="h-5 w-5 shrink-0 text-warning-content" />
+                <p class="text-sm font-semibold text-warning-content">
+                    {{ trans_choice(':count payment awaiting|:count payments awaiting', $this->pendingPayments->count()) }}
+                    — {{ number_format($this->pendingPayments->sum('amount_due'), 2, ',', ' ') }} €
+                </p>
+            </div>
+            <div class="divide-y divide-warning/20 border-t border-warning/20">
+                @foreach ($this->pendingPayments as $payment)
+                    @php
+                        $eventName = $payment->payable?->tournament?->name ?? $payment->payable?->meeting?->title;
+                    @endphp
+                    <div class="flex flex-wrap items-center gap-2 px-4 py-2.5">
+                        <div class="min-w-0 flex-1">
+                            <span class="text-sm font-medium">{{ $eventName }}</span>
+                            <span class="ml-2 text-xs text-base-content/60">{{ number_format($payment->amount_due, 2, ',', ' ') }} €</span>
+                        </div>
                         <x-button
-                            class="btn-primary btn-xs mt-3"
-                            :label="__('Quick register')"
-                            spinner="register"
-                            wire:click="register({{ $nextTournament->id }})"
+                            class="btn-warning btn-xs"
+                            icon="o-qr-code"
+                            :label="__('Pay')"
+                            spinner="openPaymentModal"
+                            wire:click="openPaymentModal({{ $payment->id }})"
                         />
-                    @endif
-                </x-card>
-            @endif
-
-            {{-- Paiements en attente --}}
-            @if ($this->pendingPayments->isNotEmpty())
-                <x-card class="border border-warning/30 bg-warning/5" shadow>
-                    <div class="mb-3 text-xs font-bold uppercase tracking-wide text-warning-content">
-                        {{ __('Payments due') }}
                     </div>
-                    <div class="space-y-3">
-                        @foreach ($this->pendingPayments as $payment)
-                            @php
-                                $eventName = $payment->payable?->tournament?->name ?? $payment->payable?->meeting?->title;
-                            @endphp
-                            <div class="flex items-center justify-between gap-2">
-                                <div class="min-w-0">
-                                    <div class="truncate text-xs font-semibold">{{ $eventName }}</div>
-                                    <div class="text-xs opacity-60">
-                                        {{ number_format($payment->amount_due, 2, ',', ' ') }} €
-                                    </div>
-                                </div>
-                                <x-button
-                                    class="btn-warning btn-xs shrink-0"
-                                    icon="o-credit-card"
-                                    spinner="openPaymentModal"
-                                    wire:click="openPaymentModal({{ $payment->id }})"
-                                />
-                            </div>
-                        @endforeach
-                    </div>
-                </x-card>
-            @endif
+                @endforeach
+            </div>
         </div>
+    @endif
 
-        {{-- ── Contenu principal ────────────────────────────────────────────── --}}
-        <div class="space-y-6 lg:col-span-3">
+    <div class="space-y-6">
 
             {{-- Section : À venir --}}
-            <x-card icon="o-calendar-days" separator shadow :title="__('Upcoming Tournaments')">
+            @if ($eventType === '' || $eventType === 'tournament')
+            <x-card icon="o-calendar-days" separator :title="__('Upcoming Tournaments')">
 
                 @forelse ($this->upcomingTournaments as $tournament)
                     @php
@@ -208,17 +184,17 @@
                     </x-admin.shared.compact-event-preview>
 
                 @empty
-                    <div class="flex flex-col items-center py-10 text-base-content/40">
-                        <x-icon class="mb-3 h-10 w-10" name="o-calendar" />
-                        <p class="text-sm">{{ __('No upcoming tournaments at the moment.') }}</p>
-                    </div>
+                    <x-empty-state icon="o-calendar" :heading="__('No upcoming tournaments at the moment.')"
+                        :message="count($this->getFilterChips()) > 0 ? __('Try removing some filters.') : null" />
                 @endforelse
 
             </x-card>
 
+            @endif
+
             {{-- Section : Mes réunions ──────────────────────────────────── --}}
-            @if ($this->upcomingMeetings->isNotEmpty())
-                <x-card icon="o-calendar-days" separator shadow :title="__('Upcoming Meetings')">
+            @if (($eventType === '' || $eventType === 'meeting') && $this->upcomingMeetings->isNotEmpty())
+                <x-card icon="o-calendar-days" separator :title="__('Upcoming Meetings')">
                     @forelse ($this->upcomingMeetings as $meeting)
                         <x-admin.shared.compact-event-preview
                             :location="$meeting->format === \App\Domains\Shared\Enums\MeetingFormatEnum::PHYSICAL ? $meeting->location : null"
@@ -269,8 +245,8 @@
             @endif
 
             {{-- Section : Mes entraînements ────────────────────────────────── --}}
-            @if ($this->upcomingTrainingSessions->isNotEmpty())
-                <x-card icon="o-academic-cap" separator shadow :title="__('My upcoming sessions')">
+            @if (($eventType === '' || $eventType === 'training') && $this->upcomingTrainingSessions->isNotEmpty())
+                <x-card icon="o-academic-cap" separator :title="__('My upcoming sessions')">
                     <div class="space-y-2">
                         @foreach ($this->upcomingTrainingSessions as $session)
                             <div class="flex items-center justify-between rounded-lg border border-base-200 px-3 py-2">
@@ -323,8 +299,22 @@
                 </x-collapse>
             @endif
 
-        </div>
     </div>
+
+    {{-- Drawer de filtres (R-filtres) --}}
+    <x-admin.shared.filter-drawer :title="__('Filters')">
+        <x-slot:filters>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-wide opacity-60">{{ __('Event type') }}</p>
+                <x-radio wire:model.live="eventType" :options="collect($this->eventTypeOptions())->map(fn ($name, $id) => ['id' => $id, 'name' => $name])->prepend(['id' => '', 'name' => __('All')])->values()->all()"
+                    option-value="id" option-label="name" class="radio-sm" />
+            </div>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-wide opacity-60">{{ __('Payment') }}</p>
+                <x-checkbox :label="__('To pay only')" wire:model.live="onlyPayable" />
+            </div>
+        </x-slot:filters>
+    </x-admin.shared.filter-drawer>
 
     {{-- Modal détails paiement --}}
     <x-modal wire:model="paymentModal" :title="__('Payment details')" box-class="max-w-sm">

@@ -1519,6 +1519,8 @@
     "Notification preferences saved.": "Préférences de notifications enregistrées.",
     "All club events": "Tout le club",
     "Try removing some filters.": "Essayez de retirer des filtres.",
+    "To pay only": "À payer uniquement",
+    ":count payment awaiting|:count payments awaiting": ":count paiement en attente|:count paiements en attente",
     "Member since": "Member since",
     "Member since Sept 2024": "Membre depuis sept. 2024",
     "Members": "Membres",

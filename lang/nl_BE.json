@@ -1519,6 +1519,8 @@
     "Notification preferences saved.": "Meldingsvoorkeuren opgeslagen.",
     "All club events": "Heel de club",
     "Try removing some filters.": "Probeer enkele filters te verwijderen.",
+    "To pay only": "Alleen te betalen",
+    ":count payment awaiting|:count payments awaiting": ":count betaling in afwachting|:count betalingen in afwachting",
     "Member since": "Lid sinds",
     "Member since Sept 2024": "Lid sinds sept. 2024",
     "Members": "Leden",

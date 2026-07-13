@@ -511,11 +511,7 @@ new class extends Component
         $sortColumns = $this->sortableColumns[$this->sortBy['column']] ?? ['first_name', 'last_name'];
 
         return $query
-            ->when($this->search, fn ($q) => $q->where(
-                fn ($q) => $q->where('first_name', 'like', "%{$this->search}%")
-                    ->orWhere('last_name', 'like', "%{$this->search}%")
-                    ->orWhere('email', 'like', "%{$this->search}%")
-            ))
+            ->when($this->search, fn ($q) => $q->searchName($this->search))
             ->when(
                 ! $this->showArchived && $this->selectedLicenceType === 'competitive',
                 fn ($q) => $q->competitor()

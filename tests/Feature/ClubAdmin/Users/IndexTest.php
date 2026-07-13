@@ -110,6 +110,16 @@ describe('search functionality', function (): void {
             ->set('search', 'john')
             ->assertSee($user->first_name);
     });
+
+    it('finds compound names with words spanning first and last name', function (): void {
+        $jp = User::factory()->create(['first_name' => 'Jean-Pierre', 'last_name' => 'Van Oudenhove']);
+        $other = User::factory()->create(['first_name' => 'Alice', 'last_name' => 'Martin']);
+
+        Livewire::test(USER_INDEX_COMPONENT)
+            ->set('search', 'Jean Van')
+            ->assertSee('Van Oudenhove')
+            ->assertDontSee('Martin');
+    });
 });
 
 describe('licence type filtering', function (): void {

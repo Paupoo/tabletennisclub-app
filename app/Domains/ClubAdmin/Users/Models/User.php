@@ -580,6 +580,29 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Reusable member search: splits the query on spaces and hyphens, and
+     * requires every word to appear in the first name, last name or email
+     * (case-insensitive). This handles compound names in either order —
+     * "Jean Pierre" finds "Jean-Pierre", "Jean Van" finds "Jean-Pierre
+     * Van Oudenhove" — while staying database-agnostic (per-column LIKE,
+     * no CONCAT). Shared by the admin directory and the member directory.
+     */
+    public function scopeSearchName(EloquentBuilder $query, string $search): void
+    {
+        $terms = preg_split('/[\s-]+/', mb_strtolower(trim($search)), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        foreach ($terms as $term) {
+            $like = '%' . $term . '%';
+
+            $query->where(function (EloquentBuilder $subQuery) use ($like): void {
+                $subQuery->whereRaw('LOWER(first_name) LIKE ?', [$like])
+                    ->orWhereRaw('LOWER(last_name) LIKE ?', [$like])
+                    ->orWhereRaw('LOWER(email) LIKE ?', [$like]);
+            });
+        }
+    }
+
+    /**
      * This scope allows searching for users by terms in their first or last name.
      *
      * @param  mixed  $query

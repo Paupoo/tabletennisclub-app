@@ -139,7 +139,9 @@ Dépendances : 2 précède 4 ; 3 sert 4 ; 5 précède 6 (l'amende surface dans l
 
 **Objectif.** Corriger les deux cas : « Jean Pierre » → « Jean‑Pierre » ; « Jean Van » → prénom « Jean‑Pierre » + nom « Van Oudenhove ». Réutilisable par `⚡index` (admin) **et** l'annuaire (chantier 4).
 
-**Approche (T9, DB-agnostique).** Tokeniser la requête sur espaces **et** tirets ; chaque token doit matcher (LIKE `%token%`) dans une chaîne normalisée `first_name + ' ' + last_name` où les tirets sont remplacés par des espaces. L'email reste matché à part par un LIKE sur le terme brut.
+**✅ LIVRÉ 2026-07-13.** Pas de migration. **DB-agnostique confirmé** : `LOWER()` + `LIKE` par colonne (aucun `CONCAT`/`||`), même pattern que `scopeSearchTerms` déjà en prod → pas de risque MariaDB.
+
+**Approche retenue (plus simple que le plan initial).** Tokeniser sur espaces **et** tirets ; chaque token doit matcher (LIKE) dans `first_name` OU `last_name` OU `email` (chacun `LOWER`é). Pas besoin de concaténer les colonnes : un token individuel est un sous-mot de la colonne, donc « Jean Van » → jean∈first, van∈last (AND entre tokens). Bonus : marche quel que soit l'ordre des mots.
 
 - [ ] `User::scopeSearchName(Builder $q, string $term): Builder` :
   ```php
@@ -156,17 +158,15 @@ Dépendances : 2 précède 4 ; 3 sert 4 ; 5 précède 6 (l'amende surface dans l
       $q->orWhere('email', 'like', '%'.$term.'%'); // garde le match email global
   });
   ```
-  ⚠️ **DB-agnostique** : `||` fonctionne en SQLite **et** MariaDB (avec `PIPES_AS_CONCAT`, actif par défaut sur MariaDB récents) — **à vérifier sur MariaDB** (mémoire : SQLite en test cache les crashes MariaDB). Alternative sûre : `CONCAT_WS(' ', REPLACE(...), REPLACE(...))` mais `CONCAT_WS` n'existe pas en SQLite. → **Préférer construire l'expression via un helper qui switch selon le driver, ou tester les deux.** Décision d'implémentation à trancher au moment du TDD, en rejouant sur MariaDB.
-- [ ] Remplacer le bloc `->when($this->search, …)` de `⚡index/index.php` (lignes ~514-518) par `->when($this->search, fn ($q) => $q->searchName($this->search))`.
+  Implémenté avec `LOWER(col) LIKE ?` (aucune concaténation) → pas de souci de portabilité.
+- [x] `scopeSearchName(EloquentBuilder, string)` ajouté à `User`.
+- [x] Bloc inline de `⚡index/index.php` remplacé par `->when($this->search, fn ($q) => $q->searchName($this->search))`.
 
-**Tests.**
-- [ ] « Jean Pierre » trouve `first_name='Jean-Pierre'`.
-- [ ] « Jean Van » trouve `Jean-Pierre` / `Van Oudenhove`.
-- [ ] « oudenhove » trouve le nom seul ; email toujours matché ; casse ignorée.
-- [ ] Non-régression du filtre existant sur `⚡index`.
-- [ ] **Rejouer sur MariaDB** avant merge (pas seulement SQLite).
+**Tests.** ✅ `UserSearchNameTest` (7, model-level) + 1 intégration dans `IndexTest` :
+- [x] « Jean Pierre » trouve `Jean-Pierre` ; « Jean Van » trouve `Jean-Pierre Van Oudenhove` ; ordre indifférent ; casse ignorée ; email matché ; AND entre tokens ; tiret dans la requête ignoré.
+- [x] Non-régression `⚡index` (454 tests ClubAdmin/Users verts).
 
-**Risques.** Portabilité SQL (cf. ci-dessus). Perf : LIKE `%…%` non sargable — acceptable à l'échelle d'un club.
+**Risques.** Perf : LIKE `%…%` non sargable — acceptable à l'échelle d'un club.
 
 ---
 
@@ -275,7 +275,8 @@ Dépendances : 2 précède 4 ; 3 sert 4 ; 5 précède 6 (l'amende surface dans l
 |------|----------|-------|------|
 | 2026-07-13 | — | Claude | Grilling complet (16 décisions transverses), plans rédigés. |
 | 2026-07-13 | 1 — Règlement | Claude | ✅ Livré + commité (`4d61c0a6`). Menu déplacé hors espace perso (après Notifications). |
-| 2026-07-13 | 2 — Confidentialité | Claude | ✅ Livré en TDD : migration `contact_visibility`, helpers `sharesContact`/`contactVisibleTo`, 3 toggles auto-save dans settings, 8 clés i18n. `ContactVisibilityTest` (10) + 140 tests UserSpace verts. **Migration à jouer sur MariaDB.** Non commité. |
+| 2026-07-13 | 2 — Confidentialité | Claude | ✅ Livré + commité (`484205e0`). Password déplacé en bas + rétréci. **Migration à jouer sur MariaDB.** |
+| 2026-07-13 | 3 — Recherche | Claude | ✅ Livré en TDD : `scopeSearchName` (tokens espace+tiret, LOWER+LIKE first/last/email, DB-agnostique), branché sur `⚡index`. `UserSearchNameTest` (7) + intégration IndexTest. 454 tests Users verts. Non commité. |
 
 ---
 

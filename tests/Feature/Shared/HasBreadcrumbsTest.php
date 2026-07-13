@@ -24,7 +24,7 @@ describe('HasBreadcrumbs trait', function (): void {
         $items = $component->getBreadcrumbs();
 
         expect($items)->toHaveCount(1)
-            ->and($items[0]['label'])->toBe('Admin Pannel')
+            ->and($items[0]['label'])->toBe(__('Admin Panel'))
             ->and($items[0]['icon'])->toBe('s-home');
     });
 
@@ -44,7 +44,7 @@ describe('HasBreadcrumbs trait', function (): void {
         $items = $component->getBreadcrumbs();
 
         expect($items)->toHaveCount(2)
-            ->and($items[0]['label'])->toBe('Admin Pannel')
+            ->and($items[0]['label'])->toBe(__('Admin Panel'))
             ->and($items[1]['label'])->toBe('Users')
             ->and($items[1]['link'])->toBeNull();
     });

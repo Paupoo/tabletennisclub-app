@@ -111,7 +111,7 @@ describe('Breadcrumb', function (): void {
             $items = $breadcrumb->toArray();
 
             expect($items)->toHaveCount(4)
-                ->and($items[0]['label'])->toBe('Admin Pannel')
+                ->and($items[0]['label'])->toBe(__('Admin Panel'))
                 ->and($items[0]['icon'])->toBe('s-home')
                 ->and($items[1]['label'])->toBe('Tournaments')
                 ->and($items[2]['label'])->toBe('World Cup 2024')
@@ -132,7 +132,7 @@ describe('Breadcrumb', function (): void {
             $items = $breadcrumb->toArray();
 
             expect($items)->toHaveCount(3)
-                ->and($items[0]['label'])->toBe('Admin Pannel')
+                ->and($items[0]['label'])->toBe(__('Admin Panel'))
                 ->and($items[1]['label'])->toBe('Users')
                 ->and($items[2]['label'])->toBe('Create User')
                 ->and($items[2]['link'])->toBe(null);
@@ -149,7 +149,7 @@ describe('Breadcrumb', function (): void {
             $items = $breadcrumb->toArray();
 
             expect($items)->toHaveCount(3)
-                ->and($items[0]['label'])->toBe('Admin Pannel')
+                ->and($items[0]['label'])->toBe(__('Admin Panel'))
                 ->and($items[1]['label'])->toBe('Settings')
                 ->and($items[1]['link'])->toBe('/settings')
                 ->and($items[1]['icon'])->toBe('cog')

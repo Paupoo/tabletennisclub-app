@@ -44,7 +44,7 @@ class Breadcrumb
 
     public function home(?string $url = null): Breadcrumb
     {
-        return $this->add(__('Admin Pannel'), $url ?: route('dashboard'), 's-home');
+        return $this->add(__('Admin Panel'), $url ?: route('dashboard'), 's-home');
     }
 
     public function matches(?string $url = null): Breadcrumb

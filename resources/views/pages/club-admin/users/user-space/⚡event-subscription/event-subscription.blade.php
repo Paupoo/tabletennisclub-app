@@ -3,8 +3,6 @@
 </x-slot:breadcrumbs>
 
 <div>
-    <x-admin.shared.member-space-nav :user="$user" />
-
     <x-header separator :subtitle="__('Tournaments, dinners, and club meetings')"
         :title="__('Events and Activities')" />
 

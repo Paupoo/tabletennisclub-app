@@ -3,8 +3,6 @@
 </x-slot:breadcrumbs>
 
 <div>
-    <x-admin.shared.member-space-nav :user="$user" />
-
     <x-header :title="__('Affiliation and Training')" :subtitle="__('Manage your club membership and training enrollments')" separator />
 
     @if (count($registrations) <= 1)

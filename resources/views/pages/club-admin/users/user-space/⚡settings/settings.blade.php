@@ -3,8 +3,6 @@
         <x-breadcrumbs :items="$breadcrumbs" />
     </x-slot:breadcrumbs>
 
-    <x-admin.shared.member-space-nav :user="$user" />
-
     <x-header separator :subtitle="__('Manage your account and privacy preferences')"
             :title="__('Settings')" />
 

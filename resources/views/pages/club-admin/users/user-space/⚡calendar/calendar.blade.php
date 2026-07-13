@@ -3,8 +3,6 @@
 </x-slot:breadcrumbs>
 
 <div>
-    <x-admin.shared.member-space-nav :user="$user" />
-
     <x-header separator :subtitle="__('Upcoming club activities')" :title="__('Calendar')">
         <x-slot:actions>
             <x-button class="btn-outline btn-sm" icon="o-calendar-days" :label="__('Subscribe (Google/Apple)')"

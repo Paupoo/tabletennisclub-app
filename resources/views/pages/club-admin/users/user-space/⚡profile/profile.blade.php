@@ -3,8 +3,6 @@
 </x-slot:breadcrumbs>
 
 <div>
-    <x-admin.shared.member-space-nav :user="$user" />
-
     <x-header :title="__('My Profile')"
         :subtitle="__('Member since :date', ['date' => $memberSince->translatedFormat('F Y')])"
         separator progress-indicator>

@@ -5,10 +5,35 @@
 <div>
     <x-header separator :subtitle="__('Upcoming club activities')" :title="__('Calendar')">
         <x-slot:actions>
+            <x-admin.shared.mobile-header-actions :filter-count="count($filterChips)"
+                :show-search="false" :show-more="false" />
+            <div class="hidden items-center gap-2 lg:flex">
+                <x-admin.shared.filters-button :count="count($filterChips)" />
+            </div>
             <x-button class="btn-outline btn-sm" icon="o-calendar-days" :label="__('Subscribe (Google/Apple)')"
                 wire:click="$set('icsModal', true)" responsive />
         </x-slot:actions>
     </x-header>
+
+    {{-- Mode de vue (R2) : segmented control attaché au contenu, jamais dans le drawer --}}
+    <div class="mb-4 mt-1">
+        <div class="flex w-full gap-1 rounded-full bg-base-200 p-1 sm:inline-flex sm:w-auto">
+            <button type="button" wire:click="$set('showAllEvents', false)"
+                @class(['flex-1 rounded-full px-4 py-1.5 text-center text-sm font-semibold transition-all sm:flex-none',
+                    'bg-base-100 text-primary shadow-sm' => ! $showAllEvents,
+                    'text-base-content/60 hover:text-base-content' => $showAllEvents])>
+                {{ __('My events') }}
+            </button>
+            <button type="button" wire:click="$set('showAllEvents', true)"
+                @class(['flex-1 rounded-full px-4 py-1.5 text-center text-sm font-semibold transition-all sm:flex-none',
+                    'bg-base-100 text-primary shadow-sm' => $showAllEvents,
+                    'text-base-content/60 hover:text-base-content' => ! $showAllEvents])>
+                {{ __('All club events') }}
+            </button>
+        </div>
+    </div>
+
+    <x-admin.shared.filter-chips :chips="$filterChips" />
 
     {{-- Modal abonnement ICS --}}
     <x-modal wire:model="icsModal" :title="__('Subscribe to my calendar')" box-class="max-w-lg">
@@ -39,50 +64,8 @@
         </x-slot:actions>
     </x-modal>
 
-    <div class="grid grid-cols-1 gap-8 lg:grid-cols-4">
+    <div>
 
-        <div class="space-y-4">
-            <x-card class="border border-primary/20 bg-primary/5" shadow :title="__('Filters')">
-                <div class="space-y-4">
-
-                    {{-- Toggle vue personnelle / tous les événements du club --}}
-                    <div>
-                        <label class="label">
-                            <span class="label-text font-semibold">{{ __('View') }}</span>
-                        </label>
-                        <div class="flex gap-1 rounded-xl bg-base-200 p-1">
-                            <button
-                                wire:click="$set('showAllEvents', false)"
-                                @class(['flex-1 rounded-lg py-1.5 text-center text-xs font-semibold transition-all',
-                                    'bg-base-100 shadow' => !$showAllEvents,
-                                    'opacity-50 hover:opacity-75' => $showAllEvents])>
-                                {{ __('My events') }}
-                            </button>
-                            <button
-                                wire:click="$set('showAllEvents', true)"
-                                @class(['flex-1 rounded-lg py-1.5 text-center text-xs font-semibold transition-all',
-                                    'bg-base-100 shadow' => $showAllEvents,
-                                    'opacity-50 hover:opacity-75' => !$showAllEvents])>
-                                {{ __('All events') }}
-                            </button>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="label">
-                            <span class="label-text font-semibold">{{ __('Category') }}</span>
-                        </label>
-                        <x-choices
-                            :options="collect($categories)"
-                            :placeholder="__('All categories')"
-                            wire:model.live="selectedCategories"
-                        />
-                    </div>
-                </div>
-            </x-card>
-        </div>
-
-        <div class="lg:col-span-3">
             @php
                 $typeColors = [
                     'training'   => 'bg-accent',
@@ -147,10 +130,8 @@
                         </div>
                     </x-section-accordion>
                 @empty
-                    <div class="flex flex-col items-center py-16 text-base-content/40">
-                        <x-icon class="mb-3 h-10 w-10" name="o-calendar" />
-                        <p class="text-sm">{{ __('No upcoming events.') }}</p>
-                    </div>
+                    <x-empty-state icon="o-calendar" :heading="__('No upcoming events.')"
+                        :message="count($filterChips) > 0 ? __('Try removing some filters.') : null" />
                 @endforelse
             @else
                 {{-- Vue personnelle : accordéon par mois avec statut et actions --}}
@@ -243,12 +224,24 @@
                             @endforeach
                     </x-section-accordion>
                 @empty
-                    <div class="flex flex-col items-center py-16 text-base-content/40">
-                        <x-icon class="mb-3 h-10 w-10" name="o-calendar" />
-                        <p class="text-sm">{{ __('No upcoming events.') }}</p>
-                    </div>
+                    <x-empty-state icon="o-calendar" :heading="__('No upcoming events.')"
+                        :message="count($filterChips) > 0 ? __('Try removing some filters.') : null" />
                 @endforelse
             @endif
-        </div>
     </div>
+
+    {{-- Drawer de filtres (R-filtres) --}}
+    <x-admin.shared.filter-drawer :title="__('Filters')">
+        <x-slot:filters>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-wide opacity-60">{{ __('Category') }}</p>
+                <div class="space-y-2">
+                    @foreach ($categories as $category)
+                        <x-checkbox :label="$category['name']" :value="$category['id']"
+                            wire:model.live="selectedCategories" />
+                    @endforeach
+                </div>
+            </div>
+        </x-slot:filters>
+    </x-admin.shared.filter-drawer>
 </div>

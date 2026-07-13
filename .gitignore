@@ -119,4 +119,10 @@ Desktop.ini
 # AI agents
 # ============================================
 *.agents
-*.claudetests/Browser/Screenshots/
+*.claude
+
+# Claude Code — skills installés via npm/Laravel (régénérables) & artefacts transitoires
+.claude/skills/
+.claude/worktrees/
+.claude/playwright-test-plan.md
+tests/Browser/Screenshots/

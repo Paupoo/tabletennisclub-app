@@ -20,7 +20,7 @@
         'socials' => 'border-neutral',
     ];
 
-    $borderClass = $colors[$type] ?? 'border-gray-300';
+    $borderClass = $colors[$type] ?? 'border-base-300';
 
     // Un événement sans page de détail reste un simple bloc : pas de lien mort.
     $isLink = filled($link) && $link !== '#';

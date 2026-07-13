@@ -256,19 +256,17 @@
                                                 $isSelectedForReg = !$hasActiveSub && in_array($pack['id'], $selectedPacks);
                                             @endphp
                                             <div x-data="{ descOpen: false }">
-                                                <div @class(['flex items-center gap-4 p-4 rounded-xl border transition-colors',
-                                                    'border-primary/20 bg-primary/5'         => $enrollStatus === 'enrolled' || $isSelectedForReg,
-                                                    'border-warning/20 bg-warning/5'         => in_array($enrollStatus, ['waiting', 'pending']),
-                                                    'border-success/20 bg-success/5'         => $enrollStatus === 'offered',
-                                                    'border-base-200 bg-base-100'            => $enrollStatus === null && !$isOwnPack,
-                                                    'border-base-200 bg-base-100 opacity-50' => $isOwnPack,
+                                                <div @class(['flex items-center gap-4 p-4 rounded-xl border bg-base-100 transition-colors',
+                                                    'border-primary/40' => $enrollStatus === 'enrolled' || $isSelectedForReg,
+                                                    'border-base-300'   => !($enrollStatus === 'enrolled' || $isSelectedForReg),
+                                                    'opacity-50'        => $isOwnPack,
                                                 ])>
                                                     <div class="flex-1 min-w-0">
                                                         <div class="flex items-center gap-2 flex-wrap">
                                                             <div class="w-2 h-2 rounded-full {{ $pack['dot_color'] }} shrink-0"></div>
                                                             <span class="font-bold text-sm">{{ $pack['name'] }}</span>
                                                             @if($pack['is_full'] && $enrollStatus === null && !$isOwnPack)
-                                                                <x-badge value="{{ __('Full') }}" class="badge-error badge-sm" />
+                                                                <x-admin.shared.status-badge status="full" />
                                                             @endif
                                                             @if($isOwnPack)
                                                                 <x-badge value="{{ __('You are the coach') }}" class="badge-ghost badge-sm" />
@@ -318,10 +316,10 @@
                                                         @else
                                                         <div class="flex items-center gap-2 shrink-0">
                                                             @if($enrollStatus === 'enrolled')
-                                                                <x-badge value="{{ __('Enrolled') }}" class="badge-primary" />
+                                                                <x-admin.shared.status-badge status="enrolled" />
                                                                 <div class="text-xs opacity-40 italic">{{ __('Contact the club to unenroll') }}</div>
                                                             @elseif($enrollStatus === 'pending')
-                                                                <x-badge value="{{ __('Awaiting validation') }}" class="badge-warning" />
+                                                                <x-admin.shared.status-badge status="pending" />
                                                                 <x-button
                                                                     :label="__('Cancel')"
                                                                     icon="o-x-mark"
@@ -329,7 +327,7 @@
                                                                     wire:click="confirmLeaveTrainingPack({{ $pack['id'] }}, {{ $userId }}, 'cancel')"
                                                                     spinner />
                                                             @elseif($enrollStatus === 'waiting')
-                                                                <x-badge value="{{ __('Position #:n', ['n' => $enrollment['position']]) }}" class="badge-warning" />
+                                                                <x-admin.shared.status-badge status="waiting" :detail="$enrollment['position']" />
                                                                 <x-button
                                                                     :label="__('Leave')"
                                                                     icon="o-x-mark"
@@ -338,7 +336,7 @@
                                                                     spinner />
                                                             @elseif($enrollStatus === 'offered')
                                                                 <div class="text-right">
-                                                                    <x-badge value="{{ __('Spot available!') }}" class="badge-success" />
+                                                                    <x-admin.shared.status-badge status="offered" />
                                                                     @if(!empty($enrollment['deadline']))
                                                                         <div class="text-xs opacity-60 mt-0.5">{{ __('Confirm by') }} {{ \Carbon\Carbon::parse($enrollment['deadline'])->format('d/m H:i') }}</div>
                                                                     @endif
@@ -411,7 +409,7 @@
 
                                     <div class="space-y-5">
                                         {{-- Price estimate --}}
-                                        <div class="rounded-xl border border-base-200 bg-base-50 p-4 space-y-2">
+                                        <div class="rounded-xl border border-base-200 bg-base-200/40 p-4 space-y-2">
                                             <div class="text-xs font-bold uppercase tracking-wide opacity-60 mb-3">{{ __('Price estimate') }}</div>
                                             <div class="flex justify-between text-sm">
                                                 <span class="opacity-70">{{ $formula === 'competitive' ? __('Competition licence') : __('Recreational licence') }}</span>
@@ -444,7 +442,7 @@
                                         </div>
 
                                         {{-- Season involvement --}}
-                                        <div class="rounded-xl border border-base-200 bg-base-50 p-4 space-y-4">
+                                        <div class="rounded-xl border border-base-200 bg-base-200/40 p-4 space-y-4">
                                             <div class="text-xs font-bold uppercase tracking-wide opacity-60">{{ __('Getting involved this season') }}</div>
                                             <p class="text-xs opacity-60 -mt-2">{{ __('Optional — help us organise the season. You can update these anytime.') }}</p>
 

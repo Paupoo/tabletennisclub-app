@@ -59,10 +59,7 @@
                     </x-slot:menu>
 
                     @if ($upcomingMatches->isEmpty())
-                        <div class="flex flex-col items-center gap-3 py-10 text-center">
-                            <x-icon name="o-calendar" class="h-10 w-10 opacity-20" />
-                            <p class="text-sm text-base-content/50">{{ __('No upcoming matches for this team.') }}</p>
-                        </div>
+                        <x-empty-state icon="o-calendar" :heading="__('No upcoming matches for this team.')" />
                     @else
                         <div class="divide-y divide-base-200">
                             @foreach ($upcomingMatches as $match)

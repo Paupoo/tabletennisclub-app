@@ -33,7 +33,7 @@
                         <x-badge value="{{ __('Admin') }}" icon="o-power" class="badge-primary badge-sm" />
                     @endif
                     @if ($user->is_committee_member && $user->committee_role)
-                        <x-badge :value="$user->committee_role->label()" icon="o-star" class="badge-secondary badge-sm text-black" />
+                        <x-badge :value="$user->committee_role->label()" icon="o-star" class="badge-secondary badge-sm text-secondary-content" />
                     @endif
                     @if (!$user->is_active)
                         <x-badge value="{{ __('Inactive') }}" class="badge-neutral badge-sm" />

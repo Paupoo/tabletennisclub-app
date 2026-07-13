@@ -366,9 +366,41 @@ Rules:
 
 ---
 
-### Filter Bar — `<x-admin.shared.filter-bar>`
+### Filters — button + drawer + chips (standard)
 
-Used for advanced filters that would clutter the header. Controlled by a `$showFilters` boolean + `$activeFiltersCount` integer in the Livewire component.
+**The standard for every list view, admin and member space alike** — even when the
+page has a single filter (R-filtres, décidé le 2026-07-13) : the muscle memory of
+committee members wearing both hats must be identical everywhere. If a drawer feels
+empty with one checkbox, enrich the filters rather than inlining the checkbox.
+
+- `App\Livewire\Concerns\HasFilterDrawer` in the component (`getFilterChips()`,
+  `clearFilters()`; override `removeFilter()` when the page has no pagination or
+  array-type filters).
+- `<x-admin.shared.filters-button :count="count($filterChips)" />` in
+  `x-slot:actions` (desktop) + `<x-admin.shared.mobile-header-actions
+  :filter-count="…" />` (mobile).
+- `<x-admin.shared.filter-chips :chips="$filterChips" />` right below the header.
+- `<x-admin.shared.filter-drawer :title="__('Filters')">` at the end of the view.
+
+**R2 — view modes are not filters.** A control that changes *what the page is*
+("Mes événements / Tout le club") lives as a segmented control attached to the
+content, always visible — never inside the filter drawer.
+
+**R6 — group headers.** Two styles coexist, on purpose: grouping by **period**
+uses the neutral `<x-section-accordion>`; grouping by **category** uses the
+tokenized colored chip header (classes from the `LeagueCategory` enum). Time is
+neutral; categories carry their color.
+
+**Dark mode.** Filter UIs (and everything else) use daisyUI tokens only
+(`base-*`, `primary`, `warning-content`…) — never raw palette classes
+(`bg-blue-50`, `text-black`) which break the `dark` theme.
+
+---
+
+### Filter Bar — `<x-admin.shared.filter-bar>` (legacy)
+
+Older collapsible-panel variant, superseded by the filter drawer above. Do not use
+for new pages. Controlled by a `$showFilters` boolean + `$activeFiltersCount` integer in the Livewire component.
 
 ```blade
 {{-- Toggle button (in header actions) --}}

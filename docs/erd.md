@@ -26,13 +26,13 @@ erDiagram
     CashRegister
 
     %% ClubAdmin/Subscriptions
-    Registration
     Subscription
+    Registration
 
     %% ClubAdmin/Users
     FamilyGroup
-    User
     Guardian
+    User
 
     %% ClubPosts
     EventPost
@@ -89,10 +89,11 @@ erDiagram
     Transaction ||--o| Payment : "payment"
     Transaction ||--o| Payment : "refundPayment"
     CashRegister ||--o{ CashRegisterEntry : "entries"
-    Registration ||--o{ Payment : "payments"
     Subscription ||--o{ Payment : "payments"
     Subscription }o--o{ TrainingPack : "trainingPacks"
+    Registration ||--o{ Payment : "payments"
     FamilyGroup }o--o{ User : "users"
+    Guardian }o--o{ User : "users"
     User ||--o{ NewsPost : "articles"
     User ||--o| Team : "captainOf"
     User }o--o{ FamilyGroup : "familyGroups"
@@ -106,7 +107,6 @@ erDiagram
     User }o--o{ Team : "teams"
     User }o--o{ Tournament : "tournaments"
     User }o--o{ Training : "trainings"
-    Guardian }o--o{ User : "users"
     Interclub ||--o| InterclubResult : "interclubResult"
     Interclub ||--o{ Team : "teams"
     Interclub }o--o{ User : "users"

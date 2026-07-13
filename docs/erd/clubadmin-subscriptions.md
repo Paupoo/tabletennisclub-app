@@ -2,14 +2,6 @@
 
 ```mermaid
 erDiagram
-    Registration {
-        int id PK
-        int event_post_id FK
-        int user_id FK
-        float amount_due
-        int amount_paid
-        string status
-    }
     Subscription {
         int id PK
         int season_id FK
@@ -28,8 +20,16 @@ erDiagram
         float amount_due
         float amount_paid
     }
+    Registration {
+        int id PK
+        int event_post_id FK
+        int user_id FK
+        float amount_due
+        int amount_paid
+        string status
+    }
 
-    Registration ||--o{ Payment : "payments"
     Subscription ||--o{ Payment : "payments"
     Subscription }o--o{ TrainingPack : "trainingPacks"
+    Registration ||--o{ Payment : "payments"
 ```

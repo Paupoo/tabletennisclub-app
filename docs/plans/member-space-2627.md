@@ -202,28 +202,27 @@ Dépendances : 2 précède 4 ; 3 sert 4 ; 5 précède 6 (l'amende surface dans l
 
 **Objectif.** Page unique où le membre consulte **et** paie ses paiements + ceux de ses dépendants. Inspiré de la vue trésorier, **sans actions trésorier**, **sans stats de totaux**.
 
+**✅ LIVRÉ 2026-07-13.**
+
 **Périmètre (T11).**
-- [ ] Helper `User::payableUserIds(): array` = `[$this->id]` + ids des users dont il est tuteur : `Guardian::where('user_id', $this->id)->first()?->users->pluck('id')`. (Confirmer le sens exact `user_id` en lisant `Guardian` + pivot ; ajuster si le lien tuteur↔compte passe par `user_link`.)
-- [ ] Query paiements : `Payment::whereHasMorph('payable', [...], fn($q) => $q->whereIn('user_id', $ids))` — modèle déjà utilisé dans `event-subscription::pendingPayments`. Inclure `Subscription`, `TournamentRegistration`, `MeetingUser`, **`Fine`** (chantier 6).
+- [x] `User::payableUserIds(): array` = soi + users dont il est tuteur (`whereHas('guardians', user_id = moi)`). Sens confirmé : `Guardian.user_id` = compte du tuteur, `guardian_user` = ses pupilles.
+- [x] Query : `Payment::whereHasMorph('payable', [Subscription, TournamentRegistration, MeetingUser], user_id ∈ ids)` + morphWith. (`Fine` à ajouter au chantier 6.)
 
 **UI (T12/T13).**
-- [ ] Route : `admin/my-space/{user}/payments` → `pages::club-admin.users.user-space.payments`. `abort_unless(is($user))`.
-- [ ] Liste plate triée par date : colonnes **personne concernée** (via `getPayerName()`), **objet** (`getPaymentLabel()` → type + nom : cotisation / tournoi / réunion·repas / **amende**), **montant**, **statut** (badge), **date**, **action payer** (QR/réf via `GeneratePaymentQR`) pour les `pending`.
-- [ ] Chips de filtre : statut (en attente / payé), type, personne (soi / chaque dépendant).
-- [ ] **Pas** de bandeau de totaux à payer/payé.
-- [ ] Réutiliser le modal QR existant d'`event-subscription`.
-- [ ] **Alléger `event-subscription`** : son bloc « paiements en attente » renvoie vers ce hub (lien) ou est réduit ; éviter deux logiques divergentes sur les mêmes paiements. (Garder la logique RSVP repas là-bas.)
-- [ ] Nav user-space : entrée « Paiements ». i18n FR+NL.
+- [x] Route `admin.user.payments` (`{user}/payments`), self-only, dans la matrice.
+- [x] Liste plate triée date desc : objet (type+nom via `getPaymentLabel`), personne (`getPayerName`, seulement si tuteur de plusieurs), montant, badge statut, date, réf, **bouton Payer (QR)** pour les `pending`.
+- [x] Filtres drawer + chips : statut, type, personne (personne seulement si pupilles).
+- [x] **Aucun total** à payer/payé.
+- [x] Modal QR réutilisé (générique via `getPaymentLabel`), `GeneratePaymentQR` + `ourClub`.
+- [x] `event-subscription` : lien « Tous mes paiements » vers le hub dans le bloc paiements (bloc conservé pour le contexte événement).
+- [x] Nav : entrée « Mes paiements » (`o-credit-card`) dans le sous-menu perso. i18n FR+NL (7 clés).
 
-**Tests.**
-- [ ] Un membre voit ses paiements + ceux de ses dépendants, **jamais** ceux d'un tiers.
-- [ ] Deux adultes sans lien tuteur ne voient pas leurs paiements mutuels.
-- [ ] Filtres statut/type/personne OK ; états en attente + payés listés.
-- [ ] Bouton payer génère un QR non vide pour un `pending` (cf. tests `EventSubscriptionPaymentTest`).
-- [ ] Aucune stat de totaux rendue.
-- [ ] Smoke 200 + JS.
+**Tests.** ✅ `PaymentsHubTest` (8) :
+- [x] Voit ses paiements (pending+paid) + ceux de ses pupilles ; **jamais** un tiers ; pas les paiements d'un user non gardé.
+- [x] `openPaymentModal` : QR pour un paiement en scope ; **403** hors scope. Page self-only (403 cross-user).
+- [x] 162 UserSpace + smoke/coverage verts.
 
-**Risques.** Sécurité d'accès : bien scoper par `payableUserIds`, tester l'accès croisé. Cohérence avec `event-subscription` (ne pas dupliquer la logique de paiement).
+**Risques traités.** Scope strict `payableUserIds` (jamais élargi par un filtre) ; garde 403 dans `openPaymentModal` contre un `payment_id` arbitraire.
 
 ---
 
@@ -274,7 +273,8 @@ Dépendances : 2 précède 4 ; 3 sert 4 ; 5 précède 6 (l'amende surface dans l
 | 2026-07-13 | 1 — Règlement | Claude | ✅ Livré + commité (`4d61c0a6`). Menu déplacé hors espace perso (après Notifications). |
 | 2026-07-13 | 2 — Confidentialité | Claude | ✅ Livré + commité (`484205e0`). Password déplacé en bas + rétréci. **Migration à jouer sur MariaDB.** |
 | 2026-07-13 | 3 — Recherche | Claude | ✅ Livré + commité (`678a919f`). |
-| 2026-07-13 | 4 — Annuaire | Claude | ✅ Livré en TDD : annuaire membre (composant `directory`, roster actifs, recherche+filtres, coordonnées selon `contactVisibleTo`, cartes brandées) + exception capitaine dans `captain-selection`. Nav top-level. Raffinements : chips équipes + options du filtre équipe avec catégorie (`LeagueCategory`) ; **filtre saison** (défaut = saison courante, chip si ≠ courante). `DirectoryTest` (9) + `CaptainSelectionTest` (+1). Non commité. |
+| 2026-07-13 | 4 — Annuaire | Claude | ✅ Livré + commité (`e480bb77`). Chips/filtre équipe avec catégorie + filtre saison (défaut courante, tri ascendant). |
+| 2026-07-13 | 5 — Hub paiements | Claude | ✅ Livré en TDD : `User::payableUserIds` (soi + pupilles), composant `payments` (liste plate, filtres statut/type/personne, QR payer, pas de totaux), lien depuis event-subscription, nav. `PaymentsHubTest` (8) + 162 UserSpace verts. Non commité. |
 
 ---
 

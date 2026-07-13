@@ -518,6 +518,25 @@ class User extends Authenticatable implements MustVerifyEmail
         return Contact::where('user_id', $this->id)->latest()->first();
     }
 
+    /**
+     * IDs of every user whose payments this member may see and settle: themself
+     * plus the users they are the guardian of (i.e. users linked to a guardian
+     * record whose account is this member). Hierarchical only — no symmetric
+     * family-group sharing between adults.
+     *
+     * @return array<int, int>
+     */
+    public function payableUserIds(): array
+    {
+        return self::query()
+            ->whereHas('guardians', fn (EloquentBuilder $query) => $query->where('guardians.user_id', $this->id))
+            ->pluck('id')
+            ->push($this->id)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
     public function pools(): BelongsToMany
     {
         return $this->belongsToMany(Pool::class, 'pool_user');

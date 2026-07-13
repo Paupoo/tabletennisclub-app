@@ -30,6 +30,7 @@ $mySpaceRoutes = [
     'admin.user.registration-management',
     'admin.user.reglement',
     'admin.user.directory',
+    'admin.user.payments',
 ];
 
 test('a member can access their own my-space pages', function (string $routeName): void {

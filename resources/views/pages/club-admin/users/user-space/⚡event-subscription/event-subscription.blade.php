@@ -25,6 +25,10 @@
                     {{ trans_choice(':count payment awaiting|:count payments awaiting', $this->pendingPayments->count()) }}
                     — {{ number_format($this->pendingPayments->sum('amount_due'), 2, ',', ' ') }} €
                 </p>
+                <a href="{{ route('admin.user.payments', $user) }}"
+                    class="ml-auto shrink-0 text-xs font-semibold text-warning-content underline-offset-2 hover:underline">
+                    {{ __('All my payments') }}
+                </a>
             </div>
             <div class="divide-y divide-warning/20 border-t border-warning/20">
                 @foreach ($this->pendingPayments as $payment)
@@ -81,15 +85,6 @@
                             {{-- Statut inscription --}}
                             @if ($isActive)
                                 <x-admin.shared.status-badge status="registered" />
-                                @if ($reg->payment_id && ! $reg->has_paid)
-                                    <x-button
-                                        class="btn-warning btn-xs"
-                                        icon="o-credit-card"
-                                        :label="__('Pay')"
-                                        spinner="openPaymentModal"
-                                        wire:click="openPaymentModal({{ $reg->payment_id }})"
-                                    />
-                                @endif
 
                                 {{-- Doubles self-pair --}}
                                 @if ($tournament->match_type === 'double' && $tournament->doubles_registration_mode === 'self')
@@ -219,16 +214,6 @@
                                     @elseif ($reg?->meal_reserved === false)
                                         <x-badge :value="__('No meal')" class="badge-ghost badge-sm" />
                                     @endif
-                                @endif
-
-                                @if ($payment && $payment->status === 'pending')
-                                    <x-button
-                                        class="btn-warning btn-xs"
-                                        icon="o-credit-card"
-                                        :label="__('Pay')"
-                                        spinner="openPaymentModal"
-                                        wire:click="openPaymentModal({{ $payment->id }})"
-                                    />
                                 @endif
 
                                 <x-button

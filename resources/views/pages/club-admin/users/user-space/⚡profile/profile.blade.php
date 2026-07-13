@@ -12,16 +12,16 @@
         </x-slot:actions>
     </x-header>
 
-    <div class="flex gap-8 items-start">
+    <div class="grid grid-cols-1 gap-8 items-start lg:grid-cols-3">
 
         {{-- ════════════════════════════════
              SIDEBAR GAUCHE
         ════════════════════════════════ --}}
-        <div class="w-72 shrink-0 space-y-4">
+        <div class="space-y-4">
 
             {{-- Avatar + nom + badges --}}
            
-            <x-admin.shared.side-card shadow>
+            <x-card>
                 <div class="flex flex-col items-center text-center gap-3">
                 <x-avatar :image="$user->photo ?? '/images/empty-user.jpg'" class="!w-24 !rounded-full" />
                 <div>
@@ -42,10 +42,10 @@
                 <x-button :label="__('Edit')" icon="o-pencil" class="btn-outline btn-sm w-fit"
                     @click="$wire.drawer = true" />
             </div>
-            </x-admin.shared.side-card>
+            </x-card>
 
             {{-- Infos contact --}}
-            <x-admin.shared.side-card shadow>
+            <x-card>
             <div class="divide-y divide-base-200">
                 <div class="flex items-center gap-3 px-4 py-3">
                     @if (in_array($currentSubscription?->status, ['confirmed', 'paid'], true))
@@ -135,86 +135,43 @@
                     </div>
                 @endif
             </div>
-            </x-admin.shared.side-card>
+            </x-card>
 
         </div>
 
         {{-- ════════════════════════════════
              CONTENU PRINCIPAL
         ════════════════════════════════ --}}
-        <div class="flex-1 min-w-0 space-y-8">
+        <div class="min-w-0 space-y-8 lg:col-span-2">
 
             {{-- Équipes --}}
-            <x-card :title="__('My Teams')" icon="o-user-group" shadow separator>
-                @if($user->teams->isEmpty())
-                    <div class="flex flex-col items-center gap-3 py-10 text-center">
-                        <x-icon name="o-user-group" class="h-10 w-10 opacity-20" />
-                        <p class="text-sm text-gray-400">{{ __('You are not part of any team this season.') }}</p>
-                    </div>
+            <x-card :title="__('My Teams')" icon="o-user-group" separator>
+                <x-slot:menu>
+                    <x-button :label="__('Team page')" icon-right="o-arrow-right" class="btn-ghost btn-sm"
+                        link="{{ route('admin.user.teams', $user) }}" />
+                </x-slot:menu>
+
+                @if ($user->teams->isEmpty())
+                    <x-empty-state icon="o-user-group" :heading="__('No team yet')"
+                        :message="__('You are not part of any team this season.')" />
                 @else
-                    <x-tabs wire:model="activeTeamTab">
-                        @foreach($user->teams as $team)
+                    <div class="flex flex-wrap gap-2">
+                        @foreach ($user->teams as $team)
                             @php
-                                $frenchCat    = \App\Domains\Shared\Enums\LeagueCategory::fromName($team->league?->category)?->label() ?? '';
-                                $tabLabel     = $team->name . ($frenchCat ? ' — ' . $frenchCat : '');
-                                $clubName     = $team->club?->name ?? '';
-                                $seasonName   = $team->season?->name ?? '';
-                                $division     = implode(' – ', array_filter([
-                                    $team->league?->level,
+                                $teamMeta = collect([
+                                    \App\Domains\Shared\Enums\LeagueCategory::fromName($team->league?->category)?->label(),
                                     $team->league?->division,
-                                ]));
+                                ])->filter()->implode(' · ');
                             @endphp
-                            <x-tab name="team-{{ $team->id }}" label="{{ $tabLabel }}" icon="o-user-group">
-
-                                <div class="mb-4 pt-2">
-                                    <p class="text-base font-bold">
-                                        {{ trim($clubName . ' ' . $team->name) ?: $team->name }}
-                                    </p>
-                                    <p class="text-xs opacity-50">
-                                        {{ implode(' · ', array_filter([$frenchCat, $division, $seasonName ? 'Saison ' . $seasonName : ''])) ?: '—' }}
-                                    </p>
-                                </div>
-
-                                <div class="grid grid-cols-2 gap-2">
-                                    @foreach ($team->users as $mate)
-                                        @php $isYou = $mate->id === Auth::id(); @endphp
-                                        <div @class([
-                                            'flex items-center justify-between p-2 rounded-lg border transition-all',
-                                            'bg-primary/5 border-primary/20 ring-1 ring-primary/30' => $isYou,
-                                            'bg-base-200/40 border-base-200/50 hover:shadow-sm'    => !$isYou,
-                                        ])>
-                                            <div class="flex items-center gap-3">
-                                                <x-avatar class="!w-7 !rounded-full"
-                                                    :image="$mate->photo ?? '/images/empty-user.jpg'" />
-                                                <div>
-                                                    <div class="flex items-center gap-1.5">
-                                                        <span class="text-sm font-semibold leading-none">
-                                                            {{ $mate->first_name }} {{ $mate->last_name }}
-                                                        </span>
-                                                        @if ($isYou)
-                                                            <span class="text-xs uppercase tracking-wide opacity-60">
-                                                                {{ __('(you)') }}
-                                                            </span>
-                                                        @endif
-                                                    </div>
-                                                    <span class="text-xs opacity-60 uppercase">
-                                                        {{ $mate->ranking }}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                </div>
-
-                                <div class="mt-4 flex justify-end">
-                                    <x-button :label="__('Team page')" icon="o-arrow-right"
-                                        class="btn-ghost btn-sm text-xs opacity-50"
-                                        link="{{ route('admin.interclubs.teams.show', $team->id) }}" />
-                                </div>
-
-                            </x-tab>
+                            <a href="{{ route('admin.user.teams', $user) }}"
+                                class="inline-flex items-center gap-2 rounded-full border border-base-300 bg-base-100 px-4 py-1.5 text-sm transition-colors hover:border-primary hover:text-primary">
+                                <span class="font-semibold">{{ $team->fullName() }}</span>
+                                @if ($teamMeta)
+                                    <span class="text-xs text-base-content/50">{{ $teamMeta }}</span>
+                                @endif
+                            </a>
                         @endforeach
-                    </x-tabs>
+                    </div>
                 @endif
             </x-card>
 
@@ -340,7 +297,7 @@
     ════════════════════════════════ --}}
     @if (Auth::user()->is($user))
         <div class="mt-8 border-t border-error/20 pt-6">
-            <div class="mx-auto max-w-2xl">
+            <div>
                 <p class="mb-1 text-xs font-semibold uppercase tracking-widest text-error/60">
                     {{ __('Danger zone') }}
                 </p>

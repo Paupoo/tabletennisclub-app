@@ -31,8 +31,6 @@ new class extends Component
 {
     use HasBreadcrumbs, HasPhotoUpload, Toast, WithFileUploads;
 
-    public string $activeTeamTab = '';
-
     #[Rule('nullable|date')]
     public ?string $birthdate = null;
 
@@ -101,7 +99,6 @@ new class extends Component
         $this->city_name = $user->city_name;
         $this->iban = $user->iban;
         $this->currentPhoto = $user->photo;
-        $this->activeTeamTab = 'team-' . $this->user->teams->first()?->id;
     }
 
     public function render(): View

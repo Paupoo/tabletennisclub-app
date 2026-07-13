@@ -40,7 +40,13 @@
     :badge="$unreadNotificationsCount > 0 ? (string) $unreadNotificationsCount : null"
     badge-classes="badge-error"
     />
-    
+
+    <x-menu-item
+        icon="o-book-open"
+        link="{{ route('admin.user.reglement', auth()->user()) }}"
+        :title="__('Rules & regulations')"
+    />
+
 
     <x-menu-separator />
     @if(Auth()->user()->is_admin || Auth()->user()->is_committee_member )

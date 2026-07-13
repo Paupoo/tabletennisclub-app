@@ -98,6 +98,21 @@
                                             <span class="opacity-50">·</span>
                                             <span class="truncate">{{ $match['address'] }}</span>
                                         </div>
+                                        @php $counts = $match['availability_counts']; @endphp
+                                        <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
+                                            @if ($counts['available'] > 0)
+                                                <span class="font-semibold text-success">{{ trans_choice(':count available|:count available', $counts['available']) }}</span>
+                                            @endif
+                                            @if ($counts['maybe'] > 0)
+                                                <span class="font-semibold text-warning-content">{{ trans_choice(':count uncertain|:count uncertain', $counts['maybe']) }}</span>
+                                            @endif
+                                            @if ($counts['unavailable'] > 0)
+                                                <span class="font-semibold text-error">{{ trans_choice(':count unavailable|:count unavailable', $counts['unavailable']) }}</span>
+                                            @endif
+                                            @if ($counts['no_response'] > 0)
+                                                <span class="text-base-content/40">{{ trans_choice(':count without response|:count without response', $counts['no_response']) }}</span>
+                                            @endif
+                                        </div>
                                     </div>
                                     <div class="shrink-0">
                                         @if ($match['availability'])

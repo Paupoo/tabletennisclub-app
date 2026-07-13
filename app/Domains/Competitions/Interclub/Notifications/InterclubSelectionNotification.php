@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domains\Competitions\Interclub\Notifications;
 
+use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -66,6 +67,11 @@ class InterclubSelectionNotification extends Notification
     /** @return array<int, string> */
     public function via(object $notifiable): array
     {
+        // Optional notification: honour the member's opt-out preference.
+        if ($notifiable instanceof User && ! $notifiable->wantsNotification('interclub_selections')) {
+            return [];
+        }
+
         return ['mail', 'database'];
     }
 

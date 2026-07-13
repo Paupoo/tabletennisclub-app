@@ -5,7 +5,41 @@
 <div>
     <x-admin.shared.member-space-nav :user="$user" />
 
-    <x-header separator :subtitle="__('Upcoming club activities')" :title="__('Calendar')" />
+    <x-header separator :subtitle="__('Upcoming club activities')" :title="__('Calendar')">
+        <x-slot:actions>
+            <x-button class="btn-outline btn-sm" icon="o-calendar-days" :label="__('Subscribe (Google/Apple)')"
+                wire:click="$set('icsModal', true)" responsive />
+        </x-slot:actions>
+    </x-header>
+
+    {{-- Modal abonnement ICS --}}
+    <x-modal wire:model="icsModal" :title="__('Subscribe to my calendar')" box-class="max-w-lg">
+        <div class="space-y-4">
+            <p class="text-sm text-base-content/70">
+                {{ __('Add this personal link to Google Calendar or Apple Calendar to see all your club activities (matches, trainings, tournaments, meetings) update automatically.') }}
+            </p>
+
+            <div class="flex items-center gap-2" x-data="{ copied: false }">
+                <input type="text" readonly value="{{ $this->icsUrl }}"
+                    class="input input-sm input-bordered w-full font-mono text-xs"
+                    @focus="$el.select()" />
+                <x-button class="btn-primary btn-sm shrink-0"
+                    x-on:click="navigator.clipboard.writeText('{{ $this->icsUrl }}'); copied = true; setTimeout(() => copied = false, 2000)">
+                    <span x-show="! copied">{{ __('Copy') }}</span>
+                    <span x-show="copied" x-cloak>{{ __('Copied!') }}</span>
+                </x-button>
+            </div>
+
+            <div class="rounded-lg border border-base-200 bg-base-200/40 p-3 text-xs text-base-content/60 space-y-1.5">
+                <p><strong>Google Calendar</strong> — {{ __('Settings → Add calendar → From URL, then paste the link.') }}</p>
+                <p><strong>Apple Calendar</strong> — {{ __('File → New Calendar Subscription, then paste the link.') }}</p>
+                <p>{{ __('Keep this link private: anyone who has it can read your club schedule.') }}</p>
+            </div>
+        </div>
+        <x-slot:actions>
+            <x-button :label="__('Close')" wire:click="$set('icsModal', false)" />
+        </x-slot:actions>
+    </x-modal>
 
     <div class="grid grid-cols-1 gap-8 lg:grid-cols-4">
 

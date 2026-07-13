@@ -64,6 +64,11 @@ class NewTournamentPublishedNotification extends Notification
      */
     public function via(object $notifiable): array
     {
+        // Optional notification: honour the member's opt-out preference.
+        if ($notifiable instanceof User && ! $notifiable->wantsNotification('new_tournaments')) {
+            return [];
+        }
+
         return ['mail', 'database'];
     }
 }

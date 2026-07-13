@@ -11,6 +11,7 @@ use App\Http\Controllers\ClubAdmin\Contact\InvitationController;
 use App\Http\Controllers\ClubAdmin\DashboardController;
 use App\Http\Controllers\ClubAdmin\Payment\PaymentController;
 use App\Http\Controllers\ClubAdmin\Subscription\RegistrationController;
+use App\Http\Controllers\ClubAdmin\Users\UserCalendarFeedController;
 use App\Http\Controllers\ClubAdmin\Users\UserDocumentController;
 use App\Http\Controllers\ClubEvents\Interclub\ResultsController;
 use App\Http\Controllers\ClubEvents\Interclub\SeasonController;
@@ -70,6 +71,12 @@ Route::post('/contact', [ContactController::class, 'store'])
 | the website's content, settings, and internal features.
 |
 */
+
+// Personal ICS feed — no session auth: Google/Apple Calendar poll it server-side.
+// The permanent signature in the URL is the secret; 'signed' rejects any tampering.
+Route::get('admin/my-space/{user}/calendar.ics', UserCalendarFeedController::class)
+    ->middleware('signed')
+    ->name('admin.user.calendar.ics');
 
 Route::prefix('admin/my-space/')
     ->middleware(['auth', 'verified'])

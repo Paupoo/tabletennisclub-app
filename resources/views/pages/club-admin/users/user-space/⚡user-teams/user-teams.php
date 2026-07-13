@@ -75,18 +75,21 @@ new class extends Component
 
     /**
      * Upcoming interclub encounters of the given team, with the member's own
-     * availability so the page never shows placeholder data.
+     * availability and the aggregated answers of the whole roster.
      *
-     * @return Collection<int, array{id: int, opponent: string, is_home: bool, start_date_time: \Illuminate\Support\Carbon, address: string, week_number: int|null, availability: InterclubAvailability|null, is_selected: bool}>
+     * @return Collection<int, array{id: int, opponent: string, is_home: bool, start_date_time: \Illuminate\Support\Carbon, address: string, week_number: int|null, availability: InterclubAvailability|null, is_selected: bool, availability_counts: array{available: int, maybe: int, unavailable: int, no_response: int}}>
      */
     private function upcomingMatches(Team $team): Collection
     {
+        $rosterIds = $team->users->pluck('id');
+
         return Interclub::with([
             'visitedTeam.club',
             'visitedTeam.league',
             'visitingTeam.club',
             'visitingTeam.league',
             'league',
+            'users' => fn ($query) => $query->whereIn('users.id', $rosterIds),
         ])
             ->where(fn ($query) => $query
                 ->where('visited_team_id', $team->id)
@@ -94,10 +97,14 @@ new class extends Component
             ->where('start_date_time', '>=', now())
             ->orderBy('start_date_time')
             ->get()
-            ->map(function (Interclub $interclub): array {
-                $pivot = $interclub->users()
-                    ->where('users.id', $this->user->id)
-                    ->first()?->registration;
+            ->map(function (Interclub $interclub) use ($rosterIds): array {
+                $pivot = $interclub->users
+                    ->firstWhere('id', $this->user->id)?->registration;
+
+                $answers = $interclub->users
+                    ->map(fn ($mate) => $mate->registration->availability)
+                    ->filter()
+                    ->countBy();
 
                 return [
                     'id' => $interclub->id,
@@ -110,6 +117,12 @@ new class extends Component
                         ? InterclubAvailability::from($pivot->availability)
                         : null,
                     'is_selected' => (bool) $pivot?->is_selected,
+                    'availability_counts' => [
+                        'available' => $answers[InterclubAvailability::AVAILABLE->value] ?? 0,
+                        'maybe' => $answers[InterclubAvailability::MAYBE->value] ?? 0,
+                        'unavailable' => $answers[InterclubAvailability::UNAVAILABLE->value] ?? 0,
+                        'no_response' => max(0, $rosterIds->count() - $answers->sum()),
+                    ],
                 ];
             });
     }

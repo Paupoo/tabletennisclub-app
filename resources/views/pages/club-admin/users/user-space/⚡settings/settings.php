@@ -15,6 +15,12 @@ new #[Title('My settings')] class extends Component
 {
     use HasBreadcrumbs, Toast;
 
+    public bool $notifyAvailabilityRequests = true;
+
+    public bool $notifyInterclubSelections = true;
+
+    public bool $notifyNewTournaments = true;
+
     public string $password = '';
 
     public string $password_confirmation = '';
@@ -26,6 +32,32 @@ new #[Title('My settings')] class extends Component
         abort_unless(Auth::user()->is($user), 403);
 
         $this->user = $user;
+        $this->notifyNewTournaments = $user->wantsNotification('new_tournaments');
+        $this->notifyAvailabilityRequests = $user->wantsNotification('availability_requests');
+        $this->notifyInterclubSelections = $user->wantsNotification('interclub_selections');
+    }
+
+    /**
+     * Notification toggles save themselves as soon as they are flipped —
+     * no extra submit button for a one-click preference.
+     */
+    public function updated(string $property): void
+    {
+        if (! str_starts_with($property, 'notify')) {
+            return;
+        }
+
+        abort_unless(Auth::user()->is($this->user), 403);
+
+        $this->user->update([
+            'notification_preferences' => [
+                'new_tournaments' => $this->notifyNewTournaments,
+                'availability_requests' => $this->notifyAvailabilityRequests,
+                'interclub_selections' => $this->notifyInterclubSelections,
+            ],
+        ]);
+
+        $this->success(__('Notification preferences saved.'), position: 'toast-bottom toast-end');
     }
 
     public function rules(): array

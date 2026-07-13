@@ -201,6 +201,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'last_invited_at' => 'datetime',
         'email_verified_at' => 'datetime',
         'gdpr_erasure_requested_at' => 'datetime',
+        'notification_preferences' => 'array',
     ];
 
     /**
@@ -238,6 +239,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'updated_by',
         'last_invited_at',
         'gdpr_erasure_requested_at',
+        'notification_preferences',
     ];
 
     /**
@@ -664,5 +666,16 @@ class User extends Authenticatable implements MustVerifyEmail
     public function trainings(): BelongsToMany
     {
         return $this->belongsToMany(Training::class)->withPivot('status')->withTimestamps();
+    }
+
+    /**
+     * Whether the member accepts the given optional notification family.
+     * Opt-out model: no stored preference (or unknown key) means enabled.
+     * Transactional notifications (payments, deadlines, GDPR…) never
+     * consult this and are always delivered.
+     */
+    public function wantsNotification(string $preference): bool
+    {
+        return (bool) ($this->notification_preferences[$preference] ?? true);
     }
 }

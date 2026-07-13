@@ -110,3 +110,19 @@ it('lets the member switch between their teams', function (): void {
         ->assertSee($otherTeam->fullName())
         ->assertSee(__('Veterans'));
 });
+
+it('aggregates the roster availabilities on each upcoming match', function (): void {
+    $interclub = Interclub::factory()->create([
+        'season_id' => $this->season->id,
+        'league_id' => $this->league->id,
+        'visited_team_id' => $this->team->id,
+        'start_date_time' => now()->addDays(7),
+    ]);
+
+    $interclub->markAvailability($this->captain, InterclubAvailability::AVAILABLE);
+
+    Livewire::actingAs($this->member)
+        ->test(USER_TEAMS_COMPONENT, ['user' => $this->member])
+        ->assertSee(trans_choice(':count available|:count available', 1))
+        ->assertSee(trans_choice(':count without response|:count without response', 1));
+});

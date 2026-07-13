@@ -77,6 +77,11 @@ class InterclubLineupBroadcastNotification extends Notification
     /** @return array<int, string> */
     public function via(object $notifiable): array
     {
+        // Optional notification: honour the member's opt-out preference.
+        if ($notifiable instanceof User && ! $notifiable->wantsNotification('interclub_selections')) {
+            return [];
+        }
+
         return ['mail', 'database'];
     }
 }

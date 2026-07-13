@@ -30,15 +30,28 @@
         </div>
     </x-admin.shared.form-section>
 
-    <!-- À venir : préférences de notifications & confidentialité -->
-    <x-admin.shared.form-section :separator="false" :subtitle="__('What is coming next')" :title="__('Coming soon')">
+    <!-- Section Notifications -->
+    <x-admin.shared.form-section :separator="false" :subtitle="__('Choose which optional notifications you receive')" :title="__('Notifications')">
         <div class="col-span-6 md:col-span-4">
-            <div class="flex items-start gap-3 rounded-xl border border-dashed border-base-300 bg-base-200/40 p-4">
-                <x-icon name="o-bell" class="mt-0.5 h-5 w-5 shrink-0 text-base-content/40" />
-                <p class="text-sm text-base-content/60">
-                    {{ __('Notification preferences (match reminders, waitlist alerts, club news) and privacy options are on their way. They will appear here as soon as they are ready.') }}
-                </p>
+            <div class="space-y-5">
+                <x-toggle class="toggle-primary"
+                    :label="__('New tournaments and events')"
+                    :hint="__('Be notified when the club publishes a new tournament.')"
+                    wire:model.live="notifyNewTournaments" />
+
+                <x-toggle class="toggle-primary"
+                    :label="__('Interclub availability reminders')"
+                    :hint="__('A reminder when your captain requests your availability.')"
+                    wire:model.live="notifyAvailabilityRequests" />
+
+                <x-toggle class="toggle-primary"
+                    :label="__('Selections and lineup announcements')"
+                    :hint="__('When you are selected or the weekly lineup is announced.')"
+                    wire:model.live="notifyInterclubSelections" />
             </div>
+            <p class="mt-4 text-xs text-base-content/50">
+                {{ __('Important notices (payments, spot offers, account security) are always sent.') }}
+            </p>
         </div>
     </x-admin.shared.form-section>
 </div>

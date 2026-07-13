@@ -45,10 +45,13 @@ it('no longer renders disabled placeholder toggles', function (): void {
         ->assertDontSee(__('Match reminders (24h before)'));
 });
 
-it('announces upcoming notification preferences honestly', function (): void {
+it('offers real notification preferences instead of a placeholder', function (): void {
     $user = User::factory()->create();
 
     Livewire::actingAs($user)
         ->test(SETTINGS_COMPONENT, ['user' => $user])
-        ->assertSee(__('Coming soon'));
+        ->assertSee(__('New tournaments and events'))
+        ->assertSee(__('Interclub availability reminders'))
+        ->assertSee(__('Selections and lineup announcements'))
+        ->assertDontSee(__('Coming soon'));
 });

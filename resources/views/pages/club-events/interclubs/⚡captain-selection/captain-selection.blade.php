@@ -259,6 +259,23 @@
                                 @if (! empty($player['availability_note']))
                                     <div class="mt-0.5 text-[9px] italic opacity-40">"{{ $player['availability_note'] }}"</div>
                                 @endif
+                                {{-- Captain override: contact details of own players (T8) --}}
+                                @if (! empty($player['phone_number']) || ! empty($player['email']))
+                                    <div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                                        @if (! empty($player['phone_number']))
+                                            <a href="tel:{{ $player['phone_number'] }}" @click.stop
+                                                class="inline-flex items-center gap-1 text-[9px] font-semibold text-base-content/50 hover:text-primary">
+                                                <x-icon name="o-phone" class="h-2.5 w-2.5" />{{ $player['phone_number'] }}
+                                            </a>
+                                        @endif
+                                        @if (! empty($player['email']))
+                                            <a href="mailto:{{ $player['email'] }}" @click.stop
+                                                class="inline-flex items-center gap-1 truncate text-[9px] font-semibold text-base-content/50 hover:text-primary">
+                                                <x-icon name="o-envelope" class="h-2.5 w-2.5 shrink-0" />{{ $player['email'] }}
+                                            </a>
+                                        @endif
+                                    </div>
+                                @endif
                             </div>
 
                             {{-- Stats: joués | sél. --}}

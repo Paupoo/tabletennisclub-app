@@ -522,6 +522,11 @@ new class extends Component
             'name' => $player->last_name . ' ' . $player->first_name,
             'last_name' => $player->last_name ?? '',
             'first_name' => $player->first_name ?? '',
+            // Captain override (decision T8): a captain always sees their own
+            // players' contact details on the selection screen, regardless of
+            // the members' opt-in contact-visibility preferences.
+            'phone_number' => $player->phone_number,
+            'email' => $player->email,
             'rank' => $player->ranking ?? '—',
             'rank_sort' => $player->ranking ?? 'ZZZ',
             'availability' => $avail,

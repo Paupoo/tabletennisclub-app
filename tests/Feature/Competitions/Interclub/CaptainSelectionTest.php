@@ -169,6 +169,22 @@ it('matchDayMap scopes week numbers to own club teams only', function (): void {
         ->and($map)->not->toHaveKey(20);
 });
 
+it('shows team players contact details to the captain even when unshared', function (): void {
+    // player1 shares nothing (opt-in default) — the captain still needs their
+    // contact to organise the selection.
+    $this->player1->update([
+        'phone_number' => '0470999888',
+        'email' => 'captain.player1@club.be',
+        'contact_visibility' => null,
+    ]);
+
+    Livewire::actingAs($this->captain)
+        ->test('pages::club-events.interclubs.captain-selection')
+        ->call('openSelection', $this->interclub->id)
+        ->assertSee('0470999888')
+        ->assertSee('captain.player1@club.be');
+});
+
 // ── Status logic tests ──────────────────────────────────────────────────────
 
 /** Helper: render the captain-selection component and return status for a given match */

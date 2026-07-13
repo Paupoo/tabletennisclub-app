@@ -42,6 +42,12 @@
     />
 
     <x-menu-item
+        icon="o-users"
+        link="{{ route('admin.user.directory', auth()->user()) }}"
+        :title="__('Member directory')"
+    />
+
+    <x-menu-item
         icon="o-book-open"
         link="{{ route('admin.user.reglement', auth()->user()) }}"
         :title="__('Rules & regulations')"

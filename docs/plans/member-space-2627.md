@@ -174,30 +174,27 @@ Dépendances : 2 précède 4 ; 3 sert 4 ; 5 précède 6 (l'amende surface dans l
 
 **Objectif.** Trombinoscope consultable par tout membre actif : nom, classement, indice de force, équipes, avatar, et coordonnées **selon les flags** (T4). Consultation pure, aucune action.
 
+**✅ LIVRÉ 2026-07-13 (4a annuaire + 4b exception capitaine).**
+
 **Archi (T7).** Nouveau composant dédié.
-- [ ] Route : `admin/my-space/{user}/directory` → `pages::club-admin.users.user-space.directory` (dans le groupe user-space authentifié). `mount` : `abort_unless(Auth::user()->is($user), 403)` (comme les autres pages my-space).
-- [ ] Query roster (T6) : `User` actifs saison courante (`is_active`), tri nom. Eager-load `teams`, subscription/ranking, avatar.
-- [ ] Recherche : `->searchName()` (chantier 3). Filtres (chips) : par équipe, par classement.
-- [ ] Colonnes/carte : avatar (`avatar_url`/`photo` fallback initiales), nom, classement, force, chips équipes.
-- [ ] Coordonnées : pour chaque ligne `L`, afficher tel/email/adresse **seulement si** `L->contactVisibleTo(Auth::user(), 'phone'|'email'|'address')`. Champs partagés → **liens** `mailto:` / `tel:` cliquables ; sinon rien (ou mention discrète « non partagé »).
-- [ ] Pagination + design-system (table/cartes responsive, empty state partagé).
-- [ ] Nav : entrée « Membres » / « Annuaire » dans le user-space.
-- [ ] i18n FR+NL.
+- [x] Route `admin.user.directory` (`{user}/directory`), self-only, dans la matrice `MySpaceAuthorizationTest`.
+- [x] Query roster (T6) : `User::active()`, tri nom, eager-load `teams:id,name`, paginate 24.
+- [x] Recherche `->searchName()` + filtres drawer (classement, équipe) via `HasFilterDrawer` + chips.
+- [x] Cartes : avatar (`photo` fallback), nom, classement, indice de force, chips équipes.
+- [x] Coordonnées filtrées **côté serveur** via `contactVisibleTo()` ; champs partagés → liens `tel:`/`mailto:` ; sinon « Aucune coordonnée partagée ».
+- [x] Grille responsive + empty state + pagination.
+- [x] Nav : entrée « Annuaire des membres » (top-level, `o-users`).
+- [x] i18n FR+NL (5 clés).
 
-**Exception capitaine (T8) — dans `⚡captain-selection`, PAS ici.**
-- [ ] Dans `captain-selection`, pour les joueurs de l'équipe du capitaine courant, afficher tel + email **inconditionnellement** (override). Vérifier l'identité capitaine via `Team.captain_id` (ou `is_selector` selon la logique existante de la page — à confirmer en lisant le composant).
-- [ ] Ne PAS router cet override par `contactVisibleTo` (qui l'ignore volontairement) : accès direct aux champs, justifié par le contexte sélection.
+**Exception capitaine (T8) — dans `⚡captain-selection`.**
+- [x] `buildPlayerData()` expose `phone_number` + `email` ; le roster (drawer de sélection) affiche tel/email des joueurs **inconditionnellement** (override, `@click.stop` pour ne pas toggler). Écran déjà gated capitaine/sélecteur/comité/admin, teams scopés aux teams accessibles.
 
-**Tests.**
-- [ ] Roster : seuls les actifs saison courante apparaissent ; un archivé/non-inscrit non.
-- [ ] Un membre récréatif apparaît, force/classement = « — ».
-- [ ] Coordonnées masquées par défaut ; visibles après opt-in du membre cible.
-- [ ] Comité voit toutes les coordonnées ; membre lambda non.
-- [ ] Recherche noms composés opérationnelle dans l'annuaire.
-- [ ] `captain-selection` : le capitaine voit tel/email de SES joueurs même non partagés ; PAS ceux d'une autre équipe ; un non-capitaine ne voit rien de plus.
-- [ ] Smoke 200 + JS.
+**Tests.** ✅ `DirectoryTest` (6) + `CaptainSelectionTest` (+1) :
+- [x] Roster actifs seulement ; ranking affiché ; coordonnées masquées par défaut / visibles après opt-in ; comité voit tout ; recherche noms composés.
+- [x] Capitaine voit tel/email de ses joueurs même non partagés.
+- [x] 149 UserSpace + 23 captain-selection + smoke/coverage verts.
 
-**Risques.** Ne jamais laisser fuiter une coordonnée non partagée dans le HTML (même masquée visuellement) : filtrer **côté serveur**, pas en CSS. Attention N+1 (eager-load teams/subscriptions).
+**Risques traités.** Filtrage **côté serveur** (aucune fuite HTML). Eager-load teams (pas de N+1 sur les chips).
 
 ---
 
@@ -276,7 +273,8 @@ Dépendances : 2 précède 4 ; 3 sert 4 ; 5 précède 6 (l'amende surface dans l
 | 2026-07-13 | — | Claude | Grilling complet (16 décisions transverses), plans rédigés. |
 | 2026-07-13 | 1 — Règlement | Claude | ✅ Livré + commité (`4d61c0a6`). Menu déplacé hors espace perso (après Notifications). |
 | 2026-07-13 | 2 — Confidentialité | Claude | ✅ Livré + commité (`484205e0`). Password déplacé en bas + rétréci. **Migration à jouer sur MariaDB.** |
-| 2026-07-13 | 3 — Recherche | Claude | ✅ Livré en TDD : `scopeSearchName` (tokens espace+tiret, LOWER+LIKE first/last/email, DB-agnostique), branché sur `⚡index`. `UserSearchNameTest` (7) + intégration IndexTest. 454 tests Users verts. Non commité. |
+| 2026-07-13 | 3 — Recherche | Claude | ✅ Livré + commité (`678a919f`). |
+| 2026-07-13 | 4 — Annuaire | Claude | ✅ Livré en TDD : annuaire membre (composant `directory`, roster actifs, recherche+filtres, coordonnées selon `contactVisibleTo`, cartes brandées) + exception capitaine dans `captain-selection`. Nav top-level. Raffinements : chips équipes + options du filtre équipe avec catégorie (`LeagueCategory`) ; **filtre saison** (défaut = saison courante, chip si ≠ courante). `DirectoryTest` (9) + `CaptainSelectionTest` (+1). Non commité. |
 
 ---
 

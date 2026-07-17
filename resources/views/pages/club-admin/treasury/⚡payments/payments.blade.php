@@ -25,8 +25,8 @@
                         <x-menu-item icon="o-sparkles" :title="__('Auto-match')"
                             wire:click="previewBatchMatch" spinner="previewBatchMatch" />
                     @endif
-                    <x-menu-item icon="o-arrow-up-tray" :title="__('Import CSV')"
-                        wire:click="$set('importModal', true)" />
+                    <x-menu-item icon="o-arrow-up-tray" :title="__('Import a bank statement')"
+                        link="{{ route('admin.treasury.transactions') }}" />
                 </x-dropdown>
             </div>
         </x-slot:actions>
@@ -614,36 +614,6 @@
     </x-modal>
 
 
-    {{-- ========================================== --}}
-    {{-- Modal : Import relevé bancaire             --}}
-    {{-- ========================================== --}}
-    <x-modal wire:model="importModal" :title="__('Import Bank Statement')" separator>
-        <div class="space-y-4">
-            <p class="text-sm opacity-70">
-                {{ __('Upload your bank export (ODS, XLSX, CSV). Transactions will be imported and available for reconciliation.') }}
-            </p>
-            <p class="text-xs opacity-50">
-                {{ __('Expected columns: Date, Montant, Description, Nom contrepartie, Numéro de compte contrepartie, Communication structurée, Communication libre') }}
-            </p>
-            <x-file
-                wire:model="importFile"
-                :label="__('Bank file')"
-                accept=".ods,.xlsx,.xls,.csv,.txt"
-                hint="ODS · XLSX · CSV" />
-        </div>
-
-        <x-slot:actions>
-            <x-button :label="__('Cancel')" @click="$wire.importModal = false" class="btn-ghost" />
-            <x-button
-                :label="__('Start Import')"
-                icon="o-arrow-up-tray"
-                class="btn-primary"
-                wire:click="processImport"
-                :disabled="! $importFile"
-                spinner />
-        </x-slot:actions>
-    </x-modal>
-
     {{-- ── Mobile action sheet ─────────────────────────────────────────── --}}
     <x-admin.shared.mobile-actions>
         @if($statusFilter === 'to_refund')
@@ -661,9 +631,9 @@
         @endif
         <x-admin.shared.mobile-action-item
             icon="o-arrow-up-tray" color="info"
-            :label="__('Import CSV')"
-            :description="__('Upload a bank statement')"
-            @click="mobileActionsOpen = false; $wire.set('importModal', true)" />
+            :label="__('Import a bank statement')"
+            :description="__('Go to Transactions to import your bank export')"
+            @click="mobileActionsOpen = false; window.location = '{{ route('admin.treasury.transactions') }}'" />
         <div class="my-1 h-px bg-base-200"></div>
         <x-admin.shared.mobile-action-item
             icon="o-check-circle" color="base"

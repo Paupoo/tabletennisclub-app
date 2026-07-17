@@ -8,6 +8,7 @@ use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
+use Livewire\Exceptions\MethodNotFoundException;
 use Livewire\Livewire;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -124,6 +125,25 @@ describe('treasury table — event name', function (): void {
             ->assertSee('Carla Petit')
             ->assertSee(__('Subscription'))
             ->assertSee($subscription->season->name);
+    });
+});
+
+// ── bank import removed from payments page (I1) ───────────────────────────────
+
+describe('treasury payments — bank import removed (I1)', function (): void {
+    it('no longer exposes the silent bank import method on the payments page', function (): void {
+        $admin = User::factory()->create();
+
+        expect(fn () => mountTreasury($admin)->call('processImport'))
+            ->toThrow(MethodNotFoundException::class);
+    });
+
+    it('routes committee members to the Transactions import instead', function (): void {
+        $admin = User::factory()->create();
+
+        mountTreasury($admin)
+            ->assertDontSee(__('Start Import'))
+            ->assertSeeHtml(route('admin.treasury.transactions'));
     });
 });
 

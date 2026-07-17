@@ -9,16 +9,7 @@ Le travail se fait en trois temps : **importer l'extrait bancaire**, **lancer le
 
 ## 1. Importer l'extrait
 
-> ### ⚠️ Importez depuis **Trésorerie → Transactions**, jamais depuis Paiements
->
-> Les deux pages proposent un import, et **ils ne se valent pas** :
->
-> - Celui des **Transactions** compte les nouvelles lignes, ignore les doublons, **signale les erreurs** et garde un historique des lignes rejetées avec leur motif.
-> - Celui des **Paiements** ne fait rien de tout ça : il **perd en silence** les lignes qu'il n'arrive pas à lire, et **ne détecte pas les doublons** — réimporter le même extrait recrée toutes les transactions en double.
->
-> Le second est un vestige à supprimer. En attendant : **passez par Transactions.** Vous alimentez la même liste, en sachant ce qui s'est passé.
-
-**Trésorerie → Transactions**, puis l'import. Formats acceptés : `.csv`, `.ods`, `.xlsx`, `.xls`, `.txt`.
+L'import se fait depuis **Trésorerie → Transactions**. Formats acceptés : `.csv`, `.ods`, `.xlsx`, `.xls`, `.txt`.
 
 Le fichier doit avoir une **ligne d'en-tête**, et les colonnes sont reconnues **par leur nom** — celui des exports bancaires belges francophones :
 

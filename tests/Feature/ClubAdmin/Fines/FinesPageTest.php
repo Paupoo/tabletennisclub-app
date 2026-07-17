@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Fines\Actions\IssueFine;
 use App\Domains\ClubAdmin\Fines\Models\Fine;
+use App\Domains\ClubAdmin\Fines\Notifications\FineCancelledNotification;
 use App\Domains\ClubAdmin\Fines\Notifications\FineIssuedNotification;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
@@ -120,6 +122,45 @@ it('lists issued fines', function (): void {
         ->assertSee($fine->user->full_name)
         ->assertSee(__('Late arrival'))
         ->assertSee('15,00');
+});
+
+it('lets a treasurer cancel a pending fine and notifies the member', function (): void {
+    Notification::fake();
+    makeActiveSeason();
+    $member = User::factory()->create();
+    $fine = (new IssueFine)($member, treasurer(), FineReason::MISCONDUCT, 25, 'A note about it.');
+
+    Livewire::actingAs(treasurer())
+        ->test(FINES_COMPONENT)
+        ->call('confirmCancel', $fine->id)
+        ->assertSet('cancelModal', true)
+        ->call('cancelFine')
+        ->assertHasNoErrors()
+        ->assertSet('cancelModal', false)
+        ->assertDontSee($member->full_name);
+
+    expect(Fine::find($fine->id))->toBeNull()
+        ->and($fine->payment->fresh()->status)->toBe('cancelled');
+
+    Notification::assertSentTo($member, FineCancelledNotification::class);
+});
+
+it('refuses to cancel a fine that has already been paid', function (): void {
+    Notification::fake();
+    makeActiveSeason();
+    $fine = (new IssueFine)(User::factory()->create(), treasurer(), FineReason::LATE, 15, 'A note about it.');
+    $fine->payment->update(['status' => 'paid']);
+
+    Livewire::actingAs(treasurer())
+        ->test(FINES_COMPONENT)
+        ->call('confirmCancel', $fine->id)
+        ->call('cancelFine')
+        ->assertSet('cancelModal', false);
+
+    expect(Fine::find($fine->id))->not->toBeNull()
+        ->and($fine->payment->fresh()->status)->toBe('paid');
+
+    Notification::assertNotSentTo($fine->user, FineCancelledNotification::class);
 });
 
 it('refuses access to a member who cannot manage finances', function (): void {

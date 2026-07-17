@@ -39,12 +39,21 @@
                             </div>
                         </div>
 
-                        <div class="text-right">
-                            <div class="font-bold tabular-nums">{{ number_format($fine->amount, 2, ',', ' ') }} €</div>
-                            @if ($fine->payment)
-                                <x-badge
-                                    :value="$fine->payment->status === 'paid' ? __('Paid') : __('Pending')"
-                                    class="badge-sm {{ $fine->payment->status === 'paid' ? 'badge-success badge-soft' : 'badge-warning badge-soft' }}" />
+                        <div class="flex items-center gap-3 sm:justify-end">
+                            <div class="text-right">
+                                <div class="font-bold tabular-nums">{{ number_format($fine->amount, 2, ',', ' ') }} €</div>
+                                @if ($fine->payment)
+                                    <x-badge
+                                        :value="$fine->payment->status === 'paid' ? __('Paid') : __('Pending')"
+                                        class="badge-sm {{ $fine->payment->status === 'paid' ? 'badge-success badge-soft' : 'badge-warning badge-soft' }}" />
+                                @endif
+                            </div>
+
+                            @if (! $fine->payment || $fine->payment->status !== 'paid')
+                                <x-dropdown icon="o-ellipsis-vertical" class="btn-ghost btn-sm btn-circle" right>
+                                    <x-menu-item icon="o-x-circle" :title="__('Cancel this fine')"
+                                        wire:click="confirmCancel({{ $fine->id }})" />
+                                </x-dropdown>
                             @endif
                         </div>
                     </div>
@@ -110,4 +119,28 @@
             </x-slot:actions>
         </x-form>
     </x-drawer>
+
+    {{-- Cancel confirmation --}}
+    <x-modal wire:model="cancelModal" :title="__('Cancel this fine?')" separator>
+        <div class="space-y-3">
+            <p class="text-sm text-base-content/80">
+                {{ __('The fine will be removed and its pending payment cancelled. The member will be notified that they no longer owe anything.') }}
+            </p>
+            @if ($this->cancelTarget)
+                <div class="rounded-xl border border-base-300 bg-base-200/40 p-3 text-sm">
+                    <div class="font-semibold">{{ $this->cancelTarget->user?->full_name ?? '—' }}</div>
+                    <div class="mt-0.5 text-base-content/60">
+                        {{ $this->cancelTarget->reason->label() }}
+                        · {{ number_format($this->cancelTarget->amount, 2, ',', ' ') }} €
+                    </div>
+                </div>
+            @endif
+        </div>
+
+        <x-slot:actions>
+            <x-button :label="__('Keep the fine')" wire:click="$set('cancelModal', false)" />
+            <x-button class="btn-error" icon="o-x-circle" :label="__('Cancel the fine')"
+                wire:click="cancelFine" spinner="cancelFine" />
+        </x-slot:actions>
+    </x-modal>
 </div>

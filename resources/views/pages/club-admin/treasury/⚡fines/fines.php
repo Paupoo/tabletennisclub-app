@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Fines\Actions\CancelFine;
 use App\Domains\ClubAdmin\Fines\Actions\IssueFine;
 use App\Domains\ClubAdmin\Fines\Models\Fine;
 use App\Domains\ClubAdmin\Users\Models\User;
@@ -28,6 +29,11 @@ new class extends Component
     public string $description = '';
 
     public string $federationReference = '';
+
+    // ── Cancel modal
+    public bool $cancelModal = false;
+
+    public ?int $cancelFineId = null;
 
     // ── Issue drawer
     public bool $fineDrawer = false;
@@ -164,6 +170,49 @@ new class extends Component
         $this->fineDrawer = false;
         unset($this->fines);
         $this->success(__('Fine issued and the member has been notified.'));
+    }
+
+    public function confirmCancel(int $fineId): void
+    {
+        abort_unless(Auth::user()->canManageFinances(), 403);
+
+        $this->cancelFineId = $fineId;
+        $this->cancelModal = true;
+    }
+
+    public function cancelFine(CancelFine $cancelFine): void
+    {
+        abort_unless(Auth::user()->canManageFinances(), 403);
+
+        $fine = Fine::with('payment', 'user.guardians')->findOrFail($this->cancelFineId);
+
+        // A paid fine would leave collected money unaccounted for — block it here
+        // (the action guards this too). Use the refund flow for paid fines.
+        if ($fine->payment?->status === 'paid') {
+            $this->cancelModal = false;
+            $this->cancelFineId = null;
+            $this->error(__('This fine has already been paid — it cannot be cancelled here.'));
+
+            return;
+        }
+
+        $cancelFine($fine);
+
+        $this->cancelModal = false;
+        $this->cancelFineId = null;
+        unset($this->fines);
+        $this->success(__('Fine cancelled. The member has been notified.'));
+    }
+
+    /**
+     * The fine currently targeted by the cancellation modal, for its recap.
+     */
+    #[Computed]
+    public function cancelTarget(): ?Fine
+    {
+        return $this->cancelFineId
+            ? Fine::with('user')->find($this->cancelFineId)
+            : null;
     }
 
     /**

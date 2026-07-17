@@ -34,6 +34,9 @@ erDiagram
     Guardian
     User
 
+    %% ClubAdmin/Fines
+    Fine
+
     %% ClubPosts
     EventPost
     NewsPost
@@ -107,6 +110,7 @@ erDiagram
     User }o--o{ Team : "teams"
     User }o--o{ Tournament : "tournaments"
     User }o--o{ Training : "trainings"
+    Fine ||--o| Payment : "payment"
     Interclub ||--o| InterclubResult : "interclubResult"
     Interclub ||--o{ Team : "teams"
     Interclub }o--o{ User : "users"

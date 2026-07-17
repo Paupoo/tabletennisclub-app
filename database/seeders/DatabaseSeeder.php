@@ -352,6 +352,8 @@ class DatabaseSeeder extends Seeder
 
         $this->call(TreasurySeeder::class);
 
+        $this->call(FineSeeder::class);
+
         $this->call(TrainingPackSeeder::class);
 
         $this->call(NewsPostSeeder::class);

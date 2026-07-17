@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
+use App\Domains\ClubAdmin\Fines\Models\Fine;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
@@ -30,6 +31,7 @@ new class extends Component
         Subscription::class,
         TournamentRegistration::class,
         MeetingUser::class,
+        Fine::class,
     ];
 
     public bool $paymentModal = false;
@@ -72,6 +74,7 @@ new class extends Component
                 Subscription::class => ['user', 'season'],
                 TournamentRegistration::class => ['user', 'tournament'],
                 MeetingUser::class => ['user', 'meeting'],
+                Fine::class => ['user'],
             ])])
             ->whereHasMorph('payable', self::PAYABLE_TYPES, fn ($q) => $q->whereIn('user_id', $ids))
             ->when($this->statusFilter, fn ($q) => $q->where('status', $this->statusFilter))

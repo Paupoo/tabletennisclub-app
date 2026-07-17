@@ -230,38 +230,43 @@ Dépendances : 2 précède 4 ; 3 sert 4 ; 5 précède 6 (l'amende surface dans l
 
 **Objectif.** Le comité répercute une amende fédérale sur un membre → crée un `Fine` → génère un `Payment` (qui surface dans le hub §7 + vue trésorier) → envoie un email pédagogique personnalisé.
 
+**✅ LIVRÉ 2026-07-13.** ⚠️ **Migration `fines` à jouer sur MariaDB.**
+
 **Modèle (T14).**
-- [ ] Migration `fines` : `user_id` (membre sanctionné), `amount` (decimal), `reason`/`category` (enum motif : conduite, absence injustifiée, forfait, autre…), `federation_reference` (nullable), `description` (text nullable), `issued_by` (user_id comité), `pedagogical_message` (text), timestamps, soft-deletes + audit (cf. `HasAuditLog`).
-- [ ] Modèle `Fine` (domaine `ClubAdmin\Payment` ou nouveau `ClubAdmin\Fines`) implémentant `DescribesPayment` :
-  - `getPayerName()` → nom du membre sanctionné.
-  - `getPaymentLabel()` → `['type' => __('Fine'), 'name' => <motif lisible>]`.
-  - `payment(): MorphOne` (comme les autres payables).
-- [ ] Factory + enum motif. Enregistrer `Fine` dans les listes `whereHasMorph`/`morphWith` des vues paiements (hub §7, event-subscription si pertinent, trésorier).
+- [x] Migration `fines` : `user_id`, `issued_by` (nullOnDelete), `amount` (**cents**, comme `payments`), `reason`, `federation_reference`, `description`, `pedagogical_message`, timestamps, softDeletes.
+- [x] `App\Domains\ClubAdmin\Fines\Models\Fine` implémente `DescribesPayment` (`getPayerName`, `getPaymentLabel` → `{type: Amende, name: motif}`), `payment(): MorphOne`, `user()`, `issuer()`, cast `amount` euros↔cents, `HasAuditLog` + `SoftDeletes`.
+- [x] `App\Domains\Shared\Enums\FineReason` (forfeit, late, misconduct, other, unjustified_absence) + `label()` / `getOptions()`. Factory.
+- [x] `Fine` ajouté aux `PAYABLE_TYPES` + `morphWith` du hub paiements (§7).
 
 **Action métier.**
-- [ ] `IssueFineAction` : crée `Fine`, génère un `Payment` `pending` (`GeneratePaymentReference` + montant), envoie l'email. Transaction DB.
-- [ ] Gate `canManageFinances()` sur `User` : `is_admin || committee_role ∈ {TREASURER, PRESIDENT}` (+ VICE_PRESIDENT ? à confirmer). Policy `FinePolicy`.
+- [x] `IssueFine` : transaction → `Fine` + `Payment` pending (`GeneratePaymentReference`), puis notifications **hors transaction**.
+- [x] `User::canManageFinances()` = `is_admin || committee_role ∈ {TREASURER, PRESIDENT}`. Gate appliquée dans `mount`, `openFineDrawer` et `issueFine`.
 
 **UI (T15).**
-- [ ] **Fiche membre** (`⚡index` détail ou vue membre admin) : action « Infliger une amende » (drawer/modal) → formulaire : montant, motif, réf. fédérale, description, **message pédagogique** (pré-rempli, éditable), **aperçu**.
-- [ ] **Page trésorerie amendes** : `admin/treasury/fines` (middleware `committee` + gate finances) → liste des amendes (membre, motif, montant, statut paiement, date, émetteur), filtres statut. Pas d'action de paiement (le membre paie via le hub).
-- [ ] i18n FR+NL.
+- [x] **Page trésorerie amendes** `admin/treasury/fines` (middleware `committee` + gate finances) : liste (membre, motif, montant, statut paiement, date, émetteur, réf.), filtre statut. Aucune action de paiement.
+- [x] **Depuis le membre** : action « Infliger une amende » sur la ligne de `⚡index` (visible si `canManageFinances`) → deep-link `?member=<id>` qui **ouvre le drawer pré-rempli**.
+- [x] Drawer : membre (searchable), motif, montant, réf. fédérale, note interne (non envoyée), **message pédagogique pré-rempli éditable** + bouton « revenir au message suggéré », **aperçu e-mail live**.
+- [x] i18n FR+NL (27 clés).
 
 **Email pédagogique (T16).**
-- [ ] Mailable/Notification `FineIssuedNotification` : template pré-rempli (motif, montant, réf. paiement, lien vers le hub §7, ton bienveillant), corps = `pedagogical_message` du comité.
-- [ ] Destinataires : le membre **+ ses tuteurs** si mineur (`user->guardians` / `requiresGuardian()`).
-- [ ] Envoi **à la création** (dans `IssueFineAction`). Aperçu avant envoi côté UI.
-- [ ] Tester le **rendu** (`->render()` / `assertSeeInHtml`), pas seulement `Notification::fake()` (cf. mémoire email rendering).
+- [x] `FineIssuedNotification` (mail + database) → `mail.fine-issued` : motif, réf. fédérale, **message du comité**, montant, IBAN/BIC/réf., QR, bouton « Voir mes paiements ».
+- [x] Destinataires : le membre + **ses tuteurs si mineur** (`isMinor()` + guardians avec email, via `Notification::route`). ⚠️ `requiresGuardian()` = *mineur SANS tuteur* → ne convenait pas ; c'est `isMinor()` qu'il faut.
+- [x] Envoi à la création. Aperçu avant envoi dans le drawer.
+- [x] **Rendu testé** (`->toMail()->render()`), pas seulement `Notification::fake()`.
 
-**Tests.**
-- [ ] `IssueFineAction` crée Fine + Payment `pending` lié + montant correct.
-- [ ] L'amende apparaît dans le hub paiements du membre (et de son tuteur si dépendant) et dans la vue trésorier.
-- [ ] Gate : un membre lambda / capitaine ne peut pas infliger ; trésorier/président/admin oui.
-- [ ] Email : envoyé au membre (+ tuteurs si mineur), contient motif/montant/réf/lien, message perso rendu.
-- [ ] `getPaymentLabel()` → type « Amende ».
-- [ ] Migration rejouée sur **MariaDB** avant merge.
+**Ajouts hors plan initial (demandés en cours de route).**
+- [x] `FineSeeder` : une amende de démo (15 €, absence injustifiée) + son paiement pending pour l'utilisateur #1. **N'envoie pas d'e-mail** (seed sans effet de bord). Appelé depuis `DatabaseSeeder` après `TreasurySeeder`.
+- [x] **Bug corrigé** : `x-choices searchable` appelle `search()` sur le composant → `MethodNotFoundException`. `search()` implémentée (réutilise `searchName`, garde le membre sélectionné dans les options).
+- [x] **Section « Mes amendes » sur le profil** : ne s'affiche **que** si le membre en a (coût zéro sinon). Vue d'ensemble en une ligne (nombre + reste à payer / « tout est réglé »), puis un `x-collapse` par amende → **message du comité** (la clé pour comprendre), réf. fédérale, réf. paiement, bouton vers le hub.
+- [x] **« Zone de danger » (RGPD) déplacée** du profil → **paramètres du compte** (`requestErasure` + bloc UI). Tests d'effacement repointés sur `settings`.
 
-**Risques.** Financier/RGPD : l'amende crée une dette réelle — auditer (`HasAuditLog`), transaction atomique (pas de Fine sans Payment ni email). Montant : saisie libre par le comité (montant fédéral, éventuellement + frais club).
+**Tests.** ✅ `IssueFineTest` (7) + `FinesPageTest` (10) + `FineSeederTest` (2) + `ProfileFinesTest` (5) :
+- [x] Fine + Payment pending + montant ; label « Amende » + motif ; notification membre ; tuteurs d'un mineur ; rendu e-mail (message + réf + montant) ; amende visible dans le hub du membre ; matrice de la gate.
+- [x] Émission via le drawer, pré-remplissage, message non écrasé après édition, validation, deep-link, listing, **403** pour non-financier et pour un secrétaire, recherche de membre (noms composés + sélection conservée).
+- [x] Seeder (amende + paiement pending pour #1, ignoré si pas d'user #1) ; profil (rien si aucune amende, message/réf/montant sinon, jamais l'amende d'autrui, total à payer / tout réglé).
+- [x] **Suite complète : 2317 tests verts** (1 test browser `AuthFlowTest` flaky **uniquement en parallèle** — passe 6/6 en isolation, flakiness connue, sans lien avec ces changements).
+
+**Risques traités.** Transaction atomique (pas de Fine sans Payment) ; audit (`HasAuditLog`) ; notifications envoyées après commit. Montant en saisie libre par le comité.
 
 ---
 
@@ -274,7 +279,8 @@ Dépendances : 2 précède 4 ; 3 sert 4 ; 5 précède 6 (l'amende surface dans l
 | 2026-07-13 | 2 — Confidentialité | Claude | ✅ Livré + commité (`484205e0`). Password déplacé en bas + rétréci. **Migration à jouer sur MariaDB.** |
 | 2026-07-13 | 3 — Recherche | Claude | ✅ Livré + commité (`678a919f`). |
 | 2026-07-13 | 4 — Annuaire | Claude | ✅ Livré + commité (`e480bb77`). Chips/filtre équipe avec catégorie + filtre saison (défaut courante, tri ascendant). |
-| 2026-07-13 | 5 — Hub paiements | Claude | ✅ Livré en TDD : `User::payableUserIds` (soi + pupilles), composant `payments` (liste plate, filtres statut/type/personne, QR payer, pas de totaux), lien depuis event-subscription, nav. `PaymentsHubTest` (8) + 162 UserSpace verts. Non commité. |
+| 2026-07-13 | 5 — Hub paiements | Claude | ✅ Livré + commité (`05a22050`). Boutons « Payer » retirés des lignes d'événements (bandeau conservé). |
+| 2026-07-13 | 6 — Amendes | Claude | ✅ Livré en TDD : domaine `ClubAdmin\Fines` (modèle payable, enum, factory, `IssueFine`, `FineIssuedNotification` + vue mail), gate `canManageFinances`, page trésorerie/amendes + drawer (message pédagogique pré-rempli/éditable + aperçu), deep-link depuis la fiche membre, surfacing dans le hub. `IssueFineTest` (7) + `FinesPageTest` (8). **Suite complète 2308 verts.** **Migration `fines` à jouer sur MariaDB.** Non commité. |
 
 ---
 

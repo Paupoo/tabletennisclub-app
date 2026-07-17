@@ -277,6 +277,18 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Whether the user may manage club finances — here, issue a fine to a member.
+     * Full admins plus the treasurer and president committee roles.
+     */
+    public function canManageFinances(): bool
+    {
+        return $this->is_admin || in_array($this->committee_role, [
+            CommitteeRolesEnum::TREASURER,
+            CommitteeRolesEnum::PRESIDENT,
+        ], true);
+    }
+
+    /**
      * Whether the user may read the club-wide audit log.
      *
      * Full platform admins plus the president, vice-president, secretary and

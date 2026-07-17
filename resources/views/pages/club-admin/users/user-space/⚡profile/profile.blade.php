@@ -175,6 +175,65 @@
                 @endif
             </x-card>
 
+            {{-- Amendes — n'apparaît que si le membre en a (quasiment jamais) --}}
+            @if ($this->fines->isNotEmpty())
+                @php($finesDue = $this->fines->filter(fn ($f) => $f->payment?->status === 'pending'))
+                <x-card :title="__('My fines')" icon="o-scale" separator>
+                    <x-slot:menu>
+                        @if ($finesDue->isNotEmpty())
+                            <x-button :label="__('Pay')" icon-right="o-arrow-right" class="btn-ghost btn-sm"
+                                link="{{ route('admin.user.payments', $user) }}" />
+                        @endif
+                    </x-slot:menu>
+
+                    {{-- Vue d'ensemble en une ligne --}}
+                    <p class="mb-3 text-sm text-base-content/70">
+                        {{ trans_choice(':count fine|:count fines', $this->fines->count()) }}
+                        @if ($finesDue->isNotEmpty())
+                            — <span class="font-semibold text-warning-content">{{ __(':amount € still to pay', ['amount' => number_format($finesDue->sum(fn ($f) => $f->payment->amount_due), 2, ',', ' ')]) }}</span>
+                        @else
+                            — <span class="font-semibold text-success">{{ __('all settled') }}</span>
+                        @endif
+                    </p>
+
+                    <div class="space-y-2">
+                        @foreach ($this->fines as $fine)
+                            @php($isPending = $fine->payment?->status === 'pending')
+                            <x-collapse class="border border-base-300 bg-base-100">
+                                <x-slot:heading>
+                                    <div class="flex flex-wrap items-center gap-2 text-sm">
+                                        <span class="font-semibold">{{ $fine->reason->label() }}</span>
+                                        <span class="text-xs text-base-content/50">{{ $fine->created_at?->format('d/m/Y') }}</span>
+                                        <span class="font-bold tabular-nums">{{ number_format($fine->amount, 2, ',', ' ') }} €</span>
+                                        <x-badge :value="$isPending ? __('Pending') : __('Paid')"
+                                            class="badge-sm {{ $isPending ? 'badge-warning badge-soft' : 'badge-success badge-soft' }}" />
+                                    </div>
+                                </x-slot:heading>
+                                <x-slot:content>
+                                    {{-- Le message du comité : c'est ce qui permet de comprendre --}}
+                                    <p class="whitespace-pre-line text-sm text-base-content/80">{{ $fine->pedagogical_message }}</p>
+
+                                    <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-base-200 pt-3 text-xs text-base-content/60">
+                                        @if ($fine->federation_reference)
+                                            <span>{{ __('Federation reference') }}: <span class="font-mono">{{ $fine->federation_reference }}</span></span>
+                                        @endif
+                                        @if ($fine->payment)
+                                            <span>{{ __('Reference') }}: <span class="font-mono">{{ $fine->payment->reference }}</span></span>
+                                        @endif
+                                    </div>
+
+                                    @if ($isPending)
+                                        <x-button :label="__('Go to my payments')" icon-right="o-arrow-right"
+                                            class="btn-primary btn-sm mt-3"
+                                            link="{{ route('admin.user.payments', $user) }}" />
+                                    @endif
+                                </x-slot:content>
+                            </x-collapse>
+                        @endforeach
+                    </div>
+                </x-card>
+            @endif
+
         </div>
     </div>
 
@@ -292,39 +351,5 @@
         {{ __('Are you sure you want to delete this picture? This action is irreversible.') }}
     </x-confirm-modal>
 
-    {{-- ════════════════════════════════
-         ZONE DE DANGER (RGPD)
-    ════════════════════════════════ --}}
-    @if (Auth::user()->is($user))
-        <div class="mt-8 border-t border-error/20 pt-6">
-            <div>
-                <p class="mb-1 text-xs font-semibold uppercase tracking-widest text-error/60">
-                    {{ __('Danger zone') }}
-                </p>
-                <x-card class="border border-error/20 bg-error/5">
-                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                            <p class="font-medium text-error">{{ __('Request account deletion') }}</p>
-                            <p class="mt-0.5 text-sm text-base-content/60">
-                                {{ __('Send a deletion request to the administrator. Your data will be anonymized. Note: requests with pending payments may be delayed.') }}
-                            </p>
-                        </div>
-                        @if ($user->gdpr_erasure_requested_at)
-                            <x-badge
-                                :value="__('Request sent on :date', ['date' => $user->gdpr_erasure_requested_at->format('d/m/Y')])"
-                                class="badge-warning badge-soft shrink-0" />
-                        @else
-                            <x-button
-                                class="btn-error btn-soft btn-sm shrink-0"
-                                icon="o-trash"
-                                :label="__('Request deletion')"
-                                wire:click="requestErasure"
-                                spinner="requestErasure" />
-                        @endif
-                    </div>
-                </x-card>
-            </div>
-        </div>
-    @endif
 
 </div>

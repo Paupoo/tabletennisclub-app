@@ -73,6 +73,9 @@
 
     <x-menu-sub icon="o-banknotes" :title="__('Treasury')">
         <x-menu-item icon="o-credit-card" link="{{ route('admin.treasury.payments') }}" :title="__('Payments')" />
+        @if (Auth::user()->canManageFinances())
+            <x-menu-item icon="o-scale" link="{{ route('admin.treasury.fines') }}" :title="__('Fines')" />
+        @endif
         <x-menu-item icon="o-building-library" link="{{ route('admin.treasury.transactions') }}" :title="__('Bank Transactions')" />
         <x-menu-item icon="o-currency-euro" link="{{ route('admin.treasury.cash') }}" :title="__('Cash Register')" />
     </x-menu-sub>

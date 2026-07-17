@@ -126,6 +126,8 @@ Route::prefix('admin/treasury/')
         Route::middleware('committee')->group(function (): void {
             Route::livewire('payments', 'pages::club-admin.treasury.payments')->name('admin.treasury.payments');
             Route::livewire('transactions', 'pages::club-admin.treasury.transactions')->name('admin.treasury.transactions');
+            // Fines — further gated to finance managers (treasurer/president/admin) in the component.
+            Route::livewire('fines', 'pages::club-admin.treasury.fines')->name('admin.treasury.fines');
         });
         // Cash register (bar) — access intentionally left broad for now (Xavier's domain).
         Route::livewire('cash-register', 'pages::club-admin.treasury.cash-register')->name('admin.treasury.cash');

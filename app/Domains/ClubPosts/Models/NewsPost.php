@@ -88,6 +88,22 @@ class NewsPost extends Model
         return 'slug';
     }
 
+    /**
+     * The posts the public site may serve: published by the committee *and*
+     * marked visible to everyone.
+     *
+     * Both flags are promises the admin UI makes — the edit form labels the
+     * toggle "Visible publiquement" and the article list shows a padlock when
+     * it is off. Keep the rule here, in one place: it used to be spelled out
+     * in the public list and forgotten entirely in the article page, which
+     * served drafts and padlocked posts to anonymous visitors.
+     */
+    public function scopePubliclyVisible(Builder $query): void
+    {
+        $query->where('status', NewsPostStatusEnum::PUBLISHED)
+            ->where('is_public', true);
+    }
+
     public function scopeSearch(Builder $query, string $value): void
     {
         $query->where('title', 'like', '%' . $value . '%')

@@ -7,7 +7,6 @@ namespace App\Livewire\Public\Articles;
 use App\Domains\ClubPosts\Models\NewsPost;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\NewsPostCategoryEnum;
-use App\Domains\Shared\Enums\NewsPostStatusEnum;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -69,8 +68,7 @@ class ArticleList extends Component
 
     public function getArticlesProperty(): LengthAwarePaginator
     {
-        $query = NewsPost::query()
-            ->where('status', NewsPostStatusEnum::PUBLISHED);
+        $query = NewsPost::publiclyVisible();
 
         $this->applyFilters($query);
 
@@ -140,7 +138,7 @@ class ArticleList extends Component
             return 0;
         }
 
-        $hasArticles = NewsPost::where('status', NewsPostStatusEnum::PUBLISHED)
+        $hasArticles = NewsPost::publiclyVisible()
             ->whereBetween('created_at', [$season->start_at->startOfDay(), $season->end_at->endOfDay()])
             ->exists();
 

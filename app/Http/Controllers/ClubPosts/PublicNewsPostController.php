@@ -19,13 +19,14 @@ class PublicNewsPostController extends Controller
 
     public function show(string $slug): View
     {
-
-        $article = NewsPost::whereSlug($slug)
+        $article = NewsPost::publiclyVisible()
+            ->whereSlug($slug)
             ->with('user')
             ->firstOrFail();
 
         // Articles similaires (même catégorie)
-        $relatedArticles = NewsPost::where('category', $article->category)
+        $relatedArticles = NewsPost::publiclyVisible()
+            ->where('category', $article->category)
             ->where('slug', '!=', $slug)
             ->take(3)
             ->get();

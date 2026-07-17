@@ -80,14 +80,50 @@ describe('Minutes page — drafting', function (): void {
 });
 
 describe('Minutes page — note-taking lock', function (): void {
-    test('the first committee member to open the page takes the lock', function (): void {
+    test('opening the page does not take the note-taking pen (I4)', function (): void {
         $admin = minutesAdmin();
         $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $admin->id]);
 
         Livewire::actingAs($admin)
             ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting]);
 
-        expect($meeting->fresh()->minutes_editor_id)->toBe($admin->id);
+        // Merely opening to read must not claim the pen — the free pen stays free.
+        expect($meeting->fresh()->minutes_editor_id)->toBeNull();
+    });
+
+    test('the first edit claims the pen', function (): void {
+        $admin = minutesAdmin();
+        $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $admin->id]);
+
+        $component = Livewire::actingAs($admin)
+            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting]);
+
+        expect($meeting->fresh()->minutes_editor_id)->toBeNull();
+
+        $component->set('notes', 'Première prise de notes');
+
+        expect($meeting->fresh()->minutes_editor_id)->toBe($admin->id)
+            ->and($meeting->fresh()->minutes?->notes)->toBe('Première prise de notes');
+    });
+
+    test('opening does not steal a stale lock; the first edit reclaims it (I4)', function (): void {
+        $away = minutesAdmin();
+        $arriving = minutesAdmin();
+        $meeting = Meeting::factory()->committee()->completed()->create([
+            'created_by' => $away->id,
+            'minutes_editor_id' => $away->id,
+            'minutes_editor_at' => now()->subMinutes(20),
+        ]);
+
+        $component = Livewire::actingAs($arriving)
+            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting]);
+
+        // Opening a page whose previous holder went stale must not grab the pen.
+        expect($meeting->fresh()->minutes_editor_id)->toBe($away->id);
+
+        // Only when the arriving member actually writes do they reclaim it.
+        $component->set('notes', 'Je reprends');
+        expect($meeting->fresh()->minutes_editor_id)->toBe($arriving->id);
     });
 
     test('a second member sees who takes notes and their edits are not persisted', function (): void {
@@ -121,20 +157,6 @@ describe('Minutes page — note-taking lock', function (): void {
             ->and($fresh->minutes->notes)->toBe('notes reprises');
     });
 
-    test('a stale lock is taken over automatically on open', function (): void {
-        $away = minutesAdmin();
-        $arriving = minutesAdmin();
-        $meeting = Meeting::factory()->committee()->completed()->create([
-            'created_by' => $away->id,
-            'minutes_editor_id' => $away->id,
-            'minutes_editor_at' => now()->subMinutes(20),
-        ]);
-
-        Livewire::actingAs($arriving)
-            ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting]);
-
-        expect($meeting->fresh()->minutes_editor_id)->toBe($arriving->id);
-    });
 });
 
 describe('Minutes page — live reading', function (): void {
@@ -178,6 +200,7 @@ describe('Minutes page — live reading (holder side)', function (): void {
 
         $component = Livewire::actingAs($holder)
             ->test('pages::club-events.meetings.minutes', ['meeting' => $meeting])
+            ->set('notes', 'je prends le stylo') // claim the pen by writing (I4)
             ->assertSeeText(__('You are taking the notes'));
 
         // Someone takes over from another session.

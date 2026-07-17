@@ -59,7 +59,7 @@
                             <button type="button"
                                 class="flex w-full items-start gap-3 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-base-200/50 disabled:pointer-events-none"
                                 wire:click="toggleDiscussed({{ $item->id }})"
-                                @disabled(! $this->holdsLock)>
+                                @disabled($this->lockHolder && ! $this->holdsLock)>
                                 <x-icon :name="$item->discussed_at ? 'o-check-circle' : 'o-minus-circle'"
                                     @class(['mt-0.5 h-5 w-5 shrink-0', 'text-primary' => $item->discussed_at, 'text-base-content/25' => ! $item->discussed_at]) />
                                 <span @class(['text-sm', 'text-base-content/40 line-through' => $item->discussed_at])>
@@ -72,7 +72,9 @@
             </x-card>
         @endif
 
-        <fieldset class="contents" @disabled(! $this->holdsLock)>
+        {{-- Editable when the pen is free/stale or held by us; read-only only when
+             another committee member holds it live (I4). --}}
+        <fieldset class="contents" @disabled($this->lockHolder && ! $this->holdsLock)>
 
         {{-- ── 1. Attendance ─────────────────────────────────────────── --}}
         @if ($meeting->users->isNotEmpty())
@@ -187,7 +189,7 @@
             @elseif (! $minutes?->is_published)
                 <x-button icon="o-eye" :label="__('Publish minutes')"
                     class="btn-primary" wire:click="publishMinutes" spinner="publishMinutes"
-                    :disabled="! $this->holdsLock" />
+                    :disabled="(bool) ($this->lockHolder && ! $this->holdsLock)" />
             @else
                 <x-button icon="o-paper-airplane"
                     :label="__('Send to committee')"

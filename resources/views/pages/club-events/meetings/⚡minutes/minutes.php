@@ -109,9 +109,8 @@ new class extends Component
 
         $this->meetingId = $meeting->id;
 
-        // Take the pen when it is free (or the previous holder went stale).
-        $meeting->acquireMinutesLock(auth()->user());
-
+        // Opening the page must never take the pen — a reader would dispossess the
+        // note taker. The pen is claimed on the first edit instead (see claimPen).
         $this->hydrateDraft($meeting);
     }
 
@@ -135,11 +134,12 @@ new class extends Component
             return;
         }
 
-        if (! $this->holdsLock) {
+        if (! $this->meeting->acquireMinutesLock(auth()->user())) {
             $this->toast(type: 'error', title: __('Take over the notes before publishing'));
 
             return;
         }
+        unset($this->meeting);
 
         $this->validate(['actionItems.*.title' => 'nullable|string|max:255']);
 
@@ -217,7 +217,8 @@ new class extends Component
     {
         abort_unless($this->canManage, 403);
 
-        if (! $this->holdsLock) {
+        // Ticking an item off is note-taking too: claim the pen (I4).
+        if (! $this->claimPen()) {
             return;
         }
 
@@ -276,19 +277,34 @@ new class extends Component
             ->toArray();
     }
 
-    private function persistDraft(): MeetingMinutes
+    /**
+     * Claim the note-taking pen for the current user on a write. Succeeds when the
+     * pen is free/stale or already theirs; fails (with a warning) only when another
+     * committee member holds it live. This is where the pen is taken — never on
+     * mount (I4) — so simply opening the page leaves the note taker undisturbed.
+     */
+    private function claimPen(): bool
     {
-        $meeting = $this->meeting;
+        if ($this->meeting->acquireMinutesLock(auth()->user())) {
+            unset($this->meeting);
 
-        // Only the note taker writes; everyone else is read-only until takeover.
-        if (! $this->holdsLock) {
-            $this->toast(type: 'warning', title: __(':name is taking notes', ['name' => $this->lockHolder?->full_name ?? '']));
-
-            return $meeting->minutes ?? new MeetingMinutes(['meeting_id' => $this->meetingId]);
+            return true;
         }
 
-        $meeting->acquireMinutesLock(auth()->user());
+        $this->toast(type: 'warning', title: __(':name is taking notes', ['name' => $this->lockHolder?->full_name ?? '']));
 
+        return false;
+    }
+
+    private function persistDraft(): MeetingMinutes
+    {
+        // The first edit claims the pen; another live holder keeps everyone else
+        // read-only until an explicit takeover.
+        if (! $this->claimPen()) {
+            return $this->meeting->minutes ?? new MeetingMinutes(['meeting_id' => $this->meetingId]);
+        }
+
+        $meeting = $this->meeting;
         $minutes = $meeting->minutes ?? new MeetingMinutes(['meeting_id' => $this->meetingId]);
         $minutes->announcements = array_values(array_filter($this->announcements, fn ($v) => filled($v)));
         $minutes->decisions = array_values(array_filter($this->decisions, fn ($v) => filled($v)));

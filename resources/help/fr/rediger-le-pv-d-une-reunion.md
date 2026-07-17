@@ -11,9 +11,9 @@ Le PV se prépare **dès que la date est confirmée** — vous pouvez poser l'or
 
 C'est le point à comprendre avant tout le reste.
 
-**Ouvrir la page du PV prend le stylo automatiquement**, s'il est libre. Vous n'avez rien à cliquer — et c'est aussi vrai si vous vouliez juste jeter un œil. Si vous ouvrez le PV « pour voir » pendant qu'un autre s'apprêtait à écrire, vous venez de le lui prendre.
+**Ouvrir la page ne prend pas le stylo.** Vous pouvez venir lire sans rien déranger — celui qui écrivait garde la main. Le stylo se prend **à votre première modification** : dès que vous tapez une note ou cochez un point de l'ordre du jour, il est à vous.
 
-Si quelqu'un l'a déjà, vous **lisez en direct** : ses notes arrivent chez vous toutes les trois secondes environ, sans rien faire. Vous pouvez **reprendre le stylo explicitement** — il n'y a pas de permission à demander, l'autre est simplement averti qu'il a changé de mains. C'est fait pour : en réunion, celui qui parle passe le clavier.
+Si quelqu'un écrit déjà, vous **lisez en direct** : ses notes arrivent chez vous toutes les trois secondes environ, sans rien faire, et les champs restent en lecture seule. Vous pouvez **reprendre le stylo explicitement** avec le bouton prévu — il n'y a pas de permission à demander, l'autre est simplement averti qu'il a changé de mains. C'est fait pour : en réunion, celui qui parle passe le clavier.
 
 **Le stylo se libère tout seul après 10 minutes sans écrire.** N'importe qui peut alors le prendre sans avoir à forcer. C'est pratique quand le secrétaire ferme son ordinateur sans prévenir — inutile de l'appeler.
 
@@ -30,7 +30,7 @@ Si quelqu'un l'a déjà, vous **lisez en direct** : ses notes arrivent chez vous
 Deux conditions, et l'application refusera tant que les deux ne sont pas réunies :
 
 - **La réunion doit avoir eu lieu.** Vous préparez le PV à l'avance autant que vous voulez, mais on ne publie pas le compte rendu d'une réunion qui n'a pas encore commencé. Le refus dit exactement ça.
-- **Vous devez tenir le stylo.** Si quelqu'un d'autre l'a, reprenez-le d'abord — le message vous le dira.
+- **Personne d'autre ne doit être en train d'écrire.** Si le stylo est libre, publier le prend au passage ; si quelqu'un l'a, reprenez-le d'abord — le message vous le dira.
 
 Une fois le PV publié, vous pouvez le **diffuser sur le site** : le formulaire de publication arrive pré-rempli avec les informations de la réunion. Dans l'autre sens, ça ne marche pas : **il faut publier le PV avant de pouvoir le diffuser.**
 

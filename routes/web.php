@@ -97,6 +97,15 @@ Route::prefix('admin/my-space/')
         Route::get('{user}/documents/{type}', [UserDocumentController::class, 'download'])->name('admin.user.documents.download');
     });
 
+// Help — every signed-in member. The library is not split per role: each task is
+// written once and tagged, and HelpAudience decides what a given member is shown.
+Route::prefix('admin/aide')
+    ->middleware(['auth', 'verified'])
+    ->group(function (): void {
+        Route::livewire('/', 'pages::help.index')->name('admin.help.index');
+        Route::livewire('{slug}', 'pages::help.show')->name('admin.help.show');
+    });
+
 // Members administration — reserved to the management committee (admins + committee members).
 // Directly reachable by URL, so the whole group is gated here (the nav only hides the links).
 Route::prefix('admin/club-admin/users/')

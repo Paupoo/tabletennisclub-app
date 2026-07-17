@@ -54,6 +54,12 @@
         :title="__('Rules & regulations')"
     />
 
+    <x-menu-item
+        icon="o-question-mark-circle"
+        link="{{ route('admin.help.index') }}"
+        :title="__('Help')"
+    />
+
 
     <x-menu-separator />
     @if(Auth()->user()->is_admin || Auth()->user()->is_committee_member )

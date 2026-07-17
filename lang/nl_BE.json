@@ -3707,5 +3707,9 @@
     ":amount € still to pay": ":amount € nog te betalen",
     "all settled": "alles is betaald",
     "Go to my payments": "Naar mijn betalingen",
-    ":count fine|:count fines": ":count boete|:count boetes"
+    ":count fine|:count fines": ":count boete|:count boetes",
+    "One page per task — only what concerns your role.": "Eén pagina per taak — enkel wat u aanbelangt.",
+    "Search help...": "Zoeken in de hulp...",
+    "No help page matches your search.": "Geen hulppagina komt overeen met uw zoekopdracht.",
+    "Back to help": "Terug naar de hulp"
 }

@@ -3707,5 +3707,9 @@
     ":amount € still to pay": ":amount € encore à payer",
     "all settled": "tout est réglé",
     "Go to my payments": "Aller à mes paiements",
-    ":count fine|:count fines": ":count amende|:count amendes"
+    ":count fine|:count fines": ":count amende|:count amendes",
+    "One page per task — only what concerns your role.": "Une page par tâche — seulement ce qui vous concerne.",
+    "Search help...": "Rechercher dans l’aide...",
+    "No help page matches your search.": "Aucune page d’aide ne correspond à votre recherche.",
+    "Back to help": "Retour à l’aide"
 }

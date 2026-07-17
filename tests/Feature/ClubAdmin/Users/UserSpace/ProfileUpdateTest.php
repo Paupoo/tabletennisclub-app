@@ -153,14 +153,22 @@ test('email must be unique across users', function (): void {
         ->assertHasErrors(['email']);
 });
 
-test('user can request GDPR erasure', function (): void {
+test('user can request GDPR erasure from the settings page', function (): void {
+    $user = User::factory()->create(['gdpr_erasure_requested_at' => null]);
+
+    Livewire::actingAs($user)
+        ->test('pages::club-admin.users.user-space.settings', ['user' => $user])
+        ->call('requestErasure');
+
+    expect($user->fresh()->gdpr_erasure_requested_at)->not->toBeNull();
+});
+
+test('the profile page no longer carries the danger zone', function (): void {
     $user = User::factory()->create();
 
     Livewire::actingAs($user)
         ->test('pages::club-admin.users.user-space.profile', ['user' => $user])
-        ->call('requestErasure');
-
-    expect($user->fresh())->not->toBeNull();
+        ->assertDontSee(__('Danger zone'));
 });
 
 describe('profile shows real season data — no prototype leftovers', function (): void {

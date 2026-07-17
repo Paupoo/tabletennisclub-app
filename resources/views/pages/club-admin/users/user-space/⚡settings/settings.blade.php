@@ -77,4 +77,33 @@
             </x-form>
         </div>
     </x-admin.shared.form-section>
+
+    <!-- Zone de danger (RGPD) -->
+    <div class="mt-8 border-t border-error/20 pt-6">
+        <p class="mb-1 text-xs font-semibold uppercase tracking-widest text-error/60">
+            {{ __('Danger zone') }}
+        </p>
+        <x-card class="border border-error/20 bg-error/5">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <p class="font-medium text-error">{{ __('Request account deletion') }}</p>
+                    <p class="mt-0.5 text-sm text-base-content/60">
+                        {{ __('Send a deletion request to the administrator. Your data will be anonymized. Note: requests with pending payments may be delayed.') }}
+                    </p>
+                </div>
+                @if ($user->gdpr_erasure_requested_at)
+                    <x-badge
+                        :value="__('Request sent on :date', ['date' => $user->gdpr_erasure_requested_at->format('d/m/Y')])"
+                        class="badge-warning badge-soft shrink-0" />
+                @else
+                    <x-button
+                        class="btn-error btn-soft btn-sm shrink-0"
+                        icon="o-trash"
+                        :label="__('Request deletion')"
+                        wire:click="requestErasure"
+                        spinner="requestErasure" />
+                @endif
+            </div>
+        </x-card>
+    </div>
 </div>

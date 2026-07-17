@@ -24,6 +24,8 @@ pest()->group('club-admin', 'users');
 
 const SECURITY_FORM_COMPONENT = 'pages::club-admin.users.form';
 const PROFILE_COMPONENT = 'pages::club-admin.users.user-space.profile';
+// Erasure lives in account settings, not on the profile page.
+const SECURITY_SETTINGS_COMPONENT = 'pages::club-admin.users.user-space.settings';
 
 beforeEach(function () {
     $this->admin = User::factory()->create(['is_admin' => true, 'is_coach' => false]);
@@ -58,7 +60,7 @@ describe('self-service erasure request', function () {
         $user = User::factory()->create(['gdpr_erasure_requested_at' => null]);
 
         Livewire::actingAs($user)
-            ->test(PROFILE_COMPONENT, ['user' => $user])
+            ->test(SECURITY_SETTINGS_COMPONENT, ['user' => $user])
             ->call('requestErasure');
 
         expect($user->fresh()->gdpr_erasure_requested_at)->not->toBeNull();
@@ -72,7 +74,7 @@ describe('self-service erasure request', function () {
         $member = User::factory()->create(['gdpr_erasure_requested_at' => null]);
 
         Livewire::actingAs($member)
-            ->test(PROFILE_COMPONENT, ['user' => $member])
+            ->test(SECURITY_SETTINGS_COMPONENT, ['user' => $member])
             ->call('requestErasure');
 
         Notification::assertSentTo([$this->admin, $secretary], GdprErasureRequestedNotification::class);
@@ -86,7 +88,7 @@ describe('self-service erasure request', function () {
         $member = User::factory()->create(['gdpr_erasure_requested_at' => $originalDate]);
 
         Livewire::actingAs($member)
-            ->test(PROFILE_COMPONENT, ['user' => $member])
+            ->test(SECURITY_SETTINGS_COMPONENT, ['user' => $member])
             ->call('requestErasure');
 
         Notification::assertNothingSent();

@@ -339,7 +339,14 @@
                                     @endif
                                 </div>
                             @empty
-                                <div class="p-4 text-center text-xs opacity-40">{{ __('No player found.') }}</div>
+                                @if ($searchNote)
+                                    <div class="flex items-start gap-2 rounded-lg bg-warning/10 p-3 text-xs text-warning-content">
+                                        <x-icon name="o-information-circle" class="mt-0.5 h-4 w-4 shrink-0" />
+                                        <span>{{ $searchNote }}</span>
+                                    </div>
+                                @else
+                                    <div class="p-4 text-center text-xs opacity-40">{{ __('No player found.') }}</div>
+                                @endif
                             @endforelse
                         </div>
                     @endif

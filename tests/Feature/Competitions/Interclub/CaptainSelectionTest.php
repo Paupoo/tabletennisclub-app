@@ -8,6 +8,7 @@ use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
+use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\InterclubAvailability;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -183,6 +184,94 @@ it('shows team players contact details to the captain even when unshared', funct
         ->call('openSelection', $this->interclub->id)
         ->assertSee('0470999888')
         ->assertSee('captain.player1@club.be');
+});
+
+// ── substitute search: explain why the list is empty (I2) ─────────────────────
+
+describe('substitute search — explains the silent filtering (I2)', function (): void {
+    // The substitute search is a selector/committee feature (a plain captain has
+    // no access to it), so these tests act as a selector.
+    beforeEach(function (): void {
+        $this->selector = User::factory()->create(['is_selector' => true]);
+    });
+
+    function openSelectorSearch(User $selector, int $interclubId, int $teamId, string $search)
+    {
+        return Livewire::actingAs($selector)
+            ->test('pages::club-events.interclubs.captain-selection')
+            ->set('selectedTeamId', $teamId)
+            ->call('openSelection', $interclubId)
+            ->set('search', $search);
+    }
+
+    it('tells the selector the team category is hiding matching players', function (): void {
+        // beforeEach sets the team up in a MEN league. A female competitor whose
+        // name matches the search is silently filtered out by category.
+        User::factory()->isCompetitor()->create([
+            'gender' => Gender::WOMEN,
+            'last_name' => 'Zoravitch',
+        ]);
+
+        $component = openSelectorSearch($this->selector, $this->interclub->id, $this->team->id, 'Zoravitch');
+
+        expect($component->viewData('searchResults'))->toBeEmpty()
+            ->and($component->viewData('searchNote'))->not->toBeNull();
+
+        $component->assertSee(__('this team only lines up men'));
+    });
+
+    it('tells the selector a matching player is already lined up elsewhere', function (): void {
+        // A male competitor of the right category, but already selected in another
+        // team the same week -> blocked and silently removed from the results.
+        $blocked = User::factory()->isCompetitor()->create([
+            'gender' => Gender::MEN,
+            'last_name' => 'Blockman',
+        ]);
+
+        $otherTeam = Team::factory()->create([
+            'season_id' => $this->season->id,
+            'league_id' => $this->league->id,
+            'club_id' => $this->ownClub->id,
+        ]);
+
+        $otherMatch = Interclub::factory()->create([
+            'season_id' => $this->season->id,
+            'league_id' => $this->league->id,
+            'visited_team_id' => $otherTeam->id,
+            'week_number' => $this->interclub->week_number,
+            'total_players' => 4,
+            'start_date_time' => now()->addDays(7),
+        ]);
+        $otherMatch->users()->attach($blocked->id, ['is_selected' => true]);
+
+        $component = openSelectorSearch($this->selector, $this->interclub->id, $this->team->id, 'Blockman');
+
+        expect($component->viewData('searchResults'))->toBeEmpty()
+            ->and($component->viewData('searchNote'))->not->toBeNull();
+
+        $component->assertSee(__('some are already selected here or lined up in another team this week'));
+    });
+
+    it('stays silent when no competitor matches the search at all', function (): void {
+        $component = openSelectorSearch($this->selector, $this->interclub->id, $this->team->id, 'Nobodyhere');
+
+        expect($component->viewData('searchResults'))->toBeEmpty()
+            ->and($component->viewData('searchNote'))->toBeNull();
+
+        $component->assertSee(__('No player found.'));
+    });
+
+    it('still returns an eligible substitute of the right category', function (): void {
+        $man = User::factory()->isCompetitor()->create([
+            'gender' => Gender::MEN,
+            'last_name' => 'Eligibleman',
+        ]);
+
+        $component = openSelectorSearch($this->selector, $this->interclub->id, $this->team->id, 'Eligibleman');
+
+        expect(collect($component->viewData('searchResults'))->pluck('id'))->toContain($man->id)
+            ->and($component->viewData('searchNote'))->toBeNull();
+    });
 });
 
 // ── Status logic tests ──────────────────────────────────────────────────────

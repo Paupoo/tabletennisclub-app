@@ -15,17 +15,16 @@ En bas du panneau de sélection, la section **Rechercher un remplaçant**. Tapez
 
 ### Pourquoi votre joueur n'apparaît pas
 
-La recherche filtre en silence, et c'est la source de confusion numéro un. Un nom absent n'est pas un bug :
+La recherche ne renvoie que les joueurs réellement alignables. Quand elle ne renvoie rien alors que des noms correspondaient, **l'application vous dit désormais pourquoi** — un message apparaît sous le champ. Les filtres en jeu :
 
-- **Seuls les compétiteurs** sont cherchés. Un membre récréatif n'apparaîtra jamais.
-- **La catégorie de l'équipe filtre les résultats**, sans le dire :
+- **La catégorie de l'équipe** restreint les résultats :
   - équipe **messieurs** → seuls les hommes ;
   - équipe **dames** → seules les femmes ;
   - équipe **vétérans** → seuls les joueurs qui ont **40 ans ou plus à la fin de la saison**.
 - **Les joueurs déjà sélectionnés** pour ce match n'apparaissent pas — ils sont déjà dans la liste du dessus.
-- **Les joueurs déjà alignés dans une autre équipe cette semaine-là n'apparaissent pas non plus.** Ils sont retirés des résultats, sans explication. Si vous cherchez quelqu'un dont vous êtes sûr et qu'il reste introuvable, c'est presque toujours ça : il joue déjà ailleurs cette semaine.
+- **Les joueurs déjà alignés dans une autre équipe cette semaine-là** sont retirés des résultats. Si vous cherchez quelqu'un dont vous êtes sûr et qu'il reste introuvable, c'est presque toujours ça : il joue déjà ailleurs cette semaine.
 
-> La différence est importante : dans la **liste de l'équipe**, un joueur déjà aligné ailleurs vous est montré et signalé comme bloqué. Dans la **recherche de remplaçant**, il est simplement absent. Deux comportements différents pour la même situation.
+Un cas que le message ne couvre pas : **seuls les compétiteurs** sont cherchés. Un membre récréatif ne remontera jamais, et la recherche affiche alors simplement « Aucun joueur trouvé ».
 
 ### Ce que l'application ne vérifie pas pour vous
 

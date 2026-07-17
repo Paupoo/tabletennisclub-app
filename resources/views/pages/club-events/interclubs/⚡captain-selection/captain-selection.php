@@ -433,25 +433,42 @@ new class extends Component
         }
 
         $searchResults = collect();
+        $searchNote = null;
         if ($canSearchSubstitute && strlen($this->search) >= 2) {
             $selectedTeam = $teams->firstWhere('id', $this->selectedTeamId);
             $teamCategory = $selectedTeam?->league?->category;
+            $veteranCutoff = $season ? $season->end_at->copy()->subYears(40) : null;
+            $excludedIds = array_merge($this->selectedPlayerIds, $blockedPlayerIds);
 
-            $searchResults = User::competitor()
+            // All competitors matching the name, before the category / alignment
+            // filters — so we can explain what got silently removed (I2).
+            $nameMatches = User::competitor()
                 ->where(fn ($q) => $q
                     ->where('first_name', 'like', '%' . $this->search . '%')
                     ->orWhere('last_name', 'like', '%' . $this->search . '%'))
-                ->whereNotIn('id', array_merge($this->selectedPlayerIds, $blockedPlayerIds))
-                ->when($teamCategory === 'MEN', fn ($q) => $q->where('gender', Gender::MEN))
-                ->when($teamCategory === 'WOMEN', fn ($q) => $q->where('gender', Gender::WOMEN))
-                ->when($teamCategory === 'VETERANS' && $season, fn ($q) => $q->whereDate('birthdate', '<=', $season->end_at->copy()->subYears(40)))
-                ->limit(8)
-                ->get()
-                ->map(fn (User $u) => [
-                    'id' => $u->id,
-                    'name' => $u->last_name . ' ' . $u->first_name,
-                    'rank' => $u->ranking ?? '—',
-                ]);
+                ->get();
+
+            $matchesCategory = fn (User $u): bool => match ($teamCategory) {
+                'MEN' => $u->gender === Gender::MEN,
+                'WOMEN' => $u->gender === Gender::WOMEN,
+                'VETERANS' => $veteranCutoff !== null && $u->birthdate !== null
+                    && $u->birthdate->toDateString() <= $veteranCutoff->toDateString(),
+                default => true,
+            };
+
+            $eligible = $nameMatches
+                ->reject(fn (User $u) => in_array($u->id, $excludedIds, true))
+                ->filter($matchesCategory);
+
+            $searchResults = $eligible->take(8)->map(fn (User $u) => [
+                'id' => $u->id,
+                'name' => $u->last_name . ' ' . $u->first_name,
+                'rank' => $u->ranking ?? '—',
+            ])->values();
+
+            if ($searchResults->isEmpty()) {
+                $searchNote = $this->buildSearchNote($nameMatches, $excludedIds, $matchesCategory, $teamCategory);
+            }
         }
 
         $allTeamsForSummary = $isAdminOrCommittee
@@ -477,6 +494,7 @@ new class extends Component
             'roster' => $roster,
             'maxPlayers' => $maxPlayers,
             'searchResults' => $searchResults,
+            'searchNote' => $searchNote,
             'drawerInterclub' => $drawerInterclub,
             'isAdminOrCommittee' => $isAdminOrCommittee,
             'canSearchSubstitute' => $canSearchSubstitute,
@@ -495,6 +513,51 @@ new class extends Component
         return Breadcrumb::make()
             ->home()
             ->current(__('Captain Selection'));
+    }
+
+    /**
+     * Explain why a substitute search returned nothing: matching competitors do
+     * exist, but the category rule and/or the same-week alignment hid them (I2).
+     *
+     * @param  Collection<int, User>  $nameMatches
+     * @param  array<int, int>  $excludedIds
+     * @param  callable(User): bool  $matchesCategory
+     */
+    private function buildSearchNote(Collection $nameMatches, array $excludedIds, callable $matchesCategory, ?string $teamCategory): ?string
+    {
+        if ($nameMatches->isEmpty()) {
+            return null;
+        }
+
+        $hiddenByAlignment = $nameMatches->contains(fn (User $u) => in_array($u->id, $excludedIds, true));
+        $hiddenByCategory = $nameMatches
+            ->reject(fn (User $u) => in_array($u->id, $excludedIds, true))
+            ->contains(fn (User $u) => ! $matchesCategory($u));
+
+        $reasons = [];
+
+        if ($hiddenByCategory) {
+            $reasons[] = match ($teamCategory) {
+                'MEN' => __('this team only lines up men'),
+                'WOMEN' => __('this team only lines up women'),
+                'VETERANS' => __('this team only lines up veterans (40 and over)'),
+                default => null,
+            };
+        }
+
+        if ($hiddenByAlignment) {
+            $reasons[] = __('some are already selected here or lined up in another team this week');
+        }
+
+        $reasons = array_filter($reasons);
+
+        if ($reasons === []) {
+            return null;
+        }
+
+        return __('Some players match your search but are hidden: :reasons.', [
+            'reasons' => implode(' ; ', $reasons),
+        ]);
     }
 
     /**

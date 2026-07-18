@@ -13,6 +13,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Competitions\Tournament\Notifications\TournamentConfirmationExpiredNotification;
+use App\Domains\Competitions\Tournament\Notifications\TournamentPaymentExpiredNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentPaymentReminderNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentPaymentRequestNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentRegistrationCancelledNotification;
@@ -148,9 +149,14 @@ class TournamentService
                 ->where('id', $registration->id)
                 ->update(['registration_status' => 'cancelled']);
 
+            $user = User::find($registration->user_id);
             $tournament = Tournament::find($registration->tournament_id);
 
-            if ($tournament) {
+            if ($user && $tournament) {
+                // Tell the member their spot is gone — they got payment reminders
+                // before, so silence here reads as an oversight (I5). Mirrors
+                // expireConfirmationDeadlines().
+                $user->notify(new TournamentPaymentExpiredNotification($tournament));
                 $this->countRegisteredUsers($tournament);
                 $this->openSpot($tournament);
             }

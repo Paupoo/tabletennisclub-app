@@ -21,15 +21,11 @@ Pour un tournoi payant, le délai n'est **pas** un compte à rebours fixe :
 - Inscription **après la clôture** (inscription tardive) → **3 jours** à partir de l'inscription.
 - Inscription **le jour même du tournoi** → **aucun délai de paiement n'est posé.** Le paiement se règle sur place, entre vous.
 
-## ⚠️ Le point qui vous vaudra des appels
+## L'annulation pour non-paiement
 
-**Une inscription non payée au terme du délai est annulée automatiquement — et le membre n'en est pas averti.**
+**Une inscription non payée au terme du délai est annulée automatiquement.** Le membre reçoit des **rappels de paiement** avant l'échéance, puis, à l'annulation, **un e-mail lui explique que sa place a été libérée faute de paiement à temps** — comme pour l'expiration de la liste d'attente. Sa place est alors proposée à la première personne en attente.
 
-Il reçoit bien des **rappels de paiement** avant l'échéance. Mais l'annulation elle-même, personne ne la lui annonce : sa place est libérée, donnée à la liste d'attente, et il l'apprend en arrivant le jour du tournoi.
-
-C'est différent de la liste d'attente, où l'expiration **est** notifiée. Cette asymétrie n'est pas voulue, elle est signalée.
-
-**En pratique :** avant un tournoi, passez la liste des inscrits en revue plutôt que d'attendre que les gens se manifestent. Un membre annulé pour non-paiement ne le sait pas.
+**En pratique :** l'annulation est désormais annoncée, mais avant un tournoi il reste utile de passer la liste des inscrits en revue plutôt que d'attendre que chacun se manifeste.
 
 ## Quand quelqu'un se désinscrit
 

@@ -8,6 +8,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Competitions\Tournament\Notifications\TournamentConfirmationExpiredNotification;
+use App\Domains\Competitions\Tournament\Notifications\TournamentPaymentExpiredNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentRegistrationCancelledNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentRegistrationConfirmedNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentWaitlistSpotOpenedNotification;
@@ -369,6 +370,50 @@ describe('expirePaymentDeadlines', function (): void {
                 ->where('user_id', $user->id)
                 ->value('registration_status')
         )->toBe('cancelled');
+    });
+
+    it('notifies the member when their unpaid registration is cancelled (I5)', function (): void {
+        Notification::fake();
+        $tournament = paymentTournament(['price' => 10]);
+        $user = User::factory()->create();
+        $tournament->users()->attach($user->id, [
+            'registration_status' => 'registered',
+            'has_paid' => false,
+            'payment_deadline' => now()->subHour(),
+        ]);
+
+        Event::fake();
+        (new TournamentService)->expirePaymentDeadlines();
+
+        Notification::assertSentTo($user, TournamentPaymentExpiredNotification::class);
+    });
+
+    it('renders the payment-expired email fully in the member locale', function (): void {
+        app()->setLocale('fr_BE');
+        $tournament = paymentTournament(['price' => 10]);
+        $user = User::factory()->create();
+
+        $rendered = (string) (new TournamentPaymentExpiredNotification($tournament))->toMail($user)->render();
+
+        expect($rendered)->toContain('paiement')
+            ->and($rendered)->not->toContain('has been cancelled because we did not receive')
+            ->and($rendered)->not->toContain('Your registration has expired');
+    });
+
+    it('does not notify when nothing expires', function (): void {
+        Notification::fake();
+        $tournament = paymentTournament(['price' => 10]);
+        $user = User::factory()->create();
+        $tournament->users()->attach($user->id, [
+            'registration_status' => 'registered',
+            'has_paid' => false,
+            'payment_deadline' => now()->addDay(),
+        ]);
+
+        Event::fake();
+        (new TournamentService)->expirePaymentDeadlines();
+
+        Notification::assertNotSentTo($user, TournamentPaymentExpiredNotification::class);
     });
 
     it('does not cancel registrations with future payment deadlines', function (): void {

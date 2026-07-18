@@ -24,7 +24,9 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // Expire waitlist confirmation (48h) + payment deadlines (72h) + send daily reminders.
+        // Expire waitlist confirmation (48h) + unpaid registrations past their
+        // payment deadline (the registration-close date, or 3 days for a late
+        // sign-up) + send payment reminders.
         $schedule->command('tournament:process-deadlines')->hourly();
 
         // Expire unconfirmed training waitlist offers (48h) and promote next waiter.

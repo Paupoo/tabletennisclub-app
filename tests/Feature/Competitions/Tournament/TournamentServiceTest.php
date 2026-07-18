@@ -14,6 +14,7 @@ use App\Domains\Competitions\Tournament\Notifications\TournamentRegistrationConf
 use App\Domains\Competitions\Tournament\Notifications\TournamentWaitlistSpotOpenedNotification;
 use App\Domains\Competitions\Tournament\Services\TournamentService;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Notification;
 
@@ -96,6 +97,51 @@ describe('registerUser', function (): void {
 
         expect(Payment::count())->toBe(1);
         expect(Payment::first()->status)->toBe('pending');
+    });
+
+    // The payment deadline is NOT a fixed 72h window (I6): these lock the real rule.
+    it('sets the payment deadline to the registration-close date for a normal sign-up', function (): void {
+        Notification::fake();
+        Event::fake();
+        $tournament = paymentTournament([
+            'price' => 10,
+            'registration_deadline' => Carbon::create(2026, 9, 15, 12),
+            'start_date' => Carbon::create(2026, 9, 20, 10),
+        ]);
+
+        (new TournamentService)->registerUser($tournament, User::factory()->create());
+
+        expect(TournamentRegistration::first()->payment_deadline->format('Y-m-d H:i:s'))
+            ->toBe('2026-09-15 23:59:59');
+    });
+
+    it('gives a late sign-up 3 days to pay, not the past registration date', function (): void {
+        Notification::fake();
+        Event::fake();
+        $tournament = paymentTournament([
+            'price' => 10,
+            'registration_deadline' => now()->subDays(2),
+            'start_date' => now()->addDays(5),
+        ]);
+
+        (new TournamentService)->registerUser($tournament, User::factory()->create());
+
+        expect(TournamentRegistration::first()->payment_deadline->toDateString())
+            ->toBe(now()->addDays(3)->toDateString());
+    });
+
+    it('sets no payment deadline for a same-day entry', function (): void {
+        Notification::fake();
+        Event::fake();
+        $tournament = paymentTournament([
+            'price' => 10,
+            'registration_deadline' => now()->subDay(),
+            'start_date' => now(),
+        ]);
+
+        (new TournamentService)->registerUser($tournament, User::factory()->create());
+
+        expect(TournamentRegistration::first()->payment_deadline)->toBeNull();
     });
 
     it('throws LogicException when user is already registered', function (): void {

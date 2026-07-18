@@ -133,8 +133,11 @@ class TournamentService
     }
 
     /**
-     * Expire unpaid registrations (72h window passed) and trigger waitlist.
-     * Called by the daily scheduler.
+     * Expire unpaid registrations whose payment deadline has passed and trigger
+     * the waitlist. The deadline is not a fixed window: it is set at registration
+     * time (see registerUser) to the registration-close date, or now + 3 days for
+     * a late sign-up, and no deadline at all for a same-day entry.
+     * Called by the hourly scheduler.
      */
     public function expirePaymentDeadlines(): void
     {

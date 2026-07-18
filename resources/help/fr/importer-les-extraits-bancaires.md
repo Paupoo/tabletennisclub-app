@@ -39,7 +39,7 @@ Un import qui annonce **0 nouvelle et 0 doublon** signifie que rien n'a été re
 
 La recherche couvre le **nom de la contrepartie**, les **communications** (structurée et libre) et la **description**. Vous pouvez filtrer par période, par sens (entrées / sorties) et par état de rapprochement.
 
-> **Le compteur « à rapprocher » et le filtre « non rapprochées » ne disent pas la même chose.** Le compteur ne retient que les **entrées d'argent** — les seules qui peuvent correspondre à une cotisation. Le filtre, lui, affiche aussi toutes les **sorties**, qui ne seront jamais rapprochées à quoi que ce soit. Un écart entre les deux chiffres est normal, ce n'est pas un compte faux.
+Le compteur **« à rapprocher »** et le filtre **« non rapprochées »** comptent la même chose : les **entrées d'argent** encore sans paiement associé — les seules qui peuvent correspondre à une cotisation. Les sorties (remboursements, frais) ne sont jamais concernées, ni par l'un ni par l'autre.
 
 ## Supprimer des transactions
 

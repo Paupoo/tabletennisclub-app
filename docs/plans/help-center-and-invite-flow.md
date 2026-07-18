@@ -156,6 +156,7 @@ Périmètre **intouché** par le chantier UI, donc rédigeable en même temps sa
 - **2026-07-17** — 📝 Article 12 : `importer-les-extraits-bancaires.md`. **12 articles, 8 défauts.** Leçon de la journée : **un article déjà écrit peut être faux.** `rapprocher-les-paiements.md` envoyait le trésorier sur l'import cassé, faute d'avoir vu que le bon existait une page plus loin. Corrigé. C'est exactement le mécanisme qui a tué `docs/manual-committee-fr.md` — sauf qu'ici la correction a coûté cinq minutes parce que le texte vit dans le repo, à côté du code.
 - **2026-07-17** — ✅ **I7 corrigé en TDD** (fuite d'articles non publiés sur le site public). Détail dans le bandeau §8. Premier défaut de la série effectivement réparé — code applicatif touché (contrôleur, modèle, composant, factory) + 6 tests de non-régression.
 - **2026-07-17** — 📝 Article 13 : `suivre-le-materiel-confie.md`. **13 articles. Lot parallèle bouclé** (reste seulement « contenu du site », volontairement en attente — dépend de la refonte contenu + écran admin de publication). **Bilan détecteur : 13 articles → 8 défauts, 1 corrigé (I7), 7 en attente d'arbitrage.** Prochaine étape non technique : **retour du comité** pour prioriser le chantier UI (§4) et le plan d'action défauts (§8).
+- **2026-07-17** — ✅ **I8 corrigé en TDD** (tuile vs filtre « non rapprochées »). Le filtre `unreconciled` ne compte plus que les entrées (`amount > 0`), comme la tuile — dans la liste et la sélection groupée. 2 tests, article `importer-les-extraits-bancaires.md` corrigé. **Série des défauts bouclée : I1–I8 tous corrigés.** Détail §8.
 - **2026-07-17** — ✅ **I6 corrigé** (mythe « 72h »). Le « 72h » mensonger était surtout dans **l'e-mail de demande de paiement** (user-facing) → corrigé + test. 2 commentaires (`TournamentService`, `Kernel`) réécrits. Bonus : 3 tests de caractérisation verrouillent la vraie règle du délai (aucun test ne la couvrait). Détail §8.
 - **2026-07-17** — ✅ **I5 corrigé en TDD** (inscription tournoi non payée annulée sans prévenir). `expirePaymentDeadlines()` notifie le membre (nouvelle `TournamentPaymentExpiredNotification`, calquée sur la liste d'attente) : sa place a été libérée faute de paiement. 3 tests, 2 clés FR+NL, article `comprendre-les-inscriptions-tournoi.md` mis à jour. Détail §8.
 - **2026-07-17** — ✅ **I4 corrigé en TDD** (ouvrir le PV volait le stylo). `mount()` n'acquiert plus le verrou ; il se prend à la première frappe (`claimPen()`). Champs éditables quand le stylo est libre, lecture seule si un autre écrit. 5 tests de verrou (2 anciens réécrits), article `rediger-le-pv-d-une-reunion.md` mis à jour. Détail §8.
@@ -166,9 +167,9 @@ Périmètre **intouché** par le chantier UI, donc rédigeable en même temps sa
 
 ---
 
-## 8. Défauts repérés par la rédaction — à arbitrer
+## 8. Défauts repérés par la rédaction
 
-Ni corrigés ni planifiés : ils sont sortis en documentant, hors périmètre du chantier §4.
+Sortis en documentant, hors périmètre du chantier §4. **Les huit (I1–I8) sont désormais corrigés** (2026-07-17), chacun en TDD avec son article d'aide mis à jour et son commit isolé.
 
 > ### ✅ I7 — Fuite d'articles non publiés sur le site public — **CORRIGÉ le 2026-07-17**
 >
@@ -242,6 +243,11 @@ Ni corrigés ni planifiés : ils sont sortis en documentant, hors périmètre du
 > **Commentaire de code trompeur.** `expirePaymentDeadlines()` annonce « 72h window » ; la vraie règle est : délai = **la date de clôture des inscriptions**, sauf inscription tardive (3 j) ou inscription le jour même (aucun délai). Piège pour le prochain qui lira le code.
 > </details>
 
-| # | Constat | Enjeu |
-|---|---|---|
-| I8 | **La tuile et le filtre « non rapprochées » se contredisent.** `⚡transactions/stats()` compte `doesntHave('payment')->where('amount', '>', 0)` (crédits seuls) ; le filtre `reconciledFilter === 'unreconciled'` fait `doesntHave('payment')` tout court, débits compris. La tuile annonce 12, le filtre en montre 40. | Mineur mais fait douter des chiffres — le pire effet possible sur un outil comptable. Correctif : aligner le filtre sur la stat (`amount > 0`). |
+> ### ✅ I8 — Tuile et filtre « non rapprochées » contradictoires — **CORRIGÉ le 2026-07-17**
+>
+> **Fait, en TDD.** Le filtre `reconciledFilter === 'unreconciled'` ajoute désormais `->where('amount', '>', 0)` — dans `transactions()` **et** `allMatchingTransactionIds()` (sélection groupée) — pour compter comme la tuile : les entrées d'argent sans paiement. Les débits (sorties) ne gonflent plus la liste. 2 tests (le débit disparaît du filtre ; total du filtre == compteur de la tuile). Article `importer-les-extraits-bancaires.md` corrigé : l'encadré « les deux chiffres diffèrent, c'est normal » devient « ils comptent la même chose ».
+>
+> <details><summary>Constat d'origine (conservé)</summary>
+>
+> **La tuile et le filtre « non rapprochées » se contredisent.** `⚡transactions/stats()` compte `doesntHave('payment')->where('amount', '>', 0)` (crédits seuls) ; le filtre faisait `doesntHave('payment')` tout court, débits compris. La tuile annonce 12, le filtre en montre 40. Mineur mais fait douter des chiffres — le pire effet possible sur un outil comptable.
+> </details>

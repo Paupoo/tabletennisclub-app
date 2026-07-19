@@ -150,10 +150,12 @@
                                     $max = $pack->effectiveMaxParticipants();
                                     $full = $max > 0 && $enrolled >= $max;
                                 @endphp
+                                {{-- No overflow-hidden: it would clip the actions dropdown at the
+                                     bottom of the card. The header rounds its own corners instead. --}}
                                 <div
-                                    class="group flex flex-col overflow-hidden rounded-xl border border-base-200 bg-base-100">
+                                    class="group flex flex-col rounded-xl border border-base-200 bg-base-100">
                                     {{-- Card header --}}
-                                    <div class="bg-primary/5 px-4 py-3">
+                                    <div class="rounded-t-xl bg-primary/5 px-4 py-3">
                                         <div class="flex items-start justify-between gap-2">
                                             <div>
                                                 <p class="font-semibold leading-tight text-primary">
@@ -214,11 +216,12 @@
                                         </div>
 
                                         {{-- Actions --}}
-                                        <div class="mt-auto flex gap-2 border-t border-base-200 pt-2">
-                                            <x-button class="btn-ghost btn-sm flex-1 text-xs"
+                                        <div class="mt-auto flex flex-nowrap items-center gap-1 border-t border-base-200 pt-2">
+                                            <x-button class="btn-ghost btn-sm min-w-0 flex-1 text-xs"
                                                 icon="o-calendar-days" :label="__('Sessions')"
                                                 wire:click="viewSessions({{ $pack->id }})" />
-                                            <x-button class="btn-ghost btn-sm text-xs" icon="o-pencil"
+                                            <x-button class="btn-ghost btn-sm shrink-0 text-xs" icon="o-pencil"
+                                                :aria-label="__('Edit')"
                                                 wire:click="openEdit({{ $pack->id }})" />
                                             <livewire:admin.shared.event-post-button
                                                 :model-class="\App\Domains\Trainings\Models\TrainingPack::class"
@@ -234,18 +237,37 @@
                                                 :can-publish="true"
                                                 wire:key="ep-training-{{ $pack->id }}"
                                                 @event-post-saved.window="$wire.refreshPacks()" />
-                                            @if ($pack->is_active)
-                                                <x-button class="btn-ghost btn-sm text-xs" icon="o-eye-slash"
-                                                    :tooltip="__('Withdraw from the offer (sessions still run)')"
-                                                    wire:click="openWithdrawPack({{ $pack->id }})" />
-                                                <x-button class="btn-ghost btn-sm text-error text-xs" icon="o-x-circle"
-                                                    :tooltip="__('Stop the pack (cancels sessions, refunds members)')"
-                                                    wire:click="openDiscontinuePack({{ $pack->id }})" />
-                                            @else
-                                                <x-button class="btn-ghost btn-sm text-success text-xs" icon="o-arrow-uturn-left"
-                                                    :tooltip="__('Put back in the offer')"
-                                                    wire:click="restorePack({{ $pack->id }})" />
-                                            @endif
+                                            {{-- Icon-only trigger on purpose: four cards fit across an xl
+                                                 screen, and a labelled dropdown wraps its text and bursts out
+                                                 of the card. The labels live on the menu items instead, which
+                                                 also reads better for actions that cancel sessions and move
+                                                 money. --}}
+                                            {{-- The id is not decoration: mary derives the dropdown's
+                                                 wire:key from the serialized component, so identical
+                                                 triggers across cards would collide and confuse Livewire's
+                                                 DOM diffing. --}}
+                                            <x-dropdown class="shrink-0" :id="'pack-actions-' . $pack->id" right
+                                                no-x-anchor>
+                                                <x-slot:trigger>
+                                                    <x-button class="btn-ghost btn-sm shrink-0 text-xs"
+                                                        :id="'pack-actions-trigger-' . $pack->id"
+                                                        icon="o-ellipsis-vertical"
+                                                        :aria-label="__('More actions')" />
+                                                </x-slot:trigger>
+
+                                                @if ($pack->is_active)
+                                                    <x-menu-item icon="o-eye-slash"
+                                                        :title="__('Withdraw from the offer')"
+                                                        wire:click="openWithdrawPack({{ $pack->id }})" />
+                                                    <x-menu-item class="text-error" icon="o-x-circle" separator
+                                                        :title="__('Stop the pack (cancels and refunds)')"
+                                                        wire:click="openDiscontinuePack({{ $pack->id }})" />
+                                                @else
+                                                    <x-menu-item class="text-success" icon="o-arrow-uturn-left"
+                                                        :title="__('Put back in the offer')"
+                                                        wire:click="restorePack({{ $pack->id }})" />
+                                                @endif
+                                            </x-dropdown>
                                         </div>
                                     </div>
                                 </div>

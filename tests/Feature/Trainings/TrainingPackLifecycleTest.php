@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\ClubAdmin\Subscriptions\CalculatePriceAction;
 use App\Actions\ClubAdmin\Subscriptions\DiscontinueTrainingPackAction;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
@@ -117,12 +118,17 @@ describe('discontinuing a pack', function (): void {
             'is_competitive' => false,
         ]);
         $subscription->trainingPacks()->attach($pack->id, ['status' => 'enrolled']);
+
+        // 60 € (récréatif) + 90 € de pack, facturés et encaissés.
+        (new CalculatePriceAction)($subscription);
         $subscription->payments()->create([
             'reference' => 'TEST-PAID',
             'amount_due' => 150,
             'amount_paid' => 150,
             'status' => 'paid',
         ]);
+
+        expect($subscription->fresh()->amount_due)->toBe(150.0);
 
         $result = (new DiscontinueTrainingPackAction)($pack, 'Salle perdue');
 

@@ -12,13 +12,13 @@ use Illuminate\Support\Facades\DB;
 class LeaveTrainingPackAction
 {
     /**
-     * Retire le pack et renvoie le montant réellement remboursable, en euros.
+     * Retire le pack et renvoie le montant remboursable, en euros.
      *
      * Ce montant n'est *pas* le prix du pack. Quitter un pack peut faire perdre
      * la remise multi-packs de {@see CalculatePriceAction}, ce qui renchérit les
      * packs restants : rembourser le prix affiché rendrait alors trop d'argent.
-     * On compare donc ce que le membre a versé au nouveau dû, et on ne rend que
-     * le trop-perçu — zéro s'il reste débiteur.
+     * On rembourse donc la baisse réelle du dû, plafonnée à ce que le membre a
+     * effectivement versé — on ne rend jamais un euro qui n'est pas rentré.
      */
     public function __invoke(Subscription $subscription, TrainingPack $pack, int $familyMembersCount = 1, bool $notifyUser = true): float
     {
@@ -33,6 +33,8 @@ class LeaveTrainingPackAction
 
         $wasEnrolled = $pivot->status === 'enrolled';
         $wasPending = $pivot->status === 'pending';
+
+        $amountDueBefore = (float) $subscription->amount_due;
 
         $subscription->trainingPacks()->detach($pack->id);
 
@@ -49,6 +51,11 @@ class LeaveTrainingPackAction
 
         $subscription->refresh();
 
-        return max(0.0, round($subscription->netAmountPaid() - (float) $subscription->amount_due, 2));
+        $delta = max(0.0, $amountDueBefore - (float) $subscription->amount_due);
+
+        // netAmountPaid() rather than totalPaid(): the latter counts refund
+        // payments as money coming in — a cancelled `to_refund` goes back to
+        // `paid` — so a second departure would refund the same euros twice.
+        return round(min($delta, $subscription->netAmountPaid()), 2);
     }
 }

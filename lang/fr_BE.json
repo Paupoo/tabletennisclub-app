@@ -3785,5 +3785,7 @@
     "Availability": "Disponibilité",
     "Show withdrawn packs": "Afficher les packs retirés",
     "Withdrawn": "Retiré",
-    "Withdrawn packs shown": "Packs retirés affichés"
+    "Withdrawn packs shown": "Packs retirés affichés",
+    "Withdraw from the offer": "Retirer de l'offre",
+    "Stop the pack (cancels and refunds)": "Arrêter le pack (annule et rembourse)"
 }

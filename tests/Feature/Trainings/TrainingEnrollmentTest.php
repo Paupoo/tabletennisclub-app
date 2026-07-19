@@ -237,7 +237,7 @@ describe('Training Enrollment', function (): void {
         expect($refundable)->toBe(90.0);
     })->group('training', 'enrollment', 'refund');
 
-    test('refunds nothing when the member still owes money', function (): void {
+    test('never refunds more than the member actually paid', function (): void {
         $subscription = Subscription::factory()->create(['is_competitive' => false]);
         $packA = TrainingPack::factory()->create(['price' => 90, 'allow_discount' => true, 'max_participants' => 5]);
         $packB = TrainingPack::factory()->create(['price' => 90, 'allow_discount' => true, 'max_participants' => 5]);
@@ -245,15 +245,28 @@ describe('Training Enrollment', function (): void {
         $subscription->trainingPacks()->attach([$packA->id, $packB->id], ['status' => 'enrolled']);
         (new CalculatePriceAction)($subscription);
 
-        // A versé 80 sur 220 : après retrait il doit encore 150.
+        // A versé 20 sur 220. La baisse du dû est de 70, mais on ne peut pas
+        // rendre plus que ce qui est entré : le remboursement est plafonné.
         $subscription->payments()->create([
             'reference' => 'TEST-PARTIAL',
             'amount_due' => 220,
-            'amount_paid' => 80,
+            'amount_paid' => 20,
             'status' => 'paid',
         ]);
 
         $refundable = (new LeaveTrainingPackAction)($subscription, $packA);
+
+        expect($refundable)->toBe(20.0);
+    })->group('training', 'enrollment', 'refund');
+
+    test('refunds nothing when the member has paid nothing', function (): void {
+        $subscription = Subscription::factory()->create(['is_competitive' => false]);
+        $pack = TrainingPack::factory()->create(['price' => 90, 'allow_discount' => true, 'max_participants' => 5]);
+
+        $subscription->trainingPacks()->attach($pack->id, ['status' => 'enrolled']);
+        (new CalculatePriceAction)($subscription);
+
+        $refundable = (new LeaveTrainingPackAction)($subscription, $pack);
 
         expect($refundable)->toBe(0.0);
     })->group('training', 'enrollment', 'refund');

@@ -64,11 +64,11 @@ Le motif que vous saisissez part dans l'e-mail. Écrivez-le pour un membre, pas 
 
 Deux boutons distincts, et **ils n'ont pas du tout les mêmes conséquences**.
 
-Les deux se trouvent **en bas de la carte du pack**, à droite de la ligne de boutons qui commence par *Séances* — après l'icône crayon et l'icône 🎯 du site public.
+Les deux sont dans le menu **⋮** en bas à droite de la carte du pack, après *Séances*, le crayon et l'icône 🎯.
 
-**Retirer de l'offre** (icône œil barré) ferme les inscriptions. **Les séances continuent**, les inscrits gardent leur place et **ne sont pas prévenus** — rien n'a changé pour eux. C'est le geste pour un pack qui ne se remplit pas, ou au contraire déjà complet.
+**Retirer de l'offre** ferme les inscriptions. **Les séances continuent**, les inscrits gardent leur place et **ne sont pas prévenus** — rien n'a changé pour eux. C'est le geste pour un pack qui ne se remplit pas, ou au contraire déjà complet.
 
-C'est **réversible**. Un pack retiré disparaît de la liste par défaut : ouvrez **Filtres**, cochez **Afficher les packs retirés**, et il réapparaît avec l'étiquette *Retiré*. Le bouton vert en forme de flèche le remet dans l'offre.
+C'est **réversible**. Un pack retiré disparaît de la liste par défaut : ouvrez **Filtres**, cochez **Afficher les packs retirés**, et il réapparaît avec l'étiquette *Retiré*. Son menu **⋮** propose alors **Remettre dans l'offre**.
 
 **Arrêter le pack** (icône croix rouge) est autre chose. L'application :
 

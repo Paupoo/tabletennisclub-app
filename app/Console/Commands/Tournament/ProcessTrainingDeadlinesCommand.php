@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Console\Commands\Tournament;
 
 use App\Actions\ClubAdmin\Subscriptions\PromoteFromTrainingWaitlistAction;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\Trainings\Models\TrainingPack;
+use App\Domains\Trainings\Notifications\TrainingWaitlistOfferExpiredNotification;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -31,6 +33,23 @@ class ProcessTrainingDeadlinesCommand extends Command
         $this->info("Expiring {$expired->count()} training waitlist offer(s)...");
 
         $packIds = $expired->pluck('training_pack_id')->unique();
+
+        // Warn the members before the rows go: once deleted, nothing anywhere
+        // tells them the offer existed, let alone that they lost it.
+        $packs = TrainingPack::whereIn('id', $packIds)->get()->keyBy('id');
+        $subscriptions = Subscription::with('user')
+            ->whereIn('id', $expired->pluck('subscription_id')->unique())
+            ->get()
+            ->keyBy('id');
+
+        foreach ($expired as $offer) {
+            $pack = $packs->get($offer->training_pack_id);
+            $user = $subscriptions->get($offer->subscription_id)?->user;
+
+            if ($pack && $user) {
+                $user->notify(new TrainingWaitlistOfferExpiredNotification($pack));
+            }
+        }
 
         // Remove expired offers
         DB::table('subscription_training_pack')

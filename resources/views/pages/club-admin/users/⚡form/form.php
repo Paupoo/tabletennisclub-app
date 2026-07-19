@@ -54,7 +54,7 @@ new class extends Component
 
     public ?string $committee_role = null;
 
-    #[Rule('required|email')]
+    #[Validate()]
     public string $email = '';
 
     public ?int $existingFamilyGroupId = null;
@@ -318,6 +318,11 @@ new class extends Component
             'committee_role' => [
                 'nullable',
                 ValidationRule::when($this->is_committee_member, ['required', new Enum(CommitteeRolesEnum::class)]),
+            ],
+            'email' => [
+                'required',
+                'email',
+                ValidationRule::unique('users', 'email')->ignore($this->user?->id),
             ],
             'licence' => [
                 'nullable',

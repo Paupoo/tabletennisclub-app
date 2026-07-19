@@ -67,3 +67,36 @@ test('quick invite fails when email already taken', function (): void {
 
     Mail::assertNotQueued(InviteNewUserMail::class);
 });
+
+test('full form save fails with a validation error when the email is already taken', function (): void {
+    $admin = $this->createFakeAdmin();
+
+    Livewire::actingAs($admin)
+        ->test('pages::club-admin.users.form')
+        ->set('first_name', 'Hugo')
+        ->set('last_name', 'Van Oudenhove')
+        ->set('email', 'aurelien.paulus@gmail.com') // already used by $this->existingUser
+        ->set('gender', 'MEN')
+        ->set('phone_number', '0485610204')
+        ->set('street', 'Du Bauloy')
+        ->set('city_code', '1348')
+        ->set('city_name', 'Ottignies')
+        ->set('licence_type', 'recreative')
+        ->set('password', 'Password1!')
+        ->set('password_confirmation', 'Password1!')
+        ->call('save')
+        ->assertHasErrors(['email']);
+
+    // No second user with that email — the DB unique constraint was never reached.
+    expect(User::where('email', 'aurelien.paulus@gmail.com')->count())->toBe(1);
+});
+
+test('editing a user keeps its own email without a uniqueness error', function (): void {
+    $admin = $this->createFakeAdmin();
+
+    Livewire::actingAs($admin)
+        ->test('pages::club-admin.users.form', ['user' => $this->existingUser])
+        ->set('password', '')
+        ->call('save')
+        ->assertHasNoErrors(['email']);
+});

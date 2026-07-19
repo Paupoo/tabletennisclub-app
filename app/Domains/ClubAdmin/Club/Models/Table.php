@@ -8,6 +8,7 @@ use App\Domains\Competitions\Tournament\Models\TableTournament;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentMatch;
 use App\Domains\Shared\Traits\HasAuditLog;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -109,5 +110,19 @@ class Table extends Model
             ])
             ->using(TableTournament::class)
             ->withTimestamps();
+    }
+
+    /**
+     * Coerce an empty date string into null so a blank form field
+     * doesn't reach the DATE column (SQLSTATE[22007]). Non-empty values
+     * are normalized to the storage format, as the datetime cast would.
+     */
+    protected function purchasedOn(): Attribute
+    {
+        return Attribute::set(
+            set: fn (mixed $value): ?string => in_array($value, [null, ''], true)
+                ? null
+                : $this->asDateTime($value)->format('Y-m-d H:i:s'),
+        );
     }
 }

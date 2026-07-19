@@ -251,7 +251,7 @@ class TrainingPack extends Model
     {
         return Attribute::make(
             get: fn (int $value): float => round($value / 100, 2),
-            set: fn (float|int $value): int => (int) $value * 100,
+            set: fn (float|int $value): int => (int) round($value * 100),
         );
     }
 

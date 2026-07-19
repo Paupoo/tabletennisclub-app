@@ -250,3 +250,35 @@ describe('trainerOptions', function (): void {
             ->assertDontSee('Nestor Nocoach');
     });
 });
+
+// ── price ─────────────────────────────────────────────────────────────────────
+
+describe('price', function (): void {
+    it('keeps the cents of a price entered with decimals', function (): void {
+        $season = makeActiveSeason();
+        $pack = makeTrainingPack($season, ['price' => 87.50]);
+
+        expect($pack->fresh()->price)->toBe(87.50);
+    });
+
+    it('stores the price as cents', function (): void {
+        $season = makeActiveSeason();
+        $pack = makeTrainingPack($season, ['price' => 87.50]);
+
+        expect((int) $pack->getRawOriginal('price'))->toBe(8750);
+    });
+
+    it('rounds a price with sub-cent precision to the nearest cent', function (): void {
+        $season = makeActiveSeason();
+        $pack = makeTrainingPack($season, ['price' => 12.345]);
+
+        expect($pack->fresh()->price)->toBe(12.35);
+    });
+
+    it('round-trips a whole-euro price unchanged', function (): void {
+        $season = makeActiveSeason();
+        $pack = makeTrainingPack($season, ['price' => 90]);
+
+        expect($pack->fresh()->price)->toBe(90.0);
+    });
+});

@@ -236,6 +236,35 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
         $this->getCurrentState()->markAsPaid($this);
     }
 
+    // ==================== Others ====================
+
+    /**
+     * Ce que le membre a réellement versé, net des remboursements déjà engagés.
+     *
+     * {@see totalPaid()} compte les paiements de remboursement comme de
+     * l'argent entrant : un `to_refund` annulé repasse en `paid`, et un
+     * remboursement exécuté finit lui aussi en `paid`/`refunded`. S'en servir
+     * pour décider d'un nouveau remboursement rembourserait deux fois.
+     *
+     * Le sens de l'argent est porté par `payment_method`, pas par le statut.
+     */
+    public function netAmountPaid(): float
+    {
+        $received = (float) $this->payments()
+            ->where(fn ($q) => $q->where('payment_method', '!=', 'refund')->orWhereNull('payment_method'))
+            ->whereIn('status', ['paid', 'refunded'])
+            ->sum('amount_paid');
+
+        // Un `to_refund` compte déjà comme sorti : la demande est dans le
+        // circuit trésorerie, la rejouer créerait un doublon.
+        $refunded = (float) $this->payments()
+            ->where('payment_method', 'refund')
+            ->whereIn('status', ['to_refund', 'paid', 'refunded'])
+            ->sum('amount_paid');
+
+        return round(($received - $refunded) / 100, 2);
+    }
+
     /**
      * Tous les paiements associés à cette subscription
      *
@@ -323,8 +352,6 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
             set: fn (int|float $value): int => (int) $value * 100,
         );
     }
-
-    // ==================== Others ====================
 
     /**
      * Calcule le total payé (en euros) via tous les payments.

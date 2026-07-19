@@ -191,4 +191,102 @@ describe('Training Enrollment', function (): void {
         expect($subscription->trainingPacks()->where('training_pack_id', $pack->id)->exists())->toBeTrue();
     })->group('training', 'enrollment', 'refund');
 
+    // ── Refundable amount (discount-aware) ──────────────────────────────────
+
+    test('refunds only the overpayment when leaving a pack loses the multi-pack discount', function (): void {
+        $subscription = Subscription::factory()->create(['is_competitive' => false]);
+        $packA = TrainingPack::factory()->create(['price' => 90, 'allow_discount' => true, 'max_participants' => 5]);
+        $packB = TrainingPack::factory()->create(['price' => 90, 'allow_discount' => true, 'max_participants' => 5]);
+
+        $subscription->trainingPacks()->attach([$packA->id, $packB->id], ['status' => 'enrolled']);
+        (new CalculatePriceAction)($subscription);
+
+        // 60 (récréatif) + 80 + 80 après remise multi-packs
+        expect($subscription->fresh()->amount_due)->toBe(220.0);
+
+        $subscription->payments()->create([
+            'reference' => 'TEST-PAID',
+            'amount_due' => 220,
+            'amount_paid' => 220,
+            'status' => 'paid',
+        ]);
+
+        $refundable = (new LeaveTrainingPackAction)($subscription, $packA);
+
+        // Nouveau dû : 60 + 90 (remise perdue) = 150 → trop-perçu de 70, pas 90.
+        expect($subscription->fresh()->amount_due)->toBe(150.0)
+            ->and($refundable)->toBe(70.0);
+    })->group('training', 'enrollment', 'refund');
+
+    test('refunds the full pack price when no discount was in play', function (): void {
+        $subscription = Subscription::factory()->create(['is_competitive' => false]);
+        $pack = TrainingPack::factory()->create(['price' => 90, 'allow_discount' => true, 'max_participants' => 5]);
+
+        $subscription->trainingPacks()->attach($pack->id, ['status' => 'enrolled']);
+        (new CalculatePriceAction)($subscription);
+
+        $subscription->payments()->create([
+            'reference' => 'TEST-PAID',
+            'amount_due' => 150,
+            'amount_paid' => 150,
+            'status' => 'paid',
+        ]);
+
+        $refundable = (new LeaveTrainingPackAction)($subscription, $pack);
+
+        expect($refundable)->toBe(90.0);
+    })->group('training', 'enrollment', 'refund');
+
+    test('refunds nothing when the member still owes money', function (): void {
+        $subscription = Subscription::factory()->create(['is_competitive' => false]);
+        $packA = TrainingPack::factory()->create(['price' => 90, 'allow_discount' => true, 'max_participants' => 5]);
+        $packB = TrainingPack::factory()->create(['price' => 90, 'allow_discount' => true, 'max_participants' => 5]);
+
+        $subscription->trainingPacks()->attach([$packA->id, $packB->id], ['status' => 'enrolled']);
+        (new CalculatePriceAction)($subscription);
+
+        // A versé 80 sur 220 : après retrait il doit encore 150.
+        $subscription->payments()->create([
+            'reference' => 'TEST-PARTIAL',
+            'amount_due' => 220,
+            'amount_paid' => 80,
+            'status' => 'paid',
+        ]);
+
+        $refundable = (new LeaveTrainingPackAction)($subscription, $packA);
+
+        expect($refundable)->toBe(0.0);
+    })->group('training', 'enrollment', 'refund');
+
+    test('does not refund twice when a refund is already queued in the treasury', function (): void {
+        $subscription = Subscription::factory()->create(['is_competitive' => false]);
+        $packA = TrainingPack::factory()->create(['price' => 90, 'allow_discount' => true, 'max_participants' => 5]);
+        $packB = TrainingPack::factory()->create(['price' => 90, 'allow_discount' => true, 'max_participants' => 5]);
+
+        $subscription->trainingPacks()->attach([$packA->id, $packB->id], ['status' => 'enrolled']);
+        (new CalculatePriceAction)($subscription);
+
+        $subscription->payments()->create([
+            'reference' => 'TEST-PAID',
+            'amount_due' => 220,
+            'amount_paid' => 220,
+            'status' => 'paid',
+        ]);
+
+        $first = (new LeaveTrainingPackAction)($subscription, $packA);
+        $subscription->payments()->create([
+            'reference' => 'TEST-REFUND',
+            'amount_due' => $first,
+            'amount_paid' => $first,
+            'status' => 'to_refund',
+            'payment_method' => 'refund',
+        ]);
+
+        $second = (new LeaveTrainingPackAction)($subscription, $packB);
+
+        // 220 versés − 70 déjà en circuit = 150 net, nouveau dû 60 → 90, pas 160.
+        expect($first)->toBe(70.0)
+            ->and($second)->toBe(90.0);
+    })->group('training', 'enrollment', 'refund');
+
 });

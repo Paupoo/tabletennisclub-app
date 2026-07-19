@@ -11,7 +11,16 @@ use Illuminate\Support\Facades\DB;
 
 class LeaveTrainingPackAction
 {
-    public function __invoke(Subscription $subscription, TrainingPack $pack, int $familyMembersCount = 1, bool $notifyUser = true): void
+    /**
+     * Retire le pack et renvoie le montant réellement remboursable, en euros.
+     *
+     * Ce montant n'est *pas* le prix du pack. Quitter un pack peut faire perdre
+     * la remise multi-packs de {@see CalculatePriceAction}, ce qui renchérit les
+     * packs restants : rembourser le prix affiché rendrait alors trop d'argent.
+     * On compare donc ce que le membre a versé au nouveau dû, et on ne rend que
+     * le trop-perçu — zéro s'il reste débiteur.
+     */
+    public function __invoke(Subscription $subscription, TrainingPack $pack, int $familyMembersCount = 1, bool $notifyUser = true): float
     {
         $pivot = DB::table('subscription_training_pack')
             ->where('subscription_id', $subscription->id)
@@ -19,7 +28,7 @@ class LeaveTrainingPackAction
             ->first();
 
         if (! $pivot) {
-            return;
+            return 0.0;
         }
 
         $wasEnrolled = $pivot->status === 'enrolled';
@@ -37,5 +46,9 @@ class LeaveTrainingPackAction
         if ($wasEnrolled && $pack->waitlistCount() > 0) {
             (new PromoteFromTrainingWaitlistAction)($pack);
         }
+
+        $subscription->refresh();
+
+        return max(0.0, round($subscription->netAmountPaid() - (float) $subscription->amount_due, 2));
     }
 }

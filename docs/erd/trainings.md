@@ -16,26 +16,6 @@ erDiagram
         string cancellation_note "nullable"
         datetime cancelled_at "nullable"
     }
-    TrainingPack {
-        int id PK
-        string name
-        int season_id FK
-        float price
-        TrainingLevel level
-        TrainingType type
-        int room_id FK
-        int trainer_id FK "nullable"
-        int day_of_week "nullable"
-        string start_time "nullable"
-        int duration_minutes "nullable"
-        string description "nullable"
-        int max_participants "nullable"
-        bool is_active
-        datetime pack_start_date "nullable"
-        datetime pack_end_date "nullable"
-        bool allow_discount
-        bool is_open_enrollment
-    }
     TrainingPlan {
         int id PK
         int season_id FK
@@ -60,12 +40,32 @@ erDiagram
         int max_participants "nullable"
         int position
     }
+    TrainingPack {
+        int id PK
+        string name
+        int season_id FK
+        float price
+        TrainingLevel level
+        TrainingType type
+        int room_id FK
+        int trainer_id FK "nullable"
+        int day_of_week "nullable"
+        string start_time "nullable"
+        int duration_minutes "nullable"
+        string description "nullable"
+        int max_participants "nullable"
+        bool is_active
+        datetime pack_start_date "nullable"
+        datetime pack_end_date "nullable"
+        bool allow_discount
+        bool is_open_enrollment
+    }
 
     Training }o--o{ User : "trainees"
-    TrainingPack ||--o| EventPost : "eventPost"
-    TrainingPack }o--o{ Subscription : "subscriptions"
-    TrainingPack ||--o{ Training : "trainings"
     TrainingPlan ||--o{ TrainingPlanAssignment : "assignments"
     TrainingPlan ||--o{ TrainingPlanPack : "packs"
     TrainingPlanPack ||--o{ TrainingPlanAssignment : "assignments"
+    TrainingPack ||--o| EventPost : "eventPost"
+    TrainingPack }o--o{ Subscription : "subscriptions"
+    TrainingPack ||--o{ Training : "trainings"
 ```

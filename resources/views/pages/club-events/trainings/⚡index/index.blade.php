@@ -352,6 +352,26 @@
                         wire:model.live="formDurationMinutes" />
                 </div>
 
+                {{-- Capacity --}}
+                <div>
+                    <x-input :label="__('Maximum participants')" type="number" min="1" max="999"
+                        wire:model.live="formMaxParticipants" :disabled="$formIsOpenEnrollment"
+                        :placeholder="$this->inheritedRoomCapacity
+                            ? __('Room capacity: :count', ['count' => $this->inheritedRoomCapacity])
+                            : __('Room capacity')" />
+
+                    <p class="mt-1 text-xs text-base-content/50">
+                        {{ __('Leave empty to use the training capacity of the selected room.') }}
+                    </p>
+
+                    @if ($formType === \App\Domains\Shared\Enums\TrainingType::FREE->value)
+                        <label class="flex items-center gap-2 mt-3 cursor-pointer">
+                            <x-checkbox wire:model.live="formIsOpenEnrollment" />
+                            <span class="text-sm">{{ __('Unlimited enrolment (no cap, no waiting list)') }}</span>
+                        </label>
+                    @endif
+                </div>
+
                 {{-- Custom date range --}}
                 <div>
                     <p class="mb-1 text-xs text-base-content/50">

@@ -52,7 +52,12 @@ new class extends Component
     /** @var array<int, string> */
     public array $formExcludedDates = [];
 
+    public bool $formIsOpenEnrollment = false;
+
     public string $formLevel = '';
+
+    /** Empty string = inherit the room's training capacity. */
+    public string $formMaxParticipants = '';
 
     public string $formName = '';
 
@@ -192,6 +197,18 @@ new class extends Component
         return $chips;
     }
 
+    /**
+     * The cap that applies when no explicit maximum is set, shown as the
+     * placeholder so the committee sees the real limit without reading the help.
+     */
+    #[Computed]
+    public function inheritedRoomCapacity(): ?int
+    {
+        return $this->formRoomId
+            ? Room::find($this->formRoomId)?->capacity_for_trainings
+            : null;
+    }
+
     #[Computed]
     public function levelOptions(): array
     {
@@ -227,6 +244,7 @@ new class extends Component
             $rules = [
                 'formStartTime' => 'required',
                 'formDurationMinutes' => 'required|integer|min:15|max:480',
+                'formMaxParticipants' => 'nullable|integer|min:1|max:999',
             ];
 
             if ($this->formRecurrenceType === 'weekly') {
@@ -293,6 +311,8 @@ new class extends Component
         $this->formExcludedDates = $pack->excluded_dates ?? [];
         $this->formPrice = (float) $pack->price;
         $this->formAllowDiscount = $pack->allow_discount;
+        $this->formMaxParticipants = (string) ($pack->max_participants ?? '');
+        $this->formIsOpenEnrollment = $pack->is_open_enrollment;
 
         $this->wizardOpen = true;
         $this->step = '1';
@@ -417,6 +437,7 @@ new class extends Component
             'formRoomId' => 'required|integer|min:1',
             'formStartTime' => 'required',
             'formDurationMinutes' => 'required|integer|min:15|max:480',
+            'formMaxParticipants' => 'nullable|integer|min:1|max:999',
             'formPrice' => 'required|numeric|min:0',
         ];
 
@@ -433,6 +454,11 @@ new class extends Component
         $this->validate($rules);
 
         $season = Season::findOrFail($this->formSeasonId);
+
+        // Unlimited enrolment only makes sense for free practice: a directed or
+        // supervised session with no cap leaves the coach discovering the
+        // overbooking on the night, with no waiting list to have prevented it.
+        $isOpenEnrollment = $this->formIsOpenEnrollment && $this->formType === TrainingType::FREE->value;
 
         // Build recurrence data
         if ($this->formRecurrenceType === 'specific_days') {
@@ -460,6 +486,10 @@ new class extends Component
             'pack_start_date' => $this->formPackStartDate ?: null,
             'pack_end_date' => $this->formPackEndDate ?: null,
             'excluded_dates' => ! empty($this->formExcludedDates) ? array_values($this->formExcludedDates) : null,
+            'max_participants' => $isOpenEnrollment || $this->formMaxParticipants === ''
+                ? null
+                : (int) $this->formMaxParticipants,
+            'is_open_enrollment' => $isOpenEnrollment,
             'is_active' => true,
             'price' => $this->formPrice,
             'allow_discount' => $this->formAllowDiscount,
@@ -628,5 +658,7 @@ new class extends Component
         $this->formExcludedDates = [];
         $this->formPrice = 90;
         $this->formAllowDiscount = true;
+        $this->formMaxParticipants = '';
+        $this->formIsOpenEnrollment = false;
     }
 };

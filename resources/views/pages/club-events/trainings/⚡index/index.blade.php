@@ -220,8 +220,18 @@
                                                 :can-publish="true"
                                                 wire:key="ep-training-{{ $pack->id }}"
                                                 @event-post-saved.window="$wire.refreshPacks()" />
-                                            <x-button class="btn-ghost btn-sm text-error text-xs" icon="o-trash"
-                                                wire:click="openDeactivatePack({{ $pack->id }})" />
+                                            @if ($pack->is_active)
+                                                <x-button class="btn-ghost btn-sm text-xs" icon="o-eye-slash"
+                                                    :tooltip="__('Withdraw from the offer (sessions still run)')"
+                                                    wire:click="openWithdrawPack({{ $pack->id }})" />
+                                                <x-button class="btn-ghost btn-sm text-error text-xs" icon="o-x-circle"
+                                                    :tooltip="__('Stop the pack (cancels sessions, refunds members)')"
+                                                    wire:click="openDiscontinuePack({{ $pack->id }})" />
+                                            @else
+                                                <x-button class="btn-ghost btn-sm text-success text-xs" icon="o-arrow-uturn-left"
+                                                    :tooltip="__('Put back in the offer')"
+                                                    wire:click="restorePack({{ $pack->id }})" />
+                                            @endif
                                         </div>
                                     </div>
                                 </div>
@@ -546,8 +556,38 @@
         </x-slot:actions>
     </x-modal>
 
-    <x-confirm-modal model="deactivatePackModal" :title="__('Deactivate this pack?')"
-        :confirmLabel="__('Deactivate')" confirmClass="btn-error" confirmAction="confirmDeactivatePack">
-        <p>{{ __('Players will no longer be able to register to this training pack.') }}</p>
+    <x-confirm-modal model="withdrawPackModal" :title="__('Withdraw this pack from the offer?')"
+        :confirmLabel="__('Withdraw')" confirmClass="btn-warning" confirmAction="confirmWithdrawPack">
+        <p>{{ __('Members will no longer be able to enrol in this pack.') }}</p>
+        <p class="mt-2 text-sm opacity-70">
+            {{ __('The sessions still take place and the members already enrolled keep their spot — they are not notified. Use « Stop the pack » if the training will not happen at all.') }}
+        </p>
+        <p class="mt-2 text-sm opacity-70">
+            {{ __('Reversible: tick « Show withdrawn packs » to find it and put it back.') }}
+        </p>
     </x-confirm-modal>
+
+    <x-modal wire:model="discontinuePackModal" :title="__('Stop this pack?')" separator>
+        <p>{{ __('The remaining sessions are cancelled and the members are told the training will not happen.') }}</p>
+
+        <div class="p-3 mt-3 text-sm rounded-lg bg-error/10">
+            <p>{{ __(':count session(s) still to come will be cancelled.', ['count' => $discontinueImpact['sessions']]) }}</p>
+            <p>{{ __(':count member(s) enrolled will be notified and refunded what they overpaid.', ['count' => $discontinueImpact['members']]) }}</p>
+            @if ($discontinueImpact['waiting'] > 0)
+                <p>{{ __(':count member(s) on the waiting list will be told no spot will open.', ['count' => $discontinueImpact['waiting']]) }}</p>
+            @endif
+        </div>
+
+        <p class="mt-3 text-sm font-semibold text-error">
+            {{ __('This cannot be undone: the emails go out and the refunds enter the treasury workflow.') }}
+        </p>
+
+        <x-textarea :label="__('Reason (optional — included in the email)')" wire:model="discontinueReason"
+            rows="2" class="mt-3" />
+
+        <x-slot:actions>
+            <x-button :label="__('Cancel')" wire:click="$set('discontinuePackModal', false)" />
+            <x-button :label="__('Stop the pack')" class="btn-error" wire:click="confirmDiscontinuePack" spinner />
+        </x-slot:actions>
+    </x-modal>
 </div>

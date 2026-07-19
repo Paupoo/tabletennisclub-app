@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\ClubAdmin\Subscriptions\DiscontinueTrainingPackAction;
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
@@ -17,6 +18,7 @@ use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -37,9 +39,18 @@ new class extends Component
 
     public string $cancelType = 'FREE';
 
-    public bool $deactivatePackModal = false;
+    public bool $discontinuePackModal = false;
 
-    public ?int $deactivatingPackId = null;
+    public string $discontinueReason = '';
+
+    public ?int $discontinuingPackId = null;
+
+    /** Show packs withdrawn from the offer, so they can be found and put back. */
+    public bool $showInactive = false;
+
+    public bool $withdrawPackModal = false;
+
+    public ?int $withdrawingPackId = null;
 
     public bool $formAllowDiscount = true;
 
@@ -145,10 +156,39 @@ new class extends Component
         $this->warning(__('Session cancelled. Members have been notified.'), icon: 'o-x-circle');
     }
 
-    public function confirmDeactivatePack(): void
+    /**
+     * Stop the pack for good: cancel what is left, pay people back, tell them.
+     */
+    public function confirmDiscontinuePack(): void
     {
-        if ($this->deactivatingPackId) {
-            $this->deactivatePack($this->deactivatingPackId);
+        if (! $this->discontinuingPackId) {
+            return;
+        }
+
+        $pack = TrainingPack::findOrFail($this->discontinuingPackId);
+
+        $result = (new DiscontinueTrainingPackAction)($pack, $this->discontinueReason ?: null);
+
+        unset($this->packs);
+        $this->discontinuePackModal = false;
+        $this->discontinuingPackId = null;
+        $this->discontinueReason = '';
+
+        $this->warning(
+            title: __('Pack stopped.'),
+            description: __(':sessions session(s) cancelled, :members member(s) notified, :amount € to refund.', [
+                'sessions' => $result['sessions'],
+                'members' => $result['members'],
+                'amount' => number_format($result['refunded'], 2),
+            ]),
+            icon: 'o-x-circle',
+        );
+    }
+
+    public function confirmWithdrawPack(): void
+    {
+        if ($this->withdrawingPackId) {
+            $this->withdrawPack($this->withdrawingPackId);
         }
     }
 
@@ -166,13 +206,24 @@ new class extends Component
         ];
     }
 
-    public function deactivatePack(int $packId): void
+    /**
+     * Take the pack off the offer without touching what is already running:
+     * sessions go ahead, enrolled members keep their place and hear nothing.
+     */
+    public function withdrawPack(int $packId): void
     {
         TrainingPack::findOrFail($packId)->update(['is_active' => false]);
         unset($this->packs);
-        $this->deactivatePackModal = false;
-        $this->deactivatingPackId = null;
-        $this->warning(__('Pack deactivated.'));
+        $this->withdrawPackModal = false;
+        $this->withdrawingPackId = null;
+        $this->warning(__('Pack withdrawn from the offer. Its sessions still run.'));
+    }
+
+    public function restorePack(int $packId): void
+    {
+        TrainingPack::findOrFail($packId)->update(['is_active' => true]);
+        unset($this->packs);
+        $this->success(__('Pack back in the offer.'));
     }
 
     /** @return array<int, array{key: string, label: string}> */
@@ -283,10 +334,17 @@ new class extends Component
         $this->step = '1';
     }
 
-    public function openDeactivatePack(int $packId): void
+    public function openDiscontinuePack(int $packId): void
     {
-        $this->deactivatingPackId = $packId;
-        $this->deactivatePackModal = true;
+        $this->discontinuingPackId = $packId;
+        $this->discontinueReason = '';
+        $this->discontinuePackModal = true;
+    }
+
+    public function openWithdrawPack(int $packId): void
+    {
+        $this->withdrawingPackId = $packId;
+        $this->withdrawPackModal = true;
     }
 
     public function openEdit(int $packId): void
@@ -328,10 +386,40 @@ new class extends Component
 
         return TrainingPack::with(['room', 'trainer', 'eventPost'])
             ->where('season_id', $this->viewSeason->id)
-            ->where('is_active', true)
+            ->when(! $this->showInactive, fn (Builder $q) => $q->where('is_active', true))
+            ->orderBy('is_active', 'desc')
             ->orderBy('level')
             ->orderBy('name')
             ->get();
+    }
+
+    /**
+     * How much of the club this would touch, shown before the committee confirms.
+     *
+     * Deliberately no euro figure: the refund owed to each member depends on the
+     * multi-pack discount they lose, so any total shown here would be a guess
+     * that the actual refunds then contradict. The toast reports the real total
+     * once the refunds have been computed member by member.
+     *
+     * @return array{members: int, waiting: int, sessions: int}
+     */
+    #[Computed]
+    public function discontinueImpact(): array
+    {
+        $pack = $this->discontinuingPackId ? TrainingPack::find($this->discontinuingPackId) : null;
+
+        if (! $pack) {
+            return ['members' => 0, 'waiting' => 0, 'sessions' => 0];
+        }
+
+        return [
+            'members' => $pack->committedCount(),
+            'waiting' => $pack->waitlistCount(),
+            'sessions' => $pack->trainings()
+                ->where('status', 'scheduled')
+                ->where('start', '>=', Carbon::now())
+                ->count(),
+        ];
     }
 
     /** @return array<int, Carbon> */
@@ -607,6 +695,7 @@ new class extends Component
         return [
             'activeSeason' => $this->activeSeason,
             'filterChips' => $this->filterChips,
+            'discontinueImpact' => $this->discontinueImpact,
             'viewSeason' => $this->viewSeason,
             'packs' => $this->packs,
             'selectedPack' => $this->selectedPack,

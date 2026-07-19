@@ -12,6 +12,7 @@ use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Shared\Enums\TrainingType;
 use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Models\TrainingPack;
+use App\Domains\Trainings\Notifications\TrainingPackScheduleChangedNotification;
 use App\Domains\Trainings\Notifications\TrainingSessionCancelledNotification;
 use App\Domains\Trainings\Services\TrainingDateGenerator;
 use App\Livewire\Concerns\HasBreadcrumbs;
@@ -40,6 +41,13 @@ new class extends Component
     public string $cancelType = 'FREE';
 
     public bool $discontinuePackModal = false;
+
+    /** Ticked by default: forgetting to warn members is worse than one extra mail. */
+    public bool $notifyMembersOfChange = true;
+
+    public bool $regenerateModal = false;
+
+    public bool $regenerationConfirmed = false;
 
     public string $discontinueReason = '';
 
@@ -541,6 +549,14 @@ new class extends Component
 
         $this->validate($rules);
 
+        // Editing the slot of a pack that already has sessions is destructive:
+        // the old sessions have to go and be rebuilt. Say so before doing it.
+        if ($this->packId && ! $this->regenerationConfirmed && $this->scheduleChanged()) {
+            $this->regenerateModal = true;
+
+            return;
+        }
+
         $season = Season::findOrFail($this->formSeasonId);
 
         // Unlimited enrolment only makes sense for free practice: a directed or
@@ -587,7 +603,6 @@ new class extends Component
             ? tap(TrainingPack::findOrFail($this->packId))->update($data)
             : TrainingPack::create($data);
 
-        // Generate sessions only on create
         if (! $this->packId) {
             $pack->generateSessions($season);
 
@@ -601,12 +616,137 @@ new class extends Component
             // Propagate trainer change to all linked sessions
             $pack->trainings()->update(['trainer_id' => $pack->trainer_id]);
 
-            $this->success(__('Pack updated!'), icon: 'o-check-circle');
+            if ($this->regenerationConfirmed) {
+                $this->rebuildFutureSessions($pack, $season);
+            } else {
+                $this->success(__('Pack updated!'), icon: 'o-check-circle');
+            }
         }
 
         unset($this->packs);
         $this->wizardOpen = false;
         $this->resetWizardFields();
+    }
+
+    /**
+     * Confirmation step for a slot change on a pack that already has sessions.
+     */
+    public function confirmRegeneration(): void
+    {
+        $this->regenerationConfirmed = true;
+        $this->regenerateModal = false;
+
+        $this->save();
+    }
+
+    /**
+     * Has anything that decides *when and where* the sessions happen changed?
+     *
+     * Renaming the pack, editing its description or its price does not move a
+     * single session, so it must not trigger a rebuild or an email.
+     */
+    public function scheduleChanged(): bool
+    {
+        $pack = $this->packId ? TrainingPack::find($this->packId) : null;
+
+        if (! $pack) {
+            return false;
+        }
+
+        $formDays = $this->formRecurrenceType === 'specific_days'
+            ? array_values(array_map('intval', $this->formSpecificDays))
+            : null;
+
+        if ($formDays !== null) {
+            sort($formDays);
+        }
+
+        $packDays = $pack->days_of_week ? array_map('intval', $pack->days_of_week) : null;
+
+        if ($packDays !== null) {
+            sort($packDays);
+        }
+
+        $formExcluded = array_values($this->formExcludedDates);
+        $packExcluded = array_values($pack->excluded_dates ?? []);
+        sort($formExcluded);
+        sort($packExcluded);
+
+        return $packDays !== $formDays
+            || (int) $pack->day_of_week !== (int) ($formDays[0] ?? $this->formDayOfWeek)
+            || substr((string) $pack->start_time, 0, 5) !== substr($this->formStartTime, 0, 5)
+            || (int) $pack->duration_minutes !== $this->formDurationMinutes
+            || (int) $pack->room_id !== $this->formRoomId
+            || ($pack->pack_start_date?->toDateString() ?? '') !== $this->formPackStartDate
+            || ($pack->pack_end_date?->toDateString() ?? '') !== $this->formPackEndDate
+            || $packExcluded !== $formExcluded;
+    }
+
+    /**
+     * What the confirmation modal reports before the committee commits.
+     *
+     * @return array{deleting: int, keeping: int, members: int}
+     */
+    #[Computed]
+    public function regenerationImpact(): array
+    {
+        $pack = $this->packId ? TrainingPack::find($this->packId) : null;
+
+        if (! $pack) {
+            return ['deleting' => 0, 'keeping' => 0, 'members' => 0];
+        }
+
+        return [
+            'deleting' => $pack->trainings()
+                ->where('status', 'scheduled')
+                ->where('start', '>=', Carbon::now())
+                ->count(),
+            'keeping' => $pack->trainings()
+                ->where(fn (Builder $q) => $q->where('status', '!=', 'scheduled')->orWhere('start', '<', Carbon::now()))
+                ->count(),
+            'members' => $pack->enrolledCount(),
+        ];
+    }
+
+    /**
+     * Rebuild the sessions still to come, leaving history alone.
+     *
+     * Past sessions carry attendance — deleting them would rewrite every
+     * member's presence rate. Cancelled ones were announced by email with their
+     * own wording, and resurrecting them would contradict what members were told.
+     */
+    private function rebuildFutureSessions(TrainingPack $pack, Season $season): void
+    {
+        $deleted = $pack->trainings()
+            ->where('status', 'scheduled')
+            ->where('start', '>=', Carbon::now())
+            ->delete();
+
+        $pack->refresh();
+        $pack->generateSessions($season);
+
+        $created = $pack->trainings()
+            ->where('status', 'scheduled')
+            ->where('start', '>=', Carbon::now())
+            ->count();
+
+        $notified = 0;
+
+        if ($this->notifyMembersOfChange) {
+            $recipients = $pack->trainees()->where('emails_notifications', true)->get();
+            $recipients->each->notify(new TrainingPackScheduleChangedNotification($pack));
+            $notified = $recipients->count();
+        }
+
+        $this->success(
+            title: __('Pack updated!'),
+            description: __(':deleted session(s) replaced by :created, :notified member(s) notified.', [
+                'deleted' => $deleted,
+                'created' => $created,
+                'notified' => $notified,
+            ]),
+            icon: 'o-calendar',
+        );
     }
 
     // ── Options ───────────────────────────────────────────────────────────────
@@ -696,6 +836,7 @@ new class extends Component
             'activeSeason' => $this->activeSeason,
             'filterChips' => $this->filterChips,
             'discontinueImpact' => $this->discontinueImpact,
+            'regenerationImpact' => $this->regenerationImpact,
             'viewSeason' => $this->viewSeason,
             'packs' => $this->packs,
             'selectedPack' => $this->selectedPack,
@@ -749,5 +890,7 @@ new class extends Component
         $this->formAllowDiscount = true;
         $this->formMaxParticipants = '';
         $this->formIsOpenEnrollment = false;
+        $this->regenerationConfirmed = false;
+        $this->notifyMembersOfChange = true;
     }
 };

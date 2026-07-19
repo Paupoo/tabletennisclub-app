@@ -567,6 +567,33 @@
         </p>
     </x-confirm-modal>
 
+    <x-modal wire:model="regenerateModal" :title="__('Rebuild the sessions?')" separator>
+        <p>{{ __('You changed when or where this pack takes place. Its existing sessions do not move on their own.') }}</p>
+
+        <div class="p-3 mt-3 text-sm rounded-lg bg-warning/10">
+            <p>{{ __(':count session(s) still to come will be deleted and generated again on the new slot.', ['count' => $regenerationImpact['deleting']]) }}</p>
+            <p>{{ __(':count past or already cancelled session(s) are left untouched.', ['count' => $regenerationImpact['keeping']]) }}</p>
+        </div>
+
+        <p class="mt-2 text-xs text-base-content/60">
+            {{ __('Past sessions carry the attendance you recorded, and a cancelled session was announced with its own wording — neither is rebuilt.') }}
+        </p>
+
+        @if ($regenerationImpact['members'] > 0)
+            <label class="flex items-center gap-2 mt-3 cursor-pointer">
+                <x-checkbox wire:model="notifyMembersOfChange" />
+                <span class="text-sm">
+                    {{ __('Email the :count enrolled member(s) about the new schedule', ['count' => $regenerationImpact['members']]) }}
+                </span>
+            </label>
+        @endif
+
+        <x-slot:actions>
+            <x-button :label="__('Cancel')" wire:click="$set('regenerateModal', false)" />
+            <x-button :label="__('Rebuild the sessions')" class="btn-warning" wire:click="confirmRegeneration" spinner />
+        </x-slot:actions>
+    </x-modal>
+
     <x-modal wire:model="discontinuePackModal" :title="__('Stop this pack?')" separator>
         <p>{{ __('The remaining sessions are cancelled and the members are told the training will not happen.') }}</p>
 

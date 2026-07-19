@@ -3781,5 +3781,9 @@
     "Withdraw this pack from the offer?": "Retirer ce pack de l'offre ?",
     "You are no longer on the waiting list for this training. If you are still interested, you can ask to join it again.": "Vous n'êtes plus en liste d'attente pour cet entraînement. Si vous êtes toujours intéressé, vous pouvez en refaire la demande.",
     "You changed when or where this pack takes place. Its existing sessions do not move on their own.": "Vous avez changé le moment ou le lieu de ce pack. Ses séances existantes ne se déplacent pas toutes seules.",
-    "Your spot for :pack has expired": "Votre place pour :pack a expiré"
+    "Your spot for :pack has expired": "Votre place pour :pack a expiré",
+    "Availability": "Disponibilité",
+    "Show withdrawn packs": "Afficher les packs retirés",
+    "Withdrawn": "Retiré",
+    "Withdrawn packs shown": "Packs retirés affichés"
 }

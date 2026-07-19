@@ -2,7 +2,7 @@
 title: Organiser une réunion
 summary: Trouver une date par sondage, confirmer, convoquer. L'application vous dit à chaque instant quelle est la prochaine étape.
 audience: committee
-order: 9
+order: 10
 ---
 
 Une réunion suit toujours le même cycle : **en préparation → confirmée → tenue**. La page de la réunion s'adapte à l'étape où vous en êtes, et vous affiche **la prochaine action à faire** — quand vous ne savez pas quoi faire, c'est là qu'il faut regarder.

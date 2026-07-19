@@ -2,7 +2,7 @@
 title: Rédiger le PV d'une réunion
 summary: Prendre les notes en direct, à plusieurs, sans se marcher dessus. Et publier une fois la réunion passée.
 audience: committee
-order: 8
+order: 9
 ---
 
 Le PV se prépare **dès que la date est confirmée** — vous pouvez poser l'ordre du jour et vos notes bien avant la réunion. La publication, elle, attend que la réunion ait réellement eu lieu.

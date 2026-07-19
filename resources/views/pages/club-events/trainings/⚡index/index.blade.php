@@ -39,6 +39,16 @@
                     <x-select :options="$seasonOptions" wire:model.live="viewSeasonId"
                         :placeholder="__('Season…')" class="w-full" />
                 </div>
+
+                <div>
+                    <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                        {{ __('Availability') }}
+                    </p>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <x-checkbox wire:model.live="showInactive" />
+                        <span class="text-sm">{{ __('Show withdrawn packs') }}</span>
+                    </label>
+                </div>
             </x-slot:filters>
         </x-admin.shared.filter-drawer>
     @endif
@@ -158,6 +168,10 @@
                                                 </p>
                                             </div>
                                             <div class="flex shrink-0 flex-col items-end gap-1">
+                                                @unless ($pack->is_active)
+                                                    <x-badge value="{{ __('Withdrawn') }}"
+                                                        class="badge-warning badge-soft badge-xs" icon="o-eye-slash" />
+                                                @endunless
                                                 <x-badge value="{{ number_format($pack->price, 0) }}€"
                                                     class="badge-primary badge-soft" />
                                                 @if ($pack->eventPost?->status->value === 'PUBLISHED')

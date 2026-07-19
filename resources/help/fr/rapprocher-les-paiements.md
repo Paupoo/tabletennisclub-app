@@ -2,7 +2,7 @@
 title: Rapprocher les paiements avec la banque
 summary: Importer l'extrait, laisser l'application apparier ce qu'elle peut, traiter le reste à la main.
 audience: treasurer, committee
-order: 6
+order: 7
 ---
 
 Le travail se fait en trois temps : **importer l'extrait bancaire**, **lancer le rapprochement automatique**, puis **traiter à la main ce qui reste**. Ce qui reste est toujours la partie intéressante.

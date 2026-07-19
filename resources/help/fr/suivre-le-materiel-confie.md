@@ -2,7 +2,7 @@
 title: Savoir qui détient les clés et les caisses
 summary: Tenir à jour qui a un trousseau et qui est responsable de chaque caisse — et qui a le droit de le changer.
 audience: committee, treasurer
-order: 13
+order: 14
 ---
 
 Le club confie deux choses à des personnes : des **trousseaux de clés** (pour ouvrir les locaux) et des **caisses** (dont quelqu'un est comptable). L'application sert à répondre à une seule question, mais la bonne : **en cas de besoin un soir d'événement, à qui je m'adresse ?**

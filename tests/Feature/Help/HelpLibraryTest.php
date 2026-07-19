@@ -92,3 +92,29 @@ test('every help task declares a title and a summary', function (): void {
             ->and($article->summary)->not->toBe('');
     }
 });
+
+test('every internal link points to a task that exists', function (): void {
+    $slugs = array_map(fn (HelpArticle $a): string => $a->slug, HelpLibrary::all());
+
+    $broken = [];
+
+    foreach (HelpLibrary::all() as $article) {
+        preg_match_all('/\]\(([a-z0-9-]+)\)/', $article->markdown, $matches);
+
+        foreach ($matches[1] as $target) {
+            if (! in_array($target, $slugs, true)) {
+                $broken[] = "{$article->slug}.md → {$target}";
+            }
+        }
+    }
+
+    expect($broken)->toBeEmpty(
+        count($broken) . " dead help link(s):\n- " . implode("\n- ", $broken),
+    );
+});
+
+test('no two help tasks claim the same position', function (): void {
+    $orders = array_map(fn (HelpArticle $a): int => $a->order, HelpLibrary::all());
+
+    expect($orders)->toBe(array_unique($orders));
+});

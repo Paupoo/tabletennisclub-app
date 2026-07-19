@@ -2,7 +2,7 @@
 title: Inscriptions aux tournois : délais et liste d'attente
 summary: Ce qui s'annule tout seul, quand, et pourquoi un membre a perdu sa place.
 audience: committee
-order: 10
+order: 11
 ---
 
 Les inscriptions aux tournois se gèrent **toutes seules** : places libérées, liste d'attente, annulations automatiques. C'est confortable, jusqu'au jour où un membre vous appelle parce qu'il n'est plus inscrit. Voici ce qui s'est passé.

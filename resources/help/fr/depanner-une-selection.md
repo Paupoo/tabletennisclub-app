@@ -2,7 +2,7 @@
 title: Dépanner une sélection (sélectionneur)
 summary: Intervenir sur n'importe quelle équipe et aller chercher un remplaçant hors composition.
 audience: selector, committee
-order: 5
+order: 6
 ---
 
 Vous voyez **toutes les équipes du club**, pas seulement les vôtres, et vous pouvez ouvrir n'importe quel match. La mécanique est identique à celle du capitaine — voyez [Composer et envoyer ma sélection](composer-ma-selection) pour les disponibilités, la composition et l'envoi. Cette page ne couvre que ce que vous avez **en plus**.

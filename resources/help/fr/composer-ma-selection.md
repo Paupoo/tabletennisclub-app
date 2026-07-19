@@ -2,7 +2,7 @@
 title: Composer et envoyer ma sélection
 summary: Demander les disponibilités, composer l'équipe, envoyer la feuille. Et pourquoi l'application refuse parfois.
 audience: captain, selector, committee
-order: 4
+order: 5
 ---
 
 Allez dans **Interclubs → Sélections**. Vous y voyez les matchs de vos équipes pour la saison. Si vous en avez plusieurs, le sélecteur d'équipe en haut de page bascule de l'une à l'autre.

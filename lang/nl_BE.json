@@ -3781,5 +3781,9 @@
     "Withdraw this pack from the offer?": "Dit pakket uit het aanbod halen?",
     "You are no longer on the waiting list for this training. If you are still interested, you can ask to join it again.": "U staat niet langer op de wachtlijst voor deze training. Als u nog steeds interesse hebt, kunt u zich opnieuw aanmelden.",
     "You changed when or where this pack takes place. Its existing sessions do not move on their own.": "U hebt gewijzigd wanneer of waar dit pakket doorgaat. De bestaande sessies verplaatsen zichzelf niet.",
-    "Your spot for :pack has expired": "Uw plaats voor :pack is vervallen"
+    "Your spot for :pack has expired": "Uw plaats voor :pack is vervallen",
+    "Availability": "Beschikbaarheid",
+    "Show withdrawn packs": "Ingetrokken pakketten tonen",
+    "Withdrawn": "Ingetrokken",
+    "Withdrawn packs shown": "Ingetrokken pakketten getoond"
 }

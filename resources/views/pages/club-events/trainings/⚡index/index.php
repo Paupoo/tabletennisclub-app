@@ -133,6 +133,7 @@ new class extends Component
     public function clearFilters(): void
     {
         $this->viewSeasonId = Season::where('is_active', true)->value('id') ?? 0;
+        $this->showInactive = false;
     }
 
     public function closeWizard(): void
@@ -251,6 +252,10 @@ new class extends Component
         if ($this->viewSeasonId !== $activeSeasonId) {
             $seasonName = Season::find($this->viewSeasonId)?->name ?? __('All seasons');
             $chips[] = ['key' => 'viewSeasonId', 'label' => __('Season') . ': ' . $seasonName];
+        }
+
+        if ($this->showInactive) {
+            $chips[] = ['key' => 'showInactive', 'label' => __('Withdrawn packs shown')];
         }
 
         return $chips;

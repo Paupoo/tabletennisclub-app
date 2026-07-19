@@ -33,6 +33,31 @@ describe('withdrawing a pack from the offer', function (): void {
         Notification::assertNothingSent();
     })->group('training', 'pack-lifecycle');
 
+    it('offers both actions on the page, not just as methods', function (): void {
+        $admin = User::factory()->isAdmin()->create();
+        $season = makeActiveSeason();
+        makeTrainingPack($season);
+
+        // Asserting the affordances exist: a method nobody can reach from the
+        // page is the same as no feature at all.
+        Livewire::actingAs($admin)
+            ->test('pages::club-events.trainings.index')
+            ->assertSeeHtml('openWithdrawPack')
+            ->assertSeeHtml('openDiscontinuePack')
+            ->assertSeeHtml('showInactive');
+    })->group('training', 'pack-lifecycle');
+
+    it('offers the restore action on a withdrawn pack', function (): void {
+        $admin = User::factory()->isAdmin()->create();
+        $season = makeActiveSeason();
+        makeTrainingPack($season, ['is_active' => false]);
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-events.trainings.index')
+            ->set('showInactive', true)
+            ->assertSeeHtml('restorePack');
+    })->group('training', 'pack-lifecycle');
+
     it('keeps a withdrawn pack findable and restorable', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $season = makeActiveSeason();

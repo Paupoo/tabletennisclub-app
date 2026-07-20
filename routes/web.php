@@ -182,13 +182,15 @@ Route::prefix('admin/club-admin/rooms/')
             ->group(function (): void {
                 Route::livewire('{room}/edit', 'pages::club-admin.rooms.form')->name('admin.rooms.edit');
             });
+
+        Route::livewire('{room}', 'pages::club-admin.rooms.show')->name('admin.rooms.show');
     });
 
+// Tables have no list of their own: a table is always looked at through the
+// room that holds it, on admin.rooms.show.
 Route::prefix('admin/club-admin/tables/')
     ->middleware(['auth', 'verified', 'committee'])
     ->group(function (): void {
-        Route::livewire('list', 'pages::club-admin.tables.index')->name('admin.tables.index');
-
         Route::middleware('can:update,table')
             ->group(function (): void {
                 Route::livewire('{table}/edit', 'pages::club-admin.tables.form')->name('admin.tables.edit');

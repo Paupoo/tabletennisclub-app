@@ -13,7 +13,6 @@ dataset('simple_methods', [
     ['matches',       'Matches',        'admin.interclubs.interclubs',          '/custom-matches',       's-home'],
     ['rooms',         'Rooms',          'admin.rooms.index',                    '/custom-rooms',         null],
     ['seasons',       'Seasons',        'clubEvents.interclubs.seasons.index',  '/custom-seasons',       'o-calendar'],
-    ['tables',        'Tables',         'tables.index',                         '/custom-tables',         null],
     ['teams',         'Teams',          'teams.index',                          '/custom-teams',          null],
     ['trainingPacks', 'Training Packs', 'admin.trainings.index',                '/custom-trainings', null],
     ['trainings',     'Trainings',      'trainings.index',                      '/custom-trainings',      null],

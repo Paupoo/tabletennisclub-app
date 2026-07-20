@@ -67,7 +67,6 @@
         <x-menu-item icon="o-identification" link="{{ route('admin.club-info') }}" :title="__('Informations')" />
         <x-menu-item icon="o-calendar" link="{{ route('admin.seasons.index') }}" :title="__('Seasons')" />
         <x-menu-item icon="o-building-office-2" link="{{ route('admin.rooms.index') }}" :title="__('Rooms')" />
-        <x-menu-item icon="o-squares-2x2" link="{{ route('admin.tables.index') }}" :title="__('Tables')" />
     </x-menu-sub>
                     
     <x-menu-sub icon="o-user-group" :title="__('Members Admin')">

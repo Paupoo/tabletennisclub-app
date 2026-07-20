@@ -37,7 +37,6 @@ it('forbids a plain member on committee-only pages', function (string $routeName
     'admin.tournaments.index',
     'admin.trainings.index',
     'admin.rooms.index',
-    'admin.tables.index',
     'admin.interclubs.control-center',
     'admin.interclubs.teams',
     'admin.interclubs.clubs',

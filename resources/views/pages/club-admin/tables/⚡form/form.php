@@ -85,7 +85,7 @@ new class extends Component
     {
         return Breadcrumb::make()
             ->home()
-            ->tables()
+            ->rooms()
             ->current($this->tableId ? __('Update') : __('Create'));
     }
 };

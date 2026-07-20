@@ -49,39 +49,27 @@
     <x-admin.shared.filter-chips :chips="$filterChips" />
 
     {{-- Stats --}}
-    <div class="grid grid-cols-3 gap-4 mb-6">
-        <x-card class="border border-base-200 bg-base-100" shadow>
-            <div class="flex items-center justify-between">
-                <div>
-                    <div class="text-xs font-bold uppercase tracking-widest opacity-50">{{ __('Total') }}</div>
-                    <div class="text-2xl font-black mt-1">{{ $this->stats['total'] }}</div>
-                    <div class="text-xs opacity-60 mt-0.5">{{ __('transactions imported') }}</div>
-                </div>
-                <x-icon name="o-building-library" class="w-10 h-10 opacity-20" />
-            </div>
-        </x-card>
+    <div class="grid grid-cols-2 gap-4 mb-6 lg:grid-cols-3">
+        <x-admin.shared.stat-card
+            :label="__('Total')"
+            :value="$this->stats['total']"
+            :hint="__('transactions imported')"
+            icon="o-building-library" />
 
-        <x-card class="border border-success/20 bg-success/5" shadow>
-            <div class="flex items-center justify-between">
-                <div>
-                    <div class="text-xs font-bold uppercase tracking-widest opacity-50">{{ __('Reconciled') }}</div>
-                    <div class="text-2xl font-black mt-1">{{ $this->stats['reconciled'] }}</div>
-                    <div class="text-xs opacity-60 mt-0.5">{{ __('matched to a payment') }}</div>
-                </div>
-                <x-icon name="o-check-badge" class="w-10 h-10 text-success opacity-40" />
-            </div>
-        </x-card>
+        <x-admin.shared.stat-card
+            :label="__('Reconciled')"
+            :value="$this->stats['reconciled']"
+            :hint="__('matched to a payment')"
+            icon="o-check-badge"
+            color="success" />
 
-        <x-card class="border border-warning/20 bg-warning/5" shadow>
-            <div class="flex items-center justify-between">
-                <div>
-                    <div class="text-xs font-bold uppercase tracking-widest opacity-50">{{ __('Unreconciled') }}</div>
-                    <div class="text-2xl font-black mt-1">{{ $this->stats['unreconciled'] }}</div>
-                    <div class="text-xs opacity-60 mt-0.5">{{ __('incoming, no match yet') }}</div>
-                </div>
-                <x-icon name="o-clock" class="w-10 h-10 text-warning-content opacity-40" />
-            </div>
-        </x-card>
+        <x-admin.shared.stat-card
+            :label="__('Unreconciled')"
+            :value="$this->stats['unreconciled']"
+            :hint="__('incoming, no match yet')"
+            icon="o-clock"
+            color="warning"
+            class="col-span-2 lg:col-span-1" />
     </div>
 
     <x-card class="bg-base-100 border-none shadow-sm">

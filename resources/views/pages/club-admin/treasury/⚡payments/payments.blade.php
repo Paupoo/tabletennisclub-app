@@ -55,53 +55,28 @@
     <x-admin.shared.filter-chips :chips="$filterChips" />
 
     {{-- Stats --}}
-    <div class="grid grid-cols-3 gap-4 mb-6">
-        <x-card class="border border-warning/20 bg-warning/5" shadow>
-            <div class="flex items-center justify-between">
-                <div>
-                    <div class="text-xs font-bold uppercase tracking-widest opacity-50">{{ __('Pending') }}</div>
-                    <div class="text-2xl font-black mt-1">{{ number_format($this->stats['pending_total'], 2, ',', ' ') }} €</div>
-                    <div class="text-xs opacity-60 mt-0.5">{{ $this->stats['pending_count'] }} {{ __('payment(s) awaiting reconciliation') }}</div>
-                </div>
-                <x-icon name="o-clock" class="w-10 h-10 text-warning-content opacity-40" />
-            </div>
-        </x-card>
+    <div class="grid grid-cols-2 gap-4 mb-6 lg:grid-cols-3">
+        <x-admin.shared.stat-card
+            :label="__('Pending')"
+            :value="number_format($this->stats['pending_total'], 2, ',', ' ') . ' €'"
+            :hint="$this->stats['pending_count'] . ' ' . __('payment(s) awaiting reconciliation')"
+            icon="o-clock"
+            color="warning" />
 
-        <x-card class="border border-success/20 bg-success/5" shadow>
-            <div class="flex items-center justify-between">
-                <div>
-                    <div class="text-xs font-bold uppercase tracking-widest opacity-50">{{ __('Collected') }}</div>
-                    <div class="text-2xl font-black mt-1">{{ number_format($this->stats['paid_total'], 2, ',', ' ') }} €</div>
-                    <div class="text-xs opacity-60 mt-0.5">{{ $this->stats['paid_count'] }} {{ __('payment(s) received') }}</div>
-                </div>
-                <x-icon name="o-check-badge" class="w-10 h-10 text-success opacity-40" />
-            </div>
-        </x-card>
+        <x-admin.shared.stat-card
+            :label="__('Collected')"
+            :value="number_format($this->stats['paid_total'], 2, ',', ' ') . ' €'"
+            :hint="$this->stats['paid_count'] . ' ' . __('payment(s) received')"
+            icon="o-check-badge"
+            color="success" />
 
-        <x-card
-            wire:click="$set('statusFilter', 'to_refund')"
-            @class([
-                'border cursor-pointer transition-all',
-                'border-error/40 bg-error/10 shadow-md ring-2 ring-error/30' => $this->stats['to_refund_count'] > 0,
-                'border-base-200 bg-base-100 opacity-60'                     => $this->stats['to_refund_count'] === 0,
-            ])
-            shadow>
-            <div class="flex items-center justify-between">
-                <div>
-                    <div class="text-xs font-bold uppercase tracking-widest opacity-50">{{ __('To refund') }}</div>
-                    <div @class([
-                        'text-2xl font-black mt-1',
-                        'text-error' => $this->stats['to_refund_count'] > 0,
-                    ])>{{ number_format($this->stats['to_refund_total'], 2, ',', ' ') }} €</div>
-                    <div class="text-xs opacity-60 mt-0.5">{{ $this->stats['to_refund_count'] }} {{ __('refund(s) pending') }}</div>
-                </div>
-                <x-icon name="o-arrow-uturn-left" @class([
-                    'w-10 h-10 opacity-40',
-                    'text-error'    => $this->stats['to_refund_count'] > 0,
-                    'text-base-400' => $this->stats['to_refund_count'] === 0,
-                ]) />
-            </div>
-        </x-card>
+        <x-admin.shared.stat-card
+            :label="__('To refund')"
+            :value="number_format($this->stats['to_refund_total'], 2, ',', ' ') . ' €'"
+            :hint="$this->stats['to_refund_count'] . ' ' . __('refund(s) pending')"
+            icon="o-arrow-uturn-left"
+            :color="$this->stats['to_refund_count'] > 0 ? 'error' : 'neutral'"
+            class="col-span-2 lg:col-span-1" />
     </div>
 
     {{-- Tabs + table --}}

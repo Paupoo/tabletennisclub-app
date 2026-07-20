@@ -143,10 +143,12 @@
                                                 icon="o-pencil-square"
                                                 :label="__('Select')"
                                                 wire:click="openSelection({{ $ic['id'] }})" />
+                                            {{-- Infobulle à gauche : le conteneur de la liste est en
+                                                 overflow-hidden, une bulle au-dessus y serait rognée. --}}
                                             <x-button
                                                 class="btn-ghost btn-xs text-base-content/40"
                                                 icon="o-envelope"
-                                                :tooltip="__('Request availability')"
+                                                :tooltip-left="__('Request availability')"
                                                 wire:click="requestAvailability({{ $ic['id'] }})" />
                                         </div>
                                     @endif

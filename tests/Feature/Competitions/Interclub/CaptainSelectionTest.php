@@ -96,6 +96,18 @@ it('captain can access the captain selection page', function (): void {
         ->assertOk();
 });
 
+/**
+ * Régression #31 : la liste des rencontres est en overflow-hidden, une bulle
+ * positionnée au-dessus du bouton y était rognée et illisible.
+ */
+it('anchors the availability request tooltip to the left so the list does not clip it', function (): void {
+    $this->actingAs($this->captain)
+        ->get(route('admin.interclubs.captain-selection'))
+        ->assertOk()
+        ->assertSee('lg:tooltip-left', escape: false)
+        ->assertDontSee('lg:tooltip-top', escape: false);
+});
+
 it('non-captain user cannot access the captain selection page', function (): void {
     $nonCaptain = User::factory()->isCompetitor()->create();
 

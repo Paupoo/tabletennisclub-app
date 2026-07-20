@@ -25,10 +25,20 @@
                         wire:model="name"
                         placeholder="A – Z" />
 
-                    @if ($team->league)
+                    @if ($fixtureCount === 0)
+                        <x-select
+                            :label="__('Division')"
+                            :options="$leagueOptions"
+                            wire:model="leagueId"
+                            :placeholder="__('Select a division')" />
+                    @else
                         <div class="rounded-lg bg-gray-50 p-3 text-sm text-gray-600">
-                            <p class="font-medium text-gray-800">Ligue</p>
+                            <p class="font-medium text-gray-800">{{ __('Division') }}</p>
                             <p class="mt-1">{{ $division }}</p>
+                            <p class="mt-2 flex items-start gap-1.5 text-xs text-gray-500">
+                                <x-icon name="o-lock-closed" class="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                                <span>{{ trans_choice('Locked: :count fixture is already scheduled for this team. Change the schedule first.|Locked: :count fixtures are already scheduled for this team. Change the schedule first.', $fixtureCount, ['count' => $fixtureCount]) }}</span>
+                            </p>
                         </div>
                     @endif
 

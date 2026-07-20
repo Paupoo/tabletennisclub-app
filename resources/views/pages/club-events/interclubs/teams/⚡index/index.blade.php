@@ -97,11 +97,23 @@
         <div class="space-y-4">
             <x-select label="Lettre" :options="$teamNameOptions" wire:model="newTeamName"
                 placeholder="Choisir A – Z" />
-            <x-select :label="__('Category')" :options="$categoryOptions" wire:model="newCategory"
-                placeholder="Sélectionner..." />
-            <x-select label="Niveau" :options="$levelOptions" wire:model="newLevel"
-                placeholder="Sélectionner..." />
-            <x-input label="Division" wire:model="newDivision" placeholder="ex: 3B" />
+
+            @if ($newDivisionMode)
+                <x-select :label="__('Category')" :options="$categoryOptions" wire:model="newCategory"
+                    placeholder="Sélectionner..." />
+                <x-select label="Niveau" :options="$levelOptions" wire:model="newLevel"
+                    placeholder="Sélectionner..." />
+                <x-input :label="__('Division')" wire:model="newDivision" placeholder="ex: 3B" />
+                <x-button class="btn-ghost btn-xs" icon="o-arrow-uturn-left"
+                    :label="__('Choose an existing division')"
+                    wire:click="$set('newDivisionMode', false)" />
+            @else
+                <x-select :label="__('Division')" :options="$leagueOptions" wire:model="newLeagueId"
+                    :placeholder="__('Select a division')" />
+                <x-button class="btn-ghost btn-xs" icon="o-plus"
+                    :label="__('Create a new division')"
+                    wire:click="$set('newDivisionMode', true)" />
+            @endif
         </div>
         <x-slot:actions>
             <x-button label="Annuler" wire:click="$set('createModal', false)" />

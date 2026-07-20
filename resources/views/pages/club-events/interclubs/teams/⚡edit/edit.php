@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Resources\views\Pages\ClubEvents\Interclubs\Teams\Edit;
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Interclub;
+use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\LeagueLevel;
@@ -12,6 +14,7 @@ use App\Domains\Shared\Enums\TeamName;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
@@ -22,6 +25,8 @@ new class extends Component
     use HasBreadcrumbs, Toast;
 
     public ?int $captainId = null;
+
+    public ?int $leagueId = null;
 
     public array $memberIds = [];
 
@@ -39,7 +44,22 @@ new class extends Component
         $this->teamId = $team->id;
         $this->name = $team->name;
         $this->captainId = $team->captain_id;
+        $this->leagueId = $team->league_id;
         $this->memberIds = $team->users->pluck('id')->toArray();
+    }
+
+    /**
+     * Nombre de rencontres où l'équipe est engagée, à domicile ou en déplacement.
+     *
+     * Les rencontres portent leur propre league_id : déplacer l'équipe une fois
+     * le calendrier encodé laisserait ces rencontres rattachées à l'ancienne
+     * division. La division est donc verrouillée dès la première rencontre.
+     */
+    public function fixtureCount(): int
+    {
+        return Interclub::where('visited_team_id', $this->teamId)
+            ->orWhere('visiting_team_id', $this->teamId)
+            ->count();
     }
 
     public function removeCaptain(): void
@@ -54,17 +74,31 @@ new class extends Component
 
     public function save(): void
     {
+        $team = Team::findOrFail($this->teamId);
+        $canChangeLeague = $this->fixtureCount() === 0;
+
         $this->validate([
             'name' => ['required', 'string', 'size:1'],
             'memberIds' => ['array', 'min:1'],
+            'leagueId' => [
+                'required',
+                Rule::exists('leagues', 'id')->where('season_id', $team->season_id),
+            ],
         ], [
             'name.size' => __('The name must be a single letter (A–Z).'),
             'memberIds.min' => 'L\'équipe doit avoir au moins un joueur.',
+            'leagueId.exists' => __('This division does not belong to the team season.'),
         ]);
 
-        $team = Team::findOrFail($this->teamId);
         $team->name = strtoupper($this->name);
         $team->captain_id = $this->captainId;
+
+        // Le champ est masqué côté vue quand des rencontres existent ; on refuse
+        // aussi le changement côté serveur, la vue n'étant pas une protection.
+        if ($canChangeLeague) {
+            $team->league_id = $this->leagueId;
+        }
+
         $team->save();
 
         $team->users()->sync($this->memberIds);
@@ -127,6 +161,23 @@ new class extends Component
         $teamNameOptions = collect(TeamName::cases())
             ->map(fn ($n) => ['id' => $n->name, 'name' => $n->name]);
 
+        // Divisions déjà déclarées pour la saison de l'équipe. On ne propose que
+        // l'existant : créer une division reste une action délibérée, ailleurs.
+        $leagueOptions = League::where('season_id', $team->season_id)
+            ->orderBy('level')
+            ->orderBy('division')
+            ->get()
+            ->map(fn (League $league): array => [
+                'id' => $league->id,
+                'name' => implode(' – ', array_filter([
+                    $levelLabels[$league->level] ?? $league->level,
+                    $league->division,
+                    $league->category,
+                ])),
+            ]);
+
+        $fixtureCount = $this->fixtureCount();
+
         return [
             'breadcrumbs' => Breadcrumb::make()
                 ->home()
@@ -140,6 +191,8 @@ new class extends Component
             'competitors' => $competitors,
             'teamMembers' => $teamMembers,
             'teamNameOptions' => $teamNameOptions,
+            'leagueOptions' => $leagueOptions,
+            'fixtureCount' => $fixtureCount,
         ];
     }
 

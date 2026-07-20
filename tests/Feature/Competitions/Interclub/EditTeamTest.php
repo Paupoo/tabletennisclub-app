@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Competitions\Interclub\Models\Club;
+use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
@@ -132,4 +134,94 @@ test('admin can remove captain', function (): void {
         ->test('pages::club-events.interclubs.teams.edit', ['team' => $this->team])
         ->call('removeCaptain')
         ->assertSet('captainId', null);
+});
+
+/**
+ * Régression #27 : la division n'était pas modifiable, une erreur de saisie
+ * imposait de supprimer l'équipe et de la recréer.
+ */
+describe('division correction', function (): void {
+    beforeEach(function (): void {
+        $this->team->load('league');
+
+        $this->otherLeague = League::create([
+            'division' => '3B',
+            'level' => 'PROVINCIAL_BW',
+            'category' => 'MEN',
+            'season_id' => $this->team->season_id,
+        ]);
+    });
+
+    it('lets an admin move a team that has no fixture yet', function (): void {
+        Livewire::actingAs($this->admin)
+            ->test('pages::club-events.interclubs.teams.edit', ['team' => $this->team])
+            ->set('leagueId', $this->otherLeague->id)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        expect($this->team->fresh()->league_id)->toBe($this->otherLeague->id);
+    });
+
+    it('rejects a division belonging to another season', function (): void {
+        // Dates explicites : Season refuse les saisons qui se chevauchent.
+        $foreignSeason = Season::factory()->create([
+            'is_active' => false,
+            'start_at' => now()->subYears(6)->startOfYear(),
+            'end_at' => now()->subYears(6)->endOfYear(),
+        ]);
+
+        $foreignLeague = League::create([
+            'division' => '2A',
+            'level' => 'PROVINCIAL_BW',
+            'category' => 'MEN',
+            'season_id' => $foreignSeason->id,
+        ]);
+
+        Livewire::actingAs($this->admin)
+            ->test('pages::club-events.interclubs.teams.edit', ['team' => $this->team])
+            ->set('leagueId', $foreignLeague->id)
+            ->call('save')
+            ->assertHasErrors('leagueId');
+    });
+
+    it('keeps the division locked once a fixture is scheduled', function (): void {
+        $originalLeagueId = $this->team->league_id;
+
+        Interclub::factory()->create([
+            'season_id' => $this->team->season_id,
+            'league_id' => $originalLeagueId,
+            'visited_team_id' => $this->team->id,
+            'total_players' => 4,
+            'start_date_time' => now()->addDays(7),
+        ]);
+
+        Livewire::actingAs($this->admin)
+            ->test('pages::club-events.interclubs.teams.edit', ['team' => $this->team])
+            ->set('leagueId', $this->otherLeague->id)
+            ->call('save');
+
+        expect($this->team->fresh()->league_id)->toBe($originalLeagueId);
+    });
+
+    it('counts away fixtures too', function (): void {
+        $opponent = Team::create([
+            'name' => 'A',
+            'season_id' => $this->team->season_id,
+            'league_id' => $this->team->league_id,
+            'club_id' => Club::factory()->create()->id,
+        ]);
+
+        Interclub::factory()->create([
+            'season_id' => $this->team->season_id,
+            'league_id' => $this->team->league_id,
+            'visited_team_id' => $opponent->id,
+            'visiting_team_id' => $this->team->id,
+            'total_players' => 4,
+            'start_date_time' => now()->addDays(7),
+        ]);
+
+        Livewire::actingAs($this->admin)
+            ->test('pages::club-events.interclubs.teams.edit', ['team' => $this->team])
+            ->assertViewHas('fixtureCount', 1);
+    });
 });

@@ -71,16 +71,25 @@
             </div>
         @endforelse
 
-        {{-- Tables sans salle : `room_id` est nullable, donc elles doivent rester
-             joignables. Carte absente tant qu'aucune table n'est orpheline. --}}
-        @if ($unassignedTables->isNotEmpty())
-            <x-card class="border-dashed shadow-sm">
-                <x-slot:title>{{ __('Unassigned') }}</x-slot:title>
-                <x-slot:subtitle>{{ __('Tables not linked to any room') }}</x-slot:subtitle>
+    </div>
+
+    {{-- Tables sans salle. `room_id` est nullable, donc elles doivent rester
+         joignables — mais une orpheline n'est pas un lieu, elle n'a donc pas sa
+         place dans la grille des salles. Section absente tant qu'il n'y en a pas. --}}
+    @if ($unassignedTables->isNotEmpty())
+        <div class="mt-10">
+            <div class="mb-3 flex items-center gap-3">
+                <h2 class="text-xs font-bold uppercase tracking-widest opacity-50">{{ __('Unassigned') }}</h2>
+                <div class="h-px flex-1 bg-base-300"></div>
+            </div>
+
+            <x-card class="shadow-sm">
+                <p class="text-xs opacity-60">{{ __('Tables not linked to any room') }}</p>
 
                 <div class="mt-3 divide-y divide-base-200">
                     @foreach ($unassignedTables as $table)
-                        <div class="flex items-center justify-between gap-3 py-2">
+                        <div class="flex items-center justify-between gap-3 py-2"
+                            wire:key="unassigned-{{ $table->id }}">
                             <div>
                                 <div class="text-sm font-medium">{{ $table->name }}</div>
                                 <div class="text-xs text-base-content/50">{{ $table->state->getLabel() }}</div>
@@ -93,8 +102,8 @@
                     @endforeach
                 </div>
             </x-card>
-        @endif
-    </div>
+        </div>
+    @endif
 
     @can('create', \App\Domains\ClubAdmin\Club\Models\Room::class)
         <x-confirm-modal model="deleteRoomModal" :title="__('Delete this room?')" :subtitle="__('Warning!')"

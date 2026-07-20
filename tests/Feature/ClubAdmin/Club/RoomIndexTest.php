@@ -96,4 +96,33 @@ describe('Room index tests', function (): void {
 
         expect(Room::where('id', $room->id)->exists())->toBeTrue();
     });
+
+    // 6. Les tables orphelines vivent hors de la grille des salles
+    it('hides the unassigned section when every table has a room', function (): void {
+        $committee = User::factory()->create(['is_committee_member' => true]);
+        Table::factory()->for(Room::factory())->create();
+
+        $component = Livewire::actingAs($committee)
+            ->test('pages::club-admin.rooms.index');
+
+        expect($component->viewData('unassignedTables'))->toBeEmpty();
+        $component->assertDontSee(__('Tables not linked to any room'));
+    });
+
+    it('lists tables with no room in a section of their own', function (): void {
+        // `room_id` est nullable : sans cette section, une orpheline ne serait
+        // atteignable depuis nulle part.
+        $committee = User::factory()->create(['is_committee_member' => true]);
+        Table::factory()->for(Room::factory())->create(['name' => 'Assignée']);
+        Table::factory()->create(['name' => 'Orpheline', 'room_id' => null]);
+
+        $component = Livewire::actingAs($committee)
+            ->test('pages::club-admin.rooms.index');
+
+        expect($component->viewData('unassignedTables')->pluck('name'))
+            ->toContain('Orpheline')
+            ->not->toContain('Assignée');
+
+        $component->assertSee(__('Unassigned'));
+    });
 })->group('club-admin', 'room');

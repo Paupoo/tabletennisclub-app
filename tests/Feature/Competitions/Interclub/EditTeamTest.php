@@ -225,3 +225,59 @@ describe('division correction', function (): void {
             ->assertViewHas('scheduledMatchCount', 1);
     });
 });
+
+describe('creating a division from the edit form', function (): void {
+    it('moves the team to a division created on the spot', function (): void {
+        Livewire::actingAs($this->admin)
+            ->test('pages::club-events.interclubs.teams.edit', ['team' => $this->team])
+            ->set('newDivisionMode', true)
+            ->set('newCategory', 'MEN')
+            ->set('newLevel', 'PROVINCIAL_BW')
+            ->set('newDivision', '5h')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $league = League::where('season_id', $this->team->season_id)
+            ->where('division', '5H')
+            ->first();
+
+        expect($league)->not->toBeNull();
+        expect($this->team->fresh()->league_id)->toBe($league->id);
+    });
+
+    it('rejects a malformed division', function (): void {
+        Livewire::actingAs($this->admin)
+            ->test('pages::club-events.interclubs.teams.edit', ['team' => $this->team])
+            ->set('newDivisionMode', true)
+            ->set('newCategory', 'MEN')
+            ->set('newLevel', 'PROVINCIAL_BW')
+            ->set('newDivision', 'Provincial BW 6')
+            ->call('save')
+            ->assertHasErrors('newDivision');
+
+        expect(League::where('division', 'Provincial BW 6')->exists())->toBeFalse();
+    });
+
+    it('does not create a division when the team is locked by a scheduled match', function (): void {
+        $originalLeagueId = $this->team->league_id;
+
+        Interclub::factory()->create([
+            'season_id' => $this->team->season_id,
+            'league_id' => $originalLeagueId,
+            'visited_team_id' => $this->team->id,
+            'total_players' => 4,
+            'start_date_time' => now()->addDays(7),
+        ]);
+
+        Livewire::actingAs($this->admin)
+            ->test('pages::club-events.interclubs.teams.edit', ['team' => $this->team])
+            ->set('newDivisionMode', true)
+            ->set('newCategory', 'MEN')
+            ->set('newLevel', 'PROVINCIAL_BW')
+            ->set('newDivision', '5H')
+            ->call('save');
+
+        expect(League::where('division', '5H')->exists())->toBeFalse();
+        expect($this->team->fresh()->league_id)->toBe($originalLeagueId);
+    });
+});

@@ -9,6 +9,7 @@ use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\Gender;
+use App\Domains\Shared\Enums\LeagueCategory;
 use App\Domains\Shared\Enums\LeagueLevel;
 use App\Domains\Shared\Enums\TeamName;
 use App\Livewire\Concerns\HasBreadcrumbs;
@@ -25,6 +26,15 @@ new class extends Component
     use HasBreadcrumbs, Toast;
 
     public ?int $captainId = null;
+
+    /** Bascule vers la saisie d'une nouvelle division plutôt que le choix d'une existante. */
+    public bool $newDivisionMode = false;
+
+    public string $newCategory = '';
+
+    public string $newDivision = '';
+
+    public string $newLevel = '';
 
     public ?int $leagueId = null;
 
@@ -77,18 +87,41 @@ new class extends Component
         $team = Team::findOrFail($this->teamId);
         $canChangeLeague = $this->scheduledMatchCount() === 0;
 
-        $this->validate([
+        // Mêmes deux chemins qu'à la création : choisir une division existante,
+        // ou en créer une explicitement. Sans le second, corriger une erreur vers
+        // une division pas encore déclarée resterait impossible (issue #27).
+        $rules = [
             'name' => ['required', 'string', 'size:1'],
             'memberIds' => ['array', 'min:1'],
-            'leagueId' => [
-                'required',
-                Rule::exists('leagues', 'id')->where('season_id', $team->season_id),
-            ],
-        ], [
+        ];
+        $messages = [
             'name.size' => __('The name must be a single letter (A–Z).'),
             'memberIds.min' => 'L\'équipe doit avoir au moins un joueur.',
-            'leagueId.exists' => __('This division does not belong to the team season.'),
-        ]);
+        ];
+
+        if ($canChangeLeague && $this->newDivisionMode) {
+            $rules += [
+                'newCategory' => ['required', 'string'],
+                'newLevel' => ['required', 'string'],
+                'newDivision' => ['required', 'string', 'regex:/^[A-Za-z0-9]{1,4}$/'],
+            ];
+            $messages += [
+                'newCategory.required' => __('Please select a category.'),
+                'newLevel.required' => __('Please select a level.'),
+                'newDivision.required' => 'Indiquez la division.',
+                'newDivision.regex' => __('A division is 1 to 4 letters or digits, for example 3B.'),
+            ];
+        } else {
+            $rules += [
+                'leagueId' => [
+                    'required',
+                    Rule::exists('leagues', 'id')->where('season_id', $team->season_id),
+                ],
+            ];
+            $messages += ['leagueId.exists' => __('This division does not belong to the team season.')];
+        }
+
+        $this->validate($rules, $messages);
 
         $team->name = strtoupper($this->name);
         $team->captain_id = $this->captainId;
@@ -96,7 +129,14 @@ new class extends Component
         // Le champ est masqué côté vue quand des rencontres existent ; on refuse
         // aussi le changement côté serveur, la vue n'étant pas une protection.
         if ($canChangeLeague) {
-            $team->league_id = $this->leagueId;
+            $team->league_id = $this->newDivisionMode
+                ? League::firstOrCreate([
+                    'category' => $this->newCategory,
+                    'level' => $this->newLevel,
+                    'division' => strtoupper($this->newDivision),
+                    'season_id' => $team->season_id,
+                ])->id
+                : $this->leagueId;
         }
 
         $team->save();
@@ -193,6 +233,8 @@ new class extends Component
             'teamNameOptions' => $teamNameOptions,
             'leagueOptions' => $leagueOptions,
             'scheduledMatchCount' => $scheduledMatchCount,
+            'categoryOptions' => collect(LeagueCategory::cases())->map(fn ($c) => ['id' => $c->name, 'name' => $c->value]),
+            'levelOptions' => collect(LeagueLevel::cases())->map(fn ($l) => ['id' => $l->name, 'name' => $l->value]),
         ];
     }
 

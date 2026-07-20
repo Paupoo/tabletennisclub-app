@@ -26,11 +26,25 @@
                         placeholder="A – Z" />
 
                     @if ($scheduledMatchCount === 0)
-                        <x-select
-                            :label="__('Division')"
-                            :options="$leagueOptions"
-                            wire:model="leagueId"
-                            :placeholder="__('Select a division')" />
+                        @if ($newDivisionMode)
+                            <x-select :label="__('Category')" :options="$categoryOptions" wire:model="newCategory"
+                                placeholder="Sélectionner..." />
+                            <x-select label="Niveau" :options="$levelOptions" wire:model="newLevel"
+                                placeholder="Sélectionner..." />
+                            <x-input :label="__('Division')" wire:model="newDivision" placeholder="ex: 3B" />
+                            <x-button class="btn-ghost btn-xs" icon="o-arrow-uturn-left"
+                                :label="__('Choose an existing division')"
+                                wire:click="$set('newDivisionMode', false)" />
+                        @else
+                            <x-select
+                                :label="__('Division')"
+                                :options="$leagueOptions"
+                                wire:model="leagueId"
+                                :placeholder="__('Select a division')" />
+                            <x-button class="btn-ghost btn-xs" icon="o-plus"
+                                :label="__('Create a new division')"
+                                wire:click="$set('newDivisionMode', true)" />
+                        @endif
                     @else
                         <div class="rounded-lg bg-gray-50 p-3 text-sm text-gray-600">
                             <p class="font-medium text-gray-800">{{ __('Division') }}</p>

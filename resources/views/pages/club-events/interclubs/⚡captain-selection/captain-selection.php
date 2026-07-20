@@ -46,6 +46,7 @@ new class extends Component
 
     public string $search = '';
 
+    #[Locked]
     public ?int $selectedInterclubId = null;
 
     /** @var array<int, int> */
@@ -113,6 +114,7 @@ new class extends Component
     public function openSelection(int $interclubId): void
     {
         $interclub = Interclub::findOrFail($interclubId);
+        $this->authorizeInterclub($interclub);
 
         if ($interclub->start_date_time < now()) {
             return;
@@ -147,6 +149,8 @@ new class extends Component
     public function requestAvailability(int $interclubId, InterclubAvailabilityService $service): void
     {
         $interclub = Interclub::findOrFail($interclubId);
+        $this->authorizeInterclub($interclub);
+
         $service->requestAvailability($interclub);
 
         $this->success(
@@ -790,7 +794,33 @@ new class extends Component
             return null;
         }
 
-        return Interclub::find($this->selectedInterclubId);
+        $interclub = Interclub::find($this->selectedInterclubId);
+
+        if ($interclub) {
+            $this->authorizeInterclub($interclub);
+        }
+
+        return $interclub;
+    }
+
+    /**
+     * Mirrors the scoping of loadAccessibleTeams(): admins, committee members and
+     * selectors reach every team, a captain only the teams they lead.
+     */
+    private function authorizeInterclub(Interclub $interclub): void
+    {
+        $user = Auth::user();
+
+        if ($user->is_admin || $user->is_committee_member || $user->is_selector) {
+            return;
+        }
+
+        abort_unless(
+            Team::whereIn('id', array_filter([$interclub->visited_team_id, $interclub->visiting_team_id]))
+                ->where('captain_id', $user->id)
+                ->exists(),
+            403
+        );
     }
 
     /**

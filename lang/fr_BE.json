@@ -1362,7 +1362,7 @@
     "Lock": "Verrouiller",
     "Lock and setup": "Verrouiller et configurer",
     "Locked": "Verrouillé",
-    "Locked: :count fixture is already scheduled for this team. Change the schedule first.|Locked: :count fixtures are already scheduled for this team. Change the schedule first.": "Verrouillé : :count rencontre est déjà planifiée pour cette équipe. Modifiez d'abord le calendrier.|Verrouillé : :count rencontres sont déjà planifiées pour cette équipe. Modifiez d'abord le calendrier.",
+    "Locked: :count match is already scheduled for this team. Change the schedule first.|Locked: :count matches are already scheduled for this team. Change the schedule first.": "Verrouillé : :count rencontre est déjà planifiée pour cette équipe. Modifiez d'abord le calendrier.|Verrouillé : :count rencontres sont déjà planifiées pour cette équipe. Modifiez d'abord le calendrier.",
     "Locker": "Locker",
     "Log Out": "Se déconnecter",
     "Log in": "Se connecter",

@@ -25,7 +25,7 @@
                         wire:model="name"
                         placeholder="A – Z" />
 
-                    @if ($fixtureCount === 0)
+                    @if ($scheduledMatchCount === 0)
                         <x-select
                             :label="__('Division')"
                             :options="$leagueOptions"
@@ -37,7 +37,7 @@
                             <p class="mt-1">{{ $division }}</p>
                             <p class="mt-2 flex items-start gap-1.5 text-xs text-gray-500">
                                 <x-icon name="o-lock-closed" class="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                                <span>{{ trans_choice('Locked: :count fixture is already scheduled for this team. Change the schedule first.|Locked: :count fixtures are already scheduled for this team. Change the schedule first.', $fixtureCount, ['count' => $fixtureCount]) }}</span>
+                                <span>{{ trans_choice('Locked: :count match is already scheduled for this team. Change the schedule first.|Locked: :count matches are already scheduled for this team. Change the schedule first.', $scheduledMatchCount, ['count' => $scheduledMatchCount]) }}</span>
                             </p>
                         </div>
                     @endif

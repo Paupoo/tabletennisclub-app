@@ -152,7 +152,7 @@ describe('division correction', function (): void {
         ]);
     });
 
-    it('lets an admin move a team that has no fixture yet', function (): void {
+    it('lets an admin move a team that has no match yet', function (): void {
         Livewire::actingAs($this->admin)
             ->test('pages::club-events.interclubs.teams.edit', ['team' => $this->team])
             ->set('leagueId', $this->otherLeague->id)
@@ -184,7 +184,7 @@ describe('division correction', function (): void {
             ->assertHasErrors('leagueId');
     });
 
-    it('keeps the division locked once a fixture is scheduled', function (): void {
+    it('keeps the division locked once a match is scheduled', function (): void {
         $originalLeagueId = $this->team->league_id;
 
         Interclub::factory()->create([
@@ -203,7 +203,7 @@ describe('division correction', function (): void {
         expect($this->team->fresh()->league_id)->toBe($originalLeagueId);
     });
 
-    it('counts away fixtures too', function (): void {
+    it('counts away matches too', function (): void {
         $opponent = Team::create([
             'name' => 'A',
             'season_id' => $this->team->season_id,
@@ -222,6 +222,6 @@ describe('division correction', function (): void {
 
         Livewire::actingAs($this->admin)
             ->test('pages::club-events.interclubs.teams.edit', ['team' => $this->team])
-            ->assertViewHas('fixtureCount', 1);
+            ->assertViewHas('scheduledMatchCount', 1);
     });
 });

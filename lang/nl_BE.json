@@ -1362,7 +1362,7 @@
     "Lock": "Vergrendelen",
     "Lock and setup": "Vergrendelen en instellen",
     "Locked": "Vergrendeld",
-    "Locked: :count fixture is already scheduled for this team. Change the schedule first.|Locked: :count fixtures are already scheduled for this team. Change the schedule first.": "Vergrendeld: :count wedstrijd is al ingepland voor dit team. Pas eerst de kalender aan.|Vergrendeld: :count wedstrijden zijn al ingepland voor dit team. Pas eerst de kalender aan.",
+    "Locked: :count match is already scheduled for this team. Change the schedule first.|Locked: :count matches are already scheduled for this team. Change the schedule first.": "Vergrendeld: :count wedstrijd is al ingepland voor dit team. Pas eerst de kalender aan.|Vergrendeld: :count wedstrijden zijn al ingepland voor dit team. Pas eerst de kalender aan.",
     "Locker": "Kluisje",
     "Log Out": "Afmelden",
     "Log in": "Aanmelden",

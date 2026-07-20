@@ -55,7 +55,7 @@ new class extends Component
      * le calendrier encodé laisserait ces rencontres rattachées à l'ancienne
      * division. La division est donc verrouillée dès la première rencontre.
      */
-    public function fixtureCount(): int
+    public function scheduledMatchCount(): int
     {
         return Interclub::where('visited_team_id', $this->teamId)
             ->orWhere('visiting_team_id', $this->teamId)
@@ -75,7 +75,7 @@ new class extends Component
     public function save(): void
     {
         $team = Team::findOrFail($this->teamId);
-        $canChangeLeague = $this->fixtureCount() === 0;
+        $canChangeLeague = $this->scheduledMatchCount() === 0;
 
         $this->validate([
             'name' => ['required', 'string', 'size:1'],
@@ -176,7 +176,7 @@ new class extends Component
                 ])),
             ]);
 
-        $fixtureCount = $this->fixtureCount();
+        $scheduledMatchCount = $this->scheduledMatchCount();
 
         return [
             'breadcrumbs' => Breadcrumb::make()
@@ -192,7 +192,7 @@ new class extends Component
             'teamMembers' => $teamMembers,
             'teamNameOptions' => $teamNameOptions,
             'leagueOptions' => $leagueOptions,
-            'fixtureCount' => $fixtureCount,
+            'scheduledMatchCount' => $scheduledMatchCount,
         ];
     }
 

@@ -255,6 +255,7 @@ new class extends Component
         $query = Subscription::query()
             ->with('user')
             ->forSeason($season)
+            ->active()
             ->whereHas('user')
             ->when($this->search !== '', fn ($q) => $q->whereHas('user', fn ($u) => $u
                 ->where('first_name', 'like', "%{$this->search}%")
@@ -341,6 +342,7 @@ new class extends Component
 
         return Subscription::query()
             ->forSeason($season)
+            ->active()
             ->findOrFail($subscriptionId);
     }
 };

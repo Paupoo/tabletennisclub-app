@@ -235,7 +235,7 @@ new class extends Component
             return false;
         }
 
-        return $this->user->subscriptions()->where('season_id', $seasonId)->exists();
+        return $this->user->subscriptions()->where('season_id', $seasonId)->affiliated()->exists();
     }
 
     /**

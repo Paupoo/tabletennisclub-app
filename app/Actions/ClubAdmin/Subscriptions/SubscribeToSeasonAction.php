@@ -41,7 +41,7 @@ class SubscribeToSeasonAction
         $this->user = User::find($validated['user_id']);
 
         // Make sure we don't subscribe twice for the same season
-        if ($this->user->subscriptions()->where('season_id', $this->season->id)->exists()) {
+        if ($this->user->subscriptions()->where('season_id', $this->season->id)->affiliated()->exists()) {
             return back()->withErrors(__('The user has already subscribed to this season'));
         }
 

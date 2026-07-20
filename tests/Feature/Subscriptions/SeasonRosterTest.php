@@ -86,6 +86,49 @@ describe('listing', function (): void {
     });
 });
 
+describe('active members only', function (): void {
+    it('hides members whose subscription is not confirmed', function (string $status): void {
+        rosterMember($this->season, ['first_name' => 'Ghost', 'last_name' => 'Member'], ['status' => $status]);
+
+        Livewire::actingAs($this->manager)
+            ->test(ROSTER)
+            ->assertDontSee('Ghost');
+    })->with(['pending', 'cancelled', 'refunded']);
+
+    it('shows members whose subscription is confirmed or paid', function (string $status): void {
+        rosterMember($this->season, ['first_name' => 'Real', 'last_name' => 'Member'], ['status' => $status]);
+
+        Livewire::actingAs($this->manager)
+            ->test(ROSTER)
+            ->assertSee('Real');
+    })->with(['confirmed', 'paid']);
+
+    /**
+     * Régression #29 : une inscription rejetée puis resoumise créait une
+     * seconde ligne, et le membre apparaissait deux fois dans l'effectif.
+     */
+    it('lists a member once after a rejected registration was resubmitted', function (): void {
+        $member = User::factory()->create(['first_name' => 'Aurelien', 'last_name' => 'Resubmitted']);
+
+        Subscription::factory()->create([
+            'user_id' => $member->id,
+            'season_id' => $this->season->id,
+            'status' => 'cancelled',
+        ]);
+
+        Subscription::factory()->create([
+            'user_id' => $member->id,
+            'season_id' => $this->season->id,
+            'status' => 'confirmed',
+        ]);
+
+        Livewire::actingAs($this->manager)
+            ->test(ROSTER)
+            ->assertSee('Aurelien')
+            ->assertViewHas('rows', fn ($rows): bool => $rows->where('name', 'Aurelien Resubmitted')->count() === 1);
+    });
+});
+
 describe('filters', function (): void {
     it('filters by competitive', function (): void {
         rosterMember($this->season, ['first_name' => 'Compyes'], ['is_competitive' => true]);

@@ -39,6 +39,40 @@ it('throws when user already has an active subscription for the season', functio
         ->toThrow(Exception::class);
 });
 
+/**
+ * Régression #29 : les états terminaux n'engagent plus le membre, il doit
+ * pouvoir se réinscrire après un rejet (cancelled) ou un remboursement.
+ */
+it('allows a new subscription when the previous one reached a terminal state', function (string $status): void {
+    $user = User::factory()->create();
+    $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
+
+    Subscription::factory()->create([
+        'user_id' => $user->id,
+        'season_id' => $season->id,
+        'status' => $status,
+    ]);
+
+    $subscription = (new CreateSubscriptionAction)->execute($user, $season, []);
+
+    expect($subscription->status)->toBe('pending');
+    expect(Subscription::where('user_id', $user->id)->where('season_id', $season->id)->count())->toBe(2);
+})->with(['cancelled', 'refunded']);
+
+it('throws when the existing subscription is still ongoing', function (string $status): void {
+    $user = User::factory()->create();
+    $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
+
+    Subscription::factory()->create([
+        'user_id' => $user->id,
+        'season_id' => $season->id,
+        'status' => $status,
+    ]);
+
+    expect(fn (): mixed => (new CreateSubscriptionAction)->execute($user, $season, []))
+        ->toThrow(Exception::class);
+})->with(['pending', 'confirmed', 'paid']);
+
 it('sets the initial status to pending', function (): void {
     $user = User::factory()->create();
     $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);

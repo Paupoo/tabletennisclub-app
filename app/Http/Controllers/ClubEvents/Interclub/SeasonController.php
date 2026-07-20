@@ -75,7 +75,7 @@ class SeasonController extends Controller
         $subscriptions = $season->subscriptions->load('payments');
         $trainingPacks = $season->trainingPacks()->get();
         $notSubscribedUsers = User::whereDoesntHave('subscriptions', function (Builder $query) use ($season): void {
-            $query->where('season_id', $season->id);
+            $query->where('season_id', $season->id)->affiliated();
         })->get();
 
         return view('clubEvents.interclubs.seasons.show', compact([

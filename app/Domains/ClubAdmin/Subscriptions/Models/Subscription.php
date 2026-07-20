@@ -281,14 +281,31 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
     }
 
     /**
-     * Scope pour récupérer les subscriptions actives (payées)
+     * Scope pour récupérer les subscriptions des membres actifs du club.
+     *
+     * Un membre est actif dès que son inscription est confirmée : les statuts
+     * pending, cancelled et refunded ne comptent pas dans les effectifs.
+     * Aligné sur User::scopeActive().
      */
     public function scopeActive(Builder $query): Builder
     {
-        return $query->where('status', 'paid');
+        return $query->whereIn('status', ['confirmed', 'paid']);
     }
 
     // ==================== Scopes ====================
+
+    /**
+     * Scope pour récupérer les inscriptions encore en cours.
+     *
+     * Une inscription affiliée empêche d'en créer une nouvelle pour la même
+     * saison. Les états terminaux (cancelled, refunded) en sont exclus : ils
+     * n'engagent plus le membre et le laissent libre de se réinscrire.
+     * Aligné sur User::scopeAffiliatedForCurrentSeason().
+     */
+    public function scopeAffiliated(Builder $query): Builder
+    {
+        return $query->whereIn('status', ['pending', 'confirmed', 'paid']);
+    }
 
     /**
      * Scope pour récupérer les inscriptions dont le membre se porte volontaire comme capitaine d'équipe.

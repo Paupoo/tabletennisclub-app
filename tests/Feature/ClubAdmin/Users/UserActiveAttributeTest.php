@@ -69,3 +69,51 @@ it('stays in sync with the User::active() scope', function (): void {
         ->and($scopeIds)->toContain($active->id)
         ->and($scopeIds)->not->toContain($inactive->id);
 });
+
+// ── Compétiteur ⊂ actif ──────────────────────────────────────────────────────
+
+/**
+ * Un compétiteur est d'abord un membre actif. L'attribut et le scope doivent
+ * rester alignés : UserObserver lit l'attribut, RecalculateForceListAction lit
+ * le scope, et les faire diverger laisse des force_list à null.
+ */
+describe('competitor implies active membership', function (): void {
+    it('is not a competitor when the competitive subscription is terminated', function (string $status): void {
+        $season = makeActiveSeason();
+        $user = User::factory()->create();
+        Subscription::factory()->for($user)->create([
+            'season_id' => $season->id,
+            'status' => $status,
+            'is_competitive' => true,
+        ]);
+
+        expect($user->fresh()->is_competitor)->toBeFalse();
+        expect(User::competitor()->whereKey($user->id)->exists())->toBeFalse();
+    })->with(['cancelled', 'refunded', 'pending']);
+
+    it('is a competitor with an active competitive subscription', function (string $status): void {
+        $season = makeActiveSeason();
+        $user = User::factory()->create();
+        Subscription::factory()->for($user)->create([
+            'season_id' => $season->id,
+            'status' => $status,
+            'is_competitive' => true,
+        ]);
+
+        expect($user->fresh()->is_competitor)->toBeTrue();
+        expect(User::competitor()->whereKey($user->id)->exists())->toBeTrue();
+    })->with(['confirmed', 'paid']);
+
+    it('agrees between the attribute and the scope when subscriptions are eager-loaded', function (): void {
+        $season = makeActiveSeason();
+        $user = User::factory()->create();
+        Subscription::factory()->for($user)->cancelled()->create([
+            'season_id' => $season->id,
+            'is_competitive' => true,
+        ]);
+
+        $eagerLoaded = User::with('subscriptions')->find($user->id);
+
+        expect($eagerLoaded->is_competitor)->toBeFalse();
+    });
+});

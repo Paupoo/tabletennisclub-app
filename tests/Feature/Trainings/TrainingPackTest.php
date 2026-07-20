@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Club\Models\Room;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\TrainingLevel;
@@ -377,5 +378,57 @@ describe('capacity', function (): void {
             ->call('save');
 
         expect(TrainingPack::where('name', 'Libre du vendredi')->sole()->is_open_enrollment)->toBeTrue();
+    });
+});
+
+// ── Capacité et statut de l'inscription club ─────────────────────────────────
+
+/**
+ * Régression #29 : les comptages filtraient le statut du pivot mais jamais
+ * celui de l'inscription club. Une inscription annulée gardait sa place et
+ * pouvait faire afficher « complet » à un pack qui ne l'était pas.
+ */
+describe('capacity ignores terminated subscriptions', function (): void {
+    beforeEach(function (): void {
+        $this->season = makeActiveSeason();
+        $this->pack = makeTrainingPack($this->season, ['max_participants' => 2]);
+    });
+
+    it('frees the slot of a subscription in a terminal state', function (string $status): void {
+        $gone = Subscription::factory()->create([
+            'season_id' => $this->season->id,
+            'status' => $status,
+        ]);
+        $gone->trainingPacks()->attach($this->pack->id, ['status' => 'enrolled']);
+
+        expect($this->pack->committedCount())->toBe(0);
+        expect($this->pack->enrolledCount())->toBe(0);
+    })->with(['cancelled', 'refunded']);
+
+    it('keeps the slot of a member still awaiting validation', function (): void {
+        $pendingMember = Subscription::factory()->pending()->create([
+            'season_id' => $this->season->id,
+        ]);
+        $pendingMember->trainingPacks()->attach($this->pack->id, ['status' => 'enrolled']);
+
+        expect($this->pack->committedCount())->toBe(1);
+    });
+
+    it('counts a confirmed member', function (): void {
+        $member = Subscription::factory()->create([
+            'season_id' => $this->season->id,
+            'status' => 'confirmed',
+        ]);
+        $member->trainingPacks()->attach($this->pack->id, ['status' => 'enrolled']);
+
+        expect($this->pack->committedCount())->toBe(1);
+        expect($this->pack->enrolledCount())->toBe(1);
+    });
+
+    it('excludes cancelled members from the waitlist count', function (): void {
+        $gone = Subscription::factory()->cancelled()->create(['season_id' => $this->season->id]);
+        $gone->trainingPacks()->attach($this->pack->id, ['status' => 'waiting']);
+
+        expect($this->pack->waitlistCount())->toBe(0);
     });
 });

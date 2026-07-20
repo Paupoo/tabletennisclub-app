@@ -417,15 +417,19 @@ class User extends Authenticatable implements MustVerifyEmail
 
         $seasonId = Season::current()?->id;
 
+        // Un compétiteur est d'abord un membre actif : une inscription annulée
+        // ou en attente ne fait de personne un compétiteur du club.
         if ($this->relationLoaded('subscriptions')) {
             return $this->subscriptions
                 ->where('season_id', $seasonId)
+                ->whereIn('status', ['confirmed', 'paid'])
                 ->where('is_competitive', true)
                 ->isNotEmpty();
         }
 
         return $this->subscriptions()
             ->where('season_id', $seasonId)
+            ->active()
             ->where('is_competitive', true)
             ->exists();
     }
@@ -579,12 +583,20 @@ class User extends Authenticatable implements MustVerifyEmail
         );
     }
 
+    /**
+     * Compétiteurs de la saison en cours.
+     *
+     * Doit rester aligné sur getIsCompetitorAttribute() : UserObserver lit
+     * l'attribut, RecalculateForceListAction lit ce scope. Les faire diverger
+     * laisse des force_list à null.
+     */
     public function scopeCompetitor(EloquentBuilder $query): EloquentBuilder
     {
         $seasonId = Season::current()?->id;
 
         return $query->whereHas('subscriptions', fn (EloquentBuilder $q) => $q
             ->where('season_id', $seasonId)
+            ->whereIn('status', ['confirmed', 'paid'])
             ->where('is_competitive', true)
         );
     }

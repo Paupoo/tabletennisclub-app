@@ -85,9 +85,11 @@ class UserFactory extends Factory
             $season = Season::current() ?? Season::inRandomOrder()->first();
 
             if ($season !== null) {
+                // Statut confirmé : un compétiteur est d'abord un membre actif
+                // du club (voir User::scopeCompetitor).
                 Subscription::firstOrCreate(
                     ['user_id' => $user->id, 'season_id' => $season->id],
-                    ['is_competitive' => true, 'amount_due' => 125, 'amount_paid' => 0],
+                    ['is_competitive' => true, 'amount_due' => 125, 'amount_paid' => 0, 'status' => 'confirmed'],
                 );
             }
         });

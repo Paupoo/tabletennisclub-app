@@ -746,6 +746,7 @@ new class extends Component
                 ? collect()
                 : Subscription::query()
                     ->where('season_id', $season->id)
+                    ->affiliated()
                     ->get()
                     ->keyBy('user_id');
         }

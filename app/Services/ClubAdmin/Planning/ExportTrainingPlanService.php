@@ -217,6 +217,7 @@ class ExportTrainingPlanService
     {
         return Subscription::query()
             ->where('season_id', $plan->season_id)
+            ->affiliated()
             ->get()
             ->keyBy('user_id');
     }

@@ -289,7 +289,9 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
      */
     public function scopeActive(Builder $query): Builder
     {
-        return $query->whereIn('status', ['confirmed', 'paid']);
+        // Colonne qualifiée : le pivot subscription_training_pack porte lui aussi
+        // une colonne status, et un whereIn nu serait ambigu dans la jointure.
+        return $query->whereIn($query->qualifyColumn('status'), ['confirmed', 'paid']);
     }
 
     // ==================== Scopes ====================
@@ -304,7 +306,7 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
      */
     public function scopeAffiliated(Builder $query): Builder
     {
-        return $query->whereIn('status', ['pending', 'confirmed', 'paid']);
+        return $query->whereIn($query->qualifyColumn('status'), ['pending', 'confirmed', 'paid']);
     }
 
     /**

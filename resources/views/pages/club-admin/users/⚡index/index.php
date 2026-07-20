@@ -517,9 +517,14 @@ new class extends Component
                 fn ($q) => $q->competitor()
             )
             ->when(
+                // Complément exact de competitor() : une inscription compétitive
+                // annulée ne fait plus classer le membre en compétiteur.
+                // Volontairement sans filtre d'appartenance : la liste inclut
+                // aussi les utilisateurs sans inscription, comme avant.
                 ! $this->showArchived && $this->selectedLicenceType === 'recreative',
                 fn ($q) => $q->whereDoesntHave('subscriptions', fn ($s) => $s
                     ->where('season_id', Season::current()?->id)
+                    ->active()
                     ->where('is_competitive', true)
                 )
             )

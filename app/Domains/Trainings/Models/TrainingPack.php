@@ -136,9 +136,21 @@ class TrainingPack extends Model
         'is_open_enrollment',
     ];
 
+    /**
+     * Places engagées dans le pack.
+     *
+     * Le statut du pivot ne suffit pas : une inscription club annulée gardait
+     * sa place et pouvait faire afficher « complet » à un pack qui ne l'était
+     * pas, bloquant de vrais membres (issue #29).
+     *
+     * On filtre sur affiliated() et non active() : un membre en attente de
+     * validation qui a réservé une place la conserve, sinon la place serait
+     * attribuée deux fois. Seuls les états terminaux libèrent la place.
+     */
     public function committedCount(): int
     {
         return $this->subscriptions()
+            ->affiliated()
             ->wherePivotIn('status', ['enrolled', 'pending'])
             ->count();
     }
@@ -151,6 +163,7 @@ class TrainingPack extends Model
     public function enrolledCount(): int
     {
         return $this->subscriptions()
+            ->affiliated()
             ->wherePivot('status', 'enrolled')
             ->count();
     }
@@ -278,7 +291,7 @@ class TrainingPack extends Model
     public function trainees(): Builder
     {
         return User::query()->whereHas('subscriptions', function (Builder $q): void {
-            $q->whereHas('trainingPacks', fn (Builder $q2) => $q2
+            $q->affiliated()->whereHas('trainingPacks', fn (Builder $q2) => $q2
                 ->where('training_packs.id', $this->id)
                 ->where('subscription_training_pack.status', 'enrolled')
             );
@@ -298,6 +311,7 @@ class TrainingPack extends Model
     public function waitlistCount(): int
     {
         return $this->subscriptions()
+            ->affiliated()
             ->wherePivot('status', 'waiting')
             ->count();
     }

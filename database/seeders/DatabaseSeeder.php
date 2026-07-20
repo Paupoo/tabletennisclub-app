@@ -20,6 +20,7 @@ use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\LeagueCategory;
 use App\Domains\Shared\Enums\LeagueLevel;
 use App\Domains\Shared\Enums\Ranking;
+use App\Domains\Shared\Enums\TableStateEnum;
 use App\Domains\Shared\Models\AppSetting;
 use App\Services\ForceList;
 use Illuminate\Database\Seeder;
@@ -321,7 +322,7 @@ class DatabaseSeeder extends Seeder
             Table::create([
                 'name' => $i + 1,
                 'purchased_on' => fake()->dateTimeBetween('-10 years', '-1 year'),
-                'state' => 'used',
+                'state' => TableStateEnum::GOOD,
                 'room_id' => Room::inRandomOrder()->first()->id,
             ]);
         }

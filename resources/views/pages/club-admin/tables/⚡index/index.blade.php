@@ -65,7 +65,7 @@
                             @endscope
 
                             @scope('cell_state', $table)
-                                <x-badge :value="$table->state" class="badge-neutral w-30 text-xs" />
+                                <x-badge :value="$table->state->getLabel()" class="badge-neutral w-30 text-xs" />
                             @endscope
 
                             @scope('cell_is_competition_ready', $table)
@@ -113,7 +113,7 @@
                                             {{ $table->is_competition_ready ? __('Yes') : __('No') }}
                                         </div>
                                         <div class="text-[10px] uppercase tracking-wider opacity-60 mt-1">
-                                            {{ __('State:') }} {{ $table->state ?? 'N/A' }}</div>
+                                            {{ __('State:') }} {{ $table->state->getLabel() }}</div>
                                     </div>
                                 </div>
 

@@ -7,6 +7,7 @@ namespace App\Domains\ClubAdmin\Club\Models;
 use App\Domains\Competitions\Tournament\Models\TableTournament;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentMatch;
+use App\Domains\Shared\Enums\TableStateEnum;
 use App\Domains\Shared\Traits\HasAuditLog;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
@@ -64,7 +65,7 @@ class Table extends Model
         'name' => 'string',
         'brand' => 'string',
         'model' => 'string',
-        'state' => 'string',
+        'state' => TableStateEnum::class,
         'state_description' => 'string',
         'is_available' => 'boolean',
         'purchased_on' => 'datetime:d-m-Y',
@@ -81,13 +82,12 @@ class Table extends Model
         'room_id',
     ];
 
+    /**
+     * @return array<int, array{id: string, name: string}>
+     */
     public static function getStates(): array
     {
-        return [
-            ['id' => 'Good condition', 'name' => __('Good condition')],
-            ['id' => 'Needs repair', 'name' => __('Needs repair')],
-            ['id' => 'Out of service', 'name' => __('Out of service')],
-        ];
+        return TableStateEnum::options();
     }
 
     public function match(): BelongsToMany

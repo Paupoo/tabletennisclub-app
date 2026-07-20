@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\TableStateEnum;
 use Illuminate\Support\Collection;
 use Livewire\Livewire;
 
@@ -125,13 +126,13 @@ describe('TableIndex Livewire Component', function (): void {
     test('search filters tables by state', function (): void {
         // Arrange
         $room = Room::factory()->create();
-        Table::factory()->for($room)->create(['name' => 'Table 1', 'state' => 'Good condition']);
-        Table::factory()->for($room)->create(['name' => 'Table 2', 'state' => 'Needs repair']);
-        Table::factory()->for($room)->create(['name' => 'Table 3', 'state' => 'Good condition']);
+        Table::factory()->for($room)->create(['name' => 'Table 1', 'state' => TableStateEnum::GOOD]);
+        Table::factory()->for($room)->create(['name' => 'Table 2', 'state' => TableStateEnum::NEEDS_REPAIR]);
+        Table::factory()->for($room)->create(['name' => 'Table 3', 'state' => TableStateEnum::GOOD]);
 
         // Act : Chercher "Needs repair"
         $component = Livewire::test('pages::club-admin.tables')
-            ->set('search', 'Needs repair');
+            ->set('search', TableStateEnum::NEEDS_REPAIR->value);
 
         // Assert
         $grouped = $component->viewData('groupedTables');
@@ -251,9 +252,9 @@ describe('TableIndex Livewire Component', function (): void {
         $room2 = Room::factory()->create(['name' => 'Room B']);
         $admin = User::factory()->create(['is_admin' => true]);
 
-        $table1 = Table::factory()->for($room1)->create(['name' => 'Competition Table', 'state' => 'Good condition']);
-        $table2 = Table::factory()->for($room1)->create(['name' => 'Training Table', 'state' => 'Good condition']);
-        $table3 = Table::factory()->for($room2)->create(['name' => 'Competition Table', 'state' => 'Needs repair']);
+        $table1 = Table::factory()->for($room1)->create(['name' => 'Competition Table', 'state' => TableStateEnum::GOOD]);
+        $table2 = Table::factory()->for($room1)->create(['name' => 'Training Table', 'state' => TableStateEnum::GOOD]);
+        $table3 = Table::factory()->for($room2)->create(['name' => 'Competition Table', 'state' => TableStateEnum::NEEDS_REPAIR]);
 
         $component = Livewire::actingAs($admin)->test('pages::club-admin.tables');
 

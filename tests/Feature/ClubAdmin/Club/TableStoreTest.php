@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\TableStateEnum;
 use Livewire\Livewire;
 
 describe('Table purchased_on normalization', function (): void {
@@ -53,7 +54,7 @@ describe('Table form component', function (): void {
             ->test('pages::club-admin.tables.form')
             ->set('name', 'Table 01')
             ->set('room_id', $room->id)
-            ->set('state', 'Needs repair')
+            ->set('state', TableStateEnum::NEEDS_REPAIR->value)
             ->set('purchased_on', '')
             ->call('save')
             ->assertHasNoErrors();

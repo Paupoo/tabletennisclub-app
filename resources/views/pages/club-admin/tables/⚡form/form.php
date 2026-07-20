@@ -2,8 +2,10 @@
 
     use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
+use App\Domains\Shared\Enums\TableStateEnum;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
+use Illuminate\Validation\Rules\Enum;
 use Illuminate\View\View;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
@@ -28,7 +30,7 @@ new class extends Component
     #[Validate('nullable')]
     public ?int $room_id = null;
 
-    #[Validate('nullable')]
+    #[Validate(['required', new Enum(TableStateEnum::class)])]
     public ?string $state = null;
 
     #[Validate('nullable')]
@@ -46,7 +48,7 @@ new class extends Component
         $this->model = $table->model ?? '';
         $this->room_id = $table->room_id;
         $this->purchased_on = $table->purchased_on ? $table->purchased_on->format('Y-m-d') : null;
-        $this->state = $table->state;
+        $this->state = ($table->state ?? TableStateEnum::GOOD)->value;
         $this->state_description = $table->state_description ?? '';
 
         $this->states = Table::getStates();

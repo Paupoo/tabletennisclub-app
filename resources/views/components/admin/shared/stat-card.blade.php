@@ -4,8 +4,8 @@
     Une pastille d'icône colorée à gauche, puis eyebrow + valeur + précision.
 
     Usage :
-        <x-admin.shared.stat-card :label="__('Pending')" value="1 250,00 €"
-            :hint="__('3 payment(s) awaiting reconciliation')" icon="o-clock" color="warning" />
+        <x-admin.shared.stat-card :label="$label" value="1 250,00 €"
+            :hint="$hint" icon="o-clock" color="warning" />
 
     `value` arrive déjà formaté (montants en €, compteurs) : le formatage reste
     chez l'appelant, qui seul sait s'il s'agit d'un euro ou d'un décompte.

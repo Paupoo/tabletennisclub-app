@@ -10,6 +10,7 @@ use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentMatch;
 use App\Domains\Competitions\Tournament\Models\TournamentPair;
 use App\Domains\Competitions\Tournament\Services\TournamentMatchService;
+use App\Domains\Shared\Enums\TableStateEnum;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 
 function conflictTournament(): Tournament
@@ -51,7 +52,7 @@ function occupyConflictTable(TournamentMatch $match): void
 {
     $table = Table::create([
         'name' => 'Table ' . $match->id,
-        'state' => 'used',
+        'state' => TableStateEnum::GOOD,
         'purchased_on' => now()->subYears(2)->toDateString(),
         'room_id' => Room::factory()->create()->id,
     ]);

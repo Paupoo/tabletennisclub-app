@@ -7,6 +7,7 @@ namespace App\Domains\Competitions\Tournament\Services;
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentMatch;
+use App\Domains\Shared\Enums\TableStateEnum;
 
 class TournamentTableService
 {
@@ -34,7 +35,7 @@ class TournamentTableService
 
         foreach ($tournament->rooms as $room) {
             foreach ($room->tables as $table) {
-                if ($table->state !== 'oos') {
+                if ($table->state->isPlayable()) {
                     $tablesToSync[] = $table->id;
                 }
             }
@@ -46,7 +47,9 @@ class TournamentTableService
     public function updateTablesCount(Room $room): void
     {
         $total_tables = $room->tables()->count();
-        $total_playable_tables = $room->tables()->where('state', '!=', 'oos')->count();
+        $total_playable_tables = $room->tables()
+            ->whereNot('state', TableStateEnum::OUT_OF_SERVICE)
+            ->count();
         $room->total_tables = $total_tables;
         $room->total_playable_tables = $total_playable_tables;
         $room->save();

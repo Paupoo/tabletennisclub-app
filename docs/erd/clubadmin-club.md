@@ -13,7 +13,6 @@ erDiagram
         string access_description "nullable"
         int capacity_for_trainings
         int capacity_for_interclubs
-        int total_tables
         int total_playable_tables
     }
     Table {

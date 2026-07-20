@@ -31,7 +31,6 @@ use Illuminate\Support\Carbon;
  * @property string|null $access_description
  * @property int $capacity_for_trainings
  * @property int $capacity_for_interclubs
- * @property int $total_tables
  * @property int $total_playable_tables
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at

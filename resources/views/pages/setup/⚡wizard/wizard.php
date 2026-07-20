@@ -88,8 +88,6 @@ new class extends Component
 
     public string $roomStreet = '';
 
-    public int $roomTotalTables = 4;
-
     public string $seasonEndAt = '';
 
     // ── Step 4 — Season ──────────────────────────────────────────────────────
@@ -131,7 +129,6 @@ new class extends Component
             'roomBuildingName' => 'nullable|string|max:100',
             'roomCapacityTraining' => 'required|integer|min:0|max:99',
             'roomCapacityInterclub' => 'required|integer|min:0|max:99',
-            'roomTotalTables' => 'required|integer|min:0|max:99',
         ]);
 
         $this->rooms[] = [
@@ -142,14 +139,12 @@ new class extends Component
             'building_name' => $this->roomBuildingName ?: null,
             'capacity_for_trainings' => $this->roomCapacityTraining,
             'capacity_for_interclubs' => $this->roomCapacityInterclub,
-            'total_tables' => $this->roomTotalTables,
         ];
 
         $this->reset(['roomName', 'roomStreet', 'roomCityCode', 'roomCityName', 'roomBuildingName', 'showRoomForm']);
         $this->roomCapacityTraining = 6;
         $this->roomCapacityInterclub = 4;
-        $this->roomTotalTables = 4;
-        $this->resetValidation(['roomName', 'roomStreet', 'roomCityCode', 'roomCityName', 'roomBuildingName', 'roomCapacityTraining', 'roomCapacityInterclub', 'roomTotalTables']);
+        $this->resetValidation(['roomName', 'roomStreet', 'roomCityCode', 'roomCityName', 'roomBuildingName', 'roomCapacityTraining', 'roomCapacityInterclub']);
     }
 
     public function addTable(): void

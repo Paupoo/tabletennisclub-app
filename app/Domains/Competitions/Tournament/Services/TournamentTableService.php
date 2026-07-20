@@ -46,12 +46,9 @@ class TournamentTableService
 
     public function updateTablesCount(Room $room): void
     {
-        $total_tables = $room->tables()->count();
-        $total_playable_tables = $room->tables()
+        $room->total_playable_tables = $room->tables()
             ->whereNot('state', TableStateEnum::OUT_OF_SERVICE)
             ->count();
-        $room->total_tables = $total_tables;
-        $room->total_playable_tables = $total_playable_tables;
         $room->save();
     }
 }

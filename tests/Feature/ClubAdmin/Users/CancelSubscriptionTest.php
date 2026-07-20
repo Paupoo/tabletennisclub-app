@@ -384,10 +384,20 @@ describe('Registrations page — cancel flow', function (): void {
         $subscription = Subscription::factory()->create([
             'season_id' => $this->season->id,
             'status' => 'paid',
-            'amount_due' => 215,
+            'is_competitive' => false,
+            'amount_due' => 150,
         ]);
         $pack = TrainingPack::factory()->create(['price' => 90]);
         $subscription->trainingPacks()->attach($pack->id, ['status' => 'enrolled']);
+
+        // 60 € (récréatif) + 90 € de pack, réellement encaissés : le
+        // remboursement se calcule sur les paiements, pas sur le statut.
+        $subscription->payments()->create([
+            'reference' => 'TEST-PAID',
+            'amount_due' => 150,
+            'amount_paid' => 150,
+            'status' => 'paid',
+        ]);
 
         Livewire::test(CANCEL_REGISTRATIONS_COMPONENT)
             ->call('openRefundModal', $subscription->id, $pack->id)

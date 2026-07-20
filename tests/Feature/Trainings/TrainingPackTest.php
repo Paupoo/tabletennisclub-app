@@ -5,6 +5,8 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Shared\Enums\TrainingLevel;
+use App\Domains\Shared\Enums\TrainingType;
 use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Models\TrainingPack;
 use Livewire\Livewire;
@@ -248,5 +250,132 @@ describe('trainerOptions', function (): void {
             ->call('openCreate')
             ->assertSee('Zelda Coachowski')
             ->assertDontSee('Nestor Nocoach');
+    });
+});
+
+// ── price ─────────────────────────────────────────────────────────────────────
+
+describe('price', function (): void {
+    it('keeps the cents of a price entered with decimals', function (): void {
+        $season = makeActiveSeason();
+        $pack = makeTrainingPack($season, ['price' => 87.50]);
+
+        expect($pack->fresh()->price)->toBe(87.50);
+    });
+
+    it('stores the price as cents', function (): void {
+        $season = makeActiveSeason();
+        $pack = makeTrainingPack($season, ['price' => 87.50]);
+
+        expect((int) $pack->getRawOriginal('price'))->toBe(8750);
+    });
+
+    it('rounds a price with sub-cent precision to the nearest cent', function (): void {
+        $season = makeActiveSeason();
+        $pack = makeTrainingPack($season, ['price' => 12.345]);
+
+        expect($pack->fresh()->price)->toBe(12.35);
+    });
+
+    it('round-trips a whole-euro price unchanged', function (): void {
+        $season = makeActiveSeason();
+        $pack = makeTrainingPack($season, ['price' => 90]);
+
+        expect($pack->fresh()->price)->toBe(90.0);
+    });
+});
+
+// ── capacity ──────────────────────────────────────────────────────────────────
+
+describe('capacity', function (): void {
+    it('saves an explicit maximum from the wizard', function (): void {
+        $admin = User::factory()->isAdmin()->create();
+        $season = makeActiveSeason();
+        $room = Room::factory()->create(['capacity_for_trainings' => 16]);
+        $coach = User::factory()->create(['is_coach' => true]);
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-events.trainings.index')
+            ->call('openCreate')
+            ->set('formSeasonId', $season->id)
+            ->set('formName', 'Jeunes mardi')
+            ->set('formLevel', TrainingLevel::KIDS->value)
+            ->set('formType', TrainingType::DIRECTED->value)
+            ->set('formRoomId', $room->id)
+            ->set('formTrainerId', $coach->id)
+            ->set('formDayOfWeek', 2)
+            ->set('formMaxParticipants', '12')
+            ->call('save');
+
+        expect(TrainingPack::where('name', 'Jeunes mardi')->sole()->max_participants)->toBe(12);
+    });
+
+    it('falls back to the room capacity when the maximum is left empty', function (): void {
+        $admin = User::factory()->isAdmin()->create();
+        $season = makeActiveSeason();
+        $room = Room::factory()->create(['capacity_for_trainings' => 16]);
+        $coach = User::factory()->create(['is_coach' => true]);
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-events.trainings.index')
+            ->call('openCreate')
+            ->set('formSeasonId', $season->id)
+            ->set('formName', 'Sans plafond explicite')
+            ->set('formLevel', TrainingLevel::KIDS->value)
+            ->set('formType', TrainingType::DIRECTED->value)
+            ->set('formRoomId', $room->id)
+            ->set('formTrainerId', $coach->id)
+            ->set('formDayOfWeek', 2)
+            ->call('save');
+
+        $pack = TrainingPack::where('name', 'Sans plafond explicite')->sole();
+
+        expect($pack->max_participants)->toBeNull()
+            ->and($pack->effectiveMaxParticipants())->toBe(16);
+    });
+
+    it('refuses unlimited enrolment on a directed pack', function (): void {
+        $admin = User::factory()->isAdmin()->create();
+        $season = makeActiveSeason();
+        $room = Room::factory()->create(['capacity_for_trainings' => 16]);
+        $coach = User::factory()->create(['is_coach' => true]);
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-events.trainings.index')
+            ->call('openCreate')
+            ->set('formSeasonId', $season->id)
+            ->set('formName', 'Dirige sans limite')
+            ->set('formLevel', TrainingLevel::KIDS->value)
+            ->set('formType', TrainingType::DIRECTED->value)
+            ->set('formRoomId', $room->id)
+            ->set('formTrainerId', $coach->id)
+            ->set('formDayOfWeek', 2)
+            ->set('formIsOpenEnrollment', true)
+            ->call('save');
+
+        $pack = TrainingPack::where('name', 'Dirige sans limite')->sole();
+
+        expect($pack->is_open_enrollment)->toBeFalse()
+            ->and($pack->hasAvailableSpot())->toBeTrue();
+    });
+
+    it('allows unlimited enrolment on a free-practice pack', function (): void {
+        $admin = User::factory()->isAdmin()->create();
+        $season = makeActiveSeason();
+        $room = Room::factory()->create(['capacity_for_trainings' => 4]);
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-events.trainings.index')
+            ->call('openCreate')
+            ->set('formSeasonId', $season->id)
+            ->set('formName', 'Libre du vendredi')
+            ->set('formLevel', TrainingLevel::OPEN->value)
+            ->set('formType', TrainingType::FREE->value)
+            ->set('formRoomId', $room->id)
+            ->set('formDayOfWeek', 5)
+            ->set('formIsOpenEnrollment', true)
+            ->call('save');
+
+        expect(TrainingPack::where('name', 'Libre du vendredi')->sole()->is_open_enrollment)->toBeTrue();
     });
 });

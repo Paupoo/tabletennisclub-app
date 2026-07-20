@@ -272,36 +272,46 @@ new class extends Component
             return;
         }
 
-        $packPrice = (float) $pack->price;
-
-        // Detach + price recalculation + waitlist promotion for the freed spot
-        (new LeaveTrainingPackAction)($subscription, $pack, $subscription->has_other_family_members ? 2 : 1, notifyUser: false);
-
-        // Refund enters the treasury workflow (to_refund) and notifies the treasurer & secretary
-        (new RequestSubscriptionRefundAction)($subscription, $packPrice, __(':member has been removed from :pack after having paid.', [
-            'member' => $subscription->user->first_name . ' ' . $subscription->user->last_name,
-            'pack' => $pack->name,
-        ]));
+        // Detach + price recalculation + waitlist promotion for the freed spot.
+        // The refundable amount is the resulting overpayment, not the pack price:
+        // losing a pack can also lose the multi-pack discount on the ones kept.
+        $refundable = (new LeaveTrainingPackAction)($subscription, $pack, $subscription->has_other_family_members ? 2 : 1, notifyUser: false);
 
         $this->refundModal = false;
         $this->refundSubscriptionId = null;
         $this->refundPackId = null;
 
         $userName = $subscription->user->first_name . ' ' . $subscription->user->last_name;
+
+        if ($refundable <= 0.0) {
+            $this->success(__(':user removed from :pack. Nothing to refund — their balance is settled.', [
+                'user' => $userName,
+                'pack' => $pack->name,
+            ]));
+
+            return;
+        }
+
+        // Refund enters the treasury workflow (to_refund) and notifies the treasurer & secretary
+        (new RequestSubscriptionRefundAction)($subscription, $refundable, __(':member has been removed from :pack after having paid.', [
+            'member' => $userName,
+            'pack' => $pack->name,
+        ]));
+
         $userIban = $subscription->user->iban;
 
         if ($userIban) {
             $this->success(__(':user removed from :pack. Refund of :amount€ to be issued to :iban.', [
                 'user' => $userName,
                 'pack' => $pack->name,
-                'amount' => number_format($packPrice, 2),
+                'amount' => number_format($refundable, 2),
                 'iban' => $userIban,
             ]));
         } else {
             $this->warning(__(':user removed from :pack. Refund of :amount€ required — no IBAN on file, please handle manually.', [
                 'user' => $userName,
                 'pack' => $pack->name,
-                'amount' => number_format($packPrice, 2),
+                'amount' => number_format($refundable, 2),
             ]));
         }
     }

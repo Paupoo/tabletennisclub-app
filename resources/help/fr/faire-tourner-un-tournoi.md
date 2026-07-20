@@ -2,7 +2,7 @@
 title: Faire tourner un tournoi le jour J
 summary: Lancer les matchs sur les tables, encoder les scores, générer le tableau final, clôturer.
 audience: committee
-order: 11
+order: 12
 ---
 
 Tout se passe dans le **live center** du tournoi. La journée suit trois temps : **les poules**, **le tableau final**, **la clôture**. L'application vous empêche de sauter une étape — ce n'est pas de la rigidité, c'est ce qui évite de générer un tableau final avec des poules inachevées.

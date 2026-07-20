@@ -26,8 +26,8 @@ erDiagram
     CashRegister
 
     %% ClubAdmin/Subscriptions
-    Subscription
     Registration
+    Subscription
 
     %% ClubAdmin/Users
     FamilyGroup
@@ -72,10 +72,10 @@ erDiagram
 
     %% Trainings
     Training
-    TrainingPack
     TrainingPlan
     TrainingPlanAssignment
     TrainingPlanPack
+    TrainingPack
 
     BarCategory ||--o{ BarProduct : "products"
     BarOrder ||--o{ BarOrderItem : "items"
@@ -92,9 +92,9 @@ erDiagram
     Transaction ||--o| Payment : "payment"
     Transaction ||--o| Payment : "refundPayment"
     CashRegister ||--o{ CashRegisterEntry : "entries"
+    Registration ||--o{ Payment : "payments"
     Subscription ||--o{ Payment : "payments"
     Subscription }o--o{ TrainingPack : "trainingPacks"
-    Registration ||--o{ Payment : "payments"
     FamilyGroup }o--o{ User : "users"
     Guardian }o--o{ User : "users"
     User ||--o{ NewsPost : "articles"
@@ -151,10 +151,10 @@ erDiagram
     Meeting ||--o| MeetingMinutes : "minutes"
     Meeting }o--o{ User : "users"
     Training }o--o{ User : "trainees"
-    TrainingPack ||--o| EventPost : "eventPost"
-    TrainingPack }o--o{ Subscription : "subscriptions"
-    TrainingPack ||--o{ Training : "trainings"
     TrainingPlan ||--o{ TrainingPlanAssignment : "assignments"
     TrainingPlan ||--o{ TrainingPlanPack : "packs"
     TrainingPlanPack ||--o{ TrainingPlanAssignment : "assignments"
+    TrainingPack ||--o| EventPost : "eventPost"
+    TrainingPack }o--o{ Subscription : "subscriptions"
+    TrainingPack ||--o{ Training : "trainings"
 ```

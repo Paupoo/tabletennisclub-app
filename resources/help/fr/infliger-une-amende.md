@@ -2,7 +2,7 @@
 title: Répercuter une amende fédérale sur un membre
 summary: Enregistrer une amende reçue de la fédération et la passer au membre concerné, avec possibilité d'annulation tant qu'elle n'est pas payée.
 audience: treasurer
-order: 7
+order: 8
 ---
 
 Quand la fédération sanctionne le club pour le fait d'un joueur — forfait, absence injustifiée, retard, comportement — vous pouvez répercuter l'amende sur ce joueur. Elle devient alors un paiement dû comme un autre.

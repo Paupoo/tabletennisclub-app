@@ -13,6 +13,8 @@ Tant que vous n'êtes pas affilié pour la saison en cours, l'application vous l
 
 Le comité l'approuve ensuite. C'est cette approbation qui fixe le montant et **génère votre paiement**, avec sa communication structurée et son QR code. Avant ça, il n'y a rien à payer — inutile de virer quoi que ce soit « en avance », le virement ne pourrait pas être rattaché.
 
+Vous n'êtes pas obligé de tout choisir maintenant : un entraînement peut se demander en cours de saison, depuis la même page. Voir [M'inscrire à un entraînement](m-inscrire-a-un-entrainement).
+
 ## Pour vos enfants
 
 Si vous êtes rattaché comme tuteur, ils apparaissent dans des onglets à côté du vôtre, sur la même page. Vous les affiliez exactement de la même façon, chacun avec son propre type de licence et ses propres entraînements.

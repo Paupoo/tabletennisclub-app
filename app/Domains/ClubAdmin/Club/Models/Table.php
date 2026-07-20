@@ -46,7 +46,6 @@ use Illuminate\Support\Carbon;
  * @property string|null $state_description
  * @property string|null $brand
  * @property string|null $model
- * @property bool|null $is_available
  *
  * @method static \Database\Factories\Domains\ClubAdmin\Club\Models\TableFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Table whereBrand($value)
@@ -67,7 +66,6 @@ class Table extends Model
         'model' => 'string',
         'state' => TableStateEnum::class,
         'state_description' => 'string',
-        'is_available' => 'boolean',
         'purchased_on' => 'datetime:d-m-Y',
     ];
 
@@ -77,7 +75,6 @@ class Table extends Model
         'model',
         'state',
         'state_description',
-        'is_available',
         'purchased_on',
         'room_id',
     ];

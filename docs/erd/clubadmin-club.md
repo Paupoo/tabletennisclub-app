@@ -25,7 +25,6 @@ erDiagram
         string state_description "nullable"
         string brand "nullable"
         string model "nullable"
-        bool is_available "nullable"
     }
 
     Room }o--o{ Club : "clubs"

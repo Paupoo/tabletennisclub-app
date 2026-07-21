@@ -15,7 +15,7 @@ beforeEach(function (): void {
 describe('Room index tests', function (): void {
     // 1. Tester que la page est accessible au comité
     it('renders the rooms index page for the committee', function (): void {
-        $committee = User::factory()->create(['is_committee_member' => true]);
+        $committee = User::factory()->isCommitteeMember()->create();
 
         $this->actingAs($committee)
             ->get(route('admin.rooms.index'))
@@ -41,7 +41,7 @@ describe('Room index tests', function (): void {
             ->assertDontSee(__('Delete'));
 
         // Cas 2 : On simule les permissions (via un Mock ou en donnant un rôle à l'user)
-        $admin = User::factory()->create(['is_admin' => true]); // Exemple
+        $admin = User::factory()->isAdmin()->create(); // Exemple
 
         Livewire::actingAs($admin)
             ->test('pages::club-admin.rooms.index')
@@ -49,7 +49,7 @@ describe('Room index tests', function (): void {
             ->assertSee(__('Modify'))
             ->assertSee(__('Delete'));
 
-        $committeeMember = User::factory()->create(['is_committee_member' => true]); // Exemple
+        $committeeMember = User::factory()->isCommitteeMember()->create(); // Exemple
 
         Livewire::actingAs($committeeMember)
             ->test('pages::club-admin.rooms.index')
@@ -61,7 +61,7 @@ describe('Room index tests', function (): void {
     // 3. Tester l'action de suppression
     it('can delete a room', function (): void {
         $room = Room::factory()->create();
-        $admin = User::factory()->create(['is_admin' => true]);
+        $admin = User::factory()->isAdmin()->create();
 
         Livewire::actingAs($admin)
             ->test('pages::club-admin.rooms.index')
@@ -73,7 +73,7 @@ describe('Room index tests', function (): void {
 
     // 4. Tester que la suppression est bloquée si la salle a des tables liées
     it('cannot delete a room that has linked tables', function (): void {
-        $admin = User::factory()->create(['is_admin' => true]);
+        $admin = User::factory()->isAdmin()->create();
         $room = Room::factory()->create();
         Table::factory()->create(['room_id' => $room->id]);
 
@@ -99,7 +99,7 @@ describe('Room index tests', function (): void {
 
     // 6. Les tables orphelines vivent hors de la grille des salles
     it('hides the unassigned section when every table has a room', function (): void {
-        $committee = User::factory()->create(['is_committee_member' => true]);
+        $committee = User::factory()->isCommitteeMember()->create();
         Table::factory()->for(Room::factory())->create();
 
         $component = Livewire::actingAs($committee)
@@ -112,7 +112,7 @@ describe('Room index tests', function (): void {
     it('lists tables with no room in a section of their own', function (): void {
         // `room_id` est nullable : sans cette section, une orpheline ne serait
         // atteignable depuis nulle part.
-        $committee = User::factory()->create(['is_committee_member' => true]);
+        $committee = User::factory()->isCommitteeMember()->create();
         Table::factory()->for(Room::factory())->create(['name' => 'Assignée']);
         Table::factory()->create(['name' => 'Orpheline', 'room_id' => null]);
 

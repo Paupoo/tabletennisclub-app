@@ -10,7 +10,7 @@ const TRANSACTIONS_COMPONENT = 'pages::club-admin.treasury.transactions';
 
 function transactionsAdmin(): User
 {
-    return User::factory()->create(['is_admin' => true]);
+    return User::factory()->isAdmin()->create();
 }
 
 it('the unreconciled filter shows only credits, like the unreconciled tile (I8)', function (): void {

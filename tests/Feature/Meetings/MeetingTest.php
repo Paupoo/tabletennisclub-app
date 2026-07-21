@@ -22,12 +22,12 @@ uses(RefreshDatabase::class);
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function meetingAdmin(): User
 {
-    return User::factory()->create(['is_admin' => true, 'is_committee_member' => true]);
+    return User::factory()->isAdmin()->isCommitteeMember()->create();
 }
 
 function meetingMember(): User
 {
-    return User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
+    return User::factory()->create();
 }
 
 function confirmedMeeting(?User $creator = null): Meeting
@@ -158,7 +158,7 @@ describe('SendMeetingInvitationsJob', function (): void {
         Notification::fake();
 
         $admin = meetingAdmin();
-        $member = User::factory()->create(['is_committee_member' => true]);
+        $member = User::factory()->isCommitteeMember()->create();
         $meeting = confirmedMeeting($admin);
 
         dispatch_sync(new SendMeetingInvitationsJob($meeting->id));
@@ -173,7 +173,7 @@ describe('SendMeetingInvitationsJob', function (): void {
         Notification::fake();
 
         $admin = meetingAdmin();
-        $member = User::factory()->create(['is_committee_member' => true]);
+        $member = User::factory()->isCommitteeMember()->create();
         $meeting = confirmedMeeting($admin);
 
         dispatch_sync(new SendMeetingInvitationsJob($meeting->id));
@@ -262,7 +262,7 @@ describe('Meeting show page', function (): void {
         Notification::fake();
 
         $admin = meetingAdmin();
-        $committee = User::factory()->create(['is_committee_member' => true]);
+        $committee = User::factory()->isCommitteeMember()->create();
         $meeting = confirmedMeeting($admin);
 
         Livewire::actingAs($admin)
@@ -296,7 +296,7 @@ describe('Meeting show page', function (): void {
         Notification::fake();
 
         $admin = meetingAdmin();
-        $committee = User::factory()->create(['is_committee_member' => true]);
+        $committee = User::factory()->isCommitteeMember()->create();
         $meeting = confirmedMeeting($admin);
 
         Livewire::actingAs($admin)

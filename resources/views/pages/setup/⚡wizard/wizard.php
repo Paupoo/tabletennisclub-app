@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\Role;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Models\AppSetting;
@@ -187,25 +188,21 @@ new class extends Component
 
         $user = User::first();
 
+        $attributes = [
+            'first_name' => $this->firstName,
+            'last_name' => $this->lastName,
+            'email' => $this->email,
+            'password' => Hash::make($this->password),
+            'is_active' => true,
+        ];
+
         if ($user) {
-            $user->update([
-                'first_name' => $this->firstName,
-                'last_name' => $this->lastName,
-                'email' => $this->email,
-                'password' => Hash::make($this->password),
-                'is_admin' => true,
-                'is_active' => true,
-            ]);
+            $user->update($attributes);
         } else {
-            $user = User::create([
-                'first_name' => $this->firstName,
-                'last_name' => $this->lastName,
-                'email' => $this->email,
-                'password' => Hash::make($this->password),
-                'is_admin' => true,
-                'is_active' => true,
-            ]);
+            $user = User::create($attributes);
         }
+
+        $user->assignRole(Role::ADMINISTRATOR->value);
 
         Auth::login($user);
 

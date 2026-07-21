@@ -17,7 +17,7 @@ const USER_INDEX_COMPONENT = 'pages::club-admin.users.index';
 
 beforeEach(function (): void {
     // On crée un utilisateur admin pour les tests
-    $this->admin = User::factory()->create(['is_admin' => true]);
+    $this->admin = User::factory()->isAdmin()->create();
     actingAs($this->admin);
 
     Season::factory()->create(['is_active' => true]);

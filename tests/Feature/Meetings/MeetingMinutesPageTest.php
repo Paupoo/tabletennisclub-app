@@ -13,7 +13,7 @@ uses(RefreshDatabase::class);
 
 function minutesAdmin(): User
 {
-    return User::factory()->create(['is_admin' => true, 'is_committee_member' => true]);
+    return User::factory()->isAdmin()->isCommitteeMember()->create();
 }
 
 describe('Minutes page — drafting', function (): void {
@@ -70,7 +70,7 @@ describe('Minutes page — drafting', function (): void {
     });
 
     test('a regular member cannot open the minutes page', function (): void {
-        $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
+        $member = User::factory()->create();
         $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => minutesAdmin()->id]);
 
         Livewire::actingAs($member)
@@ -274,7 +274,7 @@ describe('Minutes page — publish & send', function (): void {
         Notification::fake();
 
         $admin = minutesAdmin();
-        $committee = User::factory()->create(['is_committee_member' => true]);
+        $committee = User::factory()->isCommitteeMember()->create();
         $meeting = Meeting::factory()->committee()->completed()->create(['created_by' => $admin->id]);
 
         Livewire::actingAs($admin)

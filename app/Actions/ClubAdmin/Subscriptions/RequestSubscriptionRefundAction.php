@@ -9,6 +9,7 @@ use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\Role;
 use App\Domains\Subscriptions\Notifications\SubscriptionRefundRequestedNotification;
 
 class RequestSubscriptionRefundAction
@@ -29,7 +30,7 @@ class RequestSubscriptionRefundAction
             'payment_method' => 'refund',
         ]);
 
-        User::where('is_committee_member', true)
+        User::role(Role::COMMITTEE->value)
             ->whereIn('committee_role', [
                 CommitteeRolesEnum::TREASURER->value,
                 CommitteeRolesEnum::SECRETARY->value,

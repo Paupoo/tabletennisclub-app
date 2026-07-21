@@ -24,9 +24,6 @@ class CreateUserAction
             'city_code' => $data->city_code,
             'city_name' => $data->city_name,
             'birthdate' => $data->birthdate,
-            'is_committee_member' => $data->is_committee_member,
-            'is_admin' => $data->is_admin,
-            'is_coach' => $data->is_coach,
             'has_key' => $data->has_key,
             'licence' => $data->licence,
             'ranking' => $data->ranking ?? 'NA',
@@ -34,6 +31,8 @@ class CreateUserAction
             'updated_by' => $actor->id,
             'password' => $hasPassword ? Hash::make($data->password) : '',
         ]);
+
+        SyncBaseRolesAction::handle($user, $data->is_admin, $data->is_committee_member, $data->is_coach);
 
         if ($data->guardianIds !== []) {
             $user->guardians()->sync($data->guardianIds);

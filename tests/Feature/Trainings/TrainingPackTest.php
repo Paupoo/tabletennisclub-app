@@ -204,8 +204,8 @@ describe('model bug fixes', function (): void {
 describe('trainer update', function (): void {
     it('propagates trainer change to all linked sessions', function (): void {
         $admin = User::factory()->isAdmin()->create();
-        $coachA = User::factory()->create(['is_coach' => true]);
-        $coachB = User::factory()->create(['is_coach' => true]);
+        $coachA = User::factory()->isCoach()->create();
+        $coachB = User::factory()->isCoach()->create();
 
         $season = makeActiveSeason();
         $pack = makeTrainingPack($season, ['trainer_id' => $coachA->id]);
@@ -233,15 +233,13 @@ describe('trainerOptions', function (): void {
         $season = makeActiveSeason();
 
         // Coach without any subscription — must still be selectable as a trainer.
-        User::factory()->create([
-            'is_coach' => true,
+        User::factory()->isCoach()->create([
             'first_name' => 'Zelda',
             'last_name' => 'Coachowski',
         ]);
 
         // Active member (confirmed subscription) but not a coach — must not appear.
         activeMember($season, [
-            'is_coach' => false,
             'first_name' => 'Nestor',
             'last_name' => 'Nocoach',
         ]);
@@ -293,7 +291,7 @@ describe('capacity', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $season = makeActiveSeason();
         $room = Room::factory()->create(['capacity_for_trainings' => 16]);
-        $coach = User::factory()->create(['is_coach' => true]);
+        $coach = User::factory()->isCoach()->create();
 
         Livewire::actingAs($admin)
             ->test('pages::club-events.trainings.index')
@@ -315,7 +313,7 @@ describe('capacity', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $season = makeActiveSeason();
         $room = Room::factory()->create(['capacity_for_trainings' => 16]);
-        $coach = User::factory()->create(['is_coach' => true]);
+        $coach = User::factory()->isCoach()->create();
 
         Livewire::actingAs($admin)
             ->test('pages::club-events.trainings.index')
@@ -339,7 +337,7 @@ describe('capacity', function (): void {
         $admin = User::factory()->isAdmin()->create();
         $season = makeActiveSeason();
         $room = Room::factory()->create(['capacity_for_trainings' => 16]);
-        $coach = User::factory()->create(['is_coach' => true]);
+        $coach = User::factory()->isCoach()->create();
 
         Livewire::actingAs($admin)
             ->test('pages::club-events.trainings.index')

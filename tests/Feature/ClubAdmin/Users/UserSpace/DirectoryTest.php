@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Team;
+use App\Domains\Shared\Enums\Role;
 use Livewire\Livewire;
 
 const DIRECTORY_COMPONENT = 'pages::club-admin.users.user-space.directory';
@@ -57,7 +58,8 @@ it('shows a phone number the member has opted to share', function (): void {
 });
 
 it('shows unshared contact details to a committee member', function (): void {
-    $committee = activeMember($this->season, ['is_committee_member' => true]);
+    $committee = activeMember($this->season);
+    $committee->assignRole(Role::COMMITTEE->value);
     activeMember($this->season, ['phone_number' => '0470555666']); // shares nothing
 
     Livewire::actingAs($committee)

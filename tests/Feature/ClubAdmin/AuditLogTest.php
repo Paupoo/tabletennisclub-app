@@ -43,6 +43,7 @@ use App\Domains\Meetings\Models\MeetingDateVote;
 use App\Domains\Meetings\Models\MeetingMinutes;
 use App\Domains\Meetings\Models\MeetingUser;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Models\AppSetting;
 use App\Domains\Shared\Traits\HasAuditLog;
 use App\Domains\Trainings\Models\Training;
@@ -130,7 +131,7 @@ it('logs a created activity when an audited model is created', function () {
 });
 
 it('logs a deleted activity for each transaction when bulk-deleted', function () {
-    $admin = User::factory()->create(['is_admin' => true]);
+    $admin = User::factory()->isAdmin()->create();
     $transactions = collect([
         Transaction::create(['date' => '2026-06-01', 'description' => 'A', 'amount' => 10]),
         Transaction::create(['date' => '2026-06-02', 'description' => 'B', 'amount' => 20]),
@@ -146,7 +147,7 @@ it('logs a deleted activity for each transaction when bulk-deleted', function ()
 });
 
 it('logs a deleted activity for each contact when bulk-deleted', function () {
-    $admin = User::factory()->create(['is_admin' => true]);
+    $admin = User::factory()->isAdmin()->create();
     $contacts = Contact::factory()->count(2)->create();
 
     Livewire::actingAs($admin)
@@ -159,7 +160,7 @@ it('logs a deleted activity for each contact when bulk-deleted', function () {
 });
 
 it('logs a deleted activity for each spam entry when bulk-deleted', function () {
-    $admin = User::factory()->create(['is_admin' => true]);
+    $admin = User::factory()->isAdmin()->create();
     $spams = Spam::factory()->count(2)->create();
 
     Livewire::actingAs($admin)
@@ -205,7 +206,7 @@ it('applies the audit trait to every model in the agreed scope', function (strin
 })->with(auditedModels());
 
 it('forbids the audit log page to users without access', function () {
-    $user = User::factory()->create(['is_admin' => false, 'is_committee_member' => false, 'committee_role' => null]);
+    $user = User::factory()->create(['committee_role' => null]);
 
     $this->actingAs($user)
         ->get(route('admin.audit.index'))
@@ -213,7 +214,7 @@ it('forbids the audit log page to users without access', function () {
 });
 
 it('shows the audit log page to authorised users', function () {
-    $user = User::factory()->create(['is_admin' => true]);
+    $user = User::factory()->isAdmin()->create();
 
     $this->actingAs($user)
         ->get(route('admin.audit.index'))
@@ -221,7 +222,7 @@ it('shows the audit log page to authorised users', function () {
 });
 
 it('lists logged activity and filters it by item type', function () {
-    $admin = User::factory()->create(['is_admin' => true]);
+    $admin = User::factory()->isAdmin()->create();
 
     $room = Room::factory()->create(['name' => 'Salle A']);
     $editedMember = User::factory()->create(['first_name' => 'Marcel']);
@@ -237,7 +238,7 @@ it('lists logged activity and filters it by item type', function () {
 });
 
 it('renders the audit log when a logged activity has an array-cast attribute', function () {
-    $admin = User::factory()->create(['is_admin' => true]);
+    $admin = User::factory()->isAdmin()->create();
 
     // Spam casts `inputs` to an array, so the created activity stores an array
     // value the audit table must render without an "Array to string" error.
@@ -251,16 +252,16 @@ it('renders the audit log when a logged activity has an array-cast attribute', f
         ->assertSee('spammer@example.com');
 });
 
-it('grants audit log access to admins and management committee roles', function (array $attributes, bool $expected) {
-    $user = User::factory()->create($attributes);
+it('grants audit log access to admins and management committee roles', function (array $roles, ?CommitteeRolesEnum $committeeRole, bool $expected) {
+    $user = User::factory()->withRole(...$roles)->create(['committee_role' => $committeeRole]);
 
     expect($user->canViewAuditLog())->toBe($expected);
 })->with([
-    'platform admin' => [['is_admin' => true, 'is_committee_member' => false, 'committee_role' => null], true],
-    'president' => [['is_admin' => false, 'is_committee_member' => true, 'committee_role' => CommitteeRolesEnum::PRESIDENT], true],
-    'vice-president' => [['is_admin' => false, 'is_committee_member' => true, 'committee_role' => CommitteeRolesEnum::VICE_PRESIDENT], true],
-    'secretary' => [['is_admin' => false, 'is_committee_member' => true, 'committee_role' => CommitteeRolesEnum::SECRETARY], true],
-    'treasurer' => [['is_admin' => false, 'is_committee_member' => true, 'committee_role' => CommitteeRolesEnum::TREASURER], true],
-    'plain administrator committee role' => [['is_admin' => false, 'is_committee_member' => true, 'committee_role' => CommitteeRolesEnum::ADMINISTRATOR], false],
-    'regular member' => [['is_admin' => false, 'is_committee_member' => false, 'committee_role' => null], false],
+    'platform admin' => [[Role::ADMINISTRATOR], null, true],
+    'president' => [[Role::COMMITTEE], CommitteeRolesEnum::PRESIDENT, true],
+    'vice-president' => [[Role::COMMITTEE], CommitteeRolesEnum::VICE_PRESIDENT, true],
+    'secretary' => [[Role::COMMITTEE], CommitteeRolesEnum::SECRETARY, true],
+    'treasurer' => [[Role::COMMITTEE], CommitteeRolesEnum::TREASURER, true],
+    'plain administrator committee role' => [[Role::COMMITTEE], CommitteeRolesEnum::ADMINISTRATOR, false],
+    'regular member' => [[], null, false],
 ]);

@@ -16,7 +16,7 @@ uses(RefreshDatabase::class);
 
 function hubEditAdmin(): User
 {
-    return User::factory()->create(['is_admin' => true, 'is_committee_member' => true]);
+    return User::factory()->isAdmin()->isCommitteeMember()->create();
 }
 
 describe('Hub card editing — practical details', function (): void {
@@ -99,7 +99,7 @@ describe('Hub card editing — practical details', function (): void {
     });
 
     test('a regular member cannot edit details', function (): void {
-        $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
+        $member = User::factory()->create();
         $meeting = Meeting::factory()->committee()->confirmed()->create(['created_by' => hubEditAdmin()->id]);
 
         Livewire::actingAs($member)

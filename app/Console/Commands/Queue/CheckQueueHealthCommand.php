@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Console\Commands\Queue;
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\Role;
 use App\Mail\QueueStalledMail;
 use App\Support\QueueHealth;
 use Illuminate\Console\Command;
@@ -24,7 +25,7 @@ class CheckQueueHealthCommand extends Command
             return self::SUCCESS;
         }
 
-        $admins = User::where('is_admin', true)->pluck('email')->all();
+        $admins = User::role(Role::ADMINISTRATOR->value)->pluck('email')->all();
 
         if ($admins === []) {
             return self::SUCCESS;

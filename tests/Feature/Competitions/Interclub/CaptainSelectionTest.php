@@ -142,7 +142,7 @@ it('openSelection silently ignores past interclubs', function (): void {
 });
 
 it('is_selector user can access the captain selection page and sees all teams', function (): void {
-    $selector = User::factory()->create(['is_selector' => true]);
+    $selector = User::factory()->isSelector()->create();
 
     $this->actingAs($selector)
         ->get(route('admin.interclubs.captain-selection'))
@@ -204,7 +204,7 @@ describe('substitute search — explains the silent filtering (I2)', function ()
     // The substitute search is a selector/committee feature (a plain captain has
     // no access to it), so these tests act as a selector.
     beforeEach(function (): void {
-        $this->selector = User::factory()->create(['is_selector' => true]);
+        $this->selector = User::factory()->isSelector()->create();
     });
 
     function openSelectorSearch(User $selector, int $interclubId, int $teamId, string $search)

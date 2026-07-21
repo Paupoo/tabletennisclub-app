@@ -49,7 +49,7 @@ function registeredUserWithPayment(Tournament $tournament): array
 
 describe('recordCashPayment', function (): void {
     it('marks payment as paid with cash method', function (): void {
-        $admin = User::factory()->create(['is_admin' => true]);
+        $admin = User::factory()->isAdmin()->create();
         $this->actingAs($admin);
         $service = new TournamentService;
         $register = CashRegister::create(['name' => 'Test']);
@@ -64,7 +64,7 @@ describe('recordCashPayment', function (): void {
     });
 
     it('sets has_paid to true on the pivot', function (): void {
-        $admin = User::factory()->create(['is_admin' => true]);
+        $admin = User::factory()->isAdmin()->create();
         $this->actingAs($admin);
         $service = new TournamentService;
         $register = CashRegister::create(['name' => 'Test']);
@@ -86,7 +86,7 @@ describe('recordCashPayment', function (): void {
         $register = CashRegister::create(['name' => 'Test']);
         $tournament = paidTournament();
         [$user] = registeredUserWithPayment($tournament);
-        $admin = User::factory()->create(['is_admin' => true]);
+        $admin = User::factory()->isAdmin()->create();
 
         $this->actingAs($admin);
         $service->recordCashPayment($tournament, $user, $register);

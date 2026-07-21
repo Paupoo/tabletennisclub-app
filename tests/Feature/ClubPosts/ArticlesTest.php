@@ -8,7 +8,7 @@ use App\Domains\Shared\Enums\NewsPostStatusEnum;
 use Livewire\Livewire;
 
 beforeEach(function (): void {
-    $this->admin = User::factory()->create(['is_admin' => true]);
+    $this->admin = User::factory()->isAdmin()->create();
 });
 
 describe('Articles index', function (): void {

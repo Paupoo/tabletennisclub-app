@@ -274,7 +274,7 @@ describe('Subscription state machine — refund from confirmed', function (): vo
 describe('Registrations page — cancel flow', function (): void {
 
     beforeEach(function (): void {
-        actingAs(User::factory()->create(['is_admin' => true, 'is_coach' => false]));
+        actingAs(User::factory()->isAdmin()->create());
     });
 
     test('openCancelModal prefills the refund amount with the total paid', function (): void {

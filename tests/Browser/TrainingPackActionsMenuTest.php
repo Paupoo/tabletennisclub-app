@@ -18,7 +18,7 @@ it('opens the pack actions menu without clipping it', function (): void {
     $admin = User::factory()->isAdmin()->isCommitteeMember()->create();
     $season = makeActiveSeason();
     $room = Room::factory()->create(['name' => 'Demeester -1', 'capacity_for_trainings' => 8]);
-    $coach = User::factory()->create(['is_coach' => true, 'first_name' => 'Eric', 'last_name' => 'Filee']);
+    $coach = User::factory()->isCoach()->create(['first_name' => 'Eric', 'last_name' => 'Filee']);
 
     $packs = [];
 

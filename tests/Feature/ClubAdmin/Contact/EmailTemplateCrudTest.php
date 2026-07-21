@@ -8,7 +8,7 @@ use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use Livewire\Livewire;
 
 beforeEach(function (): void {
-    $this->admin = User::factory()->create(['is_admin' => true]);
+    $this->admin = User::factory()->isAdmin()->create();
 });
 
 describe('listing', function (): void {
@@ -194,9 +194,7 @@ describe('toggle active', function (): void {
 
 describe('authorization', function (): void {
     it('lets a secretary access and create templates', function (): void {
-        $secretary = User::factory()->create([
-            'is_admin' => false,
-            'is_committee_member' => true,
+        $secretary = User::factory()->isCommitteeMember()->create([
             'committee_role' => CommitteeRolesEnum::SECRETARY,
         ]);
 
@@ -215,7 +213,6 @@ describe('authorization', function (): void {
 
     it('forbids a non-manager committee member from mounting the screen', function (): void {
         $treasurer = User::factory()->create([
-            'is_admin' => false,
             'committee_role' => CommitteeRolesEnum::TREASURER,
         ]);
 
@@ -225,9 +222,7 @@ describe('authorization', function (): void {
     });
 
     it('forbids a non-manager committee member at the route level', function (): void {
-        $treasurer = User::factory()->create([
-            'is_admin' => false,
-            'is_committee_member' => true,
+        $treasurer = User::factory()->isCommitteeMember()->create([
             'committee_role' => CommitteeRolesEnum::TREASURER,
         ]);
 

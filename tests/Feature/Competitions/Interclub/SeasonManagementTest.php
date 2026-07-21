@@ -10,17 +10,17 @@ use Livewire\Livewire;
 
 function makeAdmin(): User
 {
-    return User::factory()->create(['is_admin' => true]);
+    return User::factory()->isAdmin()->create();
 }
 
 function makeCommitteeMember(): User
 {
-    return User::factory()->create(['is_committee_member' => true]);
+    return User::factory()->isCommitteeMember()->create();
 }
 
 function makeRegularUser(): User
 {
-    return User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
+    return User::factory()->create();
 }
 
 // ── Access control ────────────────────────────────────────────────────────────

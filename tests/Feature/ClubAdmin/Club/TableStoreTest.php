@@ -47,7 +47,7 @@ describe('Table purchased_on normalization', function (): void {
 describe('Table form component', function (): void {
 
     test('creating a table with an empty purchase date does not 500', function (): void {
-        $admin = User::factory()->create(['is_admin' => true]);
+        $admin = User::factory()->isAdmin()->create();
         $room = Room::factory()->create();
 
         Livewire::actingAs($admin)

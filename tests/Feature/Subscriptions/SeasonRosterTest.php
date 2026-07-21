@@ -13,13 +13,11 @@ const ROSTER = 'pages::club-admin.subscriptions.roster';
 beforeEach(function (): void {
     $this->season = makeActiveSeason();
 
-    $this->manager = User::factory()->create([
-        'is_committee_member' => true,
+    $this->manager = User::factory()->isCommitteeMember()->create([
         'committee_role' => CommitteeRolesEnum::SECRETARY,
     ]);
 
-    $this->viewer = User::factory()->create([
-        'is_committee_member' => true,
+    $this->viewer = User::factory()->isCommitteeMember()->create([
         'committee_role' => CommitteeRolesEnum::TREASURER,
     ]);
 });

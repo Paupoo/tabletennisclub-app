@@ -19,7 +19,7 @@ pest()->group('club-admin', 'registrations', 'smoke');
 beforeEach(function (): void {
     Club::factory()->ownClub()->create();
     $this->season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
-    actingAs(User::factory()->create(['is_admin' => true, 'is_coach' => false]));
+    actingAs(User::factory()->isAdmin()->create());
 });
 
 it('renders the registrations page', function (): void {

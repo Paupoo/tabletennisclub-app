@@ -68,7 +68,7 @@ it('renders meetings with the payable filter on without erroring', function (): 
     // filter.
     makeActiveSeason();
     $user = User::factory()->create();
-    $admin = User::factory()->create(['is_admin' => true]);
+    $admin = User::factory()->isAdmin()->create();
 
     $payable = Meeting::factory()->confirmed()->withMeal('Pizzas', 1200)->create([
         'created_by' => $admin->id,

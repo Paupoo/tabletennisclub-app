@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domains\Shared\Enums\Role;
 use App\Support\Help\HelpArticle;
 use App\Support\Help\HelpAudience;
 use App\Support\Help\HelpLibrary;
@@ -36,7 +37,7 @@ test('a committee member is shown committee tasks', function (): void {
 
 test('a selector is shown the selection task, a plain member is not', function (): void {
     $selector = $this->createFakeUser();
-    $selector->update(['is_selector' => true]);
+    $selector->assignRole(Role::SELECTIONS->value);
 
     expect(collect(HelpLibrary::visibleTo(HelpAudience::for($selector)))->pluck('slug'))
         ->toContain('composer-ma-selection');

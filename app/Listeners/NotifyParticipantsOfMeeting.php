@@ -7,6 +7,7 @@ namespace App\Listeners;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Meetings\Notifications\MeetingInvitationNotification;
+use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Events\Meetings\MeetingCreated;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Notification;
@@ -34,7 +35,7 @@ class NotifyParticipantsOfMeeting
 
     private function getCommitteeMembers(): Collection
     {
-        return User::where('is_committee_member', true)->get();
+        return User::role(Role::COMMITTEE->value)->get();
     }
 
     private function getParticipants(Meeting $meeting): Collection

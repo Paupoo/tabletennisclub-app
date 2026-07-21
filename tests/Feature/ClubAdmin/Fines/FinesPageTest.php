@@ -16,8 +16,7 @@ const FINES_COMPONENT = 'pages::club-admin.treasury.fines';
 
 function treasurer(): User
 {
-    return User::factory()->create([
-        'is_committee_member' => true,
+    return User::factory()->isCommitteeMember()->create([
         'committee_role' => CommitteeRolesEnum::TREASURER,
     ]);
 }
@@ -170,8 +169,7 @@ it('refuses access to a member who cannot manage finances', function (): void {
 });
 
 it('refuses access to a secretary', function (): void {
-    $secretary = User::factory()->create([
-        'is_committee_member' => true,
+    $secretary = User::factory()->isCommitteeMember()->create([
         'committee_role' => CommitteeRolesEnum::SECRETARY,
     ]);
 

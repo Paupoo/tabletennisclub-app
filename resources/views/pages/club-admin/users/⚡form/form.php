@@ -10,6 +10,7 @@ use App\Data\User\CreateUserData;
 use App\Data\User\UpdateUserData;
 use App\Domains\ClubAdmin\Users\Models\FamilyGroup;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\Role;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Gender;
@@ -358,7 +359,7 @@ new class extends Component
                     }
 
                     if ($this->user?->is_admin && ! $value) {
-                        $remainingAdmins = User::where('is_admin', true)->whereKeyNot($this->user->id)->count();
+                        $remainingAdmins = User::role(Role::ADMINISTRATOR->value)->whereKeyNot($this->user->id)->count();
 
                         if ($remainingAdmins === 0) {
                             $fail(__('Cannot remove the last administrator. Promote another user first.'));

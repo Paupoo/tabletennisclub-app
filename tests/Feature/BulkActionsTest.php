@@ -12,7 +12,7 @@ uses(RefreshDatabase::class);
 const USERS_COMPONENT = 'pages::club-admin.users.index';
 
 beforeEach(function (): void {
-    $this->admin = User::factory()->create(['is_admin' => true]);
+    $this->admin = User::factory()->isAdmin()->create();
 });
 
 // ── HasBulkActions — tested via real users component ─────────────────────────

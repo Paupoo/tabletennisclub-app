@@ -15,7 +15,7 @@ use Livewire\Livewire;
 describe('RoomShow Livewire Component', function (): void {
 
     beforeEach(function (): void {
-        $this->admin = User::factory()->create(['is_admin' => true]);
+        $this->admin = User::factory()->isAdmin()->create();
     });
 
     test('la fiche ne montre que les tables de sa salle', function (): void {

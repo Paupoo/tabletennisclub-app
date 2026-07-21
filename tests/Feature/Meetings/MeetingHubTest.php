@@ -15,7 +15,7 @@ uses(RefreshDatabase::class);
 
 function hubAdmin(): User
 {
-    return User::factory()->create(['is_admin' => true, 'is_committee_member' => true]);
+    return User::factory()->isAdmin()->isCommitteeMember()->create();
 }
 
 describe('Meeting hub — next step banner', function (): void {
@@ -179,7 +179,7 @@ describe('Meeting hub — next step banner', function (): void {
     });
 
     test('a regular member never sees the next step banner', function (): void {
-        $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
+        $member = User::factory()->create();
         $meeting = Meeting::factory()->committee()->confirmed()->create(['created_by' => hubAdmin()->id]);
 
         Livewire::actingAs($member)

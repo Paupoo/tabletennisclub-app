@@ -20,6 +20,7 @@ use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Shared\Casts\IbanCast;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Gender;
+use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Support\IbanNormalizer;
 use App\Domains\Shared\Traits\HasAuditLog;
 use App\Domains\Trainings\Models\Training;
@@ -32,6 +33,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Contracts\Database\Query\Builder;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -45,6 +47,7 @@ use Illuminate\Notifications\DatabaseNotificationCollection;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Laravel\Sanctum\PersonalAccessToken;
+use Spatie\Permission\Traits\HasRoles;
 
 /**
  * @property int $id
@@ -163,7 +166,7 @@ use Laravel\Sanctum\PersonalAccessToken;
 #[ObservedBy(UserObserver::class)]
 class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasApiTokens, HasAuditLog, HasFactory, Notifiable, SoftDeletes;
+    use HasApiTokens, HasAuditLog, HasFactory, HasRoles, Notifiable, SoftDeletes;
 
     public const int INVITATION_LINK_VALIDITY_DAYS = 7;
 
@@ -173,10 +176,6 @@ class User extends Authenticatable implements MustVerifyEmail
      * @var array<string, string>
      */
     protected $casts = [
-        'is_admin' => 'boolean',
-        'is_committee_member' => 'boolean',
-        'is_selector' => 'boolean',
-        'is_coach' => 'boolean',
         'has_key' => 'boolean',
         'email' => 'string',
         'password' => 'hashed',
@@ -216,9 +215,6 @@ class User extends Authenticatable implements MustVerifyEmail
         'city_name',
         'email',
         'first_name',
-        'is_admin',
-        'is_committee_member',
-        'is_selector',
         'last_name',
         'licence',
         'password',
@@ -233,7 +229,6 @@ class User extends Authenticatable implements MustVerifyEmail
         'theme',
         'committee_role',
         'force_list',
-        'is_coach',
         'has_key',
         'medical_certificate_path',
         'parental_consent_path',
@@ -772,5 +767,41 @@ class User extends Authenticatable implements MustVerifyEmail
     public function wantsNotification(string $preference): bool
     {
         return (bool) ($this->notification_preferences[$preference] ?? true);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Role flags — compatibility layer
+    |--------------------------------------------------------------------------
+    |
+    | The four boolean columns are being retired in favour of Spatie roles. They
+    | still exist in the table, but reads now resolve against the roles, and the
+    | attributes left `$fillable` no longer include them — which also closes the
+    | mass-assignment privilege escalation `is_admin` used to allow.
+    |
+    | Existing `$user->is_admin` call sites keep working untouched; they are
+    | migrated to `can()` / policies domain by domain, and these accessors go
+    | away with the columns once the last one is gone.
+    |
+    */
+
+    protected function isAdmin(): Attribute
+    {
+        return Attribute::get(fn (): bool => $this->hasRole(Role::ADMINISTRATOR->value));
+    }
+
+    protected function isCoach(): Attribute
+    {
+        return Attribute::get(fn (): bool => $this->hasRole(Role::COACH->value));
+    }
+
+    protected function isCommitteeMember(): Attribute
+    {
+        return Attribute::get(fn (): bool => $this->hasRole(Role::COMMITTEE->value));
+    }
+
+    protected function isSelector(): Attribute
+    {
+        return Attribute::get(fn (): bool => $this->hasRole(Role::SELECTIONS->value));
     }
 }

@@ -8,7 +8,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use Livewire\Livewire;
 
 beforeEach(function (): void {
-    $this->admin = User::factory()->create(['is_admin' => true]);
+    $this->admin = User::factory()->isAdmin()->create();
 });
 
 describe('Contacts index', function (): void {

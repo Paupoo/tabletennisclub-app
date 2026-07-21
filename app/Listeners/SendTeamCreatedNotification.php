@@ -6,6 +6,7 @@ namespace App\Listeners;
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Notifications\TeamCreatedNotification;
+use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Events\Interclub\TeamCreated;
 use Illuminate\Support\Facades\Notification;
 
@@ -15,7 +16,7 @@ class SendTeamCreatedNotification
     {
         $team = $event->team;
 
-        $admins = User::where('is_admin', true)->get();
+        $admins = User::role(Role::ADMINISTRATOR->value)->get();
 
         if ($admins->isNotEmpty()) {
             Notification::send(

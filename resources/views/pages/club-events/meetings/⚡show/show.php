@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\Role;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Meetings\Models\MeetingDateProposal;
 use App\Domains\Meetings\Models\MeetingMinutes;
@@ -147,7 +148,7 @@ new class extends Component
     #[Computed]
     public function committeeUsers(): Illuminate\Database\Eloquent\Collection
     {
-        return User::where(fn ($q) => $q->where('is_admin', true)->orWhere('is_committee_member', true))
+        return User::role([Role::ADMINISTRATOR->value, Role::COMMITTEE->value])
             ->orderBy('last_name')->get();
     }
 
@@ -844,6 +845,6 @@ new class extends Component
         // Nobody invited yet — fall back to target audience
         return $meeting->type === MeetingTypeEnum::GENERAL_ASSEMBLY
             ? User::active()->get()
-            : User::where(fn ($q) => $q->where('is_admin', true)->orWhere('is_committee_member', true))->get();
+            : User::role([Role::ADMINISTRATOR->value, Role::COMMITTEE->value])->get();
     }
 };

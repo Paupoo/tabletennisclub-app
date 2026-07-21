@@ -74,7 +74,7 @@ it('treats a team captain as a non-committee member on committee-only pages', fu
 });
 
 it('forbids a plain member from the coach area but grants coaches and admins', function (): void {
-    $coach = User::factory()->create(['is_coach' => true]);
+    $coach = User::factory()->isCoach()->create();
 
     $this->actingAs($this->member)->get(route('coach.trainings'))->assertForbidden();
     expect(Gate::forUser($coach)->allows('access-coach-area'))->toBeTrue();

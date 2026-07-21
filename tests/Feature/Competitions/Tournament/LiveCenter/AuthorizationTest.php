@@ -67,7 +67,7 @@ describe('canManageTournament', function (): void {
     });
 
     it('is false for regular members', function (): void {
-        $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
+        $member = User::factory()->create();
         $tournament = authTournament();
 
         liveCenterAs($member, $tournament)
@@ -91,7 +91,7 @@ describe('openScoreEntry authorization', function (): void {
     });
 
     it('forbids regular members from opening the score drawer', function (): void {
-        $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
+        $member = User::factory()->create();
         $tournament = authTournament();
         $match = authMatch($tournament);
 
@@ -116,7 +116,7 @@ describe('openLaunchDrawer authorization', function (): void {
     });
 
     it('forbids regular members from opening the launch drawer', function (): void {
-        $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
+        $member = User::factory()->create();
         $tournament = authTournament();
 
         liveCenterAs($member, $tournament)
@@ -131,7 +131,7 @@ describe('openLaunchDrawer authorization', function (): void {
 describe('submitScore authorization', function (): void {
 
     it('forbids regular members from submitting a score', function (): void {
-        $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
+        $member = User::factory()->create();
         $tournament = authTournament();
 
         liveCenterAs($member, $tournament)
@@ -146,7 +146,7 @@ describe('submitScore authorization', function (): void {
 describe('saveDraft authorization', function (): void {
 
     it('forbids regular members from saving a draft', function (): void {
-        $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
+        $member = User::factory()->create();
         $tournament = authTournament();
 
         liveCenterAs($member, $tournament)
@@ -161,7 +161,7 @@ describe('saveDraft authorization', function (): void {
 describe('startMatch authorization', function (): void {
 
     it('forbids regular members from starting a match', function (): void {
-        $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
+        $member = User::factory()->create();
         $tournament = authTournament();
         $match = authMatch($tournament);
 
@@ -177,7 +177,7 @@ describe('startMatch authorization', function (): void {
 describe('generateBracket authorization', function (): void {
 
     it('forbids regular members from generating the bracket', function (): void {
-        $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
+        $member = User::factory()->create();
         $tournament = authTournament();
 
         liveCenterAs($member, $tournament)
@@ -192,7 +192,7 @@ describe('generateBracket authorization', function (): void {
 describe('closeTournament authorization', function (): void {
 
     it('forbids regular members from closing the tournament', function (): void {
-        $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
+        $member = User::factory()->create();
         $tournament = authTournament();
 
         liveCenterAs($member, $tournament)

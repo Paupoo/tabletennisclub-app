@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\Role;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Meetings\Models\MeetingMinutes;
 use App\Domains\Meetings\Notifications\MeetingMinutesNotification;
@@ -190,7 +191,7 @@ new class extends Component
 
         $recipients = $toAll
             ? User::active()->get()
-            : User::where(fn ($q) => $q->where('is_admin', true)->orWhere('is_committee_member', true))->get();
+            : User::role([Role::ADMINISTRATOR->value, Role::COMMITTEE->value])->get();
 
         Notification::send($recipients, new MeetingMinutesNotification($meeting));
 
@@ -238,7 +239,7 @@ new class extends Component
     #[Computed]
     public function usersForAssignment(): array
     {
-        return User::where(fn ($q) => $q->where('is_admin', true)->orWhere('is_committee_member', true))
+        return User::role([Role::ADMINISTRATOR->value, Role::COMMITTEE->value])
             ->orderBy('last_name')->get()
             ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->full_name])
             ->toArray();

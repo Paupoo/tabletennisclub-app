@@ -28,9 +28,6 @@ class UpdateUserAction
             'birthdate' => $data->birthdate,
             'guardian_phone_number' => $data->guardian_phone_number,
             'iban' => $data->iban,
-            'is_committee_member' => $data->is_committee_member,
-            'is_admin' => $data->is_admin,
-            'is_coach' => $data->is_coach,
             'has_key' => $data->has_key,
             'licence' => $data->licence,
             'ranking' => $data->ranking ?? 'NA',
@@ -43,6 +40,8 @@ class UpdateUserAction
         }
 
         $user->update($attributes);
+
+        SyncBaseRolesAction::handle($user, $data->is_admin, $data->is_committee_member, $data->is_coach);
 
         $user->guardians()->sync($data->guardianIds);
         SyncFamilyGroupMembersAction::handle($user, $data->familyMemberIds);

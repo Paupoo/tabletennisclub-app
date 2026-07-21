@@ -28,14 +28,14 @@ const PROFILE_COMPONENT = 'pages::club-admin.users.user-space.profile';
 const SECURITY_SETTINGS_COMPONENT = 'pages::club-admin.users.user-space.settings';
 
 beforeEach(function () {
-    $this->admin = User::factory()->create(['is_admin' => true, 'is_coach' => false]);
+    $this->admin = User::factory()->isAdmin()->create();
     actingAs($this->admin);
 });
 
 describe('admin form security actions', function () {
     it('resends an invitation and stamps last_invited_at', function () {
         Mail::fake();
-        $user = User::factory()->create(['last_invited_at' => null, 'is_coach' => false]);
+        $user = User::factory()->create(['last_invited_at' => null]);
 
         Livewire::test(SECURITY_FORM_COMPONENT, ['user' => $user])
             ->call('resendInvitation');
@@ -46,7 +46,7 @@ describe('admin form security actions', function () {
 
     it('sends a password reset link to the member', function () {
         Notification::fake();
-        $user = User::factory()->create(['is_coach' => false]);
+        $user = User::factory()->create();
 
         Livewire::test(SECURITY_FORM_COMPONENT, ['user' => $user])
             ->call('sendPasswordResetLink');

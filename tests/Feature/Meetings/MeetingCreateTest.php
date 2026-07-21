@@ -16,7 +16,7 @@ uses(RefreshDatabase::class);
 
 function createAdmin(): User
 {
-    return User::factory()->create(['is_admin' => true, 'is_committee_member' => true]);
+    return User::factory()->isAdmin()->isCommitteeMember()->create();
 }
 
 describe('Meeting quick create', function (): void {

@@ -18,7 +18,7 @@ beforeEach(function (): void {
 function issuePendingFine(?User $member = null): Fine
 {
     $member ??= User::factory()->create();
-    $issuer = User::factory()->create(['is_admin' => true]);
+    $issuer = User::factory()->isAdmin()->create();
 
     return (new IssueFine)($member, $issuer, FineReason::MISCONDUCT, 25, 'Please be careful next time.');
 }

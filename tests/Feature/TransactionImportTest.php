@@ -25,7 +25,7 @@ function makeCsvFile(array $rows, string $name = 'bank.csv'): UploadedFile
 
 function adminUser(): User
 {
-    return User::factory()->create(['is_admin' => true]);
+    return User::factory()->isAdmin()->create();
 }
 
 // ── Import scenarios ───────────────────────────────────────────────────────────

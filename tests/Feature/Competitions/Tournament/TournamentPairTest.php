@@ -105,7 +105,7 @@ describe('doubles_registration_mode', function (): void {
 
 describe('wizard createPair', function (): void {
     it('creates a pair between two registered players', function (): void {
-        $admin = User::factory()->create(['is_admin' => true]);
+        $admin = User::factory()->isAdmin()->create();
         $this->actingAs($admin);
 
         $tournament = doublesTournament();
@@ -121,7 +121,7 @@ describe('wizard createPair', function (): void {
     });
 
     it('rejects pairing the same player twice', function (): void {
-        $admin = User::factory()->create(['is_admin' => true]);
+        $admin = User::factory()->isAdmin()->create();
         $this->actingAs($admin);
 
         $tournament = doublesTournament();
@@ -136,7 +136,7 @@ describe('wizard createPair', function (): void {
     });
 
     it('rejects creating a pair if a player is already paired', function (): void {
-        $admin = User::factory()->create(['is_admin' => true]);
+        $admin = User::factory()->isAdmin()->create();
         $this->actingAs($admin);
 
         $tournament = doublesTournament();
@@ -158,7 +158,7 @@ describe('wizard createPair', function (): void {
     });
 
     it('deletes a pair', function (): void {
-        $admin = User::factory()->create(['is_admin' => true]);
+        $admin = User::factory()->isAdmin()->create();
         $this->actingAs($admin);
 
         $tournament = doublesTournament();

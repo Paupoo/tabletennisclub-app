@@ -122,7 +122,7 @@ describe('GeneratePayment', function (): void {
     })->group('payments', 'generate');
 
     test('non-admin cannot generate payment (Gate denies)', function (): void {
-        $user = User::factory()->create(['is_admin' => false]);
+        $user = User::factory()->create();
         $this->actingAs($user);
 
         $subscription = Subscription::factory()->create(['status' => 'confirmed', 'amount_due' => 125]);

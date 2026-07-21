@@ -17,13 +17,13 @@ pest()->group('club-admin', 'users');
 const USER_FORM_COMPONENT = 'pages::club-admin.users.form';
 
 beforeEach(function (): void {
-    $this->admin = User::factory()->create(['is_admin' => true, 'is_coach' => false]);
+    $this->admin = User::factory()->isAdmin()->create();
     actingAs($this->admin);
 });
 
 describe('ranking — recreational users', function (): void {
     it('does not require ranking for recreational users', function (): void {
-        $user = User::factory()->create(['is_coach' => false]);
+        $user = User::factory()->create();
 
         Livewire::test(USER_FORM_COMPONENT, ['user' => $user])
             ->set('licence_type', 'recreative')
@@ -36,7 +36,6 @@ describe('ranking — recreational users', function (): void {
     it('saves NA when updating a recreational user', function (): void {
         $user = User::factory()->create([
 
-            'is_coach' => false,
             'ranking' => 'NA',
         ]);
 
@@ -51,7 +50,6 @@ describe('ranking — recreational users', function (): void {
     it('does not throw a QueryException (no DB truncation) when saving a recreational user', function (): void {
         $user = User::factory()->create([
 
-            'is_coach' => false,
         ]);
 
         expect(fn () => Livewire::test(USER_FORM_COMPONENT, ['user' => $user])
@@ -64,7 +62,6 @@ describe('ranking — recreational users', function (): void {
     it('initialises ranking to a valid enum value (never N/A with slash) when mounting', function (): void {
         $user = User::factory()->create([
 
-            'is_coach' => false,
             'ranking' => 'NA',
         ]);
 
@@ -81,12 +78,12 @@ describe('ranking — recreational users', function (): void {
 
 describe('admin role guards — committee member cannot change is_admin', function (): void {
     beforeEach(function (): void {
-        $this->actor = User::factory()->isCommitteeMember()->create(['is_coach' => false]);
+        $this->actor = User::factory()->isCommitteeMember()->create();
         actingAs($this->actor);
     });
 
     it('cannot grant is_admin to another user', function (): void {
-        $target = User::factory()->create(['is_admin' => false, 'is_coach' => false]);
+        $target = User::factory()->create();
 
         Livewire::test(USER_FORM_COMPONENT, ['user' => $target])
             ->set('is_admin', true)
@@ -97,7 +94,7 @@ describe('admin role guards — committee member cannot change is_admin', functi
     })->skip('save() non déclenché via ->call() en contexte PHPUnit — à investiguer');
 
     it('cannot revoke is_admin from an admin', function (): void {
-        $otherAdmin = User::factory()->isAdmin()->create(['is_coach' => false]);
+        $otherAdmin = User::factory()->isAdmin()->create();
 
         Livewire::test(USER_FORM_COMPONENT, ['user' => $otherAdmin])
             ->set('is_admin', false)
@@ -119,7 +116,7 @@ describe('admin role guards — last admin protection', function (): void {
     })->skip('save() non déclenché via ->call() en contexte PHPUnit — à investiguer');
 
     it('allows removing is_admin when another admin exists', function (): void {
-        User::factory()->isAdmin()->create(['is_coach' => false]);
+        User::factory()->isAdmin()->create();
 
         Livewire::test(USER_FORM_COMPONENT, ['user' => $this->admin])
             ->set('is_admin', false)
@@ -134,7 +131,7 @@ describe('admin role guards — last admin protection', function (): void {
 describe('licence type — bound to the active-season subscription', function (): void {
     it('locks the licence type toggle when the member has no subscription for the active season', function (): void {
         makeActiveSeason();
-        $user = User::factory()->create(['is_coach' => false]);
+        $user = User::factory()->create();
 
         $component = Livewire::test(USER_FORM_COMPONENT, ['user' => $user]);
 
@@ -144,7 +141,7 @@ describe('licence type — bound to the active-season subscription', function ()
 
     it('keeps the toggle editable when the member is subscribed to the active season', function (): void {
         $season = makeActiveSeason();
-        $user = User::factory()->create(['is_coach' => false]);
+        $user = User::factory()->create();
         Subscription::factory()->for($user)->create(['season_id' => $season->id]);
 
         $component = Livewire::test(USER_FORM_COMPONENT, ['user' => $user]);
@@ -155,7 +152,7 @@ describe('licence type — bound to the active-season subscription', function ()
 
     it('persists the competitive status onto the active-season subscription on save', function (): void {
         $season = makeActiveSeason();
-        $user = User::factory()->create(['is_coach' => false]);
+        $user = User::factory()->create();
         $subscription = Subscription::factory()->for($user)->create([
             'season_id' => $season->id,
             'is_competitive' => false,

@@ -21,20 +21,14 @@ beforeEach(function (): void {
     ]);
 
     $this->member = User::factory()->create([
-        'is_admin' => false,
-        'is_committee_member' => false,
         'licence' => null,
     ]);
 
-    $this->committee_member = User::factory()->create([
-        'is_admin' => false,
-        'is_committee_member' => true,
+    $this->committee_member = User::factory()->isCommitteeMember()->create([
         'licence' => null,
     ]);
 
-    $this->admin = User::factory()->create([
-        'is_admin' => true,
-        'is_committee_member' => false,
+    $this->admin = User::factory()->isAdmin()->create([
         'licence' => null,
     ]);
 

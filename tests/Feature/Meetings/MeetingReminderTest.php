@@ -14,7 +14,7 @@ uses(RefreshDatabase::class);
 
 function reminderAdmin(): User
 {
-    return User::factory()->create(['is_admin' => true, 'is_committee_member' => true]);
+    return User::factory()->isAdmin()->isCommitteeMember()->create();
 }
 
 describe('Meeting invitation reminders', function (): void {
@@ -69,7 +69,7 @@ describe('Meeting invitation reminders', function (): void {
         Notification::fake();
 
         $meeting = Meeting::factory()->committee()->confirmed()->create(['created_by' => reminderAdmin()->id]);
-        $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
+        $member = User::factory()->create();
         $meeting->users()->attach($member->id, [
             'status' => MeetingUserStatusEnum::INVITED->value,
             'invitation_sent_at' => now()->subDays(3),

@@ -20,6 +20,7 @@ use App\Domains\Competitions\Tournament\Notifications\TournamentRegistrationCanc
 use App\Domains\Competitions\Tournament\Notifications\TournamentRegistrationConfirmedNotification;
 use App\Domains\Competitions\Tournament\Notifications\TournamentWaitlistSpotOpenedNotification;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Jobs\SendDebtReminderNotification;
 use Illuminate\Support\Facades\DB;
@@ -428,7 +429,7 @@ class TournamentService
         User $user,
         Tournament $tournament,
     ): void {
-        User::where('is_committee_member', true)
+        User::role(Role::COMMITTEE->value)
             ->whereIn('committee_role', [
                 CommitteeRolesEnum::TREASURER->value,
                 CommitteeRolesEnum::SECRETARY->value,

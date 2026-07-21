@@ -16,7 +16,7 @@ pest()->group('club-admin', 'users', 'family');
 const FAMILY_FORM_COMPONENT = 'pages::club-admin.users.form';
 
 beforeEach(function () {
-    $this->admin = User::factory()->create(['is_admin' => true, 'is_coach' => false]);
+    $this->admin = User::factory()->isAdmin()->create();
     actingAs($this->admin);
 });
 

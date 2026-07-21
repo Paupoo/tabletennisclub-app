@@ -10,7 +10,7 @@ use App\Domains\Competitions\Tournament\Models\Tournament;
 describe('wizard route authorization', function (): void {
 
     it('returns 403 for regular members on the create wizard', function (): void {
-        $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
+        $member = User::factory()->create();
 
         $this->actingAs($member)
             ->get(route('admin.tournaments.wizard'))
@@ -18,7 +18,7 @@ describe('wizard route authorization', function (): void {
     });
 
     it('returns 403 for regular members on the edit wizard', function (): void {
-        $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
+        $member = User::factory()->create();
         $tournament = Tournament::factory()->create();
 
         $this->actingAs($member)

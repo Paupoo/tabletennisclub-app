@@ -20,7 +20,7 @@ function indexAs(User $user)
 describe('draft tournament visibility', function (): void {
 
     it('hides draft tournaments from regular members', function (): void {
-        $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
+        $member = User::factory()->create();
         $draft = Tournament::factory()->create(['status' => TournamentStatusEnum::DRAFT]);
         $published = Tournament::factory()->create(['status' => TournamentStatusEnum::PUBLISHED]);
 
@@ -50,7 +50,7 @@ describe('draft tournament visibility', function (): void {
 describe('draft status filter isolation', function (): void {
 
     it('hides draft tournaments from regular members even when filtering by draft status', function (): void {
-        $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
+        $member = User::factory()->create();
         $draft = Tournament::factory()->create(['status' => TournamentStatusEnum::DRAFT]);
 
         indexAs($member)
@@ -74,7 +74,7 @@ describe('draft status filter isolation', function (): void {
 describe('canManage computed', function (): void {
 
     it('is false for regular members', function (): void {
-        $member = User::factory()->create(['is_admin' => false, 'is_committee_member' => false]);
+        $member = User::factory()->create();
 
         indexAs($member)->assertSet('canManage', false);
     });

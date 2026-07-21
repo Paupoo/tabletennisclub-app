@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\Role;
 use App\Domains\ClubAdmin\Users\Notifications\GdprErasureRequestedNotification;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Livewire\Concerns\HasBreadcrumbs;
@@ -117,7 +118,7 @@ new #[Title('My settings')] class extends Component
         $recipients = User::query()
             ->where('id', '!=', $this->user->id)
             ->where(function ($query): void {
-                $query->where('is_admin', true)
+                $query->whereHas('roles', fn ($q) => $q->where('name', Role::ADMINISTRATOR->value))
                     ->orWhere('committee_role', CommitteeRolesEnum::SECRETARY->value);
             })
             ->get();

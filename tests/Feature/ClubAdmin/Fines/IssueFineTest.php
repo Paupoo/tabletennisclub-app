@@ -20,7 +20,7 @@ beforeEach(function (): void {
 it('creates a fine and its pending payment', function (): void {
     Notification::fake();
     $member = User::factory()->create();
-    $issuer = User::factory()->create(['is_admin' => true]);
+    $issuer = User::factory()->isAdmin()->create();
 
     $fine = (new IssueFine)($member, $issuer, FineReason::MISCONDUCT, 25, 'Please be more careful next time.');
 
@@ -48,7 +48,7 @@ it('labels the payment as a fine with its reason', function (): void {
 it('notifies the fined member', function (): void {
     Notification::fake();
     $member = User::factory()->create();
-    $issuer = User::factory()->create(['is_admin' => true]);
+    $issuer = User::factory()->isAdmin()->create();
 
     (new IssueFine)($member, $issuer, FineReason::LATE, 15, 'A note.');
 
@@ -58,7 +58,7 @@ it('notifies the fined member', function (): void {
 it('also notifies the guardians of a minor', function (): void {
     Notification::fake();
     $minor = User::factory()->create(['birthdate' => now()->subYears(12)]);
-    $issuer = User::factory()->create(['is_admin' => true]);
+    $issuer = User::factory()->isAdmin()->create();
     $guardian = Guardian::factory()->create(['email' => 'parent@example.com']);
     $minor->guardians()->attach($guardian->id);
 
@@ -70,7 +70,7 @@ it('also notifies the guardians of a minor', function (): void {
 it('renders the pedagogical message, amount and reference in the email', function (): void {
     Club::factory()->ownClub()->create();
     $member = User::factory()->create();
-    $issuer = User::factory()->create(['is_admin' => true]);
+    $issuer = User::factory()->isAdmin()->create();
 
     $fine = (new IssueFine)($member, $issuer, FineReason::MISCONDUCT, 30, 'This is your educational note.');
 
@@ -84,7 +84,7 @@ it('renders the pedagogical message, amount and reference in the email', functio
 it('surfaces the fine in the members payments hub', function (): void {
     Notification::fake();
     $member = User::factory()->create();
-    $issuer = User::factory()->create(['is_admin' => true]);
+    $issuer = User::factory()->isAdmin()->create();
 
     (new IssueFine)($member, $issuer, FineReason::MISCONDUCT, 42, 'A note.');
 
@@ -97,14 +97,13 @@ it('surfaces the fine in the members payments hub', function (): void {
 /** A committee role only sticks on an actual committee member (see UserObserver::saving). */
 function committeeMemberWithRole(CommitteeRolesEnum $role): User
 {
-    return User::factory()->create([
-        'is_committee_member' => true,
+    return User::factory()->isCommitteeMember()->create([
         'committee_role' => $role,
     ]);
 }
 
 it('gates who can manage finances', function (): void {
-    expect(User::factory()->create(['is_admin' => true])->canManageFinances())->toBeTrue()
+    expect(User::factory()->isAdmin()->create()->canManageFinances())->toBeTrue()
         ->and(committeeMemberWithRole(CommitteeRolesEnum::TREASURER)->canManageFinances())->toBeTrue()
         ->and(committeeMemberWithRole(CommitteeRolesEnum::PRESIDENT)->canManageFinances())->toBeTrue()
         ->and(User::factory()->create()->canManageFinances())->toBeFalse()

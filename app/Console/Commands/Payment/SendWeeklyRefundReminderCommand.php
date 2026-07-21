@@ -8,6 +8,7 @@ use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Notifications\WeeklyRefundReminderNotification;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\Role;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -28,7 +29,7 @@ class SendWeeklyRefundReminderCommand extends Command
             return self::SUCCESS;
         }
 
-        $recipients = User::where('is_committee_member', true)
+        $recipients = User::role(Role::COMMITTEE->value)
             ->whereIn('committee_role', [
                 CommitteeRolesEnum::TREASURER->value,
                 CommitteeRolesEnum::SECRETARY->value,

@@ -21,7 +21,7 @@ const REGISTRATIONS_COMPONENT = 'pages::club-admin.users.registrations';
 
 beforeEach(function (): void {
     Club::factory()->ownClub()->create();
-    actingAs(User::factory()->create(['is_admin' => true, 'is_coach' => false]));
+    actingAs(User::factory()->isAdmin()->create());
 });
 
 it('shows an invitation counter of 1 after sending the first payment email', function (): void {

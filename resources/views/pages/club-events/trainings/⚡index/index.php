@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Actions\ClubAdmin\Subscriptions\DiscontinueTrainingPackAction;
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\Role;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\Recurrence;
 use App\Domains\Shared\Enums\TrainingCancellationType;
@@ -804,7 +805,7 @@ new class extends Component
     #[Computed]
     public function trainerOptions(): array
     {
-        return User::where('is_coach', true)
+        return User::role(Role::COACH->value)
             ->orderBy('first_name')
             ->get()
             ->map(fn (User $u) => ['id' => $u->id, 'name' => $u->full_name])

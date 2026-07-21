@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Team;
+use App\Domains\Shared\Enums\Role;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Livewire;
 
@@ -81,12 +82,29 @@ it('forbids a plain member from the coach area but grants coaches and admins', f
     expect(Gate::forUser($this->admin)->allows('access-coach-area'))->toBeTrue();
 });
 
-it('keeps self-scoped and bar pages open to any member', function (string $routeName): void {
+it('keeps self-scoped pages open to any member', function (string $routeName): void {
     $this->actingAs($this->member)->get(route($routeName))->assertOk();
 })->with([
     'admin.interclubs.my-matches',
-    'admin.treasury.cash',
 ]);
+
+/*
+| The cash register sat outside the committee gate — "access intentionally left
+| broad for now" — so any verified member could read the balances. It now answers
+| to the cash-register délégation, which is precisely what lets the duty be handed
+| to someone who is not on the committee.
+*/
+it('closes the cash register to a member without the delegation', function (): void {
+    $this->actingAs($this->member)->get(route('admin.treasury.cash'))->assertForbidden();
+});
+
+it('opens the cash register to its delegate, committee member or not', function (): void {
+    $keeper = User::factory()->withRole(Role::CASH_REGISTER)->create();
+
+    expect($keeper->is_committee_member)->toBeFalse();
+
+    $this->actingAs($keeper)->get(route('admin.treasury.cash'))->assertOk();
+});
 
 it('refuses to mount the user form for a plain member (defense in depth)', function (): void {
     $target = User::factory()->create();

@@ -49,13 +49,13 @@
         @else
             <span class="text-sm italic text-base-content/40">{{ __('None') }}</span>
         @endif
-        @if(Auth::user()->is_admin || Auth::user()->committee_role === \App\Domains\Shared\Enums\CommitteeRolesEnum::TREASURER)
+        @can('cash_register.holder.change')
             <x-button
                 :label="__('Change')"
                 icon="o-pencil"
                 class="btn-ghost btn-xs ml-1"
                 wire:click="openChangeHolder" />
-        @endif
+        @endcan
     </div>
 
     {{-- Balance card --}}

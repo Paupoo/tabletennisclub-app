@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Payment\Models\CashRegister;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\Role;
 use Livewire\Livewire;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -105,7 +106,7 @@ describe('Cash register confirmChangeHolder', function (): void {
     });
 
     it('treasurer can change holder', function (): void {
-        $treasurer = User::factory()->isCommitteeMember()->create([
+        $treasurer = User::factory()->isCommitteeMember()->withRole(Role::CASH_REGISTER)->create([
             'committee_role' => CommitteeRolesEnum::TREASURER,
         ]);
         $newHolder = makeHolder();
@@ -121,7 +122,7 @@ describe('Cash register confirmChangeHolder', function (): void {
         expect($register->fresh()->held_by_user_id)->toBe($newHolder->id);
     });
 
-    it('committee member without treasurer role cannot change holder', function (): void {
+    it('committee member without the cash register delegation cannot change holder', function (): void {
         $secretary = User::factory()->isCommitteeMember()->create([
             'committee_role' => CommitteeRolesEnum::SECRETARY,
         ]);

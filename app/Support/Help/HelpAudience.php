@@ -6,6 +6,7 @@ namespace App\Support\Help;
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Team;
+use App\Domains\Shared\Enums\Permission;
 use App\Http\Controllers\ClubAdmin\DashboardController;
 
 /**
@@ -45,7 +46,7 @@ final class HelpAudience
             $tags[] = 'secretary';
         }
 
-        if ($user->canManageFinances()) {
+        if ($user->can(Permission::FinesIssue->value)) {
             $tags[] = 'treasurer';
         }
 

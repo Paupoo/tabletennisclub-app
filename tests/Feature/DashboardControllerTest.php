@@ -7,6 +7,7 @@ use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\Role;
 
 describe('DashboardController', function (): void {
 
@@ -42,8 +43,9 @@ describe('DashboardController', function (): void {
         $response->assertDontSee(__('Treasurer'));
     });
 
-    it('shows only treasurer group to a treasurer user', function (): void {
-        $treasurer = User::factory()->isCommitteeMember()->create([
+    it('shows only treasurer group to whoever holds the treasury duty', function (): void {
+        // The title alone no longer opens the section — the délégation does.
+        $treasurer = User::factory()->isCommitteeMember()->withRole(Role::TREASURY)->create([
             'committee_role' => CommitteeRolesEnum::TREASURER,
         ]);
 

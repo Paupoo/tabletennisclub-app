@@ -7,8 +7,7 @@ namespace App\Console\Commands\Payment;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Notifications\WeeklyRefundReminderNotification;
 use App\Domains\ClubAdmin\Users\Models\User;
-use App\Domains\Shared\Enums\CommitteeRolesEnum;
-use App\Domains\Shared\Enums\Role;
+use App\Domains\Shared\Enums\Permission;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -29,15 +28,11 @@ class SendWeeklyRefundReminderCommand extends Command
             return self::SUCCESS;
         }
 
-        $recipients = User::role(Role::COMMITTEE->value)
-            ->whereIn('committee_role', [
-                CommitteeRolesEnum::TREASURER->value,
-                CommitteeRolesEnum::SECRETARY->value,
-            ])
+        $recipients = User::permission(Permission::PaymentsRefund->value)
             ->get();
 
         if ($recipients->isEmpty()) {
-            $this->warn('No treasurer or secretary found — nobody to notify.');
+            $this->warn('Nobody holds the refund duty — nobody to notify.');
 
             return self::SUCCESS;
         }

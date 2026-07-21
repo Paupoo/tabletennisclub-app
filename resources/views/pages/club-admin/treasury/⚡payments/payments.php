@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Domains\Shared\Enums\Permission;
+use Illuminate\Support\Facades\Gate;
 use App\Contracts\DescribesPayment;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
@@ -79,6 +81,8 @@ new class extends Component
 
     public function bulkCancelRefund(): void
     {
+        Gate::authorize(Permission::PaymentsRefund->value);
+
         $ids = $this->selectingAllResults
             ? $this->allMatchingPaymentIds()
             : array_map('intval', $this->selected);
@@ -109,6 +113,8 @@ new class extends Component
 
     public function bulkSendReminder(): void
     {
+        Gate::authorize(Permission::PaymentsRemind->value);
+
         $ids = $this->selectingAllResults
             ? $this->allMatchingPaymentIds()
             : array_map('intval', $this->selected);
@@ -130,6 +136,8 @@ new class extends Component
 
     public function confirmBatchReconcile(): void
     {
+        Gate::authorize(Permission::PaymentsReconcile->value);
+
         $count = 0;
 
         foreach ($this->batchMatches as $match) {
@@ -162,6 +170,8 @@ new class extends Component
 
     public function confirmBatchRefundReconcile(): void
     {
+        Gate::authorize(Permission::PaymentsRefund->value);
+
         $count = 0;
 
         foreach ($this->refundBatchMatches as $match) {
@@ -189,6 +199,8 @@ new class extends Component
 
     public function confirmReconcile(): void
     {
+        Gate::authorize(Permission::PaymentsReconcile->value);
+
         if (! $this->reconcilePaymentId || ! $this->selectedTransactionId) {
             $this->error(__('Please select a transaction.'));
 
@@ -218,6 +230,8 @@ new class extends Component
 
     public function confirmRefundReconcile(): void
     {
+        Gate::authorize(Permission::PaymentsRefund->value);
+
         if (! $this->refundPaymentId || ! $this->selectedRefundTransactionId) {
             $this->error(__('Please select a transaction.'));
 

@@ -271,17 +271,13 @@ class User extends Authenticatable implements MustVerifyEmail
         ], true);
     }
 
-    /**
-     * Whether the user may manage club finances — here, issue a fine to a member.
-     * Full admins plus the treasurer and president committee roles.
+    /*
+     * canManageFinances() lived here. It was one of three divergent definitions of
+     * "treasurer" — this one granted the president, the dashboard's did not, and
+     * the cash register used a third. Callers now ask for the permission that
+     * matches what they are about to do (fines.issue, payments.reconcile,
+     * cash_register.holder.change), so the question has a single answer.
      */
-    public function canManageFinances(): bool
-    {
-        return $this->is_admin || in_array($this->committee_role, [
-            CommitteeRolesEnum::TREASURER,
-            CommitteeRolesEnum::PRESIDENT,
-        ], true);
-    }
 
     /**
      * Whether the user may read the club-wide audit log.

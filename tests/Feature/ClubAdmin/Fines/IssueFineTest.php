@@ -10,6 +10,8 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\FineReason;
+use App\Domains\Shared\Enums\Permission;
+use App\Domains\Shared\Enums\Role;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 
@@ -94,19 +96,19 @@ it('surfaces the fine in the members payments hub', function (): void {
         ->assertSee('42,00');
 });
 
-/** A committee role only sticks on an actual committee member (see UserObserver::saving). */
-function committeeMemberWithRole(CommitteeRolesEnum $role): User
-{
-    return User::factory()->isCommitteeMember()->create([
-        'committee_role' => $role,
+/*
+| canManageFinances() used to answer this, and it was one of three divergent
+| definitions of "treasurer" in the codebase. Issuing a fine is now its own duty,
+| so a statutory title neither grants nor withholds it.
+*/
+it('gates fining on the delegation, not on a statutory title', function (): void {
+    $titledButUndelegated = User::factory()->isCommitteeMember()->create([
+        'committee_role' => CommitteeRolesEnum::TREASURER,
     ]);
-}
+    $delegatedWithoutTitle = User::factory()->withRole(Role::FINES)->create();
 
-it('gates who can manage finances', function (): void {
-    expect(User::factory()->isAdmin()->create()->canManageFinances())->toBeTrue()
-        ->and(committeeMemberWithRole(CommitteeRolesEnum::TREASURER)->canManageFinances())->toBeTrue()
-        ->and(committeeMemberWithRole(CommitteeRolesEnum::PRESIDENT)->canManageFinances())->toBeTrue()
-        ->and(User::factory()->create()->canManageFinances())->toBeFalse()
-        ->and(committeeMemberWithRole(CommitteeRolesEnum::SECRETARY)->canManageFinances())->toBeFalse()
-        ->and(committeeMemberWithRole(CommitteeRolesEnum::ADMINISTRATOR)->canManageFinances())->toBeFalse();
+    expect(User::factory()->isAdmin()->create()->can(Permission::FinesIssue->value))->toBeTrue()
+        ->and($delegatedWithoutTitle->can(Permission::FinesIssue->value))->toBeTrue()
+        ->and($titledButUndelegated->can(Permission::FinesIssue->value))->toBeFalse()
+        ->and(User::factory()->create()->can(Permission::FinesIssue->value))->toBeFalse();
 });

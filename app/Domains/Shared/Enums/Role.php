@@ -149,7 +149,10 @@ enum Role: string
                 Permission::UsersView,
                 Permission::SubscriptionsView,
                 Permission::PaymentsView,
-                Permission::FinesView,
+                // Deliberately not FinesView: fines are named disciplinary records.
+                // The club restricted them before this refactor, and a security
+                // refactor must not widen access as a side effect. Move it here if
+                // the committee should see them — it is a one-line decision.
                 Permission::ContactsView,
                 Permission::NewsPostsView,
                 Permission::InterclubsView,

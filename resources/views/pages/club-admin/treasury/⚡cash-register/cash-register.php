@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Domains\Shared\Enums\Permission;
+use Illuminate\Support\Facades\Gate;
 use App\Domains\ClubAdmin\Payment\Models\CashRegister;
 use App\Domains\ClubAdmin\Payment\Models\CashRegisterEntry;
 use App\Domains\ClubAdmin\Users\Models\User;
@@ -54,12 +56,7 @@ new class extends Component
 
     public function confirmChangeHolder(): void
     {
-        /** @var User $auth */
-        $auth = Auth::user();
-
-        if (! $auth->is_admin && $auth->committee_role !== CommitteeRolesEnum::TREASURER) {
-            abort(403);
-        }
+        Gate::authorize(Permission::CashRegisterHolderChange->value);
 
         $this->validateOnly('newHolderUserId');
 
@@ -76,12 +73,7 @@ new class extends Component
         $this->validateOnly('newRegisterName');
         $this->validateOnly('newRegisterHolderUserId');
 
-        /** @var User $auth */
-        $auth = Auth::user();
-
-        if (! $auth->is_admin && $auth->committee_role !== CommitteeRolesEnum::TREASURER) {
-            abort(403);
-        }
+        Gate::authorize(Permission::CashRegisterHolderChange->value);
 
         $register = CashRegister::create([
             'name' => $this->newRegisterName,
@@ -102,12 +94,7 @@ new class extends Component
 
     public function openChangeHolder(): void
     {
-        /** @var User $auth */
-        $auth = Auth::user();
-
-        if (! $auth->is_admin && $auth->committee_role !== CommitteeRolesEnum::TREASURER) {
-            abort(403);
-        }
+        Gate::authorize(Permission::CashRegisterHolderChange->value);
 
         $this->newHolderUserId = $this->register?->held_by_user_id;
         $this->changeHolderModal = true;

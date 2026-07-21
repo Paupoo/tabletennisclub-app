@@ -8,6 +8,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\Role;
 use App\Domains\Subscriptions\Notifications\SubscriptionCancelledNotification;
 use App\Domains\Subscriptions\Notifications\SubscriptionRefundRequestedNotification;
 use App\Domains\Trainings\Models\TrainingPack;
@@ -99,8 +100,8 @@ describe('CancelSubscriptionWithRefundAction', function (): void {
     test('treasurer and secretary are notified when a refund is requested', function (): void {
         Notification::fake();
 
-        $treasurer = User::factory()->isCommitteeMember()->create(['committee_role' => CommitteeRolesEnum::TREASURER->value]);
-        $secretary = User::factory()->isCommitteeMember()->create(['committee_role' => CommitteeRolesEnum::SECRETARY->value]);
+        $treasurer = User::factory()->isCommitteeMember()->withRole(Role::TREASURY)->create(['committee_role' => CommitteeRolesEnum::TREASURER->value]);
+        $secretary = User::factory()->isCommitteeMember()->withRole(Role::TREASURY)->create(['committee_role' => CommitteeRolesEnum::SECRETARY->value]);
 
         $subscription = Subscription::factory()->create([
             'season_id' => $this->season->id,
@@ -202,7 +203,7 @@ describe('CancelSubscriptionWithRefundAction', function (): void {
     });
 
     test('the treasurer refund email renders with the amount and a link to the member profile', function (): void {
-        $treasurer = User::factory()->isCommitteeMember()->create(['committee_role' => CommitteeRolesEnum::TREASURER->value]);
+        $treasurer = User::factory()->isCommitteeMember()->withRole(Role::TREASURY)->create(['committee_role' => CommitteeRolesEnum::TREASURER->value]);
 
         $subscription = Subscription::factory()->create([
             'season_id' => $this->season->id,
@@ -379,7 +380,7 @@ describe('Registrations page — cancel flow', function (): void {
     test('confirmRefund on an enrolled pack creates a to_refund payment in the treasury workflow', function (): void {
         Notification::fake();
 
-        $treasurer = User::factory()->isCommitteeMember()->create(['committee_role' => CommitteeRolesEnum::TREASURER->value]);
+        $treasurer = User::factory()->isCommitteeMember()->withRole(Role::TREASURY)->create(['committee_role' => CommitteeRolesEnum::TREASURER->value]);
 
         $subscription = Subscription::factory()->create([
             'season_id' => $this->season->id,

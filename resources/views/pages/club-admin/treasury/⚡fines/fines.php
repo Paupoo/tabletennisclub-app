@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Domains\Shared\Enums\Permission;
+use Illuminate\Support\Facades\Gate;
 use App\Domains\ClubAdmin\Fines\Actions\CancelFine;
 use App\Domains\ClubAdmin\Fines\Actions\IssueFine;
 use App\Domains\ClubAdmin\Fines\Models\Fine;
@@ -55,7 +57,7 @@ new class extends Component
 
     public function mount(): void
     {
-        abort_unless(Auth::user()->canManageFinances(), 403);
+        Gate::authorize(Permission::FinesView->value);
 
         // Deep link from a member row: /admin/treasury/fines?member=123
         if ($memberId = request()->integer('member')) {
@@ -106,7 +108,7 @@ new class extends Component
 
     public function openFineDrawer(?int $memberId = null): void
     {
-        abort_unless(Auth::user()->canManageFinances(), 403);
+        Gate::authorize(Permission::FinesIssue->value);
 
         $this->reset(['amount', 'description', 'federationReference', 'pedagogicalMessage', 'reason', 'messageEdited']);
         $this->memberId = $memberId;
@@ -153,7 +155,7 @@ new class extends Component
 
     public function issueFine(IssueFine $issueFine): void
     {
-        abort_unless(Auth::user()->canManageFinances(), 403);
+        Gate::authorize(Permission::FinesIssue->value);
 
         $this->validate();
 
@@ -174,7 +176,7 @@ new class extends Component
 
     public function confirmCancel(int $fineId): void
     {
-        abort_unless(Auth::user()->canManageFinances(), 403);
+        Gate::authorize(Permission::FinesCancel->value);
 
         $this->cancelFineId = $fineId;
         $this->cancelModal = true;
@@ -182,7 +184,7 @@ new class extends Component
 
     public function cancelFine(CancelFine $cancelFine): void
     {
-        abort_unless(Auth::user()->canManageFinances(), 403);
+        Gate::authorize(Permission::FinesCancel->value);
 
         $fine = Fine::with('payment', 'user.guardians')->findOrFail($this->cancelFineId);
 

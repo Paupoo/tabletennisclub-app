@@ -84,18 +84,26 @@
     </x-menu-sub>
 
     @feature('treasury', 'cash_register')
+    @canany(['payments.view', 'fines.view', 'transactions.view', 'cash_register.view'])
     <x-menu-sub icon="o-banknotes" :title="__('Treasury')">
         @feature('treasury')
-        <x-menu-item icon="o-credit-card" link="{{ route('admin.treasury.payments') }}" :title="__('Payments')" />
-        @if (Auth::user()->canManageFinances())
+        @can('payments.view')
+            <x-menu-item icon="o-credit-card" link="{{ route('admin.treasury.payments') }}" :title="__('Payments')" />
+        @endcan
+        @can('fines.view')
             <x-menu-item icon="o-scale" link="{{ route('admin.treasury.fines') }}" :title="__('Fines')" />
-        @endif
-        <x-menu-item icon="o-building-library" link="{{ route('admin.treasury.transactions') }}" :title="__('Bank Transactions')" />
+        @endcan
+        @can('transactions.view')
+            <x-menu-item icon="o-building-library" link="{{ route('admin.treasury.transactions') }}" :title="__('Bank Transactions')" />
+        @endcan
         @endfeature
         @feature('cash_register')
-        <x-menu-item icon="o-currency-euro" link="{{ route('admin.treasury.cash') }}" :title="__('Cash Register')" />
+        @can('cash_register.view')
+            <x-menu-item icon="o-currency-euro" link="{{ route('admin.treasury.cash') }}" :title="__('Cash Register')" />
+        @endcan
         @endfeature
     </x-menu-sub>
+    @endcanany
     @endfeature
     <x-menu-sub icon="o-cog-6-tooth" link="#" :title="__('Club')">
     </x-menu-sub>

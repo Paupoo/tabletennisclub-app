@@ -132,16 +132,24 @@ Route::prefix('admin/club-admin/planning/')
 Route::prefix('admin/treasury/')
     ->middleware(['auth', 'verified', 'feature:treasury'])
     ->group(function (): void {
-        // Member payments & bank transactions — committee only.
-        Route::middleware('committee')->group(function (): void {
-            Route::livewire('payments', 'pages::club-admin.treasury.payments')->name('admin.treasury.payments');
-            Route::livewire('transactions', 'pages::club-admin.treasury.transactions')->name('admin.treasury.transactions');
-            // Fines — further gated to finance managers (treasurer/president/admin) in the component.
-            Route::livewire('fines', 'pages::club-admin.treasury.fines')->name('admin.treasury.fines');
-        });
-        // Cash register (bar) — access intentionally left broad for now (Xavier's domain).
+        // Each screen answers to the délégation that owns it, not to committee
+        // membership: holding the cash box and reconciling the accounts are two
+        // distinct duties, and someone may well hold one without the other.
+        Route::livewire('payments', 'pages::club-admin.treasury.payments')
+            ->middleware('can:payments.view')
+            ->name('admin.treasury.payments');
+
+        Route::livewire('transactions', 'pages::club-admin.treasury.transactions')
+            ->middleware('can:transactions.view')
+            ->name('admin.treasury.transactions');
+
+        Route::livewire('fines', 'pages::club-admin.treasury.fines')
+            ->middleware('can:fines.view')
+            ->name('admin.treasury.fines');
+
+        // Was reachable by any verified member — balances included.
         Route::livewire('cash-register', 'pages::club-admin.treasury.cash-register')
-            ->middleware('feature:cash_register')
+            ->middleware(['feature:cash_register', 'can:cash_register.view'])
             ->name('admin.treasury.cash');
     });
 

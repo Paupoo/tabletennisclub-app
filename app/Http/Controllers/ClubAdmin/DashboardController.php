@@ -16,6 +16,7 @@ use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Feature;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
+use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\Trainings\Models\Training;
 use App\Http\Controllers\Controller;
@@ -38,7 +39,19 @@ class DashboardController extends Controller
             CommitteeRolesEnum::PRESIDENT,
             CommitteeRolesEnum::VICE_PRESIDENT,
         ]);
-        $showTreasurer = $isAdmin || $role === CommitteeRolesEnum::TREASURER;
+        // Was a third, narrower definition of "treasurer" — the dashboard hid the
+        // treasury card from the president while the fines screen let them act.
+        // The délégation is now the single answer.
+        // Managing permissions, not viewing ones: payments.view belongs to the
+        // committee baseline, so keying on it would have shown the treasury
+        // section to every committee member — widening what this refactor is
+        // meant to tighten.
+        $showTreasurer = $user->canAny([
+            Permission::PaymentsReconcile->value,
+            Permission::TransactionsView->value,
+            Permission::CashRegisterView->value,
+            Permission::FinesIssue->value,
+        ]);
         $showCaptain = $isAdmin || $isCaptain;
         $showCommittee = $isAdmin || in_array($role, [
             CommitteeRolesEnum::PRESIDENT,

@@ -9,14 +9,16 @@ use App\Domains\ClubAdmin\Fines\Notifications\FineIssuedNotification;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\FineReason;
+use App\Domains\Shared\Enums\Role;
 use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 
 const FINES_COMPONENT = 'pages::club-admin.treasury.fines';
 
+/** Holds the fines duty — which is what the screen asks for, title or not. */
 function treasurer(): User
 {
-    return User::factory()->isCommitteeMember()->create([
+    return User::factory()->isCommitteeMember()->withRole(Role::FINES)->create([
         'committee_role' => CommitteeRolesEnum::TREASURER,
     ]);
 }
@@ -168,7 +170,7 @@ it('refuses access to a member who cannot manage finances', function (): void {
         ->assertForbidden();
 });
 
-it('refuses access to a secretary', function (): void {
+it('refuses access to a committee member without the fines delegation', function (): void {
     $secretary = User::factory()->isCommitteeMember()->create([
         'committee_role' => CommitteeRolesEnum::SECRETARY,
     ]);

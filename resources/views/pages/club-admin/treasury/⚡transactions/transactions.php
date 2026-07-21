@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Domains\Shared\Enums\Permission;
+use Illuminate\Support\Facades\Gate;
 use App\Domains\ClubAdmin\Payment\Models\BankImport;
 use App\Domains\ClubAdmin\Payment\Models\Transaction;
 use App\Livewire\Concerns\HasBreadcrumbs;
@@ -50,6 +52,8 @@ new class extends Component
 
     public function bulkDelete(): void
     {
+        Gate::authorize(Permission::TransactionsDelete->value);
+
         $ids = array_map('intval', $this->selected);
 
         if ($this->selectingAllResults) {
@@ -127,6 +131,8 @@ new class extends Component
 
     public function processImport(): void
     {
+        Gate::authorize(Permission::TransactionsImport->value);
+
         $this->validate(['importFile' => 'required|file|mimes:ods,xlsx,xls,csv,txt']);
 
         $path = $this->importFile->getRealPath();

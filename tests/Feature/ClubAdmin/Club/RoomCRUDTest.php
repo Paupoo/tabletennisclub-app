@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Club\Models\Room;
+use App\Domains\Shared\Enums\Role;
 use Tests\Trait\CreateUser;
 
 uses(CreateUser::class);
@@ -51,7 +52,7 @@ test('admin and committee member can see create or edit buttons', function (): v
         ->assertSee(__('Modify'))
         ->assertSee(__('Delete'));
 
-    $this->actingAs($this->createFakeCommitteeMember())
+    $this->actingAs(tap($this->createFakeCommitteeMember(), fn ($u) => $u->assignRole(Role::FACILITIES->value)))
         ->get(route('admin.rooms.index'))
         ->assertSee(__('Create'))
         ->assertSee(__('Modify'))

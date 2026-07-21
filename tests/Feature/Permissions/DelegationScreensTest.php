@@ -125,7 +125,7 @@ describe('assigning delegations on the member form', function (): void {
             ->call('save');
 
         expect($xavier->fresh())
-            ->is_committee_member->toBeFalse()
+            ->hasRole(Role::COMMITTEE->value)->toBeFalse()
             ->committee_role->toBeNull()
             ->can('cash_register.holder.change')->toBeTrue()
             ->can('payments.reconcile')->toBeFalse();
@@ -152,7 +152,7 @@ describe('assigning delegations on the member form', function (): void {
             ->call('save');
 
         expect($member->fresh())
-            ->is_admin->toBeFalse()
+            ->hasRole(Role::ADMINISTRATOR->value)->toBeFalse()
             ->and($member->fresh()->getRoleNames()->all())->toBe([Role::BAR->value]);
     });
 });

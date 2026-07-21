@@ -66,7 +66,7 @@ describe('what a délégation actually grants', function (): void {
         $xavier = User::factory()->withRole(Role::CASH_REGISTER)->create();
 
         expect($xavier)
-            ->is_committee_member->toBeFalse()
+            ->hasRole(Role::COMMITTEE->value)->toBeFalse()
             ->committee_role->toBeNull()
             ->can(Permission::CashRegisterHolderChange->value)->toBeTrue()
             ->can(Permission::PaymentsReconcile->value)->toBeFalse();
@@ -95,14 +95,24 @@ describe('policies still outrank permissions', function (): void {
     });
 });
 
-describe('the boolean accessors resolve against roles', function (): void {
-    it('maps each retired column to its role', function (Role $role, string $attribute): void {
-        expect(User::factory()->withRole($role)->create()->{$attribute})->toBeTrue()
-            ->and(User::factory()->create()->{$attribute})->toBeFalse();
+/*
+| This block used to check the compatibility accessors that stood in for the four
+| boolean columns. The columns and the accessors are gone; what it was really
+| protecting — that each retired flag has a role carrying the same meaning — is
+| asserted here directly.
+*/
+describe('the retired flags each have a role', function (): void {
+    it('grants the role, and nothing to a member without it', function (Role $role): void {
+        expect(User::factory()->withRole($role)->create()->hasRole($role->value))->toBeTrue()
+            ->and(User::factory()->create()->hasRole($role->value))->toBeFalse();
     })->with([
-        'is_admin' => [Role::ADMINISTRATOR, 'is_admin'],
-        'is_committee_member' => [Role::COMMITTEE, 'is_committee_member'],
-        'is_coach' => [Role::COACH, 'is_coach'],
-        'is_selector' => [Role::SELECTIONS, 'is_selector'],
+        'is_admin' => Role::ADMINISTRATOR,
+        'is_committee_member' => Role::COMMITTEE,
+        'is_coach' => Role::COACH,
+        'is_selector' => Role::SELECTIONS,
     ]);
+
+    it('no longer exposes the columns as attributes', function (string $flag): void {
+        expect(User::factory()->create()->getAttributes())->not->toHaveKey($flag);
+    })->with(['is_admin', 'is_committee_member', 'is_coach', 'is_selector']);
 });

@@ -17,10 +17,10 @@
             <div class="hidden items-center gap-2 lg:flex">
                 <x-admin.shared.filters-button :count="count($filterChips)" />
                 <x-dropdown :label="__('More actions')" icon="o-ellipsis-vertical" right class="btn-ghost btn-sm">
-                    @if (Auth::user()->is_admin || Auth::user()->is_committee_member)
+                    @can('setOrUpdateForceList', \App\Domains\ClubAdmin\Users\Models\User::class)
                         <x-menu-item icon="o-arrow-path" :title="__('Recalculate force list')"
                             wire:click="recalculateForceList" spinner="recalculateForceList" />
-                    @endif
+                    @endcan
                     <x-menu-item icon="o-envelope" :title="__('Quick invite')"
                         wire:click="$set('quickInviteDrawer', true)" />
                 </x-dropdown>
@@ -135,10 +135,10 @@
                                     :tooltip="__('Issue a fine')"
                                     link="{{ route('admin.treasury.fines', ['member' => $user->id]) }}" />
                             @endcan
-                            @if (Auth::user()->is_admin && Auth::id() !== $user->id)
+                            @can('delete', $user)
                                 <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-archive-box"
                                     :tooltip="__('Archive')" wire:click="confirmDelete({{ $user->id }})" />
-                            @endif
+                            @endcan
                         </x-admin.shared.row-actions>
                     @endif
                 </x-slot:actions>
@@ -204,7 +204,7 @@
                                         :tooltip="__('Resend invitation')"
                                         wire:click="sendInvitation({{ $user->id }})" spinner />
                                 @endif
-                                @if (Auth::user()->is_admin && Auth::id() !== $user->id)
+                                @can('delete', $user)
                                     @if ($user->trashed())
                                         <x-button class="btn-ghost btn-sm btn-circle text-success" icon="o-arrow-path"
                                             :tooltip="__('Restore')"
@@ -216,7 +216,7 @@
                                             :tooltip="__('Anonymize (GDPR)')"
                                             wire:click="openAnonymizeModal({{ $user->id }})" />
                                     @endif
-                                @endif
+                                @endcan
                             </x-admin.shared.row-actions>
                         </div>
                     @endscope
@@ -240,10 +240,10 @@
             <x-button class="btn-ghost btn-sm" icon="o-calendar" :label="__('Subscribe')"
                 wire:click="$set('subscribeModal', true)" />
             <span class="text-base-content/20">|</span>
-            @if (Auth::user()->is_admin)
+            @can('users.delete')
                 <x-button class="btn-ghost btn-sm text-error" icon="o-archive-box" :label="__('Archive')"
                     wire:click="confirmBulkArchive" />
-            @endif
+            @endcan
         </x-slot:actions>
     </x-admin.shared.selection-pill>
 
@@ -292,11 +292,11 @@
                 <x-choices :options="$teams" class="w-full" clearable :placeholder="__('Select a team...')"
                     wire:model.live="team_ids" />
             </div>
-            @if (Auth::user()->is_admin)
+            @can('users.delete')
                 <div class="border-t border-base-200 pt-4">
                     <x-toggle wire:model.live="showArchived" :label="__('Show archived members')" right />
                 </div>
-            @endif
+            @endcan
         </x-slot:filters>
     </x-admin.shared.filter-drawer>
 
@@ -383,13 +383,13 @@
             :label="__('Quick invite')"
             :description="__('Send an invitation by email')"
             @click="mobileActionsOpen = false; $wire.set('quickInviteDrawer', true)" />
-        @if (Auth::user()->is_admin || Auth::user()->is_committee_member)
+        @can('setOrUpdateForceList', \App\Domains\ClubAdmin\Users\Models\User::class)
             <x-admin.shared.mobile-action-item
                 icon="o-arrow-path" color="base"
                 :label="__('Recalculate force list')"
                 :description="__('Update player rankings used for team assignment')"
                 @click="mobileActionsOpen = false; $wire.call('recalculateForceList')" />
-        @endif
+        @endcan
         <div class="my-1 h-px bg-base-200"></div>
         <x-admin.shared.mobile-action-item
             icon="o-check-circle" color="base"

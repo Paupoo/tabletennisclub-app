@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -16,7 +17,7 @@ class StoreOrUpdateTournamentRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()->is_admin || $this->user()->is_committee_member;
+        return $this->user()->can(Permission::TournamentsManage->value);
     }
 
     /**

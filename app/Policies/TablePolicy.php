@@ -6,6 +6,7 @@ namespace App\Policies;
 
 use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\Permission;
 
 class TablePolicy
 {
@@ -22,7 +23,7 @@ class TablePolicy
      */
     public function create(User $user): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::TablesManage->value);
     }
 
     /**
@@ -30,7 +31,7 @@ class TablePolicy
      */
     public function delete(User $user, Table $table): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::TablesManage->value);
     }
 
     /**
@@ -38,7 +39,7 @@ class TablePolicy
      */
     public function edit(User $user): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::TablesManage->value);
     }
 
     /**
@@ -46,7 +47,7 @@ class TablePolicy
      */
     public function forceDelete(User $user, Table $table): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::TablesManage->value);
     }
 
     /**
@@ -54,7 +55,7 @@ class TablePolicy
      */
     public function restore(User $user, Table $table): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::TablesManage->value);
     }
 
     /**
@@ -62,7 +63,7 @@ class TablePolicy
      */
     public function update(User $user, Table $table): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::TablesManage->value);
     }
 
     /**

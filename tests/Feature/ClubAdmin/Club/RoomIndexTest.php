@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\Role;
 use Livewire\Livewire;
 
 beforeEach(function (): void {
@@ -15,7 +16,7 @@ beforeEach(function (): void {
 describe('Room index tests', function (): void {
     // 1. Tester que la page est accessible au comité
     it('renders the rooms index page for the committee', function (): void {
-        $committee = User::factory()->isCommitteeMember()->create();
+        $committee = User::factory()->isCommitteeMember()->withRole(Role::FACILITIES)->create();
 
         $this->actingAs($committee)
             ->get(route('admin.rooms.index'))
@@ -49,7 +50,7 @@ describe('Room index tests', function (): void {
             ->assertSee(__('Modify'))
             ->assertSee(__('Delete'));
 
-        $committeeMember = User::factory()->isCommitteeMember()->create(); // Exemple
+        $committeeMember = User::factory()->isCommitteeMember()->withRole(Role::FACILITIES)->create(); // Exemple
 
         Livewire::actingAs($committeeMember)
             ->test('pages::club-admin.rooms.index')
@@ -99,7 +100,7 @@ describe('Room index tests', function (): void {
 
     // 6. Les tables orphelines vivent hors de la grille des salles
     it('hides the unassigned section when every table has a room', function (): void {
-        $committee = User::factory()->isCommitteeMember()->create();
+        $committee = User::factory()->isCommitteeMember()->withRole(Role::FACILITIES)->create();
         Table::factory()->for(Room::factory())->create();
 
         $component = Livewire::actingAs($committee)
@@ -112,7 +113,7 @@ describe('Room index tests', function (): void {
     it('lists tables with no room in a section of their own', function (): void {
         // `room_id` est nullable : sans cette section, une orpheline ne serait
         // atteignable depuis nulle part.
-        $committee = User::factory()->isCommitteeMember()->create();
+        $committee = User::factory()->isCommitteeMember()->withRole(Role::FACILITIES)->create();
         Table::factory()->for(Room::factory())->create(['name' => 'Assignée']);
         Table::factory()->create(['name' => 'Orpheline', 'room_id' => null]);
 

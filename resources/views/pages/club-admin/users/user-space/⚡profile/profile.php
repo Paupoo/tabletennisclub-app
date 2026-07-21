@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domains\Shared\Enums\Role;
 use App\Actions\User\StoreUserDocumentAction;
 use App\Actions\User\UpdateUserAction;
 use App\Data\User\UpdateUserData;
@@ -184,9 +185,8 @@ new class extends Component
                 iban: $this->iban,
                 // Admin-only fields are preserved from the current model (not self-editable).
                 is_competitor: $this->user->is_competitor,
-                is_committee_member: $this->user->is_committee_member,
-                is_admin: $this->user->is_admin,
-                is_coach: $this->user->is_coach,
+                is_committee_member: $this->user->hasRole(Role::COMMITTEE->value),
+                is_admin: $this->user->hasRole(Role::ADMINISTRATOR->value),
                 licence: $this->user->licence,
                 ranking: $this->user->ranking,
                 committee_role: $this->user->committee_role,

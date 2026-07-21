@@ -121,7 +121,7 @@
 
         {{-- Actions --}}
         @php
-            $canManageCard = ($u = auth()->user()) && ($u->is_admin || $u->is_committee_member);
+            $canManageCard = ($u = auth()->user()) && $u->can('tournaments.manage');
         @endphp
 
         <div class="flex items-center justify-end border-t border-base-200 pt-2">

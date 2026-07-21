@@ -12,7 +12,7 @@ uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->admin = User::factory()->isAdmin()->create();
-    $this->member = User::factory()->isCommitteeMember()->withRole(Role::MEMBERS)->create();
+    $this->member = User::factory()->isCommitteeMember()->withRole(Role::MEMBERS, Role::SEASONS)->create();
     $this->regular = User::factory()->create();
     $this->subscription = Subscription::factory()->create();
 });
@@ -65,7 +65,7 @@ describe('generatePayment', function (): void {
 
 describe('update and view delegate to season', function (): void {
     it('allows admin to update subscription (via season policy)', fn () => expect($this->admin->can('update', $this->subscription))->toBeTrue());
-    it('allows committee member to update', fn () => expect($this->member->can('update', $this->subscription))->toBeTrue());
+    it('allows the seasons delegate to update', fn () => expect($this->member->can('update', $this->subscription))->toBeTrue());
     it('denies regular user from updating', fn () => expect($this->regular->can('update', $this->subscription))->toBeFalse());
 
     it('allows admin to view subscription (via season policy)', fn () => expect($this->admin->can('view', $this->subscription))->toBeTrue());

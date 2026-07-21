@@ -27,7 +27,6 @@ readonly class CreateUserData
         public ?string $birthdate = null,
         public bool $is_committee_member = false,
         public bool $is_admin = false,
-        public bool $is_coach = false,
         public bool $has_key = false,
         public ?string $licence = null,
         public ?string $ranking = null,

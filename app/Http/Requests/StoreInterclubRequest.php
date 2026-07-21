@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Domains\Shared\Enums\Permission;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -15,7 +16,8 @@ class StoreInterclubRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()->is_admin || $this->user()->is_committee_member || $this->user()->captainOf()->where('id', $this->input('team_id'))->exists();
+        return $this->user()->can(Permission::InterclubsManage->value)
+            || $this->user()->captainOf()->where('id', $this->input('team_id'))->exists();
     }
 
     public function messages(): array

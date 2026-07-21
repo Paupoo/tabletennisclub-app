@@ -66,7 +66,7 @@
 
 
     <x-menu-separator />
-    @if(Auth()->user()->is_admin || Auth()->user()->is_committee_member )
+    @can('users.view')
     <x-menu-sub icon="o-building-office" :title="__('Club Settings')">
         <x-menu-item icon="o-identification" link="{{ route('admin.club-info') }}" :title="__('Informations')" />
         <x-menu-item icon="o-calendar" link="{{ route('admin.seasons.index') }}" :title="__('Seasons')" />
@@ -119,7 +119,7 @@
     </x-menu-sub>
 
     <x-menu-separator />
-    @endif
+    @endcan
 
     @feature('trainings')
     <x-menu-sub icon="o-academic-cap" :title="__('Trainings')">
@@ -152,7 +152,7 @@
     </x-menu-sub>
     @endfeature
 
-    @if($user->is_committee_member || $user->is_admin)
+    @can('users.view')
     @feature('meetings', 'tournaments')
     <x-menu-sub icon="o-star" :title="__('Events')">
         @feature('meetings')
@@ -169,9 +169,9 @@
 
     <x-menu-separator />
     @endfeature
-    @endif
+    @endcan
 
-    @if($user->is_admin || $user->is_committee_member)
+    @can('users.view')
     @feature('website', 'contacts')
     <x-menu-sub icon="o-globe-alt" :title="__('Website')">
         @feature('website')
@@ -195,7 +195,7 @@
         @endfeature
     </x-menu-sub>
     @endfeature
-    @endif
+    @endcan
 
     @feature('supervision')
     @if($user->canViewAuditLog())
@@ -205,7 +205,7 @@
         link="{{ route('admin.audit.index') }}"
         :title="__('Audit')"
     />
-    @endif
+    @endcan
     @endfeature
 
     @feature('supervision')

@@ -20,11 +20,10 @@ use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Shared\Casts\IbanCast;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Gender;
-use App\Domains\Shared\Enums\Role;
+use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\Support\IbanNormalizer;
 use App\Domains\Shared\Traits\HasAuditLog;
 use App\Domains\Trainings\Models\Training;
-use App\Http\Controllers\ClubAdmin\DashboardController;
 use App\Observers\UserObserver;
 use Carbon\Carbon;
 use Database\Factories\Domains\ClubAdmin\Users\Models\UserFactory;
@@ -53,9 +52,6 @@ use Spatie\Permission\Traits\HasRoles;
  * @property int $id
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
- * @property bool $is_admin
- * @property bool $is_committee_member
- * @property bool $is_selector
  * @property string $email
  * @property string|null $email_verified_at
  * @property string $password
@@ -107,8 +103,6 @@ use Spatie\Permission\Traits\HasRoles;
  * @method static EloquentBuilder<static>|User whereForceList($value)
  * @method static EloquentBuilder<static>|User whereHasDebt($value)
  * @method static EloquentBuilder<static>|User whereId($value)
- * @method static EloquentBuilder<static>|User whereIsAdmin($value)
- * @method static EloquentBuilder<static>|User whereIsCommitteeMember($value)
  * @method static EloquentBuilder<static>|User whereLastName($value)
  * @method static EloquentBuilder<static>|User whereLicence($value)
  * @method static EloquentBuilder<static>|User wherePassword($value)
@@ -126,7 +120,6 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string|null $guardian_phone_number
  * @property string|null $photo
  * @property CommitteeRolesEnum|null $committee_role
- * @property bool $is_coach
  * @property string|null $medical_certificate_path
  * @property string|null $parental_consent_path
  * @property-read Collection<int, NewsPost> $articles
@@ -155,7 +148,6 @@ use Spatie\Permission\Traits\HasRoles;
  * @method static EloquentBuilder<static>|User whereGender($value)
  * @method static EloquentBuilder<static>|User whereGuardianPhoneNumber($value)
  * @method static EloquentBuilder<static>|User whereIban($value)
- * @method static EloquentBuilder<static>|User whereIsCoach($value)
  * @method static EloquentBuilder<static>|User whereMedicalCertificatePath($value)
  * @method static EloquentBuilder<static>|User whereParentalConsentPath($value)
  * @method static EloquentBuilder<static>|User wherePhoto($value)
@@ -257,18 +249,13 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Whether the user belongs to the club-admin management group.
      *
-     * Mirrors the `showSecretary` rule used in {@see DashboardController}:
-     * full admins plus the secretary/president/vice-president committee roles may
-     * manage club-admin operations (contact triage, templates, …). Other committee
-     * members can only view.
+     * Kept as a named shorthand for the contacts duty, which is what the two
+     * remaining gates (`manage-contacts`, `manage-season`) actually ask about.
+     * It used to read the statutory title; the title decides nothing now.
      */
     public function canManageClubAdmin(): bool
     {
-        return $this->is_admin || in_array($this->committee_role, [
-            CommitteeRolesEnum::SECRETARY,
-            CommitteeRolesEnum::PRESIDENT,
-            CommitteeRolesEnum::VICE_PRESIDENT,
-        ], true);
+        return $this->can(Permission::ContactsManage->value);
     }
 
     /*
@@ -282,18 +269,13 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Whether the user may read the club-wide audit log.
      *
-     * Full platform admins plus the president, vice-president, secretary and
-     * treasurer committee roles. The plain administrator committee role does
-     * not grant access on its own.
+     * The supervision duty. It used to be the statutory title — full admins plus
+     * the president, vice-president, secretary and treasurer. The title decides
+     * nothing now.
      */
     public function canViewAuditLog(): bool
     {
-        return $this->is_admin || in_array($this->committee_role, [
-            CommitteeRolesEnum::PRESIDENT,
-            CommitteeRolesEnum::VICE_PRESIDENT,
-            CommitteeRolesEnum::SECRETARY,
-            CommitteeRolesEnum::TREASURER,
-        ], true);
+        return $this->can(Permission::AuditLogView->value);
     }
 
     public function captainOf(): HasOne
@@ -317,8 +299,7 @@ class User extends Authenticatable implements MustVerifyEmail
     public function contactVisibleTo(User $viewer, string $field): bool
     {
         return $viewer->is($this)
-            || $viewer->is_admin
-            || $viewer->is_committee_member
+            || $viewer->can(Permission::UsersView->value)
             || $this->sharesContact($field);
     }
 
@@ -763,41 +744,5 @@ class User extends Authenticatable implements MustVerifyEmail
     public function wantsNotification(string $preference): bool
     {
         return (bool) ($this->notification_preferences[$preference] ?? true);
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Role flags — compatibility layer
-    |--------------------------------------------------------------------------
-    |
-    | The four boolean columns are being retired in favour of Spatie roles. They
-    | still exist in the table, but reads now resolve against the roles, and the
-    | attributes left `$fillable` no longer include them — which also closes the
-    | mass-assignment privilege escalation `is_admin` used to allow.
-    |
-    | Existing `$user->is_admin` call sites keep working untouched; they are
-    | migrated to `can()` / policies domain by domain, and these accessors go
-    | away with the columns once the last one is gone.
-    |
-    */
-
-    protected function isAdmin(): Attribute
-    {
-        return Attribute::get(fn (): bool => $this->hasRole(Role::ADMINISTRATOR->value));
-    }
-
-    protected function isCoach(): Attribute
-    {
-        return Attribute::get(fn (): bool => $this->hasRole(Role::COACH->value));
-    }
-
-    protected function isCommitteeMember(): Attribute
-    {
-        return Attribute::get(fn (): bool => $this->hasRole(Role::COMMITTEE->value));
-    }
-
-    protected function isSelector(): Attribute
-    {
-        return Attribute::get(fn (): bool => $this->hasRole(Role::SELECTIONS->value));
     }
 }

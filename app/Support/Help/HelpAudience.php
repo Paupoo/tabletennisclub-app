@@ -7,6 +7,7 @@ namespace App\Support\Help;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\Permission;
+use App\Domains\Shared\Enums\Role;
 use App\Http\Controllers\ClubAdmin\DashboardController;
 
 /**
@@ -30,15 +31,15 @@ final class HelpAudience
             $tags[] = 'competitor';
         }
 
-        if ($user->is_coach) {
+        if ($user->can(Permission::CoachAreaAccess->value)) {
             $tags[] = 'coach';
         }
 
-        if ($user->is_selector) {
+        if ($user->can(Permission::SelectionsManage->value)) {
             $tags[] = 'selector';
         }
 
-        if ($user->is_committee_member || $user->is_admin) {
+        if ($user->can(Permission::UsersView->value)) {
             $tags[] = 'committee';
         }
 
@@ -54,7 +55,7 @@ final class HelpAudience
             $tags[] = 'captain';
         }
 
-        if ($user->is_admin) {
+        if ($user->hasRole(Role::ADMINISTRATOR->value)) {
             $tags[] = 'admin';
         }
 

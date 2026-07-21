@@ -29,10 +29,10 @@
                     <div class="text-sm opacity-50 mt-0.5">{{ $user->is_active ? __('Active member') : __('Inactive member') }}</div>
                 </div>
                 <div class="flex flex-wrap justify-center gap-1">
-                    @if ($user->is_admin)
+                    @if ($user->hasRole(\App\Domains\Shared\Enums\Role::ADMINISTRATOR->value))
                         <x-badge value="{{ __('Admin') }}" icon="o-power" class="badge-primary badge-sm" />
                     @endif
-                    @if ($user->is_committee_member && $user->committee_role)
+                    @if ($user->committee_role)
                         <x-badge :value="$user->committee_role->label()" icon="o-star" class="badge-secondary badge-sm text-secondary-content" />
                     @endif
                     @if (!$user->is_active)

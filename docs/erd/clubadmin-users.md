@@ -8,9 +8,6 @@ erDiagram
     }
     User {
         int id PK
-        bool is_admin
-        bool is_committee_member
-        bool is_selector
         string email
         string email_verified_at "nullable"
         string password
@@ -35,7 +32,6 @@ erDiagram
         string guardian_phone_number "nullable"
         string photo "nullable"
         CommitteeRolesEnum committee_role "nullable"
-        bool is_coach
         string medical_certificate_path "nullable"
         string parental_consent_path "nullable"
     }

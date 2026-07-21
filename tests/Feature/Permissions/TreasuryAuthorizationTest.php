@@ -94,7 +94,7 @@ describe('the statutory title no longer decides', function (): void {
 
         expect($xavier)
             ->committee_role->toBeNull()
-            ->is_committee_member->toBeFalse()
+            ->hasRole(Role::COMMITTEE->value)->toBeFalse()
             ->can(Permission::CashRegisterHolderChange->value)->toBeTrue()
             ->can(Permission::PaymentsReconcile->value)->toBeFalse();
     });

@@ -160,7 +160,7 @@ describe('Test Club Settings', function (): void {
                 ->call('addMember');
 
             expect($user->fresh())
-                ->is_committee_member->toBeTrue()
+                ->hasRole(Role::COMMITTEE->value)->toBeTrue()
                 ->committee_role->toBe(CommitteeRolesEnum::PRESIDENT);
         });
 
@@ -233,7 +233,7 @@ describe('Test Club Settings', function (): void {
                 ->call('removeMember', $user->id);
 
             expect($user->fresh())
-                ->is_committee_member->toBeFalse()
+                ->hasRole(Role::COMMITTEE->value)->toBeFalse()
                 ->committee_role->toBeNull();
         });
 

@@ -101,7 +101,7 @@ it('closes the cash register to a member without the delegation', function (): v
 it('opens the cash register to its delegate, committee member or not', function (): void {
     $keeper = User::factory()->withRole(Role::CASH_REGISTER)->create();
 
-    expect($keeper->is_committee_member)->toBeFalse();
+    expect($keeper->hasRole(Role::COMMITTEE->value))->toBeFalse();
 
     $this->actingAs($keeper)->get(route('admin.treasury.cash'))->assertOk();
 });

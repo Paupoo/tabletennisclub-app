@@ -6,6 +6,7 @@ namespace App\Http\Controllers\ClubAdmin\Users;
 
 use App\Actions\User\StoreUserDocumentAction;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\Permission;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -26,8 +27,7 @@ class UserDocumentController extends Controller
 
         abort_unless(
             $actor->is($user)
-                || $actor->is_admin
-                || $actor->is_committee_member
+                || $actor->can(Permission::UsersView->value)
                 || $user->guardians()->where('guardians.user_id', $actor->id)->exists(),
             403
         );

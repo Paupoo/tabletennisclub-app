@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Contact\Models\Contact;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\Role;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -12,7 +13,7 @@ uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->admin = User::factory()->isAdmin()->create();
-    $this->member = User::factory()->isCommitteeMember()->create();
+    $this->member = User::factory()->isCommitteeMember()->withRole(Role::CONTACTS)->create();
     $this->regular = User::factory()->create();
     $this->contact = Contact::factory()->create();
 });

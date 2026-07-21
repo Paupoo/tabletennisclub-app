@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domains\Shared\Enums\Role;
 use App\Mail\QueueStalledMail;
 use App\Support\QueueHealth;
 use Illuminate\Support\Facades\DB;
@@ -56,7 +57,7 @@ test('a regular member cannot open the queue monitoring', function (): void {
 });
 
 test('a committee member can open the queue monitoring', function (): void {
-    $this->actingAs($this->createFakeCommitteeMember())
+    $this->actingAs(tap($this->createFakeCommitteeMember(), fn ($u) => $u->assignRole(Role::SUPERVISION->value)))
         ->get(route('admin.queue.index'))
         ->assertSuccessful();
 });

@@ -6,12 +6,13 @@ namespace App\Policies;
 
 use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\Permission;
 
 class GuardianPolicy
 {
     public function create(User $user, ?User $target = null): bool
     {
-        if ($user->is_admin || $user->is_committee_member) {
+        if ($user->can(Permission::UsersUpdate->value)) {
             return true;
         }
 
@@ -20,7 +21,7 @@ class GuardianPolicy
 
     public function delete(User $user, Guardian $guardian): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::UsersUpdate->value);
     }
 
     public function forceDelete(User $user, Guardian $guardian): bool
@@ -35,16 +36,16 @@ class GuardianPolicy
 
     public function update(User $user, Guardian $guardian): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::UsersUpdate->value);
     }
 
     public function view(User $user, Guardian $guardian): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::UsersView->value);
     }
 
     public function viewAny(User $user): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::UsersView->value);
     }
 }

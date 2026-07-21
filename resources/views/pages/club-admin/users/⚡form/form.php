@@ -199,7 +199,7 @@ new class extends Component
 
     public function confirmAnonymize(): void
     {
-        abort_unless(Auth::user()->is_admin && Auth::user()->isNot($this->user), 403);
+        Gate::authorize('anonymize', $this->user);
 
         if (strtoupper($this->anonymizeConfirmText) !== 'ANONYMIZE') {
             $this->error(__('Type ANONYMIZE to confirm.'));
@@ -325,8 +325,8 @@ new class extends Component
             $this->licence = $user->licence;
             $this->ranking = $user->ranking ?? 'NA';
             $this->is_competitor = $user->is_competitor;
-            $this->is_committee_member = $user->is_committee_member;
-            $this->is_admin = $user->is_admin;
+            $this->is_committee_member = $user->hasRole(Role::COMMITTEE->value);
+            $this->is_admin = $user->hasRole(Role::ADMINISTRATOR->value);
             $this->has_key = (bool) ($user->has_key ?? false);
             $this->committee_role = $user->committee_role?->value;
             $this->delegations = $user->roles
@@ -404,15 +404,15 @@ new class extends Component
                 'boolean',
                 function ($attribute, $value, $fail): void {
                     $actor = Auth::user();
-                    $targetIsAdmin = $this->user?->is_admin ?? false;
+                    $targetIsAdmin = $this->user?->hasRole(Role::ADMINISTRATOR->value) ?? false;
 
-                    if ((bool) $value !== $targetIsAdmin && ! $actor?->is_admin) {
+                    if ((bool) $value !== $targetIsAdmin && ! $actor?->hasRole(Role::ADMINISTRATOR->value)) {
                         $fail(__('Only an administrator can change the administrator status.'));
 
                         return;
                     }
 
-                    if ($this->user?->is_admin && ! $value) {
+                    if ($targetIsAdmin && ! $value) {
                         $remainingAdmins = User::role(Role::ADMINISTRATOR->value)->whereKeyNot($this->user->id)->count();
 
                         if ($remainingAdmins === 0) {

@@ -17,6 +17,7 @@ use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Feature;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\Permission;
+use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\Trainings\Models\Training;
 use App\Http\Controllers\Controller;
@@ -31,7 +32,7 @@ class DashboardController extends Controller
         /** @var User $user */
         $user = Auth::user();
         $role = $user->committee_role;
-        $isAdmin = $user->is_admin;
+        $isAdmin = $user->hasRole(Role::ADMINISTRATOR->value);
         $isCaptain = Team::where('captain_id', $user->id)->exists();
 
         $showSecretary = $isAdmin || in_array($role, [
@@ -250,7 +251,7 @@ class DashboardController extends Controller
 
         // Queue health (admins + committee): a dead worker silently blocks
         // every outgoing email, surface it prominently.
-        if ($isAdmin || $user->is_committee_member) {
+        if ($user->can(Permission::QueueView->value)) {
             if (QueueHealth::isStalled()) {
                 $alerts[] = [
                     'type' => 'error',

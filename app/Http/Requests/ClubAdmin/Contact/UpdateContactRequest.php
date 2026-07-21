@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\ClubAdmin\Contact;
 
+use App\Domains\Shared\Enums\Permission;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -15,7 +16,7 @@ class UpdateContactRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return $this->user()->is_admin || $this->user()->is_committee_member;
+        return $this->user()->can(Permission::ContactsManage->value);
     }
 
     /**

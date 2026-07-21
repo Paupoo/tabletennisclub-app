@@ -447,7 +447,7 @@
                 </div>
 
                 {{-- Zone de danger (RGPD) — admin uniquement, pas sur son propre compte --}}
-                @if ($user && Auth::user()->is_admin && Auth::id() !== $user->id)
+                @if ($user && Auth::user()->can('anonymize', $user))
                     <div class="col-span-6 mt-4 border-t border-error/20 pt-6">
                         <x-header
                             :title="__('Danger zone')"

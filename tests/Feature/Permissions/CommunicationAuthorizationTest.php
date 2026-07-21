@@ -45,7 +45,7 @@ describe('the bar, previously open to every member', function (): void {
     it('opens to whoever holds the bar duty', function (): void {
         $barkeeper = User::factory()->withRole(Role::BAR)->create();
 
-        expect($barkeeper->is_committee_member)->toBeFalse();
+        expect($barkeeper->hasRole(Role::COMMITTEE->value))->toBeFalse();
 
         $this->actingAs($barkeeper)->get(route('bar.index'))->assertOk();
     });

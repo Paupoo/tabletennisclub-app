@@ -5,55 +5,51 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\Role;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 
 uses(RefreshDatabase::class);
 
 /*
-| `is_admin` used to sit in $fillable. Any code path reaching User::create() or
-| ->update() with unfiltered input could therefore hand out administrator rights.
-| Nothing exploited it, but the door was open; these tests keep it shut.
+| `is_admin` used to sit in $fillable, on the users table. Any code path reaching
+| User::create() or ->update() with unfiltered input could therefore hand out
+| administrator rights. Nothing exploited it, but the door was open.
+|
+| The column is gone: rights live in a pivot table that mass assignment cannot
+| reach at all. These tests assert the property that replaced it — a role is only
+| ever granted by an explicit call — so that reintroducing a writable flag, or a
+| form field that assigns roles from raw input, shows up here.
 */
 
-it('refuses to mass-assign the retired role flags', function (string $flag): void {
-    $user = User::factory()->create();
-
-    $user->update([$flag => true]);
-
-    // Two independent guards, asserted separately so a regression in either shows:
-    // the attribute is no longer $fillable (the column stays untouched), and the
-    // accessor answers from the roles regardless of what the column says.
-    expect(DB::table('users')->where('id', $user->id)->value($flag))
-        ->toBeIn([0, false], "La colonne {$flag} a été écrite en mass-assignment.")
-        ->and($user->fresh()->{$flag})->toBeFalse();
-})->with(['is_admin', 'is_committee_member', 'is_coach', 'is_selector']);
-
-it('ignores the legacy column even if something writes it directly', function (): void {
-    $user = User::factory()->create();
-
-    DB::table('users')->where('id', $user->id)->update(['is_admin' => true]);
-
-    expect($user->fresh()->is_admin)->toBeFalse();
-});
-
-it('refuses to grant administrator through creation attributes', function (): void {
-    $user = User::factory()->create();
+it('cannot be granted a role through creation attributes', function (): void {
     $created = User::create([
         'first_name' => 'Mallory',
         'last_name' => 'Test',
         'email' => 'mallory@example.test',
         'password' => 'secret-password',
         'is_admin' => true,
+        'roles' => [Role::ADMINISTRATOR->value],
     ]);
 
-    expect($created->fresh()->is_admin)->toBeFalse()
-        ->and($user->fresh()->is_admin)->toBeFalse();
+    expect($created->fresh()->hasRole(Role::ADMINISTRATOR->value))->toBeFalse();
 });
+
+it('cannot be granted a role through an update', function (): void {
+    $user = User::factory()->create();
+
+    $user->update(['is_admin' => true, 'roles' => [Role::ADMINISTRATOR->value]]);
+
+    expect($user->fresh()->getRoleNames())->toBeEmpty();
+});
+
+it('no longer keeps the retired flags on the table', function (string $column): void {
+    expect(Schema::hasColumn('users', $column))->toBeFalse();
+})->with(['is_admin', 'is_committee_member', 'is_coach', 'is_selector']);
 
 it('only grants a role through an explicit assignment', function (): void {
     $user = User::factory()->create();
-    expect($user->is_admin)->toBeFalse();
+    expect($user->hasRole(Role::ADMINISTRATOR->value))->toBeFalse();
 
     $user->assignRole(Role::ADMINISTRATOR->value);
 
-    expect($user->fresh()->is_admin)->toBeTrue();
+    expect($user->fresh()->hasRole(Role::ADMINISTRATOR->value))->toBeTrue();
 });

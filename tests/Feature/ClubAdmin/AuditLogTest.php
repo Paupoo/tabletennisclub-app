@@ -252,16 +252,20 @@ it('renders the audit log when a logged activity has an array-cast attribute', f
         ->assertSee('spammer@example.com');
 });
 
-it('grants audit log access to admins and management committee roles', function (array $roles, ?CommitteeRolesEnum $committeeRole, bool $expected) {
+/*
+| Reading the audit log used to follow the statutory title — full admins plus the
+| president, vice-president, secretary and treasurer. It is the supervision duty
+| now, so the title neither grants nor withholds it.
+*/
+it('grants audit log access on the supervision delegation', function (array $roles, ?CommitteeRolesEnum $committeeRole, bool $expected) {
     $user = User::factory()->withRole(...$roles)->create(['committee_role' => $committeeRole]);
 
     expect($user->canViewAuditLog())->toBe($expected);
 })->with([
     'platform admin' => [[Role::ADMINISTRATOR], null, true],
-    'president' => [[Role::COMMITTEE], CommitteeRolesEnum::PRESIDENT, true],
-    'vice-president' => [[Role::COMMITTEE], CommitteeRolesEnum::VICE_PRESIDENT, true],
-    'secretary' => [[Role::COMMITTEE], CommitteeRolesEnum::SECRETARY, true],
-    'treasurer' => [[Role::COMMITTEE], CommitteeRolesEnum::TREASURER, true],
-    'plain administrator committee role' => [[Role::COMMITTEE], CommitteeRolesEnum::ADMINISTRATOR, false],
+    'supervision delegate' => [[Role::SUPERVISION], null, true],
+    'supervision delegate who is also president' => [[Role::COMMITTEE, Role::SUPERVISION], CommitteeRolesEnum::PRESIDENT, true],
+    'president without the delegation' => [[Role::COMMITTEE], CommitteeRolesEnum::PRESIDENT, false],
+    'treasurer without the delegation' => [[Role::COMMITTEE], CommitteeRolesEnum::TREASURER, false],
     'regular member' => [[], null, false],
 ]);

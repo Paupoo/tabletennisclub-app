@@ -66,16 +66,16 @@ describe('base roles', function (): void {
         SyncUserRolesAction::handle($user, isAdmin: true, isCommitteeMember: true, delegations: [Role::COACH->value]);
 
         expect($user->fresh())
-            ->is_admin->toBeTrue()
-            ->is_committee_member->toBeTrue()
-            ->is_coach->toBeTrue();
+            ->hasRole(Role::ADMINISTRATOR->value)->toBeTrue()
+            ->hasRole(Role::COMMITTEE->value)->toBeTrue()
+            ->hasRole(Role::COACH->value)->toBeTrue();
 
         SyncUserRolesAction::handle($user, isAdmin: false, isCommitteeMember: true, delegations: []);
 
         expect($user->fresh())
-            ->is_admin->toBeFalse()
-            ->is_committee_member->toBeTrue()
-            ->is_coach->toBeFalse();
+            ->hasRole(Role::ADMINISTRATOR->value)->toBeFalse()
+            ->hasRole(Role::COMMITTEE->value)->toBeTrue()
+            ->hasRole(Role::COACH->value)->toBeFalse();
     });
 
     it('leaves délégations alone when the caller does not manage them', function (): void {
@@ -99,8 +99,8 @@ describe('base roles', function (): void {
         ]);
 
         expect($user->fresh())
-            ->is_admin->toBeFalse()
-            ->is_committee_member->toBeFalse()
+            ->hasRole(Role::ADMINISTRATOR->value)->toBeFalse()
+            ->hasRole(Role::COMMITTEE->value)->toBeFalse()
             ->and($user->fresh()->getRoleNames()->all())->toBe([Role::WEBSITE->value]);
     });
 

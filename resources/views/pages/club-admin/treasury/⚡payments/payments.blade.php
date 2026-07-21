@@ -19,11 +19,15 @@
                 <x-admin.shared.filters-button :count="count($filterChips)" />
                 <x-dropdown :label="__('More actions')" icon="o-ellipsis-vertical" right class="btn-ghost btn-sm">
                     @if($statusFilter === 'to_refund')
-                        <x-menu-item icon="o-sparkles" :title="__('Auto-match refunds')"
-                            wire:click="previewBatchRefundMatch" spinner="previewBatchRefundMatch" />
+                        @can('payments.refund')
+                            <x-menu-item icon="o-sparkles" :title="__('Auto-match refunds')"
+                                wire:click="previewBatchRefundMatch" spinner="previewBatchRefundMatch" />
+                        @endcan
                     @else
-                        <x-menu-item icon="o-sparkles" :title="__('Auto-match')"
-                            wire:click="previewBatchMatch" spinner="previewBatchMatch" />
+                        @can('payments.reconcile')
+                            <x-menu-item icon="o-sparkles" :title="__('Auto-match')"
+                                wire:click="previewBatchMatch" spinner="previewBatchMatch" />
+                        @endcan
                     @endif
                     <x-menu-item icon="o-arrow-up-tray" :title="__('Import a bank statement')"
                         link="{{ route('admin.treasury.transactions') }}" />
@@ -128,24 +132,30 @@
             @scope('actions', $payment)
             @if($this->statusFilter === 'pending')
             <div class="flex items-center gap-2">
-                <x-button
-                    icon="o-paper-airplane"
-                    wire:click="sendReminder({{ $payment->id }})"
-                    class="btn-xs btn-ghost"
-                    tooltip="{{ $payment->invitation_counter > 0 ? __('Resend (:n sent)', ['n' => $payment->invitation_counter]) : __('Send invitation') }}"
-                    spinner />
-                <x-button
-                    :label="__('Reconcile')"
-                    icon="o-link"
-                    wire:click="openReconcile({{ $payment->id }})"
-                    class="btn-xs btn-outline" />
+                @can('payments.remind')
+                    <x-button
+                        icon="o-paper-airplane"
+                        wire:click="sendReminder({{ $payment->id }})"
+                        class="btn-xs btn-ghost"
+                        tooltip="{{ $payment->invitation_counter > 0 ? __('Resend (:n sent)', ['n' => $payment->invitation_counter]) : __('Send invitation') }}"
+                        spinner />
+                @endcan
+                @can('payments.reconcile')
+                    <x-button
+                        :label="__('Reconcile')"
+                        icon="o-link"
+                        wire:click="openReconcile({{ $payment->id }})"
+                        class="btn-xs btn-outline" />
+                @endcan
             </div>
             @elseif($this->statusFilter === 'to_refund')
-            <x-button
-                :label="__('Confirm refund')"
-                icon="o-arrow-uturn-left"
-                wire:click="openRefundReconcile({{ $payment->id }})"
-                class="btn-xs btn-error btn-outline" />
+            @can('payments.refund')
+                <x-button
+                    :label="__('Confirm refund')"
+                    icon="o-arrow-uturn-left"
+                    wire:click="openRefundReconcile({{ $payment->id }})"
+                    class="btn-xs btn-error btn-outline" />
+            @endcan
             @else
             <div class="flex items-center gap-1.5 text-success text-xs font-bold">
                 <x-icon name="o-check-circle" class="w-4 h-4" />
@@ -179,17 +189,21 @@
         :select-all="$selectAll">
         <x-slot:actions>
             @if ($statusFilter === 'pending')
-            <x-button
-                wire:click="openBulkReminderModal"
-                icon="o-paper-airplane"
-                :label="__('Send reminders')"
-                class="btn-ghost btn-sm" />
+            @can('payments.remind')
+                <x-button
+                    wire:click="openBulkReminderModal"
+                    icon="o-paper-airplane"
+                    :label="__('Send reminders')"
+                    class="btn-ghost btn-sm" />
+            @endcan
             @elseif ($statusFilter === 'to_refund')
-            <x-button
-                wire:click="openBulkCancelRefundModal"
-                icon="o-x-circle"
-                :label="__('Cancel refunds')"
-                class="btn-ghost btn-sm" />
+            @can('payments.refund')
+                <x-button
+                    wire:click="openBulkCancelRefundModal"
+                    icon="o-x-circle"
+                    :label="__('Cancel refunds')"
+                    class="btn-ghost btn-sm" />
+            @endcan
             @endif
         </x-slot:actions>
     </x-admin.shared.selection-pill>

@@ -9,10 +9,14 @@ use App\Domains\Shared\Enums\Feature;
 use App\Domains\Trainings\Services\TrainingBuilder;
 use App\Domains\Trainings\Services\TrainingDateGenerator;
 use App\Services\ForceList;
+use Database\Seeders\RoleSeeder;
+use Illuminate\Console\Events\CommandFinished;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Application;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -35,6 +39,29 @@ class AppServiceProvider extends ServiceProvider
             : Password::min(8)->letters()->numbers());
 
         Paginator::defaultView('custom-paginate');
+
+        /*
+         * The role → permission matrix lives in the Role enum, and the database
+         * must follow it. Nothing re-applied it after the initial backfill, so
+         * every later change to the matrix stayed in the code and never reached
+         * a running install — the tests kept passing because RefreshDatabase
+         * replays the migration each time, which hid the gap entirely.
+         *
+         * Re-seeding after every `migrate` closes it: the seeder is idempotent,
+         * touches no role assignment, and takes a few milliseconds.
+         */
+        Event::listen(CommandFinished::class, static function (CommandFinished $event): void {
+            // Deliberately not MigrationsEnded: that only fires when there is
+            // something pending, so a deploy with no new migration would leave a
+            // changed matrix unapplied — which is exactly how it drifted before.
+            if (! in_array($event->command, ['migrate', 'migrate:fresh', 'migrate:refresh'], true)) {
+                return;
+            }
+
+            if (Schema::hasTable('permissions') && Schema::hasTable('roles')) {
+                (new RoleSeeder)->run();
+            }
+        });
 
         // @feature('bar') ... @endfeature — hides a switched-off domain from the
         // navigation and the dashboard, so a member never clicks through to a 404.

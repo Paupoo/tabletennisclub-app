@@ -8,6 +8,7 @@ use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentRegistration;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
+use App\Domains\Shared\Enums\Role;
 use Livewire\Exceptions\MethodNotFoundException;
 use Livewire\Livewire;
 
@@ -49,9 +50,13 @@ function treasuryMeetingPayment(User $user, Meeting $meeting, string $status = '
     ]);
 }
 
-function mountTreasury(User $admin)
+function mountTreasury(User $actor)
 {
-    return Livewire::actingAs($admin)
+    // The screen answers to the treasury duty; these tests are about what the
+    // modals render, so the actor needs it.
+    $actor->assignRole(Role::TREASURY->value);
+
+    return Livewire::actingAs($actor)
         ->test('pages::club-admin.treasury.payments');
 }
 

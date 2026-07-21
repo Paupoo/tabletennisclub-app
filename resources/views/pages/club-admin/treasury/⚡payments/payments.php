@@ -311,6 +311,8 @@ new class extends Component
 
     public function openBulkCancelRefundModal(): void
     {
+        Gate::authorize(Permission::PaymentsRefund->value);
+
         $this->bulkCancelRefundModal = true;
     }
 
@@ -318,11 +320,15 @@ new class extends Component
 
     public function openBulkReminderModal(): void
     {
+        Gate::authorize(Permission::PaymentsRemind->value);
+
         $this->bulkReminderModal = true;
     }
 
     public function openReconcile(int $paymentId): void
     {
+        Gate::authorize(Permission::PaymentsReconcile->value);
+
         $this->reconcilePaymentId = $paymentId;
         $this->selectedTransactionId = null;
         $this->reconcileModal = true;
@@ -332,6 +338,8 @@ new class extends Component
 
     public function openRefundReconcile(int $paymentId): void
     {
+        Gate::authorize(Permission::PaymentsRefund->value);
+
         $this->refundPaymentId = $paymentId;
         $this->selectedRefundTransactionId = null;
         $this->refundModal = true;
@@ -434,6 +442,8 @@ new class extends Component
 
     public function previewBatchMatch(): void
     {
+        Gate::authorize(Permission::PaymentsReconcile->value);
+
         $pendingPayments = Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])
             ->where('status', 'pending')
             ->whereNull('transaction_id')
@@ -483,6 +493,8 @@ new class extends Component
 
     public function previewBatchRefundMatch(): void
     {
+        Gate::authorize(Permission::PaymentsRefund->value);
+
         $toRefundPayments = Payment::with(['payable' => fn (MorphTo $m) => $m->morphWith($this->payableEagerLoads())])
             ->where('status', 'to_refund')
             ->whereNull('refund_transaction_id')
@@ -637,6 +649,8 @@ new class extends Component
 
     public function sendReminder(int $paymentId): void
     {
+        Gate::authorize(Permission::PaymentsRemind->value);
+
         $payment = Payment::with(['payable.user'])->find($paymentId);
 
         if (! $payment?->payable?->user) {

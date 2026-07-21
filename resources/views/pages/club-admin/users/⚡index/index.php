@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Domains\Shared\Enums\Permission;
+use Illuminate\Support\Facades\Gate;
 use App\Actions\User\AnonymizeUserAction;
 use App\Actions\User\CreateUserAction;
 use App\Actions\User\RecalculateForceListAction;
@@ -130,7 +132,7 @@ new class extends Component
 
     public function bulkArchive(): void
     {
-        abort_unless(Auth::user()->is_admin, 403);
+        Gate::authorize(Permission::UsersDelete->value);
 
         $selfIncluded = in_array((string) Auth::id(), array_map('strval', $this->selected));
 
@@ -364,7 +366,7 @@ new class extends Component
 
     public function recalculateForceList(): void
     {
-        abort_unless(Auth::user()->is_admin || Auth::user()->is_committee_member, 403);
+        Gate::authorize('setOrUpdateForceList', User::class);
 
         RecalculateForceListAction::handle();
 

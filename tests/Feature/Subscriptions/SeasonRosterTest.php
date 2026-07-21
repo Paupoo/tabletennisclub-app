@@ -6,6 +6,7 @@ use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\Role;
 use Livewire\Livewire;
 
 const ROSTER = 'pages::club-admin.subscriptions.roster';
@@ -13,7 +14,8 @@ const ROSTER = 'pages::club-admin.subscriptions.roster';
 beforeEach(function (): void {
     $this->season = makeActiveSeason();
 
-    $this->manager = User::factory()->isCommitteeMember()->create([
+    // Editing the roster is the `membres` duty; the title alone no longer grants it.
+    $this->manager = User::factory()->isCommitteeMember()->withRole(Role::MEMBERS)->create([
         'committee_role' => CommitteeRolesEnum::SECRETARY,
     ]);
 

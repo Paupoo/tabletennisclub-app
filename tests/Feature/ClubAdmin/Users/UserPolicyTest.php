@@ -3,21 +3,26 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\Role;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->admin = User::factory()->isAdmin()->create();
-    $this->member = User::factory()->isCommitteeMember()->create();
+    // Holds the `membres` duty — which is what these abilities now ask for.
+    $this->member = User::factory()->isCommitteeMember()->withRole(Role::MEMBERS)->create();
+    // On the committee, but without that duty.
+    $this->committeeOnly = User::factory()->isCommitteeMember()->create();
     $this->regular = User::factory()->create();
 });
 
 // ── index / view (always true) ────────────────────────────────────────────────
 
 describe('index', function (): void {
-    it('allows everyone', function (): void {
-        expect($this->regular->can('index', User::class))->toBeTrue();
+    it('allows anyone who may read the member list', function (): void {
+        expect($this->committeeOnly->can('index', User::class))->toBeTrue();
+        expect($this->regular->can('index', User::class))->toBeFalse();
     });
 });
 
@@ -33,13 +38,13 @@ describe('view', function (): void {
 
 describe('create', function (): void {
     it('allows admin', fn () => expect($this->admin->can('create', User::class))->toBeTrue());
-    it('allows committee member', fn () => expect($this->member->can('create', User::class))->toBeTrue());
+    it('allows the members delegate', fn () => expect($this->member->can('create', User::class))->toBeTrue());
     it('denies regular user', fn () => expect($this->regular->can('create', User::class))->toBeFalse());
 });
 
 describe('update', function (): void {
     it('allows admin', fn () => expect($this->admin->can('update', User::class))->toBeTrue());
-    it('allows committee member', fn () => expect($this->member->can('update', User::class))->toBeTrue());
+    it('allows the members delegate', fn () => expect($this->member->can('update', User::class))->toBeTrue());
     it('denies regular user', fn () => expect($this->regular->can('update', User::class))->toBeFalse());
 });
 
@@ -51,7 +56,7 @@ describe('delete', function (): void {
     it('denies admin from deleting themselves', function (): void {
         expect($this->admin->can('delete', $this->admin))->toBeFalse();
     });
-    it('denies committee member to delete', function (): void {
+    it('denies the members delegate to delete', function (): void {
         $target = User::factory()->create();
         expect($this->member->can('delete', $target))->toBeFalse();
     });
@@ -63,13 +68,13 @@ describe('delete', function (): void {
 
 describe('sendEmail', function (): void {
     it('allows admin', fn () => expect($this->admin->can('sendEmail', User::class))->toBeTrue());
-    it('allows committee member', fn () => expect($this->member->can('sendEmail', User::class))->toBeTrue());
+    it('allows the members delegate', fn () => expect($this->member->can('sendEmail', User::class))->toBeTrue());
     it('denies regular user', fn () => expect($this->regular->can('sendEmail', User::class))->toBeFalse());
 });
 
 describe('setOrUpdateForceList', function (): void {
     it('allows admin', fn () => expect($this->admin->can('setOrUpdateForceList', User::class))->toBeTrue());
-    it('allows committee member', fn () => expect($this->member->can('setOrUpdateForceList', User::class))->toBeTrue());
+    it('allows the members delegate', fn () => expect($this->member->can('setOrUpdateForceList', User::class))->toBeTrue());
     it('denies regular user', fn () => expect($this->regular->can('setOrUpdateForceList', User::class))->toBeFalse());
 });
 
@@ -93,7 +98,7 @@ describe('restore', function (): void {
         $target->delete();
         expect($this->admin->can('restore', $target))->toBeTrue();
     });
-    it('denies committee member to restore', function (): void {
+    it('denies the members delegate to restore', function (): void {
         $target = User::factory()->create();
         $target->delete();
         expect($this->member->can('restore', $target))->toBeFalse();
@@ -113,7 +118,7 @@ describe('anonymize', function (): void {
     it('denies admin from anonymizing themselves', function (): void {
         expect($this->admin->can('anonymize', $this->admin))->toBeFalse();
     });
-    it('denies committee member to anonymize', function (): void {
+    it('denies the members delegate to anonymize', function (): void {
         $target = User::factory()->create();
         expect($this->member->can('anonymize', $target))->toBeFalse();
     });

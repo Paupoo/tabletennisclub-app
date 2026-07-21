@@ -109,16 +109,32 @@ Route::prefix('admin/aide')
 // Members administration — reserved to the management committee (admins + committee members).
 // Directly reachable by URL, so the whole group is gated here (the nav only hides the links).
 Route::prefix('admin/club-admin/users/')
-    ->middleware(['auth', 'verified', 'committee'])
+    ->middleware(['auth', 'verified'])
     ->group(function (): void {
-        // Users admin
-        Route::livewire('list', 'pages::club-admin.users.index')->name('admin.users.index');
-        Route::livewire('create', 'pages::club-admin.users.form')->name('admin.users.create');
-        Route::livewire('{user}/edit', 'pages::club-admin.users.form')->name('admin.users.edit');
-        Route::livewire('registrations', 'pages::club-admin.users.registrations')->name('admin.users.registrations');
-        Route::livewire('delegations', 'pages::club-admin.users.delegations')->name('admin.users.delegations');
-        // Season roster — visible to the whole committee, editing reserved to managers (decision #18).
-        Route::livewire('roster', 'pages::club-admin.subscriptions.roster')->name('admin.subscriptions.roster');
+        // The directory is the committee baseline; creating and editing members
+        // is the `membres` délégation.
+        Route::livewire('list', 'pages::club-admin.users.index')
+            ->middleware('can:users.view')
+            ->name('admin.users.index');
+        Route::livewire('create', 'pages::club-admin.users.form')
+            ->middleware('can:users.create')
+            ->name('admin.users.create');
+        Route::livewire('{user}/edit', 'pages::club-admin.users.form')
+            ->middleware('can:users.update')
+            ->name('admin.users.edit');
+        Route::livewire('registrations', 'pages::club-admin.users.registrations')
+            ->middleware('can:subscriptions.view')
+            ->name('admin.users.registrations');
+        // Who holds what: readable by whoever may edit members, since that is who
+        // hands the duties out.
+        Route::livewire('delegations', 'pages::club-admin.users.delegations')
+            ->middleware('can:users.update')
+            ->name('admin.users.delegations');
+        // Season roster — readable at the committee baseline, editing reserved to
+        // the members délégation (guarded inside the component).
+        Route::livewire('roster', 'pages::club-admin.subscriptions.roster')
+            ->middleware('can:subscriptions.view')
+            ->name('admin.subscriptions.roster');
         // Legacy redirect — kept for backward compatibility
         Route::get('payments', fn () => redirect()->route('admin.treasury.payments'))->name('admin.users.payments');
     });

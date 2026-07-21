@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Resources\views\Pages\ClubAdmin\Subscriptions\Roster;
 
+use App\Domains\Shared\Enums\Permission;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\AgeCategoryEnum;
@@ -224,7 +225,7 @@ new class extends Component
             'headers' => $headers,
             'triStateOptions' => $triStateOptions,
             'ageCategoryOptions' => $ageCategoryOptions,
-            'canManage' => Gate::allows('manage-season'),
+            'canManage' => Gate::allows(Permission::SubscriptionsManage->value),
             'filterChips' => $this->filterChips,
         ];
     }
@@ -324,12 +325,12 @@ new class extends Component
     }
 
     /**
-     * Ensure the current user belongs to the management group before mutating
-     * season attributes (decision #18). Non-managers may view but not edit.
+     * The roster is readable at the committee baseline; changing what it records
+     * about a member is the `membres` duty.
      */
     private function authorizeManagement(): void
     {
-        Gate::authorize('manage-season');
+        Gate::authorize(Permission::SubscriptionsManage->value);
     }
 
     /**

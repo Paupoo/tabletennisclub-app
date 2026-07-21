@@ -5,13 +5,14 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Shared\Enums\Role;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->admin = User::factory()->isAdmin()->create();
-    $this->member = User::factory()->isCommitteeMember()->create();
+    $this->member = User::factory()->isCommitteeMember()->withRole(Role::MEMBERS)->create();
     $this->regular = User::factory()->create();
     $this->subscription = Subscription::factory()->create();
 });
@@ -52,11 +53,11 @@ describe('forceDelete', function (): void {
     it('denies regular user', fn () => expect($this->regular->can('forceDelete', $this->subscription))->toBeFalse());
 });
 
-// ── generatePayment (admin | committee) ───────────────────────────────────────
+// ── generatePayment (whoever manages affiliations) ───────────────────────────
 
 describe('generatePayment', function (): void {
     it('allows admin', fn () => expect($this->admin->can('generatePayment', $this->subscription))->toBeTrue());
-    it('allows committee member', fn () => expect($this->member->can('generatePayment', $this->subscription))->toBeTrue());
+    it('allows the members delegate', fn () => expect($this->member->can('generatePayment', $this->subscription))->toBeTrue());
     it('denies regular user', fn () => expect($this->regular->can('generatePayment', $this->subscription))->toBeFalse());
 });
 

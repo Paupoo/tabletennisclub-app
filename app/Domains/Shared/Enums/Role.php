@@ -189,11 +189,14 @@ enum Role: string
                 Permission::UsersView,
                 Permission::UsersCreate,
                 Permission::UsersUpdate,
-                Permission::UsersDelete,
-                Permission::UsersAnonymize,
                 Permission::UsersInvite,
                 Permission::SubscriptionsView,
                 Permission::SubscriptionsManage,
+                // Deliberately not UsersDelete / UsersAnonymize: archiving a member
+                // and erasing their personal data were administrator-only before
+                // this refactor, and anonymisation is irreversible. Administrators
+                // still hold both. Move them here if the club wants the members
+                // delegate to archive departures — that is a product decision.
             ],
 
             self::CONTACTS => [

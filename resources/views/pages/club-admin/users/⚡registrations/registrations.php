@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Domains\Shared\Enums\Permission;
+use Illuminate\Support\Facades\Gate;
 use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
 use App\Actions\ClubAdmin\Payments\GeneratePaymentReference;
 use App\Actions\ClubAdmin\Subscriptions\ApproveTrainingPacksAction;
@@ -93,6 +95,8 @@ new class extends Component
 
     public function approve(): void
     {
+        Gate::authorize(Permission::SubscriptionsManage->value);
+
         $subscription = Subscription::with(['user', 'trainingPacks'])->find($this->currentRequestId);
         (new CalculatePriceAction)($subscription);
         $subscription->confirm();
@@ -132,6 +136,8 @@ new class extends Component
 
     public function approveTrainingRequest(): void
     {
+        Gate::authorize(Permission::SubscriptionsManage->value);
+
         $subscription = Subscription::with(['user', 'season', 'trainingPacks'])->find($this->currentTrainingRequestId);
         if (! $subscription) {
             return;
@@ -206,6 +212,8 @@ new class extends Component
 
     public function confirmCancelSubscription(): void
     {
+        Gate::authorize(Permission::SubscriptionsManage->value);
+
         $subscription = Subscription::with(['user', 'season', 'trainingPacks', 'payments'])->find($this->cancelSubscriptionId);
         if (! $subscription || ! in_array($subscription->status, ['confirmed', 'paid'], true)) {
             return;
@@ -255,6 +263,8 @@ new class extends Component
 
     public function confirmRefund(): void
     {
+        Gate::authorize(Permission::SubscriptionsManage->value);
+
         $subscription = Subscription::with(['user', 'season', 'trainingPacks', 'payments'])->find($this->refundSubscriptionId);
         if (! $subscription) {
             return;
@@ -363,6 +373,8 @@ new class extends Component
 
     public function mount(): void
     {
+        Gate::authorize(Permission::SubscriptionsView->value);
+
         $this->selectedSeasonId = Season::current()?->id;
     }
 
@@ -498,6 +510,8 @@ new class extends Component
 
     public function reject(): void
     {
+        Gate::authorize(Permission::SubscriptionsManage->value);
+
         $subscription = Subscription::with(['user', 'season'])->find($this->currentRequestId);
         $subscription->user->notify(new SubscriptionRejectedNotification(
             $subscription,
@@ -514,6 +528,8 @@ new class extends Component
 
     public function rejectTrainingRequest(): void
     {
+        Gate::authorize(Permission::SubscriptionsManage->value);
+
         $subscription = Subscription::with(['user', 'season', 'trainingPacks'])->find($this->currentTrainingRequestId);
         if (! $subscription) {
             return;
@@ -611,6 +627,8 @@ new class extends Component
 
     public function saveFamilyRegistration(): void
     {
+        Gate::authorize(Permission::SubscriptionsManage->value);
+
         $season = Season::current();
         if (! $season) {
             $this->error(__('No active season found.'));
@@ -654,6 +672,8 @@ new class extends Component
 
     public function sendPaymentEmail(): void
     {
+        Gate::authorize(Permission::SubscriptionsManage->value);
+
         if (empty($this->paymentData['payment_id'])) {
             return;
         }
@@ -687,6 +707,8 @@ new class extends Component
 
     public function toggleRegistrations(): void
     {
+        Gate::authorize(Permission::SubscriptionsManage->value);
+
         $season = Season::current();
         if (! $season) {
             $this->error(__('No active season found.'));

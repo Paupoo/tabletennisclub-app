@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Resources\views\Pages\Website\Articles\Edit;
 
+use App\Domains\Shared\Enums\Permission;
+use Illuminate\Support\Facades\Gate;
 use App\Domains\ClubPosts\Models\NewsPost;
 use App\Domains\Shared\Enums\NewsPostCategoryEnum;
 use App\Domains\Shared\Enums\NewsPostStatusEnum;
@@ -44,6 +46,8 @@ new class extends Component
 
     public function mount(?NewsPost $newsPost = null): void
     {
+        Gate::authorize(Permission::NewsPostsManage->value);
+
         if ($newsPost && $newsPost->exists) {
             $this->newsPostId = $newsPost->id;
             $this->title = $newsPost->title;
@@ -71,6 +75,8 @@ new class extends Component
 
     public function save(): void
     {
+        Gate::authorize(Permission::NewsPostsManage->value);
+
         $this->validate([
             'title' => ['required', 'string', 'max:255'],
             'slug' => ['required', 'string', Rule::unique('news_posts', 'slug')->ignore($this->newsPostId)],

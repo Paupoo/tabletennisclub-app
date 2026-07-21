@@ -8,6 +8,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\AgeCategoryEnum;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\PlayerExperienceEnum;
+use App\Domains\Shared\Enums\Role;
 use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
 
@@ -249,7 +250,7 @@ describe('inbox filters', function (): void {
 
 describe('authorization', function (): void {
     it('lets a secretary manage the contact profile', function (): void {
-        $secretary = User::factory()->isCommitteeMember()->create([
+        $secretary = User::factory()->isCommitteeMember()->withRole(Role::CONTACTS)->create([
             'committee_role' => CommitteeRolesEnum::SECRETARY,
         ]);
         $contact = Contact::factory()->create();

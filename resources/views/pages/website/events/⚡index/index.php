@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Domains\Shared\Enums\Permission;
+use Illuminate\Support\Facades\Gate;
 use App\Domains\ClubPosts\Models\EventPost;
 use App\Domains\Shared\Enums\ClubEventTypeEnum;
 use App\Domains\Shared\Enums\EventPostStatusEnum;
@@ -76,12 +78,16 @@ new class extends Component
 
     public function archive(int $id): void
     {
+        Gate::authorize(Permission::EventPostsManage->value);
+
         EventPost::findOrFail($id)->update(['status' => EventPostStatusEnum::ARCHIVED]);
         $this->warning(__('Event archived.'));
     }
 
     public function bulkArchive(): void
     {
+        Gate::authorize(Permission::EventPostsManage->value);
+
         $count = count($this->selected);
         EventPost::whereIn('id', $this->selected)->update(['status' => EventPostStatusEnum::ARCHIVED]);
         $this->confirmBulkArchiveModal = false;
@@ -93,6 +99,8 @@ new class extends Component
 
     public function bulkPublish(): void
     {
+        Gate::authorize(Permission::EventPostsManage->value);
+
         $count = count($this->selected);
         EventPost::whereIn('id', $this->selected)->update(['status' => EventPostStatusEnum::PUBLISHED]);
         $this->clearSelection();
@@ -119,6 +127,8 @@ new class extends Component
 
     public function delete(): void
     {
+        Gate::authorize(Permission::EventPostsManage->value);
+
         $event = EventPost::findOrFail($this->deletingId);
 
         if (! $event->canBeDeleted()) {
@@ -208,6 +218,8 @@ new class extends Component
 
     public function publish(int $id): void
     {
+        Gate::authorize(Permission::EventPostsManage->value);
+
         EventPost::findOrFail($id)->update(['status' => EventPostStatusEnum::PUBLISHED]);
         $this->success(__('Event published.'));
     }
@@ -219,6 +231,8 @@ new class extends Component
 
     public function saveEdit(): void
     {
+        Gate::authorize(Permission::EventPostsManage->value);
+
         $this->validate([
             'editTitle' => ['required', 'string', 'max:255'],
             'editDescription' => ['required', 'string'],

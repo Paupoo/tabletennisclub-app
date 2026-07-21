@@ -244,7 +244,7 @@ Route::prefix('coach')
     });
 
 Route::prefix('admin/club-events/meetings')
-    ->middleware(['auth', 'verified', 'committee', 'feature:meetings'])
+    ->middleware(['auth', 'verified', 'can:meetings.view', 'feature:meetings'])
     ->group(function (): void {
         Route::livewire('/', 'pages::club-events.meetings.index')->name('admin.meetings.index');
         Route::livewire('/create', 'pages::club-events.meetings.create')->name('admin.meetings.create');
@@ -363,18 +363,26 @@ Route::middleware(['auth', 'verified'])
             ->name('tournament.table.score.submit');
     });
 
-Route::prefix('admin/website')->middleware(['auth', 'verified', 'committee', 'feature:website'])->group(function (): void {
-    Route::livewire('/articles', 'pages::website.articles.index')->name('admin.website.articles.index');
-    Route::livewire('/articles/create', 'pages::website.articles.edit')->name('admin.website.articles.create');
-    Route::livewire('/articles/{newsPost}/edit', 'pages::website.articles.edit')->name('admin.website.articles.edit');
-    Route::middleware('feature:contacts')->group(function (): void {
-        Route::livewire('/contacts', 'pages::website.contacts.index')->name('admin.website.contacts.index');
-        Route::livewire('/contacts/email-templates', 'pages::website.contacts.email-templates')
-            ->middleware('can:manage-contacts')
-            ->name('admin.website.contacts.email-templates');
-        Route::livewire('/spams', 'pages::website.spams.index')->name('admin.website.spams.index');
+Route::prefix('admin/website')->middleware(['auth', 'verified', 'feature:website'])->group(function (): void {
+    Route::middleware('can:news_posts.manage')->group(function (): void {
+        Route::livewire('/articles', 'pages::website.articles.index')->name('admin.website.articles.index');
+        Route::livewire('/articles/create', 'pages::website.articles.edit')->name('admin.website.articles.create');
+        Route::livewire('/articles/{newsPost}/edit', 'pages::website.articles.edit')->name('admin.website.articles.edit');
     });
-    Route::livewire('/events', 'pages::website.events.index')->name('admin.website.events.index');
+    Route::middleware('feature:contacts')->group(function (): void {
+        Route::livewire('/contacts', 'pages::website.contacts.index')
+            ->middleware('can:contacts.view')
+            ->name('admin.website.contacts.index');
+        Route::livewire('/contacts/email-templates', 'pages::website.contacts.email-templates')
+            ->middleware('can:contacts.templates.manage')
+            ->name('admin.website.contacts.email-templates');
+        Route::livewire('/spams', 'pages::website.spams.index')
+            ->middleware('can:spams.manage')
+            ->name('admin.website.spams.index');
+    });
+    Route::livewire('/events', 'pages::website.events.index')
+        ->middleware('can:event_posts.manage')
+        ->name('admin.website.events.index');
 });
 
 Route::middleware(['auth', 'verified'])->group(function (): void {

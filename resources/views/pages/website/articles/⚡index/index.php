@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Resources\views\Pages\Website\Articles\Index;
 
+use App\Domains\Shared\Enums\Permission;
+use Illuminate\Support\Facades\Gate;
 use App\Domains\ClubPosts\Models\NewsPost;
 use App\Domains\Shared\Enums\NewsPostCategoryEnum;
 use App\Domains\Shared\Enums\NewsPostStatusEnum;
@@ -44,6 +46,8 @@ new class extends Component
 
     public function archive(int $id): void
     {
+        Gate::authorize(Permission::NewsPostsManage->value);
+
         NewsPost::findOrFail($id)->update(['status' => NewsPostStatusEnum::ARCHIVED]);
         $this->warning(__('Article archived.'));
     }
@@ -63,6 +67,8 @@ new class extends Component
 
     public function bulkArchive(): void
     {
+        Gate::authorize(Permission::NewsPostsManage->value);
+
         $count = count($this->selected);
         NewsPost::whereIn('id', $this->selected)->update(['status' => NewsPostStatusEnum::ARCHIVED]);
         $this->confirmBulkArchiveModal = false;
@@ -74,6 +80,8 @@ new class extends Component
 
     public function bulkPublish(): void
     {
+        Gate::authorize(Permission::NewsPostsManage->value);
+
         $count = count($this->selected);
         NewsPost::whereIn('id', $this->selected)->update(['status' => NewsPostStatusEnum::PUBLISHED]);
         $this->clearSelection();
@@ -100,6 +108,8 @@ new class extends Component
 
     public function delete(): void
     {
+        Gate::authorize(Permission::NewsPostsManage->value);
+
         NewsPost::findOrFail($this->deletingId)->delete();
         $this->deleteModal = false;
         $this->deletingId = null;
@@ -144,6 +154,8 @@ new class extends Component
 
     public function publish(int $id): void
     {
+        Gate::authorize(Permission::NewsPostsManage->value);
+
         NewsPost::findOrFail($id)->update(['status' => NewsPostStatusEnum::PUBLISHED]);
         $this->success(__('Article published.'));
     }

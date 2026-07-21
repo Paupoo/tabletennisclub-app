@@ -95,7 +95,7 @@ class AuthServiceProvider extends ServiceProvider
         Gate::define('access-results', fn (User $user): bool => $user->can(Permission::ResultsManage->value)
             || $user->captainOf()->exists());
 
-        Gate::define('manage-contacts', fn (User $user): bool => $user->canManageClubAdmin());
+        Gate::define('manage-contacts', fn (User $user): bool => $user->can(Permission::ContactsManage->value));
         Gate::define('manage-season', fn (User $user): bool => $user->canManageClubAdmin());
         Gate::define('view-audit-log', fn (User $user): bool => $user->canViewAuditLog());
         Gate::define('view-queue-monitoring', fn (User $user): bool => $user->is_admin || $user->is_committee_member);

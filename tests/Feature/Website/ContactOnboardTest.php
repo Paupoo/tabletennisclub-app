@@ -6,6 +6,7 @@ use App\Domains\ClubAdmin\Contact\Models\Contact;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\ContactReasonEnum;
+use App\Domains\Shared\Enums\Role;
 use App\Mail\InviteNewUserMail;
 use Illuminate\Support\Facades\Mail;
 use Livewire\Livewire;
@@ -65,7 +66,7 @@ test('onboarding sends invitation email to new user', function (): void {
 });
 
 test('a managing committee member (secretary) can onboard a contact', function (): void {
-    $secretary = User::factory()->isCommitteeMember()->create([
+    $secretary = User::factory()->isCommitteeMember()->withRole(Role::CONTACTS)->create([
         'committee_role' => CommitteeRolesEnum::SECRETARY,
     ]);
     $contact = Contact::factory()->create([
@@ -81,7 +82,8 @@ test('a managing committee member (secretary) can onboard a contact', function (
 });
 
 test('a non-managing committee member cannot onboard a contact', function (): void {
-    $committee = $this->createFakeCommitteeMember();
+    // No contacts delegation on purpose — that is the whole point of the test.
+    $committee = $this->createFakeCommitteeMemberWithoutDelegation();
     $contact = Contact::factory()->create([
         'interest' => ContactReasonEnum::TRIAL,
         'status' => 'new',

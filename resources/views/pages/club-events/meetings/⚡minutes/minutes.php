@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domains\Shared\Enums\Permission;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\Role;
 use App\Domains\Meetings\Models\Meeting;
@@ -61,7 +62,7 @@ new class extends Component
     {
         $user = auth()->user();
 
-        return $user instanceof User && ($user->is_admin || $user->is_committee_member);
+        return $user instanceof User && $user->can(Permission::MeetingsManage->value);
     }
 
     public function markAbsent(int $userId): void

@@ -6,12 +6,13 @@ namespace App\Domains\ClubPosts\Policies;
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\ClubPosts\Models\EventPost;
+use App\Domains\Shared\Enums\Permission;
 
 class EventPostPolicy
 {
     public function archive(User $user): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::EventPostsManage->value);
     }
 
     /**
@@ -19,7 +20,7 @@ class EventPostPolicy
      */
     public function create(User $user): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::EventPostsManage->value);
     }
 
     /**
@@ -27,12 +28,12 @@ class EventPostPolicy
      */
     public function delete(User $user, EventPost $event): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::EventPostsManage->value);
     }
 
     public function duplicate(User $user): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::EventPostsManage->value);
     }
 
     /**
@@ -40,12 +41,12 @@ class EventPostPolicy
      */
     public function forceDelete(User $user, EventPost $event): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::EventPostsManage->value);
     }
 
     public function publish(User $user): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::EventPostsManage->value);
     }
 
     /**
@@ -53,7 +54,7 @@ class EventPostPolicy
      */
     public function restore(User $user, EventPost $event): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::EventPostsManage->value);
     }
 
     /**
@@ -61,7 +62,7 @@ class EventPostPolicy
      */
     public function update(User $user, EventPost $event): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::EventPostsManage->value);
     }
 
     /**
@@ -69,14 +70,17 @@ class EventPostPolicy
      */
     public function view(User $user, EventPost $event): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::EventPostsManage->value);
     }
 
     /**
      * Determine whether the user can view any models.
      */
+    /**
+     * Was `false` while every sibling allowed the committee — a stub, never called.
+     */
     public function viewAny(User $user): bool
     {
-        return false;
+        return $user->can(Permission::EventPostsManage->value);
     }
 }

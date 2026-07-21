@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Resources\views\Pages\Website\Spams\Index;
 
+use App\Domains\Shared\Enums\Permission;
+use Illuminate\Support\Facades\Gate;
 use App\Domains\ClubAdmin\Contact\Models\Spam;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasBulkActions;
@@ -46,6 +48,8 @@ new class extends Component
 
     public function bulkDelete(): void
     {
+        Gate::authorize(Permission::SpamsManage->value);
+
         if (empty($this->selected)) {
             return;
         }
@@ -80,6 +84,8 @@ new class extends Component
 
     public function delete(): void
     {
+        Gate::authorize(Permission::SpamsManage->value);
+
         Spam::findOrFail($this->deletingId)->delete();
         $this->deleteModal = false;
         $this->deletingId = null;

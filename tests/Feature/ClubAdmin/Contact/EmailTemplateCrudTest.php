@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Contact\Models\EmailTemplate;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\Role;
 use Livewire\Livewire;
 
 beforeEach(function (): void {
@@ -194,7 +195,7 @@ describe('toggle active', function (): void {
 
 describe('authorization', function (): void {
     it('lets a secretary access and create templates', function (): void {
-        $secretary = User::factory()->isCommitteeMember()->create([
+        $secretary = User::factory()->isCommitteeMember()->withRole(Role::CONTACTS)->create([
             'committee_role' => CommitteeRolesEnum::SECRETARY,
         ]);
 

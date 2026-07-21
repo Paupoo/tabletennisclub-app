@@ -156,7 +156,9 @@
     @feature('meetings', 'tournaments')
     <x-menu-sub icon="o-star" :title="__('Events')">
         @feature('meetings')
+        @can('meetings.view')
         <x-menu-item icon="o-calendar-days" link="{{ route('admin.meetings.index') }}" :title="__('Meetings')" />
+        @endcan
         @endfeature
         @feature('tournaments')
         @can('tournaments.manage')
@@ -173,17 +175,23 @@
     @feature('website', 'contacts')
     <x-menu-sub icon="o-globe-alt" :title="__('Website')">
         @feature('website')
+        @can('news_posts.manage')
         <x-menu-item icon="o-newspaper" link="{{ route('admin.website.articles.index') }}" :title="__('Articles')" />
+        @endcan
         @endfeature
         @feature('contacts')
         <x-menu-item icon="o-envelope-open" link="{{ route('admin.website.contacts.index') }}" :title="__('Contacts')" />
         @can('manage-contacts')
             <x-menu-item icon="o-document-text" link="{{ route('admin.website.contacts.email-templates') }}" :title="__('Email templates')" />
         @endcan
+        @can('spams.manage')
         <x-menu-item icon="o-shield-exclamation" link="{{ route('admin.website.spams.index') }}" :title="__('Spam')" />
+        @endcan
         @endfeature
         @feature('website')
+        @can('event_posts.manage')
         <x-menu-item icon="o-calendar-days" link="{{ route('admin.website.events.index') }}" :title="__('Events')" />
+        @endcan
         @endfeature
     </x-menu-sub>
     @endfeature

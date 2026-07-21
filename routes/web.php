@@ -100,7 +100,7 @@ Route::prefix('admin/my-space/')
 // Help — every signed-in member. The library is not split per role: each task is
 // written once and tagged, and HelpAudience decides what a given member is shown.
 Route::prefix('admin/aide')
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth', 'verified', 'feature:help_centre'])
     ->group(function (): void {
         Route::livewire('/', 'pages::help.index')->name('admin.help.index');
         Route::livewire('{slug}', 'pages::help.show')->name('admin.help.show');
@@ -123,13 +123,13 @@ Route::prefix('admin/club-admin/users/')
     });
 // Season planning board — visible to the whole committee, mutations reserved to managers (decision #18).
 Route::prefix('admin/club-admin/planning/')
-    ->middleware(['auth', 'verified', 'committee'])
+    ->middleware(['auth', 'verified', 'committee', 'feature:training_planning'])
     ->group(function (): void {
         Route::livewire('board', 'pages::club-admin.planning.board')->name('admin.planning.board');
     });
 
 Route::prefix('admin/treasury/')
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth', 'verified', 'feature:treasury'])
     ->group(function (): void {
         // Member payments & bank transactions — committee only.
         Route::middleware('committee')->group(function (): void {
@@ -139,19 +139,21 @@ Route::prefix('admin/treasury/')
             Route::livewire('fines', 'pages::club-admin.treasury.fines')->name('admin.treasury.fines');
         });
         // Cash register (bar) — access intentionally left broad for now (Xavier's domain).
-        Route::livewire('cash-register', 'pages::club-admin.treasury.cash-register')->name('admin.treasury.cash');
+        Route::livewire('cash-register', 'pages::club-admin.treasury.cash-register')
+            ->middleware('feature:cash_register')
+            ->name('admin.treasury.cash');
     });
 
 // Audit log — readable by platform admins and the management committee (decision: audit access).
 Route::prefix('admin/club-admin/audit/')
-    ->middleware(['auth', 'verified', 'can:view-audit-log'])
+    ->middleware(['auth', 'verified', 'can:view-audit-log', 'feature:supervision'])
     ->group(function (): void {
         Route::livewire('list', 'pages::club-admin.audit.index')->name('admin.audit.index');
     });
 
 // Queue monitoring — pending/failed jobs and worker health, for admins and the committee.
 Route::prefix('admin/club-admin/queue/')
-    ->middleware(['auth', 'verified', 'can:view-queue-monitoring'])
+    ->middleware(['auth', 'verified', 'can:view-queue-monitoring', 'feature:supervision'])
     ->group(function (): void {
         Route::livewire('list', 'pages::club-admin.queue.index')->name('admin.queue.index');
     });
@@ -204,20 +206,20 @@ Route::prefix('admin/club-admin/tables/')
 
 // Training packs administration — committee only.
 Route::prefix('admin/club-events/interclubs/')
-    ->middleware(['auth', 'verified', 'committee'])
+    ->middleware(['auth', 'verified', 'committee', 'feature:trainings'])
     ->group(function (): void {
         Route::livewire('trainings', 'pages::club-events.trainings.index')->name('admin.trainings.index');
     });
 
 // Coach's personal sessions — coaches (and admins for oversight).
 Route::prefix('coach')
-    ->middleware(['auth', 'verified', 'can:access-coach-area'])
+    ->middleware(['auth', 'verified', 'can:access-coach-area', 'feature:trainings'])
     ->group(function (): void {
         Route::livewire('trainings', 'pages::club-events.trainings.coach')->name('coach.trainings');
     });
 
 Route::prefix('admin/club-events/meetings')
-    ->middleware(['auth', 'verified', 'committee'])
+    ->middleware(['auth', 'verified', 'committee', 'feature:meetings'])
     ->group(function (): void {
         Route::livewire('/', 'pages::club-events.meetings.index')->name('admin.meetings.index');
         Route::livewire('/create', 'pages::club-events.meetings.create')->name('admin.meetings.create');
@@ -241,7 +243,7 @@ Route::post('/meetings/{meeting}/rsvp/{user}', [MeetingRsvpController::class, 's
 
 // Tournament administration (events) — committee only.
 Route::prefix('admin/club-events/tournaments')
-    ->middleware(['auth', 'verified', 'committee'])
+    ->middleware(['auth', 'verified', 'committee', 'feature:tournaments'])
     ->group(function (): void {
         Route::livewire('/', 'pages::club-events.tournaments.index')->name('admin.tournaments.index');
         Route::livewire('{tournament}/live-center', 'pages::club-events.tournaments.live-center')->name('admin.tournaments.live-center');
@@ -250,7 +252,7 @@ Route::prefix('admin/club-events/tournaments')
     });
 
 Route::prefix('admin/club-events/interclubs/')
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth', 'verified', 'feature:interclubs'])
     ->group(function (): void {
         // Personal matches — self-scoped, left broad for any player for now.
         Route::livewire('my-matches', 'pages::club-events.interclubs.my-matches')->name('admin.interclubs.my-matches');
@@ -333,15 +335,17 @@ Route::middleware(['auth', 'verified'])
             ->name('tournament.table.score.submit');
     });
 
-Route::prefix('admin/website')->middleware(['auth', 'verified', 'committee'])->group(function (): void {
+Route::prefix('admin/website')->middleware(['auth', 'verified', 'committee', 'feature:website'])->group(function (): void {
     Route::livewire('/articles', 'pages::website.articles.index')->name('admin.website.articles.index');
     Route::livewire('/articles/create', 'pages::website.articles.edit')->name('admin.website.articles.create');
     Route::livewire('/articles/{newsPost}/edit', 'pages::website.articles.edit')->name('admin.website.articles.edit');
-    Route::livewire('/contacts', 'pages::website.contacts.index')->name('admin.website.contacts.index');
-    Route::livewire('/contacts/email-templates', 'pages::website.contacts.email-templates')
-        ->middleware('can:manage-contacts')
-        ->name('admin.website.contacts.email-templates');
-    Route::livewire('/spams', 'pages::website.spams.index')->name('admin.website.spams.index');
+    Route::middleware('feature:contacts')->group(function (): void {
+        Route::livewire('/contacts', 'pages::website.contacts.index')->name('admin.website.contacts.index');
+        Route::livewire('/contacts/email-templates', 'pages::website.contacts.email-templates')
+            ->middleware('can:manage-contacts')
+            ->name('admin.website.contacts.email-templates');
+        Route::livewire('/spams', 'pages::website.spams.index')->name('admin.website.spams.index');
+    });
     Route::livewire('/events', 'pages::website.events.index')->name('admin.website.events.index');
 });
 

@@ -38,8 +38,8 @@ erDiagram
     Fine
 
     %% ClubPosts
-    EventPost
     NewsPost
+    EventPost
 
     %% Competitions/Interclub
     Interclub

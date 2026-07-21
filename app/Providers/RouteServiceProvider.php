@@ -41,7 +41,7 @@ class RouteServiceProvider extends ServiceProvider
                 ->group(base_path('routes/web.php'));
 
             // Bar module routes (isolated)
-            Route::middleware('web', 'auth')
+            Route::middleware('web', 'auth', 'feature:bar')
                 ->prefix('bar')
                 ->name('bar.')
                 ->group(base_path('routes/bar.php'));

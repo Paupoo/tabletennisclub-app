@@ -14,6 +14,7 @@ use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\Feature;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\Trainings\Models\Training;
@@ -273,7 +274,7 @@ class DashboardController extends Controller
             ['icon' => 'o-bell',                     'label' => 'Notifications',  'sub' => 'Infos & tâches',                          'href' => route('notifications.index'),                       'color' => 'rose'],
         ];
 
-        if ($user->is_competitor) {
+        if ($user->is_competitor && Feature::Interclubs->enabled()) {
             $tiles[] = ['icon' => 'o-calendar-days', 'label' => 'Disponibilités', 'sub' => 'Interclubs', 'href' => route('admin.user.calendar', $user),  'color' => 'indigo'];
             $tiles[] = ['icon' => 'o-globe-alt',     'label' => 'Mes matchs',     'sub' => 'Interclubs', 'href' => route('admin.interclubs.my-matches'), 'color' => 'rose'];
         }

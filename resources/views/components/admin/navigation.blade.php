@@ -14,9 +14,11 @@
 
         <x-menu-item icon="o-user" link="{{ route('admin.user.profile', $user) }}"
             :title="__('My profile')" />
+        @feature('interclubs')
         @if($user->is_competitor)
             <x-menu-item icon="o-calendar" link="{{ route('admin.interclubs.my-matches') }}" :title="__('My matches')" />
         @endif
+        @endfeature
         <x-menu-item icon="o-users" link="{{ route('admin.user.teams', $user) }}" :title="__('My team(s)')" />
         <x-menu-item icon="o-star" link="{{ route('admin.user.event-subscription', $user) }}" :title="__('My registrations')" />
         <x-menu-item icon="o-credit-card" link="{{ route('admin.user.payments', $user) }}" :title="__('My payments')" />
@@ -54,11 +56,13 @@
         :title="__('Rules & regulations')"
     />
 
+    @feature('help_centre')
     <x-menu-item
         icon="o-question-mark-circle"
         link="{{ route('admin.help.index') }}"
         :title="__('Help')"
     />
+    @endfeature
 
 
     <x-menu-separator />
@@ -73,23 +77,32 @@
         <x-menu-item icon="o-users" link="{{ route('admin.users.index') }}" :title="__('Users')" />
         <x-menu-item icon="o-list-bullet" link="{{ route('admin.users.registrations') }}" :title="__('Registrations')" />
         <x-menu-item icon="o-clipboard-document-list" link="{{ route('admin.subscriptions.roster') }}" :title="__('Season roster')" />
+        @feature('training_planning')
         <x-menu-item icon="o-view-columns" link="{{ route('admin.planning.board') }}" :title="__('Planning board')" />
+        @endfeature
     </x-menu-sub>
 
+    @feature('treasury', 'cash_register')
     <x-menu-sub icon="o-banknotes" :title="__('Treasury')">
+        @feature('treasury')
         <x-menu-item icon="o-credit-card" link="{{ route('admin.treasury.payments') }}" :title="__('Payments')" />
         @if (Auth::user()->canManageFinances())
             <x-menu-item icon="o-scale" link="{{ route('admin.treasury.fines') }}" :title="__('Fines')" />
         @endif
         <x-menu-item icon="o-building-library" link="{{ route('admin.treasury.transactions') }}" :title="__('Bank Transactions')" />
+        @endfeature
+        @feature('cash_register')
         <x-menu-item icon="o-currency-euro" link="{{ route('admin.treasury.cash') }}" :title="__('Cash Register')" />
+        @endfeature
     </x-menu-sub>
+    @endfeature
     <x-menu-sub icon="o-cog-6-tooth" link="#" :title="__('Club')">
     </x-menu-sub>
 
     <x-menu-separator />
     @endif
 
+    @feature('trainings')
     <x-menu-sub icon="o-academic-cap" :title="__('Trainings')">
         @if($user->is_committee_member || $user->is_admin)
         <x-menu-item icon="o-tag" link="{{ route('admin.trainings.index') }}" :title="__('Training Packs')" />
@@ -98,7 +111,9 @@
         <x-menu-item icon="o-calendar-days" link="{{ route('coach.trainings') }}" :title="__('My sessions')" />
         @endif
     </x-menu-sub>
+    @endfeature
 
+    @feature('interclubs')
     <x-menu-sub icon="o-calendar-days" link="#" :title="__('Interclubs')">
         
         @if($user->is_admin || $user->is_committee_member || $user->captainOf)
@@ -114,28 +129,44 @@
         </x-menu-sub>
         @endif
     </x-menu-sub>
+    @endfeature
 
     @if($user->is_committee_member || $user->is_admin)
+    @feature('meetings', 'tournaments')
     <x-menu-sub icon="o-star" :title="__('Events')">
+        @feature('meetings')
         <x-menu-item icon="o-calendar-days" link="{{ route('admin.meetings.index') }}" :title="__('Meetings')" />
+        @endfeature
+        @feature('tournaments')
         <x-menu-item icon="o-trophy" link="{{ route('admin.tournaments.index') }}" :title="__('Tournaments')" />
+        @endfeature
     </x-menu-sub>
-    
+
     <x-menu-separator />
+    @endfeature
     @endif
 
     @if($user->is_admin || $user->is_committee_member)
+    @feature('website', 'contacts')
     <x-menu-sub icon="o-globe-alt" :title="__('Website')">
+        @feature('website')
         <x-menu-item icon="o-newspaper" link="{{ route('admin.website.articles.index') }}" :title="__('Articles')" />
+        @endfeature
+        @feature('contacts')
         <x-menu-item icon="o-envelope-open" link="{{ route('admin.website.contacts.index') }}" :title="__('Contacts')" />
         @can('manage-contacts')
             <x-menu-item icon="o-document-text" link="{{ route('admin.website.contacts.email-templates') }}" :title="__('Email templates')" />
         @endcan
         <x-menu-item icon="o-shield-exclamation" link="{{ route('admin.website.spams.index') }}" :title="__('Spam')" />
+        @endfeature
+        @feature('website')
         <x-menu-item icon="o-calendar-days" link="{{ route('admin.website.events.index') }}" :title="__('Events')" />
+        @endfeature
     </x-menu-sub>
+    @endfeature
     @endif
 
+    @feature('supervision')
     @if($user->canViewAuditLog())
     <x-menu-separator />
     <x-menu-item
@@ -144,7 +175,9 @@
         :title="__('Audit')"
     />
     @endif
+    @endfeature
 
+    @feature('supervision')
     @can('view-queue-monitoring')
     <x-menu-item
         icon="o-queue-list"
@@ -152,5 +185,6 @@
         :title="__('Queue monitoring')"
     />
     @endcan
+    @endfeature
 
 </x-menu>

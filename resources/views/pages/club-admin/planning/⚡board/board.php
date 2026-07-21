@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Resources\views\Pages\ClubAdmin\Planning\Board;
 
+use App\Domains\Shared\Enums\Permission;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
@@ -102,7 +103,7 @@ new class extends Component
      */
     public function addPack(): void
     {
-        Gate::authorize('manage-season');
+        Gate::authorize(Permission::TrainingPlansManage->value);
 
         $plan = $this->currentPlan();
 
@@ -133,7 +134,7 @@ new class extends Component
      */
     public function archivePlan(?int $planId = null): void
     {
-        Gate::authorize('manage-season');
+        Gate::authorize(Permission::TrainingPlansManage->value);
 
         $planId ??= $this->pendingPlanId;
 
@@ -193,7 +194,7 @@ new class extends Component
      */
     public function createPlan(SeedTrainingPlanService $seeder): void
     {
-        Gate::authorize('manage-season');
+        Gate::authorize(Permission::TrainingPlansManage->value);
 
         $this->validate([
             'newPlanName' => ['required', 'string', 'max:255'],
@@ -223,7 +224,7 @@ new class extends Component
      */
     public function deletePlan(?int $planId = null): void
     {
-        Gate::authorize('manage-season');
+        Gate::authorize(Permission::TrainingPlansManage->value);
 
         $planId ??= $this->pendingPlanId;
 
@@ -249,7 +250,7 @@ new class extends Component
      */
     public function editPack(int $packId): void
     {
-        Gate::authorize('manage-season');
+        Gate::authorize(Permission::TrainingPlansManage->value);
 
         $pack = $this->planPack($packId);
 
@@ -294,7 +295,7 @@ new class extends Component
      */
     public function import(ImportTrainingPlanService $importer): void
     {
-        Gate::authorize('manage-season');
+        Gate::authorize(Permission::TrainingPlansManage->value);
 
         $plan = $this->currentPlan();
 
@@ -331,7 +332,7 @@ new class extends Component
      */
     public function moveAssignment(int $assignmentId, int $position, string $groupId): void
     {
-        Gate::authorize('manage-season');
+        Gate::authorize(Permission::TrainingPlansManage->value);
 
         $plan = $this->currentPlan();
 
@@ -359,7 +360,7 @@ new class extends Component
      */
     public function openAddPack(): void
     {
-        Gate::authorize('manage-season');
+        Gate::authorize(Permission::TrainingPlansManage->value);
 
         $this->resetPackForm();
         $this->showPackModal = true;
@@ -370,7 +371,7 @@ new class extends Component
      */
     public function openImport(): void
     {
-        Gate::authorize('manage-season');
+        Gate::authorize(Permission::TrainingPlansManage->value);
 
         $this->reset('importFile');
         $this->resetValidation();
@@ -384,7 +385,7 @@ new class extends Component
      */
     public function optimize(OptimizeTrainingPlanService $optimizer): void
     {
-        Gate::authorize('manage-season');
+        Gate::authorize(Permission::TrainingPlansManage->value);
 
         $plan = $this->currentPlan();
 
@@ -418,7 +419,7 @@ new class extends Component
      */
     public function removePack(?int $packId = null): void
     {
-        Gate::authorize('manage-season');
+        Gate::authorize(Permission::TrainingPlansManage->value);
 
         $packId ??= $this->pendingPackId;
 
@@ -452,7 +453,7 @@ new class extends Component
      */
     public function savePack(): void
     {
-        Gate::authorize('manage-season');
+        Gate::authorize(Permission::TrainingPlansManage->value);
 
         if ($this->editingPackId === null) {
             return;

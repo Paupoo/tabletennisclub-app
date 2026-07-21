@@ -87,7 +87,9 @@
             <x-menu-item icon="o-clipboard-document-list" link="{{ route('admin.subscriptions.roster') }}" :title="__('Season roster')" />
         @endcan
         @feature('training_planning')
+        @can('training_plans.manage')
         <x-menu-item icon="o-view-columns" link="{{ route('admin.planning.board') }}" :title="__('Planning board')" />
+        @endcan
         @endfeature
     </x-menu-sub>
 
@@ -121,12 +123,12 @@
 
     @feature('trainings')
     <x-menu-sub icon="o-academic-cap" :title="__('Trainings')">
-        @if($user->is_committee_member || $user->is_admin)
+        @can('trainings.manage')
         <x-menu-item icon="o-tag" link="{{ route('admin.trainings.index') }}" :title="__('Training Packs')" />
-        @endif
-        @if($user->is_coach)
+        @endcan
+        @can('coach_area.access')
         <x-menu-item icon="o-calendar-days" link="{{ route('coach.trainings') }}" :title="__('My sessions')" />
-        @endif
+        @endcan
     </x-menu-sub>
     @endfeature
 
@@ -157,7 +159,9 @@
         <x-menu-item icon="o-calendar-days" link="{{ route('admin.meetings.index') }}" :title="__('Meetings')" />
         @endfeature
         @feature('tournaments')
+        @can('tournaments.manage')
         <x-menu-item icon="o-trophy" link="{{ route('admin.tournaments.index') }}" :title="__('Tournaments')" />
+        @endcan
         @endfeature
     </x-menu-sub>
 

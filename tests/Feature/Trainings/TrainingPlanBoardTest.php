@@ -7,6 +7,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\AgeCategoryEnum;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
+use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Enums\TrainingPlanStatusEnum;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Trainings\Models\TrainingPlan;
@@ -20,7 +21,7 @@ const BOARD = 'pages::club-admin.planning.board';
 beforeEach(function (): void {
     $this->season = makeActiveSeason();
 
-    $this->manager = User::factory()->isCommitteeMember()->create([
+    $this->manager = User::factory()->isCommitteeMember()->withRole(Role::TRAININGS)->create([
         'committee_role' => CommitteeRolesEnum::SECRETARY,
     ]);
 

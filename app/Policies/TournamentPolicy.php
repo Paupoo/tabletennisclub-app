@@ -6,6 +6,7 @@ namespace App\Policies;
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 
 class TournamentPolicy
@@ -15,7 +16,7 @@ class TournamentPolicy
      */
     public function create(User $user): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::TournamentsManage->value);
     }
 
     /**
@@ -23,7 +24,7 @@ class TournamentPolicy
      */
     public function delete(User $user, Tournament $tournament): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::TournamentsManage->value);
     }
 
     /**
@@ -31,7 +32,7 @@ class TournamentPolicy
      */
     public function forceDelete(User $user, Tournament $tournament): bool
     {
-        return ($user->is_admin || $user->is_committee_member) && $tournament->status !== TournamentStatusEnum::PENDING;
+        return $user->can(Permission::TournamentsManage->value) && $tournament->status !== TournamentStatusEnum::PENDING;
     }
 
     /**
@@ -47,7 +48,7 @@ class TournamentPolicy
      */
     public function update(User $user): bool
     {
-        return $user->is_admin || $user->is_committee_member;
+        return $user->can(Permission::TournamentsManage->value);
     }
 
     /**
@@ -55,7 +56,7 @@ class TournamentPolicy
      */
     public function updatesBeforeStart(User $user, Tournament $tournament): bool
     {
-        return ($user->is_admin || $user->is_committee_member) && $tournament->status->value === TournamentStatusEnum::PUBLISHED->value;
+        return $user->can(Permission::TournamentsManage->value) && $tournament->status->value === TournamentStatusEnum::PUBLISHED->value;
     }
 
     /**
@@ -69,6 +70,12 @@ class TournamentPolicy
     /**
      * Determine whether the user can view the model.
      */
+    /**
+     * Denies everyone, and viewAny() allows everyone — the two contradict each
+     * other. Both are left as they were: no call site exercises view(), a test
+     * documents each, and reconciling them is a product decision rather than a
+     * side effect of naming the rights.
+     */
     public function view(User $user, Tournament $tournament): bool
     {
         return false;
@@ -76,6 +83,9 @@ class TournamentPolicy
 
     /**
      * Determine whether the user can view any models.
+     */
+    /**
+     * Open on purpose: members browse the tournament list to register for one.
      */
     public function viewAny(User $user): bool
     {

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domains\Shared\Enums\Permission;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Shared\Enums\EventPostStatusEnum;
@@ -60,7 +61,7 @@ new class extends Component
     {
         $user = Auth::user();
 
-        return $user instanceof User && ($user->is_admin || $user->is_committee_member);
+        return $user instanceof User && $user->can(Permission::TournamentsManage->value);
     }
 
     public function clearFilters(): void

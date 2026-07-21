@@ -100,7 +100,7 @@ class AuthServiceProvider extends ServiceProvider
         Gate::define('view-audit-log', fn (User $user): bool => $user->canViewAuditLog());
         Gate::define('view-queue-monitoring', fn (User $user): bool => $user->is_admin || $user->is_committee_member);
 
-        // Coach area (personal training sessions): coaches, with admin oversight.
-        Gate::define('access-coach-area', fn (User $user): bool => $user->is_admin || $user->is_coach);
+        // Coach area (personal training sessions) — the coach délégation.
+        Gate::define('access-coach-area', fn (User $user): bool => $user->can(Permission::CoachAreaAccess->value));
     }
 }

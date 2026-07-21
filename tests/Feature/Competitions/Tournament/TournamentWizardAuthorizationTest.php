@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Shared\Enums\Role;
 
 // ── Wizard route access ───────────────────────────────────────────────────────
 
@@ -44,7 +45,7 @@ describe('wizard route authorization', function (): void {
     });
 
     it('allows committee members to access the create wizard', function (): void {
-        $committee = User::factory()->isCommitteeMember()->create();
+        $committee = User::factory()->isCommitteeMember()->withRole(Role::TOURNAMENTS)->create();
 
         $this->actingAs($committee)
             ->get(route('admin.tournaments.wizard'))

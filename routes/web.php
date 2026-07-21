@@ -140,7 +140,7 @@ Route::prefix('admin/club-admin/users/')
     });
 // Season planning board — visible to the whole committee, mutations reserved to managers (decision #18).
 Route::prefix('admin/club-admin/planning/')
-    ->middleware(['auth', 'verified', 'committee', 'feature:training_planning'])
+    ->middleware(['auth', 'verified', 'can:training_plans.manage', 'feature:training_planning'])
     ->group(function (): void {
         Route::livewire('board', 'pages::club-admin.planning.board')->name('admin.planning.board');
     });
@@ -231,7 +231,7 @@ Route::prefix('admin/club-admin/tables/')
 
 // Training packs administration — committee only.
 Route::prefix('admin/club-events/interclubs/')
-    ->middleware(['auth', 'verified', 'committee', 'feature:trainings'])
+    ->middleware(['auth', 'verified', 'can:trainings.manage', 'feature:trainings'])
     ->group(function (): void {
         Route::livewire('trainings', 'pages::club-events.trainings.index')->name('admin.trainings.index');
     });
@@ -268,7 +268,7 @@ Route::post('/meetings/{meeting}/rsvp/{user}', [MeetingRsvpController::class, 's
 
 // Tournament administration (events) — committee only.
 Route::prefix('admin/club-events/tournaments')
-    ->middleware(['auth', 'verified', 'committee', 'feature:tournaments'])
+    ->middleware(['auth', 'verified', 'can:tournaments.manage', 'feature:tournaments'])
     ->group(function (): void {
         Route::livewire('/', 'pages::club-events.tournaments.index')->name('admin.tournaments.index');
         Route::livewire('{tournament}/live-center', 'pages::club-events.tournaments.live-center')->name('admin.tournaments.live-center');

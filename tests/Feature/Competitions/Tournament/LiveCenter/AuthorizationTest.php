@@ -6,6 +6,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Pool;
 use App\Domains\Competitions\Tournament\Models\Tournament;
 use App\Domains\Competitions\Tournament\Models\TournamentMatch;
+use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use Livewire\Livewire;
 
@@ -59,7 +60,7 @@ describe('canManageTournament', function (): void {
     });
 
     it('is true for committee members', function (): void {
-        $committee = User::factory()->isCommitteeMember()->create();
+        $committee = User::factory()->isCommitteeMember()->withRole(Role::TOURNAMENTS)->create();
         $tournament = authTournament();
 
         liveCenterAs($committee, $tournament)
@@ -81,7 +82,7 @@ describe('canManageTournament', function (): void {
 describe('openScoreEntry authorization', function (): void {
 
     it('allows committee members to open the score drawer', function (): void {
-        $committee = User::factory()->isCommitteeMember()->create();
+        $committee = User::factory()->isCommitteeMember()->withRole(Role::TOURNAMENTS)->create();
         $tournament = authTournament();
         $match = authMatch($tournament);
 

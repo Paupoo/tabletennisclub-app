@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use Livewire\Livewire;
 
@@ -37,7 +38,7 @@ describe('draft tournament visibility', function (): void {
     });
 
     it('shows draft tournaments to committee members', function (): void {
-        $committee = User::factory()->isCommitteeMember()->create();
+        $committee = User::factory()->isCommitteeMember()->withRole(Role::TOURNAMENTS)->create();
         $draft = Tournament::factory()->create(['status' => TournamentStatusEnum::DRAFT]);
 
         indexAs($committee)->assertSee($draft->name);
@@ -86,7 +87,7 @@ describe('canManage computed', function (): void {
     });
 
     it('is true for committee members', function (): void {
-        $committee = User::factory()->isCommitteeMember()->create();
+        $committee = User::factory()->isCommitteeMember()->withRole(Role::TOURNAMENTS)->create();
 
         indexAs($committee)->assertSet('canManage', true);
     });

@@ -19,6 +19,7 @@ use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Shared\Enums\Permission;
 use App\Domains\Trainings\Models\Training;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Trainings\Policies\TrainingPackPolicy;
@@ -80,6 +81,19 @@ class AuthServiceProvider extends ServiceProvider
         // (UserPolicy::delete stops an admin deleting their own account), and a
         // blanket short-circuit would silently override both. Administrators instead
         // hold every permission explicitly — see Role::ADMINISTRATOR.
+
+        /*
+         * Reaching the selections and results screens is the one place where a
+         * permission is not enough on its own: a captain is a relation
+         * (teams.captain_id), never a délégation, and must be able to compose and
+         * report for their own teams without holding one. Each screen then narrows
+         * down to the teams they actually captain.
+         */
+        Gate::define('access-selections', fn (User $user): bool => $user->can(Permission::SelectionsManage->value)
+            || $user->captainOf()->exists());
+
+        Gate::define('access-results', fn (User $user): bool => $user->can(Permission::ResultsManage->value)
+            || $user->captainOf()->exists());
 
         Gate::define('manage-contacts', fn (User $user): bool => $user->canManageClubAdmin());
         Gate::define('manage-season', fn (User $user): bool => $user->canManageClubAdmin());

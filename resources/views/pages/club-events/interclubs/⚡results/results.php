@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Resources\views\Pages\ClubEvents\Interclubs;
 
+use App\Domains\Shared\Enums\Permission;
+use Illuminate\Support\Facades\Gate;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\InterclubResult;
 use App\Domains\Competitions\Interclub\Models\Season;
@@ -128,10 +130,9 @@ new class extends Component
     {
         $this->seasonId = Season::current()?->id;
 
-        $user = Auth::user();
-        if (! $user->is_admin && ! $user->is_committee_member) {
-            abort_unless(Team::where('captain_id', $user->id)->exists(), 403);
-        }
+        // Results delegate, or captain of at least one team; authorizeTeam()
+        // then narrows each mutation to the teams actually captained.
+        Gate::authorize('access-results');
     }
 
     public function openEditModal(int $matchResultId): void
@@ -291,7 +292,7 @@ new class extends Component
             ->inClub()
             ->where('season_id', $this->seasonId);
 
-        if (! $user->is_admin && ! $user->is_committee_member) {
+        if (! $user->can(Permission::ResultsManage->value)) {
             $teamsQuery->where('captain_id', $user->id);
         }
 
@@ -331,13 +332,16 @@ new class extends Component
             ->current(__('Results'));
     }
 
+    /**
+     * A club-wide manager records any team's result; a captain only their own.
+     */
     private function authorizeTeam(int $teamId): void
     {
-        $user = Auth::user();
-        if ($user->is_admin || $user->is_committee_member) {
+        if (Auth::user()->can(Permission::ResultsManage->value)) {
             return;
         }
-        abort_unless(Team::where('id', $teamId)->where('captain_id', $user->id)->exists(), 403);
+
+        abort_unless(Team::where('id', $teamId)->where('captain_id', Auth::id())->exists(), 403);
     }
 
     private function computeStats(Collection $interclubResults): array

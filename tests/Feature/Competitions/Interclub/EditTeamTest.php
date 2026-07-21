@@ -8,6 +8,7 @@ use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
+use App\Domains\Shared\Enums\Role;
 use Livewire\Livewire;
 
 beforeEach(function (): void {
@@ -24,7 +25,7 @@ beforeEach(function (): void {
         'licence' => null,
     ]);
 
-    $this->committee_member = User::factory()->isCommitteeMember()->create([
+    $this->committee_member = User::factory()->isCommitteeMember()->withRole(Role::INTERCLUBS)->create([
         'licence' => null,
     ]);
 

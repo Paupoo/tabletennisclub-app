@@ -3,10 +3,11 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\Role;
 
 test('committee member can see teams index', function (): void {
     makeActiveSeason();
-    $user = User::factory()->isCommitteeMember()->create();
+    $user = User::factory()->isCommitteeMember()->withRole(Role::INTERCLUBS)->create();
     $response = $this->actingAs($user)
         ->get(route('admin.interclubs.teams'));
 

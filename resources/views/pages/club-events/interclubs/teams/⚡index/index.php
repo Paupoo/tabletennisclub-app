@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Resources\views\Pages\ClubEvents\Interclubs\Teams;
 
+use App\Domains\Shared\Enums\Permission;
+use Illuminate\Support\Facades\Gate;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\League;
@@ -59,7 +61,7 @@ new class extends Component
 
     public function confirmDelete(int $id): void
     {
-        abort_unless(Auth::user()->is_admin || Auth::user()->is_committee_member, 403);
+        Gate::authorize(Permission::TeamsManage->value);
 
         $this->teamToDelete = $id;
         $this->deleteModal = true;
@@ -67,7 +69,7 @@ new class extends Component
 
     public function createTeam(): void
     {
-        abort_unless(Auth::user()->is_admin || Auth::user()->is_committee_member, 403);
+        Gate::authorize(Permission::TeamsManage->value);
 
         $season = Season::current();
 
@@ -148,7 +150,7 @@ new class extends Component
 
     public function deleteAll(): void
     {
-        abort_unless(Auth::user()->is_admin || Auth::user()->is_committee_member, 403);
+        Gate::authorize(Permission::TeamsManage->value);
 
         $season = Season::current();
 
@@ -298,7 +300,7 @@ new class extends Component
             'categoryOptions' => collect(LeagueCategory::cases())->map(fn ($c) => ['id' => $c->name, 'name' => $c->value]),
             'levelOptions' => collect(LeagueLevel::cases())->map(fn ($l) => ['id' => $l->name, 'name' => $l->value]),
             'leagueOptions' => $this->leagueOptions(Season::current()),
-            'isAdminOrCommittee' => Auth::user()->is_admin || Auth::user()->is_committee_member,
+            'isAdminOrCommittee' => Auth::user()->can(Permission::TeamsManage->value),
         ];
     }
 

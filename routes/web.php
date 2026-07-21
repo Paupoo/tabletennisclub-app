@@ -282,14 +282,17 @@ Route::prefix('admin/club-events/interclubs/')
         // Personal matches — self-scoped, left broad for any player for now.
         Route::livewire('my-matches', 'pages::club-events.interclubs.my-matches')->name('admin.interclubs.my-matches');
 
-        // Selections & results — committee, team captains (and selectors for
-        // selection). Authorization is enforced inside each component's mount(),
-        // which carries the finer per-role rules, so no route gate is added here.
-        Route::livewire('captain-selection', 'pages::club-events.interclubs.captain-selection')->name('admin.interclubs.captain-selection');
-        Route::livewire('results', 'pages::club-events.interclubs.results')->name('admin.interclubs.results');
+        // Selections & results: the permission gates the route, and each
+        // component narrows it down to the teams the caller actually captains.
+        Route::livewire('captain-selection', 'pages::club-events.interclubs.captain-selection')
+            ->middleware('can:access-selections')
+            ->name('admin.interclubs.captain-selection');
+        Route::livewire('results', 'pages::club-events.interclubs.results')
+            ->middleware('can:access-results')
+            ->name('admin.interclubs.results');
 
-        // Interclub configuration & control — committee only.
-        Route::middleware('committee')->group(function (): void {
+        // Interclub configuration & control — the interclubs délégation.
+        Route::middleware('can:interclubs.manage')->group(function (): void {
             Route::livewire('control-center', 'pages::club-events.interclubs.control-center')->name('admin.interclubs.control-center');
             Route::livewire('teams', 'pages::club-events.interclubs.teams.index')->name('admin.interclubs.teams');
             Route::livewire('teams/builder', 'pages::club-events.interclubs.teams.builder')->name('admin.interclubs.teams.builder');

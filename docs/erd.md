@@ -42,12 +42,12 @@ erDiagram
     EventPost
 
     %% Competitions/Interclub
-    Interclub
     InterclubResult
     League
     Season
     Team
     Club
+    Interclub
 
     %% Competitions/Tournament
     MatchSet
@@ -111,9 +111,6 @@ erDiagram
     User }o--o{ Tournament : "tournaments"
     User }o--o{ Training : "trainings"
     Fine ||--o| Payment : "payment"
-    Interclub ||--o| InterclubResult : "interclubResult"
-    Interclub ||--o{ Team : "teams"
-    Interclub }o--o{ User : "users"
     League ||--o{ Interclub : "interclubs"
     League ||--o{ Team : "teams"
     Season ||--o{ Interclub : "interclubs"
@@ -129,6 +126,9 @@ erDiagram
     Club }o--o{ Room : "rooms"
     Club ||--o{ Team : "teams"
     Club ||--o{ User : "users"
+    Interclub ||--o| InterclubResult : "interclubResult"
+    Interclub ||--o{ Team : "teams"
+    Interclub }o--o{ User : "users"
     Pool }o--o{ TournamentPair : "pairs"
     Pool ||--o{ TournamentMatch : "tournamentmatches"
     Pool }o--o{ User : "users"

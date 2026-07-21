@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Resources\views\Pages\ClubEvents\Interclubs\Teams\Edit;
 
+use App\Domains\Shared\Enums\Permission;
+use Illuminate\Support\Facades\Gate;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\League;
@@ -49,7 +51,7 @@ new class extends Component
 
     public function mount(Team $team): void
     {
-        abort_unless(Auth::user()->is_admin || Auth::user()->is_committee_member, 403);
+        Gate::authorize(Permission::TeamsManage->value);
 
         $this->teamId = $team->id;
         $this->name = $team->name;

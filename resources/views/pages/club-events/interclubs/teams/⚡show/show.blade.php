@@ -8,10 +8,10 @@
         <x-slot:actions>
             <x-button class="btn-ghost" link="{{ route('admin.interclubs.teams') }}" icon="o-arrow-left"
                 :label="__('All teams')" />
-            @if (auth()->user()->is_admin || auth()->user()->is_committee_member)
+            @can('update', $team)
                 <x-button class="btn-primary" link="{{ route('admin.interclubs.teams.edit', $team->id) }}"
                     icon="o-pencil" label="Modifier" />
-            @endif
+            @endcan
         </x-slot:actions>
     </x-header>
 

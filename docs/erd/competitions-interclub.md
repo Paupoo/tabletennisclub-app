@@ -2,20 +2,6 @@
 
 ```mermaid
 erDiagram
-    Interclub {
-        int id PK
-        string address
-        datetime start_date_time
-        int week_number "nullable"
-        int total_players
-        string score "nullable"
-        string result "nullable"
-        int visited_team_id FK "nullable"
-        int visiting_team_id FK "nullable"
-        int room_id FK "nullable"
-        int league_id FK "nullable"
-        int season_id FK "nullable"
-    }
     InterclubResult {
         int id PK
         int interclub_id FK "nullable"
@@ -71,10 +57,21 @@ erDiagram
         string website_url "nullable"
         string enterprise_number "nullable"
     }
+    Interclub {
+        int id PK
+        string address
+        datetime start_date_time
+        int week_number "nullable"
+        int total_players
+        string score "nullable"
+        string result "nullable"
+        int visited_team_id FK "nullable"
+        int visiting_team_id FK "nullable"
+        int room_id FK "nullable"
+        int league_id FK "nullable"
+        int season_id FK "nullable"
+    }
 
-    Interclub ||--o| InterclubResult : "interclubResult"
-    Interclub ||--o{ Team : "teams"
-    Interclub }o--o{ User : "users"
     League ||--o{ Interclub : "interclubs"
     League ||--o{ Team : "teams"
     Season ||--o{ Interclub : "interclubs"
@@ -90,4 +87,7 @@ erDiagram
     Club }o--o{ Room : "rooms"
     Club ||--o{ Team : "teams"
     Club ||--o{ User : "users"
+    Interclub ||--o| InterclubResult : "interclubResult"
+    Interclub ||--o{ Team : "teams"
+    Interclub }o--o{ User : "users"
 ```

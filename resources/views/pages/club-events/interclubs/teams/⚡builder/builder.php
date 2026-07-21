@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Resources\views\Pages\ClubEvents\Interclubs\Teams\Builder;
 
+use App\Domains\Shared\Enums\Permission;
+use Illuminate\Support\Facades\Gate;
 use App\Actions\User\RecalculateForceListAction;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
@@ -95,7 +97,7 @@ new class extends Component
 
     public function mount(): void
     {
-        abort_unless(Auth::user()->is_admin || Auth::user()->is_committee_member, 403);
+        Gate::authorize(Permission::TeamsManage->value);
 
         $this->seasonId = Season::current()?->id;
     }

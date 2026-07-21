@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Resources\views\Pages\ClubEvents\Interclubs\CaptainSelection;
 
+use App\Domains\Shared\Enums\Permission;
+use Illuminate\Support\Facades\Gate;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\Season;
@@ -103,10 +105,9 @@ new class extends Component
         $this->selectedSeasonId = Season::current()?->id;
 
         $user = Auth::user();
-        if (! $user->is_admin && ! $user->is_committee_member && ! $user->is_selector) {
-            $isCaptain = Team::where('captain_id', $user->id)->exists();
-            abort_unless($isCaptain, 403);
-        }
+
+        // Selections delegate, or captain of at least one team.
+        Gate::authorize('access-selections');
 
         $this->selectedTeamId = $this->loadAccessibleTeams($user, Season::current())->first()?->id;
     }
@@ -328,8 +329,8 @@ new class extends Component
     public function with(): array
     {
         $user = Auth::user();
-        $isAdminOrCommittee = $user->is_admin || $user->is_committee_member;
-        $canSearchSubstitute = $user->is_admin || $user->is_committee_member || $user->is_selector;
+        $isAdminOrCommittee = $user->can(Permission::InterclubsManage->value);
+        $canSearchSubstitute = $user->can(Permission::SelectionsManage->value);
 
         $seasons = Season::orderBy('start_at')->get();
         $season = $this->selectedSeasonId
@@ -747,7 +748,8 @@ new class extends Component
             $query->where('season_id', $season->id);
         }
 
-        if (! $user->is_admin && ! $user->is_committee_member && ! $user->is_selector) {
+        // A club-wide selector sees every team; a captain, only theirs.
+        if (! $user->can(Permission::SelectionsManage->value)) {
             $query->where('captain_id', $user->id);
         }
 
@@ -807,20 +809,14 @@ new class extends Component
      * Mirrors the scoping of loadAccessibleTeams(): admins, committee members and
      * selectors reach every team, a captain only the teams they lead.
      */
+    /**
+     * Delegates to InterclubPolicy::selectLineup, so the rule lives in one place
+     * rather than being restated here — this component and the policy answered
+     * the same question in two different ways before.
+     */
     private function authorizeInterclub(Interclub $interclub): void
     {
-        $user = Auth::user();
-
-        if ($user->is_admin || $user->is_committee_member || $user->is_selector) {
-            return;
-        }
-
-        abort_unless(
-            Team::whereIn('id', array_filter([$interclub->visited_team_id, $interclub->visiting_team_id]))
-                ->where('captain_id', $user->id)
-                ->exists(),
-            403
-        );
+        Gate::authorize('selectLineup', $interclub);
     }
 
     /**

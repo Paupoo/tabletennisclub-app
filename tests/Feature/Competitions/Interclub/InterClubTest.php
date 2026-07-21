@@ -8,6 +8,7 @@ use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\League;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
+use App\Domains\Shared\Enums\Role;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\Trait\CreateInterclub;
@@ -49,6 +50,7 @@ test('admin or comitte member can create interclub', function (): void {
         ->assertOK();
 
     $committee_member = $this->createFakeCommitteeMember();
+    $committee_member->assignRole(Role::INTERCLUBS->value);
 
     $this->actingAs($committee_member)
         ->get(route('admin.interclubs.control-center'))

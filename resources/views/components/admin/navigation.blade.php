@@ -133,18 +133,20 @@
     @feature('interclubs')
     <x-menu-sub icon="o-calendar-days" link="#" :title="__('Interclubs')">
         
-        @if($user->is_admin || $user->is_committee_member || $user->captainOf)
+        @can('selections.manage')
         <x-menu-item icon="o-user-group" link="{{ route('admin.interclubs.captain-selection') }}" :title="__('Selections')" />
+        @endcan
+        @can('results.manage')
         <x-menu-item icon="o-squares-2x2" link="{{ route('admin.interclubs.results') }}" :title="__('Results')" />
-        @endif
-        @if($user->is_admin || $user->is_committee_member)
+        @endcan
+        @can('interclubs.manage')
         <x-menu-item icon="o-calendar-days" link="{{ route('admin.interclubs.interclubs') }}" :title="__('Planning')" />
         <x-menu-sub icon="o-cog-6-tooth" :title="__('Configuration saison')">
             <x-menu-item icon="o-identification" link="{{ route('admin.interclubs.teams') }}" :title="__('Nos équipes')" />
             <x-menu-item icon="o-table-cells" link="{{ route('admin.interclubs.division-setup') }}" :title="__('Adversaires')" />
             <x-menu-item icon="o-building-office-2" link="{{ route('admin.interclubs.clubs') }}" :title="__('Clubs')" />
         </x-menu-sub>
-        @endif
+        @endcan
     </x-menu-sub>
     @endfeature
 

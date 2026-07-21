@@ -32,7 +32,7 @@ class CreateUserAction
             'password' => $hasPassword ? Hash::make($data->password) : '',
         ]);
 
-        SyncBaseRolesAction::handle($user, $data->is_admin, $data->is_committee_member, $data->is_coach);
+        SyncUserRolesAction::handle($user, $data->is_admin, $data->is_committee_member, $data->delegations);
 
         if ($data->guardianIds !== []) {
             $user->guardians()->sync($data->guardianIds);

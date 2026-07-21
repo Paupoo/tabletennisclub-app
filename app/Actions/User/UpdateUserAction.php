@@ -41,7 +41,7 @@ class UpdateUserAction
 
         $user->update($attributes);
 
-        SyncBaseRolesAction::handle($user, $data->is_admin, $data->is_committee_member, $data->is_coach);
+        SyncUserRolesAction::handle($user, $data->is_admin, $data->is_committee_member, $data->delegations);
 
         $user->guardians()->sync($data->guardianIds);
         SyncFamilyGroupMembersAction::handle($user, $data->familyMemberIds);

@@ -76,6 +76,7 @@
     <x-menu-sub icon="o-user-group" :title="__('Members Admin')">
         <x-menu-item icon="o-users" link="{{ route('admin.users.index') }}" :title="__('Users')" />
         <x-menu-item icon="o-list-bullet" link="{{ route('admin.users.registrations') }}" :title="__('Registrations')" />
+        <x-menu-item icon="o-key" link="{{ route('admin.users.delegations') }}" :title="__('Delegations')" />
         <x-menu-item icon="o-clipboard-document-list" link="{{ route('admin.subscriptions.roster') }}" :title="__('Season roster')" />
         @feature('training_planning')
         <x-menu-item icon="o-view-columns" link="{{ route('admin.planning.board') }}" :title="__('Planning board')" />

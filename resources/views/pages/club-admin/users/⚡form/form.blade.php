@@ -295,33 +295,95 @@
                 <x-menu-separator />
             </div>
 
-            <!-- Section Permissions -->
+            {{--
+                Section Statut — the statutory title. It is displayed (profile badge,
+                committee list) and never decides an access: what someone may do is
+                carried by the délégations below.
+            --}}
             <div class="col-span-6 md:col-span-2">
-                <x-header :subtitle="__('Define the roles and permissions here')"
-                    :title="__('Permissions')" />
+                <x-header :subtitle="__('Seat on the committee — a title, not an access right')"
+                    :title="__('Status')" />
             </div>
             <div class="col-span-6 md:col-span-4">
                 <x-checkbox
-                    :hint="__('Committee Members are granted most accesses like creating, updating and deleting objects (Users, teams, tournaments...)')"
+                    :hint="__('Grants baseline back-office access, and allows a statutory title to be held.')"
                     :label="__('Is a committee member')" wire:model.live="is_committee_member" />
                 @if ($is_committee_member)
-                    <div class="w-64 mb-4 ml-10">
+                    <div class="w-full sm:w-72 mb-4 sm:ml-10">
                         <x-select :label="__('Committee Role')" icon="o-briefcase"
-                            :placeholder="__('Select a role')" :options="$this->CommitteeRoleOptions" wire:model="committee_role" />
+                            :placeholder="__('Select a role')" :options="$this->CommitteeRoleOptions"
+                            wire:model.live="committee_role" />
+                        <p class="mt-1 text-xs text-base-content/60">
+                            {{ __('Picking a title pre-checks its usual duties below. You can change them.') }}
+                        </p>
                     </div>
                 @endif
-                <x-checkbox :hint="__('Can access the coach view and be assigned to training packs')"
-                    :label="__('Is a coach')" wire:model="is_coach" />
                 <x-checkbox :hint="__('With great power comes great responsibility...')"
                     :label="__('Is an administrator')" wire:model="is_admin" />
             </div>
 
-            <!-- Section Équipements confiés -->
             <div class="col-span-6">
                 <x-menu-separator />
             </div>
+
+            {{--
+                Section Délégations — what the member may actually do. Assignable to
+                anyone, committee member or not, and cumulative.
+            --}}
             <div class="col-span-6 md:col-span-2">
-                <x-header :subtitle="__('Physical items entrusted to this member')"
+                <x-header :subtitle="__('Operational duties. Anyone can hold them, and they stack.')"
+                    :title="__('Delegations')" />
+            </div>
+            <div class="col-span-6 md:col-span-4">
+                {{-- Cards stack on mobile and pair up from md: 16 duties never fit a
+                     single readable column on a phone, nor a wide row on a laptop. --}}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    @foreach ($this->delegationOptions as $delegation)
+                        @php($isHeld = in_array($delegation['value'], $delegations, true))
+                        <label
+                            for="delegation-{{ $delegation['value'] }}"
+                            @class([
+                                'flex gap-3 items-start p-3 rounded-xl border cursor-pointer transition-colors duration-150',
+                                'border-primary/60 bg-primary/5' => $isHeld,
+                                'border-base-300 hover:border-primary/40' => ! $isHeld,
+                            ])
+                        >
+                            <input
+                                type="checkbox"
+                                id="delegation-{{ $delegation['value'] }}"
+                                value="{{ $delegation['value'] }}"
+                                wire:model.live="delegations"
+                                class="checkbox checkbox-sm checkbox-primary mt-0.5 shrink-0"
+                            />
+                            <span class="min-w-0">
+                                <span class="block text-sm font-semibold text-base-content">
+                                    {{ $delegation['label'] }}
+                                </span>
+                                <span class="block text-xs text-base-content/60 leading-snug">
+                                    {{ $delegation['description'] }}
+                                </span>
+                            </span>
+                        </label>
+                    @endforeach
+                </div>
+
+                @if ($delegations === [])
+                    <p class="mt-3 text-xs text-base-content/60">
+                        {{ __('No delegation: this member holds no management right.') }}
+                    </p>
+                @endif
+            </div>
+
+            <div class="col-span-6">
+                <x-menu-separator />
+            </div>
+
+            {{--
+                Section Équipements confiés — the third family. An object handed over
+                and given back; it records a fact and grants nothing by itself.
+            --}}
+            <div class="col-span-6 md:col-span-2">
+                <x-header :subtitle="__('Physical items entrusted to this member. Grants no access by itself.')"
                     :title="__('Entrusted equipment')" />
             </div>
             <div class="col-span-6 md:col-span-4">

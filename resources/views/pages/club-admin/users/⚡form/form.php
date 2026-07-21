@@ -55,6 +55,19 @@ new class extends Component
 
     public ?string $committee_role = null;
 
+    /**
+     * Délégations held, as Role values. Duties, not a statutory title: they may be
+     * handed to anyone, committee member or not, and they stack.
+     *
+     * The rule keeps the payload well-formed; SyncUserRolesAction is what refuses
+     * a base role slipped in here, since that is a rule about the domain rather
+     * than about this form.
+     *
+     * @var array<int, string>
+     */
+    #[Rule(['array'])]
+    public array $delegations = [];
+
     #[Validate()]
     public string $email = '';
 
@@ -86,9 +99,6 @@ new class extends Component
     public bool $is_admin = false;
 
     // Permissions
-
-    #[Rule('required|boolean')]
-    public bool $is_coach = false;
 
     #[Rule('required|boolean')]
     public bool $is_committee_member = false;
@@ -145,6 +155,46 @@ new class extends Component
     public function CommitteeRoleOptions(): array
     {
         return CommitteeRolesEnum::getOptions();
+    }
+
+    /**
+     * @return array<int, array{value: string, label: string, description: string}>
+     */
+    #[Computed()]
+    public function delegationOptions(): array
+    {
+        return array_map(static fn (Role $role): array => [
+            'value' => $role->value,
+            'label' => $role->label(),
+            'description' => $role->description(),
+        ], Role::delegations());
+    }
+
+    /**
+     * Pre-checks the duties usually handed over with a statutory title.
+     *
+     * A suggestion, never an automatism: the admin can uncheck any of them, and a
+     * treasurer who does not handle the cash box is a legitimate situation. Only
+     * adds — unchecking something then picking another title must not bring it back.
+     */
+    public function updatedCommitteeRole(): void
+    {
+        if ($this->committee_role === null || $this->committee_role === '') {
+            return;
+        }
+
+        $title = CommitteeRolesEnum::tryFrom($this->committee_role);
+
+        if (! $title instanceof CommitteeRolesEnum) {
+            return;
+        }
+
+        $suggested = array_map(
+            static fn (Role $role): string => $role->value,
+            Role::suggestedFor($title),
+        );
+
+        $this->delegations = array_values(array_unique([...$this->delegations, ...$suggested]));
     }
 
     public function confirmAnonymize(): void
@@ -276,10 +326,14 @@ new class extends Component
             $this->ranking = $user->ranking ?? 'NA';
             $this->is_competitor = $user->is_competitor;
             $this->is_committee_member = $user->is_committee_member;
-            $this->is_coach = $user->is_coach;
             $this->is_admin = $user->is_admin;
             $this->has_key = (bool) ($user->has_key ?? false);
             $this->committee_role = $user->committee_role?->value;
+            $this->delegations = $user->roles
+                ->pluck('name')
+                ->filter(static fn (string $name): bool => Role::tryFrom($name)?->isDelegation() ?? false)
+                ->values()
+                ->all();
         }
     }
 
@@ -452,7 +506,6 @@ new class extends Component
                     is_competitor: $this->is_competitor,
                     is_committee_member: $this->is_committee_member,
                     is_admin: $this->is_admin,
-                    is_coach: $this->is_coach,
                     has_key: $this->has_key,
                     licence: $licence,
                     ranking: $ranking,
@@ -460,6 +513,7 @@ new class extends Component
                     password: $this->password !== '' ? $this->password : null,
                     guardianIds: $this->guardianIds,
                     familyMemberIds: $this->familyMemberIds,
+                    delegations: $this->delegations,
                 ),
                 $actor,
             );
@@ -485,7 +539,6 @@ new class extends Component
                     birthdate: $this->birthdate,
                     is_committee_member: $this->is_committee_member,
                     is_admin: $this->is_admin,
-                    is_coach: $this->is_coach,
                     has_key: $this->has_key,
                     licence: $licence,
                     ranking: $ranking,
@@ -493,6 +546,7 @@ new class extends Component
                     password: $this->password !== '' ? $this->password : null,
                     guardianIds: $this->guardianIds,
                     familyMemberIds: $this->familyMemberIds,
+                    delegations: $this->delegations,
                 ),
                 $actor,
             );

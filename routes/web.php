@@ -116,6 +116,7 @@ Route::prefix('admin/club-admin/users/')
         Route::livewire('create', 'pages::club-admin.users.form')->name('admin.users.create');
         Route::livewire('{user}/edit', 'pages::club-admin.users.form')->name('admin.users.edit');
         Route::livewire('registrations', 'pages::club-admin.users.registrations')->name('admin.users.registrations');
+        Route::livewire('delegations', 'pages::club-admin.users.delegations')->name('admin.users.delegations');
         // Season roster — visible to the whole committee, editing reserved to managers (decision #18).
         Route::livewire('roster', 'pages::club-admin.subscriptions.roster')->name('admin.subscriptions.roster');
         // Legacy redirect — kept for backward compatibility

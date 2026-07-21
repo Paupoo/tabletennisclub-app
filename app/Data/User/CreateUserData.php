@@ -35,5 +35,13 @@ readonly class CreateUserData
         public ?string $password = null,
         public array $guardianIds = [],
         public array $familyMemberIds = [],
+        /**
+         * Délégations submitted by the form, as Role values. Null means the caller
+         * does not manage duties — the self-service profile screen, typically —
+         * and the ones already held must be left alone.
+         *
+         * @var array<int, string>|null
+         */
+        public ?array $delegations = null,
     ) {}
 }

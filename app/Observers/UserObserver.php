@@ -29,7 +29,7 @@ class UserObserver
      * roles, and roles only exist once the row does — so on creation the observer
      * would read "not a committee member" and wipe the title being set.
      *
-     * It moved to SyncBaseRolesAction, which runs right after the roles are synced
+     * It moved to SyncUserRolesAction, which runs right after the roles are synced
      * and is therefore the first point where the answer is knowable.
      */
 }

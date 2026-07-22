@@ -93,8 +93,17 @@ describe('the delegations', function (): void {
         expect($delegate)
             ->can('update', $this->fixture)->toBeTrue()
             ->can('delete', $this->fixture)->toBeTrue()
-            ->can('update', $this->team)->toBeTrue()
-            ->can('selectLineup', $this->otherFixture)->toBeTrue();
+            ->can('update', $this->team)->toBeTrue();
+    });
+
+    it('does not let the interclubs delegate compose lineups — that is the selections duty', function (): void {
+        $delegate = User::factory()->withRole(Role::INTERCLUBS)->create();
+
+        expect($delegate)
+            ->can('selectLineup', $this->fixture)->toBeFalse()
+            ->can('selectLineup', $this->otherFixture)->toBeFalse();
+
+        $this->actingAs($delegate)->get(route('admin.interclubs.captain-selection'))->assertForbidden();
     });
 
     it('no longer opens the configuration screens on committee membership alone', function (string $routeName): void {

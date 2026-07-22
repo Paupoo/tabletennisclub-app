@@ -196,7 +196,7 @@ Route::prefix('admin/club-admin/seasons/')
     });
 
 Route::prefix('admin/club-admin/rooms/')
-    ->middleware(['auth', 'verified', 'committee'])
+    ->middleware(['auth', 'verified', 'can:rooms.manage'])
     ->group(function (): void {
         Route::livewire('list', 'pages::club-admin.rooms.index')->name('admin.rooms.index');
 
@@ -216,7 +216,7 @@ Route::prefix('admin/club-admin/rooms/')
 // Tables have no list of their own: a table is always looked at through the
 // room that holds it, on admin.rooms.show.
 Route::prefix('admin/club-admin/tables/')
-    ->middleware(['auth', 'verified', 'committee'])
+    ->middleware(['auth', 'verified', 'can:tables.manage'])
     ->group(function (): void {
         Route::middleware('can:update,table')
             ->group(function (): void {

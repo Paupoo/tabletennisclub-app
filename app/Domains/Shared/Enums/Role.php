@@ -218,7 +218,9 @@ enum Role: string
                 Permission::LeaguesManage,
                 Permission::ClubsManage,
                 Permission::ResultsManage,
-                Permission::SelectionsManage,
+                // Composing lineups is the SELECTIONS délégation (or the captain
+                // relation), never bundled here: managing the calendar and picking
+                // who plays are separate duties the club hands out independently.
             ],
 
             self::SELECTIONS => [

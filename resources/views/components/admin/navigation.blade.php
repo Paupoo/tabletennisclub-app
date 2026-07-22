@@ -66,13 +66,22 @@
 
 
     <x-menu-separator />
-    @can('users.view')
+
+    @canany(['club.update', 'seasons.view', 'rooms.manage'])
     <x-menu-sub icon="o-building-office" :title="__('Club Settings')">
+        @can('club.update')
         <x-menu-item icon="o-identification" link="{{ route('admin.club-info') }}" :title="__('Informations')" />
+        @endcan
+        @can('seasons.view')
         <x-menu-item icon="o-calendar" link="{{ route('admin.seasons.index') }}" :title="__('Seasons')" />
+        @endcan
+        @can('rooms.manage')
         <x-menu-item icon="o-building-office-2" link="{{ route('admin.rooms.index') }}" :title="__('Rooms')" />
+        @endcan
     </x-menu-sub>
-                    
+    @endcanany
+
+    @canany(['users.view', 'subscriptions.view', 'users.update', 'training_plans.manage'])
     <x-menu-sub icon="o-user-group" :title="__('Members Admin')">
         @can('users.view')
             <x-menu-item icon="o-users" link="{{ route('admin.users.index') }}" :title="__('Users')" />
@@ -92,6 +101,7 @@
         @endcan
         @endfeature
     </x-menu-sub>
+    @endcanany
 
     @feature('treasury', 'cash_register')
     @canany(['payments.view', 'fines.view', 'transactions.view', 'cash_register.view'])
@@ -115,13 +125,11 @@
     </x-menu-sub>
     @endcanany
     @endfeature
-    <x-menu-sub icon="o-cog-6-tooth" link="#" :title="__('Club')">
-    </x-menu-sub>
 
     <x-menu-separator />
-    @endcan
 
     @feature('trainings')
+    @canany(['trainings.manage', 'coach_area.access'])
     <x-menu-sub icon="o-academic-cap" :title="__('Trainings')">
         @can('trainings.manage')
         <x-menu-item icon="o-tag" link="{{ route('admin.trainings.index') }}" :title="__('Training Packs')" />
@@ -130,11 +138,12 @@
         <x-menu-item icon="o-calendar-days" link="{{ route('coach.trainings') }}" :title="__('My sessions')" />
         @endcan
     </x-menu-sub>
+    @endcanany
     @endfeature
 
     @feature('interclubs')
+    @canany(['selections.manage', 'results.manage', 'interclubs.manage'])
     <x-menu-sub icon="o-calendar-days" link="#" :title="__('Interclubs')">
-        
         @can('selections.manage')
         <x-menu-item icon="o-user-group" link="{{ route('admin.interclubs.captain-selection') }}" :title="__('Selections')" />
         @endcan
@@ -150,10 +159,11 @@
         </x-menu-sub>
         @endcan
     </x-menu-sub>
+    @endcanany
     @endfeature
 
-    @can('users.view')
     @feature('meetings', 'tournaments')
+    @canany(['meetings.view', 'tournaments.manage'])
     <x-menu-sub icon="o-star" :title="__('Events')">
         @feature('meetings')
         @can('meetings.view')
@@ -166,13 +176,11 @@
         @endcan
         @endfeature
     </x-menu-sub>
-
-    <x-menu-separator />
+    @endcanany
     @endfeature
-    @endcan
 
-    @can('users.view')
     @feature('website', 'contacts')
+    @canany(['news_posts.manage', 'contacts.view', 'contacts.manage', 'spams.manage', 'event_posts.manage'])
     <x-menu-sub icon="o-globe-alt" :title="__('Website')">
         @feature('website')
         @can('news_posts.manage')
@@ -180,7 +188,9 @@
         @endcan
         @endfeature
         @feature('contacts')
+        @can('contacts.view')
         <x-menu-item icon="o-envelope-open" link="{{ route('admin.website.contacts.index') }}" :title="__('Contacts')" />
+        @endcan
         @can('contacts.manage')
             <x-menu-item icon="o-document-text" link="{{ route('admin.website.contacts.email-templates') }}" :title="__('Email templates')" />
         @endcan
@@ -194,8 +204,8 @@
         @endcan
         @endfeature
     </x-menu-sub>
+    @endcanany
     @endfeature
-    @endcan
 
     @feature('supervision')
     @if($user->canViewAuditLog())
@@ -205,7 +215,7 @@
         link="{{ route('admin.audit.index') }}"
         :title="__('Audit')"
     />
-    @endcan
+    @endif
     @endfeature
 
     @feature('supervision')

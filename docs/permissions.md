@@ -105,7 +105,6 @@ Gérer les équipes, les divisions, les clubs adverses, les matches et les résu
 - `leagues.manage`
 - `clubs.manage`
 - `results.manage`
-- `selections.manage`
 
 ### Réunions — `reunions`
 

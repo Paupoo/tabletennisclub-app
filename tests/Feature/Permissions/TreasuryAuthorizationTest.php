@@ -48,6 +48,22 @@ describe('the screens answer to their own delegation', function (): void {
     it('keeps payments readable by the committee — its baseline is read-only', function (): void {
         $this->actingAs($this->plainCommittee)->get(route('admin.treasury.payments'))->assertOk();
     });
+
+    // The action triggers are unique markers; the "Auto-match" / "Import" wording
+    // also lives in always-rendered modal titles, so we assert on the triggers.
+    it('hides the reconcile and import controls from the read-only committee', function (): void {
+        Livewire::actingAs($this->plainCommittee)
+            ->test('pages::club-admin.treasury.payments')
+            ->assertDontSee('previewBatchMatch')
+            ->assertDontSee(route('admin.treasury.transactions'));
+    });
+
+    it('shows the reconcile and import controls to the treasury delegate', function (): void {
+        Livewire::actingAs(User::factory()->withRole(Role::TREASURY)->create())
+            ->test('pages::club-admin.treasury.payments')
+            ->assertSee('previewBatchMatch')
+            ->assertSee(route('admin.treasury.transactions'));
+    });
 });
 
 describe('mutations are guarded inside the components too', function (): void {

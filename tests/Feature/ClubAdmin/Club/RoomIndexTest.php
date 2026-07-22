@@ -23,11 +23,20 @@ describe('Room index tests', function (): void {
             ->assertStatus(200);
     });
 
-    // 1b. Un membre lambda n'a pas accès à la page (réservée au comité)
+    // 1b. Un membre lambda n'a pas accès à la page (réservée à la délégation Installations)
     it('forbids a plain member from the rooms index page', function (): void {
         $this->actingAs($this->user)
             ->get(route('admin.rooms.index'))
             ->assertForbidden();
+    });
+
+    // 1c. La délégation Installations suffit, sans siège au comité.
+    it('grants the rooms index page to a facilities delegate off the committee', function (): void {
+        $delegate = User::factory()->withRole(Role::FACILITIES)->create();
+
+        $this->actingAs($delegate)
+            ->get(route('admin.rooms.index'))
+            ->assertStatus(200);
     });
 
     // 2. Tester la visibilité des boutons selon les Policies

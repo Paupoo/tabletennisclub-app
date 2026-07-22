@@ -17,6 +17,7 @@
             {{-- Desktop: full buttons --}}
             <div class="hidden items-center gap-2 lg:flex">
                 <x-admin.shared.filters-button :count="count($filterChips)" />
+                @canany(['payments.reconcile', 'payments.refund', 'transactions.view'])
                 <x-dropdown :label="__('More actions')" icon="o-ellipsis-vertical" right class="btn-ghost btn-sm">
                     @if($statusFilter === 'to_refund')
                         @can('payments.refund')
@@ -29,9 +30,12 @@
                                 wire:click="previewBatchMatch" spinner="previewBatchMatch" />
                         @endcan
                     @endif
+                    @can('transactions.view')
                     <x-menu-item icon="o-arrow-up-tray" :title="__('Import a bank statement')"
                         link="{{ route('admin.treasury.transactions') }}" />
+                    @endcan
                 </x-dropdown>
+                @endcanany
             </div>
         </x-slot:actions>
     </x-header>
@@ -608,23 +612,29 @@
     {{-- ── Mobile action sheet ─────────────────────────────────────────── --}}
     <x-admin.shared.mobile-actions>
         @if($statusFilter === 'to_refund')
+            @can('payments.refund')
             <x-admin.shared.mobile-action-item
                 icon="o-sparkles" color="error"
                 :label="__('Auto-match refunds')"
                 :description="__('Automatically match refund payments')"
                 @click="mobileActionsOpen = false; $wire.call('previewBatchRefundMatch')" />
+            @endcan
         @else
+            @can('payments.reconcile')
             <x-admin.shared.mobile-action-item
                 icon="o-sparkles" color="primary"
                 :label="__('Auto-match')"
                 :description="__('Automatically reconcile payments')"
                 @click="mobileActionsOpen = false; $wire.call('previewBatchMatch')" />
+            @endcan
         @endif
+        @can('transactions.view')
         <x-admin.shared.mobile-action-item
             icon="o-arrow-up-tray" color="info"
             :label="__('Import a bank statement')"
             :description="__('Go to Transactions to import your bank export')"
             @click="mobileActionsOpen = false; window.location = '{{ route('admin.treasury.transactions') }}'" />
+        @endcan
         <div class="my-1 h-px bg-base-200"></div>
         <x-admin.shared.mobile-action-item
             icon="o-check-circle" color="base"

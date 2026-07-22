@@ -133,18 +133,43 @@ new class extends Component
 
     public ?User $user = null;
 
+    /**
+     * The family group the edited user is (or will be) part of: their own group,
+     * or the group of an already-linked member when they are joining an existing
+     * family. Null while no family is established on either side.
+     */
+    private function allowedFamilyGroupId(): ?int
+    {
+        if ($this->existingFamilyGroupId !== null) {
+            return $this->existingFamilyGroupId;
+        }
+
+        if ($this->familyMemberIds === []) {
+            return null;
+        }
+
+        return FamilyGroup::query()
+            ->whereHas('users', fn ($query) => $query->whereIn('users.id', $this->familyMemberIds))
+            ->value('id');
+    }
+
     public function attachFamilyMember(int $userId): void
     {
         $candidate = User::findOrFail($userId);
 
-        if (FamilyGroup::conflictsWith($candidate, $this->existingFamilyGroupId)) {
+        if (FamilyGroup::conflictsWith($candidate, $this->allowedFamilyGroupId())) {
             $this->error(__(':name is already part of another family. Remove them from their current family first.', ['name' => $candidate->first_name . ' ' . $candidate->last_name]));
 
             return;
         }
 
-        if (! in_array($userId, $this->familyMemberIds, true)) {
-            $this->familyMemberIds[] = $userId;
+        // Joining someone who already has a family links the whole family.
+        $idsToLink = [$userId, ...$candidate->familyMembers()->pluck('id')->all()];
+
+        foreach ($idsToLink as $idToLink) {
+            if ($idToLink !== $this->user?->id && ! in_array($idToLink, $this->familyMemberIds, true)) {
+                $this->familyMemberIds[] = $idToLink;
+            }
         }
 
         $this->familySearch = '';
@@ -467,10 +492,12 @@ new class extends Component
             );
         }
 
+        $allowedFamilyGroupId = $this->allowedFamilyGroupId();
+
         foreach ($this->familyMemberIds as $familyMemberId) {
             $candidate = User::find($familyMemberId);
 
-            if ($candidate && FamilyGroup::conflictsWith($candidate, $this->existingFamilyGroupId)) {
+            if ($candidate && FamilyGroup::conflictsWith($candidate, $allowedFamilyGroupId)) {
                 $this->error(__(':name is already part of another family. Remove them from their current family first.', ['name' => $candidate->first_name . ' ' . $candidate->last_name]));
 
                 return;

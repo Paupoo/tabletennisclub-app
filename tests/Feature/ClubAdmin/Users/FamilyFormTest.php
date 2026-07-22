@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\User\SyncFamilyGroupMembersAction;
+use App\Domains\ClubAdmin\Users\Models\FamilyGroup;
 use App\Domains\ClubAdmin\Users\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -59,15 +60,55 @@ describe('family management from the form', function () {
             ->assertSet('familyMemberIds', [$sibling->id]);
     });
 
-    it('refuses to link a member already in another family and does not mutate the list', function () {
+    it('joins the existing family when linking a member who already has one', function () {
         $user = User::factory()->create();
-        $alreadyLinked = User::factory()->create();
-        $otherMember = User::factory()->create();
-        SyncFamilyGroupMembersAction::handle($otherMember, [$alreadyLinked->id]);
+        $parent = User::factory()->create();
+        $child = User::factory()->create();
+        SyncFamilyGroupMembersAction::handle($parent, [$child->id]);
+        $groupId = $parent->fresh()->familyGroups()->first()->id;
 
         Livewire::test(FAMILY_FORM_COMPONENT, ['user' => $user])
-            ->call('attachFamilyMember', $alreadyLinked->id)
-            ->assertSet('familyMemberIds', []);
+            ->call('attachFamilyMember', $parent->id)
+            ->assertSet('familyMemberIds', [$parent->id, $child->id])
+            ->set('licence_type', 'recreative')
+            ->set('password', '')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        expect($user->fresh()->familyGroups()->first()->id)->toBe($groupId)
+            ->and(FamilyGroup::count())->toBe(1)
+            ->and($user->fresh()->familyMembers()->pluck('id')->sort()->values()->all())
+            ->toBe(collect([$parent->id, $child->id])->sort()->values()->all());
+    });
+
+    it('refuses to link a member from another family when the user already has one', function () {
+        $user = User::factory()->create();
+        $sibling = User::factory()->create();
+        SyncFamilyGroupMembersAction::handle($user, [$sibling->id]);
+
+        $stranger = User::factory()->create();
+        $strangerSibling = User::factory()->create();
+        SyncFamilyGroupMembersAction::handle($stranger, [$strangerSibling->id]);
+
+        Livewire::test(FAMILY_FORM_COMPONENT, ['user' => $user])
+            ->call('attachFamilyMember', $stranger->id)
+            ->assertSet('familyMemberIds', [$sibling->id]);
+    });
+
+    it('refuses to mix members from two different families on a user without one', function () {
+        $user = User::factory()->create();
+
+        $parentA = User::factory()->create();
+        SyncFamilyGroupMembersAction::handle($parentA, [User::factory()->create()->id]);
+
+        $parentB = User::factory()->create();
+        SyncFamilyGroupMembersAction::handle($parentB, [User::factory()->create()->id]);
+
+        $component = Livewire::test(FAMILY_FORM_COMPONENT, ['user' => $user])
+            ->call('attachFamilyMember', $parentA->id)
+            ->call('attachFamilyMember', $parentB->id);
+
+        expect($component->get('familyMemberIds'))->not->toContain($parentB->id);
     });
 
     it('finds a club member by name in the family search', function () {

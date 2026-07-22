@@ -45,6 +45,22 @@ test('syncing family members reuses the existing group instead of creating a new
         ->toBe([$sibling->id, $newSibling->id]);
 });
 
+test('syncing a user into a member\'s existing family joins that group and keeps its other members', function (): void {
+    $parent = User::factory()->create();
+    $childA = User::factory()->create();
+    $childB = User::factory()->create();
+    SyncFamilyGroupMembersAction::handle($parent, [$childA->id, $childB->id]);
+    $groupId = $parent->fresh()->familyGroups()->first()->id;
+
+    $newcomer = User::factory()->create();
+    SyncFamilyGroupMembersAction::handle($newcomer, [$parent->id]);
+
+    expect($newcomer->fresh()->familyGroups()->first()->id)->toBe($groupId)
+        ->and(FamilyGroup::count())->toBe(1)
+        ->and($childA->fresh()->familyMembers()->pluck('id')->sort()->values()->all())
+        ->toBe(collect([$parent->id, $childB->id, $newcomer->id])->sort()->values()->all());
+});
+
 test('syncing to no members detaches the user and deletes the group if only one member remains', function (): void {
     $user = User::factory()->create();
     $sibling = User::factory()->create();

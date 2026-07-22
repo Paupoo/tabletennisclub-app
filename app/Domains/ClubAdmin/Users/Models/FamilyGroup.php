@@ -18,10 +18,18 @@ class FamilyGroup extends Model
     use HasFactory;
 
     /**
-     * Whether $candidate already belongs to a family group other than $allowedGroupId.
+     * Whether $candidate belongs to a family group clashing with $allowedGroupId.
+     *
+     * A null $allowedGroupId means no family is established on the editing side
+     * yet: the candidate's own family (if any) becomes the family to join, so it
+     * is never a conflict.
      */
     public static function conflictsWith(User $candidate, ?int $allowedGroupId): bool
     {
+        if ($allowedGroupId === null) {
+            return false;
+        }
+
         $groupId = $candidate->familyGroups()->value('family_groups.id');
 
         return $groupId !== null && $groupId !== $allowedGroupId;

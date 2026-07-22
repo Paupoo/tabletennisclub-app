@@ -11,7 +11,7 @@
         </p>
     @endif
 
-    <x-tabs wire:model="selectedTab">
+    <x-admin.shared.tabs wire:model="selectedTab">
         @foreach($registrations as $userId => $reg)
         @php
             $existingSub      = $existingSubscriptions[$userId] ?? null;
@@ -25,7 +25,7 @@
             $isRegistering    = (! $currentEntry || ($currentEntry['status'] ?? null) === 'cancelled') && ($registrationsOpen || $canReAffiliate);
         @endphp
 
-        <x-tab name="tab-{{ $userId }}" label="{{ $reg['name'] }}">
+        <x-admin.shared.tab name="tab-{{ $userId }}" label="{{ $reg['name'] }}">
             <div class="space-y-10 mt-4">
 
                 {{-- ── A. AFFILIATION ────────────────────────────────────────────── --}}
@@ -611,9 +611,9 @@
                 </div>
 
             </div>
-        </x-tab>
+        </x-admin.shared.tab>
         @endforeach
-    </x-tabs>
+    </x-admin.shared.tabs>
 
     {{-- Modal: Payment details --}}
     <x-modal wire:model="paymentModal" :title="__('Payment Details')" box-class="max-w-md">

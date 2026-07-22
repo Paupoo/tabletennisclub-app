@@ -65,14 +65,16 @@
             :value="number_format($this->stats['pending_total'], 2, ',', ' ') . ' €'"
             :hint="$this->stats['pending_count'] . ' ' . __('payment(s) awaiting reconciliation')"
             icon="o-clock"
-            color="warning" />
+            color="warning"
+            class="{{ $statusFilter === 'pending' ? 'ring-2 ring-primary/30' : '' }}" />
 
         <x-admin.shared.stat-card
-            :label="__('Collected')"
+            :label="__('Paid')"
             :value="number_format($this->stats['paid_total'], 2, ',', ' ') . ' €'"
             :hint="$this->stats['paid_count'] . ' ' . __('payment(s) received')"
             icon="o-check-badge"
-            color="success" />
+            color="success"
+            class="{{ $statusFilter === 'paid' ? 'ring-2 ring-primary/30' : '' }}" />
 
         <x-admin.shared.stat-card
             :label="__('To refund')"
@@ -80,15 +82,15 @@
             :hint="$this->stats['to_refund_count'] . ' ' . __('refund(s) pending')"
             icon="o-arrow-uturn-left"
             :color="$this->stats['to_refund_count'] > 0 ? 'error' : 'neutral'"
-            class="col-span-2 lg:col-span-1" />
+            class="col-span-2 lg:col-span-1 {{ $statusFilter === 'to_refund' ? 'ring-2 ring-primary/30' : '' }}" />
     </div>
 
-    {{-- Tabs + table --}}
-    <x-tabs wire:model.live="statusFilter">
-        <x-tab name="pending"   :label="__('Pending')"   icon="o-clock" />
-        <x-tab name="paid"      :label="__('Paid')"      icon="o-check-badge" />
-        <x-tab name="to_refund" :label="__('To refund')" icon="o-arrow-uturn-left" />
-    </x-tabs>
+    {{-- Status filter — folder tabs; the filtered table lives outside as its own card --}}
+    <x-admin.shared.tabs wire:model.live="statusFilter">
+        <x-admin.shared.tab name="pending"   :label="__('Pending')"   icon="o-clock" />
+        <x-admin.shared.tab name="paid"      :label="__('Paid')"      icon="o-check-badge" />
+        <x-admin.shared.tab name="to_refund" :label="__('To refund')" icon="o-arrow-uturn-left" />
+    </x-admin.shared.tabs>
 
     <x-card class="bg-base-100 border-none shadow-sm rounded-t-none">
         <x-table :headers="$headers" :rows="$payments" :sort-by="$sortBy" wire:model.live="selected" selectable hover>

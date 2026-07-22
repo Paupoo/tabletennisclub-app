@@ -100,6 +100,17 @@ describe('the website admin, previously guarded by route middleware alone', func
         $this->actingAs($triager)->get(route('admin.website.spams.index'))->assertOk();
         $this->actingAs($triager)->get(route('admin.website.articles.index'))->assertForbidden();
     });
+
+    it('ties the email templates to the contacts delegation', function (): void {
+        // Templates are a contacts thing: whoever handles contacts manages them,
+        // and the redundant contacts.templates.manage permission was folded in.
+        $contacts = User::factory()->withRole(Role::CONTACTS)->create();
+        $writer = User::factory()->withRole(Role::WEBSITE)->create();
+
+        $this->actingAs($contacts)->get(route('admin.website.contacts.email-templates'))->assertOk();
+        $this->actingAs($writer)->get(route('admin.website.contacts.email-templates'))->assertForbidden();
+        $this->actingAs($this->member)->get(route('admin.website.contacts.email-templates'))->assertForbidden();
+    });
 });
 
 describe('meetings', function (): void {

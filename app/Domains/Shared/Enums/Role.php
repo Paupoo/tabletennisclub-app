@@ -202,7 +202,6 @@ enum Role: string
             self::CONTACTS => [
                 Permission::ContactsView,
                 Permission::ContactsManage,
-                Permission::ContactsTemplatesManage,
                 Permission::SpamsManage,
             ],
 

@@ -38,7 +38,6 @@ enum Permission: string
     case ClubUpdate = 'club.update';
     case CoachAreaAccess = 'coach_area.access';
     case ContactsManage = 'contacts.manage';
-    case ContactsTemplatesManage = 'contacts.templates.manage';
 
     // Contacts et CRM
     case ContactsView = 'contacts.view';

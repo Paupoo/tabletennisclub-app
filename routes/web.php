@@ -374,7 +374,7 @@ Route::prefix('admin/website')->middleware(['auth', 'verified', 'feature:website
             ->middleware('can:contacts.view')
             ->name('admin.website.contacts.index');
         Route::livewire('/contacts/email-templates', 'pages::website.contacts.email-templates')
-            ->middleware('can:contacts.templates.manage')
+            ->middleware('can:contacts.manage')
             ->name('admin.website.contacts.email-templates');
         Route::livewire('/spams', 'pages::website.spams.index')
             ->middleware('can:spams.manage')

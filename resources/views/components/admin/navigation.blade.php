@@ -181,7 +181,7 @@
         @endfeature
         @feature('contacts')
         <x-menu-item icon="o-envelope-open" link="{{ route('admin.website.contacts.index') }}" :title="__('Contacts')" />
-        @can('manage-contacts')
+        @can('contacts.manage')
             <x-menu-item icon="o-document-text" link="{{ route('admin.website.contacts.email-templates') }}" :title="__('Email templates')" />
         @endcan
         @can('spams.manage')

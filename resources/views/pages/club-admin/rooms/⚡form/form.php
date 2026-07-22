@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Club\Models\Table;
+use App\Domains\Shared\Enums\TableStateEnum;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
@@ -52,7 +54,7 @@ new class extends Component
 
     public string $newTablePurchasedOn = '';
 
-    public string $newTableState = 'new';
+    public string $newTableState = TableStateEnum::GOOD->value;
 
     public Room $room;
 
@@ -71,7 +73,7 @@ new class extends Component
             'newTableBrand' => 'nullable|string|max:100',
             'newTableModel' => 'nullable|string|max:100',
             'newTablePurchasedOn' => 'nullable|date',
-            'newTableState' => 'required|string|max:10',
+            'newTableState' => ['required', Rule::enum(TableStateEnum::class)],
         ]);
 
         $newTable = Table::create([
@@ -79,7 +81,6 @@ new class extends Component
             'brand' => $this->newTableBrand,
             'model' => $this->newTableModel,
             'state' => $this->newTableState,
-            'state_description' => $this->newTableState,
             'purchased_on' => $this->newTablePurchasedOn,
         ]);
 

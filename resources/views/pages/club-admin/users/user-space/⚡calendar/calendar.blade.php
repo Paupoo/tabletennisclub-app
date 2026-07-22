@@ -64,170 +64,224 @@
         </x-slot:actions>
     </x-modal>
 
-    <div>
+    @php
+        $typeDotClasses = [
+            'training'   => 'bg-accent',
+            'tournament' => 'bg-secondary',
+            'interclub'  => 'bg-primary',
+            'meeting'    => 'bg-warning',
+        ];
+        $typeChipClasses = [
+            'training'   => 'border-accent bg-accent/10',
+            'tournament' => 'border-secondary bg-secondary/20',
+            'interclub'  => 'border-primary bg-primary/10',
+            'meeting'    => 'border-warning bg-warning/20',
+        ];
+        $typeBadgeClasses = [
+            'training'   => 'badge-accent badge-soft',
+            'tournament' => 'badge-secondary badge-soft',
+            'interclub'  => 'badge-primary badge-soft',
+            'meeting'    => 'badge-warning badge-soft',
+        ];
+        $typeLabels = [
+            'training'   => __('Training'),
+            'tournament' => __('Tournament'),
+            'interclub'  => __('Interclub'),
+            'meeting'    => __('Meeting'),
+        ];
+        $weekStart = now()->startOfWeek(\Carbon\Carbon::MONDAY);
+    @endphp
 
-            @php
-                $typeColors = [
-                    'training'   => 'bg-accent',
-                    'tournament' => 'bg-secondary',
-                    'interclub'  => 'bg-primary',
-                    'meeting'    => 'bg-warning',
-                ];
-                $typeBadgeClasses = [
-                    'training'   => 'badge-accent badge-soft',
-                    'tournament' => 'badge-secondary badge-soft',
-                    'interclub'  => 'badge-primary badge-soft',
-                    'meeting'    => 'badge-warning badge-soft',
-                ];
-                $typeLabels = [
-                    'training'   => __('Training'),
-                    'tournament' => __('Tournament'),
-                    'interclub'  => __('Interclub'),
-                    'meeting'    => __('Meeting'),
-                ];
-                $currentMonthKey = now()->translatedFormat('F Y');
-            @endphp
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-start">
 
-            @if ($showAllEvents)
-                {{-- Vue condensée avec accordéon par mois --}}
-                @forelse ($calendar as $month => $events)
-                    <x-section-accordion
-                        label="{{ $month }}"
-                        count="{{ count($events) }}"
-                        color="gray"
-                        :open="$month === $currentMonthKey"
-                        class="mb-4">
-                        <div>
-                            <div class="divide-y divide-base-200 overflow-hidden rounded-xl border border-base-200 bg-base-100">
-                                @foreach ($events as $event)
-                                    @php
-                                        $dt = \Carbon\Carbon::parse($event['startDateTime']);
-                                        $userWaiting = ($event['registrationStatus'] ?? null) === 'waiting';
-                                    @endphp
-                                    <div class="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-base-200/30">
-                                        <div class="{{ $typeColors[$event['type']] ?? 'bg-base-300' }} h-1.5 w-1.5 shrink-0 rounded-full"></div>
-                                        <span class="min-w-[52px] text-xs font-bold text-base-content/50">{{ $dt->translatedFormat('d M') }}</span>
-                                        <div class="flex min-w-0 flex-1 flex-col">
-                                            <span class="truncate text-xs font-medium">{{ $event['title'] }}</span>
-                                            @if ($event['type'] === 'training' && ! empty($event['coach']))
-                                                <span class="truncate text-xs text-base-content/50">{{ $event['coach'] }}</span>
-                                            @endif
-                                        </div>
-                                        <span class="shrink-0 text-xs text-base-content/50">
-                                            {{ $dt->format('H:i') }}{{ $event['type'] === 'training' && ! empty($event['endTime']) ? '–' . $event['endTime'] : '' }}
-                                        </span>
-                                        @if ($userWaiting)
-                                            <span class="badge badge-xs badge-warning badge-soft font-bold">
-                                                {{ __('Wait') }}{{ ! empty($event['waitlistPosition']) ? ' #' . $event['waitlistPosition'] : '' }}
-                                            </span>
-                                        @endif
-                                        <span class="badge badge-xs {{ $typeBadgeClasses[$event['type']] ?? 'badge-ghost' }}">
-                                            {{ $typeLabels[$event['type']] ?? $event['type'] }}
-                                        </span>
-                                    </div>
+        {{-- Grille mensuelle --}}
+        <div class="min-w-0 flex-1 overflow-hidden rounded-xl border border-base-200 bg-base-100">
+            <div class="flex items-center justify-between gap-2 border-b border-base-200 px-3 py-2.5 sm:px-4">
+                <div class="flex items-center gap-1">
+                    <x-button class="btn-ghost btn-sm btn-square" icon="o-chevron-left"
+                        wire:click="previousMonth" :aria-label="__('Previous month')" />
+                    <span class="min-w-36 text-center text-sm font-bold sm:text-base">{{ $monthLabel }}</span>
+                    <x-button class="btn-ghost btn-sm btn-square" icon="o-chevron-right"
+                        wire:click="nextMonth" :aria-label="__('Next month')" />
+                </div>
+                @unless ($isCurrentMonth)
+                    <x-button class="btn-outline btn-xs" :label="__('Today')" wire:click="goToToday" />
+                @endunless
+            </div>
+
+            {{-- En-têtes des jours --}}
+            <div class="grid grid-cols-7 border-b border-base-200 bg-base-200/40">
+                @for ($i = 0; $i < 7; $i++)
+                    <div class="px-1 py-1.5 text-center text-[10px] font-bold uppercase tracking-wide text-base-content/50 lg:text-left lg:px-2">
+                        {{ $weekStart->copy()->addDays($i)->translatedFormat('D') }}
+                    </div>
+                @endfor
+            </div>
+
+            {{-- Semaines --}}
+            @foreach ($weeks as $week)
+                <div class="grid grid-cols-7" wire:key="week-{{ $week[0]['date'] }}">
+                    @foreach ($week as $day)
+                        <button type="button" wire:key="day-{{ $day['date'] }}"
+                            wire:click="selectDay('{{ $day['date'] }}')"
+                            @class([
+                                'group relative flex min-h-12 flex-col items-center gap-0.5 border-b border-r border-base-200/60 p-1 transition-colors last:border-r-0 lg:min-h-24 lg:items-stretch lg:p-1.5',
+                                'bg-primary/5' => $day['isSelected'],
+                                'hover:bg-base-200/40' => ! $day['isSelected'],
+                            ])>
+                            <span @class([
+                                'flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold lg:h-5 lg:w-5 lg:text-[11px]',
+                                'bg-primary text-primary-content' => $day['isSelected'],
+                                'text-primary font-bold ring-1 ring-primary' => $day['isToday'] && ! $day['isSelected'],
+                                'text-base-content/30' => ! $day['inMonth'] && ! $day['isSelected'],
+                                'text-base-content/70' => $day['inMonth'] && ! $day['isSelected'] && ! $day['isToday'],
+                            ])>
+                                {{ $day['day'] }}
+                            </span>
+
+                            {{-- Mobile : pastilles --}}
+                            <span class="flex h-1.5 items-center justify-center gap-0.5 lg:hidden">
+                                @foreach (array_slice($day['events'], 0, 3) as $event)
+                                    <span @class([
+                                        'h-1.5 w-1.5 rounded-full',
+                                        $typeDotClasses[$event['type']] ?? 'bg-base-300',
+                                        'opacity-40' => $day['isPast'],
+                                    ])></span>
                                 @endforeach
-                            </div>
-                        </div>
-                    </x-section-accordion>
-                @empty
-                    <x-empty-state icon="o-calendar" :heading="__('No upcoming events.')"
-                        :message="count($filterChips) > 0 ? __('Try removing some filters.') : null" />
-                @endforelse
-            @else
-                {{-- Vue personnelle : accordéon par mois avec statut et actions --}}
-                @forelse ($calendar as $month => $events)
-                    <x-section-accordion
-                        label="{{ $month }}"
-                        count="{{ count($events) }}"
-                        color="gray"
-                        :open="$month === $currentMonthKey"
-                        class="mb-4">
-                            @foreach ($events as $event)
-                                @php
-                                    $regStatus     = $event['registrationStatus'] ?? null;
-                                    $isActive      = in_array($regStatus, ['registered', 'confirmed']);
-                                    $isSpotOffered = $regStatus === 'spot_offered';
-                                    $isWaiting     = $regStatus === 'waiting';
-                                    $isTraining    = $event['type'] === 'training';
-                                    $isInterclub   = $event['type'] === 'interclub';
-                                @endphp
-                                <x-admin.shared.compact-event-preview
-                                    :name="$event['title']"
-                                    :startDateTime="$event['startDateTime']"
-                                    :endTime="$isTraining ? ($event['endTime'] ?? null) : null"
-                                    :type="$event['type']"
-                                    :link="$isInterclub && $event['isUserInTeam'] ? route('admin.interclubs.my-matches') : '#'"
-                                    :location="$isInterclub ? $event['address'] : ($event['room'] ?? '')"
-                                    :organizer="$isTraining && ! empty($event['coach']) ? $event['coach'] : null"
-                                >
-                                    <x-slot:actions>
-                                        @if ($isInterclub)
-                                            @if ($event['isHome'])
-                                                <x-badge class="badge-neutral badge-xs font-bold" value="{{ __('Home') }}" />
-                                            @else
-                                                <x-badge class="badge-ghost badge-xs border border-base-300 font-bold" value="{{ __('Away') }}" />
-                                            @endif
-                                            @if ($event['division'])
-                                                <x-badge class="badge-outline badge-xs" value="{{ $event['division'] }}" />
-                                            @endif
-                                            @if ($event['isUserInTeam'])
-                                                @if ($event['isSelected'])
-                                                    <x-admin.shared.status-badge status="selected" />
-                                                @elseif ($event['availability'])
-                                                    <x-badge :class="$event['availability']->color() . ' badge-sm font-bold'" :value="$event['availability']->label()" />
-                                                @else
-                                                    <x-admin.shared.status-badge status="no_response" />
-                                                @endif
-                                            @endif
-                                        @elseif ($isTraining)
-                                            @php $packStatus = $event['packStatus'] ?? 'enrolled'; @endphp
-                                            @if (isset($event['level']))
-                                                <x-badge class="badge-primary badge-soft badge-sm" value="{{ $event['level'] }}" />
-                                            @endif
-                                            @if ($packStatus === 'offered')
-                                                <span class="flex items-center gap-1.5 text-xs font-semibold text-success">
-                                                    <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-success"></span>
-                                                    {{ __('Confirm attendance') }}
-                                                </span>
-                                                @if (!empty($event['confirmDeadline']))
-                                                    <span class="text-xs text-base-content/50">{{ \Carbon\Carbon::parse($event['confirmDeadline'])->format('d/m') }}</span>
-                                                @endif
-                                            @elseif ($packStatus === 'pending')
-                                                <x-admin.shared.status-badge status="pending" />
-                                            @elseif ($packStatus === 'waiting')
-                                                <x-admin.shared.status-badge status="waiting" :detail="$event['packWaitlistPosition'] ?? null" />
-                                            @else
-                                                <x-admin.shared.status-badge status="enrolled" />
-                                            @endif
-                                        @elseif ($isSpotOffered)
-                                            <span class="flex items-center gap-1.5 text-xs font-semibold text-success">
-                                                <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-success"></span>
-                                                {{ __('Confirm attendance') }}
-                                            </span>
-                                            @if (!empty($event['confirmDeadline']))
-                                                <span class="text-xs text-base-content/50">{{ \Carbon\Carbon::parse($event['confirmDeadline'])->format('d/m') }}</span>
-                                            @endif
-                                        @elseif ($isActive)
-                                            <x-admin.shared.status-badge status="registered" />
-                                        @elseif ($isWaiting)
-                                            <x-admin.shared.status-badge status="waiting" :detail="$event['waitlistPosition'] ?? null" />
-                                        @else
-                                            <a class="btn btn-primary btn-outline btn-xs"
-                                                href="{{ route('admin.user.event-subscription', $user) }}">
-                                                {{ __('Register') }}
-                                            </a>
-                                        @endif
-                                        <x-icon class="h-5 w-5 opacity-20 transition-opacity group-hover:opacity-100"
-                                            name="o-chevron-right" />
-                                    </x-slot:actions>
-                                </x-admin.shared.compact-event-preview>
-                            @endforeach
-                    </x-section-accordion>
-                @empty
-                    <x-empty-state icon="o-calendar" :heading="__('No upcoming events.')"
-                        :message="count($filterChips) > 0 ? __('Try removing some filters.') : null" />
-                @endforelse
-            @endif
+                            </span>
+
+                            {{-- Desktop : chips --}}
+                            <span class="hidden w-full min-w-0 flex-col gap-0.5 lg:flex">
+                                @foreach (array_slice($day['events'], 0, 3) as $event)
+                                    <span @class([
+                                        'block truncate rounded border-l-[3px] px-1 py-0.5 text-left text-[11px] font-medium leading-tight',
+                                        $typeChipClasses[$event['type']] ?? 'border-base-300 bg-base-200',
+                                        'opacity-50' => $day['isPast'],
+                                    ])>
+                                        {{ \Carbon\Carbon::parse($event['startDateTime'])->format('H:i') }}
+                                        {{ $event['title'] }}
+                                    </span>
+                                @endforeach
+                                @if (count($day['events']) > 3)
+                                    <span class="px-1 text-left text-[10px] font-semibold text-base-content/50">
+                                        +{{ count($day['events']) - 3 }}
+                                    </span>
+                                @endif
+                            </span>
+                        </button>
+                    @endforeach
+                </div>
+            @endforeach
+
+            <div class="flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-2 sm:px-4">
+                @foreach ($typeLabels as $type => $label)
+                    <span class="flex items-center gap-1.5 text-[11px] text-base-content/60">
+                        <span class="{{ $typeDotClasses[$type] }} h-2 w-2 rounded-full"></span>
+                        {{ $label }}
+                    </span>
+                @endforeach
+            </div>
+        </div>
+
+        {{-- Panneau du jour sélectionné --}}
+        <div class="w-full rounded-xl border border-base-200 bg-base-100 p-4 lg:w-96 lg:shrink-0" wire:key="day-panel">
+            <h3 class="mb-1 text-sm font-bold">
+                {{ ucfirst(\Carbon\Carbon::parse($selectedDay)->translatedFormat('l j F Y')) }}
+            </h3>
+
+            @forelse ($selectedDayEvents as $event)
+                @php
+                    $regStatus     = $event['registrationStatus'] ?? null;
+                    $isActive      = in_array($regStatus, ['registered', 'confirmed']);
+                    $isSpotOffered = $regStatus === 'spot_offered';
+                    $isWaiting     = $regStatus === 'waiting';
+                    $isTraining    = $event['type'] === 'training';
+                    $isInterclub   = $event['type'] === 'interclub';
+                @endphp
+                <x-admin.shared.compact-event-preview
+                    wire:key="event-{{ $selectedDay }}-{{ $loop->index }}"
+                    :name="$event['title']"
+                    :startDateTime="$event['startDateTime']"
+                    :endTime="$isTraining ? ($event['endTime'] ?? null) : null"
+                    :type="$event['type']"
+                    :link="$isInterclub && $event['isUserInTeam'] ? route('admin.interclubs.my-matches') : '#'"
+                    :location="$isInterclub ? $event['address'] : ($event['room'] ?? '')"
+                    :organizer="$isTraining && ! empty($event['coach']) ? $event['coach'] : null"
+                >
+                    <x-slot:actions>
+                        @if ($showAllEvents)
+                            @if (($event['registrationStatus'] ?? null) === 'waiting')
+                                <span class="badge badge-xs badge-warning badge-soft font-bold">
+                                    {{ __('Wait') }}{{ ! empty($event['waitlistPosition']) ? ' #' . $event['waitlistPosition'] : '' }}
+                                </span>
+                            @endif
+                            <span class="badge badge-xs {{ $typeBadgeClasses[$event['type']] ?? 'badge-ghost' }}">
+                                {{ $typeLabels[$event['type']] ?? $event['type'] }}
+                            </span>
+                        @elseif ($isInterclub)
+                            @if ($event['isHome'])
+                                <x-badge class="badge-neutral badge-xs font-bold" value="{{ __('Home') }}" />
+                            @else
+                                <x-badge class="badge-ghost badge-xs border border-base-300 font-bold" value="{{ __('Away') }}" />
+                            @endif
+                            @if ($event['division'])
+                                <x-badge class="badge-outline badge-xs" value="{{ $event['division'] }}" />
+                            @endif
+                            @if ($event['isUserInTeam'])
+                                @if ($event['isSelected'])
+                                    <x-admin.shared.status-badge status="selected" />
+                                @elseif ($event['availability'])
+                                    <x-badge :class="$event['availability']->color() . ' badge-sm font-bold'" :value="$event['availability']->label()" />
+                                @else
+                                    <x-admin.shared.status-badge status="no_response" />
+                                @endif
+                            @endif
+                        @elseif ($isTraining)
+                            @php $packStatus = $event['packStatus'] ?? 'enrolled'; @endphp
+                            @if (isset($event['level']))
+                                <x-badge class="badge-primary badge-soft badge-sm" value="{{ $event['level'] }}" />
+                            @endif
+                            @if ($packStatus === 'offered')
+                                <span class="flex items-center gap-1.5 text-xs font-semibold text-success">
+                                    <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-success"></span>
+                                    {{ __('Confirm attendance') }}
+                                </span>
+                                @if (! empty($event['confirmDeadline']))
+                                    <span class="text-xs text-base-content/50">{{ \Carbon\Carbon::parse($event['confirmDeadline'])->format('d/m') }}</span>
+                                @endif
+                            @elseif ($packStatus === 'pending')
+                                <x-admin.shared.status-badge status="pending" />
+                            @elseif ($packStatus === 'waiting')
+                                <x-admin.shared.status-badge status="waiting" :detail="$event['packWaitlistPosition'] ?? null" />
+                            @else
+                                <x-admin.shared.status-badge status="enrolled" />
+                            @endif
+                        @elseif ($isSpotOffered)
+                            <span class="flex items-center gap-1.5 text-xs font-semibold text-success">
+                                <span class="h-1.5 w-1.5 animate-pulse rounded-full bg-success"></span>
+                                {{ __('Confirm attendance') }}
+                            </span>
+                            @if (! empty($event['confirmDeadline']))
+                                <span class="text-xs text-base-content/50">{{ \Carbon\Carbon::parse($event['confirmDeadline'])->format('d/m') }}</span>
+                            @endif
+                        @elseif ($isActive)
+                            <x-admin.shared.status-badge status="registered" />
+                        @elseif ($isWaiting)
+                            <x-admin.shared.status-badge status="waiting" :detail="$event['waitlistPosition'] ?? null" />
+                        @else
+                            <a class="btn btn-primary btn-outline btn-xs"
+                                href="{{ route('admin.user.event-subscription', $user) }}">
+                                {{ __('Register') }}
+                            </a>
+                        @endif
+                    </x-slot:actions>
+                </x-admin.shared.compact-event-preview>
+            @empty
+                <p class="py-6 text-center text-sm text-base-content/40">
+                    {{ __('No events on this day.') }}
+                </p>
+            @endforelse
+        </div>
     </div>
 
     {{-- Drawer de filtres (R-filtres) --}}

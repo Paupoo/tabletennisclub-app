@@ -15,6 +15,7 @@ use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\Trainings\Models\Training;
 use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 
 /**
@@ -26,26 +27,30 @@ class UserCalendarService
 {
     /**
      * @param  string[]  $categories  empty = all categories
+     * @param  CarbonInterface|null  $from  defaults to now (upcoming events only, e.g. ICS feed)
+     * @param  CarbonInterface|null  $to  null = unbounded
      * @return Collection<int, array<string, mixed>> flat list sorted by start datetime
      */
-    public function eventsFor(User $user, bool $showAllEvents = false, array $categories = []): Collection
+    public function eventsFor(User $user, bool $showAllEvents = false, array $categories = [], ?CarbonInterface $from = null, ?CarbonInterface $to = null): Collection
     {
+        $from ??= Carbon::now();
+
         $events = collect();
 
         if ($this->wants('tournament', $categories)) {
-            $events = $events->merge($this->tournaments($user, $showAllEvents));
+            $events = $events->merge($this->tournaments($user, $showAllEvents, $from, $to));
         }
 
         if ($this->wants('training', $categories)) {
-            $events = $events->merge($this->trainingSessions($user, $showAllEvents));
+            $events = $events->merge($this->trainingSessions($user, $showAllEvents, $from, $to));
         }
 
         if ($this->wants('meeting', $categories)) {
-            $events = $events->merge($this->meetings($user, $showAllEvents));
+            $events = $events->merge($this->meetings($user, $showAllEvents, $from, $to));
         }
 
         if ($this->wants('interclub', $categories)) {
-            $events = $events->merge($this->interclubs($user, $showAllEvents));
+            $events = $events->merge($this->interclubs($user, $showAllEvents, $from, $to));
         }
 
         return $events->sortBy('startDateTime')->values();
@@ -81,7 +86,7 @@ class UserCalendarService
     /**
      * @return Collection<int, array<string, mixed>>
      */
-    private function interclubs(User $user, bool $showAllEvents): Collection
+    private function interclubs(User $user, bool $showAllEvents, CarbonInterface $from, ?CarbonInterface $to): Collection
     {
         $season = Season::where('is_active', true)->first();
 
@@ -112,7 +117,8 @@ class UserCalendarService
         ])
             ->where('season_id', $season->id)
             ->where(fn ($q) => $q->whereIn('visited_team_id', $filterTeamIds)->orWhereIn('visiting_team_id', $filterTeamIds))
-            ->where('start_date_time', '>=', Carbon::now())
+            ->where('start_date_time', '>=', $from)
+            ->when($to, fn ($q) => $q->where('start_date_time', '<=', $to))
             ->orderBy('start_date_time')
             ->get()
             ->map(fn ($ic) => $this->formatInterclub($ic, $ourTeamIds->toArray(), $userTeamIds));
@@ -121,10 +127,11 @@ class UserCalendarService
     /**
      * @return Collection<int, array<string, mixed>>
      */
-    private function meetings(User $user, bool $showAllEvents): Collection
+    private function meetings(User $user, bool $showAllEvents, CarbonInterface $from, ?CarbonInterface $to): Collection
     {
         $meetingsQuery = Meeting::whereIn('status', [MeetingStatusEnum::CONFIRMED->value])
-            ->where('scheduled_at', '>=', now());
+            ->where('scheduled_at', '>=', $from)
+            ->when($to, fn ($q) => $q->where('scheduled_at', '<=', $to));
 
         if (! $showAllEvents) {
             $meetingsQuery->whereHas('users', fn ($q) => $q->where('meeting_user.user_id', $user->id));
@@ -150,10 +157,13 @@ class UserCalendarService
     /**
      * @return Collection<int, array<string, mixed>>
      */
-    private function tournaments(User $user, bool $showAllEvents): Collection
+    private function tournaments(User $user, bool $showAllEvents, CarbonInterface $from, ?CarbonInterface $to): Collection
     {
+        // A tournament overlaps the window as soon as it hasn't ended before $from
+        // (multi-day tournaments keep showing while ongoing).
         $tournamentsQuery = Tournament::where('status', TournamentStatusEnum::PUBLISHED)
-            ->where('start_date', '>=', now());
+            ->whereRaw('COALESCE(end_date, start_date) >= ?', [$from])
+            ->when($to, fn ($q) => $q->where('start_date', '<=', $to));
 
         if (! $showAllEvents) {
             $tournamentsQuery->whereHas('users', fn ($q) => $q
@@ -168,6 +178,7 @@ class UserCalendarService
             ->get()
             ->map(fn ($t) => [
                 'startDateTime' => $t->start_date->format('Y-m-d H:i:s'),
+                'endDate' => $t->end_date?->format('Y-m-d'),
                 'title' => $t->name,
                 'type' => 'tournament',
                 'tournamentId' => $t->id,
@@ -181,7 +192,7 @@ class UserCalendarService
     /**
      * @return Collection<int, array<string, mixed>>
      */
-    private function trainingSessions(User $user, bool $showAllEvents): Collection
+    private function trainingSessions(User $user, bool $showAllEvents, CarbonInterface $from, ?CarbonInterface $to): Collection
     {
         $season = Season::where('is_active', true)->first();
 
@@ -192,7 +203,8 @@ class UserCalendarService
         if ($showAllEvents) {
             return Training::with(['trainingPack', 'room', 'trainer'])
                 ->where('status', 'scheduled')
-                ->where('start', '>=', Carbon::now())
+                ->where('start', '>=', $from)
+                ->when($to, fn ($q) => $q->where('start', '<=', $to))
                 ->orderBy('start')
                 ->get()
                 ->map(fn ($s) => [
@@ -235,7 +247,8 @@ class UserCalendarService
             $sessionIds = $sessionIds->merge(
                 Training::whereIn('training_pack_id', $enrolledPackIds)
                     ->where('status', 'scheduled')
-                    ->where('start', '>=', Carbon::now())
+                    ->where('start', '>=', $from)
+                    ->when($to, fn ($q) => $q->where('start', '<=', $to))
                     ->pluck('id')
             );
         }
@@ -243,14 +256,16 @@ class UserCalendarService
         $sessionIds = $sessionIds->merge(
             Training::where('trainer_id', $user->id)
                 ->where('status', 'scheduled')
-                ->where('start', '>=', Carbon::now())
+                ->where('start', '>=', $from)
+                ->when($to, fn ($q) => $q->where('start', '<=', $to))
                 ->pluck('id')
         );
 
         $sessionIds = $sessionIds->merge(
             $user->trainings()
                 ->where('trainings.status', 'scheduled')
-                ->where('trainings.start', '>=', Carbon::now())
+                ->where('trainings.start', '>=', $from)
+                ->when($to, fn ($q) => $q->where('trainings.start', '<=', $to))
                 ->pluck('trainings.id')
         );
 

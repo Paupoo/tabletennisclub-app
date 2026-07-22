@@ -464,7 +464,11 @@ new class extends Component
                     'amount_paid' => $sub->amount_paid,
                     'enrolled_packs' => $sub->trainingPacks
                         ->filter(fn ($p) => in_array($p->pivot->status, ['enrolled', 'pending'], true))
-                        ->map(fn ($p) => ['name' => $p->name, 'status' => $p->pivot->status])
+                        ->map(fn ($p) => [
+                            'name' => $p->name,
+                            'status' => $p->pivot->status,
+                            'schedule' => $p->scheduleLabel(),
+                        ])
                         ->values()
                         ->toArray(),
                     'is_current_season' => $season && $sub->season_id === $season->id,
@@ -523,7 +527,9 @@ new class extends Component
                         },
                         'coach' => $pack->trainer
                             ? $pack->trainer->first_name . ' ' . $pack->trainer->last_name
-                            : '—',
+                            : null,
+                        'schedule' => $pack->scheduleLabel(),
+                        'room' => $pack->room?->name,
                         'is_open_enrollment' => $pack->is_open_enrollment,
                         'spots_remaining' => max(0, $pack->effectiveMaxParticipants() - $pack->enrolledCount()),
                         'waitlist_count' => $pack->waitlistCount(),

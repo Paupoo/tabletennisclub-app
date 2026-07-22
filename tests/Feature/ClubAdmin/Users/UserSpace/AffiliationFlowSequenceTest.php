@@ -22,7 +22,7 @@ it('sequences the affiliation flow: formula, then trainings, then summary and su
         ->test('pages::club-admin.users.user-space.registration-management', ['user' => $user])
         ->assertSeeInOrder([
             __('Competition'),
-            __('Training'),
+            __('Directed training'),
             __('Summary and submit'),
             __('Submit my registration'),
         ]);

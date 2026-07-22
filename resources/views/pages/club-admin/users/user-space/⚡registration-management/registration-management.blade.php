@@ -5,13 +5,56 @@
 <div>
     <x-header :title="__('Affiliation and Training')" :subtitle="__('Manage your club membership and training enrollments')" separator />
 
-    @if (count($registrations) <= 1)
-        <p class="text-sm text-base-content/50 italic mb-4">
-            {{ __('To add a family member, please contact the committee.') }}
-        </p>
-    @endif
+    @php $isSingleMember = count($registrations) === 1; @endphp
 
-    <x-admin.shared.tabs wire:model="selectedTab">
+    <div x-data="{ selected: @entangle('selectedTab') }">
+        @unless($isSingleMember)
+            {{-- Family member selector --}}
+            <div class="flex items-center gap-2 mb-3">
+                <div class="flex items-center gap-1.5">
+                    <x-icon name="o-users" class="w-4 h-4 text-base-content/40" />
+                    <span class="text-xs font-bold uppercase tracking-wide text-base-content/50">{{ __('Your family') }}</span>
+                </div>
+                <span class="text-xs opacity-50 italic shrink-0">— {{ __('Select the person to manage') }}</span>
+            </div>
+            <div class="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-2.5 mb-6">
+                @foreach($registrations as $userId => $reg)
+                    @php
+                        $memberEntry = collect(($subscriptionHistory[$userId] ?? ['history' => []])['history'])
+                            ->firstWhere('is_current_season', true);
+                        $memberStatus = ($memberEntry && $memberEntry['status'] !== 'cancelled') ? $memberEntry['status'] : null;
+                        $memberInitials = collect(explode(' ', trim($reg['name'])))
+                            ->filter()
+                            ->map(fn (string $part): string => mb_strtoupper(mb_substr($part, 0, 1)))
+                            ->take(2)
+                            ->implode('');
+                    @endphp
+                    <button type="button"
+                        @click="selected = 'tab-{{ $userId }}'"
+                        :class="selected === 'tab-{{ $userId }}' ? 'border-primary bg-primary/5 shadow-sm' : 'border-base-300 hover:border-primary/50'"
+                        :aria-selected="selected === 'tab-{{ $userId }}'"
+                        role="tab"
+                        class="flex items-center gap-3 rounded-xl border-2 p-3 text-left transition-colors cursor-pointer">
+                        <div class="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-bold shrink-0">
+                            {{ $memberInitials }}
+                        </div>
+                        <div class="min-w-0">
+                            <div class="font-bold text-sm truncate">{{ $reg['name'] }}</div>
+                            @if($memberStatus === 'paid')
+                                <div class="text-xs text-success font-medium">✓ {{ __('Paid') }}</div>
+                            @elseif($memberStatus === 'confirmed')
+                                <div class="text-xs text-info font-medium">{{ __('To pay') }}</div>
+                            @elseif($memberStatus === 'pending')
+                                <div class="text-xs text-warning-content font-medium">{{ __('Pending') }}</div>
+                            @else
+                                <div class="text-xs text-error font-medium">{{ __('To register') }}</div>
+                            @endif
+                        </div>
+                    </button>
+                @endforeach
+            </div>
+        @endunless
+
         @foreach($registrations as $userId => $reg)
         @php
             $existingSub      = $existingSubscriptions[$userId] ?? null;
@@ -25,7 +68,7 @@
             $isRegistering    = (! $currentEntry || ($currentEntry['status'] ?? null) === 'cancelled') && ($registrationsOpen || $canReAffiliate);
         @endphp
 
-        <x-admin.shared.tab name="tab-{{ $userId }}" label="{{ $reg['name'] }}">
+        <div x-show="selected === 'tab-{{ $userId }}'" role="tabpanel">
             <div class="space-y-10 mt-4">
 
                 {{-- ── A. AFFILIATION ────────────────────────────────────────────── --}}
@@ -65,9 +108,13 @@
                                             @if(!empty($currentEntry['enrolled_packs']))
                                                 <div class="mt-2 space-y-1">
                                                     @foreach($currentEntry['enrolled_packs'] as $packInfo)
-                                                        <div class="flex items-center gap-1.5 text-xs opacity-60">
+                                                        <div class="flex items-center gap-1.5 text-xs opacity-60 flex-wrap">
                                                             <x-icon name="o-academic-cap" class="w-3 h-3 shrink-0" />
                                                             <span>{{ $packInfo['name'] }}</span>
+                                                            @if(!empty($packInfo['schedule']))
+                                                                <span>·</span>
+                                                                <span>{{ $packInfo['schedule'] }}</span>
+                                                            @endif
                                                         </div>
                                                     @endforeach
                                                 </div>
@@ -132,9 +179,13 @@
                                                 <span class="ml-auto font-bold text-sm">{{ $currentEntry['amount_due'] }} €</span>
                                             </div>
                                             @foreach($currentEntry['enrolled_packs'] as $packInfo)
-                                                <div class="flex items-center gap-2 text-xs opacity-60 pl-8">
+                                                <div class="flex items-center gap-2 text-xs opacity-60 pl-8 flex-wrap">
                                                     <x-icon name="o-academic-cap" class="w-3.5 h-3.5 text-success shrink-0" />
                                                     <span>{{ $packInfo['name'] }}</span>
+                                                    @if(!empty($packInfo['schedule']))
+                                                        <span>·</span>
+                                                        <span>{{ $packInfo['schedule'] }}</span>
+                                                    @endif
                                                 </div>
                                             @endforeach
                                         </div>
@@ -173,7 +224,26 @@
                                         </div>
                                     @endif
 
+                                    {{-- How it works: licence vs training --}}
+                                    <div class="flex items-start gap-3 p-4 rounded-xl border border-info/30 bg-info/10 mb-5">
+                                        <x-icon name="o-information-circle" class="w-5 h-5 text-info shrink-0 mt-0.5" />
+                                        <div class="text-sm">
+                                            <span class="font-bold">{{ __('How does it work?') }}</span>
+                                            <span class="opacity-80">{{ __('The licence is required to play at the club. Directed training sessions are optional and billed in addition, whichever licence you choose.') }}</span>
+                                        </div>
+                                    </div>
+
                                     <div class="space-y-5">
+                                        {{-- Section: your licence --}}
+                                        <div class="flex items-center gap-2">
+                                            <div class="flex items-center gap-1.5">
+                                                <x-icon name="o-identification" class="w-4 h-4 text-base-content/40" />
+                                                <span class="text-xs font-bold uppercase tracking-wide text-base-content/50">{{ __('Your licence') }}</span>
+                                            </div>
+                                            <span class="text-xs opacity-50 italic shrink-0">{{ __('Required') }}</span>
+                                            <div class="flex-1 border-t border-base-200"></div>
+                                        </div>
+
                                         {{-- Formula selection --}}
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div wire:click="$set('registrations.{{ $userId }}.formula', 'competitive')"
@@ -191,7 +261,7 @@
                                                     @endif
                                                 </div>
                                                 <div class="mt-4 font-bold text-lg">{{ __('Competition') }}</div>
-                                                <div class="text-sm opacity-70">{{ __('Official matches, ranking, and advanced coaching.') }}</div>
+                                                <div class="text-sm opacity-70">{{ __('Official interclub matches and AFTT ranking.') }}</div>
                                                 <div class="mt-4 text-xl font-bold">125&nbsp;€ <span class="text-xs font-normal">/ season</span></div>
                                             </div>
 
@@ -233,10 +303,12 @@
                                     <div class="flex items-center gap-2 mb-4">
                                         <div class="flex items-center gap-1.5">
                                             <x-icon name="o-academic-cap" class="w-4 h-4 text-base-content/40" />
-                                            <span class="text-xs font-bold uppercase tracking-wide text-base-content/50">{{ __('Training') }}</span>
+                                            <span class="text-xs font-bold uppercase tracking-wide text-base-content/50">{{ __('Directed training') }}</span>
                                         </div>
                                         @if(!$hasActiveSub && ($registrationsOpen || $canReAffiliate))
-                                            <span class="text-xs opacity-50 italic shrink-0">{{ __('Optional — tick to include in your registration') }}</span>
+                                            <span class="text-xs opacity-50 italic shrink-0">{{ __('Optional, billed in addition — tick to include in your registration') }}</span>
+                                        @else
+                                            <span class="text-xs opacity-50 italic shrink-0">{{ __('Optional, billed in addition to your licence') }}</span>
                                         @endif
                                         <div class="flex-1 border-t border-base-200"></div>
                                     </div>
@@ -271,18 +343,28 @@
                                                             @if($isOwnPack)
                                                                 <x-badge value="{{ __('You are the coach') }}" class="badge-ghost badge-sm" />
                                                             @endif
-                                                        </div>
-                                                        <div class="flex items-center gap-2 mt-1 text-xs opacity-60 flex-wrap">
-                                                            <span>{{ $pack['coach'] }}</span>
-                                                            <span>·</span>
-                                                            <span class="uppercase italic tracking-wider">{{ $pack['level'] }}</span>
                                                             @if(!$pack['is_open_enrollment'])
-                                                                <span>·</span>
                                                                 @if($pack['is_full'])
-                                                                    <span class="text-error font-semibold">{{ trans_choice(':n on waitlist|:n on waitlist', $pack['waitlist_count'], ['n' => $pack['waitlist_count']]) }}</span>
+                                                                    <span class="text-xs text-error font-semibold">{{ trans_choice(':n on waitlist|:n on waitlist', $pack['waitlist_count'], ['n' => $pack['waitlist_count']]) }}</span>
                                                                 @else
-                                                                    <span>{{ trans_choice(':n spot left|:n spots left', $pack['spots_remaining'], ['n' => $pack['spots_remaining']]) }}</span>
+                                                                    <span class="text-xs opacity-60">{{ trans_choice(':n spot left|:n spots left', $pack['spots_remaining'], ['n' => $pack['spots_remaining']]) }}</span>
                                                                 @endif
+                                                            @endif
+                                                        </div>
+                                                        <div class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 mt-1.5 text-xs">
+                                                            @if(!empty($pack['schedule']))
+                                                                <span class="opacity-40">{{ __('Schedule') }}</span>
+                                                                <span class="font-medium">{{ $pack['schedule'] }}</span>
+                                                            @endif
+                                                            @if(!empty($pack['room']))
+                                                                <span class="opacity-40">{{ __('Room') }}</span>
+                                                                <span class="font-medium">{{ $pack['room'] }}</span>
+                                                            @endif
+                                                            <span class="opacity-40">{{ __('Level') }}</span>
+                                                            <span class="font-medium">{{ __($pack['level']) }}</span>
+                                                            @if(!empty($pack['coach']))
+                                                                <span class="opacity-40">{{ __('Trainer') }}</span>
+                                                                <span class="font-medium">{{ $pack['coach'] }}</span>
                                                             @endif
                                                         </div>
                                                         <div class="mt-1 flex items-center gap-2">
@@ -378,6 +460,15 @@
                                             @endforeach
                                         </div>
                                     @endif
+
+                                    @if($isRegistering)
+                                        <div class="mt-4 p-4 rounded-xl border border-base-200 bg-base-200/40">
+                                            <x-toggle
+                                                wire:model="registrations.{{ $userId }}.wants_directed_training"
+                                                :label="__('No slot suits you? Let us know you are interested in directed training')"
+                                                :hint="__('The club will contact you when organising the training schedule.')" />
+                                        </div>
+                                    @endif
                                 </div>
 
                             {{-- ── RÉCAPITULATIF & ENVOI (inscription en cours) ────── --}}
@@ -468,10 +559,6 @@
                                             <x-toggle
                                                 wire:model="registrations.{{ $userId }}.volunteer_help"
                                                 :label="__('I am willing to help as a volunteer')" />
-
-                                            <x-toggle
-                                                wire:model="registrations.{{ $userId }}.wants_directed_training"
-                                                :label="__('I would like directed training (with a coach)')" />
                                         </div>
 
                                         <x-button
@@ -611,9 +698,15 @@
                 </div>
 
             </div>
-        </x-admin.shared.tab>
+        </div>
         @endforeach
-    </x-admin.shared.tabs>
+    </div>
+
+    @if($isSingleMember)
+        <p class="text-xs text-base-content/40 italic mt-8">
+            {{ __('To add a family member, please contact the committee.') }}
+        </p>
+    @endif
 
     {{-- Modal: Payment details --}}
     <x-modal wire:model="paymentModal" :title="__('Payment Details')" box-class="max-w-md">

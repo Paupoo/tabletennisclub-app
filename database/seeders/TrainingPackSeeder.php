@@ -14,6 +14,7 @@ use App\Domains\Shared\Enums\ClubEventTypeEnum;
 use App\Domains\Shared\Enums\EventPostStatusEnum;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\Ranking;
+use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Shared\Enums\TrainingType;
 use App\Domains\Trainings\Models\TrainingPack;
@@ -66,7 +67,6 @@ class TrainingPackSeeder extends Seeder
                 'first_name' => 'Éric',
                 'last_name' => 'Filée',
                 'password' => $password,
-                'is_coach' => true,
                 'gender' => Gender::MEN->name,
                 'ranking' => Ranking::C6->name,
                 'phone_number' => '047' . fake()->randomNumber(7, true),
@@ -76,6 +76,8 @@ class TrainingPackSeeder extends Seeder
                 'city_name' => fake()->city(),
             ]
         );
+
+        $eric->assignRole(Role::COACH->value);
         if ($ourClub && ! $eric->club_id) {
             $eric->club()->associate($ourClub)->save();
         }

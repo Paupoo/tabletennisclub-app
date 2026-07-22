@@ -16,6 +16,7 @@ use App\Domains\Shared\Enums\MeetingFormatEnum;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\MeetingTypeEnum;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
+use App\Domains\Shared\Enums\Role;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 
@@ -23,12 +24,11 @@ class MeetingSeeder extends Seeder
 {
     public function run(): void
     {
-        $admin = User::where('is_admin', true)->first()
-            ?? User::where('is_committee_member', true)->first()
+        $admin = User::role(Role::ADMINISTRATOR->value)->first()
+            ?? User::role(Role::COMMITTEE->value)->first()
             ?? User::first();
 
-        $committeeMembers = User::where(fn ($q) => $q->where('is_admin', true)->orWhere('is_committee_member', true))
-            ->get();
+        $committeeMembers = User::role([Role::ADMINISTRATOR->value, Role::COMMITTEE->value])->get();
 
         $allActiveMembers = User::inRandomOrder()->take(30)->get();
 

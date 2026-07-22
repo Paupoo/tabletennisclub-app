@@ -130,11 +130,6 @@
                                     :tooltip="__('Resend invitation')"
                                     wire:click="sendInvitation({{ $user->id }})" spinner />
                             @endif
-                            @can('fines.issue')
-                                <x-button class="btn-ghost btn-sm btn-circle" icon="o-scale"
-                                    :tooltip="__('Issue a fine')"
-                                    link="{{ route('admin.treasury.fines', ['member' => $user->id]) }}" />
-                            @endcan
                             @can('delete', $user)
                                 <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-archive-box"
                                     :tooltip="__('Archive')" wire:click="confirmDelete({{ $user->id }})" />

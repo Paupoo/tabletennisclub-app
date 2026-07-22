@@ -32,7 +32,6 @@ class NewsPostFactory extends Factory
             'content' => $this->faker->paragraph(),
             'user_id' => User::factory(),
             'status' => NewsPostStatusEnum::PUBLISHED,
-            'is_public' => true,
             'category' => 'Partnership', // ou un value de ton enum
             'created_at' => now(),
             'updated_at' => now(),

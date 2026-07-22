@@ -166,12 +166,7 @@
                 <x-table :headers="$headers" :rows="$articles" :sort-by="$sortBy"
                     selectable wire:model.live="selected">
                     @scope('cell_title', $article)
-                        <div class="flex items-center gap-2">
-                            @if (!$article->is_public)
-                                <x-icon name="o-lock-closed" class="h-3.5 w-3.5 shrink-0 text-base-content/40" />
-                            @endif
-                            <span class="font-medium">{{ $article->title }}</span>
-                        </div>
+                        <span class="font-medium">{{ $article->title }}</span>
                     @endscope
                     @scope('cell_category_label', $article)
                         @if ($article->category)

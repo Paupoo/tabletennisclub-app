@@ -12,7 +12,6 @@ erDiagram
         string image "nullable"
         int user_id FK
         NewsPostStatusEnum status
-        bool is_public
     }
     EventPost {
         EventPostStatusEnum status

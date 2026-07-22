@@ -68,7 +68,7 @@ class ArticleList extends Component
 
     public function getArticlesProperty(): LengthAwarePaginator
     {
-        $query = NewsPost::publiclyVisible();
+        $query = NewsPost::published();
 
         $this->applyFilters($query);
 
@@ -138,7 +138,7 @@ class ArticleList extends Component
             return 0;
         }
 
-        $hasArticles = NewsPost::publiclyVisible()
+        $hasArticles = NewsPost::published()
             ->whereBetween('created_at', [$season->start_at->startOfDay(), $season->end_at->endOfDay()])
             ->exists();
 

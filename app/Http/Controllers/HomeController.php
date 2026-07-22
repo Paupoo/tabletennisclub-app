@@ -23,7 +23,8 @@ class HomeController extends Controller
             ['name' => 'Chatisfait', 'logo' => asset('images/sponsors/sponsor_2_v2.png'), 'url' => 'https://www.chatisfait.be/'],
         ];
 
-        $articles = NewsPost::latest()
+        $articles = NewsPost::published()
+            ->latest()
             ->with('user')
             ->take(3)
             ->get();

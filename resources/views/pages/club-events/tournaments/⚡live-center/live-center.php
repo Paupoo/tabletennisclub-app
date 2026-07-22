@@ -182,7 +182,6 @@ new class extends Component
                 'content' => $this->newsPostContent,
                 'category' => NewsPostCategoryEnum::COMPETITION,
                 'status' => NewsPostStatusEnum::PUBLISHED,
-                'is_public' => false,
                 'image' => $imagePath,
                 'user_id' => auth()->id(),
             ]);

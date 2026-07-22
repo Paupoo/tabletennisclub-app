@@ -33,8 +33,6 @@ new class extends Component
 
     public mixed $image = null;
 
-    public bool $isPublic = true;
-
     #[Locked]
     public ?int $newsPostId = null;
 
@@ -55,7 +53,6 @@ new class extends Component
             $this->content = $newsPost->content ?? '';
             $this->category = $newsPost->category?->value ?? '';
             $this->status = $newsPost->status?->value ?? 'draft';
-            $this->isPublic = (bool) $newsPost->is_public;
             $this->existingImage = $newsPost->image;
         }
     }
@@ -101,7 +98,6 @@ new class extends Component
             'content' => $this->content,
             'category' => $this->category,
             'status' => NewsPostStatusEnum::from($this->status),
-            'is_public' => $this->isPublic,
             'image' => $imagePath,
             'user_id' => Auth::id(),
         ];

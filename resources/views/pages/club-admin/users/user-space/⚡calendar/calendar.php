@@ -9,8 +9,8 @@ use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\URL;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 
 new class extends Component
@@ -20,9 +20,11 @@ new class extends Component
     public bool $icsModal = false;
 
     /** Displayed month, "Y-m" format. */
+    #[Url]
     public string $month = '';
 
-    /** Selected day, "Y-m-d" format. */
+    /** Selected day, "Y-m-d" format. Entangled client-side for instant selection. */
+    #[Url]
     public string $selectedDay = '';
 
     /** @var string[] */
@@ -86,6 +88,16 @@ new class extends Component
         $this->navigateToMonth(now()->startOfMonth());
     }
 
+    /** Jump straight to any month from the month/year picker. */
+    public function setMonth(string $month): void
+    {
+        if (! Carbon::hasFormat($month, 'Y-m')) {
+            return;
+        }
+
+        $this->navigateToMonth(Carbon::createFromFormat('Y-m-d', $month . '-01')->startOfDay());
+    }
+
     public function selectDay(string $day): void
     {
         if (! Carbon::hasFormat($day, 'Y-m-d')) {
@@ -93,6 +105,20 @@ new class extends Component
         }
 
         $this->selectedDay = $day;
+    }
+
+    /** The color legend doubles as a quick category filter. */
+    public function toggleCategory(string $category): void
+    {
+        $validIds = array_column($this->categoryOptions(), 'id');
+
+        if (! in_array($category, $validIds)) {
+            return;
+        }
+
+        $this->selectedCategories = in_array($category, $this->selectedCategories)
+            ? array_values(array_filter($this->selectedCategories, fn (string $c): bool => $c !== $category))
+            : [...$this->selectedCategories, $category];
     }
 
     /**
@@ -103,7 +129,7 @@ new class extends Component
     #[Computed]
     public function icsUrl(): string
     {
-        return URL::signedRoute('admin.user.calendar.ics', ['user' => $this->user]);
+        return \Illuminate\Support\Facades\URL::signedRoute('admin.user.calendar.ics', ['user' => $this->user]);
     }
 
     /**
@@ -125,14 +151,21 @@ new class extends Component
 
         foreach ($events as $event) {
             $start = Carbon::parse($event['startDateTime'])->startOfDay();
-            // Multi-day tournaments repeat on every covered day of the grid.
+            // Multi-day tournaments repeat on every covered day of the grid,
+            // tagged with their position (day 2/3…) so continuation days
+            // don't misleadingly show the day-1 start time.
             $end = ! empty($event['endDate']) ? Carbon::parse($event['endDate'])->startOfDay() : $start;
 
             $day = $start->greaterThan($gridStart) ? $start->copy() : $gridStart->copy()->startOfDay();
             $last = $end->lessThan($gridEnd) ? $end : $gridEnd;
+            $dayCount = (int) $start->diffInDays($end) + 1;
 
             while ($day->lessThanOrEqualTo($last)) {
-                $byDay[$day->format('Y-m-d')][] = $event;
+                $entry = $event;
+                $entry['dayIndex'] = (int) $start->diffInDays($day) + 1;
+                $entry['dayCount'] = $dayCount;
+
+                $byDay[$day->format('Y-m-d')][] = $entry;
                 $day->addDay();
             }
         }
@@ -141,7 +174,7 @@ new class extends Component
     }
 
     /**
-     * @return array<int, array<int, array{date: string, day: int, inMonth: bool, isToday: bool, isPast: bool, isSelected: bool, events: array<int, array<string, mixed>>}>>
+     * @return array<int, array<int, array{date: string, day: int, inMonth: bool, isToday: bool, isPast: bool, events: array<int, array<string, mixed>>, ariaLabel: string, panelLabel: string}>>
      */
     #[Computed]
     public function weeks(): array
@@ -151,20 +184,30 @@ new class extends Component
         $cursor = $monthStart->copy()->startOfWeek(Carbon::MONDAY);
         $gridEnd = $monthStart->copy()->endOfMonth()->endOfWeek(Carbon::SUNDAY);
         $today = now()->format('Y-m-d');
+        $tomorrow = now()->addDay()->format('Y-m-d');
 
         $weeks = [];
         $week = [];
 
         while ($cursor->lessThanOrEqualTo($gridEnd)) {
             $date = $cursor->format('Y-m-d');
+            $dayEvents = $eventsByDay[$date] ?? [];
+            $count = count($dayEvents);
+
             $week[] = [
                 'date' => $date,
                 'day' => $cursor->day,
                 'inMonth' => $cursor->month === $monthStart->month,
                 'isToday' => $date === $today,
                 'isPast' => $date < $today,
-                'isSelected' => $date === $this->selectedDay,
-                'events' => $eventsByDay[$date] ?? [],
+                'events' => $dayEvents,
+                'ariaLabel' => ucfirst($cursor->translatedFormat('l j F')) . ' — '
+                    . trans_choice(':count event|:count events', $count, ['count' => $count]),
+                'panelLabel' => match ($date) {
+                    $today => __('Today'),
+                    $tomorrow => __('Tomorrow'),
+                    default => ucfirst($cursor->translatedFormat('l j F Y')),
+                },
             ];
 
             if (count($week) === 7) {
@@ -192,18 +235,38 @@ new class extends Component
         abort_unless(Auth::user()->is($user), 403);
 
         $this->user = $user;
-        $this->month = now()->format('Y-m');
-        $this->selectedDay = now()->format('Y-m-d');
+
+        // #[Url] values are applied before mount(): only fill the defaults
+        // when the query string didn't provide them.
+        if ($this->month === '') {
+            $this->month = now()->format('Y-m');
+        }
+
+        if ($this->selectedDay === '') {
+            $this->selectedDay = now()->format('Y-m-d');
+        }
     }
 
     public function with(): array
     {
+        // selectedDay is entangled client-side and URL-backed: normalize
+        // anything invalid back to today before rendering.
+        if (! Carbon::hasFormat($this->selectedDay, 'Y-m-d')) {
+            $this->selectedDay = now()->format('Y-m-d');
+        }
+
+        $monthStart = $this->monthStart();
+
         return [
             'breadcrumbs' => $this->getBreadcrumbs(),
             'weeks' => $this->weeks,
-            'selectedDayEvents' => $this->selectedDayEvents,
-            'monthLabel' => ucfirst($this->monthStart()->translatedFormat('F Y')),
+            'monthLabel' => ucfirst($monthStart->translatedFormat('F Y')),
             'isCurrentMonth' => $this->month === now()->format('Y-m'),
+            'monthHasEvents' => $this->eventsByDay !== [],
+            'pickerYear' => $monthStart->year,
+            'monthShortNames' => collect(range(1, 12))
+                ->map(fn (int $m): string => ucfirst($monthStart->copy()->month($m)->translatedFormat('M')))
+                ->all(),
             'categories' => $this->categoryOptions(),
             'filterChips' => $this->getFilterChips(),
         ];

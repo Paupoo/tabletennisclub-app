@@ -61,7 +61,9 @@
             <div class="flex-1 overflow-y-auto">
                 @foreach ($notifications as $notification)
                     <button
+                        dusk="notification-{{ $notification->id }}"
                         wire:click="markAsRead('{{ $notification->id }}')"
+                        @click="document.getElementById('notification-panel-toggle').checked = false"
                         class="flex w-full items-start gap-3 border-l-4 p-3 text-left transition-colors hover:bg-base-200
                             @if (is_null($notification->read_at)) border-primary bg-primary/5 @else border-transparent @endif"
                     >

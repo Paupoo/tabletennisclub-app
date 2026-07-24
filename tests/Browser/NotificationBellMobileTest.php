@@ -145,6 +145,36 @@ it('keeps both header buttons visible on a very narrow screen with doubled syste
         );
 });
 
+it('closes the sheet when a notification without a destination is tapped', function (): void {
+    $user = User::factory()->create();
+
+    $notification = $user->notifications()->create([
+        'id' => (string) Str::uuid(),
+        'type' => 'App\\Notifications\\TestNotification',
+        'data' => ['icon' => 'o-bell', 'title' => 'Titre', 'body' => 'Corps', 'url' => '#'],
+    ]);
+
+    $this->actingAs($user);
+
+    visit(route('notifications.index'))
+        ->resize(390, 844)
+        ->click('label[aria-label="Notifications"]')
+        ->assertVisible('label[aria-label="Fermer"]')
+        ->click('[dusk="notification-' . $notification->id . '"]')
+        ->assertScript(
+            "document.getElementById('notification-panel-toggle').checked",
+            false
+        )
+        // The unread badge disappearing confirms the wire:click round-trip
+        // completed even though the sheet was closed client-side on tap.
+        ->assertScript(
+            "document.querySelector('label[aria-label=\"Notifications\"] .bg-error') === null",
+            true
+        );
+
+    expect($user->notifications()->first()->read_at)->not->toBeNull();
+});
+
 it('closes the sheet when the close button is clicked', function (): void {
     $user = User::factory()->create();
 

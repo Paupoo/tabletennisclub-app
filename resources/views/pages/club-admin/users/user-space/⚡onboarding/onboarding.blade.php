@@ -226,11 +226,8 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div wire:key="photo-container-{{ $imageKey }}">
-                    <x-file :label="__('Photo')" wire:model="photo"
-                        accept="image/png, image/jpeg, image/webp" crop-after-change>
-                        <img src="{{ $photo ? $photo->temporaryUrl() : ($currentPhoto ? asset($currentPhoto) : asset('images/empty-user.jpg')) }}"
-                            alt="{{ __('Avatar') }}" class="h-36 rounded-lg object-cover">
-                    </x-file>
+                    <x-avatar-cropper :label="__('Photo')"
+                        :preview="($photo && $photo->isPreviewable() ? $photo->temporaryUrl() : null) ?? ($currentPhoto ? asset($currentPhoto) : null)" />
                 </div>
 
                 <div class="space-y-4">

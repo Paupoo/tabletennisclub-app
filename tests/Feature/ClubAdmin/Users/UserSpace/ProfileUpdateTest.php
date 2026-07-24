@@ -93,6 +93,34 @@ test('user can upload a parental consent', function (): void {
     Storage::disk('local')->assertExists($path);
 });
 
+test('user can upload a profile photo', function (): void {
+    Storage::fake('public');
+    $user = User::factory()->create();
+
+    Livewire::actingAs($user)
+        ->test('pages::club-admin.users.user-space.profile', ['user' => $user])
+        ->set('photo', UploadedFile::fake()->image('avatar.jpg', 512, 512))
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $photo = $user->fresh()->photo;
+    expect($photo)->not->toBeNull()->toStartWith('/storage/users/');
+    Storage::disk('public')->assertExists(str_replace('/storage/', '', $photo));
+});
+
+test('a non-image file is rejected for the profile photo', function (): void {
+    Storage::fake('public');
+    $user = User::factory()->create();
+
+    Livewire::actingAs($user)
+        ->test('pages::club-admin.users.user-space.profile', ['user' => $user])
+        ->set('photo', UploadedFile::fake()->create('doc.pdf', 100, 'application/pdf'))
+        ->call('save')
+        ->assertHasErrors(['photo']);
+
+    expect($user->fresh()->photo)->toBeNull();
+});
+
 test('parental consent field is shown for minors', function (): void {
     $minor = User::factory()->create(['birthdate' => now()->subYears(15)]);
 

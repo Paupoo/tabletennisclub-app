@@ -18,6 +18,7 @@ import priceCalculator from './components/price-calculator';
 import contactForm from './components/contact-form';
 import eventFilters from './components/event-filters';
 import navigation from './components/navigation';
+import avatarCropper from './components/avatar-upload';
 import { initMap } from './components/map';
 
 // Enregistrement Alpine
@@ -28,6 +29,7 @@ document.addEventListener('alpine:init', () => {
     Alpine.data("contactForm", contactForm);
     Alpine.data("eventFilters", eventFilters);
     Alpine.data("navigation", navigation);
+    Alpine.data("avatarCropper", avatarCropper);
     initMap();
 });
 

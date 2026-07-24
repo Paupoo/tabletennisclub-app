@@ -279,19 +279,17 @@
                         <x-input :label="__('IBAN')" wire:model="iban"
                             placeholder="BE00 0000 0000 0000"
                             :hint="__('payment.iban_format_hint')" />
-                        <div>
-                            <div wire:key="photo-container-{{ $imageKey }}">
-                                <x-file :label="__('Photo')" wire:model="photo"
-                                    accept="image/png, image/jpeg, image/webp" crop-after-change>
-                                    <img src="{{ $photo ? $photo->temporaryUrl() : ($currentPhoto ? asset($currentPhoto) : asset('images/empty-user.jpg')) }}"
-                                        alt="{{ __('Avatar') }}" class="h-36 rounded-lg object-cover">
-                                </x-file>
-                            </div>
-                            @if ($currentPhoto)
-                                <x-button :label="__('Delete photo')"
-                                    class="m-2 text-xs btn-soft btn-ghost w-36"
-                                    wire:click="$set('deleteModal', true)" />
-                            @endif
+                        <div wire:key="photo-container-{{ $imageKey }}">
+                            <x-avatar-cropper :label="__('Photo')"
+                                :preview="($photo && $photo->isPreviewable() ? $photo->temporaryUrl() : null) ?? ($currentPhoto ? asset($currentPhoto) : null)">
+                                <x-slot:delete>
+                                    @if ($currentPhoto)
+                                        <x-button :label="__('Delete photo')" icon="o-trash"
+                                            class="btn-ghost btn-soft btn-sm"
+                                            wire:click="$set('deleteModal', true)" />
+                                    @endif
+                                </x-slot:delete>
+                            </x-avatar-cropper>
                         </div>
                     </div>
                 </div>

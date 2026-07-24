@@ -40,18 +40,16 @@
                     <x-input :label="__('IBAN')" wire:model="iban"
                         placeholder="BE00 0000 0000 0000"
                         :hint="__('Used for refunds. Leave empty if unknown.')" />
-                    <div>
-                        <div wire:key="photo-container-{{ $imageKey }}">
-                            <x-file accept="image/png, image/jpeg, image/webp" crop-after-change
-                                :label="__('Photo')" wire:model="photo">
-                                <img alt="{{ __('Avatar') }}" class="h-36 rounded-lg object-cover"
-                                    src="{{ $photo ? $photo->temporaryUrl() : ($currentPhoto ? asset($currentPhoto) : asset('images/empty-user.jpg')) }}">
-                            </x-file>
-                        </div>
-                        @if ($currentPhoto)
-                            <x-button class="btn-soft btn-ghost m-2 w-36 text-xs" :label="__('Delete photo')"
-                                wire:click="$set('deleteModal', true)" />
-                        @endif
+                    <div wire:key="photo-container-{{ $imageKey }}">
+                        <x-avatar-cropper :label="__('Photo')"
+                            :preview="($photo && $photo->isPreviewable() ? $photo->temporaryUrl() : null) ?? ($currentPhoto ? asset($currentPhoto) : null)">
+                            <x-slot:delete>
+                                @if ($currentPhoto)
+                                    <x-button class="btn-soft btn-ghost btn-sm" icon="o-trash"
+                                        :label="__('Delete photo')" wire:click="$set('deleteModal', true)" />
+                                @endif
+                            </x-slot:delete>
+                        </x-avatar-cropper>
                     </div>
                 </div>
 

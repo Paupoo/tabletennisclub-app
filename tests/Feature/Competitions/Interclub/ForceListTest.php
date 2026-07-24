@@ -11,8 +11,10 @@ use Tests\Trait\CreateUser;
 uses(CreateUser::class);
 
 test('set force list are correctly calculated', function (): void {
-    // Algorithm: sequential 1-based index ordered by ranking (alpha) → last_name → first_name.
-    // Non-competitors are skipped and keep force_list = null.
+    // Algorithm: block index per ranking. Every competitor of a ranking shares
+    // the same index = cumulative headcount of that ranking or stronger. E6 and
+    // NC are merged into the weakest block; NA is out of scope. Non-competitors
+    // are skipped and keep force_list = null.
     // Create without events to prevent the observer from recalculating mid-setup.
     $season = Season::factory()->create(['is_active' => true]);
 
@@ -48,9 +50,11 @@ test('set force list are correctly calculated', function (): void {
 
     RecalculateForceListAction::handle();
 
-    // D4 comes first alphabetically, then E2 × 2 (ordered by last_name), then NC
+    // D4 block (1 player) → cumulative 1.
+    // E2 block (2 players) → cumulative 1 + 2 = 3, shared by both.
+    // E6-NC block (here only 1 NC) → cumulative 3 + 1 = 4.
     expect($d4->fresh()->force_list)->toBe(1);
-    expect($e2a->fresh()->force_list)->toBe(2);
+    expect($e2a->fresh()->force_list)->toBe(3);
     expect($e2b->fresh()->force_list)->toBe(3);
     expect($nc->fresh()->force_list)->toBe(4);
     expect($nonCompetitor->fresh()->force_list)->toBeNull();

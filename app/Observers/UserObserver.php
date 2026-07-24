@@ -18,7 +18,9 @@ class UserObserver
 
     public function saved(User $user): void
     {
-        if ($user->is_competitor && $user->wasChanged('ranking')) {
+        // ranking drives the general list; gender and birthdate move a member
+        // on/off the women's and veterans' sub-lists.
+        if ($user->is_competitor && $user->wasChanged(['ranking', 'gender', 'birthdate'])) {
             RecalculateForceListAction::handle();
         }
     }

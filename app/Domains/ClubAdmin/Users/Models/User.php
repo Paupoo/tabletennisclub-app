@@ -20,6 +20,7 @@ use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Shared\Casts\IbanCast;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Gender;
+use App\Domains\Shared\Enums\LeagueCategory;
 use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\Support\IbanNormalizer;
 use App\Domains\Shared\Traits\HasAuditLog;
@@ -68,6 +69,8 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string $ranking
  * @property string|null $licence
  * @property int|null $force_list
+ * @property int|null $force_list_women
+ * @property int|null $force_list_veterans
  * @property int $club_id
  * @property-read Team|null $captainOf
  * @property-read Club|null $club
@@ -101,6 +104,8 @@ use Spatie\Permission\Traits\HasRoles;
  * @method static EloquentBuilder<static>|User whereEmailVerifiedAt($value)
  * @method static EloquentBuilder<static>|User whereFirstName($value)
  * @method static EloquentBuilder<static>|User whereForceList($value)
+ * @method static EloquentBuilder<static>|User whereForceListWomen($value)
+ * @method static EloquentBuilder<static>|User whereForceListVeterans($value)
  * @method static EloquentBuilder<static>|User whereHasDebt($value)
  * @method static EloquentBuilder<static>|User whereId($value)
  * @method static EloquentBuilder<static>|User whereLastName($value)
@@ -163,6 +168,13 @@ class User extends Authenticatable implements MustVerifyEmail
     public const int INVITATION_LINK_VALIDITY_DAYS = 7;
 
     /**
+     * Age from which a player belongs to the veterans' force list, reached at
+     * the end of the season. Shared by the recalculation action and every
+     * query that filters veterans so the rule can never diverge.
+     */
+    public const int VETERAN_AGE = 40;
+
+    /**
      * The attributes that should be cast.
      *
      * @var array<string, string>
@@ -185,6 +197,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'ranking' => 'string',
         'licence' => 'string',
         'force_list' => 'integer',
+        'force_list_women' => 'integer',
+        'force_list_veterans' => 'integer',
         'avatar_url' => 'string',
         'theme' => 'string',
         'committee_role' => CommitteeRolesEnum::class,
@@ -221,6 +235,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'theme',
         'committee_role',
         'force_list',
+        'force_list_women',
+        'force_list_veterans',
         'has_key',
         'medical_certificate_path',
         'parental_consent_path',
@@ -240,6 +256,19 @@ class User extends Authenticatable implements MustVerifyEmail
         'password',
         'remember_token',
     ];
+
+    /**
+     * The users column holding the force-list position for a league category,
+     * for use in query ordering (`orderBy(User::forceListColumn($category))`).
+     */
+    public static function forceListColumn(LeagueCategory|string|null $category): string
+    {
+        return match (self::resolveCategory($category)) {
+            LeagueCategory::WOMEN => 'force_list_women',
+            LeagueCategory::VETERANS => 'force_list_veterans',
+            default => 'force_list',
+        };
+    }
 
     public function articles(): HasMany
     {
@@ -326,6 +355,19 @@ class User extends Authenticatable implements MustVerifyEmail
             ->whereKeyNot($this->id)
             ->distinct()
             ->get();
+    }
+
+    /**
+     * The stored force-list position for a given league category: the women's
+     * or veterans' sub-list, or the general list for MEN / unknown categories.
+     */
+    public function forceListFor(LeagueCategory|string|null $category): ?int
+    {
+        return match ($this->resolveCategory($category)) {
+            LeagueCategory::WOMEN => $this->force_list_women,
+            LeagueCategory::VETERANS => $this->force_list_veterans,
+            default => $this->force_list,
+        };
     }
 
     public function getFullNameAttribute(): string
@@ -488,6 +530,22 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->birthdate !== null && Carbon::parse($this->birthdate)->age < 18;
     }
 
+    /**
+     * Whether the member qualifies for the veterans' force list, i.e. turns
+     * {@see self::VETERAN_AGE} on or before the given season's end (defaults to
+     * the current season). Mirrors {@see self::scopeVeteran()} for in-memory use.
+     */
+    public function isVeteran(?Season $season = null): bool
+    {
+        $season ??= Season::current();
+
+        if ($season === null || $this->birthdate === null) {
+            return false;
+        }
+
+        return $this->birthdate <= $season->end_at->copy()->subYears(self::VETERAN_AGE);
+    }
+
     public function meetings(): BelongsToMany
     {
         return $this->belongsToMany(Meeting::class)
@@ -573,6 +631,17 @@ class User extends Authenticatable implements MustVerifyEmail
         );
     }
 
+    /**
+     * Members eligible for interclub team building: those holding a validated
+     * (confirmed) or paid *competitive* licence for the current season — via
+     * {@see self::scopeCompetitor()} — and carrying an actual ranking. NA
+     * (unranked) players are out of scope for the force list and for teams.
+     */
+    public function scopeInterclubEligible(EloquentBuilder $query): EloquentBuilder
+    {
+        return $query->competitor()->where('ranking', '!=', 'NA');
+    }
+
     public function scopePaid(EloquentBuilder $query): EloquentBuilder
     {
         $seasonId = Season::current()?->id;
@@ -650,6 +719,24 @@ class User extends Authenticatable implements MustVerifyEmail
         return $query->whereDoesntHave('tournaments', function (Builder $query) use ($tournament): void {
             $query->where('tournaments.id', $tournament->id);
         })->orderBy('last_name')->orderBy('first_name');
+    }
+
+    /**
+     * Members eligible for the veterans' force list: born early enough to turn
+     * {@see self::VETERAN_AGE} by the given season's end (defaults to the
+     * current season). Query-side counterpart of {@see self::isVeteran()}.
+     */
+    public function scopeVeteran(EloquentBuilder $query, ?Season $season = null): EloquentBuilder
+    {
+        $season ??= Season::current();
+
+        if ($season === null) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        $cutoff = $season->end_at->copy()->subYears(self::VETERAN_AGE);
+
+        return $query->whereNotNull('birthdate')->where('birthdate', '<=', $cutoff->toDateString());
     }
 
     public function scopeWithIncompleteProfile(Builder $query): Builder
@@ -744,5 +831,16 @@ class User extends Authenticatable implements MustVerifyEmail
     public function wantsNotification(string $preference): bool
     {
         return (bool) ($this->notification_preferences[$preference] ?? true);
+    }
+
+    /**
+     * Normalize a category given as an enum or as its raw case-name (as stored
+     * on leagues and used by the team builder) to a {@see LeagueCategory}.
+     */
+    private static function resolveCategory(LeagueCategory|string|null $category): ?LeagueCategory
+    {
+        return $category instanceof LeagueCategory
+            ? $category
+            : LeagueCategory::fromName($category);
     }
 }

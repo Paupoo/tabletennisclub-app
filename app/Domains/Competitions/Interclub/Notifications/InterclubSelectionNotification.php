@@ -38,6 +38,7 @@ class InterclubSelectionNotification extends Notification
 
         $ourTeam = $interclub->ourTeam();
         $ourTeamName = $ourTeam?->fullName() ?? '—';
+        $category = $ourTeam?->league?->category;
         $opponent = $interclub->opponentTeam()?->fullName() ?? '—';
         $venue = $interclub->isHome() ? __('Home') : __('Away');
         $dateStr = $interclub->start_date_time->format('d/m/Y') . ' ' . __('at') . ' ' . $interclub->start_date_time->format('H:i');
@@ -59,6 +60,7 @@ class InterclubSelectionNotification extends Notification
                 'address' => $address,
                 'venue' => $venue,
                 'selectedPlayers' => $selectedPlayers,
+                'category' => $category,
                 'captainMessage' => $this->captainMessage,
             ])
             ->attachData($ics, 'interclub.ics', ['mime' => 'text/calendar']);

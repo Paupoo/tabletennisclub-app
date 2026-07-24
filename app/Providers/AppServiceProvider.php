@@ -8,7 +8,6 @@ use App\Domains\Competitions\Interclub\Services\InterclubService;
 use App\Domains\Shared\Enums\Feature;
 use App\Domains\Trainings\Services\TrainingBuilder;
 use App\Domains\Trainings\Services\TrainingDateGenerator;
-use App\Services\ForceList;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Console\Events\CommandFinished;
 use Illuminate\Database\Eloquent\Model;
@@ -85,11 +84,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
-        $this->app->singleton('ForceList', function (Application $app): ForceList {
-            return new ForceList;
-        });
-
         $this->app->singleton(TrainingDateGenerator::class, function (Application $app): TrainingDateGenerator {
             return new TrainingDateGenerator;
         });

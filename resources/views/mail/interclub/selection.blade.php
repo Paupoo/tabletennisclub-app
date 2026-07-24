@@ -20,9 +20,9 @@
 ---
 
 **{{ __('Selected lineup') }}**
-@php $selectedPlayers->sortBy('force_list') @endphp
+@php $selectedPlayers = $selectedPlayers->sortBy(fn ($p) => sprintf('%03d|%s|%s', $p->forceListFor($category) ?? 999, $p->last_name, $p->first_name)) @endphp
 @foreach($selectedPlayers as $player)
-- {{ $player->full_name . '(' . $player->force_list . ')' }}
+- {{ $player->full_name . ' (' . $player->forceListFor($category) . ')' }}
 @endforeach
 
 @if($captainMessage)

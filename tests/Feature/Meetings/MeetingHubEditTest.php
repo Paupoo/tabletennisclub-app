@@ -147,6 +147,42 @@ describe('Hub card editing — agenda', function (): void {
 
         expect($meeting->fresh()->agendaItems->pluck('title')->all())->toBe(['C', 'A', 'B']);
     });
+
+    test('a fully-empty agenda row is dropped instead of raising an error', function (): void {
+        $admin = hubEditAdmin();
+        $meeting = Meeting::factory()->committee()->confirmed()->create(['created_by' => $admin->id]);
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-events.meetings.show', ['meeting' => $meeting])
+            ->call('editAgenda')
+            ->set('agendaDraft', [
+                ['id' => null, 'title' => 'Budget', 'description' => ''],
+                ['id' => null, 'title' => '', 'description' => ''],
+            ])
+            ->call('saveAgenda')
+            ->assertHasNoErrors()
+            ->assertSet('editing', null);
+
+        expect($meeting->fresh()->agendaItems->pluck('title')->all())->toBe(['Budget']);
+    });
+
+    test('a row with details but no title shows a clear French message', function (): void {
+        $admin = hubEditAdmin();
+        $meeting = Meeting::factory()->committee()->confirmed()->create(['created_by' => $admin->id]);
+
+        Livewire::actingAs($admin)
+            ->test('pages::club-events.meetings.show', ['meeting' => $meeting])
+            ->call('editAgenda')
+            ->set('agendaDraft', [
+                ['id' => null, 'title' => '', 'description' => 'On doit en parler'],
+            ])
+            ->call('saveAgenda')
+            ->assertHasErrors('agendaDraft.0.title')
+            ->assertSet('editing', 'agenda');
+
+        expect(__('Please give every agenda item a title.'))
+            ->toBe('Veuillez donner un titre à chaque point à l\'ordre du jour.');
+    });
 });
 
 describe('Hub card editing — meal, quorum, title', function (): void {

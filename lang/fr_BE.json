@@ -3622,6 +3622,8 @@
     "Your attendance to **:title** is confirmed.": "Votre présence à **:title** est confirmée.",
     "Add at least one agenda item": "Ajoutez au moins un point à l'ordre du jour",
     "Agenda updated": "Ordre du jour mis à jour",
+    "An agenda item title may not exceed 255 characters.": "Le titre d'un point à l'ordre du jour ne peut pas dépasser 255 caractères.",
+    "Please give every agenda item a title.": "Veuillez donner un titre à chaque point à l'ordre du jour.",
     "Complete the meeting before inviting": "Complétez la réunion avant d'inviter",
     "Date option added": "Option de date ajoutée",
     "Fixed date": "Date fixe",

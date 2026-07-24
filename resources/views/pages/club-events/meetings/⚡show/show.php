@@ -588,10 +588,24 @@ new class extends Component
     public function saveAgenda(): void
     {
         abort_unless($this->canManage, 403);
-        $this->validate([
-            'agendaDraft.*.title' => 'required|string|max:255',
-            'agendaDraft.*.description' => 'nullable|string',
-        ]);
+
+        // Drop fully-empty rows so a blank trailing point is simply ignored
+        // rather than rejected — this matches how they are persisted below.
+        $this->agendaDraft = array_values(array_filter(
+            $this->agendaDraft,
+            fn (array $item): bool => filled($item['title']) || filled($item['description']),
+        ));
+
+        $this->validate(
+            [
+                'agendaDraft.*.title' => 'required|string|max:255',
+                'agendaDraft.*.description' => 'nullable|string',
+            ],
+            [
+                'agendaDraft.*.title.required' => __('Please give every agenda item a title.'),
+                'agendaDraft.*.title.max' => __('An agenda item title may not exceed 255 characters.'),
+            ],
+        );
 
         $meeting = $this->meeting;
         $keptIds = [];

@@ -479,7 +479,20 @@ new class extends Component
             ))
             ->get()
             ->sortBy(fn ($sub) => $statusOrder[$sub->status] ?? 5)
-            ->map(fn (Subscription $sub) => (object) [
+            ->map(function (Subscription $sub) {
+                $enrolledPacks = $sub->trainingPacks->filter(fn ($p) => $p->pivot->status === 'enrolled');
+                $pendingPacks = $sub->trainingPacks->filter(fn ($p) => $p->pivot->status === 'pending');
+                $cancelledPacks = $sub->trainingPacks->filter(fn ($p) => $p->pivot->status === 'cancelled');
+
+                // A voided affiliation drags its trainings down with it, so any
+                // pack still flagged pending/enrolled reads as cancelled here —
+                // this also rescues rows cancelled before the status cascade.
+                if (in_array($sub->status, ['cancelled', 'refunded'], true)) {
+                    $cancelledPacks = $cancelledPacks->concat($pendingPacks)->concat($enrolledPacks);
+                    $pendingPacks = $enrolledPacks = collect();
+                }
+
+                return (object) [
                 'id' => $sub->id,
                 'first_name' => $sub->user->first_name,
                 'last_name' => $sub->user->last_name,
@@ -489,9 +502,10 @@ new class extends Component
                 'amount_due' => $sub->amount_due,
                 'total_paid' => (float) $sub->payments->whereIn('status', ['paid', 'refunded'])->sum('amount_paid'),
                 'trainings_count' => $sub->trainings_count,
-                'pending_packs' => $sub->trainingPacks->filter(fn ($p) => $p->pivot->status === 'pending'),
-                'enrolled_packs' => $sub->trainingPacks->filter(fn ($p) => $p->pivot->status === 'enrolled'),
-                'has_pending_packs' => $sub->trainingPacks->filter(fn ($p) => $p->pivot->status === 'pending')->isNotEmpty(),
+                'pending_packs' => $pendingPacks,
+                'enrolled_packs' => $enrolledPacks,
+                'cancelled_packs' => $cancelledPacks,
+                'has_pending_packs' => $pendingPacks->isNotEmpty(),
                 'subscription_price' => $sub->is_competitive ? 125.0 : 60.0,
                 'members' => [[
                     'first_name' => $sub->user->first_name,
@@ -505,7 +519,8 @@ new class extends Component
                     'status' => $p->status,
                 ])->values()->toArray(),
                 'payment_status' => $sub->payments->sortByDesc('created_at')->first()?->status,
-            ]);
+            ];
+            });
     }
 
     public function reject(): void

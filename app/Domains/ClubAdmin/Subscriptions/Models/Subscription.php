@@ -159,6 +159,15 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
     public function cancel(): void
     {
         $this->getCurrentState()->cancel($this);
+
+        // A cancelled affiliation voids its training-pack enrolments too: without
+        // this they stay stuck on "pending" and the registration history keeps
+        // showing a training that no longer stands.
+        $this->trainingPacks()
+            ->wherePivot('status', '!=', 'cancelled')
+            ->get()
+            ->each(fn (TrainingPack $pack) => $this->trainingPacks()
+                ->updateExistingPivot($pack->id, ['status' => 'cancelled']));
     }
 
     public function canGeneratePayment(): bool

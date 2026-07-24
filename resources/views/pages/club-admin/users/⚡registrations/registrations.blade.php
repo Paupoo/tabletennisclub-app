@@ -273,7 +273,7 @@
                     </div>
                 </div>
 
-                @if ($currentRequest->enrolled_packs->count() > 0 || $currentRequest->pending_packs->count() > 0)
+                @if ($currentRequest->enrolled_packs->count() > 0 || $currentRequest->pending_packs->count() > 0 || $currentRequest->cancelled_packs->count() > 0)
                     <div>
                         <h3 class="mb-3 text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Training Packs') }}</h3>
                         <div class="space-y-2">
@@ -296,6 +296,14 @@
                                     <x-icon name="o-academic-cap" class="h-3.5 w-3.5 shrink-0 text-warning-content opacity-60" />
                                     <span class="flex-1">{{ $pack->name }}</span>
                                     <x-badge value="{{ __('Awaiting validation') }}" class="badge-warning badge-xs" />
+                                    <span class="text-xs font-semibold opacity-50">{{ number_format((float) $pack->price, 2) }} €</span>
+                                </div>
+                            @endforeach
+                            @foreach ($currentRequest->cancelled_packs as $pack)
+                                <div class="flex items-center gap-3 rounded-lg border border-base-200 p-2.5 text-sm opacity-70">
+                                    <x-icon name="o-academic-cap" class="h-3.5 w-3.5 shrink-0 opacity-40" />
+                                    <span class="flex-1 line-through">{{ $pack->name }}</span>
+                                    <x-badge value="{{ __('Cancelled') }}" class="badge-ghost badge-xs" />
                                     <span class="text-xs font-semibold opacity-50">{{ number_format((float) $pack->price, 2) }} €</span>
                                 </div>
                             @endforeach

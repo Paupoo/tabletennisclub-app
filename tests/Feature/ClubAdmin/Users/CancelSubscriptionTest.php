@@ -415,3 +415,34 @@ describe('Registrations page — cancel flow', function (): void {
     });
 
 });
+
+describe('Subscription::cancel() training-pack cascade', function (): void {
+
+    test('cancelling an affiliation voids its still-pending training packs', function (): void {
+        $subscription = Subscription::factory()->create([
+            'season_id' => $this->season->id,
+            'status' => 'pending',
+        ]);
+        $pack = TrainingPack::factory()->create(['price' => 90]);
+        $subscription->trainingPacks()->attach($pack->id, ['status' => 'pending']);
+
+        $subscription->cancel();
+
+        expect($subscription->fresh()->status)->toBe('cancelled')
+            ->and($subscription->trainingPacks()->first()->pivot->status)->toBe('cancelled');
+    });
+
+    test('an already-cancelled pack is left untouched', function (): void {
+        $subscription = Subscription::factory()->create([
+            'season_id' => $this->season->id,
+            'status' => 'pending',
+        ]);
+        $pack = TrainingPack::factory()->create(['price' => 90]);
+        $subscription->trainingPacks()->attach($pack->id, ['status' => 'cancelled']);
+
+        $subscription->cancel();
+
+        expect($subscription->trainingPacks()->first()->pivot->status)->toBe('cancelled');
+    });
+
+});

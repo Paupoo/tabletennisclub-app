@@ -445,9 +445,10 @@ new class extends Component
             $veteranCutoff = $season ? $season->end_at->copy()->subYears(40) : null;
             $excludedIds = array_merge($this->selectedPlayerIds, $blockedPlayerIds);
 
-            // All competitors matching the name, before the category / alignment
-            // filters — so we can explain what got silently removed (I2).
-            $nameMatches = User::competitor()
+            // Interclub-eligible members matching the name, before the category /
+            // alignment filters — so we can explain what got silently removed (I2).
+            // NA and non-competitive members are out of scope and never surface.
+            $nameMatches = User::interclubEligible()
                 ->where(fn ($q) => $q
                     ->where('first_name', 'like', '%' . $this->search . '%')
                     ->orWhere('last_name', 'like', '%' . $this->search . '%'))

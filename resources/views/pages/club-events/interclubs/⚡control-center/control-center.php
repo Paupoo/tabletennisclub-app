@@ -278,7 +278,7 @@ new class extends Component
 
         $searchResults = [];
         if (strlen($this->search) >= 2 && $this->drawerInterclubId) {
-            $searchResults = User::competitor()
+            $searchResults = User::interclubEligible()
                 ->where(function ($q): void {
                     $q->where('first_name', 'like', '%' . $this->search . '%')
                         ->orWhere('last_name', 'like', '%' . $this->search . '%');

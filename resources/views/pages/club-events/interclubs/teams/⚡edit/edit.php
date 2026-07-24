@@ -180,22 +180,19 @@ new class extends Component
 
         // Membres actuels de l'équipe — toujours chargés pour le panel capitaine
         $teamMembers = User::whereIn('id', $this->memberIds)
-            ->orderBy('force_list')
+            ->orderBy(User::forceListColumn($category))
             ->orderBy('last_name')
             ->get();
 
-        // Liste complète des candidats, filtrée selon la catégorie de l'équipe
-        $competitors = User::competitor()
+        // Liste complète des candidats éligibles, filtrée selon la catégorie de l'équipe
+        $competitors = User::interclubEligible()
             ->when($category === Gender::WOMEN->value, fn ($q) => $q->where('gender', Gender::WOMEN->value))
-            ->when($category === 'VETERANS' && $season?->end_at, function ($q) use ($season): void {
-                $cutoff = $season->end_at->copy()->subYears(40);
-                $q->whereNotNull('birthdate')->where('birthdate', '<=', $cutoff->toDateString());
-            })
+            ->when($category === 'VETERANS', fn ($q) => $q->veteran($season))
             ->when($this->memberSearch, fn ($q) => $q->where(fn ($q2) => $q2
                 ->where('first_name', 'like', "%{$this->memberSearch}%")
                 ->orWhere('last_name', 'like', "%{$this->memberSearch}%")
             ))
-            ->orderBy('force_list')
+            ->orderBy(User::forceListColumn($category))
             ->orderBy('last_name')
             ->orderBy('first_name')
             ->get();

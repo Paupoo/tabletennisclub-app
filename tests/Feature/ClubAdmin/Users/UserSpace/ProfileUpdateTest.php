@@ -246,4 +246,13 @@ describe('profile shows real season data — no prototype leftovers', function (
             ->assertDontSee('65%')
             ->assertDontSee('+142');
     });
+
+    it('no longer offers a reset button that did nothing', function (): void {
+        makeActiveSeason();
+        $user = User::factory()->create();
+
+        Livewire::actingAs($user)
+            ->test('pages::club-admin.users.user-space.profile', ['user' => $user])
+            ->assertDontSee(__('Reset'));
+    });
 });

@@ -200,3 +200,12 @@ describe('licence and ranking — editable on the member form', function (): voi
         expect($user->fresh()->licence)->toBe('123456');
     });
 });
+
+describe('form actions', function (): void {
+    it('no longer offers a reset button that did nothing', function (): void {
+        $user = User::factory()->create();
+
+        Livewire::test(USER_FORM_COMPONENT, ['user' => $user])
+            ->assertDontSee(__('Reset'));
+    });
+});

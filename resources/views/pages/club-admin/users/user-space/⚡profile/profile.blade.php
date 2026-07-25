@@ -334,7 +334,6 @@
                 </div>
             </div>
             <x-slot:actions>
-                <x-button :label="__('Reset')" />
                 <x-button label="{{ $user ? __('Update') : __('Create') }}" class="btn-primary"
                     type="submit" spinner="save" />
             </x-slot:actions>

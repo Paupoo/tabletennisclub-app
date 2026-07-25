@@ -21,6 +21,10 @@ class Tab extends Component
 {
     public string $uuid;
 
+    /**
+     * The uuid only has to be stable across re-renders and unique among the
+     * tabs on a page, so it uses a deliberately non-cryptographic hash.
+     */
     public function __construct(
         public ?string $id = null,
         public ?string $name = null,
@@ -29,7 +33,7 @@ class Tab extends Component
         public bool $disabled = false,
         public bool $hidden = false,
     ) {
-        $this->uuid = 'tab-' . md5(serialize($this)) . $id;
+        $this->uuid = 'tab-' . hash('xxh128', serialize($this)) . $id;
     }
 
     public function render(): View|Closure|string
@@ -44,7 +48,7 @@ class Tab extends Component
                         index !== -1 ? tabs[index] = newItem : tabs.push(newItem);
 
                         Livewire.hook('morph.removed', ({el}) => {
-                            if (el.getAttribute('data-name') == '{{ $name }}') {
+                            if (el.getAttribute('data-name') === '{{ $name }}') {
                                 tabs = tabs.filter(i => i.name !== '{{ $name }}')
                             }
                         })

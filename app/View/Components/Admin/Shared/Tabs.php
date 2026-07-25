@@ -27,11 +27,15 @@ class Tabs extends Component
 {
     public string $uuid;
 
+    /**
+     * The uuid only has to be stable across re-renders and unique among the
+     * tab sets on a page, so it uses a deliberately non-cryptographic hash.
+     */
     public function __construct(
         public ?string $id = null,
         public ?string $selected = null,
     ) {
-        $this->uuid = 'tabs-' . md5(serialize($this)) . $id;
+        $this->uuid = 'tabs-' . hash('xxh128', serialize($this)) . $id;
     }
 
     public function render(): View|Closure|string
@@ -56,7 +60,7 @@ class Tabs extends Component
                                 type="button"
                                 role="tab"
                                 x-html="tab.label"
-                                x-init="if (typeof tab == 'undefined') $el.remove()"
+                                x-init="if (typeof tab === 'undefined') $el.remove()"
                                 @click="tab.disabled ? null : selected = tab.name"
                                 :aria-selected="selected === tab.name"
                                 :class="{

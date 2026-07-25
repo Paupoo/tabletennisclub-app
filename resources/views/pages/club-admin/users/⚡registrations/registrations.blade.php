@@ -359,6 +359,28 @@
                     </div>
                 </div>
 
+                {{--
+                    Accepter une affiliation, c'est l'enregistrer auprès de la fédération :
+                    c'est donc ici, et nulle part ailleurs, que le matricule se vérifie et
+                    s'encode. Les champs sont pré-remplis depuis la fiche membre.
+                --}}
+                <div>
+                    <h3 class="mb-3 text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Federation details') }}</h3>
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <x-input :label="__('Licence number')" mandatory numeric wire:model.live.debounce="reviewLicence"
+                            :hint="__('6 digits')" />
+                        <x-select :options="$rankings" icon="o-scale" :label="__('Ranking')" mandatory
+                            wire:model.live="reviewRanking" />
+                    </div>
+                    @if (blank($reviewLicence) || blank($reviewRanking) || $reviewRanking === 'NA')
+                        <x-alert icon="o-information-circle" class="alert-info mt-3">
+                            <span class="text-sm">
+                                {{ __('A licence number and a ranking are required to accept an affiliation. An unranked player is NC, not N/A.') }}
+                            </span>
+                        </x-alert>
+                    @endif
+                </div>
+
                 @if ($currentRequest->pending_packs->count() > 0)
                     <div>
                         <h3 class="mb-3 text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Training Packs Requested') }}</h3>
@@ -480,8 +502,31 @@
             </div>
         @endif
 
+        {{--
+            Changer de formule après facturation n'est jamais gratuit : la modale
+            annonce à l'admin ce que ça déclenche — l'argent qui bouge et le mail
+            qui part — avant qu'il ne confirme.
+        --}}
+        @if (! $paymentGenerated && $currentRequest && in_array($currentRequest->status, ['confirmed', 'paid']))
+            <div class="mt-4 rounded-xl border border-base-200 p-4">
+                <div class="mb-2 text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Change of formula') }}</div>
+                <p class="text-sm opacity-70">
+                    {{ $currentRequest->type === __('Compétition')
+                        ? __('Switching to recreative reprices the affiliation at 60 € and takes the member out of the force lists. Any overpayment is reported to you for refund, capped at what they actually paid.')
+                        : __('Switching to competition reprices the affiliation at 125 € and invoices the difference as a new payment with its own structured reference.') }}
+                </p>
+                <p class="mt-2 text-xs italic opacity-50">{{ __('The member will be notified by email.') }}</p>
+                <x-button :label="__('Change formula')" icon="o-arrows-right-left" class="btn-soft btn-sm mt-3"
+                    wire:click="changeFormula"
+                    wire:confirm="{{ __('Change the formula of this affiliation? The member will be notified.') }}"
+                    spinner />
+            </div>
+        @endif
+
         <x-slot:actions>
             @if (! $paymentGenerated && $currentRequest && $currentRequest->status === 'pending')
+                <x-button :label="__('Change formula')" icon="o-arrows-right-left" class="btn-ghost btn-sm"
+                    wire:click="changeFormula" spinner />
                 <x-button :label="__('Reject')" wire:click="reject" class="btn-ghost text-error" spinner />
                 <x-button :label="__('Approve and Invoice')" wire:click="approve" class="btn-primary shadow-lg" spinner />
             @elseif ($paymentGenerated)

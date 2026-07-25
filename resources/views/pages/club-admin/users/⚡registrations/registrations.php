@@ -9,6 +9,7 @@ use App\Actions\ClubAdmin\Payments\GeneratePaymentReference;
 use App\Actions\ClubAdmin\Subscriptions\ApproveTrainingPacksAction;
 use App\Actions\ClubAdmin\Subscriptions\CalculatePriceAction;
 use App\Actions\ClubAdmin\Subscriptions\CancelSubscriptionWithRefundAction;
+use App\Actions\ClubAdmin\Subscriptions\ChangeSubscriptionFormulaAction;
 use App\Actions\ClubAdmin\Subscriptions\CreateSubscriptionAction;
 use App\Actions\ClubAdmin\Subscriptions\LeaveTrainingPackAction;
 use App\Actions\ClubAdmin\Subscriptions\RequestSubscriptionRefundAction;
@@ -17,6 +18,8 @@ use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Shared\Enums\Ranking;
+use App\Domains\Subscriptions\Notifications\SubscriptionFormulaChangedNotification;
 use App\Domains\Subscriptions\Notifications\SubscriptionRejectedNotification;
 use App\Domains\Subscriptions\Notifications\TrainingPackRejectedNotification;
 use App\Domains\Trainings\Models\TrainingPack;
@@ -26,6 +29,8 @@ use App\Mail\PaymentInvitationEmail;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule as ValidationRule;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -68,7 +73,13 @@ new class extends Component
 
     public string $rejectionTemplate = '';
 
+    /** Licence number being reviewed: pre-filled from the member, editable before accepting. */
+    public ?string $reviewLicence = null;
+
     public bool $reviewModal = false;
+
+    /** Ranking being reviewed: pre-filled from the member, editable before accepting. */
+    public ?string $reviewRanking = null;
 
     public string $search = '';
 
@@ -98,6 +109,40 @@ new class extends Component
         Gate::authorize(Permission::SubscriptionsManage->value);
 
         $subscription = Subscription::with(['user', 'trainingPacks'])->find($this->currentRequestId);
+
+        $licence = filled($this->reviewLicence) ? trim($this->reviewLicence) : $subscription->user->licence;
+        $ranking = filled($this->reviewRanking) ? $this->reviewRanking : $subscription->user->ranking;
+
+        // An affiliation is what ties a member to the federation: accepting one
+        // without a licence number would register someone the AFTT cannot identify.
+        if (blank($licence)) {
+            $this->error(__('A licence number is required before this affiliation can be accepted.'));
+
+            return;
+        }
+
+        $validator = Validator::make(
+            ['licence' => $licence],
+            ['licence' => ['digits:6', ValidationRule::unique('users', 'licence')->ignore($subscription->user->id)]],
+            ['licence.digits' => __('A licence number is made of exactly 6 digits.')],
+        );
+
+        if ($validator->fails()) {
+            $this->error($validator->errors()->first('licence'));
+
+            return;
+        }
+
+        // NA means "no ranking on file", never a ranking in its own right: an
+        // unranked player is NC, which the federation does recognise.
+        if (blank($ranking) || $ranking === Ranking::NA->name) {
+            $this->error(__('A ranking is required before this affiliation can be accepted.'));
+
+            return;
+        }
+
+        $subscription->user->update(['licence' => $licence, 'ranking' => $ranking]);
+
         (new CalculatePriceAction)($subscription);
         $subscription->confirm();
 
@@ -202,6 +247,98 @@ new class extends Component
         $this->rejectionMessage = '';
         $this->rejectionTemplate = '';
         $this->success(__('Training requests approved.'));
+    }
+
+    /**
+     * Switches an affiliation between the recreative and the competitive formula.
+     *
+     * The formula belongs to the affiliation, never to the member record: this is
+     * the only place it can be changed, and it can never be changed for free —
+     * the price follows, and so does the money still owed either way.
+     */
+    public function changeFormula(): void
+    {
+        Gate::authorize(Permission::SubscriptionsManage->value);
+
+        $subscription = Subscription::with(['user', 'trainingPacks', 'payments'])->find($this->currentRequestId);
+
+        if (! $subscription) {
+            return;
+        }
+
+        // Leaving the competition while still fielded would leave the season with a
+        // player in a line-up who is no longer allowed to play it. The selections are
+        // built by hand, so we refuse rather than silently unpick them — and we name
+        // the teams, since that is what the admin has to go and fix.
+        if ($subscription->is_competitive) {
+            $teams = $subscription->user->teams()
+                ->where('season_id', $subscription->season_id)
+                ->pluck('name');
+
+            if ($teams->isNotEmpty()) {
+                $this->error(__('Remove :name from team(s) :teams before switching them back to recreative.', [
+                    'name' => $subscription->user->first_name . ' ' . $subscription->user->last_name,
+                    'teams' => $teams->implode(', '),
+                ]));
+
+                return;
+            }
+        }
+
+        // Whether the member has already been invoiced is what decides if they hear
+        // about this: before that, nothing has been announced to them yet.
+        $wasInvoiced = $subscription->payments()->exists();
+
+        $delta = (new ChangeSubscriptionFormulaAction)(
+            $subscription,
+            $subscription->has_other_family_members ? 2 : 1,
+        );
+
+        $complement = null;
+
+        if ($wasInvoiced && $delta > 0) {
+            $complement = $subscription->payments()->create([
+                'reference' => (new GeneratePaymentReference)(),
+                'amount_due' => $delta,
+                'amount_paid' => 0,
+                'status' => 'pending',
+            ]);
+        }
+
+        // A refund is capped by what actually came in: we never hand back a euro
+        // that was never received (same reasoning as LeaveTrainingPackAction).
+        $refundable = $delta < 0
+            ? round(min(abs($delta), $subscription->netAmountPaid()), 2)
+            : 0.0;
+
+        if ($wasInvoiced) {
+            $subscription->user->notify(new SubscriptionFormulaChangedNotification(
+                $subscription,
+                $delta > 0 ? $delta : -$refundable,
+                $complement?->reference,
+            ));
+        }
+
+        $this->reviewModal = false;
+
+        if ($complement !== null) {
+            $this->success(__('Formula changed. A complement of :amount € has been invoiced to the member.', [
+                'amount' => number_format($delta, 2),
+            ]));
+
+            return;
+        }
+
+        if ($refundable > 0) {
+            $this->warning(__('Formula changed. :amount € are to be refunded to the member (:iban).', [
+                'amount' => number_format($refundable, 2),
+                'iban' => $subscription->user->iban ?: __('no IBAN on file'),
+            ]));
+
+            return;
+        }
+
+        $this->success(__('Affiliation formula changed.'));
     }
 
     public function clearFilters(): void
@@ -593,6 +730,8 @@ new class extends Component
         return $this->view([
             'headers' => $this->headers(),
             'registrations' => $this->registrations(),
+            // NA is deliberately absent: an affiliation being accepted cannot carry it.
+            'rankings' => Ranking::options(includeNA: false),
             'stats' => [
                 'total' => (clone $statsBase)->count(),
                 'pending' => (clone $statsBase)->where('status', 'pending')->count(),
@@ -617,12 +756,17 @@ new class extends Component
         $this->paymentData = [];
         $this->reviewModal = true;
 
-        $subscription = Subscription::with(['trainingPacks'])->find($id);
+        $subscription = Subscription::with(['user', 'trainingPacks'])->find($id);
         $this->approvedPackIds = $subscription
             ?->trainingPacks
             ->filter(fn ($p) => $p->pivot->status === 'pending')
             ->pluck('id')
             ->toArray() ?? [];
+
+        // Accepting an affiliation is the moment the licence number is checked
+        // against the federation, so it is offered for edit right here.
+        $this->reviewLicence = $subscription?->user?->licence;
+        $this->reviewRanking = $subscription?->user?->ranking;
     }
 
     public function reviewTrainingRequest(int $subscriptionId): void

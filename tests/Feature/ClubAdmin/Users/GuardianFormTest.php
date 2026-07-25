@@ -48,7 +48,6 @@ describe('warn on save', function () {
         ]);
 
         Livewire::test(GUARDIAN_FORM_COMPONENT, ['user' => $user])
-            ->set('licence_type', 'recreative')
             ->set('password', '')
             ->call('save')
             ->assertHasNoErrors();
@@ -68,7 +67,6 @@ describe('guardian management from the form', function () {
             ->set('guardianEmail', 'marie.dupont@example.com')
             ->call('createGuardian')
             ->assertHasNoErrors()
-            ->set('licence_type', 'recreative')
             ->set('password', '')
             ->call('save');
 
@@ -86,7 +84,6 @@ describe('guardian management from the form', function () {
 
         Livewire::test(GUARDIAN_FORM_COMPONENT, ['user' => $user])
             ->call('detachGuardian', $guardian->id)
-            ->set('licence_type', 'recreative')
             ->set('password', '')
             ->call('save');
 
@@ -130,7 +127,6 @@ describe('linking an existing member as guardian', function () {
 
         Livewire::test(GUARDIAN_FORM_COMPONENT, ['user' => $minor])
             ->call('attachMemberAsGuardian', $adult->id)
-            ->set('licence_type', 'recreative')
             ->set('password', '')
             ->call('save');
 

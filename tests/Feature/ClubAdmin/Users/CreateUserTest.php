@@ -81,7 +81,6 @@ test('full form save fails with a validation error when the email is already tak
         ->set('street', 'Du Bauloy')
         ->set('city_code', '1348')
         ->set('city_name', 'Ottignies')
-        ->set('licence_type', 'recreative')
         ->set('password', 'Password1!')
         ->set('password_confirmation', 'Password1!')
         ->call('save')

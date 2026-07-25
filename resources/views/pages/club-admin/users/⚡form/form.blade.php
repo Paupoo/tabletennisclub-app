@@ -272,22 +272,13 @@
             </div>
 
             <div class="col-span-6 md:col-span-4">
-                @if ($this->canEditLicenceType)
-                    <x-group :options="$licence_types" class="btn-soft" inline :label="__('Licence Type')"
-                        wire:model.live="licence_type" />
-                    @if ($licence_type == 'competitive')
-                        <x-input :label="__('Licence *')" mandatory numeric wire:model.live.debounce="licence" />
-                        <x-select :options="$rankings" icon="o-scale" :label="__('Ranking')" wire:model.live="ranking" />
-                    @endif
-                @else
-                    <x-group :options="$licence_types->map(fn ($type) => $type + ['disabled' => true])"
-                        class="btn-soft" inline :label="__('Licence Type')" wire:model="licence_type" />
-                    <x-alert icon="o-information-circle" class="alert-info mt-2">
-                        <span class="text-sm">
-                            {{ __('The competitive/recreative status is set on the member\'s subscription. This member has no subscription for the current season, so it cannot be changed here.') }}
-                        </span>
-                    </x-alert>
-                @endif
+                <x-input :label="__('Licence')" numeric wire:model.live.debounce="licence" :hint="__('6 digits')" />
+                <x-select :options="$rankings" icon="o-scale" :label="__('Ranking')" wire:model.live="ranking" />
+                <x-alert icon="o-information-circle" class="alert-info mt-2">
+                    <span class="text-sm">
+                        {{ __('Whether a member is competitive or recreative comes from their affiliation for the season, and is decided when it is accepted on the Registrations page.') }}
+                    </span>
+                </x-alert>
             </div>
             <div class="col-span-6">
                 <x-menu-separator />

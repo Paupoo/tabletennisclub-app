@@ -29,7 +29,6 @@ describe('family management from the form', function () {
         Livewire::test(FAMILY_FORM_COMPONENT, ['user' => $user])
             ->call('attachFamilyMember', $sibling->id)
             ->assertSet('familyMemberIds', [$sibling->id])
-            ->set('licence_type', 'recreative')
             ->set('password', '')
             ->call('save')
             ->assertHasNoErrors();
@@ -44,7 +43,6 @@ describe('family management from the form', function () {
 
         Livewire::test(FAMILY_FORM_COMPONENT, ['user' => $user])
             ->call('detachFamilyMember', $sibling->id)
-            ->set('licence_type', 'recreative')
             ->set('password', '')
             ->call('save');
 
@@ -70,7 +68,6 @@ describe('family management from the form', function () {
         Livewire::test(FAMILY_FORM_COMPONENT, ['user' => $user])
             ->call('attachFamilyMember', $parent->id)
             ->assertSet('familyMemberIds', [$parent->id, $child->id])
-            ->set('licence_type', 'recreative')
             ->set('password', '')
             ->call('save')
             ->assertHasNoErrors();

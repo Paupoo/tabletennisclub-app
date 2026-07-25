@@ -11,9 +11,9 @@ use App\Data\User\UpdateUserData;
 use App\Domains\ClubAdmin\Users\Models\FamilyGroup;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\Role;
-use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Gender;
+use App\Domains\Shared\Enums\Ranking;
 use App\Domains\Shared\Rules\ValidIban;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasPhotoUpload;
@@ -105,17 +105,11 @@ new class extends Component
 
     // Registration
 
-    #[Rule('required|boolean')]
-    public bool $is_competitor = false;
-
     #[Rule('required|string')]
     public string $last_name = '';
 
     #[Validate()]
     public ?string $licence = null;
-
-    #[Rule('nullable|string')]
-    public ?string $licence_type = null;
 
     // Security
     #[Validate()]
@@ -293,28 +287,6 @@ new class extends Component
     }
 
     /**
-     * Whether the competitive/recreative toggle can be persisted. The licence
-     * type is stored on the member's subscription for the active season (see
-     * UpdateUserAction), so without such a subscription there is nowhere to
-     * save it and the toggle must be locked. Creation always allows it.
-     */
-    #[Computed()]
-    public function canEditLicenceType(): bool
-    {
-        if (! $this->user?->exists) {
-            return true;
-        }
-
-        $seasonId = Season::current()?->id;
-
-        if ($seasonId === null) {
-            return false;
-        }
-
-        return $this->user->subscriptions()->where('season_id', $seasonId)->affiliated()->exists();
-    }
-
-    /**
      * Whether the currently entered birthdate makes the member a minor (< 18y).
      */
     #[Computed()]
@@ -346,10 +318,8 @@ new class extends Component
             $this->existingFamilyGroupId = $user->familyGroups()->first()?->id;
             $this->familyMemberIds = $user->familyMembers()->pluck('id')->all();
             $this->currentPhoto = $user->photo;
-            $this->licence_type = $user->is_competitor ? 'competitive' : 'recreative';
             $this->licence = $user->licence;
-            $this->ranking = $user->ranking ?? 'NA';
-            $this->is_competitor = $user->is_competitor;
+            $this->ranking = $user->ranking ?? Ranking::NA->value;
             $this->is_committee_member = $user->hasRole(Role::COMMITTEE->value);
             $this->is_admin = $user->hasRole(Role::ADMINISTRATOR->value);
             $this->has_key = (bool) ($user->has_key ?? false);
@@ -406,10 +376,8 @@ new class extends Component
             ],
             'licence' => [
                 'nullable',
-                ValidationRule::when(
-                    $this->licence_type === 'competitive',
-                    ['required', 'digits:6', ValidationRule::unique('users', 'licence')->ignore($this->user?->id)]
-                ),
+                'digits:6',
+                ValidationRule::unique('users', 'licence')->ignore($this->user?->id),
             ],
             'password' => [
                 // Si l'utilisateur existe, on autorise 'nullable', sinon 'required'
@@ -454,20 +422,7 @@ new class extends Component
             ],
             'ranking' => [
                 'nullable',
-                'string',
-                function ($attribute, $value, $fail): void {
-                    $isCompetitive = $this->licence_type === 'competitive' || $this->is_competitor;
-
-                    if ($isCompetitive && empty($value)) {
-                        $fail('Ranking is required for competitive players.');
-
-                        return;
-                    }
-
-                    if ($isCompetitive && $value === 'NA') {
-                        $fail('Ranking N/A is not allowed for competitors.');
-                    }
-                },
+                ValidationRule::in(array_column(Ranking::cases(), 'value')),
             ],
         ];
     }
@@ -507,8 +462,8 @@ new class extends Component
         $minorWithoutGuardian = $this->isMinor && $this->guardianIds === [];
 
         $actor = Auth::user();
-        $licence = $this->licence_type === 'recreative' ? null : $this->licence;
-        $ranking = $this->licence_type === 'recreative' ? 'NA' : $this->ranking;
+        $licence = $this->licence;
+        $ranking = $this->ranking;
         $committeeRole = ($this->is_committee_member && $this->committee_role !== null && $this->committee_role !== '')
             ? CommitteeRolesEnum::from($this->committee_role)
             : null;
@@ -530,7 +485,6 @@ new class extends Component
                     birthdate: $this->birthdate,
                     guardian_phone_number: $this->user->guardian_phone_number,
                     iban: $this->iban,
-                    is_competitor: $this->is_competitor,
                     is_committee_member: $this->is_committee_member,
                     is_admin: $this->is_admin,
                     has_key: $this->has_key,
@@ -603,20 +557,11 @@ new class extends Component
         $this->success(__('Password reset link sent to :email.', ['email' => $this->user->email]));
     }
 
-    public function updatedLicenceType(string $value): void
-    {
-        $this->is_competitor = $value === 'competitive';
-
-        // On nettoie uniquement les erreurs, pas les valeurs
-        $this->resetErrorBag(['licence', 'ranking']);
-    }
-
     public function with(): array
     {
         return [
-            'licence_types' => collect([['id' => 'recreative', 'name' => __('Recreative')], ['id' => 'competitive', 'name' => __('Competitive')]]),
             'genders' => Gender::options(),
-            'rankings' => [['id' => 'NA', 'name' => 'N/A'], ['id' => 'B0', 'name' => 'B0'], ['id' => 'B2', 'name' => 'B2'], ['id' => 'B4', 'name' => 'B4'], ['id' => 'B6', 'name' => 'B6'], ['id' => 'C0', 'name' => 'C0'], ['id' => 'C2', 'name' => 'C2'], ['id' => 'C4', 'name' => 'C4'], ['id' => 'C6', 'name' => 'C6'], ['id' => 'D0', 'name' => 'D0'], ['id' => 'D2', 'name' => 'D2'], ['id' => 'D4', 'name' => 'D4'], ['id' => 'D6', 'name' => 'D6'], ['id' => 'E0', 'name' => 'E0'], ['id' => 'E2', 'name' => 'E2'], ['id' => 'E4', 'name' => 'E4'], ['id' => 'E6', 'name' => 'E6'], ['id' => 'NC', 'name' => 'NC']],
+            'rankings' => Ranking::options(),
             'quotes' => [
                 [
                     'text' => "A stranger is just a friend you haven't met yet.",

@@ -6,6 +6,7 @@ use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Livewire\Livewire;
 
 use function Pest\Laravel\actingAs;
@@ -21,39 +22,33 @@ beforeEach(function (): void {
     actingAs($this->admin);
 });
 
-describe('ranking — recreational users', function (): void {
-    it('does not require ranking for recreational users', function (): void {
+describe('ranking — members without an affiliation yet', function (): void {
+    it('does not require a ranking', function (): void {
         $user = User::factory()->create();
 
         Livewire::test(USER_FORM_COMPONENT, ['user' => $user])
-            ->set('licence_type', 'recreative')
             ->set('ranking', null)
             ->set('password', '')
             ->call('save')
             ->assertHasNoErrors(['ranking']);
     });
 
-    it('saves NA when updating a recreational user', function (): void {
+    it('keeps NA on a member who has never been affiliated', function (): void {
         $user = User::factory()->create([
-
             'ranking' => 'NA',
         ]);
 
         Livewire::test(USER_FORM_COMPONENT, ['user' => $user])
-            ->set('licence_type', 'recreative')
             ->set('password', '')
             ->call('save');
 
         expect($user->fresh()->ranking)->toBe('NA');
     });
 
-    it('does not throw a QueryException (no DB truncation) when saving a recreational user', function (): void {
-        $user = User::factory()->create([
-
-        ]);
+    it('does not throw a QueryException (no DB truncation) when saving', function (): void {
+        $user = User::factory()->create();
 
         expect(fn () => Livewire::test(USER_FORM_COMPONENT, ['user' => $user])
-            ->set('licence_type', 'recreative')
             ->set('password', '')
             ->call('save')
         )->not->toThrow(QueryException::class);
@@ -128,44 +123,80 @@ describe('admin role guards — last admin protection', function (): void {
     })->skip('save() non déclenché via ->call() en contexte PHPUnit — à investiguer');
 });
 
-describe('licence type — bound to the active-season subscription', function (): void {
-    it('locks the licence type toggle when the member has no subscription for the active season', function (): void {
-        makeActiveSeason();
-        $user = User::factory()->create();
-
-        $component = Livewire::test(USER_FORM_COMPONENT, ['user' => $user]);
-
-        expect($component->instance()->canEditLicenceType())->toBeFalse();
-        $component->assertSee('saison en cours');
-    });
-
-    it('keeps the toggle editable when the member is subscribed to the active season', function (): void {
+describe('licence type — decided by the affiliation, never by the member form', function (): void {
+    it('does not overwrite the formula the member asked for on a pending affiliation', function (): void {
         $season = makeActiveSeason();
-        $user = User::factory()->create();
-        Subscription::factory()->for($user)->create(['season_id' => $season->id]);
-
-        $component = Livewire::test(USER_FORM_COMPONENT, ['user' => $user]);
-
-        expect($component->instance()->canEditLicenceType())->toBeTrue();
-        $component->assertDontSee('saison en cours');
-    });
-
-    it('persists the competitive status onto the active-season subscription on save', function (): void {
-        $season = makeActiveSeason();
-        $user = User::factory()->create();
+        $user = User::factory()->create(['licence' => '123456', 'ranking' => 'D6']);
         $subscription = Subscription::factory()->for($user)->create([
             'season_id' => $season->id,
-            'is_competitive' => false,
+            'status' => 'pending',
+            'is_competitive' => true,
         ]);
 
         Livewire::test(USER_FORM_COMPONENT, ['user' => $user])
-            ->set('licence_type', 'competitive')
-            ->set('licence', '123456')
-            ->set('ranking', 'D6')
+            ->set('password', '')
+            ->call('save');
+
+        expect($subscription->fresh()->is_competitive)->toBeTrue();
+    });
+});
+
+describe('licence and ranking — editable on the member form', function (): void {
+    it('corrects the licence number and the ranking without erasing either', function (): void {
+        $user = User::factory()->create(['licence' => '123456', 'ranking' => 'D6']);
+
+        Livewire::test(USER_FORM_COMPONENT, ['user' => $user])
+            ->set('licence', '654321')
+            ->set('ranking', 'C4')
             ->set('password', '')
             ->call('save')
             ->assertHasNoErrors();
 
-        expect($subscription->fresh()->is_competitive)->toBeTrue();
+        expect($user->fresh()->licence)->toBe('654321')
+            ->and($user->fresh()->ranking)->toBe('C4');
+    });
+
+    it('corrects the licence of a paid affiliation without notifying or moving money', function (): void {
+        Notification::fake();
+
+        $season = makeActiveSeason();
+        $user = User::factory()->create(['licence' => '123456', 'ranking' => 'D6']);
+        $subscription = Subscription::factory()->for($user)->create([
+            'season_id' => $season->id,
+            'status' => 'paid',
+            'is_competitive' => true,
+            'amount_due' => 125,
+        ]);
+        $subscription->payments()->create([
+            'reference' => '+++000/0000/00097+++',
+            'amount_due' => 125,
+            'amount_paid' => 125,
+            'status' => 'paid',
+        ]);
+
+        Livewire::test(USER_FORM_COMPONENT, ['user' => $user])
+            ->set('licence', '654321')
+            ->set('password', '')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        expect($user->fresh()->licence)->toBe('654321')
+            ->and($subscription->fresh()->is_competitive)->toBeTrue()
+            ->and((float) $subscription->fresh()->amount_due)->toBe(125.0)
+            ->and($subscription->payments()->count())->toBe(1);
+
+        Notification::assertNothingSent();
+    });
+
+    it('refuses a licence number that is not exactly six digits', function (): void {
+        $user = User::factory()->create(['licence' => '123456']);
+
+        Livewire::test(USER_FORM_COMPONENT, ['user' => $user])
+            ->set('licence', '12345')
+            ->set('password', '')
+            ->call('save')
+            ->assertHasErrors(['licence']);
+
+        expect($user->fresh()->licence)->toBe('123456');
     });
 });

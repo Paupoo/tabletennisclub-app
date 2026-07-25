@@ -115,7 +115,7 @@ class UserFactory extends Factory
     public function setRanking(Ranking $ranking): static
     {
         return $this->state(fn (array $attributes): array => [
-            'ranking' => $ranking,
+            'ranking' => $ranking->value,
         ]);
     }
 

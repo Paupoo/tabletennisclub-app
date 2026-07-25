@@ -209,7 +209,6 @@ new class extends Component
                 'key' => 'status',
                 'label' => match ($this->status) {
                     'new' => __('Status') . ': ' . __('New'),
-                    'pending' => __('Status') . ': ' . __('Pending'),
                     'processed' => __('Status') . ': ' . __('Processed'),
                     'rejected' => __('Status') . ': ' . __('Rejected'),
                     default => __('Status') . ': ' . $this->status,
@@ -365,7 +364,7 @@ new class extends Component
             $this->emailCopy,
         );
 
-        $allowed = ['new', 'pending', 'processed', 'rejected'];
+        $allowed = ['new', 'processed', 'rejected'];
         if ($this->pendingApplyStatus !== null && in_array($this->pendingApplyStatus, $allowed, true)) {
             $contact->update(['status' => $this->pendingApplyStatus]);
         }
@@ -455,7 +454,6 @@ new class extends Component
 
         $statusOptions = [
             ['id' => 'new',       'name' => __('New')],
-            ['id' => 'pending',   'name' => __('Pending')],
             ['id' => 'processed', 'name' => __('Processed')],
             ['id' => 'rejected',  'name' => __('Rejected')],
         ];

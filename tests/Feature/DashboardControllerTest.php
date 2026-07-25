@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Contact\Models\Contact;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
@@ -92,6 +93,39 @@ describe('DashboardController', function (): void {
             ->get(route('dashboard'))
             ->assertOk()
             ->assertSee('profil');
+    });
+
+    it('shows a new messages alert for the contacts sitting in the inbox', function (): void {
+        $admin = User::factory()->isAdmin()->create();
+        Contact::factory()->count(2)->create(['status' => 'new']);
+        Contact::factory()->create(['status' => 'processed']);
+        Contact::factory()->create(['status' => 'rejected']);
+
+        $this->actingAs($admin)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('2 nouveaux messages');
+    });
+
+    it('singularises the new messages alert for a lone contact', function (): void {
+        $admin = User::factory()->isAdmin()->create();
+        Contact::factory()->create(['status' => 'new']);
+
+        $this->actingAs($admin)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('1 nouveau message');
+    });
+
+    it('hides the new messages alert when every contact has been handled', function (): void {
+        $admin = User::factory()->isAdmin()->create();
+        Contact::factory()->create(['status' => 'processed']);
+        Contact::factory()->create(['status' => 'rejected']);
+
+        $this->actingAs($admin)
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertDontSee('nouveau message');
     });
 
     it('redirects a member with an incomplete profile to the onboarding wizard', function (): void {

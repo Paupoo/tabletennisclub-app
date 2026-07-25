@@ -5,6 +5,8 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Contact\Models\Contact;
 use App\Domains\ClubAdmin\Contact\Models\EmailTemplate;
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Http\Requests\ClubAdmin\Contact\UpdateContactRequest;
+use Illuminate\Support\Facades\Validator;
 use Livewire\Livewire;
 
 beforeEach(function (): void {
@@ -92,4 +94,38 @@ describe('Contacts index', function (): void {
 
         expect($contact->fresh()->status)->toBe('new');
     });
+});
+
+describe('Contact statuses', function (): void {
+    it('offers new, processed and rejected only', function (): void {
+        $options = Livewire::actingAs($this->admin)
+            ->test('pages::website.contacts.index')
+            ->viewData('statusOptions');
+
+        expect(array_column($options, 'id'))->toBe(['new', 'processed', 'rejected']);
+    });
+
+    it('counts the inbox without a pending bucket', function (): void {
+        Contact::factory()->count(2)->create(['status' => 'new']);
+        Contact::factory()->create(['status' => 'processed']);
+        Contact::factory()->create(['status' => 'rejected']);
+
+        expect(Contact::getStatusStats())
+            ->toHaveKeys(['totalNew', 'totalProcessed', 'totalRejected'])
+            ->not->toHaveKey('totalPending');
+    });
+
+    it('accepts the three remaining statuses on the update request and refuses pending', function (string $status, bool $passes): void {
+        $validator = Validator::make(
+            ['status' => $status],
+            (new UpdateContactRequest)->rules(),
+        );
+
+        expect($validator->passes())->toBe($passes);
+    })->with([
+        ['new', true],
+        ['processed', true],
+        ['rejected', true],
+        ['pending', false],
+    ]);
 });

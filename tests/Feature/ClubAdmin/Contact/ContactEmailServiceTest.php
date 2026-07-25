@@ -23,7 +23,7 @@ function makeContact(int $id = 1, string $email = 'contact@example.com'): Contac
     $contact = Mockery::mock(Contact::class)->makePartial();
     $contact->id = $id;
     $contact->email = $email;
-    $contact->status = 'pending';
+    $contact->status = 'new';
 
     return $contact;
 }
@@ -140,7 +140,7 @@ describe('sendTemplate()', function (): void {
 
     it('applies the template apply_status to the contact (rejected)', function (): void {
         EmailTemplate::factory()->appliesStatus('rejected')->create(['key' => 'polite_decline']);
-        $contact = Contact::factory()->create(['status' => 'pending']);
+        $contact = Contact::factory()->create(['status' => 'new']);
 
         $this->service->sendTemplate($contact, 'polite_decline');
 
@@ -149,11 +149,11 @@ describe('sendTemplate()', function (): void {
 
     it('does not change the status when the template carries no apply_status', function (): void {
         EmailTemplate::factory()->create(['key' => 'request_info', 'apply_status' => null]);
-        $contact = Contact::factory()->create(['status' => 'pending']);
+        $contact = Contact::factory()->create(['status' => 'new']);
 
         $this->service->sendTemplate($contact, 'request_info');
 
-        expect($contact->fresh()->status)->toBe('pending');
+        expect($contact->fresh()->status)->toBe('new');
     });
 
     it('ignores an invalid apply_status and logs a warning', function (): void {
@@ -161,11 +161,23 @@ describe('sendTemplate()', function (): void {
         Log::shouldReceive('info')->zeroOrMoreTimes();
 
         EmailTemplate::factory()->appliesStatus('bogus_status')->create(['key' => 'weird']);
-        $contact = Contact::factory()->create(['status' => 'pending']);
+        $contact = Contact::factory()->create(['status' => 'new']);
 
         $this->service->sendTemplate($contact, 'weird');
 
-        expect($contact->fresh()->status)->toBe('pending');
+        expect($contact->fresh()->status)->toBe('new');
+    });
+
+    it('treats a leftover pending apply_status as invalid and leaves the contact untouched', function (): void {
+        Log::shouldReceive('warning')->once();
+        Log::shouldReceive('info')->zeroOrMoreTimes();
+
+        EmailTemplate::factory()->appliesStatus('pending')->create(['key' => 'legacy']);
+        $contact = Contact::factory()->create(['status' => 'processed']);
+
+        $this->service->sendTemplate($contact, 'legacy');
+
+        expect($contact->fresh()->status)->toBe('processed');
     });
 
     it('throws InvalidArgumentException for an unknown template key', function (): void {

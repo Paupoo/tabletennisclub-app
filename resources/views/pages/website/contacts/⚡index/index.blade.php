@@ -64,11 +64,10 @@
     <x-admin.shared.filter-chips :chips="$filterChips" />
 
     {{-- ── Cartes stats ──────────────────────────────────────────────── --}}
-    <div class="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+    <div class="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-3">
         @php
             $statCards = [
                 ['label' => __('New'),       'key' => 'totalNew',       'bg' => 'bg-info/10',    'color' => 'text-info'],
-                ['label' => __('Pending'),   'key' => 'totalPending',   'bg' => 'bg-warning/10', 'color' => 'text-warning-content'],
                 ['label' => __('Processed'), 'key' => 'totalProcessed', 'bg' => 'bg-success/10', 'color' => 'text-success'],
                 ['label' => __('Rejected'),  'key' => 'totalRejected',  'bg' => 'bg-error/10',   'color' => 'text-error'],
             ];
@@ -94,14 +93,12 @@
             @php
                 $badgeClass = match ($contact->status) {
                     'new'       => 'badge-info badge-soft',
-                    'pending'   => 'badge-warning badge-soft',
                     'processed' => 'badge-success badge-soft',
                     'rejected'  => 'badge-error badge-soft',
                     default     => 'badge-ghost',
                 };
                 $statusLabel = match ($contact->status) {
                     'new'       => __('New'),
-                    'pending'   => __('Pending'),
                     'processed' => __('Processed'),
                     'rejected'  => __('Rejected'),
                     default     => $contact->status,
@@ -177,14 +174,12 @@
                         @php
                             $badgeClass = match ($contact->status) {
                                 'new'       => 'badge-info badge-soft',
-                                'pending'   => 'badge-warning badge-soft',
                                 'processed' => 'badge-success badge-soft',
                                 'rejected'  => 'badge-error badge-soft',
                                 default     => 'badge-ghost',
                             };
                             $statusLabel = match ($contact->status) {
                                 'new'       => __('New'),
-                                'pending'   => __('Pending'),
                                 'processed' => __('Processed'),
                                 'rejected'  => __('Rejected'),
                                 default     => $contact->status,
@@ -312,7 +307,7 @@
                         {{ __('Status') }}
                     </p>
                     <div class="flex flex-wrap gap-2">
-                        @foreach ([['new', __('New'), 'btn-info'], ['pending', __('Pending'), 'btn-warning'], ['processed', __('Processed'), 'btn-success'], ['rejected', __('Rejected'), 'btn-error']] as [$val, $label, $cls])
+                        @foreach ([['new', __('New'), 'btn-info'], ['processed', __('Processed'), 'btn-success'], ['rejected', __('Rejected'), 'btn-error']] as [$val, $label, $cls])
                             <x-button class="btn-sm btn-soft {{ $cls }} {{ $selectedContact->status === $val ? 'opacity-100' : 'opacity-40' }}"
                                 :label="$label" :disabled="! $canManage"
                                 wire:click="updateStatus({{ $selectedContact->id }}, '{{ $val }}')" />

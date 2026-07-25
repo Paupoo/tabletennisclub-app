@@ -212,12 +212,12 @@ class DashboardController extends Controller
                 }
             }
 
-            $pendingContacts = Contact::byStatus('pending')->count();
-            if ($pendingContacts > 0) {
+            $newContacts = Contact::byStatus('new')->count();
+            if ($newContacts > 0) {
                 $alerts[] = [
                     'type' => 'info',
                     'icon' => 'o-envelope',
-                    'label' => $pendingContacts === 1 ? '1 message en attente' : "{$pendingContacts} messages en attente",
+                    'label' => $newContacts === 1 ? '1 nouveau message' : "{$newContacts} nouveaux messages",
                     'route' => route('admin.website.contacts.index'),
                 ];
             }

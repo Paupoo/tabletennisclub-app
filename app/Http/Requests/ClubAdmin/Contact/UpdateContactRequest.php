@@ -31,7 +31,6 @@ class UpdateContactRequest extends FormRequest
                 'required',
                 Rule::in([
                     'new',
-                    'pending',
                     'processed',
                     'rejected',
                 ]),

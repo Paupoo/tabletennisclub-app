@@ -18,7 +18,7 @@ class ContactEmailService
      *
      * @var list<string>
      */
-    private const ALLOWED_STATUSES = ['new', 'pending', 'processed', 'rejected'];
+    private const ALLOWED_STATUSES = ['new', 'processed', 'rejected'];
 
     public function __construct(
         private readonly EmailTemplateRenderer $renderer = new EmailTemplateRenderer,

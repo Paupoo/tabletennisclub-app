@@ -101,7 +101,6 @@ class Contact extends Model
     {
         return self::selectRaw("
         SUM(status = 'new') as totalNew,
-        SUM(status = 'pending') as totalPending,
         SUM(status = 'processed') as totalProcessed,
         SUM(status = 'rejected') as totalRejected")->first()->toArray();
     }

@@ -22,7 +22,7 @@ class GenerateErdCommand extends Command
 
     protected $description = 'Generate Mermaid ERD documentation from Eloquent models';
 
-    protected $signature = 'docs:erd';
+    protected $signature = 'docs:erd {--path= : Directory to write into, defaulting to docs/}';
 
     public function handle(): int
     {
@@ -48,6 +48,10 @@ class GenerateErdCommand extends Command
                 $models[] = $data;
             }
         }
+
+        // Finder walks the tree in filesystem order, which varies between machines
+        // and between runs. Sort so the generated files only change when a model does.
+        usort($models, fn (array $a, array $b) => [$a['domain'], $a['class']] <=> [$b['domain'], $b['class']]);
 
         return $models;
     }
@@ -93,7 +97,7 @@ class GenerateErdCommand extends Command
 
             $lines[] = '```';
 
-            $this->writeFile(base_path("docs/erd/{$slug}.md"), implode("\n", $lines));
+            $this->writeFile($this->outputPath("erd/{$slug}.md"), implode("\n", $lines));
         }
     }
 
@@ -132,7 +136,20 @@ class GenerateErdCommand extends Command
 
         $lines[] = '```';
 
-        $this->writeFile(base_path('docs/erd.md'), implode("\n", $lines));
+        $this->writeFile($this->outputPath('erd.md'), implode("\n", $lines));
+    }
+
+    /**
+     * Resolve a file below the output directory, so tests can generate into a
+     * temporary one instead of dirtying the repository's docs/.
+     */
+    private function outputPath(string $relative): string
+    {
+        $base = (string) ($this->option('path') ?? '');
+
+        return $base === ''
+            ? base_path('docs/' . $relative)
+            : rtrim($base, '/') . '/' . $relative;
     }
 
     /** @return array{class: string, fqn: string, domain: string, columns: list<array{name: string, type: string, nullable: bool, pk: bool, fk: bool}>, relationships: list<array{method: string, type: string, related_fqn: string, related_class: string}>}|null */

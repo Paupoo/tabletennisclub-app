@@ -9,6 +9,13 @@ erDiagram
         int duplicate_count
         int error_count
     }
+    CashRegister {
+        int id PK
+        string name
+        int balance
+        string notes "nullable"
+        int held_by_user_id FK "nullable"
+    }
     CashRegisterEntry {
         int id PK
         int cash_register_id FK
@@ -44,16 +51,9 @@ erDiagram
         string import_fingerprint "nullable"
         int bank_import_id FK "nullable"
     }
-    CashRegister {
-        int id PK
-        string name
-        int balance
-        string notes "nullable"
-        int held_by_user_id FK "nullable"
-    }
 
     BankImport ||--o{ Transaction : "transactions"
+    CashRegister ||--o{ CashRegisterEntry : "entries"
     Transaction ||--o| Payment : "payment"
     Transaction ||--o| Payment : "refundPayment"
-    CashRegister ||--o{ CashRegisterEntry : "entries"
 ```

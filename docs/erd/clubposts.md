@@ -2,17 +2,6 @@
 
 ```mermaid
 erDiagram
-    NewsPost {
-        int id PK
-        string title
-        string slug
-        string content
-        int reading_time "nullable"
-        NewsPostCategoryEnum category
-        string image "nullable"
-        int user_id FK
-        NewsPostStatusEnum status
-    }
     EventPost {
         EventPostStatusEnum status
         ClubEventTypeEnum type
@@ -31,6 +20,17 @@ erDiagram
         string notes "nullable"
         bool featured
         datetime featured_until "nullable"
+    }
+    NewsPost {
+        int id PK
+        string title
+        string slug
+        string content
+        int reading_time "nullable"
+        NewsPostCategoryEnum category
+        string image "nullable"
+        int user_id FK
+        NewsPostStatusEnum status
     }
 
 ```

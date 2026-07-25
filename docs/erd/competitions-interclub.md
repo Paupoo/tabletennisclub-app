@@ -2,6 +2,38 @@
 
 ```mermaid
 erDiagram
+    Club {
+        int id PK
+        string name
+        int is_active
+        bool is_own_club
+        string licence
+        string street "nullable"
+        string city_code "nullable"
+        string city_name "nullable"
+        string building_name "nullable"
+        float latitude "nullable"
+        float longitude "nullable"
+        string email_contact "nullable"
+        string phone_contact "nullable"
+        string bank_account "nullable"
+        string website_url "nullable"
+        string enterprise_number "nullable"
+    }
+    Interclub {
+        int id PK
+        string address
+        datetime start_date_time
+        int week_number "nullable"
+        int total_players
+        string score "nullable"
+        string result "nullable"
+        int visited_team_id FK "nullable"
+        int visiting_team_id FK "nullable"
+        int room_id FK "nullable"
+        int league_id FK "nullable"
+        int season_id FK "nullable"
+    }
     InterclubResult {
         int id PK
         int interclub_id FK "nullable"
@@ -39,39 +71,13 @@ erDiagram
         int season_id FK
         string final_position "nullable"
     }
-    Club {
-        int id PK
-        string name
-        int is_active
-        bool is_own_club
-        string licence
-        string street "nullable"
-        string city_code "nullable"
-        string city_name "nullable"
-        string building_name "nullable"
-        float latitude "nullable"
-        float longitude "nullable"
-        string email_contact "nullable"
-        string phone_contact "nullable"
-        string bank_account "nullable"
-        string website_url "nullable"
-        string enterprise_number "nullable"
-    }
-    Interclub {
-        int id PK
-        string address
-        datetime start_date_time
-        int week_number "nullable"
-        int total_players
-        string score "nullable"
-        string result "nullable"
-        int visited_team_id FK "nullable"
-        int visiting_team_id FK "nullable"
-        int room_id FK "nullable"
-        int league_id FK "nullable"
-        int season_id FK "nullable"
-    }
 
+    Club }o--o{ Room : "rooms"
+    Club ||--o{ Team : "teams"
+    Club ||--o{ User : "users"
+    Interclub ||--o| InterclubResult : "interclubResult"
+    Interclub ||--o{ Team : "teams"
+    Interclub }o--o{ User : "users"
     League ||--o{ Interclub : "interclubs"
     League ||--o{ Team : "teams"
     Season ||--o{ Interclub : "interclubs"
@@ -84,10 +90,4 @@ erDiagram
     Team ||--o{ InterclubResult : "interclubResults"
     Team ||--o{ Interclub : "interclubs"
     Team }o--o{ User : "users"
-    Club }o--o{ Room : "rooms"
-    Club ||--o{ Team : "teams"
-    Club ||--o{ User : "users"
-    Interclub ||--o| InterclubResult : "interclubResult"
-    Interclub ||--o{ Team : "teams"
-    Interclub }o--o{ User : "users"
 ```

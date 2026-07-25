@@ -18,12 +18,15 @@ erDiagram
     Contact
     EmailTemplate
 
+    %% ClubAdmin/Fines
+    Fine
+
     %% ClubAdmin/Payment
     BankImport
+    CashRegister
     CashRegisterEntry
     Payment
     Transaction
-    CashRegister
 
     %% ClubAdmin/Subscriptions
     Registration
@@ -34,20 +37,17 @@ erDiagram
     Guardian
     User
 
-    %% ClubAdmin/Fines
-    Fine
-
     %% ClubPosts
-    NewsPost
     EventPost
+    NewsPost
 
     %% Competitions/Interclub
+    Club
+    Interclub
     InterclubResult
     League
     Season
     Team
-    Club
-    Interclub
 
     %% Competitions/Tournament
     MatchSet
@@ -59,23 +59,23 @@ erDiagram
     TournamentRegistration
 
     %% Meetings
+    Meeting
     MeetingActionItem
+    MeetingAgendaItem
     MeetingDateProposal
     MeetingDateVote
     MeetingMinutes
     MeetingUser
-    MeetingAgendaItem
-    Meeting
 
     %% Shared
     AppSetting
 
     %% Trainings
     Training
+    TrainingPack
     TrainingPlan
     TrainingPlanAssignment
     TrainingPlanPack
-    TrainingPack
 
     BarCategory ||--o{ BarProduct : "products"
     BarOrder ||--o{ BarOrderItem : "items"
@@ -88,10 +88,11 @@ erDiagram
     Room ||--o{ Training : "trainings"
     Table }o--o{ TournamentMatch : "match"
     Table }o--o{ Tournament : "tournaments"
+    Fine ||--o| Payment : "payment"
     BankImport ||--o{ Transaction : "transactions"
+    CashRegister ||--o{ CashRegisterEntry : "entries"
     Transaction ||--o| Payment : "payment"
     Transaction ||--o| Payment : "refundPayment"
-    CashRegister ||--o{ CashRegisterEntry : "entries"
     Registration ||--o{ Payment : "payments"
     Subscription ||--o{ Payment : "payments"
     Subscription }o--o{ TrainingPack : "trainingPacks"
@@ -110,7 +111,12 @@ erDiagram
     User }o--o{ Team : "teams"
     User }o--o{ Tournament : "tournaments"
     User }o--o{ Training : "trainings"
-    Fine ||--o| Payment : "payment"
+    Club }o--o{ Room : "rooms"
+    Club ||--o{ Team : "teams"
+    Club ||--o{ User : "users"
+    Interclub ||--o| InterclubResult : "interclubResult"
+    Interclub ||--o{ Team : "teams"
+    Interclub }o--o{ User : "users"
     League ||--o{ Interclub : "interclubs"
     League ||--o{ Team : "teams"
     Season ||--o{ Interclub : "interclubs"
@@ -123,12 +129,6 @@ erDiagram
     Team ||--o{ InterclubResult : "interclubResults"
     Team ||--o{ Interclub : "interclubs"
     Team }o--o{ User : "users"
-    Club }o--o{ Room : "rooms"
-    Club ||--o{ Team : "teams"
-    Club ||--o{ User : "users"
-    Interclub ||--o| InterclubResult : "interclubResult"
-    Interclub ||--o{ Team : "teams"
-    Interclub }o--o{ User : "users"
     Pool }o--o{ TournamentPair : "pairs"
     Pool ||--o{ TournamentMatch : "tournamentmatches"
     Pool }o--o{ User : "users"
@@ -142,19 +142,19 @@ erDiagram
     TournamentMatch ||--o{ MatchSet : "sets"
     TournamentMatch }o--o{ Table : "table"
     TournamentRegistration ||--o| Payment : "payment"
-    MeetingDateProposal ||--o{ MeetingDateVote : "votes"
-    MeetingUser ||--o| Payment : "payment"
     Meeting ||--o{ MeetingActionItem : "actionItems"
     Meeting ||--o{ MeetingAgendaItem : "agendaItems"
     Meeting ||--o{ MeetingDateProposal : "dateProposals"
     Meeting ||--o| EventPost : "eventPost"
     Meeting ||--o| MeetingMinutes : "minutes"
     Meeting }o--o{ User : "users"
+    MeetingDateProposal ||--o{ MeetingDateVote : "votes"
+    MeetingUser ||--o| Payment : "payment"
     Training }o--o{ User : "trainees"
-    TrainingPlan ||--o{ TrainingPlanAssignment : "assignments"
-    TrainingPlan ||--o{ TrainingPlanPack : "packs"
-    TrainingPlanPack ||--o{ TrainingPlanAssignment : "assignments"
     TrainingPack ||--o| EventPost : "eventPost"
     TrainingPack }o--o{ Subscription : "subscriptions"
     TrainingPack ||--o{ Training : "trainings"
+    TrainingPlan ||--o{ TrainingPlanAssignment : "assignments"
+    TrainingPlan ||--o{ TrainingPlanPack : "packs"
+    TrainingPlanPack ||--o{ TrainingPlanAssignment : "assignments"
 ```

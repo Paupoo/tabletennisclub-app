@@ -24,6 +24,8 @@ erDiagram
         string ranking
         string licence "nullable"
         int force_list "nullable"
+        int force_list_women "nullable"
+        int force_list_veterans "nullable"
         int club_id FK
         string avatar_url "nullable"
         Gender gender

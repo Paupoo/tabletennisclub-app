@@ -16,16 +16,22 @@
             {{-- Desktop: full buttons --}}
             <div class="hidden items-center gap-2 lg:flex">
                 <x-admin.shared.filters-button :count="count($filterChips)" />
-                <x-dropdown :label="__('More actions')" icon="o-ellipsis-vertical" right class="btn-ghost btn-sm">
-                    @can('setOrUpdateForceList', \App\Domains\ClubAdmin\Users\Models\User::class)
-                        <x-menu-item icon="o-arrow-path" :title="__('Recalculate force list')"
-                            wire:click="recalculateForceList" spinner="recalculateForceList" />
-                    @endcan
-                    <x-menu-item icon="o-envelope" :title="__('Quick invite')"
-                        wire:click="$set('quickInviteDrawer', true)" />
-                </x-dropdown>
-                <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('Create')"
-                    link="{{ route('admin.users.create') }}" />
+                @canany(['setOrUpdateForceList', 'create'], \App\Domains\ClubAdmin\Users\Models\User::class)
+                    <x-dropdown :label="__('More actions')" icon="o-ellipsis-vertical" right class="btn-ghost btn-sm">
+                        @can('setOrUpdateForceList', \App\Domains\ClubAdmin\Users\Models\User::class)
+                            <x-menu-item icon="o-arrow-path" :title="__('Recalculate force list')"
+                                wire:click="recalculateForceList" spinner="recalculateForceList" />
+                        @endcan
+                        @can('create', \App\Domains\ClubAdmin\Users\Models\User::class)
+                            <x-menu-item icon="o-envelope" :title="__('Quick invite')"
+                                wire:click="$set('quickInviteDrawer', true)" />
+                        @endcan
+                    </x-dropdown>
+                @endcanany
+                @can('create', \App\Domains\ClubAdmin\Users\Models\User::class)
+                    <x-button class="btn-primary btn-sm" icon="o-plus" :label="__('Create')"
+                        link="{{ route('admin.users.create') }}" />
+                @endcan
             </div>
         </x-slot:actions>
     </x-header>
@@ -123,12 +129,16 @@
                 <x-slot:actions>
                     @if (! $selectionModeActive)
                         <x-admin.shared.row-actions>
-                            <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
-                                :tooltip="__('Edit')" link="{{ route('admin.users.edit', $user) }}" />
+                            @can('update', $user)
+                                <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
+                                    :tooltip="__('Edit')" link="{{ route('admin.users.edit', $user) }}" />
+                            @endcan
                             @if ($invStatus !== 'active')
-                                <x-button class="btn-ghost btn-sm btn-circle" icon="o-envelope"
-                                    :tooltip="__('Resend invitation')"
-                                    wire:click="sendInvitation({{ $user->id }})" spinner />
+                                @can('sendEmail', \App\Domains\ClubAdmin\Users\Models\User::class)
+                                    <x-button class="btn-ghost btn-sm btn-circle" icon="o-envelope"
+                                        :tooltip="__('Resend invitation')"
+                                        wire:click="sendInvitation({{ $user->id }})" spinner />
+                                @endcan
                             @endif
                             @can('delete', $user)
                                 <x-button class="btn-ghost btn-sm btn-circle text-error" icon="o-archive-box"
@@ -160,9 +170,13 @@
                         <x-avatar class="h-10 w-10" image="{{ $user->photo ?? '/images/empty-user.jpg' }}" />
                     @endscope
                     @scope('cell_name', $user)
-                        <a class="font-medium hover:underline" href="{{ route('admin.users.edit', $user) }}">
-                            {{ $user->first_name }} {{ $user->last_name }}
-                        </a>
+                        @can('update', $user)
+                            <a class="font-medium hover:underline" href="{{ route('admin.users.edit', $user) }}">
+                                {{ $user->first_name }} {{ $user->last_name }}
+                            </a>
+                        @else
+                            <span class="font-medium">{{ $user->first_name }} {{ $user->last_name }}</span>
+                        @endcan
                     @endscope
                     @scope('cell_is_competitive', $user)
                         @if ($user->is_competitor)
@@ -192,12 +206,16 @@
                                 <x-badge :value="__('Unpaid')" class="badge-error badge-soft badge-xs" />
                             @endif
                             <x-admin.shared.row-actions>
-                                <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
-                                    :tooltip="__('Edit')" link="{{ route('admin.users.edit', $user->id) }}" />
+                                @can('update', $user)
+                                    <x-button class="btn-ghost btn-sm btn-circle" icon="o-pencil"
+                                        :tooltip="__('Edit')" link="{{ route('admin.users.edit', $user->id) }}" />
+                                @endcan
                                 @if ($invStatus !== 'active')
-                                    <x-button class="btn-ghost btn-sm btn-circle" icon="o-envelope"
-                                        :tooltip="__('Resend invitation')"
-                                        wire:click="sendInvitation({{ $user->id }})" spinner />
+                                    @can('sendEmail', \App\Domains\ClubAdmin\Users\Models\User::class)
+                                        <x-button class="btn-ghost btn-sm btn-circle" icon="o-envelope"
+                                            :tooltip="__('Resend invitation')"
+                                            wire:click="sendInvitation({{ $user->id }})" spinner />
+                                    @endcan
                                 @endif
                                 @can('delete', $user)
                                     @if ($user->trashed())
@@ -230,10 +248,14 @@
         :selecting-all-results="$selectingAllResults"
         :select-all="$selectAll">
         <x-slot:actions>
-            <x-button class="btn-ghost btn-sm" icon="o-user-group" :label="__('Add to team')"
-                wire:click="$set('addToTeamModal', true)" />
-            <x-button class="btn-ghost btn-sm" icon="o-calendar" :label="__('Subscribe')"
-                wire:click="$set('subscribeModal', true)" />
+            @can('users.update')
+                <x-button class="btn-ghost btn-sm" icon="o-user-group" :label="__('Add to team')"
+                    wire:click="$set('addToTeamModal', true)" />
+            @endcan
+            @can('subscriptions.manage')
+                <x-button class="btn-ghost btn-sm" icon="o-calendar" :label="__('Subscribe')"
+                    wire:click="$set('subscribeModal', true)" />
+            @endcan
             <span class="text-base-content/20">|</span>
             @can('users.delete')
                 <x-button class="btn-ghost btn-sm text-error" icon="o-archive-box" :label="__('Archive')"
@@ -295,19 +317,21 @@
         </x-slot:filters>
     </x-admin.shared.filter-drawer>
 
-    {{-- ── Modal archive single ─────────────────────────────────────── --}}
-    <x-confirm-modal model="deleteModal" :title="__('Archive this member?')"
-        :confirmLabel="__('Archive')" confirmAction="delete">
-        <p>{{ __('The member will be archived and can be restored later. No data is permanently deleted.') }}</p>
-    </x-confirm-modal>
+    {{-- ── Modales archivage (simple et en masse) ────────────────────── --}}
+    @can('users.delete')
+        <x-confirm-modal model="deleteModal" :title="__('Archive this member?')"
+            :confirmLabel="__('Archive')" confirmAction="delete">
+            <p>{{ __('The member will be archived and can be restored later. No data is permanently deleted.') }}</p>
+        </x-confirm-modal>
 
-    {{-- ── Modal archive bulk ───────────────────────────────────────── --}}
-    <x-confirm-modal model="confirmArchiveModal" :title="__('Archive selected members?')"
-        :confirmLabel="__('Archive')" confirmAction="bulkArchive">
-        <p>{{ __('Selected members will be archived. Your own account is automatically excluded. Members can be restored later.') }}</p>
-    </x-confirm-modal>
+        <x-confirm-modal model="confirmArchiveModal" :title="__('Archive selected members?')"
+            :confirmLabel="__('Archive')" confirmAction="bulkArchive">
+            <p>{{ __('Selected members will be archived. Your own account is automatically excluded. Members can be restored later.') }}</p>
+        </x-confirm-modal>
+    @endcan
 
     {{-- ── Modal add to team ────────────────────────────────────────── --}}
+    @can('users.update')
     <x-modal wire:model="addToTeamModal" :title="__('Add to a team')">
         <div class="space-y-4">
             <p class="text-sm text-base-content/60">
@@ -323,8 +347,10 @@
                 wire:click="bulkAddToTeam" spinner="bulkAddToTeam" />
         </x-slot:actions>
     </x-modal>
+    @endcan
 
     {{-- ── Modal subscribe ──────────────────────────────────────────── --}}
+    @can('subscriptions.manage')
     <x-modal wire:model="subscribeModal" :title="__('Subscribe to an event')">
         <div class="space-y-4">
             <p class="text-sm text-base-content/60">
@@ -340,8 +366,10 @@
                 wire:click="bulkSubscribe" spinner="bulkSubscribe" />
         </x-slot:actions>
     </x-modal>
+    @endcan
 
     {{-- ── Modal anonymisation RGPD ─────────────────────────────────── --}}
+    @can('users.anonymize')
     <x-modal wire:model="anonymizeModal" :title="__('GDPR Anonymization — Irreversible')">
         <div class="space-y-4">
             <x-alert icon="o-exclamation-triangle" class="alert-error">
@@ -365,19 +393,22 @@
                 :disabled="strtoupper($anonymizeConfirmText) !== 'ANONYMIZE'" />
         </x-slot:actions>
     </x-modal>
+    @endcan
 
     {{-- ── Mobile action sheet ─────────────────────────────────────────── --}}
     <x-admin.shared.mobile-actions>
-        <x-admin.shared.mobile-action-item
-            icon="o-plus" color="primary"
-            :label="__('Create a member')"
-            :description="__('Add a new member to the club')"
-            @click="mobileActionsOpen = false; window.location.href = '{{ route('admin.users.create') }}'" />
-        <x-admin.shared.mobile-action-item
-            icon="o-envelope" color="info"
-            :label="__('Quick invite')"
-            :description="__('Send an invitation by email')"
-            @click="mobileActionsOpen = false; $wire.set('quickInviteDrawer', true)" />
+        @can('create', \App\Domains\ClubAdmin\Users\Models\User::class)
+            <x-admin.shared.mobile-action-item
+                icon="o-plus" color="primary"
+                :label="__('Create a member')"
+                :description="__('Add a new member to the club')"
+                @click="mobileActionsOpen = false; window.location.href = '{{ route('admin.users.create') }}'" />
+            <x-admin.shared.mobile-action-item
+                icon="o-envelope" color="info"
+                :label="__('Quick invite')"
+                :description="__('Send an invitation by email')"
+                @click="mobileActionsOpen = false; $wire.set('quickInviteDrawer', true)" />
+        @endcan
         @can('setOrUpdateForceList', \App\Domains\ClubAdmin\Users\Models\User::class)
             <x-admin.shared.mobile-action-item
                 icon="o-arrow-path" color="base"
@@ -394,6 +425,7 @@
     </x-admin.shared.mobile-actions>
 
     {{-- ── Quick invite ──────────────────────────────────────────────── --}}
+    @can('create', \App\Domains\ClubAdmin\Users\Models\User::class)
     <x-drawer wire:model="quickInviteDrawer" :title="__('Quick invite')" right class="w-full max-w-sm">
         <div class="space-y-4 p-1">
             <p class="text-sm text-base-content/60">
@@ -410,4 +442,5 @@
                 wire:click="quickInvite" spinner="quickInvite" />
         </x-slot:actions>
     </x-drawer>
+    @endcan
 </div>

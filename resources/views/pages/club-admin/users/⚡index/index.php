@@ -119,6 +119,8 @@ new class extends Component
 
     public function bulkAddToTeam(): void
     {
+        Gate::authorize(Permission::UsersUpdate->value);
+
         if (! $this->team_id) {
             return;
         }
@@ -156,6 +158,8 @@ new class extends Component
 
     public function bulkSubscribe(): void
     {
+        Gate::authorize(Permission::SubscriptionsManage->value);
+
         if (! $this->subscription_id) {
             return;
         }
@@ -202,11 +206,20 @@ new class extends Component
 
     public function confirmBulkArchive(): void
     {
+        Gate::authorize(Permission::UsersDelete->value);
+
         $this->confirmArchiveModal = true;
     }
 
+    /**
+     * Only opens the confirmation modal — deliberately not authorized on the
+     * instance, so that archiving one's own account still reaches the friendly
+     * message in {@see self::delete()} rather than a 403.
+     */
     public function confirmDelete(int $userId): void
     {
+        Gate::authorize(Permission::UsersDelete->value);
+
         $this->userToDelete = $userId;
         $this->deleteModal = true;
     }
@@ -338,6 +351,10 @@ new class extends Component
 
     public function quickInvite(): void
     {
+        // Creating the member and inviting them are one gesture here, so the
+        // stricter of the two rights is the one asked for.
+        Gate::authorize('create', User::class);
+
         $this->validate([
             'inviteFirstName' => ['required', 'string', 'max:255'],
             'inviteLastName' => ['required', 'string', 'max:255'],
@@ -413,6 +430,8 @@ new class extends Component
 
     public function sendInvitation(int $userId): void
     {
+        Gate::authorize('sendEmail', User::class);
+
         $user = User::findOrFail($userId);
 
         SendInvitationAction::handle($user);

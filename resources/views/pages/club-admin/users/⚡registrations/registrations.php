@@ -93,6 +93,8 @@ new class extends Component
 
     public function addToBasket($userId): void
     {
+        Gate::authorize(Permission::SubscriptionsManage->value);
+
         $user = User::find($userId);
 
         $this->familyBasket[$userId] = [
@@ -517,6 +519,8 @@ new class extends Component
 
     public function openCancelModal(int $subscriptionId): void
     {
+        Gate::authorize(Permission::SubscriptionsManage->value);
+
         $subscription = Subscription::with('payments')->find($subscriptionId);
         if (! $subscription || ! in_array($subscription->status, ['confirmed', 'paid'], true)) {
             return;
@@ -532,6 +536,8 @@ new class extends Component
 
     public function openRefundModal(int $subscriptionId, int $packId): void
     {
+        Gate::authorize(Permission::SubscriptionsManage->value);
+
         $this->refundSubscriptionId = $subscriptionId;
         $this->refundPackId = $packId;
         $this->refundModal = true;
@@ -720,6 +726,8 @@ new class extends Component
 
     public function removeFromBasket($userId): void
     {
+        Gate::authorize(Permission::SubscriptionsManage->value);
+
         unset($this->familyBasket[$userId]);
     }
 

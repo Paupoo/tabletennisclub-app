@@ -343,7 +343,8 @@ new class extends Component
     public function resendInvitation(): void
     {
         abort_unless($this->user !== null, 404);
-        Gate::authorize('update', $this->user);
+        // Inviting is its own right, not a side effect of being allowed to edit.
+        Gate::authorize('sendEmail', User::class);
 
         SendInvitationAction::handle($this->user);
 

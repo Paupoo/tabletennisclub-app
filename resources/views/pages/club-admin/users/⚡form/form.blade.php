@@ -257,8 +257,10 @@
                     <div class="flex flex-wrap gap-2 border-t border-base-200 pt-4">
                         <x-button class="btn-soft btn-sm" icon="o-key" :label="__('Send password reset link')"
                             wire:click="sendPasswordResetLink" spinner="sendPasswordResetLink" />
-                        <x-button class="btn-soft btn-sm" icon="o-envelope" :label="__('Resend invitation')"
-                            wire:click="resendInvitation" spinner="resendInvitation" />
+                        @can('sendEmail', \App\Domains\ClubAdmin\Users\Models\User::class)
+                            <x-button class="btn-soft btn-sm" icon="o-envelope" :label="__('Resend invitation')"
+                                wire:click="resendInvitation" spinner="resendInvitation" />
+                        @endcan
                     </div>
                 @endif
             </div>

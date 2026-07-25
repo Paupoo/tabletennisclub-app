@@ -16,17 +16,19 @@
             {{-- Desktop: full buttons --}}
             <div class="hidden items-center gap-2 lg:flex">
                 <x-admin.shared.filters-button :count="count($filterChips)" />
-                <x-dropdown :label="__('More actions')" icon="o-ellipsis-vertical" right class="btn-ghost btn-sm">
-                    <x-menu-item
-                        :icon="$this->registrationClosed ? 'o-lock-open' : 'o-lock-closed'"
-                        :title="$this->registrationClosed ? __('Open Registrations') : __('Close Registrations')"
-                        wire:click="toggleRegistrations" />
-                </x-dropdown>
-                @if (! $this->registrationClosed)
-                    <x-button :label="__('Register a member')" icon="o-user-plus"
-                        class="btn-primary btn-sm"
-                        @click="$wire.memberDrawer = true" />
-                @endif
+                @can('subscriptions.manage')
+                    <x-dropdown :label="__('More actions')" icon="o-ellipsis-vertical" right class="btn-ghost btn-sm">
+                        <x-menu-item
+                            :icon="$this->registrationClosed ? 'o-lock-open' : 'o-lock-closed'"
+                            :title="$this->registrationClosed ? __('Open Registrations') : __('Close Registrations')"
+                            wire:click="toggleRegistrations" />
+                    </x-dropdown>
+                    @if (! $this->registrationClosed)
+                        <x-button :label="__('Register a member')" icon="o-user-plus"
+                            class="btn-primary btn-sm"
+                            @click="$wire.memberDrawer = true" />
+                    @endif
+                @endcan
             </div>
         </x-slot:actions>
     </x-header>
@@ -154,10 +156,12 @@
                 <x-slot:actions>
                     <div class="flex items-center gap-1">
                         @if (in_array($req->status, ['confirmed', 'paid']))
-                            <x-button icon="o-x-circle"
-                                :tooltip="$req->total_paid > 0 ? __('Cancel & refund') : __('Cancel subscription')"
-                                class="btn-xs btn-ghost text-error"
-                                wire:click.stop="openCancelModal({{ $req->id }})" spinner />
+                            @can('subscriptions.manage')
+                                <x-button icon="o-x-circle"
+                                    :tooltip="$req->total_paid > 0 ? __('Cancel & refund') : __('Cancel subscription')"
+                                    class="btn-xs btn-ghost text-error"
+                                    wire:click.stop="openCancelModal({{ $req->id }})" spinner />
+                            @endcan
                         @endif
                         <x-button :label="__('Details')" wire:click.stop="review({{ $req->id }})"
                             class="btn-xs btn-ghost" />
@@ -233,10 +237,12 @@
                     @scope('actions', $req)
                         <div class="flex items-center gap-1">
                             @if (in_array($req->status, ['confirmed', 'paid']))
-                                <x-button icon="o-x-circle"
-                                    :tooltip="$req->total_paid > 0 ? __('Cancel & refund') : __('Cancel subscription')"
-                                    class="btn-xs btn-ghost text-error"
-                                    wire:click="openCancelModal({{ $req->id }})" spinner />
+                                @can('subscriptions.manage')
+                                    <x-button icon="o-x-circle"
+                                        :tooltip="$req->total_paid > 0 ? __('Cancel & refund') : __('Cancel subscription')"
+                                        class="btn-xs btn-ghost text-error"
+                                        wire:click="openCancelModal({{ $req->id }})" spinner />
+                                @endcan
                             @endif
                             <x-button :label="__('Details')" wire:click="review({{ $req->id }})"
                                 class="btn-xs btn-ghost" />
@@ -284,10 +290,12 @@
                                     <x-badge value="{{ __('Enrolled') }}" class="badge-primary badge-xs" />
                                     <span class="text-xs font-semibold opacity-50">{{ number_format((float) $pack->price, 2) }} €</span>
                                     @if (in_array($currentRequest->status, ['confirmed', 'paid']))
-                                        <x-button icon="o-arrow-uturn-left" :tooltip="__('Remove & refund')"
-                                            class="btn-ghost btn-xs text-error"
-                                            wire:click="openRefundModal({{ $currentRequest->id }}, {{ $pack->id }})"
-                                            spinner />
+                                        @can('subscriptions.manage')
+                                            <x-button icon="o-arrow-uturn-left" :tooltip="__('Remove & refund')"
+                                                class="btn-ghost btn-xs text-error"
+                                                wire:click="openRefundModal({{ $currentRequest->id }}, {{ $pack->id }})"
+                                                spinner />
+                                        @endcan
                                     @endif
                                 </div>
                             @endforeach
@@ -507,7 +515,7 @@
             annonce à l'admin ce que ça déclenche — l'argent qui bouge et le mail
             qui part — avant qu'il ne confirme.
         --}}
-        @if (! $paymentGenerated && $currentRequest && in_array($currentRequest->status, ['confirmed', 'paid']))
+        @if (! $paymentGenerated && $currentRequest && in_array($currentRequest->status, ['confirmed', 'paid']) && Auth::user()->can('subscriptions.manage'))
             <div class="mt-4 rounded-xl border border-base-200 p-4">
                 <div class="mb-2 text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Change of formula') }}</div>
                 <p class="text-sm opacity-70">
@@ -524,16 +532,16 @@
         @endif
 
         <x-slot:actions>
-            @if (! $paymentGenerated && $currentRequest && $currentRequest->status === 'pending')
+            @if (! $paymentGenerated && $currentRequest && $currentRequest->status === 'pending' && Auth::user()->can('subscriptions.manage'))
                 <x-button :label="__('Change formula')" icon="o-arrows-right-left" class="btn-ghost btn-sm"
                     wire:click="changeFormula" spinner />
                 <x-button :label="__('Reject')" wire:click="reject" class="btn-ghost text-error" spinner />
                 <x-button :label="__('Approve and Invoice')" wire:click="approve" class="btn-primary shadow-lg" spinner />
-            @elseif ($paymentGenerated)
+            @elseif ($paymentGenerated && Auth::user()->can('subscriptions.manage'))
                 <x-button :label="__('Close')" @click="$wire.reviewModal = false" class="btn-ghost" />
                 <x-button :label="__('Send by email')" icon="o-paper-airplane" class="btn-primary" wire:click="sendPaymentEmail" spinner />
             @else
-                @if ($currentRequest && in_array($currentRequest->status, ['confirmed', 'paid']))
+                @if ($currentRequest && in_array($currentRequest->status, ['confirmed', 'paid']) && Auth::user()->can('subscriptions.manage'))
                     <x-button
                         :label="$currentRequest->total_paid > 0 ? __('Cancel & refund') : __('Cancel subscription')"
                         icon="o-x-circle"
@@ -675,16 +683,21 @@
         <x-slot:actions>
             @if (! $paymentGenerated)
                 <x-button :label="__('Cancel')" @click="$wire.trainingRequestModal = false" class="btn-ghost" />
-                <x-button :label="__('Reject all')" wire:click="rejectTrainingRequest" class="btn-ghost text-error" spinner />
-                <x-button :label="__('Approve')" icon="o-check" wire:click="approveTrainingRequest" class="btn-warning shadow-lg" spinner />
+                @can('subscriptions.manage')
+                    <x-button :label="__('Reject all')" wire:click="rejectTrainingRequest" class="btn-ghost text-error" spinner />
+                    <x-button :label="__('Approve')" icon="o-check" wire:click="approveTrainingRequest" class="btn-warning shadow-lg" spinner />
+                @endcan
             @else
                 <x-button :label="__('Close')" @click="$wire.trainingRequestModal = false; $wire.paymentGenerated = false" class="btn-ghost" />
-                <x-button :label="__('Send by email')" icon="o-paper-airplane" class="btn-primary" wire:click="sendPaymentEmail" spinner />
+                @can('subscriptions.manage')
+                    <x-button :label="__('Send by email')" icon="o-paper-airplane" class="btn-primary" wire:click="sendPaymentEmail" spinner />
+                @endcan
             @endif
         </x-slot:actions>
     </x-modal>
 
     {{-- ── Drawer inscription/renouvellement ───────────────────────────── --}}
+    @can('subscriptions.manage')
     <x-drawer wire:model="memberDrawer" :title="__('Family Registration')" right separator with-close-button class="w-11/12 md:w-5/12">
         <div class="space-y-6">
             <div class="rounded-xl bg-base-200 p-4">
@@ -745,6 +758,7 @@
             @endif
         </x-slot:actions>
     </x-drawer>
+    @endcan
 
     {{-- ── Filter drawer ────────────────────────────────────────────────────── --}}
     <x-admin.shared.filter-drawer :title="__('Filters')">
@@ -775,6 +789,7 @@
         $refundSub  = $refundSubscriptionId ? $this->registrations()->firstWhere('id', $refundSubscriptionId) : null;
         $refundPack = $refundPackId ? $refundSub?->enrolled_packs->firstWhere('id', $refundPackId) : null;
     @endphp
+    @can('subscriptions.manage')
     <x-modal wire:model="refundModal" :title="__('Remove & Refund')" separator class="backdrop-blur-sm">
         @if ($refundPack)
             <div class="space-y-4">
@@ -807,8 +822,10 @@
             <x-button :label="__('Confirm refund')" icon="o-arrow-uturn-left" class="btn-error" wire:click="confirmRefund" spinner />
         </x-slot:actions>
     </x-modal>
+    @endcan
 
     {{-- ── Modal d'annulation de cotisation (avec remboursement éventuel) ── --}}
+    @can('subscriptions.manage')
     <x-modal wire:model="cancelModal" :title="$this->subscriptionToCancel?->totalPaid() > 0 ? __('Cancel & refund') : __('Cancel subscription')" separator class="backdrop-blur-sm">
         @if ($this->subscriptionToCancel)
             @php
@@ -859,21 +876,24 @@
                 wire:click="confirmCancelSubscription" spinner />
         </x-slot:actions>
     </x-modal>
+    @endcan
 
     {{-- ── Mobile action sheet ─────────────────────────────────────────── --}}
     <x-admin.shared.mobile-actions>
-        @if (! $this->registrationClosed)
+        @can('subscriptions.manage')
+            @if (! $this->registrationClosed)
+                <x-admin.shared.mobile-action-item
+                    icon="o-user-plus" color="primary"
+                    :label="__('Register a member')"
+                    :description="__('Add a member to the current season')"
+                    @click="mobileActionsOpen = false; $wire.set('memberDrawer', true)" />
+            @endif
             <x-admin.shared.mobile-action-item
-                icon="o-user-plus" color="primary"
-                :label="__('Register a member')"
-                :description="__('Add a member to the current season')"
-                @click="mobileActionsOpen = false; $wire.set('memberDrawer', true)" />
-        @endif
-        <x-admin.shared.mobile-action-item
-            :icon="$this->registrationClosed ? 'o-lock-open' : 'o-lock-closed'"
-            color="base"
-            :label="$this->registrationClosed ? __('Open Registrations') : __('Close Registrations')"
-            wire:click="toggleRegistrations"
-            @click="mobileActionsOpen = false" />
+                :icon="$this->registrationClosed ? 'o-lock-open' : 'o-lock-closed'"
+                color="base"
+                :label="$this->registrationClosed ? __('Open Registrations') : __('Close Registrations')"
+                wire:click="toggleRegistrations"
+                @click="mobileActionsOpen = false" />
+        @endcan
     </x-admin.shared.mobile-actions>
 </div>

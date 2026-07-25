@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domains\ClubAdmin\Club\Models\Room;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\FamilyGroup;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
@@ -127,3 +128,29 @@ it('offers the directed-training interest toggle below the packs when registerin
         ->assertSee(__('No slot suits you? Let us know you are interested in directed training'))
         ->assertDontSee(__('I would like directed training (with a coach)'));
 });
+
+/*
+|--------------------------------------------------------------------------
+| Issue #43 — once submitted, the member must still see which licence they
+| asked for: the choice is theirs, and it decides what they will be billed.
+|--------------------------------------------------------------------------
+*/
+
+it('shows the chosen licence on a submitted registration', function (string $status, bool $isCompetitive, string $expected): void {
+    $season = makeOpenSeason();
+    $user = User::factory()->create();
+    Subscription::factory()->for($user)->create([
+        'season_id' => $season->id,
+        'status' => $status,
+        'is_competitive' => $isCompetitive,
+    ]);
+
+    Livewire::actingAs($user)
+        ->test('pages::club-admin.users.user-space.registration-management', ['user' => $user])
+        ->assertSee(__($expected));
+})->with([
+    'pending competition' => ['pending', true, 'Competition licence'],
+    'pending recreational' => ['pending', false, 'Recreational licence'],
+    'confirmed competition' => ['confirmed', true, 'Competition licence'],
+    'confirmed recreational' => ['confirmed', false, 'Recreational licence'],
+]);

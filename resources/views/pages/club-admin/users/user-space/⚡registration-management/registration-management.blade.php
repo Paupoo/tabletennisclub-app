@@ -105,6 +105,11 @@
                                         <div class="flex-1">
                                             <div class="font-bold text-sm">{{ __('Registration submitted — awaiting club validation') }}</div>
                                             <div class="text-xs opacity-70 mt-0.5">{{ __('You will be notified once it is validated.') }}</div>
+                                            {{-- La formule demandée reste visible : c'est le choix du membre, et il décide de ce qui lui sera facturé. --}}
+                                            <div class="flex items-center gap-1.5 text-xs font-semibold mt-2">
+                                                <x-icon name="{{ $currentEntry['is_competitive'] ? 'o-trophy' : 'o-heart' }}" class="w-3.5 h-3.5 shrink-0 opacity-70" />
+                                                <span>{{ $currentEntry['is_competitive'] ? __('Competition licence') : __('Recreational licence') }}</span>
+                                            </div>
                                             @if(!empty($currentEntry['enrolled_packs']))
                                                 <div class="mt-2 space-y-1">
                                                     @foreach($currentEntry['enrolled_packs'] as $packInfo)
@@ -134,6 +139,10 @@
                                             <div class="flex-1">
                                                 <div class="font-bold text-sm">{{ __('Your registration has been validated!') }}</div>
                                                 <div class="text-xs opacity-70 mt-0.5">{{ __('Please complete your payment(s) below.') }}</div>
+                                                <div class="flex items-center gap-1.5 text-xs font-semibold mt-2">
+                                                    <x-icon name="{{ $currentEntry['is_competitive'] ? 'o-trophy' : 'o-heart' }}" class="w-3.5 h-3.5 shrink-0 opacity-70" />
+                                                    <span>{{ $currentEntry['is_competitive'] ? __('Competition licence') : __('Recreational licence') }}</span>
+                                                </div>
                                             </div>
                                         </div>
                                         @if(!empty($currentEntry['pending_payments']))

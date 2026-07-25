@@ -157,14 +157,21 @@
                 @else
                     <div class="space-y-3 rounded-lg border border-base-200 p-4">
                         <div class="grid gap-3 sm:grid-cols-2">
-                            <x-input :label="__('First name')" wire:model="guardianFirstName" />
-                            <x-input :label="__('Last name')" wire:model="guardianLastName" />
-                            <x-input :label="__('Phone')" wire:model="guardianPhone" />
-                            <x-input :label="__('Email')" type="email" wire:model="guardianEmail" />
-                            <x-input :label="__('IBAN')" wire:model="guardianIban"
+                            <x-input :label="__('First name')" wire:model.live.blur="guardianFirstName" required />
+                            <x-input :label="__('Last name')" wire:model.live.blur="guardianLastName" required />
+                            <x-input :label="__('Phone')" wire:model.live.blur="guardianPhone"
+                                placeholder="0470 00 00 00" required />
+                            <x-input :label="__('Email')" type="email" wire:model.live.blur="guardianEmail" />
+                            <x-input :label="__('IBAN')" wire:model.live.blur="guardianIban"
                                 placeholder="BE00 0000 0000 0000"
                                 :hint="__('Optional — used for refunds.')" class="sm:col-span-2" />
                         </div>
+
+                        @if ($this->duplicateGuardian)
+                            <x-admin.users.guardian-duplicate-notice :guardian="$this->duplicateGuardian"
+                                :already-linked="$this->duplicateGuardianAlreadyLinked" />
+                        @endif
+
                         <div class="flex gap-2">
                             <x-button class="btn-primary btn-sm" icon="o-check" :label="__('Add guardian')"
                                 wire:click="createGuardian" spinner="createGuardian" />

@@ -7,12 +7,16 @@ namespace App\Livewire\Concerns;
 use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Rules\ValidIban;
+use App\Domains\Shared\Rules\ValidPhone;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Computed;
 
 trait ManagesGuardians
 {
+    /** Guardian already on file matching the details being typed, if any. */
+    public ?int $duplicateGuardianId = null;
+
     public ?string $guardianEmail = null;
 
     public string $guardianFirstName = '';
@@ -37,7 +41,13 @@ trait ManagesGuardians
         }
 
         $this->guardianSearch = '';
-        unset($this->linkedGuardians, $this->guardianSearchResults, $this->memberSearchResults);
+        unset(
+            $this->linkedGuardians,
+            $this->guardianSearchResults,
+            $this->memberSearchResults,
+            $this->duplicateGuardian,
+            $this->duplicateGuardianAlreadyLinked,
+        );
     }
 
     /**
@@ -73,13 +83,16 @@ trait ManagesGuardians
     {
         Gate::authorize('create', [Guardian::class, $this->user]);
 
-        $validated = $this->validate([
-            'guardianFirstName' => ['required', 'string', 'max:255'],
-            'guardianLastName' => ['required', 'string', 'max:255'],
-            'guardianPhone' => ['required', 'string', 'max:30'],
-            'guardianEmail' => ['nullable', 'email', 'max:255'],
-            'guardianIban' => ['nullable', new ValidIban],
-        ]);
+        $validated = $this->validate($this->guardianRules());
+
+        $duplicate = $this->findDuplicateGuardian($validated['guardianPhone'], $validated['guardianEmail'] ?? null);
+
+        if ($duplicate instanceof Guardian) {
+            $this->duplicateGuardianId = $duplicate->id;
+            unset($this->duplicateGuardian, $this->duplicateGuardianAlreadyLinked);
+
+            return;
+        }
 
         $guardian = Guardian::create([
             'first_name' => $validated['guardianFirstName'],
@@ -91,16 +104,7 @@ trait ManagesGuardians
 
         $this->guardianIds[] = $guardian->id;
 
-        $this->reset([
-            'guardianFirstName',
-            'guardianLastName',
-            'guardianPhone',
-            'guardianEmail',
-            'guardianIban',
-            'showGuardianForm',
-        ]);
-
-        unset($this->linkedGuardians, $this->guardianSearchResults, $this->memberSearchResults);
+        $this->resetGuardianForm();
 
         $this->success(__('Guardian added and linked.'));
     }
@@ -112,6 +116,29 @@ trait ManagesGuardians
         );
 
         unset($this->linkedGuardians, $this->guardianSearchResults, $this->memberSearchResults);
+    }
+
+    /**
+     * The guardian already on file whose email or phone matches what is being
+     * typed in the creation form. Drives the "this guardian already exists"
+     * notice offering to link them instead of creating a duplicate.
+     */
+    #[Computed()]
+    public function duplicateGuardian(): ?Guardian
+    {
+        if ($this->duplicateGuardianId === null) {
+            return null;
+        }
+
+        return Guardian::find($this->duplicateGuardianId);
+    }
+
+    /** Whether the detected duplicate is already one of this member's guardians. */
+    #[Computed()]
+    public function duplicateGuardianAlreadyLinked(): bool
+    {
+        return $this->duplicateGuardianId !== null
+            && in_array($this->duplicateGuardianId, $this->guardianIds, true);
     }
 
     /**
@@ -138,6 +165,22 @@ trait ManagesGuardians
             ->orderBy('last_name')
             ->limit(8)
             ->get();
+    }
+
+    /**
+     * Link the guardian detected as a duplicate rather than creating a second
+     * record for the same person.
+     */
+    public function linkDuplicateGuardian(): void
+    {
+        if ($this->duplicateGuardianId === null) {
+            return;
+        }
+
+        $this->attachGuardian($this->duplicateGuardianId);
+        $this->resetGuardianForm();
+
+        $this->success(__('Existing guardian linked.'));
     }
 
     /**
@@ -185,5 +228,106 @@ trait ManagesGuardians
             ->orderBy('last_name')
             ->limit(8)
             ->get();
+    }
+
+    /**
+     * Validate each guardian field as the member leaves it, so mistakes surface
+     * where they were made instead of on the "Add guardian" click.
+     */
+    public function updatedManagesGuardians(string $property): void
+    {
+        $rules = $this->guardianRules();
+
+        if (! array_key_exists($property, $rules)) {
+            return;
+        }
+
+        // The details that identified the duplicate just changed: re-check on submit.
+        if ($property === 'guardianEmail' || $property === 'guardianPhone') {
+            $this->duplicateGuardianId = null;
+            unset($this->duplicateGuardian, $this->duplicateGuardianAlreadyLinked);
+        }
+
+        $this->validateOnly($property, $rules);
+    }
+
+    /**
+     * Rules for the guardian email address.
+     *
+     * Optional by default: the secretary often encodes a guardian over the
+     * phone and does not have their address at hand. The onboarding wizard,
+     * where the family fills the form itself, overrides this to require it.
+     *
+     * @return array<int, mixed>
+     */
+    protected function guardianEmailRules(): array
+    {
+        return ['nullable', 'email', 'max:255'];
+    }
+
+    /**
+     * @return array<string, array<int, mixed>>
+     */
+    protected function guardianRules(): array
+    {
+        return [
+            'guardianFirstName' => ['required', 'string', 'max:255'],
+            'guardianLastName' => ['required', 'string', 'max:255'],
+            'guardianPhone' => ['required', 'string', 'max:30', new ValidPhone],
+            'guardianEmail' => $this->guardianEmailRules(),
+            'guardianIban' => ['nullable', new ValidIban],
+        ];
+    }
+
+    /**
+     * An existing guardian sharing the email or the phone number just entered.
+     *
+     * Phone numbers are stored as typed, so the comparison runs on the
+     * normalized value in PHP: `+32 475 12 34 56` and `0475123456` are the
+     * same person. The table holds one row per guardian of the club, so the
+     * scan stays cheap.
+     */
+    private function findDuplicateGuardian(string $phone, ?string $email): ?Guardian
+    {
+        if (filled($email)) {
+            $byEmail = Guardian::whereRaw('LOWER(email) = ?', [mb_strtolower(trim($email))])->first();
+
+            if ($byEmail instanceof Guardian) {
+                return $byEmail;
+            }
+        }
+
+        $normalizedPhone = ValidPhone::normalize($phone);
+
+        if ($normalizedPhone === null) {
+            return null;
+        }
+
+        return Guardian::query()
+            ->whereNotNull('phone')
+            ->get()
+            ->first(fn (Guardian $guardian): bool => ValidPhone::normalize($guardian->phone) === $normalizedPhone);
+    }
+
+    /** Clear the inline creation form and every cache derived from it. */
+    private function resetGuardianForm(): void
+    {
+        $this->reset([
+            'guardianFirstName',
+            'guardianLastName',
+            'guardianPhone',
+            'guardianEmail',
+            'guardianIban',
+            'showGuardianForm',
+            'duplicateGuardianId',
+        ]);
+
+        unset(
+            $this->linkedGuardians,
+            $this->guardianSearchResults,
+            $this->memberSearchResults,
+            $this->duplicateGuardian,
+            $this->duplicateGuardianAlreadyLinked,
+        );
     }
 }

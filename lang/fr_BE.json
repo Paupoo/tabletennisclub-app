@@ -3911,5 +3911,15 @@
     "To pay": "À payer",
     "To register": "À inscrire",
     "Your family": "Votre famille",
-    "Select the person to manage": "Sélectionnez la personne à gérer"
+    "Select the person to manage": "Sélectionnez la personne à gérer",
+    "The :attribute is not a valid phone number.": "Le champ :attribute n'est pas un numéro de téléphone valide.",
+    ":name is already one of the guardians linked here — nothing more to do.": ":name fait déjà partie des tuteurs liés ici — rien de plus à faire.",
+    ":name is already registered with these details. Link this guardian instead of creating a duplicate.": ":name est déjà enregistré avec ces coordonnées. Liez ce tuteur plutôt que d'en créer un doublon.",
+    "Link this guardian": "Lier ce tuteur",
+    "Existing guardian linked.": "Tuteur existant lié.",
+    "You are under 18: the club needs a parent or guardian it can reach for authorisations and payment reminders.": "Vous avez moins de 18 ans : le club a besoin d'un parent ou tuteur joignable pour les autorisations et les rappels de paiement.",
+    "Already a club member, or a guardian of another player?": "Il est déjà membre du club ou tuteur d'un autre joueur ?",
+    "Search for them": "Le rechercher",
+    "Add another guardian": "Ajouter un autre tuteur",
+    "No guardian or member found. Fill in the form above to create one.": "Aucun tuteur ou membre trouvé. Complétez le formulaire ci-dessus pour en créer un."
 }

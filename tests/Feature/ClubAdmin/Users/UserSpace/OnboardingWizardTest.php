@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domains\ClubAdmin\Users\Models\Guardian;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\Gender;
 use Illuminate\Http\UploadedFile;
@@ -228,6 +229,7 @@ test('creating a new guardian allows the minor to advance and persists the link'
         ->set('guardianFirstName', 'Marie')
         ->set('guardianLastName', 'Dupont')
         ->set('guardianPhone', '0479123456')
+        ->set('guardianEmail', 'marie.dupont@example.com')
         ->call('createGuardian')
         ->call('completeGuardianStep')
         ->assertHasNoErrors()
@@ -248,6 +250,7 @@ test('a minor who completes the whole wizard is not sent back to the guardian st
         ->set('guardianFirstName', 'Marie')
         ->set('guardianLastName', 'Dupont')
         ->set('guardianPhone', '0479123456')
+        ->set('guardianEmail', 'marie.dupont@example.com')
         ->call('createGuardian')
         ->call('completeGuardianStep')
         ->set('street', 'Rue de la Station 1')
@@ -276,4 +279,158 @@ test('a minor who onboarded before the guardian requirement is resumed on the gu
     Livewire::actingAs($minor)
         ->test(ONBOARDING_COMPONENT)
         ->assertSet('step', 2);
+});
+
+test('the guardian step opens on the creation form and explains why the club asks', function (): void {
+    Livewire::actingAs(incompleteUser())
+        ->test(ONBOARDING_COMPONENT)
+        ->set('gender', Gender::WOMEN)
+        ->set('birthdate', now()->subYears(15)->format('Y-m-d'))
+        ->set('phone_number', '0470 12 34 56')
+        ->call('completeIdentityStep')
+        ->assertSet('showGuardianForm', true)
+        ->assertSet('showGuardianSearch', false)
+        ->assertSee(__('You are under 18: the club needs a parent or guardian it can reach for authorisations and payment reminders.'))
+        ->assertSee(__('Already a club member, or a guardian of another player?'))
+        ->assertDontSee(__('Find an existing guardian or member'));
+});
+
+test('the search is unfolded on demand as the fallback path', function (): void {
+    Livewire::actingAs(incompleteUser())
+        ->test(ONBOARDING_COMPONENT)
+        ->set('step', 2)
+        ->set('showGuardianSearch', true)
+        ->assertSee(__('Find an existing guardian or member'));
+});
+
+test('the guardian email is required during onboarding', function (): void {
+    Livewire::actingAs(incompleteUser())
+        ->test(ONBOARDING_COMPONENT)
+        ->set('step', 2)
+        ->set('guardianFirstName', 'Marie')
+        ->set('guardianLastName', 'Dupont')
+        ->set('guardianPhone', '0479123456')
+        ->call('createGuardian')
+        ->assertHasErrors(['guardianEmail' => 'required'])
+        ->assertSet('guardianIds', []);
+
+    expect(Guardian::count())->toBe(0);
+});
+
+test('the guardian phone must look like a phone number', function (): void {
+    Livewire::actingAs(incompleteUser())
+        ->test(ONBOARDING_COMPONENT)
+        ->set('step', 2)
+        ->set('guardianFirstName', 'Marie')
+        ->set('guardianLastName', 'Dupont')
+        ->set('guardianEmail', 'marie.dupont@example.com')
+        ->set('guardianPhone', 'azerty')
+        ->call('createGuardian')
+        ->assertHasErrors(['guardianPhone']);
+
+    expect(Guardian::count())->toBe(0);
+});
+
+test('a guardian field is validated as soon as the member leaves it', function (): void {
+    Livewire::actingAs(incompleteUser())
+        ->test(ONBOARDING_COMPONENT)
+        ->set('step', 2)
+        ->set('guardianPhone', 'azerty')
+        ->assertHasErrors(['guardianPhone'])
+        ->set('guardianPhone', '0479 12 34 56')
+        ->assertHasNoErrors('guardianPhone');
+});
+
+test('an existing guardian with the same email is offered for linking instead of duplicated', function (): void {
+    $existing = Guardian::factory()->create([
+        'first_name' => 'Marie',
+        'last_name' => 'Dupont',
+        'email' => 'marie.dupont@example.com',
+        'phone' => '0479123456',
+    ]);
+
+    Livewire::actingAs(incompleteUser())
+        ->test(ONBOARDING_COMPONENT)
+        ->set('step', 2)
+        ->set('guardianFirstName', 'Marie')
+        ->set('guardianLastName', 'Dupont')
+        ->set('guardianPhone', '0470000000')
+        ->set('guardianEmail', 'MARIE.DUPONT@example.com')
+        ->call('createGuardian')
+        ->assertSet('duplicateGuardianId', $existing->id)
+        ->assertSet('guardianIds', [])
+        ->assertSee(__('Link this guardian'))
+        ->call('linkDuplicateGuardian')
+        ->assertSet('guardianIds', [$existing->id])
+        ->assertSet('duplicateGuardianId', null);
+
+    expect(Guardian::count())->toBe(1);
+});
+
+test('an existing guardian with the same phone written differently is detected', function (): void {
+    $existing = Guardian::factory()->create([
+        'first_name' => 'Marie',
+        'last_name' => 'Dupont',
+        'email' => 'marie.dupont@example.com',
+        'phone' => '+32 479 12 34 56',
+    ]);
+
+    Livewire::actingAs(incompleteUser())
+        ->test(ONBOARDING_COMPONENT)
+        ->set('step', 2)
+        ->set('guardianFirstName', 'Marie')
+        ->set('guardianLastName', 'Dupont')
+        ->set('guardianPhone', '0479 12 34 56')
+        ->set('guardianEmail', 'autre.adresse@example.com')
+        ->call('createGuardian')
+        ->assertSet('duplicateGuardianId', $existing->id)
+        ->assertSee(__('Link this guardian'));
+
+    expect(Guardian::count())->toBe(1);
+});
+
+test('a guardian already linked to the member is reported as such, with no link offered', function (): void {
+    $minor = incompleteUser();
+    $existing = Guardian::factory()->create([
+        'first_name' => 'Marie',
+        'last_name' => 'Dupont',
+        'email' => 'marie.dupont@example.com',
+        'phone' => '0479123456',
+    ]);
+    $minor->guardians()->attach($existing);
+
+    Livewire::actingAs($minor)
+        ->test(ONBOARDING_COMPONENT)
+        ->set('step', 2)
+        ->set('showGuardianForm', true)
+        ->set('guardianFirstName', 'Marie')
+        ->set('guardianLastName', 'Dupont')
+        ->set('guardianPhone', '0479123456')
+        ->set('guardianEmail', 'marie.dupont@example.com')
+        ->call('createGuardian')
+        ->assertSet('duplicateGuardianId', $existing->id)
+        ->assertSee(__(':name is already one of the guardians linked here — nothing more to do.', ['name' => 'Marie Dupont']))
+        ->assertDontSee(__('Link this guardian'))
+        ->assertSet('guardianIds', [$existing->id]);
+
+    expect(Guardian::count())->toBe(1);
+});
+
+test('changing the details after a duplicate warning clears it', function (): void {
+    Guardian::factory()->create([
+        'email' => 'marie.dupont@example.com',
+        'phone' => '0479123456',
+    ]);
+
+    Livewire::actingAs(incompleteUser())
+        ->test(ONBOARDING_COMPONENT)
+        ->set('step', 2)
+        ->set('guardianFirstName', 'Marie')
+        ->set('guardianLastName', 'Dupont')
+        ->set('guardianPhone', '0479123456')
+        ->set('guardianEmail', 'marie.dupont@example.com')
+        ->call('createGuardian')
+        ->assertNotSet('duplicateGuardianId', null)
+        ->set('guardianEmail', 'nouvelle.adresse@example.com')
+        ->assertSet('duplicateGuardianId', null);
 });

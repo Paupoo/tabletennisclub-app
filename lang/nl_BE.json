@@ -3911,5 +3911,15 @@
     "To pay": "Te betalen",
     "To register": "In te schrijven",
     "Your family": "Uw gezin",
-    "Select the person to manage": "Selecteer de persoon die u wilt beheren"
+    "Select the person to manage": "Selecteer de persoon die u wilt beheren",
+    "The :attribute is not a valid phone number.": "Het veld :attribute is geen geldig telefoonnummer.",
+    ":name is already one of the guardians linked here — nothing more to do.": ":name is al een van de gekoppelde voogden — verder niets te doen.",
+    ":name is already registered with these details. Link this guardian instead of creating a duplicate.": ":name is al geregistreerd met deze gegevens. Koppel deze voogd in plaats van een duplicaat aan te maken.",
+    "Link this guardian": "Deze voogd koppelen",
+    "Existing guardian linked.": "Bestaande voogd gekoppeld.",
+    "You are under 18: the club needs a parent or guardian it can reach for authorisations and payment reminders.": "U bent jonger dan 18: de club heeft een bereikbare ouder of voogd nodig voor toestemmingen en betalingsherinneringen.",
+    "Already a club member, or a guardian of another player?": "Is hij al lid van de club of voogd van een andere speler?",
+    "Search for them": "Hem opzoeken",
+    "Add another guardian": "Nog een voogd toevoegen",
+    "No guardian or member found. Fill in the form above to create one.": "Geen voogd of lid gevonden. Vul het formulier hierboven in om er een aan te maken."
 }

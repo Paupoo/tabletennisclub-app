@@ -75,6 +75,55 @@ describe('guardian management from the form', function () {
             ->and($user->guardians->first()->first_name)->toBe('Marie');
     });
 
+    it('creates a guardian without an email address, as the secretary often must', function () {
+        $user = User::factory()->create(['birthdate' => now()->subYears(15)]);
+
+        Livewire::test(GUARDIAN_FORM_COMPONENT, ['user' => $user])
+            ->set('guardianFirstName', 'Marie')
+            ->set('guardianLastName', 'Dupont')
+            ->set('guardianPhone', '0479 12 34 56')
+            ->call('createGuardian')
+            ->assertHasNoErrors();
+
+        expect(Guardian::where('last_name', 'Dupont')->first()->email)->toBeNull();
+    });
+
+    it('refuses a phone number that is not one', function () {
+        $user = User::factory()->create(['birthdate' => now()->subYears(15)]);
+
+        Livewire::test(GUARDIAN_FORM_COMPONENT, ['user' => $user])
+            ->set('guardianFirstName', 'Marie')
+            ->set('guardianLastName', 'Dupont')
+            ->set('guardianPhone', 'azerty')
+            ->call('createGuardian')
+            ->assertHasErrors(['guardianPhone']);
+
+        expect(Guardian::count())->toBe(0);
+    });
+
+    it('offers to link an existing guardian rather than duplicating them', function () {
+        $user = User::factory()->create(['birthdate' => now()->subYears(15)]);
+        $existing = Guardian::factory()->create([
+            'first_name' => 'Marie',
+            'last_name' => 'Dupont',
+            'email' => 'marie.dupont@example.com',
+            'phone' => '0479123456',
+        ]);
+
+        Livewire::test(GUARDIAN_FORM_COMPONENT, ['user' => $user])
+            ->set('showGuardianForm', true)
+            ->set('guardianFirstName', 'Marie')
+            ->set('guardianLastName', 'Dupont')
+            ->set('guardianPhone', '0479 12 34 56')
+            ->call('createGuardian')
+            ->assertSet('duplicateGuardianId', $existing->id)
+            ->assertSee(__('Link this guardian'))
+            ->call('linkDuplicateGuardian')
+            ->assertSet('guardianIds', [$existing->id]);
+
+        expect(Guardian::count())->toBe(1);
+    });
+
     it('detaches a linked guardian', function () {
         $user = User::factory()->create([
             'birthdate' => now()->subYears(15),

@@ -73,7 +73,15 @@
     @if ($step === 2)
         <div class="animate-in fade-in duration-500">
             <h2 class="text-lg font-semibold text-base-content mb-1">{{ __('Legal guardian') }}</h2>
-            <p class="text-sm text-base-content/60 mb-6">{{ __('Who is responsible for you') }}</p>
+            <p class="text-sm text-base-content/60 mb-4">{{ __('Who is responsible for you') }}</p>
+
+            {{-- Why the club asks --}}
+            <div class="mb-6 flex items-start gap-3 rounded-lg border border-primary/20 bg-primary/5 p-4">
+                <x-icon name="o-information-circle" class="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                <p class="text-sm text-base-content/70">
+                    {{ __('You are under 18: the club needs a parent or guardian it can reach for authorisations and payment reminders.') }}
+                </p>
+            </div>
 
             {{-- Linked guardians --}}
             @if ($this->linkedGuardians->isNotEmpty())
@@ -97,79 +105,96 @@
                 </div>
             @endif
 
-            {{-- Search existing guardians and club members --}}
-            <div>
-                <x-input :label="__('Find an existing guardian or member')" icon="o-magnifying-glass"
-                    :placeholder="__('Search by name or email…')"
-                    wire:model.live.debounce.300ms="guardianSearch" />
-
-                @php
-                    $guardianResults = $this->guardianSearchResults;
-                    $memberResults = $this->memberSearchResults;
-                    $hasResults = $guardianResults->isNotEmpty() || $memberResults->isNotEmpty();
-                @endphp
-
-                @if ($hasResults)
-                    <div class="mt-2 space-y-1 rounded-lg border border-base-200 p-1">
-                        @if ($guardianResults->isNotEmpty())
-                            <div class="px-3 pt-1 text-xs font-semibold uppercase tracking-wide text-base-content/50">
-                                {{ __('Existing guardians') }}
-                            </div>
-                            @foreach ($guardianResults as $result)
-                                <button type="button" wire:key="guardian-result-{{ $result->id }}"
-                                    wire:click="attachGuardian({{ $result->id }})"
-                                    class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-base-200">
-                                    <x-icon name="o-plus-circle" class="w-4 h-4 text-success shrink-0" />
-                                    <span class="flex-1 truncate">
-                                        {{ $result->first_name }} {{ $result->last_name }}
-                                        <span class="text-base-content/50">· {{ $result->phone }}</span>
-                                    </span>
-                                </button>
-                            @endforeach
-                        @endif
-
-                        @if ($memberResults->isNotEmpty())
-                            <div class="px-3 pt-1 text-xs font-semibold uppercase tracking-wide text-base-content/50">
-                                {{ __('Club members') }}
-                            </div>
-                            @foreach ($memberResults as $member)
-                                <button type="button" wire:key="member-result-{{ $member->id }}"
-                                    wire:click="attachMemberAsGuardian({{ $member->id }})"
-                                    class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-base-200">
-                                    <x-icon name="o-user-plus" class="w-4 h-4 text-primary shrink-0" />
-                                    <span class="flex-1 truncate">
-                                        {{ $member->first_name }} {{ $member->last_name }}
-                                        <span class="text-base-content/50">· {{ __('member') }}</span>
-                                    </span>
-                                </button>
-                            @endforeach
-                        @endif
-                    </div>
-                @elseif (strlen(trim($guardianSearch)) >= 2)
-                    <p class="mt-2 text-xs text-base-content/50">
-                        {{ __('No guardian or member found. Create a new guardian below.') }}
-                    </p>
-                @endif
-            </div>
-
-            {{-- Inline creation --}}
-            @if (! $showGuardianForm)
-                <x-button class="btn-soft btn-sm mt-3" icon="o-plus" :label="__('Create a new guardian')"
-                    wire:click="$set('showGuardianForm', true)" />
-            @else
-                <div class="space-y-3 rounded-lg border border-base-200 p-4 mt-3">
+            {{-- Primary path: create the guardian --}}
+            @if ($showGuardianForm)
+                <div class="space-y-3 rounded-lg border border-base-200 p-4">
                     <div class="grid gap-3 sm:grid-cols-2">
-                        <x-input :label="__('First name')" wire:model="guardianFirstName" />
-                        <x-input :label="__('Last name')" wire:model="guardianLastName" />
-                        <x-input :label="__('Phone')" wire:model="guardianPhone" />
-                        <x-input :label="__('Email')" type="email" wire:model="guardianEmail" />
+                        <x-input :label="__('First name')" wire:model.live.blur="guardianFirstName" required />
+                        <x-input :label="__('Last name')" wire:model.live.blur="guardianLastName" required />
+                        <x-input :label="__('Phone')" wire:model.live.blur="guardianPhone"
+                            placeholder="0470 00 00 00" required />
+                        <x-input :label="__('Email')" type="email" wire:model.live.blur="guardianEmail" required />
                     </div>
+
+                    @if ($this->duplicateGuardian)
+                        <x-admin.users.guardian-duplicate-notice :guardian="$this->duplicateGuardian"
+                            :already-linked="$this->duplicateGuardianAlreadyLinked" />
+                    @endif
+
                     <div class="flex gap-2">
                         <x-button class="btn-primary btn-sm" icon="o-check" :label="__('Add guardian')"
                             wire:click="createGuardian" spinner="createGuardian" />
-                        <x-button class="btn-ghost btn-sm" :label="__('Cancel')"
-                            wire:click="$set('showGuardianForm', false)" />
+                        @if ($this->linkedGuardians->isNotEmpty())
+                            <x-button class="btn-ghost btn-sm" :label="__('Cancel')"
+                                wire:click="$set('showGuardianForm', false)" />
+                        @endif
                     </div>
+                </div>
+            @else
+                <x-button class="btn-soft btn-sm" icon="o-plus" :label="__('Add another guardian')"
+                    wire:click="$set('showGuardianForm', true)" />
+            @endif
+
+            {{-- Fallback: the guardian is already known to the club --}}
+            @if (! $showGuardianSearch)
+                <p class="mt-4 text-sm text-base-content/60">
+                    {{ __('Already a club member, or a guardian of another player?') }}
+                    <button type="button" wire:click="$set('showGuardianSearch', true)"
+                        class="link link-primary font-medium">{{ __('Search for them') }}</button>
+                </p>
+            @else
+                <div class="mt-4">
+                    <x-input :label="__('Find an existing guardian or member')" icon="o-magnifying-glass"
+                        :placeholder="__('Search by name or email…')"
+                        wire:model.live.debounce.300ms="guardianSearch" />
+
+                    @php
+                        $guardianResults = $this->guardianSearchResults;
+                        $memberResults = $this->memberSearchResults;
+                        $hasResults = $guardianResults->isNotEmpty() || $memberResults->isNotEmpty();
+                    @endphp
+
+                    @if ($hasResults)
+                        <div class="mt-2 space-y-1 rounded-lg border border-base-200 p-1">
+                            @if ($guardianResults->isNotEmpty())
+                                <div class="px-3 pt-1 text-xs font-semibold uppercase tracking-wide text-base-content/50">
+                                    {{ __('Existing guardians') }}
+                                </div>
+                                @foreach ($guardianResults as $result)
+                                    <button type="button" wire:key="guardian-result-{{ $result->id }}"
+                                        wire:click="attachGuardian({{ $result->id }})"
+                                        class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-base-200">
+                                        <x-icon name="o-plus-circle" class="w-4 h-4 text-success shrink-0" />
+                                        <span class="flex-1 truncate">
+                                            {{ $result->first_name }} {{ $result->last_name }}
+                                            <span class="text-base-content/50">· {{ $result->phone }}</span>
+                                        </span>
+                                    </button>
+                                @endforeach
+                            @endif
+
+                            @if ($memberResults->isNotEmpty())
+                                <div class="px-3 pt-1 text-xs font-semibold uppercase tracking-wide text-base-content/50">
+                                    {{ __('Club members') }}
+                                </div>
+                                @foreach ($memberResults as $member)
+                                    <button type="button" wire:key="member-result-{{ $member->id }}"
+                                        wire:click="attachMemberAsGuardian({{ $member->id }})"
+                                        class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-base-200">
+                                        <x-icon name="o-user-plus" class="w-4 h-4 text-primary shrink-0" />
+                                        <span class="flex-1 truncate">
+                                            {{ $member->first_name }} {{ $member->last_name }}
+                                            <span class="text-base-content/50">· {{ __('member') }}</span>
+                                        </span>
+                                    </button>
+                                @endforeach
+                            @endif
+                        </div>
+                    @elseif (strlen(trim($guardianSearch)) >= 2)
+                        <p class="mt-2 text-xs text-base-content/50">
+                            {{ __('No guardian or member found. Fill in the form above to create one.') }}
+                        </p>
+                    @endif
                 </div>
             @endif
 

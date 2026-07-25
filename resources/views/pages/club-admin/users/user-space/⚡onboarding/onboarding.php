@@ -46,6 +46,9 @@ new class extends Component
 
     public string $phone_number = '';
 
+    /** Fallback path of step 2: looking up a guardian already known to the club. */
+    public bool $showGuardianSearch = false;
+
     public int $step = 1;
 
     public string $street = '';
@@ -166,6 +169,10 @@ new class extends Component
         $this->currentPhoto = $this->user->photo;
         $this->guardianIds = $this->user->guardians()->pluck('guardians.id')->all();
 
+        // Creating the guardian is the common path here — a newcomer's parent is
+        // rarely already on file — so the form opens straight away.
+        $this->showGuardianForm = $this->guardianIds === [];
+
         // Resume where the member left off: already-filled steps stay reachable.
         $identityComplete = $this->user->birthdate !== null
             && filled($this->user->phone_number);
@@ -199,6 +206,19 @@ new class extends Component
         return [
             'genders' => Gender::options(),
         ];
+    }
+
+    /**
+     * Here the family fills the form itself and always knows the guardian's
+     * address, which the club needs for authorisations and payment reminders.
+     * The admin form keeps it optional: the secretary often encodes a guardian
+     * over the phone, with no address to hand.
+     *
+     * @return array<int, mixed>
+     */
+    protected function guardianEmailRules(): array
+    {
+        return ['required', 'email', 'max:255'];
     }
 
     private function leaveWizard(): void

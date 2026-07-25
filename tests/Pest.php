@@ -14,6 +14,7 @@ use App\Domains\Trainings\Models\TrainingPack;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
+use Tests\Trait\RefusesParallelExecution;
 
 /*
 |--------------------------------------------------------------------------
@@ -32,6 +33,8 @@ uses(
 )->in('Feature', 'Unit', 'Browser', '../resources/views');
 
 pest()->browser()->timeout(15_000);
+
+uses(RefusesParallelExecution::class)->in('Browser');
 
 beforeEach(function () {
     Club::forgetOwnClub();

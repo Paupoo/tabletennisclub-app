@@ -231,6 +231,12 @@ class UserCalendarService
         $packStatusMap = [];
         foreach ($subs as $sub) {
             foreach ($sub->trainingPacks as $pack) {
+                // Un pack quitté garde sa ligne pour la facturation, mais ses
+                // séances n'ont plus rien à faire dans l'agenda du membre.
+                if ($pack->pivot->status === 'left') {
+                    continue;
+                }
+
                 $packStatusMap[$pack->id] = [
                     'status' => $pack->pivot->status,
                     'deadline' => $pack->pivot->confirmation_deadline,

@@ -45,6 +45,11 @@ class DiscontinueTrainingPackAction
 
         // Enrolled and pending members: unenroll, work out what they are owed,
         // and hand the refund to the treasury workflow.
+        //
+        // « Ce qu'ils sont dus » n'est plus le prix du pack : LeaveTrainingPackAction
+        // date la sortie du jour et laisse {@see CalculatePriceAction} facturer
+        // les mois déjà suivis. Le club arrête le pack, il ne rembourse que ce
+        // qui ne sera pas dispensé.
         $committedSubscriptionIds = DB::table('subscription_training_pack')
             ->where('training_pack_id', $pack->id)
             ->whereIn('status', ['enrolled', 'pending'])

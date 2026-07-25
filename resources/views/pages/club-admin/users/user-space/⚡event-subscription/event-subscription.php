@@ -391,7 +391,11 @@ new class extends Component
             ->whereNotIn('status', ['cancelled'])
             ->with('trainingPacks')
             ->get()
-            ->flatMap(fn ($sub) => $sub->trainingPacks->pluck('id'));
+            // Les packs quittés restent attachés pour la facturation au pro
+            // rata ; ils ne donnent plus accès aux séances.
+            ->flatMap(fn ($sub) => $sub->trainingPacks
+                ->reject(fn ($pack) => $pack->pivot->status === 'left')
+                ->pluck('id'));
 
         if ($packIds->isEmpty()) {
             return new Collection;

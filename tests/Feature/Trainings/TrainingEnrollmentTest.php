@@ -69,14 +69,22 @@ describe('Training Enrollment', function (): void {
 
     // ── LeaveTrainingPackAction ─────────────────────────────────────────────
 
-    test('leaves enrolled pack and removes pivot', function (): void {
+    test('leaving an enrolled pack marks the line as left instead of deleting it', function (): void {
         $subscription = Subscription::factory()->create();
         $pack = TrainingPack::factory()->create(['max_participants' => 5, 'price' => 90]);
         $subscription->trainingPacks()->attach($pack->id, ['status' => 'enrolled']);
 
         (new LeaveTrainingPackAction)($subscription, $pack);
 
-        expect($subscription->trainingPacks()->where('training_pack_id', $pack->id)->exists())->toBeFalse();
+        $pivot = $subscription->trainingPacks()->where('training_pack_id', $pack->id)->first()?->pivot;
+
+        expect($pivot)->not->toBeNull()
+            ->and($pivot->status)->toBe('left')
+            ->and($pivot->ends_on)->toBe(today()->toDateString());
+
+        // La place est bien libérée malgré la ligne conservée.
+        expect($pack->fresh()->enrolledCount())->toBe(0)
+            ->and($pack->fresh()->hasAvailableSpot())->toBeTrue();
     })->group('training', 'enrollment');
 
     test('leaving an enrolled spot promotes first waiter', function (): void {
@@ -173,7 +181,10 @@ describe('Training Enrollment', function (): void {
 
         (new LeaveTrainingPackAction)($subscription, $pack);
 
-        expect($subscription->trainingPacks()->where('training_pack_id', $pack->id)->exists())->toBeFalse();
+        $pivot = $subscription->trainingPacks()->where('training_pack_id', $pack->id)->first()?->pivot;
+
+        expect($pivot?->status)->toBe('left')
+            ->and($pack->fresh()->enrolledCount())->toBe(0);
     })->group('training', 'enrollment', 'refund');
 
     test('user-facing guard blocks leaving an enrolled pack via leaveTrainingPack method', function (): void {

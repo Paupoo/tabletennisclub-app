@@ -62,6 +62,7 @@ new class extends Component
             'created' => __('Created'),
             'updated' => __('Modified'),
             'deleted' => __('Deleted'),
+            'training_pack_reconciled' => __('Training pack adjusted'),
             default => $event,
         };
     }

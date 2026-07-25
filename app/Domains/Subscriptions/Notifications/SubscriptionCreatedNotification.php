@@ -6,6 +6,7 @@ namespace App\Domains\Subscriptions\Notifications;
 
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\Trainings\Models\TrainingPack;
+use App\Domains\Trainings\Services\TrainingPackProrata;
 use Illuminate\Bus\Queueable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -67,12 +68,23 @@ class SubscriptionCreatedNotification extends Notification
         return ['mail', 'database'];
     }
 
+    /**
+     * Estimation volontairement grossière — la remise est annoncée « à la
+     * validation » — mais le pro rata, lui, est déjà connu : annoncer le plein
+     * tarif à quelqu'un qui rejoint un pack à mi-parcours serait faux.
+     */
     private function computeEstimate(Collection $trainingPacks): float
     {
         $basePrice = $this->subscription->is_competitive ? 125.0 : 60.0;
+        $prorata = new TrainingPackProrata;
 
-        $packTotal = $trainingPacks->sum(fn (TrainingPack $pack) => (float) $pack->price);
+        $packTotal = $trainingPacks->sum(fn (TrainingPack $pack) => $prorata->billableAmount(
+            $pack,
+            (float) $pack->price,
+            $pack->pivot->starts_on,
+            $pack->pivot->ends_on,
+        ));
 
-        return $basePrice + $packTotal;
+        return round($basePrice + $packTotal, 2);
     }
 }

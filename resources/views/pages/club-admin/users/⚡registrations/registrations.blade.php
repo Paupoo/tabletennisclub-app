@@ -279,24 +279,65 @@
                     </div>
                 </div>
 
-                @if ($currentRequest->enrolled_packs->count() > 0 || $currentRequest->pending_packs->count() > 0 || $currentRequest->cancelled_packs->count() > 0)
+                @if ($currentRequest->enrolled_packs->count() > 0 || $currentRequest->pending_packs->count() > 0 || $currentRequest->cancelled_packs->count() > 0 || $currentRequest->left_packs->count() > 0)
+                    @php
+                        $packLines = $this->reviewPackLines;
+                    @endphp
                     <div>
                         <h3 class="mb-3 text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Training Packs') }}</h3>
                         <div class="space-y-2">
                             @foreach ($currentRequest->enrolled_packs as $pack)
+                                @php
+                                    $line = $packLines[$pack->id] ?? null;
+                                @endphp
                                 <div class="flex items-center gap-3 rounded-lg border border-base-200 p-2.5 text-sm">
                                     <x-icon name="o-academic-cap" class="h-3.5 w-3.5 shrink-0 text-primary opacity-60" />
-                                    <span class="flex-1">{{ $pack->name }}</span>
+                                    <span class="flex-1">
+                                        {{ $pack->name }}
+                                        @if ($line && $line['overridden'])
+                                            <x-badge value="{{ __('Forced amount') }}" class="badge-warning badge-xs ml-1" />
+                                        @elseif ($line && $line['ratio'] < 1)
+                                            <x-badge value="{{ __('Pro rata') }}" class="badge-info badge-xs ml-1" />
+                                        @endif
+                                    </span>
                                     <x-badge value="{{ __('Enrolled') }}" class="badge-primary badge-xs" />
-                                    <span class="text-xs font-semibold opacity-50">{{ number_format((float) $pack->price, 2) }} €</span>
+                                    <span class="text-xs font-semibold opacity-50">{{ number_format($line['amount'] ?? (float) $pack->price, 2) }} €</span>
                                     @if (in_array($currentRequest->status, ['confirmed', 'paid']))
                                         @can('subscriptions.manage')
+                                            <x-button icon="o-adjustments-horizontal" :tooltip="__('Adjust period or amount')"
+                                                class="btn-ghost btn-xs"
+                                                wire:click="openReconcileModal({{ $currentRequest->id }}, {{ $pack->id }})"
+                                                spinner />
                                             <x-button icon="o-arrow-uturn-left" :tooltip="__('Remove & refund')"
                                                 class="btn-ghost btn-xs text-error"
                                                 wire:click="openRefundModal({{ $currentRequest->id }}, {{ $pack->id }})"
                                                 spinner />
                                         @endcan
                                     @endif
+                                </div>
+                            @endforeach
+                            @foreach ($currentRequest->left_packs as $pack)
+                                @php
+                                    $line = $packLines[$pack->id] ?? null;
+                                @endphp
+                                <div class="flex items-center gap-3 rounded-lg border border-base-200 bg-base-200/40 p-2.5 text-sm">
+                                    <x-icon name="o-academic-cap" class="h-3.5 w-3.5 shrink-0 opacity-40" />
+                                    <span class="flex-1">
+                                        {{ $pack->name }}
+                                        @if ($pack->pivot->ends_on)
+                                            <span class="text-xs opacity-50">
+                                                — {{ __('until :date', ['date' => \Illuminate\Support\Carbon::parse($pack->pivot->ends_on)->format('d/m/Y')]) }}
+                                            </span>
+                                        @endif
+                                    </span>
+                                    <x-badge value="{{ __('Left') }}" class="badge-ghost badge-xs" />
+                                    <span class="text-xs font-semibold opacity-50">{{ number_format($line['amount'] ?? 0.0, 2) }} €</span>
+                                    @can('subscriptions.manage')
+                                        <x-button icon="o-adjustments-horizontal" :tooltip="__('Adjust period or amount')"
+                                            class="btn-ghost btn-xs"
+                                            wire:click="openReconcileModal({{ $currentRequest->id }}, {{ $pack->id }})"
+                                            spinner />
+                                    @endcan
                                 </div>
                             @endforeach
                             @foreach ($currentRequest->pending_packs as $pack)
@@ -824,6 +865,71 @@
     </x-modal>
     @endcan
 
+    {{-- ── Modal de réconciliation d'une ligne d'entraînement ─────────── --}}
+    @can('subscriptions.manage')
+    <x-modal wire:model="reconcileModal" :title="__('Adjust training pack')" separator class="backdrop-blur-sm">
+        @php
+            $reconcile = $this->reconcilePreview;
+        @endphp
+        @if ($reconcile)
+            <div class="space-y-4">
+                <div class="rounded-xl border border-base-300 bg-base-200/60 p-3 text-sm">
+                    <div class="flex items-center gap-3">
+                        <x-icon name="o-academic-cap" class="h-4 w-4 shrink-0 text-primary opacity-60" />
+                        <span class="flex-1 font-semibold">{{ $reconcile['pack']->name }}</span>
+                        <span class="text-xs opacity-60">{{ $reconcile['member'] }}</span>
+                    </div>
+                    @if ($reconcile['prorata_available'])
+                        <p class="mt-2 text-xs opacity-50">
+                            {{ __('Pack runs from :start to :end', [
+                                'start' => $reconcile['pack']->pack_start_date->format('d/m/Y'),
+                                'end'   => $reconcile['pack']->pack_end_date->format('d/m/Y'),
+                            ]) }}
+                        </p>
+                    @else
+                        <p class="mt-2 text-xs opacity-50">{{ __('This pack has no start and end date: it cannot be pro-rated. Force the amount instead.') }}</p>
+                    @endif
+                </div>
+
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <x-input :label="__('Joined on')" type="date" wire:model.live="reconcileStartsOn"
+                        :hint="__('Empty = from the start of the pack')" />
+                    <x-input :label="__('Left on')" type="date" wire:model.live="reconcileEndsOn"
+                        :hint="__('Empty = until the end of the pack')" />
+                </div>
+
+                <div class="flex items-center gap-3 rounded-lg border border-info/20 bg-info/10 p-3 text-sm">
+                    <x-icon name="o-calculator" class="h-4 w-4 shrink-0 text-info" />
+                    <span class="flex-1">
+                        {{ __('Calculated amount') }}
+                        <span class="text-xs opacity-60">
+                            ({{ __(':percent% of :price €', [
+                                'percent' => number_format($reconcile['ratio'] * 100, 0),
+                                'price'   => number_format($reconcile['net_price'], 2),
+                            ]) }})
+                        </span>
+                    </span>
+                    <span class="font-bold">{{ number_format($reconcile['amount'], 2) }} €</span>
+                </div>
+
+                <div class="space-y-3 rounded-xl border border-warning/20 bg-warning/5 p-3">
+                    <p class="text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Force the amount') }}</p>
+                    <x-input :label="__('Forced amount (€)')" type="number" step="0.01" min="0"
+                        wire:model.live.blur="reconcileOverrideAmount"
+                        :hint="__('Empty = keep the calculated amount')" />
+                    <x-input :label="__('Reason')" wire:model.live.blur="reconcileOverrideReason"
+                        :placeholder="__('Why is this line priced manually?')"
+                        :hint="__('Mandatory as soon as an amount is forced. Recorded in the audit log.')" />
+                </div>
+            </div>
+        @endif
+        <x-slot:actions>
+            <x-button :label="__('Cancel')" @click="$wire.reconcileModal = false" class="btn-ghost" />
+            <x-button :label="__('Save adjustment')" icon="o-check" class="btn-primary" wire:click="saveReconciliation" spinner />
+        </x-slot:actions>
+    </x-modal>
+    @endcan
+
     {{-- ── Modal d'annulation de cotisation (avec remboursement éventuel) ── --}}
     @can('subscriptions.manage')
     <x-modal wire:model="cancelModal" :title="$this->subscriptionToCancel?->totalPaid() > 0 ? __('Cancel & refund') : __('Cancel subscription')" separator class="backdrop-blur-sm">
@@ -845,6 +951,7 @@
                     <x-input :label="__('Amount to refund (€)')" wire:model="cancelRefundAmount"
                         type="number" step="0.01" min="0.01" max="{{ $cancelTotalPaid }}"
                         :hint="__('Already paid: :amount €', ['amount' => number_format($cancelTotalPaid, 2)])" />
+                    <p class="-mt-2 text-xs italic opacity-40">{{ __('Suggested amount excludes the training months already attended, which the club keeps.') }}</p>
 
                     @if ($cancelUser->iban)
                         <div class="flex items-center gap-2 rounded-lg border border-success/20 bg-success/10 p-3 text-sm">

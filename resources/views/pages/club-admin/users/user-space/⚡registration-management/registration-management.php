@@ -15,9 +15,11 @@ use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Subscriptions\Notifications\SubscriptionCreatedNotification;
 use App\Domains\Trainings\Models\TrainingPack;
+use App\Domains\Trainings\Services\TrainingPackProrata;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Mary\Traits\Toast;
@@ -187,10 +189,21 @@ new class extends Component
 
         $selectedPackIds = $this->pendingPackIds[$userId] ?? [];
         if (! empty($selectedPackIds)) {
-            $attachData = array_fill_keys(
-                $selectedPackIds,
-                ['status' => 'pending']
-            );
+            $prorata = new TrainingPackProrata;
+            $packs = TrainingPack::whereIn('id', $selectedPackIds)->get()->keyBy('id');
+
+            $attachData = [];
+            foreach ($selectedPackIds as $packId) {
+                $pack = $packs->get((int) $packId);
+
+                $attachData[$packId] = [
+                    'status' => 'pending',
+                    // Nulle tant que le pack n'a pas commencé : cas nominal de
+                    // début de saison, prix plein. Datée sinon → pro rata.
+                    'starts_on' => $pack ? $prorata->enrolmentStart($pack) : null,
+                ];
+            }
+
             $subscription->trainingPacks()->attach($attachData);
         }
 
@@ -239,10 +252,19 @@ new class extends Component
             return;
         }
 
+        $pack = TrainingPack::find($packId);
+        $pivot = DB::table('subscription_training_pack')
+            ->where('subscription_id', $subscription->id)
+            ->where('training_pack_id', $packId)
+            ->first();
+
         $subscription->trainingPacks()->updateExistingPivot($packId, [
             'status' => 'enrolled',
             'waitlist_position' => null,
             'confirmation_deadline' => null,
+            // La place n'est facturable qu'à partir d'ici : une attente de trois
+            // mois ne se paie pas.
+            'starts_on' => $pivot?->starts_on ?? ($pack ? (new TrainingPackProrata)->enrolmentStart($pack) : null),
         ]);
 
         $this->success(__('Spot confirmed!'));
@@ -503,7 +525,10 @@ new class extends Component
                             continue;
                         }
                         $enrolled = $sub->trainingPacks->firstWhere('id', $pack->id);
-                        $enrollments[$uid] = $enrolled ? [
+
+                        // Une ligne quittée est de l'histoire : la carte doit
+                        // reproposer l'inscription, pas afficher un état mort.
+                        $enrollments[$uid] = ($enrolled && $enrolled->pivot->status !== 'left') ? [
                             'status' => $enrolled->pivot->status,
                             'position' => $enrolled->pivot->waitlist_position,
                             'deadline' => $enrolled->pivot->confirmation_deadline,

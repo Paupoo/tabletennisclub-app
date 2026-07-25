@@ -163,8 +163,12 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
         // A cancelled affiliation voids its training-pack enrolments too: without
         // this they stay stuck on "pending" and the registration history keeps
         // showing a training that no longer stands.
+        //
+        // `left` is spared: the member did attend those months, and the line is
+        // already terminal. Overwriting it would erase the very history the
+        // status was introduced to keep.
         $this->trainingPacks()
-            ->wherePivot('status', '!=', 'cancelled')
+            ->wherePivotNotIn('status', ['cancelled', 'left'])
             ->get()
             ->each(fn (TrainingPack $pack) => $this->trainingPacks()
                 ->updateExistingPivot($pack->id, ['status' => 'cancelled']));
@@ -398,7 +402,15 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
     public function trainingPacks(): BelongsToMany
     {
         return $this->belongsToMany(TrainingPack::class)
-            ->withPivot(['status', 'waitlist_position', 'confirmation_deadline', 'discount'])
+            ->withPivot([
+                'status',
+                'waitlist_position',
+                'confirmation_deadline',
+                'starts_on',
+                'ends_on',
+                'override_amount',
+                'override_reason',
+            ])
             ->withTimestamps();
     }
 
@@ -417,11 +429,17 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
     }
 
     // ==================== Accessors/Mutators ====================
+
+    /**
+     * Les montants au pro rata tombent rarement sur un compte rond, et
+     * `(int) ($value * 100)` tronque : 71.43 € se stocke 7142 centimes parce
+     * que le flottant vaut 7142.999…. On arrondit, comme {@see Payment}.
+     */
     protected function amountDue(): Attribute
     {
         return Attribute::make(
             get: fn (?int $value): float => round(($value ?? 0) / 100, 2),
-            set: fn (int|float $value): int => (int) ($value * 100),
+            set: fn (int|float $value): int => (int) round($value * 100),
         );
     }
 
@@ -429,7 +447,7 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
     {
         return Attribute::make(
             get: fn (?int $value): float => round(($value ?? 0) / 100, 2),
-            set: fn (int|float $value): int => (int) ($value * 100),
+            set: fn (int|float $value): int => (int) round($value * 100),
         );
     }
 
@@ -437,7 +455,7 @@ class Subscription extends Model implements DescribesPayment, PayableInterface
     {
         return Attribute::make(
             get: fn (?int $value): float => round(($value ?? 0) / 100, 2),
-            set: fn (float|int $value): int => (int) ($value * 100),
+            set: fn (float|int $value): int => (int) round($value * 100),
         );
     }
 

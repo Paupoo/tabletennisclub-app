@@ -153,8 +153,11 @@ describe('discontinuing a pack', function (): void {
 
         (new DiscontinueTrainingPackAction)($pack);
 
+        // La ligne en attente disparaît (rien n'a jamais été engagé), celle de
+        // l'inscrit est datée : elle raconte les mois déjà suivis.
         expect($waiter->trainingPacks()->where('training_pack_id', $pack->id)->exists())->toBeFalse()
-            ->and($enrolled->trainingPacks()->where('training_pack_id', $pack->id)->exists())->toBeFalse();
+            ->and($enrolled->trainingPacks()->where('training_pack_id', $pack->id)->first()?->pivot->status)->toBe('left')
+            ->and($pack->fresh()->enrolledCount())->toBe(0);
 
         Notification::assertSentTo($waiter->user, TrainingPackDiscontinuedNotification::class);
     })->group('training', 'pack-lifecycle');

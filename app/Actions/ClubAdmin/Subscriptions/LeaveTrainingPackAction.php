@@ -7,6 +7,7 @@ namespace App\Actions\ClubAdmin\Subscriptions;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Trainings\Notifications\TrainingPackCancelledNotification;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class LeaveTrainingPackAction
@@ -19,6 +20,14 @@ class LeaveTrainingPackAction
      * packs restants : rembourser le prix affiché rendrait alors trop d'argent.
      * On rembourse donc la baisse réelle du dû, plafonnée à ce que le membre a
      * effectivement versé — on ne rend jamais un euro qui n'est pas rentré.
+     *
+     * Le pro rata s'insère dans ce raisonnement sans le changer : une place
+     * validée ne se détache plus, elle passe en `left` avec sa date de sortie.
+     * {@see CalculatePriceAction} continue donc de facturer les mois consommés,
+     * le nouveau dû ne retombe plus à zéro sur ce pack, et la baisse du dû —
+     * seule mesure du remboursement — se réduit d'elle-même à la part non
+     * consommée. Le plafond `netAmountPaid()` et l'effet de la remise perdue
+     * jouent exactement comme avant, sur ce delta plus petit.
      */
     public function __invoke(Subscription $subscription, TrainingPack $pack, int $familyMembersCount = 1, bool $notifyUser = true): float
     {
@@ -31,12 +40,30 @@ class LeaveTrainingPackAction
             return 0.0;
         }
 
+        // Déjà parti : rejouer le départ remettrait une date de sortie plus
+        // tardive et referait grimper la facture.
+        if ($pivot->status === 'left') {
+            return 0.0;
+        }
+
         $wasEnrolled = $pivot->status === 'enrolled';
         $wasPending = $pivot->status === 'pending';
 
         $amountDueBefore = (float) $subscription->amount_due;
 
-        $subscription->trainingPacks()->detach($pack->id);
+        if ($wasEnrolled) {
+            // Une place validée a été consommée : on garde la ligne et on la
+            // date. La supprimer effacerait le fait que le membre a participé.
+            $subscription->trainingPacks()->updateExistingPivot($pack->id, [
+                'status' => 'left',
+                'ends_on' => Carbon::today()->toDateString(),
+            ]);
+        } else {
+            // Demande jamais validée, liste d'attente, offre en cours : rien
+            // n'a été facturé ni consommé, la ligne n'a aucune histoire à
+            // raconter.
+            $subscription->trainingPacks()->detach($pack->id);
+        }
 
         if ($wasPending && $notifyUser) {
             $subscription->user->notify(new TrainingPackCancelledNotification($pack, $subscription));

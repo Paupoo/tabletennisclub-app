@@ -160,7 +160,7 @@ describe('CancelSubscriptionWithRefundAction', function (): void {
         (new CancelSubscriptionWithRefundAction)($subscription, 200.0);
     })->throws(InvalidArgumentException::class);
 
-    test('training packs are detached and the waitlist is promoted when a spot is freed', function (): void {
+    test('training packs are released and the waitlist is promoted when a spot is freed', function (): void {
         Notification::fake();
 
         $subscription = Subscription::factory()->create([
@@ -181,7 +181,10 @@ describe('CancelSubscriptionWithRefundAction', function (): void {
 
         $promotedPivot = $waitingSubscription->trainingPacks()->where('training_pack_id', $pack->id)->first();
 
-        expect($subscription->fresh()->trainingPacks)->toBeEmpty()
+        // La ligne survit en `left` — elle raconte les mois suivis — mais elle
+        // ne tient plus la place.
+        expect($subscription->fresh()->trainingPacks->first()?->pivot->status)->toBe('left')
+            ->and($pack->fresh()->enrolledCount())->toBe(0)
             ->and($promotedPivot->pivot->status)->toBe('offered');
     });
 
@@ -406,7 +409,8 @@ describe('Registrations page — cancel flow', function (): void {
 
         $refund = $subscription->payments()->where('status', 'to_refund')->first();
 
-        expect($subscription->trainingPacks()->where('training_pack_id', $pack->id)->exists())->toBeFalse()
+        expect($subscription->trainingPacks()->where('training_pack_id', $pack->id)->first()?->pivot->status)->toBe('left')
+            ->and($pack->fresh()->enrolledCount())->toBe(0)
             ->and($refund)->not->toBeNull()
             ->and($refund->payment_method)->toBe('refund')
             ->and($refund->amount_due)->toBe(90.0);

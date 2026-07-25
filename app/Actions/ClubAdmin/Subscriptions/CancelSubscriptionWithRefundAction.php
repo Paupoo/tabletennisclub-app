@@ -13,7 +13,11 @@ class CancelSubscriptionWithRefundAction
     /**
      * Cancel a subscription request, optionally issuing a refund of money already collected.
      *
-     * - Detaches every training pack (freeing spots and promoting the waitlist).
+     * - Releases every training pack (freeing spots and promoting the waitlist).
+     *   A validated pack is dated out rather than deleted, so the months already
+     *   attended stay billed: the caller decides the refund, and the treasury
+     *   screen proposes it net of what was consumed
+     *   ({@see CalculatePriceAction::consumedTrainingTotal()}).
      * - Marks outstanding pending payments as cancelled so they leave the treasury workflow.
      * - With a refund amount: creates a dedicated `to_refund` payment picked up by the
      *   treasury reconciliation workflow, transitions the subscription to `refunded`,

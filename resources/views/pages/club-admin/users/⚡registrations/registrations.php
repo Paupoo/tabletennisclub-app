@@ -12,6 +12,7 @@ use App\Actions\ClubAdmin\Subscriptions\CancelSubscriptionWithRefundAction;
 use App\Actions\ClubAdmin\Subscriptions\ChangeSubscriptionFormulaAction;
 use App\Actions\ClubAdmin\Subscriptions\CreateSubscriptionAction;
 use App\Actions\ClubAdmin\Subscriptions\LeaveTrainingPackAction;
+use App\Actions\ClubAdmin\Subscriptions\ReconcileTrainingPackAction;
 use App\Actions\ClubAdmin\Subscriptions\RequestSubscriptionRefundAction;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
@@ -23,11 +24,14 @@ use App\Domains\Subscriptions\Notifications\SubscriptionFormulaChangedNotificati
 use App\Domains\Subscriptions\Notifications\SubscriptionRejectedNotification;
 use App\Domains\Subscriptions\Notifications\TrainingPackRejectedNotification;
 use App\Domains\Trainings\Models\TrainingPack;
+use App\Domains\Trainings\Services\TrainingPackProrata;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Mail\PaymentInvitationEmail;
 use App\Support\Breadcrumb;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule as ValidationRule;
@@ -62,6 +66,21 @@ new class extends Component
     public array $paymentData = [];
 
     public bool $paymentGenerated = false;
+
+    public ?string $reconcileEndsOn = null;
+
+    // ── Réconciliation manuelle d'une ligne d'entraînement ────────────────────
+    public bool $reconcileModal = false;
+
+    public ?string $reconcileOverrideAmount = null;
+
+    public string $reconcileOverrideReason = '';
+
+    public ?int $reconcilePackId = null;
+
+    public ?string $reconcileStartsOn = null;
+
+    public ?int $reconcileSubscriptionId = null;
 
     public bool $refundModal = false;
 
@@ -528,10 +547,43 @@ new class extends Component
 
         $totalPaid = $subscription->totalPaid();
 
+        // Proposition, pas décision : on retranche les mois d'entraînement déjà
+        // suivis, que le club garde. Le trésorier reste libre du montant.
+        $consumed = (new CalculatePriceAction)->consumedTrainingTotal(
+            $subscription,
+            $subscription->has_other_family_members ? 2 : 1,
+        );
+
         $this->cancelSubscriptionId = $subscriptionId;
-        $this->cancelRefundAmount = $totalPaid > 0 ? $totalPaid : null;
+        $this->cancelRefundAmount = $totalPaid > 0
+            ? round(max(0.0, $totalPaid - $consumed), 2)
+            : null;
         $this->cancelMessage = '';
         $this->cancelModal = true;
+    }
+
+    public function openReconcileModal(int $subscriptionId, int $packId): void
+    {
+        Gate::authorize(Permission::SubscriptionsManage->value);
+
+        $pivot = DB::table('subscription_training_pack')
+            ->where('subscription_id', $subscriptionId)
+            ->where('training_pack_id', $packId)
+            ->first();
+
+        if (! $pivot) {
+            return;
+        }
+
+        $this->reconcileSubscriptionId = $subscriptionId;
+        $this->reconcilePackId = $packId;
+        $this->reconcileStartsOn = $pivot->starts_on !== null ? Carbon::parse($pivot->starts_on)->toDateString() : null;
+        $this->reconcileEndsOn = $pivot->ends_on !== null ? Carbon::parse($pivot->ends_on)->toDateString() : null;
+        $this->reconcileOverrideAmount = $pivot->override_amount !== null
+            ? number_format(((int) $pivot->override_amount) / 100, 2, '.', '')
+            : null;
+        $this->reconcileOverrideReason = (string) ($pivot->override_reason ?? '');
+        $this->reconcileModal = true;
     }
 
     public function openRefundModal(int $subscriptionId, int $packId): void
@@ -594,6 +646,46 @@ new class extends Component
             ->get();
     }
 
+    /**
+     * Aperçu vivant de la modale de réconciliation : ce que la période saisie
+     * ferait payer, avant que le trésorier ne décide de forcer un montant.
+     *
+     * @return array{pack: TrainingPack, member: string, net_price: float, ratio: float, amount: float, prorata_available: bool}|null
+     */
+    #[Computed]
+    public function reconcilePreview(): ?array
+    {
+        $subscription = $this->reconcileSubscriptionId
+            ? Subscription::with('user')->find($this->reconcileSubscriptionId)
+            : null;
+        $pack = $this->reconcilePackId ? TrainingPack::find($this->reconcilePackId) : null;
+
+        if (! $subscription || ! $pack) {
+            return null;
+        }
+
+        $familyCount = $subscription->has_other_family_members ? 2 : 1;
+        $enrolled = $subscription->trainingPacks()->wherePivot('status', 'enrolled')->get();
+        $applyDiscount = $enrolled->filter(fn (TrainingPack $p) => $p->allow_discount)->count() > 1
+            || $familyCount > 1;
+
+        $netPrice = $applyDiscount && $pack->allow_discount
+            ? max(0.0, (float) $pack->price - 10.0)
+            : (float) $pack->price;
+
+        $prorata = new TrainingPackProrata;
+        $ratio = $prorata->ratio($pack, $this->reconcileStartsOn, $this->reconcileEndsOn);
+
+        return [
+            'pack' => $pack,
+            'member' => $subscription->user->first_name . ' ' . $subscription->user->last_name,
+            'net_price' => $netPrice,
+            'ratio' => $ratio,
+            'amount' => round($netPrice * $ratio, 2),
+            'prorata_available' => $pack->pack_start_date !== null && $pack->pack_end_date !== null,
+        ];
+    }
+
     #[Computed]
     public function registrationClosed(): bool
     {
@@ -626,6 +718,9 @@ new class extends Component
                 $enrolledPacks = $sub->trainingPacks->filter(fn ($p) => $p->pivot->status === 'enrolled');
                 $pendingPacks = $sub->trainingPacks->filter(fn ($p) => $p->pivot->status === 'pending');
                 $cancelledPacks = $sub->trainingPacks->filter(fn ($p) => $p->pivot->status === 'cancelled');
+                // Packs quittés : encore facturés au pro rata des mois suivis,
+                // donc toujours visibles dans le détail de la cotisation.
+                $leftPacks = $sub->trainingPacks->filter(fn ($p) => $p->pivot->status === 'left');
 
                 // A voided affiliation drags its trainings down with it, so any
                 // pack still flagged pending/enrolled reads as cancelled here —
@@ -648,6 +743,7 @@ new class extends Component
                 'pending_packs' => $pendingPacks,
                 'enrolled_packs' => $enrolledPacks,
                 'cancelled_packs' => $cancelledPacks,
+                'left_packs' => $leftPacks,
                 'has_pending_packs' => $pendingPacks->isNotEmpty(),
                 'subscription_price' => $sub->is_competitive ? 125.0 : 60.0,
                 'members' => [[
@@ -777,6 +873,33 @@ new class extends Component
         $this->reviewRanking = $subscription?->user?->ranking;
     }
 
+    /**
+     * Détail facturé de chaque pack de l'inscription ouverte dans la modale.
+     *
+     * Le prix affiché sur une ligne n'est plus celui du pack : remise, pro rata
+     * et montant forcé peuvent tous le déplacer.
+     *
+     * @return array<int, array{name: string, status: string, amount: float, overridden: bool, ratio: float}>
+     */
+    #[Computed]
+    public function reviewPackLines(): array
+    {
+        if (! $this->currentRequestId) {
+            return [];
+        }
+
+        $subscription = Subscription::find($this->currentRequestId);
+
+        if (! $subscription) {
+            return [];
+        }
+
+        return (new CalculatePriceAction)->quote(
+            $subscription,
+            $subscription->has_other_family_members ? 2 : 1,
+        )['lines'];
+    }
+
     public function reviewTrainingRequest(int $subscriptionId): void
     {
         $this->currentTrainingRequestId = $subscriptionId;
@@ -790,6 +913,44 @@ new class extends Component
             ->filter(fn ($p) => $p->pivot->status === 'pending')
             ->pluck('id')
             ->toArray() ?? [];
+    }
+
+    public function saveReconciliation(): void
+    {
+        Gate::authorize(Permission::SubscriptionsManage->value);
+
+        $subscription = Subscription::with('user')->find($this->reconcileSubscriptionId);
+        $pack = TrainingPack::find($this->reconcilePackId);
+
+        if (! $subscription || ! $pack) {
+            return;
+        }
+
+        try {
+            (new ReconcileTrainingPackAction)(
+                $subscription,
+                $pack,
+                $this->reconcileStartsOn,
+                $this->reconcileEndsOn,
+                filled($this->reconcileOverrideAmount) ? (float) $this->reconcileOverrideAmount : null,
+                $this->reconcileOverrideReason,
+                $subscription->has_other_family_members ? 2 : 1,
+            );
+        } catch (DomainException $e) {
+            $this->error($e->getMessage());
+
+            return;
+        }
+
+        unset($this->reviewPackLines);
+
+        $this->reconcileModal = false;
+        $this->reconcileSubscriptionId = null;
+        $this->reconcilePackId = null;
+
+        $this->success(__('Training pack adjusted. New total: :amount €', [
+            'amount' => number_format((float) $subscription->fresh()->amount_due, 2),
+        ]));
     }
 
     public function saveFamilyRegistration(): void
@@ -814,7 +975,21 @@ new class extends Component
             ]);
 
             if (! empty($config['trainings'])) {
-                $subscription->trainingPacks()->sync($config['trainings']);
+                $prorata = new TrainingPackProrata;
+                $packs = TrainingPack::whereIn('id', $config['trainings'])->get()->keyBy('id');
+
+                $syncData = [];
+                foreach ($config['trainings'] as $packId) {
+                    $pack = $packs->get((int) $packId);
+
+                    // Inscription au guichet : si le pack tourne déjà, le membre
+                    // ne paie que les mois restants.
+                    $syncData[(int) $packId] = [
+                        'starts_on' => $pack ? $prorata->enrolmentStart($pack) : null,
+                    ];
+                }
+
+                $subscription->trainingPacks()->sync($syncData);
             }
 
             $calculateAction($subscription);

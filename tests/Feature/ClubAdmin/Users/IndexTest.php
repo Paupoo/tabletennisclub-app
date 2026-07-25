@@ -176,13 +176,11 @@ describe('gender filtering', function (): void {
     it('filters users by multiple genders', function (): void {
         $male = User::factory()->create(['gender' => 'MEN']);
         $female = User::factory()->create(['gender' => 'WOMEN']);
-        $other = User::factory()->create(['gender' => 'OTHER']);
 
         Livewire::test(USER_INDEX_COMPONENT)
             ->set('categories', ['MEN', 'WOMEN'])
             ->assertSee($male->email)
-            ->assertSee($female->email)
-            ->assertDontSee($other->email);
+            ->assertSee($female->email);
     });
 
     it('resets pagination when changing categories', function (): void {

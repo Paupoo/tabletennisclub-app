@@ -6,6 +6,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\View\View;
@@ -31,6 +32,20 @@ new class extends Component
     public string $search = '';
 
     public array $sortBy = ['column' => 'created_at', 'direction' => 'desc'];
+
+    /**
+     * Member ids matching a search term, memoised for the request.
+     *
+     * @var array<string, array<int, int>>
+     */
+    private array $searchMemberIdCache = [];
+
+    /**
+     * Subject types present in the log, memoised for the request.
+     *
+     * @var array<string, string>|null
+     */
+    private ?array $subjectLabelCache = null;
 
     public function clearFilters(): void
     {
@@ -171,7 +186,7 @@ new class extends Component
      */
     public function subjectLabels(): array
     {
-        return Activity::query()
+        return $this->subjectLabelCache ??= Activity::query()
             ->whereNotNull('subject_type')
             ->distinct()
             ->pluck('subject_type')
@@ -220,10 +235,9 @@ new class extends Component
         $dir = $this->sortBy['direction'];
 
         return Activity::with(['causer', 'subject'])
-            ->when($this->search, fn ($q) => $q
-                ->where('description', 'like', "%{$this->search}%")
-                ->orWhere('subject_type', 'like', "%{$this->search}%")
-            )
+            ->when($this->search, fn (Builder $q) => $q->where(
+                fn (Builder $group) => $this->applySearch($group, $this->search)
+            ))
             ->when($this->modelFilter, fn ($q) => $q->where('subject_type', $this->modelFilter))
             ->when($this->causerFilter, fn ($q) => $q->where('causer_id', $this->causerFilter))
             ->when($this->eventFilter, fn ($q) => $q->where('event', $this->eventFilter))
@@ -231,6 +245,30 @@ new class extends Component
             ->when($this->dateTo, fn ($q) => $q->whereDate('created_at', '<=', $this->dateTo))
             ->orderBy($col, $dir)
             ->paginate(50);
+    }
+
+    /**
+     * Free-text search, applied inside its own `where` group.
+     *
+     * The log only stores machine values — `created`, an FQCN, foreign keys —
+     * so a raw LIKE can never match what the page actually displays. The term
+     * is resolved first (into member ids and into the subject types whose human
+     * label matches), then matched against the indexed morph columns.
+     */
+    protected function applySearch(Builder $query, string $term): void
+    {
+        $memberIds = $this->searchMemberIds($term);
+
+        $query
+            ->whereIn('subject_type', $this->matchingSubjectTypes($term))
+            ->orWhere(fn (Builder $authored) => $authored
+                ->where('causer_type', User::class)
+                ->whereIn('causer_id', $memberIds)
+            )
+            ->orWhere(fn (Builder $targeted) => $targeted
+                ->where('subject_type', User::class)
+                ->whereIn('subject_id', $memberIds)
+            );
     }
 
     protected function breadcrumbChain(): Breadcrumb
@@ -274,19 +312,46 @@ new class extends Component
     }
 
     /**
+     * Subject types whose human label — or class name — contains the term.
+     *
+     * Derived from subjectLabel() so the label map is never duplicated.
+     *
+     * @return array<int, string>
+     */
+    protected function matchingSubjectTypes(string $term): array
+    {
+        return collect($this->subjectLabels())
+            ->filter(fn (string $label, string $type): bool => mb_stripos($label, $term) !== false
+                || mb_stripos(class_basename($type), $term) !== false
+            )
+            ->keys()
+            ->all();
+    }
+
+    /**
      * Distinct subject types present in the log, as select options.
      *
      * @return array<int, array{id: string, name: string}>
      */
     protected function modelOptions(): array
     {
-        return Activity::query()
-            ->whereNotNull('subject_type')
-            ->distinct()
-            ->pluck('subject_type')
-            ->map(fn (string $type): array => ['id' => $type, 'name' => $this->subjectLabel($type)])
+        return collect($this->subjectLabels())
+            ->map(fn (string $label, string $type): array => ['id' => $type, 'name' => $label])
             ->sortBy('name')
             ->values()
+            ->all();
+    }
+
+    /**
+     * Ids of the members whose name (or email) matches the term.
+     *
+     * @return array<int, int>
+     */
+    protected function searchMemberIds(string $term): array
+    {
+        return $this->searchMemberIdCache[$term] ??= User::query()
+            ->searchName($term)
+            ->pluck('id')
             ->all();
     }
 };

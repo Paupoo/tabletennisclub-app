@@ -237,6 +237,84 @@ it('lists logged activity and filters it by item type', function () {
         ->assertDontSee('Marcelle');
 });
 
+it('finds an audit entry by the name of its author', function () {
+    $viewer = User::factory()->isAdmin()->create(['first_name' => 'Zoé', 'last_name' => 'Verhoeven', 'email' => 'viewer@ctt.test']);
+    $author = User::factory()->isAdmin()->create(['first_name' => 'Jean', 'last_name' => 'Dupont', 'email' => 'author@ctt.test']);
+    $bystander = User::factory()->isAdmin()->create(['first_name' => 'Paul', 'last_name' => 'Lefebvre', 'email' => 'bystander@ctt.test']);
+
+    $this->actingAs($author);
+    Room::factory()->create(['name' => 'Alpharoom']);
+
+    $this->actingAs($bystander);
+    Room::factory()->create(['name' => 'Omegaroom']);
+
+    Livewire::actingAs($viewer)
+        ->test('pages::club-admin.audit.index')
+        ->set('search', 'Dupont')
+        ->assertSee('Alpharoom')
+        ->assertDontSee('Omegaroom');
+});
+
+it('finds an audit entry by the name of the member it targets', function () {
+    $viewer = User::factory()->isAdmin()->create(['first_name' => 'Zoé', 'last_name' => 'Verhoeven', 'email' => 'viewer@ctt.test']);
+
+    $target = User::factory()->create(['first_name' => 'Alice', 'last_name' => 'Vandenberghe', 'email' => 'target@ctt.test']);
+    $target->update(['first_name' => 'Alicia']);
+
+    $other = User::factory()->create(['first_name' => 'Bob', 'last_name' => 'Lemoine', 'email' => 'other@ctt.test']);
+    $other->update(['first_name' => 'Bobby']);
+
+    Livewire::actingAs($viewer)
+        ->test('pages::club-admin.audit.index')
+        ->set('search', 'Vandenberghe')
+        ->assertSee('Alicia')
+        ->assertDontSee('Bobby');
+});
+
+it('finds audit entries by the human label of the audited model', function () {
+    $viewer = User::factory()->isAdmin()->create(['first_name' => 'Zoé', 'last_name' => 'Verhoeven', 'email' => 'viewer@ctt.test']);
+
+    $member = User::factory()->create(['first_name' => 'Marc', 'last_name' => 'Lemoine', 'email' => 'member@ctt.test']);
+    $member->update(['first_name' => 'Marcolino']);
+
+    Room::factory()->create(['name' => 'Alpharoom']);
+
+    // "Salle" is the fr_BE label of the Room model; it lives nowhere in the log.
+    Livewire::actingAs($viewer)
+        ->test('pages::club-admin.audit.index')
+        ->set('search', 'Salle')
+        ->assertSee('Alpharoom')
+        ->assertDontSee('Marcolino');
+});
+
+/*
+| The search used to be applied as an ungrouped `where(...)->orWhere(...)`, so
+| SQL operator precedence turned "search AND author" into "search OR (… AND
+| author)" and entries from every other author leaked into a filtered list.
+*/
+it('keeps the author filter binding when it is combined with the search', function () {
+    $viewer = User::factory()->isAdmin()->create(['first_name' => 'Zoé', 'last_name' => 'Verhoeven', 'email' => 'viewer@ctt.test']);
+    $author = User::factory()->isAdmin()->create(['first_name' => 'Jean', 'last_name' => 'Dupont', 'email' => 'author@ctt.test']);
+    $bystander = User::factory()->isAdmin()->create(['first_name' => 'Paul', 'last_name' => 'Lefebvre', 'email' => 'bystander@ctt.test']);
+
+    $this->actingAs($author);
+    Room::factory()->create(['name' => 'Alpharoom']);
+
+    $this->actingAs($bystander);
+    Room::factory()->create(['name' => 'Omegaroom']);
+
+    Livewire::actingAs($viewer)
+        ->test('pages::club-admin.audit.index')
+        ->set('search', 'Salle')
+        ->set('causerFilter', (string) $author->id)
+        ->assertSee('Alpharoom')
+        ->assertDontSee('Omegaroom')
+        ->assertViewHas('activities', function ($activities) use ($author): bool {
+            return $activities->total() > 0
+                && collect($activities->items())->every(fn (Activity $activity): bool => (int) $activity->causer_id === $author->id);
+        });
+});
+
 it('renders the audit log when a logged activity has an array-cast attribute', function () {
     $admin = User::factory()->isAdmin()->create();
 

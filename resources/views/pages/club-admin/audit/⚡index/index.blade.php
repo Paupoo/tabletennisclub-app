@@ -7,7 +7,7 @@
         <x-slot:middle>
             <div class="hidden w-full lg:block">
                 <x-input class="w-full" clearable icon="o-magnifying-glass"
-                    :placeholder="__('Search...')"
+                    :placeholder="__('Search by member or item type...')"
                     wire:model.live.debounce.300ms="search" />
             </div>
         </x-slot:middle>
@@ -32,7 +32,7 @@
                 <x-icon name="o-magnifying-glass" class="h-4 w-4 shrink-0 text-base-content/40" />
                 <input wire:model.live.debounce.300ms="search"
                     class="flex-1 bg-transparent text-sm outline-none placeholder:text-base-content/40"
-                    placeholder="{{ __('Search...') }}" />
+                    placeholder="{{ __('Search by member or item type...') }}" />
             </div>
             <button @click="mobileSearchOpen = false" class="btn btn-ghost btn-circle btn-sm">
                 <x-icon name="o-x-mark" class="h-5 w-5" />

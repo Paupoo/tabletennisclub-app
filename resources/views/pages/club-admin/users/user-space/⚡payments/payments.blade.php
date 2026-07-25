@@ -12,9 +12,9 @@
 
     <x-admin.shared.filter-chips :chips="$filterChips" />
 
-    @php($statusStyles = ['pending' => 'badge-warning badge-soft', 'paid' => 'badge-success badge-soft', 'refunded' => 'badge-ghost', 'to_refund' => 'badge-error badge-soft'])
-    @php($statusLabels = ['pending' => __('Pending'), 'paid' => __('Paid'), 'refunded' => __('Refunded'), 'to_refund' => __('To refund')])
-    @php($multiPerson = count($this->payableUsers) > 1)
+    @php $statusStyles = ['pending' => 'badge-warning badge-soft', 'paid' => 'badge-success badge-soft', 'refunded' => 'badge-ghost', 'to_refund' => 'badge-error badge-soft']; @endphp
+    @php $statusLabels = ['pending' => __('Pending'), 'paid' => __('Paid'), 'refunded' => __('Refunded'), 'to_refund' => __('To refund')]; @endphp
+    @php $multiPerson = count($this->payableUsers) > 1; @endphp
 
     @if ($this->payments->isEmpty())
         <x-empty-state icon="o-credit-card" :heading="__('No payments')"
@@ -23,8 +23,8 @@
         <x-card class="!p-0">
             <div class="divide-y divide-base-200">
                 @foreach ($this->payments as $payment)
-                    @php($label = $payment->payable instanceof \App\Contracts\DescribesPayment ? $payment->payable->getPaymentLabel() : null)
-                    @php($isPending = $payment->status === 'pending')
+                    @php $label = $payment->payable instanceof \App\Contracts\DescribesPayment ? $payment->payable->getPaymentLabel() : null; @endphp
+                    @php $isPending = $payment->status === 'pending'; @endphp
                     <div class="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                         <div class="min-w-0 flex-1">
                             <div class="flex items-center gap-2">
@@ -94,8 +94,8 @@
     {{-- QR payment modal --}}
     <x-modal wire:model="paymentModal" :title="__('Payment details')" box-class="max-w-sm">
         @if ($paymentQr && $selectedPaymentId)
-            @php($payment = \App\Domains\ClubAdmin\Payment\Models\Payment::find($selectedPaymentId))
-            @php($label = $payment?->payable instanceof \App\Contracts\DescribesPayment ? $payment->payable->getPaymentLabel() : null)
+            @php $payment = \App\Domains\ClubAdmin\Payment\Models\Payment::find($selectedPaymentId); @endphp
+            @php $label = $payment?->payable instanceof \App\Contracts\DescribesPayment ? $payment->payable->getPaymentLabel() : null; @endphp
             <div class="flex flex-col items-center gap-5">
                 @if ($label)
                     <div class="w-full rounded-xl border border-primary/10 bg-primary/5 px-4 py-3 text-center">

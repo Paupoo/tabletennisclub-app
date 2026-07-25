@@ -133,7 +133,7 @@
             @endscope
 
             @scope('cell_event', $activity)
-            @php($event = $activity->event ?? $activity->description)
+            @php $event = $activity->event ?? $activity->description; @endphp
             @if ($event === 'created')
             <x-badge :value="__('Created')" class="badge-success badge-sm badge-soft" />
             @elseif ($event === 'updated')
@@ -153,9 +153,9 @@
             @endscope
 
             @scope('cell_changes', $activity)
-            @php($changes = $activity->attribute_changes)
-            @php($event = $activity->event ?? $activity->description)
-            @php($formatValue = fn ($value) => \Illuminate\Support\Str::limit(is_array($value) ? json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : (string) $value, 40))
+            @php $changes = $activity->attribute_changes; @endphp
+            @php $event = $activity->event ?? $activity->description; @endphp
+            @php $formatValue = fn ($value) => \Illuminate\Support\Str::limit(is_array($value) ? json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) : (string) $value, 40); @endphp
             @if ($changes && isset($changes['attributes']))
                 @if ($event === 'created')
                 {{-- Création : repliée par défaut (sinon mur de champs) --}}

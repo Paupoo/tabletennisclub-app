@@ -337,7 +337,7 @@
                      single readable column on a phone, nor a wide row on a laptop. --}}
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                     @foreach ($this->delegationOptions as $delegation)
-                        @php($isHeld = in_array($delegation['value'], $delegations, true))
+                        @php $isHeld = in_array($delegation['value'], $delegations, true); @endphp
                         <label
                             for="delegation-{{ $delegation['value'] }}"
                             @class([

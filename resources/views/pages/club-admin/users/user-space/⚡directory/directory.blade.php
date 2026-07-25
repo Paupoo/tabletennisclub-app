@@ -23,7 +23,7 @@
 
     <x-admin.shared.filter-chips :chips="$filterChips" />
 
-    @php($viewer = auth()->user())
+    @php $viewer = auth()->user(); @endphp
 
     @if ($this->members->isEmpty())
         <x-empty-state icon="o-users" :heading="__('No members found')"
@@ -51,7 +51,7 @@
                     @if ($member->teams->isNotEmpty())
                         <div class="flex flex-wrap gap-1">
                             @foreach ($member->teams as $team)
-                                @php($category = \App\Domains\Shared\Enums\LeagueCategory::fromName($team->league?->category))
+                                @php $category = \App\Domains\Shared\Enums\LeagueCategory::fromName($team->league?->category); @endphp
                                 <x-badge
                                     :value="$category ? $team->name . ' · ' . $category->label() : $team->name"
                                     class="badge-sm {{ $category?->badgeClasses() ?? 'badge-ghost' }}" />
@@ -60,9 +60,9 @@
                     @endif
 
                     {{-- Contact (only what the member shares; committee/self always see) --}}
-                    @php($showPhone = $member->phone_number && $member->contactVisibleTo($viewer, 'phone'))
-                    @php($showEmail = $member->email && $member->contactVisibleTo($viewer, 'email'))
-                    @php($showAddress = filled($member->street) && $member->contactVisibleTo($viewer, 'address'))
+                    @php $showPhone = $member->phone_number && $member->contactVisibleTo($viewer, 'phone'); @endphp
+                    @php $showEmail = $member->email && $member->contactVisibleTo($viewer, 'email'); @endphp
+                    @php $showAddress = filled($member->street) && $member->contactVisibleTo($viewer, 'address'); @endphp
 
                     @if ($showPhone || $showEmail || $showAddress)
                         <div class="mt-1 space-y-1.5 border-t border-base-200 pt-3 text-sm">

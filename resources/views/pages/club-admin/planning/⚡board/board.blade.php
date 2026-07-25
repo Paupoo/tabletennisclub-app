@@ -128,7 +128,7 @@
                         <span class="truncate text-sm font-semibold">{{ $column['name'] }}</span>
                         <div class="flex shrink-0 items-center gap-1">
                             @if ($column['is_pool'])
-                                @php($poolFiltered = $poolAgeFilter !== '' || $poolSeriesFilter !== '')
+                                @php $poolFiltered = $poolAgeFilter !== '' || $poolSeriesFilter !== ''; @endphp
                                 <x-badge
                                     :value="$poolFiltered ? $column['current_count'] . ' / ' . ($column['total_count'] ?? $column['current_count']) : (string) $column['current_count']"
                                     class="badge-ghost badge-sm" />

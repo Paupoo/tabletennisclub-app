@@ -177,7 +177,7 @@
 
             {{-- Amendes — n'apparaît que si le membre en a (quasiment jamais) --}}
             @if ($this->fines->isNotEmpty())
-                @php($finesDue = $this->fines->filter(fn ($f) => $f->payment?->status === 'pending'))
+                @php $finesDue = $this->fines->filter(fn ($f) => $f->payment?->status === 'pending'); @endphp
                 <x-card :title="__('My fines')" icon="o-scale" separator>
                     <x-slot:menu>
                         @if ($finesDue->isNotEmpty())
@@ -198,7 +198,7 @@
 
                     <div class="space-y-2">
                         @foreach ($this->fines as $fine)
-                            @php($isPending = $fine->payment?->status === 'pending')
+                            @php $isPending = $fine->payment?->status === 'pending'; @endphp
                             <x-collapse class="border border-base-300 bg-base-100">
                                 <x-slot:heading>
                                     <div class="flex flex-wrap items-center gap-2 text-sm">

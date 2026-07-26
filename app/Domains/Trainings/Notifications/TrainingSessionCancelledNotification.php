@@ -24,8 +24,8 @@ class TrainingSessionCancelledNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'title' => __("Session d'entraînement annulée"),
-            'body' => __('Consultez les détails de l\'entraînement'),
+            'title' => __('Training session cancelled'),
+            'body' => __('See the training details'),
             'url' => route('admin.trainings.index'),
             'category' => 'training',
             'icon' => 'o-academic-cap',
@@ -38,24 +38,24 @@ class TrainingSessionCancelledNotification extends Notification
         $date = $this->training->start->translatedFormat('l d F Y à H:i');
 
         $message = (new MailMessage)
-            ->subject(__('Séance annulée — :pack', ['pack' => $pack?->name]))
-            ->greeting(__('Bonjour :name,', ['name' => $notifiable->first_name]))
-            ->line(__('La séance du :date pour le pack **:pack** a été annulée.', [
+            ->subject(__('Session cancelled — :pack', ['pack' => $pack?->name]))
+            ->greeting(__('Hello :name,', ['name' => $notifiable->first_name]))
+            ->line(__('The session on :date for pack **:pack** has been cancelled.', [
                 'date' => $date,
                 'pack' => $pack?->name,
             ]));
 
         if ($this->cancellationType === TrainingCancellationType::FREE) {
-            $message->line(__('La salle reste ouverte pour un entraînement libre.'));
+            $message->line(__('The room stays open for free practice.'));
         } else {
-            $message->line(__('La salle sera inaccessible ce jour-là.'));
+            $message->line(__('The room will be closed that day.'));
         }
 
         if ($this->note) {
             $message->line(__('Note : :note', ['note' => $this->note]));
         }
 
-        return $message->line(__('Le coût de cette séance reste inclus dans votre abonnement annuel.'));
+        return $message->line(__('The cost of this session remains covered by your training pack.'));
     }
 
     /** @return array<int, string> */

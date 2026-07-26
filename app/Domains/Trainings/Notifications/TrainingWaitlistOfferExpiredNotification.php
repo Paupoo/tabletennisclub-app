@@ -28,8 +28,8 @@ class TrainingWaitlistOfferExpiredNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'title' => __('Place d\'entraînement expirée'),
-            'body' => __('Votre place proposée pour :pack n\'a pas été confirmée à temps', ['pack' => $this->pack->name]),
+            'title' => __('Training spot expired'),
+            'body' => __('The spot offered to you for :pack was not confirmed in time', ['pack' => $this->pack->name]),
             'url' => route('admin.trainings.index'),
             'category' => 'training',
             'icon' => 'o-clock',

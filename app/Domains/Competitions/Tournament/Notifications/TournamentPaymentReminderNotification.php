@@ -26,8 +26,8 @@ class TournamentPaymentReminderNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'title' => __('Rappel de paiement : :name', ['name' => $this->tournament->name]),
-            'body' => __('Consultez les détails du tournoi'),
+            'title' => __('Payment reminder: :name', ['name' => $this->tournament->name]),
+            'body' => __('See the tournament details'),
             'url' => route('admin.tournaments.index'),
             'category' => 'tournament',
             'icon' => 'o-trophy',

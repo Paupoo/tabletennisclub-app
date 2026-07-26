@@ -12,7 +12,7 @@ uses(RefreshDatabase::class);
 it('sequences the affiliation flow: formula, then trainings, then summary and submit', function (): void {
     Season::factory()->create([
         'is_active' => true,
-        'registrations_open' => true,
+        'affiliations_open' => true,
         'start_at' => now()->startOfYear(),
         'end_at' => now()->endOfYear(),
     ]);
@@ -24,6 +24,6 @@ it('sequences the affiliation flow: formula, then trainings, then summary and su
             __('Competition'),
             __('Directed training'),
             __('Summary and submit'),
-            __('Submit my registration'),
+            __('Submit my affiliation'),
         ]);
 });

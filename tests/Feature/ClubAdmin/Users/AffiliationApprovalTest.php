@@ -20,7 +20,7 @@ pest()->group('club-admin', 'registrations');
 
 beforeEach(function (): void {
     Club::factory()->ownClub()->create();
-    $this->season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
+    $this->season = Season::factory()->create(['is_active' => true, 'affiliations_open' => true]);
     actingAs(User::factory()->isAdmin()->create());
 });
 

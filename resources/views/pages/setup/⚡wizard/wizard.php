@@ -294,7 +294,7 @@ new class extends Component
                 'start_at' => $this->seasonStartAt,
                 'end_at' => $this->seasonEndAt,
                 'is_active' => true,
-                'registrations_open' => false,
+                'affiliations_open' => false,
             ]);
         }
 

@@ -27,7 +27,7 @@ const CANCEL_REGISTRATIONS_COMPONENT = 'pages::club-admin.users.registrations';
 
 beforeEach(function (): void {
     Club::factory()->ownClub()->create();
-    $this->season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
+    $this->season = Season::factory()->create(['is_active' => true, 'affiliations_open' => true]);
 });
 
 describe('CancelSubscriptionWithRefundAction', function (): void {

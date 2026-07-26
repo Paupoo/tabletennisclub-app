@@ -139,7 +139,7 @@
                 {{ __('the active season.') }}
             </p>
             <x-alert class="alert-warning" icon="o-exclamation-triangle"
-                :title="__('The current active season will be deactivated. This affects all season-scoped data (registrations, training packs, etc.).')" />
+                :title="__('The current active season will be deactivated. This affects all season-scoped data (affiliations, training packs, etc.).')" />
         </div>
 
         <x-slot:actions>

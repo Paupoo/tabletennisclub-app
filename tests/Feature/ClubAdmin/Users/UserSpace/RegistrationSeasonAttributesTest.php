@@ -15,7 +15,7 @@ function activeOpenSeason(): Season
 {
     return Season::factory()->create([
         'is_active' => true,
-        'registrations_open' => true,
+        'affiliations_open' => true,
     ]);
 }
 

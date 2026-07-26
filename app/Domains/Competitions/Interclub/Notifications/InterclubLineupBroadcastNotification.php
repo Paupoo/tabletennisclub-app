@@ -27,8 +27,8 @@ class InterclubLineupBroadcastNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'title' => __('Équipe publiée'),
-            'body' => __('Consultez les détails du match'),
+            'title' => __('Line-up published'),
+            'body' => __('See the match details'),
             'url' => route('admin.interclubs.my-matches'),
             'category' => 'interclub',
             'icon' => 'o-user-group',

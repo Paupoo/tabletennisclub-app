@@ -15,7 +15,7 @@ describe('Subscription Business Rules', function (): void {
 
     test('user can only subscribe to active season', function (): void {
         $user = User::factory()->create();
-        $inactiveSeason = Season::factory()->create(['is_active' => false, 'registrations_open' => false]);
+        $inactiveSeason = Season::factory()->create(['is_active' => false, 'affiliations_open' => false]);
 
         $action = new CreateSubscriptionAction;
 
@@ -25,7 +25,7 @@ describe('Subscription Business Rules', function (): void {
 
     test('user can subscribe to active season with open registrations', function (): void {
         $user = User::factory()->create();
-        $activeSeason = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
+        $activeSeason = Season::factory()->create(['is_active' => true, 'affiliations_open' => true]);
 
         $action = new CreateSubscriptionAction;
         $subscription = $action->execute($user, $activeSeason);
@@ -39,19 +39,19 @@ describe('Subscription Business Rules', function (): void {
 
     test('user cannot subscribe when registrations are closed', function (): void {
         $user = User::factory()->create();
-        $season = Season::factory()->create(['is_active' => true, 'registrations_open' => false]);
+        $season = Season::factory()->create(['is_active' => true, 'affiliations_open' => false]);
 
         $action = new CreateSubscriptionAction;
 
         expect(fn () => $action->execute($user, $season))
-            ->toThrow(DomainException::class, 'Registrations are currently closed');
+            ->toThrow(DomainException::class, 'Affiliations are currently closed');
     })->group('subscriptions', 'business-rules');
 
     test('user can subscribe after registrations are opened', function (): void {
         $user = User::factory()->create();
-        $season = Season::factory()->create(['is_active' => true, 'registrations_open' => false]);
+        $season = Season::factory()->create(['is_active' => true, 'affiliations_open' => false]);
 
-        $season->openRegistrations();
+        $season->openAffiliations();
 
         $action = new CreateSubscriptionAction;
         $subscription = $action->execute($user, $season);
@@ -61,21 +61,21 @@ describe('Subscription Business Rules', function (): void {
 
     test('user cannot subscribe after registrations are closed again', function (): void {
         $user = User::factory()->create();
-        $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
+        $season = Season::factory()->create(['is_active' => true, 'affiliations_open' => true]);
 
-        $season->closeRegistrations();
+        $season->closeAffiliations();
 
         $action = new CreateSubscriptionAction;
 
         expect(fn () => $action->execute($user, $season->fresh()))
-            ->toThrow(DomainException::class, 'Registrations are currently closed');
+            ->toThrow(DomainException::class, 'Affiliations are currently closed');
     })->group('subscriptions', 'business-rules');
 
     // ==================== UNE SEULE SUBSCRIPTION ====================
 
     test('user cannot have multiple subscriptions for same season', function (): void {
         $user = User::factory()->create();
-        $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
+        $season = Season::factory()->create(['is_active' => true, 'affiliations_open' => true]);
 
         $action = new CreateSubscriptionAction;
 
@@ -89,7 +89,7 @@ describe('Subscription Business Rules', function (): void {
 
     test('user can resubscribe after cancellation', function (): void {
         $user = User::factory()->create();
-        $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
+        $season = Season::factory()->create(['is_active' => true, 'affiliations_open' => true]);
 
         $action = new CreateSubscriptionAction;
 

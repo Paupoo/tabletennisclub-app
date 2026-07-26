@@ -250,7 +250,7 @@ describe('UnsubscribeFromSeasonAction', function (): void {
 
     test('cancels a pending subscription for the given user and season', function (): void {
         $user = User::factory()->create();
-        $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
+        $season = Season::factory()->create(['is_active' => true, 'affiliations_open' => true]);
         $subscription = Subscription::factory()->create([
             'user_id' => $user->id,
             'season_id' => $season->id,
@@ -265,7 +265,7 @@ describe('UnsubscribeFromSeasonAction', function (): void {
 
     test('cancels a confirmed subscription', function (): void {
         $user = User::factory()->create();
-        $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
+        $season = Season::factory()->create(['is_active' => true, 'affiliations_open' => true]);
         $subscription = Subscription::factory()->create([
             'user_id' => $user->id,
             'season_id' => $season->id,
@@ -279,7 +279,7 @@ describe('UnsubscribeFromSeasonAction', function (): void {
 
     test('returns error redirect when no active subscription exists for the user in the season', function (): void {
         $user = User::factory()->create();
-        $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
+        $season = Season::factory()->create(['is_active' => true, 'affiliations_open' => true]);
 
         $response = (new UnsubscribeFromSeasonAction)($season, $user);
 
@@ -288,7 +288,7 @@ describe('UnsubscribeFromSeasonAction', function (): void {
 
     test('does not cancel an already cancelled subscription (returns error redirect)', function (): void {
         $user = User::factory()->create();
-        $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
+        $season = Season::factory()->create(['is_active' => true, 'affiliations_open' => true]);
         Subscription::factory()->create([
             'user_id' => $user->id,
             'season_id' => $season->id,
@@ -303,7 +303,7 @@ describe('UnsubscribeFromSeasonAction', function (): void {
 
     test('returns error redirect when attempting to unsubscribe a paid subscription (cannot cancel)', function (): void {
         $user = User::factory()->create();
-        $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
+        $season = Season::factory()->create(['is_active' => true, 'affiliations_open' => true]);
         $subscription = Subscription::factory()->create([
             'user_id' => $user->id,
             'season_id' => $season->id,
@@ -327,7 +327,7 @@ describe('SubscribeToSeasonAction', function (): void {
 
     test('creates a competitive subscription for a user in an active season', function (): void {
         $user = User::factory()->create();
-        $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
+        $season = Season::factory()->create(['is_active' => true, 'affiliations_open' => true]);
 
         $request = Request::create('/subscribe', 'POST', [
             'user_id' => (string) $user->id,
@@ -347,7 +347,7 @@ describe('SubscribeToSeasonAction', function (): void {
 
     test('creates a recreational subscription for a user in an active season', function (): void {
         $user = User::factory()->create();
-        $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
+        $season = Season::factory()->create(['is_active' => true, 'affiliations_open' => true]);
 
         $request = Request::create('/subscribe', 'POST', [
             'user_id' => (string) $user->id,
@@ -365,7 +365,7 @@ describe('SubscribeToSeasonAction', function (): void {
 
     test('prevents duplicate subscription for the same season', function (): void {
         $user = User::factory()->create();
-        $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
+        $season = Season::factory()->create(['is_active' => true, 'affiliations_open' => true]);
 
         Subscription::factory()->create([
             'user_id' => $user->id,
@@ -388,7 +388,7 @@ describe('SubscribeToSeasonAction', function (): void {
 
     test('competitive subscription is priced at 125', function (): void {
         $user = User::factory()->create();
-        $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
+        $season = Season::factory()->create(['is_active' => true, 'affiliations_open' => true]);
 
         $request = Request::create('/subscribe', 'POST', [
             'user_id' => (string) $user->id,
@@ -403,7 +403,7 @@ describe('SubscribeToSeasonAction', function (): void {
 
     test('casual subscription is priced at 60', function (): void {
         $user = User::factory()->create();
-        $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
+        $season = Season::factory()->create(['is_active' => true, 'affiliations_open' => true]);
 
         $request = Request::create('/subscribe', 'POST', [
             'user_id' => (string) $user->id,

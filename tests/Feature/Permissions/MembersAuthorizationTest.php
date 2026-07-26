@@ -63,7 +63,7 @@ describe('the registrations screen, which had no guard at all', function (): voi
         'approve',
         'reject',
         'confirmCancelSubscription',
-        'toggleRegistrations',
+        'toggleAffiliations',
         'sendPaymentEmail',
     ]);
 });

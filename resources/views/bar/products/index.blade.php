@@ -132,12 +132,12 @@
         <div style="flex:1;" x-data="{ confirming: false }">
             @if ($stock > 0)
                 <button class="btn btn-clear btn-block" type="button" disabled
-                    title="{{ __('Stock non nul : suppression impossible') }}">🗑 Supprimer</button>
+                    title="{{ __('Stock is not empty: cannot delete') }}">🗑 Supprimer</button>
             @else
                 <button x-show="!confirming" class="btn btn-clear btn-block" type="button"
                     @click="confirming = true">🗑 Supprimer</button>
                 <div x-show="confirming" x-cloak style="display:flex; flex-direction:column; gap:6px;">
-                    <span style="font-size:12px; color:#b91c1c;">{{ __('Supprimer') }} « {{ $p->name }} » ?</span>
+                    <span style="font-size:12px; color:#b91c1c;">{{ __('Delete') }} « {{ $p->name }} » ?</span>
                     <div style="display:flex; gap:6px;">
                         <form method="POST" action="{{ route('bar.products.destroy', $p) }}" style="flex:1;">
                             @csrf

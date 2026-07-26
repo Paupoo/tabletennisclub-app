@@ -24,8 +24,8 @@ class TournamentDebtReminderNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'title' => __('Rappel de dette : :name', ['name' => $this->tournament->name]),
-            'body' => __('Consultez les détails du tournoi'),
+            'title' => __('Debt reminder: :name', ['name' => $this->tournament->name]),
+            'body' => __('See the tournament details'),
             'url' => route('admin.tournaments.index'),
             'category' => 'tournament',
             'icon' => 'o-trophy',

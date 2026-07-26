@@ -54,7 +54,7 @@ describe('the registrations screen', function (): void {
     it('offers no mutation to a read-only viewer', function (): void {
         Livewire::actingAs($this->readOnly)
             ->test('pages::club-admin.users.registrations')
-            ->assertDontSee('toggleRegistrations')
+            ->assertDontSee('toggleAffiliations')
             ->assertDontSee('wire:click="approve"')
             ->assertDontSee('wire:click="reject"');
     });
@@ -62,7 +62,7 @@ describe('the registrations screen', function (): void {
     it('still offers them to the members delegate', function (): void {
         Livewire::actingAs($this->delegate)
             ->test('pages::club-admin.users.registrations')
-            ->assertSee('toggleRegistrations');
+            ->assertSee('toggleAffiliations');
     });
 });
 

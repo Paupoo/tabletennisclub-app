@@ -29,8 +29,8 @@ class TrainingPackDiscontinuedNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'title' => __('Entraînement arrêté'),
-            'body' => __(':pack ne se tiendra plus', ['pack' => $this->pack->name]),
+            'title' => __('Training discontinued'),
+            'body' => __(':pack will no longer run', ['pack' => $this->pack->name]),
             'url' => route('admin.trainings.index'),
             'category' => 'training',
             'icon' => 'o-x-circle',

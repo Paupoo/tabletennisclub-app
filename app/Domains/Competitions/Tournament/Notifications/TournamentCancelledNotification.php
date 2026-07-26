@@ -21,8 +21,8 @@ class TournamentCancelledNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'title' => __('Tournoi annulé : :name', ['name' => $this->tournament->name]),
-            'body' => __('Le tournoi a été annulé'),
+            'title' => __('Tournament cancelled: :name', ['name' => $this->tournament->name]),
+            'body' => __('The tournament has been cancelled'),
             'url' => route('admin.tournaments.index'),
             'category' => 'tournament',
             'icon' => 'o-trophy',

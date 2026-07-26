@@ -2,7 +2,7 @@
      <x-slot:breadcrumbs>
         <x-breadcrumbs :items="$breadcrumbs" separator="o-slash" />
     </x-slot:breadcrumbs>
-    <x-header :title="__('Registrations')" :subtitle="__('All affiliations by season')" separator progress-indicator>
+    <x-header :title="__('Affiliations')" :subtitle="__('All affiliations by season')" separator progress-indicator>
         <x-slot:middle>
             <div class="hidden w-full lg:block">
                 <x-input class="w-full" clearable icon="o-magnifying-glass"
@@ -19,11 +19,11 @@
                 @can('subscriptions.manage')
                     <x-dropdown :label="__('More actions')" icon="o-ellipsis-vertical" right class="btn-ghost btn-sm">
                         <x-menu-item
-                            :icon="$this->registrationClosed ? 'o-lock-open' : 'o-lock-closed'"
-                            :title="$this->registrationClosed ? __('Open Registrations') : __('Close Registrations')"
-                            wire:click="toggleRegistrations" />
+                            :icon="$this->affiliationsClosed ? 'o-lock-open' : 'o-lock-closed'"
+                            :title="$this->affiliationsClosed ? __('Open affiliations') : __('Close affiliations')"
+                            wire:click="toggleAffiliations" />
                     </x-dropdown>
-                    @if (! $this->registrationClosed)
+                    @if (! $this->affiliationsClosed)
                         <x-button :label="__('Register a member')" icon="o-user-plus"
                             class="btn-primary btn-sm"
                             @click="$wire.memberDrawer = true" />
@@ -171,7 +171,7 @@
         @empty
             <x-empty-state
                 icon="o-users"
-                :heading="__('No registrations found')"
+                :heading="__('No affiliations found')"
                 :message="__('Try adjusting your search or filters.')" />
         @endforelse
     </div>
@@ -182,7 +182,7 @@
             @if ($registrations->isEmpty())
                 <x-empty-state
                     icon="o-users"
-                    :heading="__('No registrations found')"
+                    :heading="__('No affiliations found')"
                     :message="__('Try adjusting your search or filters.')" />
             @else
                 <x-table :headers="$headers" :rows="$registrations" hover>
@@ -265,7 +265,7 @@
                 <div>
                     <h3 class="mb-3 text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Affiliation') }}</h3>
                     <div class="flex items-center gap-3 rounded-xl border border-base-300 bg-base-200/60 p-3 text-sm">
-                        <x-icon name="{{ $currentRequest->type === __('Compétition') ? 'o-trophy' : 'o-heart' }}" class="h-4 w-4 shrink-0 opacity-50" />
+                        <x-icon name="{{ $currentRequest->type === __('Competition') ? 'o-trophy' : 'o-heart' }}" class="h-4 w-4 shrink-0 opacity-50" />
                         <span class="flex-1">{{ $currentRequest->type }}</span>
                         @if ($currentRequest->status === 'paid')
                             <x-badge value="{{ __('Paid') }}" class="badge-success badge-sm" />
@@ -452,7 +452,7 @@
                 <div class="overflow-hidden rounded-xl border border-base-200 text-sm">
                     <div class="flex items-center justify-between px-4 py-3">
                         <div class="flex items-center gap-2 opacity-60">
-                            <x-icon name="{{ $currentRequest->type === __('Compétition') ? 'o-trophy' : 'o-heart' }}" class="h-3.5 w-3.5 shrink-0" />
+                            <x-icon name="{{ $currentRequest->type === __('Competition') ? 'o-trophy' : 'o-heart' }}" class="h-3.5 w-3.5 shrink-0" />
                             <span>{{ __('Affiliation') }} · {{ $currentRequest->type }}</span>
                         </div>
                         <span class="font-semibold">{{ number_format($currentRequest->subscription_price, 2) }} €</span>
@@ -560,7 +560,7 @@
             <div class="mt-4 rounded-xl border border-base-200 p-4">
                 <div class="mb-2 text-xs font-bold uppercase tracking-widest opacity-40">{{ __('Change of formula') }}</div>
                 <p class="text-sm opacity-70">
-                    {{ $currentRequest->type === __('Compétition')
+                    {{ $currentRequest->type === __('Competition')
                         ? __('Switching to recreative reprices the affiliation at 60 € and takes the member out of the force lists. Any overpayment is reported to you for refund, capped at what they actually paid.')
                         : __('Switching to competition reprices the affiliation at 125 € and invoices the difference as a new payment with its own structured reference.') }}
                 </p>
@@ -739,7 +739,7 @@
 
     {{-- ── Drawer inscription/renouvellement ───────────────────────────── --}}
     @can('subscriptions.manage')
-    <x-drawer wire:model="memberDrawer" :title="__('Family Registration')" right separator with-close-button class="w-11/12 md:w-5/12">
+    <x-drawer wire:model="memberDrawer" :title="__('Family affiliation')" right separator with-close-button class="w-11/12 md:w-5/12">
         <div class="space-y-6">
             <div class="rounded-xl bg-base-200 p-4">
                 <x-input :placeholder="__('Search for a member to add to the group...')"
@@ -793,7 +793,7 @@
         <x-slot:actions>
             <x-button :label="__('Cancel')" @click="$wire.memberDrawer = false" />
             @if (count($familyBasket) > 0)
-                <x-button :label="__('Validate group registration') . ' (' . count($familyBasket) . ')'"
+                <x-button :label="__('Validate group affiliation') . ' (' . count($familyBasket) . ')'"
                     icon="o-check" class="btn-primary"
                     wire:click="saveFamilyRegistration" />
             @endif
@@ -988,7 +988,7 @@
     {{-- ── Mobile action sheet ─────────────────────────────────────────── --}}
     <x-admin.shared.mobile-actions>
         @can('subscriptions.manage')
-            @if (! $this->registrationClosed)
+            @if (! $this->affiliationsClosed)
                 <x-admin.shared.mobile-action-item
                     icon="o-user-plus" color="primary"
                     :label="__('Register a member')"
@@ -996,10 +996,10 @@
                     @click="mobileActionsOpen = false; $wire.set('memberDrawer', true)" />
             @endif
             <x-admin.shared.mobile-action-item
-                :icon="$this->registrationClosed ? 'o-lock-open' : 'o-lock-closed'"
+                :icon="$this->affiliationsClosed ? 'o-lock-open' : 'o-lock-closed'"
                 color="base"
-                :label="$this->registrationClosed ? __('Open Registrations') : __('Close Registrations')"
-                wire:click="toggleRegistrations"
+                :label="$this->affiliationsClosed ? __('Open affiliations') : __('Close affiliations')"
+                wire:click="toggleAffiliations"
                 @click="mobileActionsOpen = false" />
         @endcan
     </x-admin.shared.mobile-actions>

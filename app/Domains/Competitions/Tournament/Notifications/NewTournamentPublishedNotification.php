@@ -32,7 +32,7 @@ class NewTournamentPublishedNotification extends Notification
     {
         return [
             'title' => __('Nouveau tournoi : :name', ['name' => $this->tournament->name]),
-            'body' => __('Un nouveau tournoi a été publié'),
+            'body' => __('A new tournament has been published'),
             'url' => route('admin.tournaments.index'),
             'category' => 'tournament',
             'icon' => 'o-trophy',

@@ -8,7 +8,7 @@
 {{ __('To finish creating your account and fill in your personal information, please click the button below:') }}
 
 <x-mail::button :url="$link" :color="'primary'">
-{{ __('Finaliser mon inscription') }}
+{{ __('Finalise my registration') }}
 </x-mail::button>
 
 {{ __('Once this step is completed, you will be able to:') }}

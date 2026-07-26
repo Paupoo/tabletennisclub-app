@@ -25,7 +25,7 @@ function makeOpenSeason(): Season
 {
     return Season::factory()->create([
         'is_active' => true,
-        'registrations_open' => true,
+        'affiliations_open' => true,
         'start_at' => now()->startOfYear(),
         'end_at' => now()->endOfYear(),
     ]);

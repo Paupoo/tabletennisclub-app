@@ -23,8 +23,8 @@ class TrainingPackCancelledNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'title' => __('Pack d\'entraînement annulé'),
-            'body' => __('Votre demande d\'inscription a bien été annulée'),
+            'title' => __('Training pack cancelled'),
+            'body' => __('Your enrolment request has been cancelled'),
             'url' => route('admin.trainings.index'),
             'category' => 'training',
             'icon' => 'o-academic-cap',
@@ -34,14 +34,14 @@ class TrainingPackCancelledNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject(__('Entraînement :pack — demande annulée', ['pack' => $this->pack->name]))
-            ->greeting(__('Bonjour :name,', ['name' => $notifiable->first_name]))
-            ->line(__('Votre demande d\'inscription au pack **:pack** pour la saison **:season** a bien été annulée.', [
+            ->subject(__('Training :pack — request cancelled', ['pack' => $this->pack->name]))
+            ->greeting(__('Hello :name,', ['name' => $notifiable->first_name]))
+            ->line(__('Your enrolment request for pack **:pack** for season **:season** has been cancelled.', [
                 'pack' => $this->pack->name,
                 'season' => $this->subscription->season->name,
             ]))
-            ->line(__('Vous pouvez soumettre une nouvelle demande à tout moment depuis votre espace membre.'))
-            ->line(__('En cas de question, n\'hésitez pas à contacter le secrétariat du club.'));
+            ->line(__('You can submit a new request at any time from your member area.'))
+            ->line(__('If you have any question, feel free to contact the club secretariat.'));
     }
 
     /** @return array<int, string> */

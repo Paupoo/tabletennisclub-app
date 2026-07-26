@@ -3,7 +3,7 @@
 </x-slot:breadcrumbs>
 
 <div>
-    <x-header :title="__('Affiliation and Training')" :subtitle="__('Manage your club membership and training enrollments')" separator />
+    <x-header :title="__('My season')" :subtitle="__('Manage your club membership and training enrollments')" separator />
 
     @php $isSingleMember = count($registrations) === 1; @endphp
 
@@ -65,7 +65,7 @@
             $currentEntry     = collect($userHistory)->firstWhere('is_current_season', true);
             $pastEntries      = collect($userHistory)->where('is_current_season', false)->values();
             $selectedPacks    = $pendingPackIds[$userId] ?? [];
-            $isRegistering    = (! $currentEntry || ($currentEntry['status'] ?? null) === 'cancelled') && ($registrationsOpen || $canReAffiliate);
+            $isRegistering    = (! $currentEntry || ($currentEntry['status'] ?? null) === 'cancelled') && ($affiliationsOpen || $canReAffiliate);
         @endphp
 
         <div x-show="selected === 'tab-{{ $userId }}'" role="tabpanel">
@@ -92,7 +92,7 @@
                                 @elseif($currentEntry['status'] === 'pending')
                                     <x-badge value="{{ __('Pending') }}" class="badge-warning badge-sm" />
                                 @endif
-                            @elseif($registrationsOpen)
+                            @elseif($affiliationsOpen)
                                 <x-badge value="{{ __('Open') }}" class="badge-ghost badge-sm" />
                             @else
                                 <x-badge value="{{ __('Closed') }}" class="badge-error badge-sm" />
@@ -103,7 +103,7 @@
                                     <div class="flex items-start gap-3 p-4 rounded-xl border border-warning/30 bg-warning/10">
                                         <x-icon name="o-clock" class="w-5 h-5 text-warning-content shrink-0 mt-0.5" />
                                         <div class="flex-1">
-                                            <div class="font-bold text-sm">{{ __('Registration submitted — awaiting club validation') }}</div>
+                                            <div class="font-bold text-sm">{{ __('Affiliation submitted — awaiting club validation') }}</div>
                                             <div class="text-xs opacity-70 mt-0.5">{{ __('You will be notified once it is validated.') }}</div>
                                             {{-- La formule demandée reste visible : c'est le choix du membre, et il décide de ce qui lui sera facturé. --}}
                                             <div class="flex items-center gap-1.5 text-xs font-semibold mt-2">
@@ -137,7 +137,7 @@
                                         <div class="flex items-center gap-3 p-4">
                                             <x-icon name="o-check-circle" class="w-5 h-5 text-info shrink-0" />
                                             <div class="flex-1">
-                                                <div class="font-bold text-sm">{{ __('Your registration has been validated!') }}</div>
+                                                <div class="font-bold text-sm">{{ __('Your affiliation has been validated!') }}</div>
                                                 <div class="text-xs opacity-70 mt-0.5">{{ __('Please complete your payment(s) below.') }}</div>
                                                 <div class="flex items-center gap-1.5 text-xs font-semibold mt-2">
                                                     <x-icon name="{{ $currentEntry['is_competitive'] ? 'o-trophy' : 'o-heart' }}" class="w-3.5 h-3.5 shrink-0 opacity-70" />
@@ -223,13 +223,13 @@
                                 @endif
                             @else
                                 {{-- No active subscription for current season (or was cancelled) --}}
-                                @if($registrationsOpen || $canReAffiliate)
+                                @if($affiliationsOpen || $canReAffiliate)
                                     @php $formula = $reg['formula'] ?? 'recreative'; @endphp
 
                                     @if($canReAffiliate)
                                         <div class="flex items-center gap-2 p-3 rounded-lg border border-warning/30 bg-warning/10 text-sm mb-4">
                                             <x-icon name="o-arrow-path" class="w-4 h-4 text-warning-content shrink-0" />
-                                            <span class="opacity-70">{{ __('Your previous registration was rejected. You can submit a new one below.') }}</span>
+                                            <span class="opacity-70">{{ __('Your previous affiliation was rejected. You can submit a new one below.') }}</span>
                                         </div>
                                     @endif
 
@@ -300,8 +300,8 @@
                                     <div class="flex items-start gap-3 p-4 rounded-xl border border-error/30 bg-error/10">
                                         <x-icon name="o-lock-closed" class="w-5 h-5 text-error shrink-0 mt-0.5" />
                                         <div>
-                                            <div class="font-bold text-sm">{{ __('Registrations are currently closed') }}</div>
-                                            <div class="text-xs opacity-70 mt-0.5">{{ __('The club is not accepting new registrations at this time. Please check back later.') }}</div>
+                                            <div class="font-bold text-sm">{{ __('Affiliations are currently closed') }}</div>
+                                            <div class="text-xs opacity-70 mt-0.5">{{ __('The club is not accepting new affiliations at this time. Please check back later.') }}</div>
                                         </div>
                                     </div>
                                 @endif
@@ -314,8 +314,8 @@
                                             <x-icon name="o-academic-cap" class="w-4 h-4 text-base-content/40" />
                                             <span class="text-xs font-bold uppercase tracking-wide text-base-content/50">{{ __('Directed training') }}</span>
                                         </div>
-                                        @if(!$hasActiveSub && ($registrationsOpen || $canReAffiliate))
-                                            <span class="text-xs opacity-50 italic shrink-0">{{ __('Optional, billed in addition — tick to include in your registration') }}</span>
+                                        @if(!$hasActiveSub && ($affiliationsOpen || $canReAffiliate))
+                                            <span class="text-xs opacity-50 italic shrink-0">{{ __('Optional, billed in addition — tick to include in your affiliation') }}</span>
                                         @else
                                             <span class="text-xs opacity-50 italic shrink-0">{{ __('Optional, billed in addition to your licence') }}</span>
                                         @endif
@@ -395,7 +395,7 @@
                                                     </div>
 
                                                     @if($pack['is_open_enrollment'])
-                                                        <x-badge value="{{ __('Entrée libre') }}" class="badge-ghost badge-sm shrink-0" />
+                                                        <x-badge value="{{ __('Free entry') }}" class="badge-ghost badge-sm shrink-0" />
                                                     @elseif(!$isOwnPack)
                                                         @if(!$hasActiveSub)
                                                             <label class="flex items-center cursor-pointer shrink-0 p-1">
@@ -571,7 +571,7 @@
                                         </div>
 
                                         <x-button
-                                            :label="__('Submit my registration')"
+                                            :label="__('Submit my affiliation')"
                                             icon="o-paper-airplane"
                                             class="btn-primary"
                                             wire:click="confirmAffiliation({{ $userId }})"
@@ -606,7 +606,7 @@
                                             <x-icon name="o-exclamation-triangle" class="w-6 h-6 text-warning-content shrink-0" />
                                             <div class="flex-1 min-w-0">
                                                 <div class="text-sm font-semibold">{{ __('Medical Certificate') }}</div>
-                                                <div class="text-xs opacity-60">{{ __('Missing — required for registration') }}</div>
+                                                <div class="text-xs opacity-60">{{ __('Missing — required for affiliation') }}</div>
                                             </div>
                                         @endif
                                     </div>
@@ -763,9 +763,9 @@
         </x-slot:actions>
     </x-modal>
 
-    <x-confirm-modal model="cancelAffiliationModal" :title="__('Cancel registration?')" :subtitle="__('Warning!')"
+    <x-confirm-modal model="cancelAffiliationModal" :title="__('Cancel affiliation?')" :subtitle="__('Warning!')"
         :confirmLabel="__('Yes, cancel it')" confirmAction="cancelAffiliation">
-        <p>{{ __('Are you sure you want to cancel your registration request? This action cannot be undone.') }}</p>
+        <p>{{ __('Are you sure you want to cancel your affiliation request? This action cannot be undone.') }}</p>
     </x-confirm-modal>
 
     {{-- Confirmation : quitter / annuler / refuser un pack entraînement --}}

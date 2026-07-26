@@ -25,8 +25,8 @@ class RefundRequestedNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'title' => __('Remboursement demandé'),
-            'body' => __('Consultez vos paiements en attente'),
+            'title' => __('Refund requested'),
+            'body' => __('See your pending payments'),
             'url' => '#',
             'category' => 'payment',
             'icon' => 'o-credit-card',

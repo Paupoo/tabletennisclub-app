@@ -27,7 +27,7 @@ beforeEach(function (): void {
 it('shows an invitation counter of 1 after sending the first payment email', function (): void {
     Mail::fake();
 
-    $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
+    $season = Season::factory()->create(['is_active' => true, 'affiliations_open' => true]);
     // Accepting an affiliation requires a licence number and a ranking on file.
     $member = User::factory()->create(['licence' => '123456', 'ranking' => 'D6']);
     $subscription = Subscription::factory()->for($member)->create([

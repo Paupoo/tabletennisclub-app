@@ -202,7 +202,7 @@ new class extends Component
                 function (string $attribute, mixed $value, \Closure $fail) use ($maxPoints): void {
                     if ($this->scoreUs !== null && $this->scoreThem !== null) {
                         if ($this->scoreUs + $this->scoreThem !== $maxPoints) {
-                            $fail(__('Le score total doit être égal à :max points.', ['max' => $maxPoints]));
+                            $fail(__('The total score must equal :max points.', ['max' => $maxPoints]));
                         }
                     }
                 },
@@ -316,9 +316,9 @@ new class extends Component
             'matchTypeOptions' => [
                 ['value' => 'normal',                   'label' => __('Normal')],
                 ['value' => 'forfeit_opponent',         'label' => __('Forfait adverse')],
-                ['value' => 'forfeit_general_opponent', 'label' => __('Forfait général adverse')],
+                ['value' => 'forfeit_general_opponent', 'label' => __('Opponent general forfeit')],
                 ['value' => 'forfeit_us',               'label' => __('Notre forfait')],
-                ['value' => 'forfeit_general_us',       'label' => __('Notre forfait général')],
+                ['value' => 'forfeit_general_us',       'label' => __('Our general forfeit')],
                 ['value' => 'bye',                      'label' => __('Bye')],
             ],
             'breadcrumbs' => Breadcrumb::make()->home()->add('Interclubs', '#')->results()->toArray(),

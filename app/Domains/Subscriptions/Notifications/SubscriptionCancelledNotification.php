@@ -23,8 +23,8 @@ class SubscriptionCancelledNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'title' => __('Affiliation annulée'),
-            'body' => __('Votre cotisation a été annulée'),
+            'title' => __('Affiliation cancelled'),
+            'body' => __('Your affiliation has been cancelled'),
             'url' => '#',
             'category' => 'subscription',
             'icon' => 'o-identification',
@@ -36,31 +36,31 @@ class SubscriptionCancelledNotification extends Notification
         $season = $this->subscription->season;
 
         $mail = (new MailMessage)
-            ->subject(__('Affiliation :season — annulation confirmée', ['season' => $season->name]))
-            ->greeting(__('Bonjour :name,', ['name' => $notifiable->first_name]))
-            ->line(__('Votre cotisation pour la saison **:season** a été annulée.', ['season' => $season->name]));
+            ->subject(__('Affiliation :season — cancellation confirmed', ['season' => $season->name]))
+            ->greeting(__('Hello :name,', ['name' => $notifiable->first_name]))
+            ->line(__('Your affiliation for season **:season** has been cancelled.', ['season' => $season->name]));
 
         if ($this->refundAmount > 0) {
-            $mail->line(__('Un remboursement de **:amount €** va vous être effectué.', [
+            $mail->line(__('A refund of **:amount €** will be issued to you.', [
                 'amount' => number_format($this->refundAmount, 2),
             ]));
 
             if ($notifiable->iban) {
-                $mail->line(__('Le remboursement sera versé sur le compte :iban.', ['iban' => $notifiable->iban]));
+                $mail->line(__('The refund will be paid to account :iban.', ['iban' => $notifiable->iban]));
             } else {
-                $mail->line(__('Nous n\'avons pas de compte bancaire enregistré à votre nom : merci de communiquer votre IBAN au secrétariat pour recevoir le remboursement.'));
+                $mail->line(__('We have no bank account on file in your name: please give your IBAN to the secretariat to receive the refund.'));
             }
         }
 
         if (! empty($this->message)) {
             $mail->line('---')
-                ->line(__('**Message du secrétariat :**'))
+                ->line(__('**Message from the secretariat:**'))
                 ->line($this->message);
         }
 
         return $mail
             ->line('---')
-            ->line(__('N\'hésitez pas à contacter le secrétariat pour toute question ou pour soumettre une nouvelle demande.'));
+            ->line(__('Feel free to contact the secretariat with any question, or to submit a new request.'));
     }
 
     /** @return array<int, string> */

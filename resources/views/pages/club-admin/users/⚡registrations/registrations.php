@@ -687,9 +687,9 @@ new class extends Component
     }
 
     #[Computed]
-    public function registrationClosed(): bool
+    public function affiliationsClosed(): bool
     {
-        return ! (Season::current()?->registrations_open ?? false);
+        return ! (Season::current()?->affiliations_open ?? false);
     }
 
     public function registrations(): Collection
@@ -735,7 +735,7 @@ new class extends Component
                     'first_name' => $sub->user->first_name,
                     'last_name' => $sub->user->last_name,
                     'name' => $sub->user->first_name . ' ' . $sub->user->last_name,
-                    'type' => $sub->is_competitive ? __('Compétition') : __('Récréative'),
+                    'type' => $sub->is_competitive ? __('Competition') : __('Recreational'),
                     'status' => $sub->status,
                     'amount_due' => $sub->amount_due,
                     'total_paid' => (float) $sub->payments->whereIn('status', ['paid', 'refunded'])->sum('amount_paid'),
@@ -957,7 +957,7 @@ new class extends Component
             $calculateAction($subscription);
         }
 
-        $this->success(__('Group registration successful!'));
+        $this->success(__('Group affiliation successful!'));
         $this->memberDrawer = false;
         $this->familyBasket = [];
     }
@@ -1047,7 +1047,7 @@ new class extends Component
         return Subscription::with(['user', 'payments'])->find($this->cancelSubscriptionId);
     }
 
-    public function toggleRegistrations(): void
+    public function toggleAffiliations(): void
     {
         Gate::authorize(Permission::SubscriptionsManage->value);
 
@@ -1058,15 +1058,15 @@ new class extends Component
             return;
         }
 
-        if ($season->registrations_open) {
-            $season->closeRegistrations();
-            $this->warning(__('Registrations are now closed.'));
+        if ($season->affiliations_open) {
+            $season->closeAffiliations();
+            $this->warning(__('Affiliations are now closed.'));
         } else {
-            $season->openRegistrations();
-            $this->success(__('Registrations are now open.'));
+            $season->openAffiliations();
+            $this->success(__('Affiliations are now open.'));
         }
 
-        unset($this->registrationClosed);
+        unset($this->affiliationsClosed);
     }
 
     public function trainingOptions(): array
@@ -1229,6 +1229,6 @@ new class extends Component
     {
         return Breadcrumb::make()
             ->home()
-            ->current(__('Registrations'));
+            ->current(__('Affiliations'));
     }
 };

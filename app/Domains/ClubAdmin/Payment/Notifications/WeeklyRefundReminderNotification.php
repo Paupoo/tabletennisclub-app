@@ -21,8 +21,8 @@ class WeeklyRefundReminderNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'title' => __('Rappel de remboursement'),
-            'body' => __('Consultez vos paiements en attente'),
+            'title' => __('Refund reminder'),
+            'body' => __('See your pending payments'),
             'url' => '#',
             'category' => 'payment',
             'icon' => 'o-credit-card',

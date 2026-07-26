@@ -109,7 +109,7 @@
                                                     class="btn-sm btn-warning"
                                                     icon="o-exclamation-triangle"
                                                     :label="__('Forfait')"
-                                                    :tooltip="__('Déclarer le forfait général')"
+                                                    :tooltip="__('Declare a general forfeit')"
                                                     wire:click="openTeamForfeitModal({{ $team->id }})" />
                                             </div>
                                         </x-slot:actions>
@@ -182,9 +182,9 @@
                                                                         @elseif ($mr->result === \App\Domains\Shared\Enums\InterclubResultEnum::FORFEIT_LOSS)
                                                                             <span class="rounded bg-red-50 px-1.5 py-0.5 text-[10px] font-semibold text-red-400">{{ __('Forfait') }}</span>
                                                                         @elseif ($mr->result === \App\Domains\Shared\Enums\InterclubResultEnum::WITHDRAWAL_OPPONENT)
-                                                                            <span class="rounded bg-orange-50 px-1.5 py-0.5 text-[10px] font-semibold text-orange-500">{{ __('F. Gén. Adv.') }}</span>
+                                                                            <span class="rounded bg-orange-50 px-1.5 py-0.5 text-[10px] font-semibold text-orange-500">{{ __('Opp. gen. forfeit') }}</span>
                                                                         @elseif ($mr->result === \App\Domains\Shared\Enums\InterclubResultEnum::WITHDRAWAL)
-                                                                            <span class="rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-semibold text-orange-600">{{ __('F. Général') }}</span>
+                                                                            <span class="rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-semibold text-orange-600">{{ __('Gen. forfeit') }}</span>
                                                                         @endif
                                                                     </td>
                                                                     <td class="py-2 text-right">
@@ -261,7 +261,7 @@
                             max="{{ $maxPts }}"
                             wire:model="scoreThem" />
                     </div>
-                    <p class="text-xs text-base-content/40">{{ __('Total : :max points par match', ['max' => $maxPts]) }}</p>
+                    <p class="text-xs text-base-content/40">{{ __('Total: :max points per match', ['max' => $maxPts]) }}</p>
                 </div>
             @endif
         </div>

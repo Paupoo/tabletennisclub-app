@@ -24,8 +24,8 @@ class TournamentUpdatedNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'title' => __('Tournoi mis à jour : :name', ['name' => $this->tournament->name]),
-            'body' => __('Un tournoi a été mis à jour'),
+            'title' => __('Tournament updated: :name', ['name' => $this->tournament->name]),
+            'body' => __('A tournament has been updated'),
             'url' => route('admin.tournaments.index'),
             'category' => 'tournament',
             'icon' => 'o-trophy',

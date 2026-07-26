@@ -388,7 +388,7 @@ describe('PaymentInvitationEmail content', function (): void {
 
         $mailable = new PaymentInvitationEmail($payment->load('payable.season'));
 
-        $mailable->assertSeeInHtml('Cotisation');
+        $mailable->assertSeeInHtml('Affiliation');
         $mailable->assertSeeInHtml($subscription->season->name);
     })->group('payments', 'mail-content');
 

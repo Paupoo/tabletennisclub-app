@@ -25,8 +25,8 @@ class MeetingCancelledNotification extends Notification implements ShouldQueue
     public function toArray(object $notifiable): array
     {
         return [
-            'title' => __('Réunion annulée: :title', ['title' => $this->meeting->title]),
-            'body' => __('La réunion prévue pour :date a été annulée.', ['date' => $this->meeting->scheduled_at?->translatedFormat('d M Y') ?? __('TBD')]),
+            'title' => __('Meeting cancelled: :title', ['title' => $this->meeting->title]),
+            'body' => __('The meeting scheduled for :date has been cancelled.', ['date' => $this->meeting->scheduled_at?->translatedFormat('d M Y') ?? __('TBD')]),
             'url' => route('admin.meetings.show', $this->meeting),
             'category' => 'meeting',
             'icon' => 'o-calendar-days',

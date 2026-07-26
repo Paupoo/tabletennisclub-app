@@ -21,8 +21,8 @@ class TournamentPaymentExpiredNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'title' => __('Inscription annulée : :name', ['name' => $this->tournament->name]),
-            'body' => __('Consultez les détails du tournoi'),
+            'title' => __('Registration cancelled: :name', ['name' => $this->tournament->name]),
+            'body' => __('See the tournament details'),
             'url' => route('admin.tournaments.index'),
             'category' => 'tournament',
             'icon' => 'o-trophy',

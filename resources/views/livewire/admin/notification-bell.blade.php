@@ -41,15 +41,15 @@
                     <button
                         type="button"
                         wire:click="markAllAsRead"
-                        aria-label="{{ __('Tout marquer comme lu') }}"
+                        aria-label="{{ __('Mark all as read') }}"
                         class="min-w-0 truncate text-xs font-semibold text-primary"
                     >
-                        {{ __('Tout marquer comme lu') }}
+                        {{ __('Mark all as read') }}
                     </button>
                 @endif
                 <label
                     for="notification-panel-toggle"
-                    aria-label="{{ __('Fermer') }}"
+                    aria-label="{{ __('Close') }}"
                     class="btn btn-ghost btn-xs btn-circle shrink-0"
                 >
                     <x-icon name="o-x-mark" class="h-4 w-4" />
@@ -98,13 +98,13 @@
                 style="padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));"
             >
                 <a href="{{ route('notifications.index') }}" class="btn btn-primary btn-block btn-sm">
-                    {{ __('Voir toutes les notifications') }}
+                    {{ __('See all notifications') }}
                 </a>
             </div>
         @else
             <div class="flex flex-col items-center justify-center gap-2 p-10 text-center text-base-content/50">
                 <x-icon name="o-bell-slash" class="h-8 w-8" />
-                <span class="text-sm">{{ __('Aucune notification') }}</span>
+                <span class="text-sm">{{ __('No notification') }}</span>
             </div>
         @endif
     </div>

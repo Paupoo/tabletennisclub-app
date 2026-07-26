@@ -12,7 +12,7 @@ uses(RefreshDatabase::class);
 
 it('creates a subscription for an active season with open registrations', function (): void {
     $user = User::factory()->create();
-    $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
+    $season = Season::factory()->create(['is_active' => true, 'affiliations_open' => true]);
 
     $subscription = (new CreateSubscriptionAction)->execute($user, $season, []);
 
@@ -23,7 +23,7 @@ it('creates a subscription for an active season with open registrations', functi
 
 it('throws when the season has registrations closed', function (): void {
     $user = User::factory()->create();
-    $season = Season::factory()->create(['is_active' => true, 'registrations_open' => false]);
+    $season = Season::factory()->create(['is_active' => true, 'affiliations_open' => false]);
 
     expect(fn (): mixed => (new CreateSubscriptionAction)->execute($user, $season, []))
         ->toThrow(Exception::class);
@@ -31,7 +31,7 @@ it('throws when the season has registrations closed', function (): void {
 
 it('throws when user already has an active subscription for the season', function (): void {
     $user = User::factory()->create();
-    $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
+    $season = Season::factory()->create(['is_active' => true, 'affiliations_open' => true]);
 
     (new CreateSubscriptionAction)->execute($user, $season, []);
 
@@ -45,7 +45,7 @@ it('throws when user already has an active subscription for the season', functio
  */
 it('allows a new subscription when the previous one reached a terminal state', function (string $status): void {
     $user = User::factory()->create();
-    $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
+    $season = Season::factory()->create(['is_active' => true, 'affiliations_open' => true]);
 
     Subscription::factory()->create([
         'user_id' => $user->id,
@@ -61,7 +61,7 @@ it('allows a new subscription when the previous one reached a terminal state', f
 
 it('throws when the existing subscription is still ongoing', function (string $status): void {
     $user = User::factory()->create();
-    $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
+    $season = Season::factory()->create(['is_active' => true, 'affiliations_open' => true]);
 
     Subscription::factory()->create([
         'user_id' => $user->id,
@@ -75,7 +75,7 @@ it('throws when the existing subscription is still ongoing', function (string $s
 
 it('sets the initial status to pending', function (): void {
     $user = User::factory()->create();
-    $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
+    $season = Season::factory()->create(['is_active' => true, 'affiliations_open' => true]);
 
     $subscription = (new CreateSubscriptionAction)->execute($user, $season, []);
 
@@ -84,7 +84,7 @@ it('sets the initial status to pending', function (): void {
 
 it('persists the season attributes passed in options', function (): void {
     $user = User::factory()->create();
-    $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
+    $season = Season::factory()->create(['is_active' => true, 'affiliations_open' => true]);
 
     $subscription = (new CreateSubscriptionAction)->execute($user, $season, [
         'can_drive' => true,
@@ -104,7 +104,7 @@ it('persists the season attributes passed in options', function (): void {
 
 it('defaults the season attributes when options are absent', function (): void {
     $user = User::factory()->create();
-    $season = Season::factory()->create(['is_active' => true, 'registrations_open' => true]);
+    $season = Season::factory()->create(['is_active' => true, 'affiliations_open' => true]);
 
     $subscription = (new CreateSubscriptionAction)->execute($user, $season, []);
 

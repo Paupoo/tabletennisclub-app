@@ -277,7 +277,7 @@
 
             <!-- Section Registration -->
             <div class="col-span-6 md:col-span-2">
-                <x-header :subtitle="__('Registration info')" :title="__(key: 'Registration')" />
+                <x-header :subtitle="__('Affiliation info')" :title="__(key: 'Registration')" />
             </div>
 
             <div class="col-span-6 md:col-span-4">
@@ -285,7 +285,7 @@
                 <x-select :options="$rankings" icon="o-scale" :label="__('Ranking')" wire:model.live="ranking" />
                 <x-alert icon="o-information-circle" class="alert-info mt-2">
                     <span class="text-sm">
-                        {{ __('Whether a member is competitive or recreative comes from their affiliation for the season, and is decided when it is accepted on the Registrations page.') }}
+                        {{ __('Whether a member is competitive or recreative comes from their affiliation for the season, and is decided when it is accepted on the Affiliations page.') }}
                     </span>
                 </x-alert>
             </div>

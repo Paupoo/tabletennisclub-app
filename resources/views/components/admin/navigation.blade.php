@@ -23,7 +23,7 @@
         <x-menu-item icon="o-star" link="{{ route('admin.user.event-subscription', $user) }}" :title="__('My registrations')" />
         <x-menu-item icon="o-credit-card" link="{{ route('admin.user.payments', $user) }}" :title="__('My payments')" />
         <x-menu-item icon="o-calendar-days" link="{{ route('admin.user.calendar', $user) }}" :title="__('My Calendar')" />
-        <x-menu-item icon="o-academic-cap" link="{{ route('admin.user.registration-management', $user) }}" :title="__('Affiliation & Trainings')" />
+        <x-menu-item icon="o-academic-cap" link="{{ route('admin.user.registration-management', $user) }}" :title="__('My season')" />
         <x-menu-item icon="o-cog-8-tooth" :link="route('admin.user.settings', $user)" :title="__('Settings')" />
         <x-menu-separator />
         <livewire:actions.logout />
@@ -87,7 +87,7 @@
             <x-menu-item icon="o-users" link="{{ route('admin.users.index') }}" :title="__('Users')" />
         @endcan
         @can('subscriptions.view')
-            <x-menu-item icon="o-list-bullet" link="{{ route('admin.users.registrations') }}" :title="__('Registrations')" />
+            <x-menu-item icon="o-list-bullet" link="{{ route('admin.users.registrations') }}" :title="__('Affiliations')" />
         @endcan
         @can('users.update')
             <x-menu-item icon="o-key" link="{{ route('admin.users.delegations') }}" :title="__('Delegations')" />
@@ -152,9 +152,9 @@
         @endcan
         @can('interclubs.manage')
         <x-menu-item icon="o-calendar-days" link="{{ route('admin.interclubs.interclubs') }}" :title="__('Planning')" />
-        <x-menu-sub icon="o-cog-6-tooth" :title="__('Configuration saison')">
-            <x-menu-item icon="o-identification" link="{{ route('admin.interclubs.teams') }}" :title="__('Nos équipes')" />
-            <x-menu-item icon="o-table-cells" link="{{ route('admin.interclubs.division-setup') }}" :title="__('Adversaires')" />
+        <x-menu-sub icon="o-cog-6-tooth" :title="__('Season configuration')">
+            <x-menu-item icon="o-identification" link="{{ route('admin.interclubs.teams') }}" :title="__('Our teams')" />
+            <x-menu-item icon="o-table-cells" link="{{ route('admin.interclubs.division-setup') }}" :title="__('Opponents')" />
             <x-menu-item icon="o-building-office-2" link="{{ route('admin.interclubs.clubs') }}" :title="__('Clubs')" />
         </x-menu-sub>
         @endcan

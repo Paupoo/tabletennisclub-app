@@ -23,8 +23,8 @@ class InterclubSelectionNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'title' => __('Vous êtes sélectionné'),
-            'body' => __('Consultez les détails du match'),
+            'title' => __('You are selected'),
+            'body' => __('See the match details'),
             'url' => route('admin.interclubs.my-matches'),
             'category' => 'interclub',
             'icon' => 'o-user-group',

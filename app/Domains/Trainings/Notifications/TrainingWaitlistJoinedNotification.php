@@ -22,8 +22,8 @@ class TrainingWaitlistJoinedNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'title' => __("Rejoint la liste d'attente"),
-            'body' => __('Consultez les détails de l\'entraînement'),
+            'title' => __('Joined the waiting list'),
+            'body' => __('See the training details'),
             'url' => route('admin.trainings.index'),
             'category' => 'training',
             'icon' => 'o-academic-cap',

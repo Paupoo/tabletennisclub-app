@@ -31,10 +31,10 @@ class SubscriptionFormulaChangedNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'title' => __('Formule d\'affiliation modifiée'),
+            'title' => __('Your affiliation formula has changed'),
             'body' => $this->subscription->is_competitive
-                ? __('Votre affiliation est passée en compétition')
-                : __('Votre affiliation est passée en récréatif'),
+                ? __('Your affiliation switched to competition')
+                : __('Your affiliation switched to recreational'),
             'url' => route('admin.user.registration-management', $this->subscription->user_id),
             'category' => 'subscription',
             'icon' => 'o-identification',
@@ -46,35 +46,35 @@ class SubscriptionFormulaChangedNotification extends Notification
         $season = $this->subscription->season;
 
         $mail = (new MailMessage)
-            ->subject(__('Affiliation :season — changement de formule', ['season' => $season->name]))
-            ->greeting(__('Bonjour :name,', ['name' => $notifiable->first_name]))
+            ->subject(__('Affiliation :season — formula changed', ['season' => $season->name]))
+            ->greeting(__('Hello :name,', ['name' => $notifiable->first_name]))
             ->line($this->subscription->is_competitive
-                ? __('Votre affiliation pour la saison **:season** est désormais une affiliation **compétition**.', ['season' => $season->name])
-                : __('Votre affiliation pour la saison **:season** est désormais une affiliation **récréative**.', ['season' => $season->name]));
+                ? __('Your affiliation for season **:season** is now a **competition** affiliation.', ['season' => $season->name])
+                : __('Your affiliation for season **:season** is now a **recreational** affiliation.', ['season' => $season->name]));
 
         if ($this->delta > 0) {
-            $mail->line(__('Un complément de **:amount €** reste à verser.', [
+            $mail->line(__('An extra **:amount €** remains to be paid.', [
                 'amount' => number_format($this->delta, 2),
             ]));
 
             if ($this->paymentReference !== null) {
-                $mail->line(__('Merci d\'indiquer la communication structurée :reference lors de votre virement.', [
+                $mail->line(__('Please quote the structured reference :reference with your transfer.', [
                     'reference' => $this->paymentReference,
                 ]));
             }
         }
 
         if ($this->delta < 0) {
-            $mail->line(__('Un remboursement de **:amount €** va vous être effectué.', [
+            $mail->line(__('A refund of **:amount €** will be issued to you.', [
                 'amount' => number_format(abs($this->delta), 2),
             ]));
 
             if (! $notifiable->iban) {
-                $mail->line(__('Nous n\'avons pas de compte bancaire enregistré à votre nom : merci de communiquer votre IBAN au secrétariat pour recevoir le remboursement.'));
+                $mail->line(__('We have no bank account on file in your name: please give your IBAN to the secretariat to receive the refund.'));
             }
         }
 
-        return $mail->line(__('Pour toute question, répondez simplement à cet e-mail.'));
+        return $mail->line(__('For any question, simply reply to this email.'));
     }
 
     /** @return array<int, string> */

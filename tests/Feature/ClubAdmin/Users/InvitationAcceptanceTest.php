@@ -193,7 +193,7 @@ test('invitation mail renders the member name, login and signed link', function 
         ->toContain(e($user->first_name . ' ' . $user->last_name))
         ->toContain($user->email)
         ->toContain(e($link))
-        ->toContain(__('Finaliser mon inscription'));
+        ->toContain(__('Finalise my registration'));
 
     expect($mail->envelope()->subject)
         ->toBe(__('Welcome to :app – Finalize your registration', ['app' => config('app.name')]));

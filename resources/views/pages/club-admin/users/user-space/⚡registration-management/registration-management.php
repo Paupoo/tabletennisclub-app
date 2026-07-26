@@ -149,7 +149,7 @@ new class extends Component
 
         unset($this->existingSubscriptions[$userId]);
         $this->cancelAffiliationModal = false;
-        $this->warning(__('Your registration request has been cancelled.'));
+        $this->warning(__('Your affiliation request has been cancelled.'));
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -159,8 +159,8 @@ new class extends Component
     public function confirmAffiliation(int $userId): void
     {
         $season = Season::current();
-        if (! $season || ! $season->registrations_open) {
-            $this->error(__('Registrations are currently closed.'));
+        if (! $season || ! $season->affiliations_open) {
+            $this->error(__('Affiliations are currently closed.'));
 
             return;
         }
@@ -219,7 +219,7 @@ new class extends Component
         ];
 
         $this->pendingPackIds[$userId] = [];
-        $this->success(__('Your registration has been submitted. The club will process it shortly.'));
+        $this->success(__('Your affiliation has been submitted. The club will process it shortly.'));
     }
 
     public function confirmCancelAffiliation(int $userId): void
@@ -566,7 +566,7 @@ new class extends Component
         }
 
         return [
-            'registrationsOpen' => $season?->registrations_open ?? false,
+            'affiliationsOpen' => $season?->affiliations_open ?? false,
             'currentSeasonName' => $season?->name ?? '—',
             'subscriptionHistory' => $subscriptionHistory,
             'availablePacks' => $availablePacks,
@@ -582,6 +582,6 @@ new class extends Component
     {
         return Breadcrumb::make()
             ->home()
-            ->current(__('Registration management'));
+            ->current(__('My season'));
     }
 };

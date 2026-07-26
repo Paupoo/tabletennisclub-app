@@ -48,7 +48,7 @@ use Illuminate\Support\Facades\DB;
  * @method static Builder<static>|Season whereUpdatedAt($value)
  *
  * @property bool $is_active
- * @property bool $registrations_open
+ * @property bool $affiliations_open
  * @property-read Collection<int, Subscription> $subscriptions
  * @property-read int|null $subscriptions_count
  * @property-read Collection<int, TrainingPack> $trainingPacks
@@ -59,7 +59,7 @@ use Illuminate\Support\Facades\DB;
  * @method static Builder<static>|Season active()
  * @method static Builder<static>|Season whereEndAt($value)
  * @method static Builder<static>|Season whereIsActive($value)
- * @method static Builder<static>|Season whereRegistrationsOpen($value)
+ * @method static Builder<static>|Season whereAffiliationsOpen($value)
  * @method static Builder<static>|Season whereStartAt($value)
  *
  * @mixin \Eloquent
@@ -74,7 +74,7 @@ class Season extends Model
         'start_at' => 'datetime',
         'end_at' => 'datetime',
         'is_active' => 'boolean',
-        'registrations_open' => 'boolean',
+        'affiliations_open' => 'boolean',
     ];
 
     protected $fillable = [
@@ -82,7 +82,7 @@ class Season extends Model
         'start_at',
         'end_at',
         'is_active',
-        'registrations_open',
+        'affiliations_open',
     ];
 
     public static function current(): ?self
@@ -103,9 +103,9 @@ class Season extends Model
         });
     }
 
-    public function closeRegistrations(): void
+    public function closeAffiliations(): void
     {
-        $this->update(['registrations_open' => false]);
+        $this->update(['affiliations_open' => false]);
         Cache::forget('season.current');
     }
 
@@ -136,9 +136,9 @@ class Season extends Model
         return $this->hasMany(League::class);
     }
 
-    public function openRegistrations(): void
+    public function openAffiliations(): void
     {
-        $this->update(['registrations_open' => true]);
+        $this->update(['affiliations_open' => true]);
         Cache::forget('season.current');
     }
 

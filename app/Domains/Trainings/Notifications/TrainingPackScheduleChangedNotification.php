@@ -28,8 +28,8 @@ class TrainingPackScheduleChangedNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'title' => __('Horaire d\'entraînement modifié'),
-            'body' => __(':pack a changé d\'horaire', ['pack' => $this->pack->name]),
+            'title' => __('Training schedule changed'),
+            'body' => __(':pack has a new schedule', ['pack' => $this->pack->name]),
             'url' => route('admin.trainings.index'),
             'category' => 'training',
             'icon' => 'o-calendar-days',

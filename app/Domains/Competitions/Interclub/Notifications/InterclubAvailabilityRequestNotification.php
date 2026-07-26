@@ -22,8 +22,8 @@ class InterclubAvailabilityRequestNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'title' => __('Demande de disponibilité'),
-            'body' => __('Consultez les détails du match'),
+            'title' => __('Availability request'),
+            'body' => __('See the match details'),
             'url' => route('admin.interclubs.my-matches'),
             'category' => 'interclub',
             'icon' => 'o-user-group',

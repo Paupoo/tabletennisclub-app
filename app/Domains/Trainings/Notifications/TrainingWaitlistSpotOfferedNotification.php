@@ -23,8 +23,8 @@ class TrainingWaitlistSpotOfferedNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'title' => __('Place disponible en entraînement'),
-            'body' => __('Consultez les détails de l\'entraînement'),
+            'title' => __('A training spot is available'),
+            'body' => __('See the training details'),
             'url' => route('admin.trainings.index'),
             'category' => 'training',
             'icon' => 'o-academic-cap',

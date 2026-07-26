@@ -15,6 +15,7 @@ use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\Ranking;
 use App\Domains\Shared\Rules\ValidIban;
+use App\Domains\Shared\Rules\ValidPhone;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasPhotoUpload;
 use App\Livewire\Concerns\ManagesGuardians;
@@ -117,7 +118,7 @@ new class extends Component
 
     public string $password_confirmation = '';
 
-    #[Rule('required|string')]
+    #[Rule(['required', 'string', 'max:20', new ValidPhone])]
     public string $phone_number = '';
 
     public ?string $ranking = null;

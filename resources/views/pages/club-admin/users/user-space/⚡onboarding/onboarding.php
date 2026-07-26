@@ -6,6 +6,7 @@ use App\Actions\User\StoreUserDocumentAction;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Rules\ValidIban;
+use App\Domains\Shared\Rules\ValidPhone;
 use App\Livewire\Concerns\HasPhotoUpload;
 use App\Livewire\Concerns\ManagesGuardians;
 use Carbon\Carbon;
@@ -92,7 +93,7 @@ new class extends Component
         $this->validate([
             'gender' => ['required'],
             'birthdate' => ['required', 'date', 'before:today', 'after:1900-01-01'],
-            'phone_number' => ['required', 'string', 'max:20'],
+            'phone_number' => ['required', 'string', 'max:20', new ValidPhone],
         ]);
 
         $this->user->update([

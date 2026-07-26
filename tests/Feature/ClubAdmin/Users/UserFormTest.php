@@ -201,6 +201,30 @@ describe('licence and ranking — editable on the member form', function (): voi
     });
 });
 
+describe('phone number', function (): void {
+    it('refuses a phone number that could not be dialled', function (): void {
+        $user = User::factory()->create(['phone_number' => '0470000000']);
+
+        Livewire::test(USER_FORM_COMPONENT, ['user' => $user])
+            ->set('phone_number', '04 70')
+            ->set('password', '')
+            ->call('save')
+            ->assertHasErrors('phone_number');
+
+        expect($user->fresh()->phone_number)->toBe('0470000000');
+    });
+
+    it('accepts a phone number however the admin spaces it', function (string $phone): void {
+        $user = User::factory()->create(['phone_number' => '0470000000']);
+
+        Livewire::test(USER_FORM_COMPONENT, ['user' => $user])
+            ->set('phone_number', $phone)
+            ->set('password', '')
+            ->call('save')
+            ->assertHasNoErrors('phone_number');
+    })->with(['0475 12 34 56', '0475.12.34.56', '+32 475 12 34 56', '010 45 67 89']);
+});
+
 describe('form actions', function (): void {
     it('no longer offers a reset button that did nothing', function (): void {
         $user = User::factory()->create();

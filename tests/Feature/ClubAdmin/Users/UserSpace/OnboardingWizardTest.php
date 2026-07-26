@@ -48,6 +48,17 @@ test('the identity step requires gender, birthdate and phone', function (): void
         ->assertSet('step', 1);
 });
 
+test('the identity step refuses a member phone number that is not dialable', function (): void {
+    Livewire::actingAs(incompleteUser())
+        ->test(ONBOARDING_COMPONENT)
+        ->set('gender', Gender::WOMEN)
+        ->set('birthdate', '1990-05-15')
+        ->set('phone_number', '04 70')
+        ->call('completeIdentityStep')
+        ->assertHasErrors('phone_number')
+        ->assertSet('step', 1);
+});
+
 test('completing the identity step persists the fields and advances to address for an adult', function (): void {
     $user = incompleteUser();
 

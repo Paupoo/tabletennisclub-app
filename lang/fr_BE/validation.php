@@ -222,6 +222,7 @@ return [
         'opposite_club_id' => 'club adverse',
         'opposite_team_name' => 'équipe adverse',
         'password' => 'mot de passe',
+        'phone' => 'numéro de téléphone',
         'phone_number' => 'numéro de téléphone',
         'players' => 'joueurs',
         'price' => 'prix',

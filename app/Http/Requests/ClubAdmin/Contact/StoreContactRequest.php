@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\ClubAdmin\Contact;
 
+use App\Domains\Shared\Rules\ValidPhone;
 use App\Support\Captcha;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Contracts\Validation\Validator;
@@ -48,7 +49,7 @@ class StoreContactRequest extends FormRequest
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
-            'phone' => 'nullable|string|max:20',
+            'phone' => ['nullable', 'string', 'max:20', new ValidPhone],
             'interest' => 'required|string',
             'message' => 'required|string|max:2000',
             'consent' => 'required|accepted',

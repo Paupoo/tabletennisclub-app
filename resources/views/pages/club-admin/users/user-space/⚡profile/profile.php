@@ -12,6 +12,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Rules\ValidIban;
+use App\Domains\Shared\Rules\ValidPhone;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasPhotoUpload;
 use App\Support\Breadcrumb;
@@ -63,7 +64,7 @@ new class extends Component
 
     public $parentalConsent = null;
 
-    #[Rule('nullable|string|max:20')]
+    #[Rule(['nullable', 'string', 'max:20', new ValidPhone])]
     public ?string $phone_number = null;
 
     #[Rule('nullable|string|max:255')]

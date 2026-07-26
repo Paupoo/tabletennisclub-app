@@ -28,6 +28,18 @@ test('user can update their own contact fields', function (): void {
         ->and($user->fresh()->phone_number)->toBe('0479999999');
 });
 
+test('a member cannot save a phone number that could not be dialled', function (): void {
+    $user = User::factory()->create(['phone_number' => '0470000000']);
+
+    Livewire::actingAs($user)
+        ->test('pages::club-admin.users.user-space.profile', ['user' => $user])
+        ->set('phone_number', '04 70')
+        ->call('save')
+        ->assertHasErrors('phone_number');
+
+    expect($user->fresh()->phone_number)->toBe('0470000000');
+});
+
 test('profile displays the stored iban grouped by 4 for readability', function (): void {
     $user = User::factory()->create(['iban' => 'BE12345678901234']);
 

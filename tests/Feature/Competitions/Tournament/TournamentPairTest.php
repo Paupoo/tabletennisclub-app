@@ -37,6 +37,14 @@ function registeredUsersInTournament(Tournament $tournament, int $count = 2): ar
     return $users->all();
 }
 
+function pairRanked(string $ranking1, string $ranking2): TournamentPair
+{
+    return TournamentPair::factory()->create([
+        'player1_id' => User::factory()->create(['ranking' => $ranking1]),
+        'player2_id' => User::factory()->create(['ranking' => $ranking2]),
+    ]);
+}
+
 // ── TournamentPair model ──────────────────────────────────────────────────────
 
 describe('TournamentPair model', function (): void {
@@ -65,6 +73,27 @@ describe('TournamentPair model', function (): void {
         ]);
 
         expect($pair->displayName())->toBe('Dupont/Martin');
+    });
+
+    it('labels a pair with both rankings rather than inventing an average', function (): void {
+        expect(pairRanked('B2', 'C4')->rankingLabel())->toBe('B2/C4');
+    });
+
+    it('falls back to NC when a player is missing', function (): void {
+        $pair = pairRanked('B2', 'C4');
+        $pair->player2_id = null;
+
+        expect($pair->rankingLabel())->toBe('B2/NC');
+    });
+
+    it('seeds a stronger pair below a weaker one', function (): void {
+        expect(pairRanked('B0', 'B2')->seedIndex())
+            ->toBeLessThan(pairRanked('D0', 'D2')->seedIndex());
+    });
+
+    it('seeds an unranked pair last, not first', function (): void {
+        expect(pairRanked('NA', 'NA')->seedIndex())
+            ->toBeGreaterThan(pairRanked('E6', 'E6')->seedIndex());
     });
 });
 

@@ -9,6 +9,7 @@
         <div class="flex flex-col gap-3 lg:max-w-2xl">
             @foreach ($this->upcomingMatches as $index => $match)
                 @php
+                    $nc           = \App\Domains\Shared\Enums\Ranking::NC->value;
                     $busyIds      = $this->busyPlayerIds;
                     $isDoubles    = $match->pair1_id !== null;
                     $isPool       = $match->pool_id !== null;
@@ -22,8 +23,8 @@
                     $hasConflict  = $isReady && ($side1Ids->intersect($busyIds)->isNotEmpty() || $side2Ids->intersect($busyIds)->isNotEmpty());
                     $side1Name    = $isDoubles ? ($match->pair1?->displayName() ?? '—') : ($match->player1?->full_name ?? '—');
                     $side2Name    = $isDoubles ? ($match->pair2?->displayName() ?? '—') : ($match->player2?->full_name ?? '—');
-                    $side1Rank    = $isDoubles ? ($match->pair1?->averageRanking() ?? 'NC') : ($match->player1?->ranking ?? 'NC');
-                    $side2Rank    = $isDoubles ? ($match->pair2?->averageRanking() ?? 'NC') : ($match->player2?->ranking ?? 'NC');
+                    $side1Rank    = $isDoubles ? ($match->pair1?->rankingLabel() ?? $nc) : ($match->player1?->ranking ?? $nc);
+                    $side2Rank    = $isDoubles ? ($match->pair2?->rankingLabel() ?? $nc) : ($match->player2?->ranking ?? $nc);
                     $refereeName  = $match->referee?->full_name;
                     $label        = $isPool
                         ? ($match->pool?->name ?? __('Pool'))

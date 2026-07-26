@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domains\Competitions\Tournament\Models;
 
 use App\Domains\ClubAdmin\Users\Models\User;
+use App\Domains\Shared\Enums\Ranking;
 use App\Domains\Shared\Traits\HasAuditLog;
 use Database\Factories\Domains\Competitions\Tournament\Models\TournamentPairFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -53,19 +54,6 @@ class TournamentPair extends Model
         'registered_by',
     ];
 
-    public function averageRanking(): string
-    {
-        $rankings = collect([$this->player1->ranking, $this->player2->ranking])
-            ->filter()
-            ->map(fn (string $r) => (int) $r);
-
-        if ($rankings->isEmpty()) {
-            return 'NC';
-        }
-
-        return (string) (int) $rankings->average();
-    }
-
     public function displayName(): string
     {
         $p1 = $this->player1?->last_name ?? '?';
@@ -84,9 +72,47 @@ class TournamentPair extends Model
         return $this->belongsTo(User::class, 'player2_id');
     }
 
+    /**
+     * The two rankings as they stand, e.g. "B2/C4".
+     *
+     * Deliberately not a single ranking: the handicap table shows the rungs are
+     * not evenly spaced (B0→C0 is worth 3 points, B4→C4 only 2), so averaging
+     * two rankings would name a level neither player holds. An unranked player
+     * shows as NC, which is what an unranked affiliated player is.
+     */
+    public function rankingLabel(): string
+    {
+        return collect([$this->player1?->ranking, $this->player2?->ranking])
+            ->map(fn (?string $ranking): string => $ranking ?: Ranking::NC->value)
+            ->implode('/');
+    }
+
     public function registeredBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'registered_by');
+    }
+
+    /**
+     * Seeding weight of the pair: the lower, the stronger.
+     *
+     * Sums both players' positions in {@see Ranking::cases()}, which runs from
+     * the strongest (B0) to the weakest (NA). A sum orders pairs correctly
+     * without claiming to name an average ranking. An unknown or missing
+     * ranking weighs as the weakest rung, so a pair nobody has ranked is seeded
+     * last rather than first.
+     */
+    public function seedIndex(): int
+    {
+        $cases = Ranking::cases();
+        $weakest = count($cases);
+
+        return collect([$this->player1?->ranking, $this->player2?->ranking])
+            ->map(function (?string $ranking) use ($cases, $weakest): int {
+                $case = $ranking === null ? null : Ranking::tryFrom($ranking);
+
+                return $case === null ? $weakest : (int) array_search($case, $cases, true);
+            })
+            ->sum();
     }
 
     public function tournament(): BelongsTo

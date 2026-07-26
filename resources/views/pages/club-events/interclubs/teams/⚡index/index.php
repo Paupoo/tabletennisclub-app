@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Resources\views\Pages\ClubEvents\Interclubs\Teams;
 
-use App\Domains\Shared\Enums\Permission;
-use Illuminate\Support\Facades\Gate;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\League;
@@ -13,12 +11,14 @@ use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\LeagueCategory;
 use App\Domains\Shared\Enums\LeagueLevel;
+use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\Enums\TeamName;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
@@ -35,12 +35,12 @@ new class extends Component
 
     public bool $deleteModal = false;
 
-    /** Bascule vers la saisie d'une nouvelle division plutôt que le choix d'une existante. */
-    public bool $newDivisionMode = false;
-
     public string $newCategory = '';
 
     public string $newDivision = '';
+
+    /** Bascule vers la saisie d'une nouvelle division plutôt que le choix d'une existante. */
+    public bool $newDivisionMode = false;
 
     public ?int $newLeagueId = null;
 
@@ -304,6 +304,13 @@ new class extends Component
         ];
     }
 
+    protected function breadcrumbChain(): Breadcrumb
+    {
+        return Breadcrumb::make()
+            ->home()
+            ->current(__('Teams'));
+    }
+
     /**
      * Divisions déjà déclarées pour la saison, libellées niveau – division – catégorie.
      *
@@ -329,12 +336,5 @@ new class extends Component
                     $league->category,
                 ])),
             ]);
-    }
-
-    protected function breadcrumbChain(): Breadcrumb
-    {
-        return Breadcrumb::make()
-            ->home()
-            ->current(__('Teams'));
     }
 };

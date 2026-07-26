@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Domains\Shared\Enums\Permission;
-use Illuminate\Support\Facades\Gate;
 use App\Actions\ClubAdmin\Payments\GeneratePaymentQR;
 use App\Actions\ClubAdmin\Payments\GeneratePaymentReference;
 use App\Actions\ClubAdmin\Subscriptions\ApproveTrainingPacksAction;
@@ -19,6 +17,7 @@ use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
+use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\Enums\Ranking;
 use App\Domains\Subscriptions\Notifications\SubscriptionFormulaChangedNotification;
 use App\Domains\Subscriptions\Notifications\SubscriptionRejectedNotification;
@@ -32,6 +31,7 @@ use App\Support\Breadcrumb;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule as ValidationRule;
@@ -731,34 +731,34 @@ new class extends Component
                 }
 
                 return (object) [
-                'id' => $sub->id,
-                'first_name' => $sub->user->first_name,
-                'last_name' => $sub->user->last_name,
-                'name' => $sub->user->first_name . ' ' . $sub->user->last_name,
-                'type' => $sub->is_competitive ? __('Compétition') : __('Récréative'),
-                'status' => $sub->status,
-                'amount_due' => $sub->amount_due,
-                'total_paid' => (float) $sub->payments->whereIn('status', ['paid', 'refunded'])->sum('amount_paid'),
-                'trainings_count' => $sub->trainings_count,
-                'pending_packs' => $pendingPacks,
-                'enrolled_packs' => $enrolledPacks,
-                'cancelled_packs' => $cancelledPacks,
-                'left_packs' => $leftPacks,
-                'has_pending_packs' => $pendingPacks->isNotEmpty(),
-                'subscription_price' => $sub->is_competitive ? 125.0 : 60.0,
-                'members' => [[
+                    'id' => $sub->id,
                     'first_name' => $sub->user->first_name,
                     'last_name' => $sub->user->last_name,
-                    'trainings' => $sub->trainingPacks->pluck('name')->toArray(),
-                ]],
-                'total_price' => $sub->amount_due,
-                'payments' => $sub->payments->map(fn ($p) => [
-                    'reference' => $p->reference,
-                    'amount_due' => $p->amount_due,
-                    'status' => $p->status,
-                ])->values()->toArray(),
-                'payment_status' => $sub->payments->sortByDesc('created_at')->first()?->status,
-            ];
+                    'name' => $sub->user->first_name . ' ' . $sub->user->last_name,
+                    'type' => $sub->is_competitive ? __('Compétition') : __('Récréative'),
+                    'status' => $sub->status,
+                    'amount_due' => $sub->amount_due,
+                    'total_paid' => (float) $sub->payments->whereIn('status', ['paid', 'refunded'])->sum('amount_paid'),
+                    'trainings_count' => $sub->trainings_count,
+                    'pending_packs' => $pendingPacks,
+                    'enrolled_packs' => $enrolledPacks,
+                    'cancelled_packs' => $cancelledPacks,
+                    'left_packs' => $leftPacks,
+                    'has_pending_packs' => $pendingPacks->isNotEmpty(),
+                    'subscription_price' => $sub->is_competitive ? 125.0 : 60.0,
+                    'members' => [[
+                        'first_name' => $sub->user->first_name,
+                        'last_name' => $sub->user->last_name,
+                        'trainings' => $sub->trainingPacks->pluck('name')->toArray(),
+                    ]],
+                    'total_price' => $sub->amount_due,
+                    'payments' => $sub->payments->map(fn ($p) => [
+                        'reference' => $p->reference,
+                        'amount_due' => $p->amount_due,
+                        'status' => $p->status,
+                    ])->values()->toArray(),
+                    'payment_status' => $sub->payments->sortByDesc('created_at')->first()?->status,
+                ];
             });
     }
 
@@ -915,44 +915,6 @@ new class extends Component
             ->toArray() ?? [];
     }
 
-    public function saveReconciliation(): void
-    {
-        Gate::authorize(Permission::SubscriptionsManage->value);
-
-        $subscription = Subscription::with('user')->find($this->reconcileSubscriptionId);
-        $pack = TrainingPack::find($this->reconcilePackId);
-
-        if (! $subscription || ! $pack) {
-            return;
-        }
-
-        try {
-            (new ReconcileTrainingPackAction)(
-                $subscription,
-                $pack,
-                $this->reconcileStartsOn,
-                $this->reconcileEndsOn,
-                filled($this->reconcileOverrideAmount) ? (float) $this->reconcileOverrideAmount : null,
-                $this->reconcileOverrideReason,
-                $subscription->has_other_family_members ? 2 : 1,
-            );
-        } catch (DomainException $e) {
-            $this->error($e->getMessage());
-
-            return;
-        }
-
-        unset($this->reviewPackLines);
-
-        $this->reconcileModal = false;
-        $this->reconcileSubscriptionId = null;
-        $this->reconcilePackId = null;
-
-        $this->success(__('Training pack adjusted. New total: :amount €', [
-            'amount' => number_format((float) $subscription->fresh()->amount_due, 2),
-        ]));
-    }
-
     public function saveFamilyRegistration(): void
     {
         Gate::authorize(Permission::SubscriptionsManage->value);
@@ -998,6 +960,44 @@ new class extends Component
         $this->success(__('Group registration successful!'));
         $this->memberDrawer = false;
         $this->familyBasket = [];
+    }
+
+    public function saveReconciliation(): void
+    {
+        Gate::authorize(Permission::SubscriptionsManage->value);
+
+        $subscription = Subscription::with('user')->find($this->reconcileSubscriptionId);
+        $pack = TrainingPack::find($this->reconcilePackId);
+
+        if (! $subscription || ! $pack) {
+            return;
+        }
+
+        try {
+            (new ReconcileTrainingPackAction)(
+                $subscription,
+                $pack,
+                $this->reconcileStartsOn,
+                $this->reconcileEndsOn,
+                filled($this->reconcileOverrideAmount) ? (float) $this->reconcileOverrideAmount : null,
+                $this->reconcileOverrideReason,
+                $subscription->has_other_family_members ? 2 : 1,
+            );
+        } catch (DomainException $e) {
+            $this->error($e->getMessage());
+
+            return;
+        }
+
+        unset($this->reviewPackLines);
+
+        $this->reconcileModal = false;
+        $this->reconcileSubscriptionId = null;
+        $this->reconcilePackId = null;
+
+        $this->success(__('Training pack adjusted. New total: :amount €', [
+            'amount' => number_format((float) $subscription->fresh()->amount_due, 2),
+        ]));
     }
 
     #[Computed]

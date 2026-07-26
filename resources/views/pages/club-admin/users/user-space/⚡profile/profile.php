@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-use App\Domains\Shared\Enums\Role;
 use App\Actions\User\StoreUserDocumentAction;
 use App\Actions\User\UpdateUserAction;
 use App\Data\User\UpdateUserData;
-use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Fines\Models\Fine;
+use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\Gender;
+use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Rules\ValidIban;
 use App\Domains\Shared\Rules\ValidPhone;
 use App\Livewire\Concerns\HasBreadcrumbs;
@@ -73,18 +73,6 @@ new class extends Component
     public User $user;
 
     /**
-     * Whether the member is a minor (< 18y) based on the entered birthdate.
-     * Drives whether the parental consent document is relevant.
-     */
-    #[Computed()]
-    public function isMinor(): bool
-    {
-        return $this->birthdate !== null
-            && $this->birthdate !== ''
-            && Carbon::parse($this->birthdate)->age < 18;
-    }
-
-    /**
      * This member's own fines, newest first. Almost always empty — the section
      * renders nothing at all in that case, so it costs no space.
      *
@@ -98,6 +86,18 @@ new class extends Component
             ->where('user_id', $this->user->id)
             ->latest()
             ->get();
+    }
+
+    /**
+     * Whether the member is a minor (< 18y) based on the entered birthdate.
+     * Drives whether the parental consent document is relevant.
+     */
+    #[Computed()]
+    public function isMinor(): bool
+    {
+        return $this->birthdate !== null
+            && $this->birthdate !== ''
+            && Carbon::parse($this->birthdate)->age < 18;
     }
 
     public function mount(User $user): void

@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Resources\views\Pages\ClubEvents\Interclubs\Teams\Edit;
 
-use App\Domains\Shared\Enums\Permission;
-use Illuminate\Support\Facades\Gate;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\League;
@@ -13,10 +11,11 @@ use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\LeagueCategory;
 use App\Domains\Shared\Enums\LeagueLevel;
+use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\Enums\TeamName;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
@@ -29,15 +28,6 @@ new class extends Component
 
     public ?int $captainId = null;
 
-    /** Bascule vers la saisie d'une nouvelle division plutôt que le choix d'une existante. */
-    public bool $newDivisionMode = false;
-
-    public string $newCategory = '';
-
-    public string $newDivision = '';
-
-    public string $newLevel = '';
-
     public ?int $leagueId = null;
 
     public array $memberIds = [];
@@ -45,6 +35,15 @@ new class extends Component
     public string $memberSearch = '';
 
     public string $name = '';
+
+    public string $newCategory = '';
+
+    public string $newDivision = '';
+
+    /** Bascule vers la saisie d'une nouvelle division plutôt que le choix d'une existante. */
+    public bool $newDivisionMode = false;
+
+    public string $newLevel = '';
 
     #[Locked]
     public int $teamId;
@@ -58,20 +57,6 @@ new class extends Component
         $this->captainId = $team->captain_id;
         $this->leagueId = $team->league_id;
         $this->memberIds = $team->users->pluck('id')->toArray();
-    }
-
-    /**
-     * Nombre de rencontres où l'équipe est engagée, à domicile ou en déplacement.
-     *
-     * Les rencontres portent leur propre league_id : déplacer l'équipe une fois
-     * le calendrier encodé laisserait ces rencontres rattachées à l'ancienne
-     * division. La division est donc verrouillée dès la première rencontre.
-     */
-    public function scheduledMatchCount(): int
-    {
-        return Interclub::where('visited_team_id', $this->teamId)
-            ->orWhere('visiting_team_id', $this->teamId)
-            ->count();
     }
 
     public function removeCaptain(): void
@@ -149,6 +134,20 @@ new class extends Component
             'Équipe mise à jour',
             redirectTo: route('admin.interclubs.teams.show', $this->teamId)
         );
+    }
+
+    /**
+     * Nombre de rencontres où l'équipe est engagée, à domicile ou en déplacement.
+     *
+     * Les rencontres portent leur propre league_id : déplacer l'équipe une fois
+     * le calendrier encodé laisserait ces rencontres rattachées à l'ancienne
+     * division. La division est donc verrouillée dès la première rencontre.
+     */
+    public function scheduledMatchCount(): int
+    {
+        return Interclub::where('visited_team_id', $this->teamId)
+            ->orWhere('visiting_team_id', $this->teamId)
+            ->count();
     }
 
     public function setCaptain(int $userId): void

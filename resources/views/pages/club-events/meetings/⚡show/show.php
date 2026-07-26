@@ -2,23 +2,21 @@
 
 declare(strict_types=1);
 
-use App\Domains\Shared\Enums\Permission;
 use App\Domains\ClubAdmin\Payment\Models\Payment;
 use App\Domains\ClubAdmin\Users\Models\User;
-use App\Domains\Shared\Enums\Role;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Meetings\Models\MeetingDateProposal;
-use App\Domains\Meetings\Models\MeetingMinutes;
 use App\Domains\Meetings\Models\MeetingUser;
 use App\Domains\Meetings\Notifications\MeetingCancelledNotification;
 use App\Domains\Meetings\Notifications\MeetingDatePollNotification;
 use App\Domains\Meetings\Notifications\MeetingInvitationNotification;
-use App\Domains\Meetings\Notifications\MeetingMinutesNotification;
 use App\Domains\Meetings\Notifications\MeetingPostponedNotification;
 use App\Domains\Shared\Enums\MeetingFormatEnum;
 use App\Domains\Shared\Enums\MeetingStatusEnum;
 use App\Domains\Shared\Enums\MeetingTypeEnum;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
+use App\Domains\Shared\Enums\Permission;
+use App\Domains\Shared\Enums\Role;
 use App\Jobs\SendMeetingInvitationsJob;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
@@ -35,13 +33,12 @@ new class extends Component
 {
     use HasBreadcrumbs, Toast;
 
-
-    // Card being edited in place: 'title' | 'details' | 'agenda' | 'meal' | 'quorum' | null
-    public ?string $editing = null;
-
     // ── Card drafts ───────────────────────────────────────────────────
     /** @var array<int, array{id: int|null, title: string, description: string}> */
     public array $agendaDraft = [];
+
+    // Cancel / postpone
+    public string $cancellationNote = '';
 
     public string $detailsDescription = '';
 
@@ -57,47 +54,59 @@ new class extends Component
 
     public ?string $detailsScheduledAt = null;
 
-    public bool $mealHasDraft = false;
+    // Card being edited in place: 'title' | 'details' | 'agenda' | 'meal' | 'quorum' | null
+    public ?string $editing = null;
 
     public string $mealDescriptionDraft = '';
 
+    public bool $mealHasDraft = false;
+
     public string $mealPriceDraft = '';
-
-    public ?string $newProposalAt = null;
-
-    public ?int $quorumDraft = null;
-
-    public string $titleDraft = '';
-
-    public string $typeDraft = 'committee';
-
-    // Cancel / postpone
-    public string $cancellationNote = '';
 
     #[Locked]
     public int $meetingId;
 
-
-
+    public ?string $newProposalAt = null;
 
     public string $postponedNote = '';
 
     public string $postponedTo = '';
 
+    public ?int $quorumDraft = null;
+
     // Modals
     public bool $showCancelModal = false;
-
-    public bool $showTitleModal = false;
 
     public bool $showDeleteModal = false;
 
     public bool $showPostponeModal = false;
 
+    public bool $showTitleModal = false;
+
+    public string $titleDraft = '';
+
+    public string $typeDraft = 'committee';
+
+    public function addAgendaDraftItem(): void
+    {
+        $this->agendaDraft[] = ['id' => null, 'title' => '', 'description' => ''];
+    }
+
+    public function addProposal(): void
+    {
+        abort_unless($this->canManage, 403);
+        $this->validate(['newProposalAt' => 'required|date']);
+
+        $this->meeting->dateProposals()->create(['proposed_at' => $this->newProposalAt]);
+
+        $this->newProposalAt = null;
+        $this->toast(type: 'success', title: __('Date option added'));
+        unset($this->meeting);
+    }
+
     // ── Action items ──────────────────────────────────────────────────
 
     // ── Minutes ───────────────────────────────────────────────────────
-
-
 
     public function archiveMeeting(): void
     {
@@ -115,6 +124,11 @@ new class extends Component
 
         $this->toast(type: 'success', title: __('Meeting archived'));
         $this->redirectRoute('admin.meetings.index', navigate: true);
+    }
+
+    public function cancelEditing(): void
+    {
+        $this->editing = null;
     }
 
     public function cancelMeeting(): void
@@ -153,42 +167,22 @@ new class extends Component
             ->orderBy('last_name')->get();
     }
 
-    public function addProposal(): void
-    {
-        abort_unless($this->canManage, 403);
-        $this->validate(['newProposalAt' => 'required|date']);
-
-        $this->meeting->dateProposals()->create(['proposed_at' => $this->newProposalAt]);
-
-        $this->newProposalAt = null;
-        $this->toast(type: 'success', title: __('Date option added'));
-        unset($this->meeting);
-    }
-
-    public function removeProposal(int $proposalId): void
+    public function deleteMeeting(): void
     {
         abort_unless($this->canManage, 403);
 
-        $proposal = $this->meeting->dateProposals()->findOrFail($proposalId);
+        $meeting = Meeting::findOrFail($this->meetingId);
 
-        if ($proposal->votes()->exists()) {
-            $this->toast(type: 'error', title: __('This date already has votes — it cannot be removed'));
+        if (! $meeting->canBeDeleted()) {
+            $this->toast(type: 'error', title: __('This meeting cannot be deleted — invitations have already been sent'));
 
             return;
         }
 
-        $proposal->delete();
-        unset($this->meeting);
-    }
+        $meeting->delete();
 
-    public function addAgendaDraftItem(): void
-    {
-        $this->agendaDraft[] = ['id' => null, 'title' => '', 'description' => ''];
-    }
-
-    public function cancelEditing(): void
-    {
-        $this->editing = null;
+        $this->toast(type: 'warning', title: __('Meeting deleted'));
+        $this->redirectRoute('admin.meetings.index', navigate: true);
     }
 
     // ── Card editing ──────────────────────────────────────────────────
@@ -255,22 +249,11 @@ new class extends Component
         $this->showTitleModal = true;
     }
 
-    public function deleteMeeting(): void
+    /** True once at least one invitation left the building. */
+    #[Computed]
+    public function invitationsSent(): bool
     {
-        abort_unless($this->canManage, 403);
-
-        $meeting = Meeting::findOrFail($this->meetingId);
-
-        if (! $meeting->canBeDeleted()) {
-            $this->toast(type: 'error', title: __('This meeting cannot be deleted — invitations have already been sent'));
-
-            return;
-        }
-
-        $meeting->delete();
-
-        $this->toast(type: 'warning', title: __('Meeting deleted'));
-        $this->redirectRoute('admin.meetings.index', navigate: true);
+        return $this->meeting->users->contains(fn (User $u) => $u->registration->invitation_sent_at !== null);
     }
 
     public function markAbsent(int $userId): void
@@ -338,48 +321,6 @@ new class extends Component
     public function mount(Meeting $meeting): void
     {
         $this->meetingId = $meeting->id;
-    }
-
-    /** True once at least one invitation left the building. */
-    #[Computed]
-    public function invitationsSent(): bool
-    {
-        return $this->meeting->users->contains(fn (User $u) => $u->registration->invitation_sent_at !== null);
-    }
-
-    /** Invitees who have not answered yet. */
-    #[Computed]
-    public function pendingInviteesCount(): int
-    {
-        return $this->meeting->users
-            ->filter(fn (User $u) => $u->registration->status === MeetingUserStatusEnum::INVITED)
-            ->count();
-    }
-
-    /**
-     * What still has to be filled in before invitations may be sent.
-     *
-     * @return array<int, string>
-     */
-    #[Computed]
-    public function sendChecklist(): array
-    {
-        $meeting = $this->meeting;
-        $missing = [];
-
-        if ($meeting->agendaItems->isEmpty()) {
-            $missing[] = __('Add at least one agenda item');
-        }
-
-        if ($meeting->format === MeetingFormatEnum::PHYSICAL && blank($meeting->location)) {
-            $missing[] = __('Set the location');
-        }
-
-        if ($meeting->format === MeetingFormatEnum::VIRTUAL && blank($meeting->meeting_link)) {
-            $missing[] = __('Set the meeting link');
-        }
-
-        return $missing;
     }
 
     /**
@@ -504,6 +445,15 @@ new class extends Component
         return null;
     }
 
+    /** Invitees who have not answered yet. */
+    #[Computed]
+    public function pendingInviteesCount(): int
+    {
+        return $this->meeting->users
+            ->filter(fn (User $u) => $u->registration->status === MeetingUserStatusEnum::INVITED)
+            ->count();
+    }
+
     public function postponeMeeting(): void
     {
         abort_unless($this->canManage, 403);
@@ -528,7 +478,6 @@ new class extends Component
         $this->toast(type: 'info', title: __('Meeting postponed'));
         unset($this->meeting);
     }
-
 
     /** Resend the invitation to invitees who never responded, at most once every 48 hours. */
     public function remindPendingInvitees(): void
@@ -561,6 +510,27 @@ new class extends Component
     public function removeAgendaDraftItem(int $i): void
     {
         array_splice($this->agendaDraft, $i, 1);
+    }
+
+    public function removeProposal(int $proposalId): void
+    {
+        abort_unless($this->canManage, 403);
+
+        $proposal = $this->meeting->dateProposals()->findOrFail($proposalId);
+
+        if ($proposal->votes()->exists()) {
+            $this->toast(type: 'error', title: __('This date already has votes — it cannot be removed'));
+
+            return;
+        }
+
+        $proposal->delete();
+        unset($this->meeting);
+    }
+
+    public function render(): View
+    {
+        return $this->view();
     }
 
     /** wire:sort handler on the read view — persists the new agenda order immediately. */
@@ -736,16 +706,6 @@ new class extends Component
         unset($this->meeting);
     }
 
-
-
-
-    public function render(): View
-    {
-        return $this->view();
-    }
-
-
-
     public function selectDateProposal(int $proposalId): void
     {
         abort_unless($this->canManage, 403);
@@ -765,6 +725,32 @@ new class extends Component
             'date' => $proposal->proposed_at->translatedFormat('d M Y à H\hi'),
         ]));
         unset($this->meeting);
+    }
+
+    /**
+     * What still has to be filled in before invitations may be sent.
+     *
+     * @return array<int, string>
+     */
+    #[Computed]
+    public function sendChecklist(): array
+    {
+        $meeting = $this->meeting;
+        $missing = [];
+
+        if ($meeting->agendaItems->isEmpty()) {
+            $missing[] = __('Add at least one agenda item');
+        }
+
+        if ($meeting->format === MeetingFormatEnum::PHYSICAL && blank($meeting->location)) {
+            $missing[] = __('Set the location');
+        }
+
+        if ($meeting->format === MeetingFormatEnum::VIRTUAL && blank($meeting->meeting_link)) {
+            $missing[] = __('Set the meeting link');
+        }
+
+        return $missing;
     }
 
     // ── Date poll ─────────────────────────────────────────────────────
@@ -818,7 +804,6 @@ new class extends Component
         unset($this->meeting);
     }
 
-
     public function unarchiveMeeting(): void
     {
         abort_unless($this->canManage, 403);
@@ -828,7 +813,6 @@ new class extends Component
         $this->toast(type: 'success', title: __('Meeting restored'));
         unset($this->meeting);
     }
-
 
     public function with(): array
     {
@@ -843,8 +827,6 @@ new class extends Component
             ->home()
             ->current(__('Meeting Details'));
     }
-
-
 
     // ── Cancel / postpone ─────────────────────────────────────────────
 

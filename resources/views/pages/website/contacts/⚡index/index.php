@@ -135,6 +135,13 @@ new class extends Component
         $this->error(trans_choice('selectedCount', $count, ['count' => $count]) . ' ' . __('deleted.'));
     }
 
+    public function cancelLink(): void
+    {
+        $this->confirmLinkModal = false;
+        $this->linkTargetContactId = null;
+        $this->warning(__('Contact left unprocessed. A member account can only have one email address — fix the contact\'s email or resolve the match manually before onboarding.'));
+    }
+
     public function clearFilters(): void
     {
         $this->status = '';
@@ -252,31 +259,6 @@ new class extends Component
         return $this->contacts->total();
     }
 
-    public function cancelLink(): void
-    {
-        $this->confirmLinkModal = false;
-        $this->linkTargetContactId = null;
-        $this->warning(__('Contact left unprocessed. A member account can only have one email address — fix the contact\'s email or resolve the match manually before onboarding.'));
-    }
-
-    public function matchedUserFor(Contact $contact): ?User
-    {
-        if ($contact->status === 'processed') {
-            return null;
-        }
-
-        return OnboardFromContactAction::matchExistingUser($contact->email);
-    }
-
-    public function trashedMatchFor(Contact $contact): ?User
-    {
-        if ($contact->status === 'processed') {
-            return null;
-        }
-
-        return OnboardFromContactAction::matchTrashedUser($contact->email);
-    }
-
     public function linkToExistingUser(): void
     {
         $this->authorizeManagement();
@@ -294,6 +276,15 @@ new class extends Component
         OnboardFromContactAction::linkToExisting($contact, $existingUser);
 
         $this->success(__('Contact linked to existing account for :email.', ['email' => $contact->email]));
+    }
+
+    public function matchedUserFor(Contact $contact): ?User
+    {
+        if ($contact->status === 'processed') {
+            return null;
+        }
+
+        return OnboardFromContactAction::matchExistingUser($contact->email);
     }
 
     public function onboardContact(int $id): void
@@ -379,6 +370,15 @@ new class extends Component
         $this->pendingApplyStatus = null;
 
         $this->success(__('Email sent.'));
+    }
+
+    public function trashedMatchFor(Contact $contact): ?User
+    {
+        if ($contact->status === 'processed') {
+            return null;
+        }
+
+        return OnboardFromContactAction::matchTrashedUser($contact->email);
     }
 
     public function updateContactProfile(): void

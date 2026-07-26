@@ -21,7 +21,6 @@ new class extends Component
 
     public ?int $deletingRoomId = null;
 
-
     // ── Actions ───────────────────────────────────────────────────────────────
 
     public function confirmDeleteRoom(int $id): void
@@ -59,7 +58,6 @@ new class extends Component
         $this->deleteRoomModal = false;
         $this->deletingRoomId = null;
     }
-
 
     public function render(): View
     {

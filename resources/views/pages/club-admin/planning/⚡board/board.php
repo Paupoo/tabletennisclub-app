@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Resources\views\Pages\ClubAdmin\Planning\Board;
 
-use App\Domains\Shared\Enums\Permission;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\AgeCategoryEnum;
+use App\Domains\Shared\Enums\Permission;
 use App\Domains\Shared\Enums\TrainingPlanStatusEnum;
 use App\Domains\Trainings\Models\TrainingPlan;
 use App\Domains\Trainings\Models\TrainingPlanAssignment;

@@ -2,14 +2,13 @@
 
 declare(strict_types=1);
 
-use App\Domains\Shared\Enums\Permission;
 use App\Domains\ClubAdmin\Users\Models\User;
-use App\Domains\Shared\Enums\Role;
 use App\Domains\Meetings\Models\Meeting;
 use App\Domains\Meetings\Models\MeetingMinutes;
 use App\Domains\Meetings\Notifications\MeetingMinutesNotification;
-use App\Domains\Shared\Enums\MeetingTypeEnum;
 use App\Domains\Shared\Enums\MeetingUserStatusEnum;
+use App\Domains\Shared\Enums\Permission;
+use App\Domains\Shared\Enums\Role;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Facades\Notification;
@@ -65,6 +64,20 @@ new class extends Component
         return $user instanceof User && $user->can(Permission::MeetingsManage->value);
     }
 
+    /** Whether the current user holds the note-taking lock. */
+    #[Computed]
+    public function holdsLock(): bool
+    {
+        return $this->meeting->minutesLockHolder()?->id === auth()->id();
+    }
+
+    /** Who currently takes notes (null when the lock is free or stale). */
+    #[Computed]
+    public function lockHolder(): ?User
+    {
+        return $this->meeting->minutesLockHolder();
+    }
+
     public function markAbsent(int $userId): void
     {
         abort_unless($this->canManage, 403);
@@ -91,20 +104,6 @@ new class extends Component
         return Meeting::with(['users', 'minutes', 'actionItems.assignedTo', 'agendaItems', 'minutesEditor'])->findOrFail($this->meetingId);
     }
 
-    /** Whether the current user holds the note-taking lock. */
-    #[Computed]
-    public function holdsLock(): bool
-    {
-        return $this->meeting->minutesLockHolder()?->id === auth()->id();
-    }
-
-    /** Who currently takes notes (null when the lock is free or stale). */
-    #[Computed]
-    public function lockHolder(): ?User
-    {
-        return $this->meeting->minutesLockHolder();
-    }
-
     public function mount(Meeting $meeting): void
     {
         abort_unless($this->canManage, 403);
@@ -114,16 +113,6 @@ new class extends Component
         // Opening the page must never take the pen — a reader would dispossess the
         // note taker. The pen is claimed on the first edit instead (see claimPen).
         $this->hydrateDraft($meeting);
-    }
-
-    /** Poll target for read-only viewers: pull the note taker's latest draft from the database. */
-    public function syncDraft(): void
-    {
-        if ($this->holdsLock) {
-            return;
-        }
-
-        $this->hydrateDraft($this->meeting);
     }
 
     public function publishMinutes(): void
@@ -203,6 +192,16 @@ new class extends Component
         unset($this->meeting);
     }
 
+    /** Poll target for read-only viewers: pull the note taker's latest draft from the database. */
+    public function syncDraft(): void
+    {
+        if ($this->holdsLock) {
+            return;
+        }
+
+        $this->hydrateDraft($this->meeting);
+    }
+
     /** Explicit takeover: wrestle the pen from the current holder. */
     public function takeOver(): void
     {
@@ -261,24 +260,6 @@ new class extends Component
             ->current(__('Minutes'));
     }
 
-    private function hydrateDraft(Meeting $meeting): void
-    {
-        $minutes = $meeting->minutes;
-        $this->announcements = $minutes->announcements ?? [];
-        $this->decisions = $minutes->decisions ?? [];
-        $this->notes = $minutes->notes ?? '';
-
-        $this->actionItems = $meeting->actionItems
-            ->map(fn ($item) => [
-                'title' => $item->title,
-                'description' => $item->description ?? '',
-                'assigned_to_id' => (string) ($item->assigned_to_id ?? ''),
-                'due_date' => $item->due_date?->format('Y-m-d') ?? '',
-                'is_completed' => $item->is_completed,
-            ])
-            ->toArray();
-    }
-
     /**
      * Claim the note-taking pen for the current user on a write. Succeeds when the
      * pen is free/stale or already theirs; fails (with a warning) only when another
@@ -296,6 +277,24 @@ new class extends Component
         $this->toast(type: 'warning', title: __(':name is taking notes', ['name' => $this->lockHolder?->full_name ?? '']));
 
         return false;
+    }
+
+    private function hydrateDraft(Meeting $meeting): void
+    {
+        $minutes = $meeting->minutes;
+        $this->announcements = $minutes->announcements ?? [];
+        $this->decisions = $minutes->decisions ?? [];
+        $this->notes = $minutes->notes ?? '';
+
+        $this->actionItems = $meeting->actionItems
+            ->map(fn ($item) => [
+                'title' => $item->title,
+                'description' => $item->description ?? '',
+                'assigned_to_id' => (string) ($item->assigned_to_id ?? ''),
+                'due_date' => $item->due_date?->format('Y-m-d') ?? '',
+                'is_completed' => $item->is_completed,
+            ])
+            ->toArray();
     }
 
     private function persistDraft(): MeetingMinutes

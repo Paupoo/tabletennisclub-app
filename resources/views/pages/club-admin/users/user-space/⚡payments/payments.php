@@ -41,21 +41,78 @@ new class extends Component
     #[Url]
     public ?int $personFilter = null;
 
+    public ?int $selectedPaymentId = null;
+
     #[Url]
     public string $statusFilter = '';
 
     #[Url]
     public string $typeFilter = '';
 
-    public ?int $selectedPaymentId = null;
-
     public User $user;
+
+    public function clearFilters(): void
+    {
+        $this->reset(['statusFilter', 'typeFilter', 'personFilter']);
+        $this->resetPage();
+    }
+
+    /**
+     * @return array<int, array{key: string, label: string}>
+     */
+    public function getFilterChips(): array
+    {
+        return array_values(array_filter([
+            $this->statusFilter !== '' ? ['key' => 'statusFilter', 'label' => $this->statusOptions()[$this->statusFilter] ?? $this->statusFilter] : null,
+            $this->typeFilter !== '' ? ['key' => 'typeFilter', 'label' => $this->typeOptions()[$this->typeFilter] ?? $this->typeFilter] : null,
+            $this->personFilter ? [
+                'key' => 'personFilter',
+                'label' => $this->payableUsers->firstWhere('id', $this->personFilter)?->full_name ?? (string) $this->personFilter,
+            ] : null,
+        ]));
+    }
 
     public function mount(User $user): void
     {
         abort_unless(Auth::user()->is($user), 403);
 
         $this->user = $user;
+    }
+
+    public function openPaymentModal(int $paymentId): void
+    {
+        $payment = Payment::with('payable')->findOrFail($paymentId);
+
+        // Never generate a QR for a payment outside this member's scope.
+        abort_unless(
+            in_array($payment->payable?->user_id, $this->user->payableUserIds(), true),
+            403
+        );
+
+        $this->selectedPaymentId = $paymentId;
+        $this->paymentQr = (new GeneratePaymentQR)($payment);
+        $this->paymentModal = true;
+    }
+
+    #[Computed]
+    public function ourClub(): ?Club
+    {
+        return Club::ourClub()->first();
+    }
+
+    /**
+     * The people whose payments are in scope (self + guarded users), for the
+     * person filter. Only meaningful when the member guards someone.
+     *
+     * @return Collection<int, User>
+     */
+    #[Computed]
+    public function payableUsers(): Collection
+    {
+        return User::query()
+            ->whereIn('id', $this->user->payableUserIds())
+            ->orderBy('first_name')
+            ->get(['id', 'first_name', 'last_name']);
     }
 
     /**
@@ -89,18 +146,14 @@ new class extends Component
     }
 
     /**
-     * The people whose payments are in scope (self + guarded users), for the
-     * person filter. Only meaningful when the member guards someone.
-     *
-     * @return Collection<int, User>
+     * @return array<string, string>
      */
-    #[Computed]
-    public function payableUsers(): Collection
+    public function statusOptions(): array
     {
-        return User::query()
-            ->whereIn('id', $this->user->payableUserIds())
-            ->orderBy('first_name')
-            ->get(['id', 'first_name', 'last_name']);
+        return [
+            'pending' => __('Pending'),
+            'paid' => __('Paid'),
+        ];
     }
 
     /**
@@ -113,59 +166,6 @@ new class extends Component
             TournamentRegistration::class => __('Tournament'),
             MeetingUser::class => __('Meeting'),
         ];
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public function statusOptions(): array
-    {
-        return [
-            'pending' => __('Pending'),
-            'paid' => __('Paid'),
-        ];
-    }
-
-    #[Computed]
-    public function ourClub(): ?Club
-    {
-        return Club::ourClub()->first();
-    }
-
-    public function openPaymentModal(int $paymentId): void
-    {
-        $payment = Payment::with('payable')->findOrFail($paymentId);
-
-        // Never generate a QR for a payment outside this member's scope.
-        abort_unless(
-            in_array($payment->payable?->user_id, $this->user->payableUserIds(), true),
-            403
-        );
-
-        $this->selectedPaymentId = $paymentId;
-        $this->paymentQr = (new GeneratePaymentQR)($payment);
-        $this->paymentModal = true;
-    }
-
-    /**
-     * @return array<int, array{key: string, label: string}>
-     */
-    public function getFilterChips(): array
-    {
-        return array_values(array_filter([
-            $this->statusFilter !== '' ? ['key' => 'statusFilter', 'label' => $this->statusOptions()[$this->statusFilter] ?? $this->statusFilter] : null,
-            $this->typeFilter !== '' ? ['key' => 'typeFilter', 'label' => $this->typeOptions()[$this->typeFilter] ?? $this->typeFilter] : null,
-            $this->personFilter ? [
-                'key' => 'personFilter',
-                'label' => $this->payableUsers->firstWhere('id', $this->personFilter)?->full_name ?? (string) $this->personFilter,
-            ] : null,
-        ]));
-    }
-
-    public function clearFilters(): void
-    {
-        $this->reset(['statusFilter', 'typeFilter', 'personFilter']);
-        $this->resetPage();
     }
 
     public function updated(string $property): void

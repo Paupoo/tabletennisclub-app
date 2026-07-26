@@ -10,10 +10,10 @@ use App\Data\User\CreateUserData;
 use App\Data\User\UpdateUserData;
 use App\Domains\ClubAdmin\Users\Models\FamilyGroup;
 use App\Domains\ClubAdmin\Users\Models\User;
-use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Enums\CommitteeRolesEnum;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\Ranking;
+use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Rules\ValidIban;
 use App\Domains\Shared\Rules\ValidPhone;
 use App\Livewire\Concerns\HasBreadcrumbs;
@@ -74,12 +74,12 @@ new class extends Component
 
     public ?int $existingFamilyGroupId = null;
 
+    /** @var array<int> Linked family member ids (source of truth, synced on save). */
+    public array $familyMemberIds = [];
+
     // Family
 
     public string $familySearch = '';
-
-    /** @var array<int> Linked family member ids (source of truth, synced on save). */
-    public array $familyMemberIds = [];
 
     // Personal Info
 
@@ -128,26 +128,6 @@ new class extends Component
 
     public ?User $user = null;
 
-    /**
-     * The family group the edited user is (or will be) part of: their own group,
-     * or the group of an already-linked member when they are joining an existing
-     * family. Null while no family is established on either side.
-     */
-    private function allowedFamilyGroupId(): ?int
-    {
-        if ($this->existingFamilyGroupId !== null) {
-            return $this->existingFamilyGroupId;
-        }
-
-        if ($this->familyMemberIds === []) {
-            return null;
-        }
-
-        return FamilyGroup::query()
-            ->whereHas('users', fn ($query) => $query->whereIn('users.id', $this->familyMemberIds))
-            ->value('id');
-    }
-
     public function attachFamilyMember(int $userId): void
     {
         $candidate = User::findOrFail($userId);
@@ -177,46 +157,6 @@ new class extends Component
         return CommitteeRolesEnum::getOptions();
     }
 
-    /**
-     * @return array<int, array{value: string, label: string, description: string}>
-     */
-    #[Computed()]
-    public function delegationOptions(): array
-    {
-        return array_map(static fn (Role $role): array => [
-            'value' => $role->value,
-            'label' => $role->label(),
-            'description' => $role->description(),
-        ], Role::delegations());
-    }
-
-    /**
-     * Pre-checks the duties usually handed over with a statutory title.
-     *
-     * A suggestion, never an automatism: the admin can uncheck any of them, and a
-     * treasurer who does not handle the cash box is a legitimate situation. Only
-     * adds — unchecking something then picking another title must not bring it back.
-     */
-    public function updatedCommitteeRole(): void
-    {
-        if ($this->committee_role === null || $this->committee_role === '') {
-            return;
-        }
-
-        $title = CommitteeRolesEnum::tryFrom($this->committee_role);
-
-        if (! $title instanceof CommitteeRolesEnum) {
-            return;
-        }
-
-        $suggested = array_map(
-            static fn (Role $role): string => $role->value,
-            Role::suggestedFor($title),
-        );
-
-        $this->delegations = array_values(array_unique([...$this->delegations, ...$suggested]));
-    }
-
     public function confirmAnonymize(): void
     {
         Gate::authorize('anonymize', $this->user);
@@ -233,6 +173,19 @@ new class extends Component
         $this->anonymizeConfirmText = '';
 
         $this->success(__('User anonymized. All personal data has been erased.'), redirectTo: route('admin.users.index'));
+    }
+
+    /**
+     * @return array<int, array{value: string, label: string, description: string}>
+     */
+    #[Computed()]
+    public function delegationOptions(): array
+    {
+        return array_map(static fn (Role $role): array => [
+            'value' => $role->value,
+            'label' => $role->label(),
+            'description' => $role->description(),
+        ], Role::delegations());
     }
 
     public function detachFamilyMember(int $userId): void
@@ -559,6 +512,33 @@ new class extends Component
         $this->success(__('Password reset link sent to :email.', ['email' => $this->user->email]));
     }
 
+    /**
+     * Pre-checks the duties usually handed over with a statutory title.
+     *
+     * A suggestion, never an automatism: the admin can uncheck any of them, and a
+     * treasurer who does not handle the cash box is a legitimate situation. Only
+     * adds — unchecking something then picking another title must not bring it back.
+     */
+    public function updatedCommitteeRole(): void
+    {
+        if ($this->committee_role === null || $this->committee_role === '') {
+            return;
+        }
+
+        $title = CommitteeRolesEnum::tryFrom($this->committee_role);
+
+        if (! $title instanceof CommitteeRolesEnum) {
+            return;
+        }
+
+        $suggested = array_map(
+            static fn (Role $role): string => $role->value,
+            Role::suggestedFor($title),
+        );
+
+        $this->delegations = array_values(array_unique([...$this->delegations, ...$suggested]));
+    }
+
     public function with(): array
     {
         return [
@@ -636,5 +616,25 @@ new class extends Component
             ->home()
             ->users()
             ->current($this->user?->exists ? __('Edit') : __('Create'));
+    }
+
+    /**
+     * The family group the edited user is (or will be) part of: their own group,
+     * or the group of an already-linked member when they are joining an existing
+     * family. Null while no family is established on either side.
+     */
+    private function allowedFamilyGroupId(): ?int
+    {
+        if ($this->existingFamilyGroupId !== null) {
+            return $this->existingFamilyGroupId;
+        }
+
+        if ($this->familyMemberIds === []) {
+            return null;
+        }
+
+        return FamilyGroup::query()
+            ->whereHas('users', fn ($query) => $query->whereIn('users.id', $this->familyMemberIds))
+            ->value('id');
     }
 };

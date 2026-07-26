@@ -97,6 +97,11 @@ new class extends Component
         $this->warning(__('Registration cancelled.'));
     }
 
+    public function clearFilters(): void
+    {
+        $this->reset(['eventType', 'onlyPayable']);
+    }
+
     public function confirmCancel(): void
     {
         if ($this->cancelConfirmId) {
@@ -116,6 +121,32 @@ new class extends Component
 
         unset($this->upcomingTournaments);
         $this->success(__('Spot confirmed!'));
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function eventTypeOptions(): array
+    {
+        return [
+            'tournament' => __('Tournaments'),
+            'meeting' => __('Meetings'),
+            'training' => __('Trainings'),
+        ];
+    }
+
+    /**
+     * @return array<int, array{key: string, label: string}>
+     */
+    public function getFilterChips(): array
+    {
+        return array_values(array_filter([
+            $this->eventType !== '' ? [
+                'key' => 'eventType',
+                'label' => $this->eventTypeOptions()[$this->eventType] ?? $this->eventType,
+            ] : null,
+            $this->onlyPayable ? ['key' => 'onlyPayable', 'label' => __('To pay only')] : null,
+        ]));
     }
 
     /**
@@ -141,45 +172,6 @@ new class extends Component
             ->whereIn('meeting_id', $meetingIds)
             ->get()
             ->keyBy('meeting_id');
-    }
-
-    public function clearFilters(): void
-    {
-        $this->reset(['eventType', 'onlyPayable']);
-    }
-
-    /**
-     * @return array<int, array{key: string, label: string}>
-     */
-    public function getFilterChips(): array
-    {
-        return array_values(array_filter([
-            $this->eventType !== '' ? [
-                'key' => 'eventType',
-                'label' => $this->eventTypeOptions()[$this->eventType] ?? $this->eventType,
-            ] : null,
-            $this->onlyPayable ? ['key' => 'onlyPayable', 'label' => __('To pay only')] : null,
-        ]));
-    }
-
-    /**
-     * No pagination on this page: plain property reset.
-     */
-    public function removeFilter(string $key): void
-    {
-        $this->reset([$key]);
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public function eventTypeOptions(): array
-    {
-        return [
-            'tournament' => __('Tournaments'),
-            'meeting' => __('Meetings'),
-            'training' => __('Trainings'),
-        ];
     }
 
     public function mount(User $user): void
@@ -290,6 +282,14 @@ new class extends Component
         $this->success(__('Pair registered!'), icon: 'o-user-group');
     }
 
+    /**
+     * No pagination on this page: plain property reset.
+     */
+    public function removeFilter(string $key): void
+    {
+        $this->reset([$key]);
+    }
+
     public function removeFromPair(int $tournamentId): void
     {
         TournamentPair::where('tournament_id', $tournamentId)
@@ -315,19 +315,6 @@ new class extends Component
         $this->meetingRsvpModal = false;
         unset($this->upcomingMeetings, $this->meetingRegistrations, $this->pendingPayments);
         $this->success(__('Your participation has been updated.'), icon: 'o-calendar-days');
-    }
-
-    /**
-     * User's upcoming confirmed meetings, unfiltered — the base list shared by
-     * both {@see upcomingMeetings()} and {@see meetingRegistrations()}.
-     */
-    private function baseUpcomingMeetings(): Collection
-    {
-        return $this->user->meetings()
-            ->where('meetings.status', MeetingStatusEnum::CONFIRMED->value)
-            ->where('scheduled_at', '>=', now())
-            ->orderBy('scheduled_at')
-            ->get();
     }
 
     #[Computed]
@@ -422,5 +409,18 @@ new class extends Component
         return Breadcrumb::make()
             ->home()
             ->current(__('Events & Activities'));
+    }
+
+    /**
+     * User's upcoming confirmed meetings, unfiltered — the base list shared by
+     * both {@see upcomingMeetings()} and {@see meetingRegistrations()}.
+     */
+    private function baseUpcomingMeetings(): Collection
+    {
+        return $this->user->meetings()
+            ->where('meetings.status', MeetingStatusEnum::CONFIRMED->value)
+            ->where('scheduled_at', '>=', now())
+            ->orderBy('scheduled_at')
+            ->get();
     }
 };

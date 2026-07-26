@@ -36,13 +36,32 @@ new class extends Component
 
     public User $user;
 
-    public function mount(User $user): void
+    public function clearFilters(): void
     {
-        abort_unless(Auth::user()->is($user), 403);
+        $this->reset(['rankingFilter', 'teamFilter']);
+        $this->seasonFilter = Season::current()?->id;
+        $this->resetPage();
+    }
 
-        $this->user = $user;
-        // Default the team-season filter to the current season.
-        $this->seasonFilter ??= Season::current()?->id;
+    /**
+     * @return array<int, array{key: string, label: string}>
+     */
+    public function getFilterChips(): array
+    {
+        $currentSeasonId = Season::current()?->id;
+
+        return array_values(array_filter([
+            $this->rankingFilter !== '' ? ['key' => 'rankingFilter', 'label' => $this->rankingFilter] : null,
+            $this->teamFilter ? [
+                'key' => 'teamFilter',
+                'label' => $this->teamsForFilter->firstWhere('id', $this->teamFilter)['name'] ?? (string) $this->teamFilter,
+            ] : null,
+            // Only chip the season when it departs from the current-season default.
+            ($this->seasonFilter && $this->seasonFilter !== $currentSeasonId) ? [
+                'key' => 'seasonFilter',
+                'label' => Season::find($this->seasonFilter)?->name ?? (string) $this->seasonFilter,
+            ] : null,
+        ]));
     }
 
     /**
@@ -68,38 +87,13 @@ new class extends Component
             ->paginate(24);
     }
 
-    /**
-     * Teams of the selected season, for the team filter. Each option carries the
-     * category ("A · Veterans") because team names alone (A, B, …) repeat across
-     * men/women/veterans.
-     *
-     * @return Collection<int, array{id: int, name: string}>
-     */
-    #[Computed]
-    public function teamsForFilter(): Collection
+    public function mount(User $user): void
     {
-        return Team::query()
-            ->when($this->seasonFilter, fn (EloquentBuilder $q) => $q->where('season_id', $this->seasonFilter))
-            ->with('league:id,category')
-            ->orderBy('name')
-            ->get(['id', 'name', 'league_id'])
-            ->map(fn (Team $team): array => [
-                'id' => $team->id,
-                'name' => ($category = LeagueCategory::fromName($team->league?->category))
-                    ? $team->name.' · '.$category->label()
-                    : $team->name,
-            ]);
-    }
+        abort_unless(Auth::user()->is($user), 403);
 
-    /**
-     * Seasons for the season filter, oldest first.
-     *
-     * @return Collection<int, Season>
-     */
-    #[Computed]
-    public function seasonsForFilter(): Collection
-    {
-        return Season::orderBy('start_at')->get(['id', 'name']);
+        $this->user = $user;
+        // Default the team-season filter to the current season.
+        $this->seasonFilter ??= Season::current()?->id;
     }
 
     /**
@@ -119,34 +113,6 @@ new class extends Component
     }
 
     /**
-     * @return array<int, array{key: string, label: string}>
-     */
-    public function getFilterChips(): array
-    {
-        $currentSeasonId = Season::current()?->id;
-
-        return array_values(array_filter([
-            $this->rankingFilter !== '' ? ['key' => 'rankingFilter', 'label' => $this->rankingFilter] : null,
-            $this->teamFilter ? [
-                'key' => 'teamFilter',
-                'label' => $this->teamsForFilter->firstWhere('id', $this->teamFilter)['name'] ?? (string) $this->teamFilter,
-            ] : null,
-            // Only chip the season when it departs from the current-season default.
-            ($this->seasonFilter && $this->seasonFilter !== $currentSeasonId) ? [
-                'key' => 'seasonFilter',
-                'label' => Season::find($this->seasonFilter)?->name ?? (string) $this->seasonFilter,
-            ] : null,
-        ]));
-    }
-
-    public function clearFilters(): void
-    {
-        $this->reset(['rankingFilter', 'teamFilter']);
-        $this->seasonFilter = Season::current()?->id;
-        $this->resetPage();
-    }
-
-    /**
      * Removing the season chip returns to the current season (its default),
      * not to "all seasons"; other filters reset normally.
      */
@@ -162,6 +128,40 @@ new class extends Component
 
         $this->reset([$key]);
         $this->resetPage();
+    }
+
+    /**
+     * Seasons for the season filter, oldest first.
+     *
+     * @return Collection<int, Season>
+     */
+    #[Computed]
+    public function seasonsForFilter(): Collection
+    {
+        return Season::orderBy('start_at')->get(['id', 'name']);
+    }
+
+    /**
+     * Teams of the selected season, for the team filter. Each option carries the
+     * category ("A · Veterans") because team names alone (A, B, …) repeat across
+     * men/women/veterans.
+     *
+     * @return Collection<int, array{id: int, name: string}>
+     */
+    #[Computed]
+    public function teamsForFilter(): Collection
+    {
+        return Team::query()
+            ->when($this->seasonFilter, fn (EloquentBuilder $q) => $q->where('season_id', $this->seasonFilter))
+            ->with('league:id,category')
+            ->orderBy('name')
+            ->get(['id', 'name', 'league_id'])
+            ->map(fn (Team $team): array => [
+                'id' => $team->id,
+                'name' => ($category = LeagueCategory::fromName($team->league?->category))
+                    ? $team->name . ' · ' . $category->label()
+                    : $team->name,
+            ]);
     }
 
     public function updated(string $property): void

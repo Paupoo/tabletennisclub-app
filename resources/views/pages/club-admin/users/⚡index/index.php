@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Domains\Shared\Enums\Permission;
-use Illuminate\Support\Facades\Gate;
 use App\Actions\User\AnonymizeUserAction;
 use App\Actions\User\CreateUserAction;
 use App\Actions\User\RecalculateForceListAction;
@@ -15,6 +13,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\Gender;
+use App\Domains\Shared\Enums\Permission;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasBulkActions;
 use App\Livewire\Concerns\HasFilterDrawer;
@@ -22,6 +21,7 @@ use App\Support\Breadcrumb;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule as ValidationRule;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
@@ -241,7 +241,7 @@ new class extends Component
 
         try {
             SoftDeleteUserAction::handle($user);
-        } catch (\DomainException $e) {
+        } catch (DomainException $e) {
             $this->error($e->getMessage());
 
             return;

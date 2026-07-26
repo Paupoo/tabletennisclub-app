@@ -2,13 +2,12 @@
 
 declare(strict_types=1);
 
-use App\Domains\Shared\Enums\Permission;
-use Illuminate\Support\Facades\Gate;
 use App\Domains\ClubAdmin\Fines\Actions\CancelFine;
 use App\Domains\ClubAdmin\Fines\Actions\IssueFine;
 use App\Domains\ClubAdmin\Fines\Models\Fine;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Shared\Enums\FineReason;
+use App\Domains\Shared\Enums\Permission;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
@@ -16,6 +15,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -28,14 +28,14 @@ new class extends Component
 
     public ?float $amount = null;
 
-    public string $description = '';
-
-    public string $federationReference = '';
+    public ?int $cancelFineId = null;
 
     // ── Cancel modal
     public bool $cancelModal = false;
 
-    public ?int $cancelFineId = null;
+    public string $description = '';
+
+    public string $federationReference = '';
 
     // ── Issue drawer
     public bool $fineDrawer = false;
@@ -54,133 +54,6 @@ new class extends Component
 
     #[Url]
     public string $statusFilter = '';
-
-    public function mount(): void
-    {
-        Gate::authorize(Permission::FinesView->value);
-
-        // Deep link from a member row: /admin/treasury/fines?member=123
-        if ($memberId = request()->integer('member')) {
-            $this->openFineDrawer($memberId);
-        }
-    }
-
-    /**
-     * @return LengthAwarePaginator<int, Fine>
-     */
-    #[Computed]
-    public function fines(): LengthAwarePaginator
-    {
-        return Fine::query()
-            ->with(['user', 'issuer', 'payment'])
-            ->when($this->statusFilter, fn (EloquentBuilder $q) => $q->whereHas(
-                'payment',
-                fn (EloquentBuilder $p) => $p->where('status', $this->statusFilter)
-            ))
-            ->latest()
-            ->paginate(20);
-    }
-
-    /**
-     * Feeds the searchable member picker (maryUI x-choices calls this method).
-     * Reuses the compound-name scope, so "Jean Van" finds "Jean-Pierre Van
-     * Oudenhove". The selected member is always kept in the list so the choice
-     * stays visible once picked.
-     */
-    public function search(string $value = ''): void
-    {
-        $selected = $this->memberId
-            ? User::whereKey($this->memberId)->get(['id', 'first_name', 'last_name'])
-            : new Collection;
-
-        $this->memberOptions = User::query()
-            ->when($value, fn (EloquentBuilder $q) => $q->searchName($value))
-            ->orderBy('last_name')
-            ->orderBy('first_name')
-            ->take(10)
-            ->get(['id', 'first_name', 'last_name'])
-            ->merge($selected)
-            ->unique('id')
-            ->map(fn (User $user): array => ['id' => $user->id, 'name' => $user->full_name])
-            ->values()
-            ->all();
-    }
-
-    public function openFineDrawer(?int $memberId = null): void
-    {
-        Gate::authorize(Permission::FinesIssue->value);
-
-        $this->reset(['amount', 'description', 'federationReference', 'pedagogicalMessage', 'reason', 'messageEdited']);
-        $this->memberId = $memberId;
-        $this->reason = FineReason::UNJUSTIFIED_ABSENCE->value;
-        $this->pedagogicalMessage = $this->suggestedMessage();
-        $this->search();
-        $this->fineDrawer = true;
-    }
-
-    public function updated(string $property): void
-    {
-        if ($property === 'pedagogicalMessage') {
-            $this->messageEdited = true;
-
-            return;
-        }
-
-        // Keep the suggestion in sync until the committee takes over the wording.
-        if (in_array($property, ['memberId', 'reason', 'amount'], true) && ! $this->messageEdited) {
-            $this->pedagogicalMessage = $this->suggestedMessage();
-        }
-    }
-
-    public function resetMessage(): void
-    {
-        $this->messageEdited = false;
-        $this->pedagogicalMessage = $this->suggestedMessage();
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    public function rules(): array
-    {
-        return [
-            'memberId' => ['required', 'exists:users,id'],
-            'amount' => ['required', 'numeric', 'min:0.01'],
-            'reason' => ['required', 'string', 'in:'.implode(',', array_column(FineReason::cases(), 'value'))],
-            'pedagogicalMessage' => ['required', 'string', 'min:10'],
-            'federationReference' => ['nullable', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-        ];
-    }
-
-    public function issueFine(IssueFine $issueFine): void
-    {
-        Gate::authorize(Permission::FinesIssue->value);
-
-        $this->validate();
-
-        $issueFine(
-            User::findOrFail($this->memberId),
-            Auth::user(),
-            FineReason::from($this->reason),
-            (float) $this->amount,
-            $this->pedagogicalMessage,
-            $this->federationReference ?: null,
-            $this->description ?: null,
-        );
-
-        $this->fineDrawer = false;
-        unset($this->fines);
-        $this->success(__('Fine issued and the member has been notified.'));
-    }
-
-    public function confirmCancel(int $fineId): void
-    {
-        Gate::authorize(Permission::FinesCancel->value);
-
-        $this->cancelFineId = $fineId;
-        $this->cancelModal = true;
-    }
 
     public function cancelFine(CancelFine $cancelFine): void
     {
@@ -217,6 +90,36 @@ new class extends Component
             : null;
     }
 
+    public function clearFilters(): void
+    {
+        $this->reset(['statusFilter']);
+        $this->resetPage();
+    }
+
+    public function confirmCancel(int $fineId): void
+    {
+        Gate::authorize(Permission::FinesCancel->value);
+
+        $this->cancelFineId = $fineId;
+        $this->cancelModal = true;
+    }
+
+    /**
+     * @return LengthAwarePaginator<int, Fine>
+     */
+    #[Computed]
+    public function fines(): LengthAwarePaginator
+    {
+        return Fine::query()
+            ->with(['user', 'issuer', 'payment'])
+            ->when($this->statusFilter, fn (EloquentBuilder $q) => $q->whereHas(
+                'payment',
+                fn (EloquentBuilder $p) => $p->where('status', $this->statusFilter)
+            ))
+            ->latest()
+            ->paginate(20);
+    }
+
     /**
      * @return array<int, array{key: string, label: string}>
      */
@@ -230,10 +133,107 @@ new class extends Component
         ]));
     }
 
-    public function clearFilters(): void
+    public function issueFine(IssueFine $issueFine): void
     {
-        $this->reset(['statusFilter']);
-        $this->resetPage();
+        Gate::authorize(Permission::FinesIssue->value);
+
+        $this->validate();
+
+        $issueFine(
+            User::findOrFail($this->memberId),
+            Auth::user(),
+            FineReason::from($this->reason),
+            (float) $this->amount,
+            $this->pedagogicalMessage,
+            $this->federationReference ?: null,
+            $this->description ?: null,
+        );
+
+        $this->fineDrawer = false;
+        unset($this->fines);
+        $this->success(__('Fine issued and the member has been notified.'));
+    }
+
+    public function mount(): void
+    {
+        Gate::authorize(Permission::FinesView->value);
+
+        // Deep link from a member row: /admin/treasury/fines?member=123
+        if ($memberId = request()->integer('member')) {
+            $this->openFineDrawer($memberId);
+        }
+    }
+
+    public function openFineDrawer(?int $memberId = null): void
+    {
+        Gate::authorize(Permission::FinesIssue->value);
+
+        $this->reset(['amount', 'description', 'federationReference', 'pedagogicalMessage', 'reason', 'messageEdited']);
+        $this->memberId = $memberId;
+        $this->reason = FineReason::UNJUSTIFIED_ABSENCE->value;
+        $this->pedagogicalMessage = $this->suggestedMessage();
+        $this->search();
+        $this->fineDrawer = true;
+    }
+
+    public function resetMessage(): void
+    {
+        $this->messageEdited = false;
+        $this->pedagogicalMessage = $this->suggestedMessage();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function rules(): array
+    {
+        return [
+            'memberId' => ['required', 'exists:users,id'],
+            'amount' => ['required', 'numeric', 'min:0.01'],
+            'reason' => ['required', 'string', 'in:' . implode(',', array_column(FineReason::cases(), 'value'))],
+            'pedagogicalMessage' => ['required', 'string', 'min:10'],
+            'federationReference' => ['nullable', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+        ];
+    }
+
+    /**
+     * Feeds the searchable member picker (maryUI x-choices calls this method).
+     * Reuses the compound-name scope, so "Jean Van" finds "Jean-Pierre Van
+     * Oudenhove". The selected member is always kept in the list so the choice
+     * stays visible once picked.
+     */
+    public function search(string $value = ''): void
+    {
+        $selected = $this->memberId
+            ? User::whereKey($this->memberId)->get(['id', 'first_name', 'last_name'])
+            : new Collection;
+
+        $this->memberOptions = User::query()
+            ->when($value, fn (EloquentBuilder $q) => $q->searchName($value))
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->take(10)
+            ->get(['id', 'first_name', 'last_name'])
+            ->merge($selected)
+            ->unique('id')
+            ->map(fn (User $user): array => ['id' => $user->id, 'name' => $user->full_name])
+            ->values()
+            ->all();
+    }
+
+    public function updated(string $property): void
+    {
+        if ($property === 'pedagogicalMessage') {
+            $this->messageEdited = true;
+
+            return;
+        }
+
+        // Keep the suggestion in sync until the committee takes over the wording.
+        if (in_array($property, ['memberId', 'reason', 'amount'], true) && ! $this->messageEdited) {
+            $this->pedagogicalMessage = $this->suggestedMessage();
+        }
     }
 
     public function with(): array

@@ -23,12 +23,12 @@ new class extends Component
     #[Url]
     public string $month = '';
 
+    /** @var string[] */
+    public array $selectedCategories = [];
+
     /** Selected day, "Y-m-d" format. Entangled client-side for instant selection. */
     #[Url]
     public string $selectedDay = '';
-
-    /** @var string[] */
-    public array $selectedCategories = [];
 
     public bool $showAllEvents = false;
 
@@ -37,99 +37,6 @@ new class extends Component
     public function clearFilters(): void
     {
         $this->reset(['selectedCategories']);
-    }
-
-    /**
-     * @return array<int, array{key: string, label: string}>
-     */
-    public function getFilterChips(): array
-    {
-        $labels = collect($this->categoryOptions())->pluck('name', 'id');
-
-        return collect($this->selectedCategories)
-            ->map(fn (string $category): array => [
-                'key' => 'category:' . $category,
-                'label' => $labels[$category] ?? $category,
-            ])
-            ->values()
-            ->all();
-    }
-
-    /**
-     * No pagination on this page, and categories are an array filter:
-     * remove one category at a time from its chip.
-     */
-    public function removeFilter(string $key): void
-    {
-        if (str_starts_with($key, 'category:')) {
-            $category = substr($key, strlen('category:'));
-            $this->selectedCategories = array_values(
-                array_filter($this->selectedCategories, fn (string $c): bool => $c !== $category)
-            );
-
-            return;
-        }
-
-        $this->reset([$key]);
-    }
-
-    public function previousMonth(): void
-    {
-        $this->navigateToMonth($this->monthStart()->subMonthNoOverflow());
-    }
-
-    public function nextMonth(): void
-    {
-        $this->navigateToMonth($this->monthStart()->addMonthNoOverflow());
-    }
-
-    public function goToToday(): void
-    {
-        $this->navigateToMonth(now()->startOfMonth());
-    }
-
-    /** Jump straight to any month from the month/year picker. */
-    public function setMonth(string $month): void
-    {
-        if (! Carbon::hasFormat($month, 'Y-m')) {
-            return;
-        }
-
-        $this->navigateToMonth(Carbon::createFromFormat('Y-m-d', $month . '-01')->startOfDay());
-    }
-
-    public function selectDay(string $day): void
-    {
-        if (! Carbon::hasFormat($day, 'Y-m-d')) {
-            return;
-        }
-
-        $this->selectedDay = $day;
-    }
-
-    /** The color legend doubles as a quick category filter. */
-    public function toggleCategory(string $category): void
-    {
-        $validIds = array_column($this->categoryOptions(), 'id');
-
-        if (! in_array($category, $validIds)) {
-            return;
-        }
-
-        $this->selectedCategories = in_array($category, $this->selectedCategories)
-            ? array_values(array_filter($this->selectedCategories, fn (string $c): bool => $c !== $category))
-            : [...$this->selectedCategories, $category];
-    }
-
-    /**
-     * Permanent signed URL of the member's personal ICS feed — the signature
-     * is the secret, so the feed works without a session (calendar providers
-     * poll it server-side).
-     */
-    #[Computed]
-    public function icsUrl(): string
-    {
-        return \Illuminate\Support\Facades\URL::signedRoute('admin.user.calendar.ics', ['user' => $this->user]);
     }
 
     /**
@@ -171,6 +78,125 @@ new class extends Component
         }
 
         return $byDay;
+    }
+
+    /**
+     * @return array<int, array{key: string, label: string}>
+     */
+    public function getFilterChips(): array
+    {
+        $labels = collect($this->categoryOptions())->pluck('name', 'id');
+
+        return collect($this->selectedCategories)
+            ->map(fn (string $category): array => [
+                'key' => 'category:' . $category,
+                'label' => $labels[$category] ?? $category,
+            ])
+            ->values()
+            ->all();
+    }
+
+    public function goToToday(): void
+    {
+        $this->navigateToMonth(now()->startOfMonth());
+    }
+
+    /**
+     * Permanent signed URL of the member's personal ICS feed — the signature
+     * is the secret, so the feed works without a session (calendar providers
+     * poll it server-side).
+     */
+    #[Computed]
+    public function icsUrl(): string
+    {
+        return Illuminate\Support\Facades\URL::signedRoute('admin.user.calendar.ics', ['user' => $this->user]);
+    }
+
+    public function mount(User $user): void
+    {
+        abort_unless(Auth::user()->is($user), 403);
+
+        $this->user = $user;
+
+        // #[Url] values are applied before mount(): only fill the defaults
+        // when the query string didn't provide them.
+        if ($this->month === '') {
+            $this->month = now()->format('Y-m');
+        }
+
+        if ($this->selectedDay === '') {
+            $this->selectedDay = now()->format('Y-m-d');
+        }
+    }
+
+    public function nextMonth(): void
+    {
+        $this->navigateToMonth($this->monthStart()->addMonthNoOverflow());
+    }
+
+    public function previousMonth(): void
+    {
+        $this->navigateToMonth($this->monthStart()->subMonthNoOverflow());
+    }
+
+    /**
+     * No pagination on this page, and categories are an array filter:
+     * remove one category at a time from its chip.
+     */
+    public function removeFilter(string $key): void
+    {
+        if (str_starts_with($key, 'category:')) {
+            $category = substr($key, strlen('category:'));
+            $this->selectedCategories = array_values(
+                array_filter($this->selectedCategories, fn (string $c): bool => $c !== $category)
+            );
+
+            return;
+        }
+
+        $this->reset([$key]);
+    }
+
+    public function selectDay(string $day): void
+    {
+        if (! Carbon::hasFormat($day, 'Y-m-d')) {
+            return;
+        }
+
+        $this->selectedDay = $day;
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    #[Computed]
+    public function selectedDayEvents(): array
+    {
+        return $this->eventsByDay[$this->selectedDay] ?? [];
+    }
+
+    /** Jump straight to any month from the month/year picker. */
+    public function setMonth(string $month): void
+    {
+        if (! Carbon::hasFormat($month, 'Y-m')) {
+            return;
+        }
+
+        $this->navigateToMonth(Carbon::createFromFormat('Y-m-d', $month . '-01')->startOfDay());
+    }
+
+    /** The color legend doubles as a quick category filter. */
+    public function toggleCategory(string $category): void
+    {
+        $validIds = array_column($this->categoryOptions(), 'id');
+
+        if (! in_array($category, $validIds)) {
+            return;
+        }
+
+        $this->selectedCategories = in_array($category, $this->selectedCategories)
+            ? array_values(array_filter($this->selectedCategories, fn (string $c): bool => $c !== $category))
+            : [...$this->selectedCategories, $category];
     }
 
     /**
@@ -219,32 +245,6 @@ new class extends Component
         }
 
         return $weeks;
-    }
-
-    /**
-     * @return array<int, array<string, mixed>>
-     */
-    #[Computed]
-    public function selectedDayEvents(): array
-    {
-        return $this->eventsByDay[$this->selectedDay] ?? [];
-    }
-
-    public function mount(User $user): void
-    {
-        abort_unless(Auth::user()->is($user), 403);
-
-        $this->user = $user;
-
-        // #[Url] values are applied before mount(): only fill the defaults
-        // when the query string didn't provide them.
-        if ($this->month === '') {
-            $this->month = now()->format('Y-m');
-        }
-
-        if ($this->selectedDay === '') {
-            $this->selectedDay = now()->format('Y-m-d');
-        }
     }
 
     public function with(): array

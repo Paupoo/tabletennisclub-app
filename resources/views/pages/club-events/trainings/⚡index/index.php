@@ -5,9 +5,9 @@ declare(strict_types=1);
 use App\Actions\ClubAdmin\Subscriptions\DiscontinueTrainingPackAction;
 use App\Domains\ClubAdmin\Club\Models\Room;
 use App\Domains\ClubAdmin\Users\Models\User;
-use App\Domains\Shared\Enums\Role;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Shared\Enums\Recurrence;
+use App\Domains\Shared\Enums\Role;
 use App\Domains\Shared\Enums\TrainingCancellationType;
 use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Shared\Enums\TrainingType;
@@ -43,23 +43,9 @@ new class extends Component
 
     public bool $discontinuePackModal = false;
 
-    /** Ticked by default: forgetting to warn members is worse than one extra mail. */
-    public bool $notifyMembersOfChange = true;
-
-    public bool $regenerateModal = false;
-
-    public bool $regenerationConfirmed = false;
-
     public string $discontinueReason = '';
 
     public ?int $discontinuingPackId = null;
-
-    /** Show packs withdrawn from the offer, so they can be found and put back. */
-    public bool $showInactive = false;
-
-    public bool $withdrawPackModal = false;
-
-    public ?int $withdrawingPackId = null;
 
     public bool $formAllowDiscount = true;
 
@@ -105,15 +91,29 @@ new class extends Component
 
     public string $formType = '';
 
+    /** Ticked by default: forgetting to warn members is worse than one extra mail. */
+    public bool $notifyMembersOfChange = true;
+
     public ?int $packId = null;
+
+    public bool $regenerateModal = false;
+
+    public bool $regenerationConfirmed = false;
 
     // ── Session drill-down ────────────────────────────────────────────────────
     public ?int $selectedPackId = null;
+
+    /** Show packs withdrawn from the offer, so they can be found and put back. */
+    public bool $showInactive = false;
 
     public string $step = '1';
 
     // ── View filter ───────────────────────────────────────────────────────────
     public int $viewSeasonId = 0;
+
+    public ?int $withdrawingPackId = null;
+
+    public bool $withdrawPackModal = false;
 
     // ── Wizard state ──────────────────────────────────────────────────────────
     public bool $wizardOpen = false;
@@ -195,6 +195,17 @@ new class extends Component
         );
     }
 
+    /**
+     * Confirmation step for a slot change on a pack that already has sessions.
+     */
+    public function confirmRegeneration(): void
+    {
+        $this->regenerationConfirmed = true;
+        $this->regenerateModal = false;
+
+        $this->save();
+    }
+
     public function confirmWithdrawPack(): void
     {
         if ($this->withdrawingPackId) {
@@ -217,23 +228,32 @@ new class extends Component
     }
 
     /**
-     * Take the pack off the offer without touching what is already running:
-     * sessions go ahead, enrolled members keep their place and hear nothing.
+     * How much of the club this would touch, shown before the committee confirms.
+     *
+     * Deliberately no euro figure: the refund owed to each member depends on the
+     * multi-pack discount they lose, so any total shown here would be a guess
+     * that the actual refunds then contradict. The toast reports the real total
+     * once the refunds have been computed member by member.
+     *
+     * @return array{members: int, waiting: int, sessions: int}
      */
-    public function withdrawPack(int $packId): void
+    #[Computed]
+    public function discontinueImpact(): array
     {
-        TrainingPack::findOrFail($packId)->update(['is_active' => false]);
-        unset($this->packs);
-        $this->withdrawPackModal = false;
-        $this->withdrawingPackId = null;
-        $this->warning(__('Pack withdrawn from the offer. Its sessions still run.'));
-    }
+        $pack = $this->discontinuingPackId ? TrainingPack::find($this->discontinuingPackId) : null;
 
-    public function restorePack(int $packId): void
-    {
-        TrainingPack::findOrFail($packId)->update(['is_active' => true]);
-        unset($this->packs);
-        $this->success(__('Pack back in the offer.'));
+        if (! $pack) {
+            return ['members' => 0, 'waiting' => 0, 'sessions' => 0];
+        }
+
+        return [
+            'members' => $pack->committedCount(),
+            'waiting' => $pack->waitlistCount(),
+            'sessions' => $pack->trainings()
+                ->where('status', 'scheduled')
+                ->where('start', '>=', Carbon::now())
+                ->count(),
+        ];
     }
 
     /** @return array<int, array{key: string, label: string}> */
@@ -355,12 +375,6 @@ new class extends Component
         $this->discontinuePackModal = true;
     }
 
-    public function openWithdrawPack(int $packId): void
-    {
-        $this->withdrawingPackId = $packId;
-        $this->withdrawPackModal = true;
-    }
-
     public function openEdit(int $packId): void
     {
         $pack = TrainingPack::findOrFail($packId);
@@ -390,6 +404,12 @@ new class extends Component
         $this->step = '1';
     }
 
+    public function openWithdrawPack(int $packId): void
+    {
+        $this->withdrawingPackId = $packId;
+        $this->withdrawPackModal = true;
+    }
+
     /** @return Collection<int, TrainingPack> */
     #[Computed]
     public function packs(): Collection
@@ -405,35 +425,6 @@ new class extends Component
             ->orderBy('level')
             ->orderBy('name')
             ->get();
-    }
-
-    /**
-     * How much of the club this would touch, shown before the committee confirms.
-     *
-     * Deliberately no euro figure: the refund owed to each member depends on the
-     * multi-pack discount they lose, so any total shown here would be a guess
-     * that the actual refunds then contradict. The toast reports the real total
-     * once the refunds have been computed member by member.
-     *
-     * @return array{members: int, waiting: int, sessions: int}
-     */
-    #[Computed]
-    public function discontinueImpact(): array
-    {
-        $pack = $this->discontinuingPackId ? TrainingPack::find($this->discontinuingPackId) : null;
-
-        if (! $pack) {
-            return ['members' => 0, 'waiting' => 0, 'sessions' => 0];
-        }
-
-        return [
-            'members' => $pack->committedCount(),
-            'waiting' => $pack->waitlistCount(),
-            'sessions' => $pack->trainings()
-                ->where('status', 'scheduled')
-                ->where('start', '>=', Carbon::now())
-                ->count(),
-        ];
     }
 
     /** @return array<int, Carbon> */
@@ -509,6 +500,32 @@ new class extends Component
         unset($this->packs);
     }
 
+    /**
+     * What the confirmation modal reports before the committee commits.
+     *
+     * @return array{deleting: int, keeping: int, members: int}
+     */
+    #[Computed]
+    public function regenerationImpact(): array
+    {
+        $pack = $this->packId ? TrainingPack::find($this->packId) : null;
+
+        if (! $pack) {
+            return ['deleting' => 0, 'keeping' => 0, 'members' => 0];
+        }
+
+        return [
+            'deleting' => $pack->trainings()
+                ->where('status', 'scheduled')
+                ->where('start', '>=', Carbon::now())
+                ->count(),
+            'keeping' => $pack->trainings()
+                ->where(fn (Builder $q) => $q->where('status', '!=', 'scheduled')->orWhere('start', '<', Carbon::now()))
+                ->count(),
+            'members' => $pack->enrolledCount(),
+        ];
+    }
+
     public function removeFilter(string $key): void
     {
         if ($key === 'viewSeasonId') {
@@ -518,6 +535,13 @@ new class extends Component
         }
 
         $this->reset([$key]);
+    }
+
+    public function restorePack(int $packId): void
+    {
+        TrainingPack::findOrFail($packId)->update(['is_active' => true]);
+        unset($this->packs);
+        $this->success(__('Pack back in the offer.'));
     }
 
     #[Computed]
@@ -639,17 +663,6 @@ new class extends Component
     }
 
     /**
-     * Confirmation step for a slot change on a pack that already has sessions.
-     */
-    public function confirmRegeneration(): void
-    {
-        $this->regenerationConfirmed = true;
-        $this->regenerateModal = false;
-
-        $this->save();
-    }
-
-    /**
      * Has anything that decides *when and where* the sessions happen changed?
      *
      * Renaming the pack, editing its description or its price does not move a
@@ -690,73 +703,6 @@ new class extends Component
             || ($pack->pack_start_date?->toDateString() ?? '') !== $this->formPackStartDate
             || ($pack->pack_end_date?->toDateString() ?? '') !== $this->formPackEndDate
             || $packExcluded !== $formExcluded;
-    }
-
-    /**
-     * What the confirmation modal reports before the committee commits.
-     *
-     * @return array{deleting: int, keeping: int, members: int}
-     */
-    #[Computed]
-    public function regenerationImpact(): array
-    {
-        $pack = $this->packId ? TrainingPack::find($this->packId) : null;
-
-        if (! $pack) {
-            return ['deleting' => 0, 'keeping' => 0, 'members' => 0];
-        }
-
-        return [
-            'deleting' => $pack->trainings()
-                ->where('status', 'scheduled')
-                ->where('start', '>=', Carbon::now())
-                ->count(),
-            'keeping' => $pack->trainings()
-                ->where(fn (Builder $q) => $q->where('status', '!=', 'scheduled')->orWhere('start', '<', Carbon::now()))
-                ->count(),
-            'members' => $pack->enrolledCount(),
-        ];
-    }
-
-    /**
-     * Rebuild the sessions still to come, leaving history alone.
-     *
-     * Past sessions carry attendance — deleting them would rewrite every
-     * member's presence rate. Cancelled ones were announced by email with their
-     * own wording, and resurrecting them would contradict what members were told.
-     */
-    private function rebuildFutureSessions(TrainingPack $pack, Season $season): void
-    {
-        $deleted = $pack->trainings()
-            ->where('status', 'scheduled')
-            ->where('start', '>=', Carbon::now())
-            ->delete();
-
-        $pack->refresh();
-        $pack->generateSessions($season);
-
-        $created = $pack->trainings()
-            ->where('status', 'scheduled')
-            ->where('start', '>=', Carbon::now())
-            ->count();
-
-        $notified = 0;
-
-        if ($this->notifyMembersOfChange) {
-            $recipients = $pack->trainees()->where('emails_notifications', true)->get();
-            $recipients->each->notify(new TrainingPackScheduleChangedNotification($pack));
-            $notified = $recipients->count();
-        }
-
-        $this->success(
-            title: __('Pack updated!'),
-            description: __(':deleted session(s) replaced by :created, :notified member(s) notified.', [
-                'deleted' => $deleted,
-                'created' => $created,
-                'notified' => $notified,
-            ]),
-            icon: 'o-calendar',
-        );
     }
 
     // ── Options ───────────────────────────────────────────────────────────────
@@ -862,6 +808,19 @@ new class extends Component
         ];
     }
 
+    /**
+     * Take the pack off the offer without touching what is already running:
+     * sessions go ahead, enrolled members keep their place and hear nothing.
+     */
+    public function withdrawPack(int $packId): void
+    {
+        TrainingPack::findOrFail($packId)->update(['is_active' => false]);
+        unset($this->packs);
+        $this->withdrawPackModal = false;
+        $this->withdrawingPackId = null;
+        $this->warning(__('Pack withdrawn from the offer. Its sessions still run.'));
+    }
+
     #[Computed]
     public function wizardSeason(): ?Season
     {
@@ -888,6 +847,47 @@ new class extends Component
 
         $this->formPackStartDate = $season?->start_at?->toDateString() ?? '';
         $this->formPackEndDate = $season?->end_at?->toDateString() ?? '';
+    }
+
+    /**
+     * Rebuild the sessions still to come, leaving history alone.
+     *
+     * Past sessions carry attendance — deleting them would rewrite every
+     * member's presence rate. Cancelled ones were announced by email with their
+     * own wording, and resurrecting them would contradict what members were told.
+     */
+    private function rebuildFutureSessions(TrainingPack $pack, Season $season): void
+    {
+        $deleted = $pack->trainings()
+            ->where('status', 'scheduled')
+            ->where('start', '>=', Carbon::now())
+            ->delete();
+
+        $pack->refresh();
+        $pack->generateSessions($season);
+
+        $created = $pack->trainings()
+            ->where('status', 'scheduled')
+            ->where('start', '>=', Carbon::now())
+            ->count();
+
+        $notified = 0;
+
+        if ($this->notifyMembersOfChange) {
+            $recipients = $pack->trainees()->where('emails_notifications', true)->get();
+            $recipients->each->notify(new TrainingPackScheduleChangedNotification($pack));
+            $notified = $recipients->count();
+        }
+
+        $this->success(
+            title: __('Pack updated!'),
+            description: __(':deleted session(s) replaced by :created, :notified member(s) notified.', [
+                'deleted' => $deleted,
+                'created' => $created,
+                'notified' => $notified,
+            ]),
+            icon: 'o-calendar',
+        );
     }
 
     private function resetWizardFields(): void

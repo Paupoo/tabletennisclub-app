@@ -44,46 +44,21 @@ new class extends Component
         $this->reset(['delegationFilter', 'search']);
     }
 
-    /**
-     * @return array<int, array{key: string, label: string}>
-     */
-    public function getFilterChips(): array
+    public function committeeTitle(User $user): ?CommitteeRolesEnum
     {
-        $chips = [];
-
-        if ($this->delegationFilter !== '' && Role::tryFrom($this->delegationFilter) instanceof Role) {
-            $chips[] = [
-                'key' => 'delegationFilter',
-                'label' => Role::from($this->delegationFilter)->label(),
-            ];
-        }
-
-        if ($this->search !== '') {
-            $chips[] = ['key' => 'search', 'label' => $this->search];
-        }
-
-        return $chips;
-    }
-
-    public function removeFilter(string $key): void
-    {
-        $this->reset($key);
-    }
-
-    public function render(): View
-    {
-        return $this->view()->title(__('Delegations'));
+        return $user->committee_role;
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array<int, array{id: string, name: string}>
      */
-    public function with(): array
+    #[Computed]
+    public function delegationOptions(): array
     {
-        return [
-            'breadcrumbs' => $this->getBreadcrumbs(),
-            'filterChips' => $this->getFilterChips(),
-        ];
+        return array_map(static fn (Role $role): array => [
+            'id' => $role->value,
+            'name' => $role->label(),
+        ], Role::delegations());
     }
 
     /**
@@ -107,6 +82,27 @@ new class extends Component
     }
 
     /**
+     * @return array<int, array{key: string, label: string}>
+     */
+    public function getFilterChips(): array
+    {
+        $chips = [];
+
+        if ($this->delegationFilter !== '' && Role::tryFrom($this->delegationFilter) instanceof Role) {
+            $chips[] = [
+                'key' => 'delegationFilter',
+                'label' => Role::from($this->delegationFilter)->label(),
+            ];
+        }
+
+        if ($this->search !== '') {
+            $chips[] = ['key' => 'search', 'label' => $this->search];
+        }
+
+        return $chips;
+    }
+
+    /**
      * The same data seen from the members' side.
      *
      * @return Collection<int, array{user: User, roles: Collection<int, Role>}>
@@ -127,6 +123,16 @@ new class extends Component
             ->values();
     }
 
+    public function removeFilter(string $key): void
+    {
+        $this->reset($key);
+    }
+
+    public function render(): View
+    {
+        return $this->view()->title(__('Delegations'));
+    }
+
     /**
      * Duties nobody covers — the reason a committee opens this screen.
      *
@@ -143,20 +149,14 @@ new class extends Component
     }
 
     /**
-     * @return array<int, array{id: string, name: string}>
+     * @return array<string, mixed>
      */
-    #[Computed]
-    public function delegationOptions(): array
+    public function with(): array
     {
-        return array_map(static fn (Role $role): array => [
-            'id' => $role->value,
-            'name' => $role->label(),
-        ], Role::delegations());
-    }
-
-    public function committeeTitle(User $user): ?CommitteeRolesEnum
-    {
-        return $user->committee_role;
+        return [
+            'breadcrumbs' => $this->getBreadcrumbs(),
+            'filterChips' => $this->getFilterChips(),
+        ];
     }
 
     protected function breadcrumbChain(): Breadcrumb

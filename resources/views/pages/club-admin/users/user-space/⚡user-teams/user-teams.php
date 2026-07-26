@@ -8,6 +8,7 @@ use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Shared\Enums\InterclubAvailability;
 use App\Domains\Shared\Enums\LeagueCategory;
 use App\Support\Breadcrumb;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
@@ -77,7 +78,7 @@ new class extends Component
      * Upcoming interclub encounters of the given team, with the member's own
      * availability and the aggregated answers of the whole roster.
      *
-     * @return Collection<int, array{id: int, opponent: string, is_home: bool, start_date_time: \Illuminate\Support\Carbon, address: string, week_number: int|null, availability: InterclubAvailability|null, is_selected: bool, availability_counts: array{available: int, maybe: int, unavailable: int, no_response: int}}>
+     * @return Collection<int, array{id: int, opponent: string, is_home: bool, start_date_time: Carbon, address: string, week_number: int|null, availability: InterclubAvailability|null, is_selected: bool, availability_counts: array{available: int, maybe: int, unavailable: int, no_response: int}}>
      */
     private function upcomingMatches(Team $team): Collection
     {

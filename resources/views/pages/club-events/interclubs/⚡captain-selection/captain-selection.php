@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Resources\views\Pages\ClubEvents\Interclubs\CaptainSelection;
 
-use App\Domains\Shared\Enums\Permission;
-use Illuminate\Support\Facades\Gate;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Interclub;
 use App\Domains\Competitions\Interclub\Models\Season;
@@ -13,12 +11,14 @@ use App\Domains\Competitions\Interclub\Models\Team;
 use App\Domains\Competitions\Interclub\Services\InterclubAvailabilityService;
 use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\InterclubAvailability;
+use App\Domains\Shared\Enums\Permission;
 use App\Livewire\Concerns\HasBreadcrumbs;
 use App\Livewire\Concerns\HasFilterDrawer;
 use App\Support\Breadcrumb;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Url;
@@ -522,6 +522,61 @@ new class extends Component
     }
 
     /**
+     * Mirrors the scoping of loadAccessibleTeams(): admins, committee members and
+     * selectors reach every team, a captain only the teams they lead.
+     */
+    /**
+     * Delegates to InterclubPolicy::selectLineup, so the rule lives in one place
+     * rather than being restated here — this component and the policy answered
+     * the same question in two different ways before.
+     */
+    private function authorizeInterclub(Interclub $interclub): void
+    {
+        Gate::authorize('selectLineup', $interclub);
+    }
+
+    /**
+     * @param  Collection<int, mixed>  $pivotMap
+     * @param  array<int, string>  $blockedPlayerData  user_id => team_name already selected this week
+     * @return array<string, mixed>
+     */
+    private function buildPlayerData(User $player, Collection $pivotMap, ?Team $team, ?Season $season, array $blockedPlayerData = []): array
+    {
+        $pivot = $pivotMap->get($player->id);
+        $avail = $pivot?->availability
+            ? InterclubAvailability::from($pivot->availability)
+            : null;
+
+        $matchesPlayed = $season && $team
+            ? $this->matchesPlayedCount($player->id, $team->id, $season)
+            : 0;
+
+        $matchesSelected = $season && $team
+            ? $this->matchesSelectedCount($player->id, $team->id, $season)
+            : 0;
+
+        return [
+            'id' => $player->id,
+            'name' => $player->last_name . ' ' . $player->first_name,
+            'last_name' => $player->last_name ?? '',
+            'first_name' => $player->first_name ?? '',
+            // Captain override (decision T8): a captain always sees their own
+            // players' contact details on the selection screen, regardless of
+            // the members' opt-in contact-visibility preferences.
+            'phone_number' => $player->phone_number,
+            'email' => $player->email,
+            'rank' => $player->ranking ?? '—',
+            'rank_sort' => $player->ranking ?? 'ZZZ',
+            'availability' => $avail,
+            'availability_note' => $pivot?->availability_note,
+            'matches_played' => $matchesPlayed,
+            'matches_selected' => $matchesSelected,
+            'is_blocked' => isset($blockedPlayerData[$player->id]),
+            'blocked_team' => $blockedPlayerData[$player->id] ?? null,
+        ];
+    }
+
+    /**
      * Explain why a substitute search returned nothing: matching competitors do
      * exist, but the category rule and/or the same-week alignment hid them (I2).
      *
@@ -564,47 +619,6 @@ new class extends Component
         return __('Some players match your search but are hidden: :reasons.', [
             'reasons' => implode(' ; ', $reasons),
         ]);
-    }
-
-    /**
-     * @param  Collection<int, mixed>  $pivotMap
-     * @param  array<int, string>  $blockedPlayerData  user_id => team_name already selected this week
-     * @return array<string, mixed>
-     */
-    private function buildPlayerData(User $player, Collection $pivotMap, ?Team $team, ?Season $season, array $blockedPlayerData = []): array
-    {
-        $pivot = $pivotMap->get($player->id);
-        $avail = $pivot?->availability
-            ? InterclubAvailability::from($pivot->availability)
-            : null;
-
-        $matchesPlayed = $season && $team
-            ? $this->matchesPlayedCount($player->id, $team->id, $season)
-            : 0;
-
-        $matchesSelected = $season && $team
-            ? $this->matchesSelectedCount($player->id, $team->id, $season)
-            : 0;
-
-        return [
-            'id' => $player->id,
-            'name' => $player->last_name . ' ' . $player->first_name,
-            'last_name' => $player->last_name ?? '',
-            'first_name' => $player->first_name ?? '',
-            // Captain override (decision T8): a captain always sees their own
-            // players' contact details on the selection screen, regardless of
-            // the members' opt-in contact-visibility preferences.
-            'phone_number' => $player->phone_number,
-            'email' => $player->email,
-            'rank' => $player->ranking ?? '—',
-            'rank_sort' => $player->ranking ?? 'ZZZ',
-            'availability' => $avail,
-            'availability_note' => $pivot?->availability_note,
-            'matches_played' => $matchesPlayed,
-            'matches_selected' => $matchesSelected,
-            'is_blocked' => isset($blockedPlayerData[$player->id]),
-            'blocked_team' => $blockedPlayerData[$player->id] ?? null,
-        ];
     }
 
     /** @return array<string, mixed> */
@@ -804,20 +818,6 @@ new class extends Component
         }
 
         return $interclub;
-    }
-
-    /**
-     * Mirrors the scoping of loadAccessibleTeams(): admins, committee members and
-     * selectors reach every team, a captain only the teams they lead.
-     */
-    /**
-     * Delegates to InterclubPolicy::selectLineup, so the rule lives in one place
-     * rather than being restated here — this component and the policy answered
-     * the same question in two different ways before.
-     */
-    private function authorizeInterclub(Interclub $interclub): void
-    {
-        Gate::authorize('selectLineup', $interclub);
     }
 
     /**

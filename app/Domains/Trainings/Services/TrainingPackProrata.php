@@ -7,6 +7,7 @@ namespace App\Domains\Trainings\Services;
 use App\Domains\Trainings\Models\TrainingPack;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
+use RuntimeException;
 
 /**
  * Pro rata d'un pack d'entraînement, en mois calendaires entamés.
@@ -43,9 +44,8 @@ class TrainingPackProrata
     public function enrolmentStart(TrainingPack $pack, CarbonInterface|string|null $on = null): ?string
     {
         $day = $this->toDate($on) ?? CarbonImmutable::today();
-        $packStart = $this->toDate($pack->pack_start_date);
 
-        if ($packStart === null || $day->lte($packStart)) {
+        if ($day->lte($this->packStart($pack))) {
             return null;
         }
 
@@ -59,11 +59,11 @@ class TrainingPackProrata
      * soient les dates du pack. C'est ce qui garantit qu'aucune inscription
      * existante ne change de prix.
      *
-     * Un pack sans `pack_start_date`/`pack_end_date` n'a aucun calendrier de
-     * facturation : il n'y a rien à proratiser. On le facture alors en plein
-     * tant que le membre le détient, et plus du tout dès qu'il l'a quitté —
-     * exactement ce que faisait le `detach()` d'avant. Un pack qui veut le pro
-     * rata déclare ses dates ; à défaut, le trésorier force le montant.
+     * Les dates du pack sont désormais obligatoires en base (#62), donc le
+     * dénominateur existe toujours. L'ancien repli « plein tarif tant que le
+     * membre le détient, 0 dès qu'il l'a quitté » a disparu avec la colonne
+     * nullable : il n'y a plus de pack que le trésorier doive facturer à la
+     * main.
      */
     public function ratio(TrainingPack $pack, CarbonInterface|string|null $startsOn, CarbonInterface|string|null $endsOn): float
     {
@@ -74,12 +74,8 @@ class TrainingPackProrata
             return 1.0;
         }
 
-        $packStart = $this->toDate($pack->pack_start_date);
-        $packEnd = $this->toDate($pack->pack_end_date);
-
-        if ($packStart === null || $packEnd === null) {
-            return $to === null ? 1.0 : 0.0;
-        }
+        $packStart = $this->packStart($pack);
+        $packEnd = $this->packEnd($pack);
 
         $total = $this->monthSpan($packStart, $packEnd);
 
@@ -105,6 +101,30 @@ class TrainingPackProrata
     private function monthSpan(CarbonImmutable $from, CarbonImmutable $to): int
     {
         return ($to->year * 12 + $to->month) - ($from->year * 12 + $from->month) + 1;
+    }
+
+    /**
+     * Fin de la période couverte par le pack.
+     *
+     * Les deux colonnes sont NOT NULL depuis #62 : une date absente signale une
+     * base incohérente, pas un pack à facturer autrement. On le dit plutôt que
+     * de deviner un montant.
+     */
+    private function packEnd(TrainingPack $pack): CarbonImmutable
+    {
+        return $this->toDate($pack->pack_end_date)
+            ?? throw new RuntimeException("Le pack d'entraînement {$pack->id} n'a pas de date de fin.");
+    }
+
+    /**
+     * Début de la période couverte par le pack.
+     *
+     * @see self::packEnd()
+     */
+    private function packStart(TrainingPack $pack): CarbonImmutable
+    {
+        return $this->toDate($pack->pack_start_date)
+            ?? throw new RuntimeException("Le pack d'entraînement {$pack->id} n'a pas de date de début.");
     }
 
     private function toDate(CarbonInterface|string|null $value): ?CarbonImmutable

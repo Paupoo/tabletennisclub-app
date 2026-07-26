@@ -12,6 +12,7 @@ use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Trainings\Models\TrainingPack;
 use App\Domains\Trainings\Services\TrainingPackProrata;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
 use Spatie\Activitylog\Models\Activity;
@@ -148,18 +149,17 @@ describe('Pro rata — mois calendaires entamés', function (): void {
         expect($subscription->fresh()->amount_due)->toBe(60.0);
     })->group('training', 'pricing', 'prorata');
 
-    test('a pack without dates cannot be pro-rated and stays at full price', function (): void {
-        $subscription = recreativeSubscription();
-        $pack = TrainingPack::factory()->create(['price' => 90, 'pack_start_date' => null, 'pack_end_date' => null]);
+    test('a pack cannot exist without the period it covers', function (): void {
+        expect(fn () => TrainingPack::factory()->create(['pack_start_date' => null]))
+            ->toThrow(QueryException::class);
+    })->group('training', 'pricing', 'prorata');
 
-        $subscription->trainingPacks()->attach($pack->id, [
-            'status' => 'enrolled',
-            'starts_on' => '2027-01-12',
-        ]);
+    test('a pack whose dates went missing is reported, not billed on a guess', function (): void {
+        $pack = referencePack();
+        $pack->pack_start_date = null;
 
-        (new CalculatePriceAction)($subscription);
-
-        expect($subscription->fresh()->amount_due)->toBe(60.0 + 90.0);
+        expect(fn () => (new TrainingPackProrata)->ratio($pack, '2027-01-12', null))
+            ->toThrow(RuntimeException::class);
     })->group('training', 'pricing', 'prorata');
 
     test('the ratio is exposed unrounded for the UI', function (): void {

@@ -111,6 +111,9 @@ describe('discontinuing a pack', function (): void {
         Notification::fake();
 
         $season = makeActiveSeason();
+
+        // The room is lost before the first session: nothing has been consumed,
+        // so the member is owed the whole pack and not a pro-rated share.
         $pack = makeTrainingPack($season, ['price' => 90, 'allow_discount' => true]);
 
         $subscription = Subscription::factory()->create([

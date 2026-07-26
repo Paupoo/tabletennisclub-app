@@ -418,10 +418,10 @@
                     @endif
                 </div>
 
-                {{-- Custom date range --}}
+                {{-- Pack period --}}
                 <div>
                     <p class="mb-1 text-xs text-base-content/50">
-                        {{ __('Custom date range (optional — overrides season dates)') }}
+                        {{ __('Period covered by the pack — prefilled with the season, change it for a camp') }}
                     </p>
                     <div class="grid grid-cols-2 gap-4">
                         <x-input :label="__('From')" type="date" wire:model.live="formPackStartDate" />

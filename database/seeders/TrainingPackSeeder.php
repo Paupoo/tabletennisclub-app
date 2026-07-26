@@ -260,7 +260,12 @@ class TrainingPackSeeder extends Seeder
         ];
 
         foreach ($packs as $data) {
-            $pack = TrainingPack::create(array_merge($data, [
+            // Season-long packs cover the season; only the summer camp, which
+            // runs after the season has closed, carries dates of its own.
+            $pack = TrainingPack::create(array_merge([
+                'pack_start_date' => $season->start_at->toDateString(),
+                'pack_end_date' => $season->end_at->toDateString(),
+            ], $data, [
                 'season_id' => $season->id,
                 'is_active' => true,
             ]));

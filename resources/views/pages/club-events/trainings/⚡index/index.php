@@ -541,6 +541,10 @@ new class extends Component
             'formDurationMinutes' => 'required|integer|min:15|max:480',
             'formMaxParticipants' => 'nullable|integer|min:1|max:999',
             'formPrice' => 'required|numeric|min:0',
+            // The pack period is the pro rata's denominator: a pack that does
+            // not declare it cannot be billed for the months actually held.
+            'formPackStartDate' => 'required|date',
+            'formPackEndDate' => 'required|date|after_or_equal:formPackStartDate',
         ];
 
         if ($this->formType !== '' && $this->formType !== TrainingType::FREE->value) {
@@ -873,6 +877,19 @@ new class extends Component
             ->current(__('Trainings'));
     }
 
+    /**
+     * Offer the season's own period as the pack's, which is what a season-long
+     * pack covers. A camp overwrites both dates; nobody has to type the two
+     * usual ones by hand.
+     */
+    private function prefillPackDatesFromSeason(): void
+    {
+        $season = $this->formSeasonId ? Season::find($this->formSeasonId) : null;
+
+        $this->formPackStartDate = $season?->start_at?->toDateString() ?? '';
+        $this->formPackEndDate = $season?->end_at?->toDateString() ?? '';
+    }
+
     private function resetWizardFields(): void
     {
         $this->packId = null;
@@ -889,8 +906,7 @@ new class extends Component
         $this->formSpecificDays = [];
         $this->formStartTime = '18:00';
         $this->formDurationMinutes = 90;
-        $this->formPackStartDate = '';
-        $this->formPackEndDate = '';
+        $this->prefillPackDatesFromSeason();
         $this->formExcludedDates = [];
         $this->formPrice = 90;
         $this->formAllowDiscount = true;

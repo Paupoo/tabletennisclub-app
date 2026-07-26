@@ -20,6 +20,8 @@ use App\Support\Breadcrumb;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
@@ -439,11 +441,25 @@ new class extends Component
         $this->resetPage();
     }
 
+    /**
+     * Move a contact to another status.
+     *
+     * `$status` reaches this method straight from the browser, so it is
+     * validated rather than trusted: without this, the `contacts.status` enum
+     * column is the only thing between a forged Livewire call and the
+     * database, and it answers with a driver exception instead of an error the
+     * admin can read.
+     */
     public function updateStatus(int $id, string $status): void
     {
         $this->authorizeManagement();
 
-        Contact::findOrFail($id)->update(['status' => $status]);
+        $validated = Validator::make(
+            ['status' => $status],
+            ['status' => ['required', Rule::in(Contact::STATUSES)]],
+        )->validate();
+
+        Contact::findOrFail($id)->update($validated);
         $this->success(__('Status updated.'));
     }
 
@@ -452,11 +468,16 @@ new class extends Component
     {
         $stats = Contact::getStatusStats();
 
-        $statusOptions = [
-            ['id' => 'new',       'name' => __('New')],
-            ['id' => 'processed', 'name' => __('Processed')],
-            ['id' => 'rejected',  'name' => __('Rejected')],
+        $statusLabels = [
+            'new' => __('New'),
+            'processed' => __('Processed'),
+            'rejected' => __('Rejected'),
         ];
+
+        $statusOptions = array_map(
+            fn (string $status): array => ['id' => $status, 'name' => $statusLabels[$status]],
+            Contact::STATUSES,
+        );
 
         $interestOptions = collect(ContactReasonEnum::cases())
             ->map(fn ($r) => ['id' => $r->value, 'name' => $r->getLabel()]);

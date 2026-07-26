@@ -5,8 +5,6 @@ declare(strict_types=1);
 use App\Domains\ClubAdmin\Contact\Models\Contact;
 use App\Domains\ClubAdmin\Contact\Models\EmailTemplate;
 use App\Domains\ClubAdmin\Users\Models\User;
-use App\Http\Requests\ClubAdmin\Contact\UpdateContactRequest;
-use Illuminate\Support\Facades\Validator;
 use Livewire\Livewire;
 
 beforeEach(function (): void {
@@ -102,7 +100,9 @@ describe('Contact statuses', function (): void {
             ->test('pages::website.contacts.index')
             ->viewData('statusOptions');
 
-        expect(array_column($options, 'id'))->toBe(['new', 'processed', 'rejected']);
+        expect(array_column($options, 'id'))
+            ->toBe(['new', 'processed', 'rejected'])
+            ->toBe(Contact::STATUSES);
     });
 
     it('counts the inbox without a pending bucket', function (): void {
@@ -115,17 +115,25 @@ describe('Contact statuses', function (): void {
             ->not->toHaveKey('totalPending');
     });
 
-    it('accepts the three remaining statuses on the update request and refuses pending', function (string $status, bool $passes): void {
-        $validator = Validator::make(
-            ['status' => $status],
-            (new UpdateContactRequest)->rules(),
-        );
+    it('moves a contact to any of the three statuses', function (string $status): void {
+        $contact = Contact::factory()->create(['status' => 'new']);
 
-        expect($validator->passes())->toBe($passes);
-    })->with([
-        ['new', true],
-        ['processed', true],
-        ['rejected', true],
-        ['pending', false],
-    ]);
+        Livewire::actingAs($this->admin)
+            ->test('pages::website.contacts.index')
+            ->call('updateStatus', $contact->id, $status)
+            ->assertHasNoErrors();
+
+        expect($contact->fresh()->status)->toBe($status);
+    })->with(Contact::STATUSES);
+
+    it('refuses a status the inbox no longer offers, without reaching the database', function (): void {
+        $contact = Contact::factory()->create(['status' => 'new']);
+
+        Livewire::actingAs($this->admin)
+            ->test('pages::website.contacts.index')
+            ->call('updateStatus', $contact->id, 'pending')
+            ->assertHasErrors('status');
+
+        expect($contact->fresh()->status)->toBe('new');
+    });
 });

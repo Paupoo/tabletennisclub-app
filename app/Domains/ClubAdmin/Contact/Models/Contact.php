@@ -68,6 +68,16 @@ class Contact extends Model
     use HasAuditLog;
     use HasFactory;
 
+    /**
+     * The statuses a contact may hold, mirroring the `contacts.status` enum
+     * column. The single origin of the admin filter, of the status select and
+     * of what `updateStatus()` accepts — a status reaching the model from
+     * anywhere else is a bug, not a new state.
+     *
+     * @var list<string>
+     */
+    public const STATUSES = ['new', 'processed', 'rejected'];
+
     protected $casts = [
         'interest' => ContactReasonEnum::class,
         'age_category' => AgeCategoryEnum::class,

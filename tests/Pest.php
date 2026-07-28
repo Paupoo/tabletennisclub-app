@@ -2,15 +2,18 @@
 
 declare(strict_types=1);
 
+use App\Data\User\FederationRow;
 use App\Domains\ClubAdmin\Subscriptions\Models\Subscription;
 use App\Domains\ClubAdmin\Users\Models\User;
 use App\Domains\Competitions\Interclub\Models\Club;
 use App\Domains\Competitions\Interclub\Models\Season;
 use App\Domains\Competitions\Tournament\Models\Tournament;
+use App\Domains\Shared\Enums\Gender;
 use App\Domains\Shared\Enums\TournamentStatusEnum;
 use App\Domains\Shared\Enums\TrainingLevel;
 use App\Domains\Shared\Enums\TrainingType;
 use App\Domains\Trainings\Models\TrainingPack;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
@@ -91,6 +94,33 @@ function activeMember(Season $season, array $attributes = []): User
     ]);
 
     return $user;
+}
+
+/**
+ * A row of the federation affiliate listing as the parser hands it over, with
+ * only the fields a given test cares about set.
+ *
+ * @param  array<string, mixed>  $overrides
+ */
+function federationRow(array $overrides = []): FederationRow
+{
+    return new FederationRow(
+        lineNumber: $overrides['lineNumber'] ?? 2,
+        licence: $overrides['licence'] ?? '166036',
+        lastName: $overrides['lastName'] ?? 'Dupont',
+        firstName: $overrides['firstName'] ?? 'Marc',
+        birthdate: array_key_exists('birthdate', $overrides)
+            ? $overrides['birthdate']
+            : CarbonImmutable::parse('1990-06-05'),
+        ranking: $overrides['ranking'] ?? 'C2',
+        gender: $overrides['gender'] ?? Gender::MEN,
+        federationLicenceType: $overrides['federationLicenceType'] ?? 'JO',
+        email: array_key_exists('email', $overrides) ? $overrides['email'] : 'marc@example.com',
+        phone: $overrides['phone'] ?? '0475123456',
+        street: $overrides['street'] ?? 'RUE DU TEST 13',
+        cityCode: $overrides['cityCode'] ?? '1348',
+        cityName: $overrides['cityName'] ?? 'LOUVAIN-LA-NEUVE',
+    );
 }
 
 function makeTrainingPack(Season $season, array $overrides = []): TrainingPack

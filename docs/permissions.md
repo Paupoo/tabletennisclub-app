@@ -20,7 +20,7 @@ Trois familles cohabitent, et une seule décide :
 
 Accès sans restriction à toute l'application.
 
-Détient les 58 permissions. Accordées explicitement plutôt que
+Détient les 59 permissions. Accordées explicitement plutôt que
 par un court-circuit `Gate::before`, car certaines policies encodent des règles qui
 doivent survivre à un administrateur — il ne peut toujours pas supprimer son propre
 compte.
@@ -122,6 +122,7 @@ Créer et modifier les membres, gérer les affiliations et les inscriptions.
 - `users.create`
 - `users.update`
 - `users.invite`
+- `users.import`
 - `subscriptions.view`
 - `subscriptions.manage`
 

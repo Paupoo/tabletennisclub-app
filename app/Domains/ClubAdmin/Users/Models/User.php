@@ -796,6 +796,33 @@ class User extends Authenticatable implements MustVerifyEmail
         );
     }
 
+    /**
+     * Members standing at a given point of {@see self::invitationStatus()}.
+     *
+     * The two are one rule expressed twice — once per member for the badge, once
+     * in SQL for the list — so they are tested against each other. Nothing new is
+     * stored: "imported but never written to" is simply `not_invited`, which is
+     * how the secretary finds the members an import brought in.
+     *
+     * @param  'not_invited'|'pending'|'expired'|'active'  $state
+     */
+    public function scopeWithInvitationState(Builder $query, string $state): Builder
+    {
+        $cutoff = now()->subDays(self::INVITATION_LINK_VALIDITY_DAYS);
+
+        return match ($state) {
+            'active' => $query->whereNotNull('email_verified_at'),
+            'not_invited' => $query->whereNull('email_verified_at')->whereNull('last_invited_at'),
+            'pending' => $query->whereNull('email_verified_at')
+                ->whereNotNull('last_invited_at')
+                ->where('last_invited_at', '>', $cutoff),
+            'expired' => $query->whereNull('email_verified_at')
+                ->whereNotNull('last_invited_at')
+                ->where('last_invited_at', '<=', $cutoff),
+            default => $query,
+        };
+    }
+
     public function seasons(): BelongsToMany
     {
         return $this->belongsToMany(Season::class, 'subscriptions')

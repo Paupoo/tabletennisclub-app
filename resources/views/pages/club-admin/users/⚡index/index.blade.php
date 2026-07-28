@@ -89,7 +89,7 @@
             @php
                 $invStatus = $user->invitationStatus();
                 $invBadge = match($invStatus) {
-                    'active'     => ['label' => __('Active'),     'class' => 'badge-success badge-soft badge-xs'],
+                    'active'     => ['label' => __('Account created'),     'class' => 'badge-success badge-soft badge-xs'],
                     'pending'    => ['label' => __('Pending'),    'class' => 'badge-warning badge-soft badge-xs'],
                     'expired'    => ['label' => __('Expired'),    'class' => 'badge-error badge-soft badge-xs'],
                     default      => ['label' => __('Not invited'),'class' => 'badge-ghost badge-xs'],
@@ -192,7 +192,7 @@
                         @php
                             $invStatus = $user->invitationStatus();
                             $invBadge = match($invStatus) {
-                                'active'  => ['label' => __('Active'),     'class' => 'badge-success badge-soft badge-xs'],
+                                'active'  => ['label' => __('Account created'),     'class' => 'badge-success badge-soft badge-xs'],
                                 'pending' => ['label' => __('Pending'),    'class' => 'badge-warning badge-soft badge-xs'],
                                 'expired' => ['label' => __('Expired'),    'class' => 'badge-error badge-soft badge-xs'],
                                 default   => ['label' => __('Not invited'),'class' => 'badge-ghost badge-xs'],
@@ -282,6 +282,12 @@
                         <x-checkbox :label="$gender['name']" :value="$gender['id']" wire:model.live="categories" />
                     @endforeach
                 </div>
+            </div>
+            <div>
+                <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">
+                    {{ __('Account') }}
+                </p>
+                <x-radio wire:model.live="invitationState" :options="$invitationStates" />
             </div>
             <div>
                 <p class="mb-2 text-xs font-semibold uppercase tracking-widest opacity-50">

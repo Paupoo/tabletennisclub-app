@@ -61,6 +61,14 @@ new class extends Component
     #[Url]
     public bool $incompleteProfile = false;
 
+    /**
+     * Where a member stands with their account, mirroring
+     * {@see User::invitationStatus()}. This is how the secretary finds the
+     * members an import brought in and has not written to yet.
+     */
+    #[Url]
+    public string $invitationState = '';
+
     public string $inviteEmail = '';
 
     public string $inviteFirstName = '';
@@ -175,6 +183,7 @@ new class extends Component
     {
         $this->selectedLicenceType = 'both';
         $this->categories = [];
+        $this->invitationState = '';
         $this->incompleteProfile = false;
         $this->unpaidSubscription = false;
         $this->hasKey = false;
@@ -280,6 +289,18 @@ new class extends Component
             }
         }
 
+        if ($this->invitationState !== '') {
+            $chips[] = [
+                'key' => 'invitationState',
+                'label' => match ($this->invitationState) {
+                    'not_invited' => __('Not invited'),
+                    'pending' => __('Pending'),
+                    'expired' => __('Expired'),
+                    default => __('Account created'),
+                },
+            ];
+        }
+
         if ($this->incompleteProfile) {
             $chips[] = ['key' => 'incompleteProfile', 'label' => __('Incomplete profile')];
         }
@@ -336,6 +357,25 @@ new class extends Component
             ['id' => 'both',        'name' => __('Both')],
             ['id' => 'competitive', 'name' => __('Competitive')],
             ['id' => 'recreative',  'name' => __('Recreative')],
+        ];
+    }
+
+    /**
+     * Where a member stands with their account, in the order they travel through
+     * it. "Not invited" is the one that matters after an import: those are the
+     * members the club recorded and has not written to yet.
+     *
+     * @return array<int, array{id: string, name: string}>
+     */
+    #[Computed]
+    public function invitationStates(): array
+    {
+        return [
+            ['id' => '',            'name' => __('All')],
+            ['id' => 'not_invited', 'name' => __('Not invited')],
+            ['id' => 'pending',     'name' => __('Pending')],
+            ['id' => 'expired',     'name' => __('Expired')],
+            ['id' => 'active',      'name' => __('Account created')],
         ];
     }
 
@@ -414,6 +454,7 @@ new class extends Component
             'breadcrumbs' => $this->getBreadcrumbs(),
             'filterChips' => $this->filterChips,
             'licenceTypes' => $this->licenceTypes,
+            'invitationStates' => $this->invitationStates,
             'stats' => $this->stats,
         ]);
     }
@@ -564,6 +605,7 @@ new class extends Component
                     fn ($teamQuery) => $teamQuery->whereIn('teams.id', $this->team_ids)
                 )
             )
+            ->when($this->invitationState !== '', fn ($q) => $q->withInvitationState($this->invitationState))
             ->when($this->incompleteProfile, fn ($q) => $q->withIncompleteProfile())
             ->when($this->unpaidSubscription, fn ($q) => $q->unpaid())
             ->when($this->hasKey, fn ($q) => $q->where('has_key', true))

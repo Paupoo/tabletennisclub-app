@@ -190,6 +190,9 @@ enum Role: string
                 Permission::UsersCreate,
                 Permission::UsersUpdate,
                 Permission::UsersInvite,
+                // Seeding the roster from the federation listing is the same job
+                // as creating members, done in bulk.
+                Permission::UsersImport,
                 Permission::SubscriptionsView,
                 Permission::SubscriptionsManage,
                 // Deliberately not UsersDelete / UsersAnonymize: archiving a member

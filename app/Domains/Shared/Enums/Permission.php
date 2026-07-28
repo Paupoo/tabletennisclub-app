@@ -102,6 +102,7 @@ enum Permission: string
     case UsersAnonymize = 'users.anonymize';
     case UsersCreate = 'users.create';
     case UsersDelete = 'users.delete';
+    case UsersImport = 'users.import';
     case UsersInvite = 'users.invite';
     case UsersUpdate = 'users.update';
 

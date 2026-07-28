@@ -59,6 +59,62 @@ describe('reaching a member', function (): void {
 });
 
 /*
+ * How the secretary finds the members an import brought in and has not written to
+ * yet. The states are the ones User::invitationStatus() already names — no new
+ * status was introduced for the import, and none was needed.
+ */
+describe('filtering members by where they stand with their account', function (): void {
+
+    it('finds the members nobody has written to yet', function (): void {
+        $untouched = User::factory()->create(['last_invited_at' => null, 'email_verified_at' => null]);
+        User::factory()->create(['last_invited_at' => now(), 'email_verified_at' => null]);
+        User::factory()->create(['email_verified_at' => now()]);
+
+        expect(User::withInvitationState('not_invited')->pluck('id')->all())->toBe([$untouched->id]);
+    });
+
+    it('finds the members still sitting on a live invitation', function (): void {
+        $invited = User::factory()->create(['last_invited_at' => now()->subDay(), 'email_verified_at' => null]);
+        User::factory()->create([
+            'last_invited_at' => now()->subDays(User::INVITATION_LINK_VALIDITY_DAYS + 1),
+            'email_verified_at' => null,
+        ]);
+
+        expect(User::withInvitationState('pending')->pluck('id')->all())->toBe([$invited->id]);
+    });
+
+    it('finds the members whose invitation went stale', function (): void {
+        $stale = User::factory()->create([
+            'last_invited_at' => now()->subDays(User::INVITATION_LINK_VALIDITY_DAYS + 1),
+            'email_verified_at' => null,
+        ]);
+        User::factory()->create(['last_invited_at' => now()->subDay(), 'email_verified_at' => null]);
+
+        expect(User::withInvitationState('expired')->pluck('id')->all())->toBe([$stale->id]);
+    });
+
+    it('finds the members who have an account of their own', function (): void {
+        $registered = User::factory()->create(['email_verified_at' => now()]);
+        User::factory()->create(['last_invited_at' => now(), 'email_verified_at' => null]);
+
+        expect(User::withInvitationState('active')->pluck('id')->all())->toBe([$registered->id]);
+    });
+
+    it('agrees with the badge shown on each member', function (): void {
+        $members = [
+            'not_invited' => User::factory()->create(['last_invited_at' => null, 'email_verified_at' => null]),
+            'pending' => User::factory()->create(['last_invited_at' => now(), 'email_verified_at' => null]),
+            'active' => User::factory()->create(['email_verified_at' => now()]),
+        ];
+
+        foreach ($members as $state => $member) {
+            expect($member->invitationStatus())->toBe($state)
+                ->and(User::withInvitationState($state)->pluck('id')->all())->toContain($member->id);
+        }
+    });
+});
+
+/*
  * Notifications are messages, so they follow the contact address rather than the
  * login. Overriding the routing in one place covers every notification the
  * application sends without touching them one by one.

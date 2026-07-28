@@ -28,7 +28,14 @@ class SendPaymentReminderJob implements ShouldQueue
             return;
         }
 
-        Mail::to($payment->payable->user)->send(
+        // A minor's payment reminder has to reach whoever actually pays it.
+        $recipient = $payment->payable->user->contactEmail();
+
+        if ($recipient === null) {
+            return;
+        }
+
+        Mail::to($recipient)->send(
             new PaymentInvitationEmail($payment, __('Please settle your payment as soon as possible.'))
         );
         $payment->increment('invitation_counter');

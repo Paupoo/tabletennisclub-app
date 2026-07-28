@@ -45,6 +45,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Notifications\DatabaseNotificationCollection;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Notifications\Notification;
 use Laravel\Sanctum\HasApiTokens;
 use Laravel\Sanctum\PersonalAccessToken;
 use Spatie\Permission\Traits\HasRoles;
@@ -204,6 +205,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'committee_role' => CommitteeRolesEnum::class,
         'deleted_at' => 'datetime',
         'last_invited_at' => 'datetime',
+        'federation_synced_at' => 'datetime',
         'email_verified_at' => 'datetime',
         'gdpr_erasure_requested_at' => 'datetime',
         'notification_preferences' => 'array',
@@ -245,6 +247,9 @@ class User extends Authenticatable implements MustVerifyEmail
         'gdpr_erasure_requested_at',
         'notification_preferences',
         'contact_visibility',
+        'federation_licence_type',
+        'federation_synced_at',
+        'member_import_id',
     ];
 
     /**
@@ -315,6 +320,32 @@ class User extends Authenticatable implements MustVerifyEmail
     public function club(): BelongsTo
     {
         return $this->belongsTo(Club::class);
+    }
+
+    /**
+     * The address to actually write to, which is not always the member's own.
+     *
+     * `email` identifies a login. It answers "who is connecting", and it is null
+     * for every member who cannot connect on their own — a child too young to
+     * own a mailbox, a sibling affiliated under one parent's address, an adult
+     * who simply has no email. Those members are reached through their guardian.
+     *
+     * Every mail and every notification must resolve its recipient here rather
+     * than reading `email` directly; `email` is reserved for the places that
+     * *identify* someone — authentication, password reset, uniqueness.
+     *
+     * The day a managed member gets an address of their own, filling the column
+     * is the whole migration: the fallback below stops applying by itself.
+     */
+    public function contactEmail(): ?string
+    {
+        if ($this->email !== null) {
+            return $this->email;
+        }
+
+        return $this->guardians
+            ->first(fn (Guardian $guardian): bool => $guardian->email !== null)
+            ?->email;
     }
 
     /**
@@ -591,6 +622,21 @@ class User extends Authenticatable implements MustVerifyEmail
     public function requiresGuardian(): bool
     {
         return $this->isMinor() && ! $this->hasGuardian();
+    }
+
+    /**
+     * Notifications are messages, so they follow the contact address rather than
+     * the login. Overriding the routing here covers every notification the
+     * application sends at once — Notifiable would otherwise read `email`
+     * straight off the model and write to nobody for a managed account.
+     *
+     * Mailables sent through `Mail::to($user)` do *not* pass through here: they
+     * read the `email` attribute directly, so those call sites resolve their
+     * recipient with {@see self::contactEmail()} themselves.
+     */
+    public function routeNotificationForMail(?Notification $notification = null): ?string
+    {
+        return $this->contactEmail();
     }
 
     public function scopeActive(EloquentBuilder $query): EloquentBuilder

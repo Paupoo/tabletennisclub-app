@@ -25,7 +25,11 @@ class CheckQueueHealthCommand extends Command
             return self::SUCCESS;
         }
 
-        $admins = User::role(Role::ADMINISTRATOR->value)->pluck('email')->all();
+        $admins = User::role(Role::ADMINISTRATOR->value)->get()
+            ->map(fn (User $admin): ?string => $admin->contactEmail())
+            ->filter()
+            ->values()
+            ->all();
 
         if ($admins === []) {
             return self::SUCCESS;

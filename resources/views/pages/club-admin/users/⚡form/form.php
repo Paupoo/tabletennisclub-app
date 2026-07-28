@@ -300,7 +300,11 @@ new class extends Component
         // Inviting is its own right, not a side effect of being allowed to edit.
         Gate::authorize('sendEmail', User::class);
 
-        SendInvitationAction::handle($this->user);
+        if (! SendInvitationAction::handle($this->user)) {
+            $this->error(__('This member has no address of their own yet, so they cannot be invited.'));
+
+            return;
+        }
 
         $this->success(__('Invitation re-sent to :email.', ['email' => $this->user->email]));
     }

@@ -434,7 +434,11 @@ new class extends Component
 
         $user = User::findOrFail($userId);
 
-        SendInvitationAction::handle($user);
+        if (! SendInvitationAction::handle($user)) {
+            $this->error(__('This member has no address of their own yet, so they cannot be invited.'));
+
+            return;
+        }
 
         $this->success(__('Invitation sent to :email.', ['email' => $user->email]));
     }

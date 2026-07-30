@@ -42,6 +42,7 @@ class InterclubLineupBroadcastNotification extends Notification
 
         $ourTeam = $interclub->ourTeam();
         $ourTeamName = $ourTeam?->fullName() ?? '—';
+        $category = $ourTeam?->league?->category;
         $opponent = $interclub->opponentTeam()?->fullName() ?? '—';
         $venue = $interclub->isHome() ? __('Home') : __('Away');
         $dateStr = $interclub->start_date_time->format('d/m/Y') . ' ' . __('at') . ' ' . $interclub->start_date_time->format('H:i');
@@ -69,6 +70,7 @@ class InterclubLineupBroadcastNotification extends Notification
                 'address' => $address,
                 'venue' => $venue,
                 'selectedPlayers' => $this->selectedPlayers,
+                'category' => $category,
                 'captainMessage' => $this->captainMessage,
                 'isUpdate' => $this->isUpdate,
             ]);

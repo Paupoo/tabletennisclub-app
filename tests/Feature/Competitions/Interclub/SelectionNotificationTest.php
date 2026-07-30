@@ -252,9 +252,76 @@ it('renders the lineup mail with an updated heading when isUpdate is true', func
         'address' => 'Rue du Sport 1',
         'venue' => 'Home',
         'selectedPlayers' => collect([$this->player1]),
+        'category' => 'MEN',
         'captainMessage' => '',
         'isUpdate' => true,
     ]);
 
     expect($html)->toContain('mise à jour');
+});
+
+it('renders the lineup as a table ordered by force index rather than inline parentheses', function (): void {
+    $this->player1->update(['first_name' => 'Alice', 'last_name' => 'Zulu', 'ranking' => 'B4', 'force_list' => 3]);
+    $this->player2->update(['first_name' => 'Bob', 'last_name' => 'Alpha', 'ranking' => 'C2', 'force_list' => 12]);
+
+    $html = (string) app(Markdown::class)->render('mail.interclub.selection', [
+        'notifiable' => $this->player1,
+        'ourTeamName' => 'CTT Ottignies-Blocry A',
+        'opponent' => 'ARC EN CIEL CTT F',
+        'dateStr' => '12/09/2026 at 19:00',
+        'address' => 'Rue du Sport 1',
+        'venue' => 'Home',
+        'selectedPlayers' => collect([$this->player2, $this->player1]),
+        'category' => 'MEN',
+        'captainMessage' => '',
+    ]);
+
+    expect($html)
+        ->toContain('Liste de force')
+        ->toContain('#3')
+        ->toContain('#12')
+        ->toContain('B4')
+        ->not->toContain('Alice Zulu (3)');
+
+    // Lowest force index first: Alice (#3) is listed before Bob (#12).
+    expect(strpos($html, 'Alice'))->toBeLessThan(strpos($html, 'Bob'));
+});
+
+it('marks the recipient in the selection lineup and leaves the others unmarked', function (): void {
+    $this->player1->update(['first_name' => 'Alice', 'last_name' => 'Zulu', 'force_list' => 3]);
+    $this->player2->update(['first_name' => 'Bob', 'last_name' => 'Alpha', 'force_list' => 12]);
+
+    $html = (string) app(Markdown::class)->render('mail.interclub.selection', [
+        'notifiable' => $this->player1,
+        'ourTeamName' => 'CTT Ottignies-Blocry A',
+        'opponent' => 'ARC EN CIEL CTT F',
+        'dateStr' => '12/09/2026 at 19:00',
+        'address' => 'Rue du Sport 1',
+        'venue' => 'Home',
+        'selectedPlayers' => collect([$this->player1, $this->player2]),
+        'category' => 'MEN',
+        'captainMessage' => '',
+    ]);
+
+    expect(substr_count($html, '>vous<'))->toBe(1);
+});
+
+it('falls back to a dash and drops the force column when nobody is ranked in the category', function (): void {
+    $this->player1->update(['force_list' => null, 'force_list_women' => null]);
+
+    $html = (string) app(Markdown::class)->render('mail.interclub.selection', [
+        'notifiable' => $this->player1,
+        'ourTeamName' => 'CTT Ottignies-Blocry A',
+        'opponent' => 'ARC EN CIEL CTT F',
+        'dateStr' => '12/09/2026 at 19:00',
+        'address' => 'Rue du Sport 1',
+        'venue' => 'Home',
+        'selectedPlayers' => collect([$this->player1]),
+        'category' => 'MEN',
+        'captainMessage' => '',
+    ]);
+
+    expect($html)
+        ->toContain($this->player1->full_name)
+        ->not->toContain('Liste de force');
 });

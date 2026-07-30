@@ -10,6 +10,8 @@ use Illuminate\Cache\RateLimiter;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Queue\Middleware\RateLimited;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 
 use function Pest\Laravel\actingAs;
@@ -53,6 +55,20 @@ describe('inviting members in bulk', function (): void {
             ->call('bulkInvite');
 
         Bus::assertBatched(fn (PendingBatch $batch): bool => $batch->jobs->count() === 2);
+    });
+
+    /*
+     * Every other test here fakes the bus, so nothing ever touched the table the
+     * batch is recorded in. This one lets the batch reach its real store.
+     */
+    it('records the batch in the database', function (): void {
+        Queue::fake();
+
+        Livewire::test(USERS_INDEX_COMPONENT)
+            ->set('selected', [(string) uninvitedMember('recorded@example.com')->id])
+            ->call('bulkInvite');
+
+        expect(DB::table('job_batches')->where('name', 'invitations')->count())->toBe(1);
     });
 
     /*

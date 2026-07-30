@@ -305,6 +305,29 @@ describe('re-importing a member the club already holds', function (): void {
         expect($member->fresh()->ranking)->toBe('C2');
     });
 
+    /*
+     * A member the club archived turns up in the federation's listing again: they
+     * came back. Nobody chose that update lightly — the screen never proposes it,
+     * a human went looking for the archived file and pointed at it — and leaving
+     * them archived would mean going to find them a second time, by hand.
+     */
+    it('brings back a member who was archived when the reviewer points at their file', function (): void {
+        Mail::fake();
+        $secretary = User::factory()->create();
+        $member = User::factory()->create(['licence' => '166036', 'ranking' => 'D4']);
+        $member->delete();
+
+        ImportFederationMembersAction::handle([
+            new ImportLine(row: federationRow(['ranking' => 'C2']), action: ImportLineAction::UPDATE, existingUserId: $member->id),
+        ], $secretary);
+
+        $restored = User::query()->find($member->id);
+
+        expect($restored)->not->toBeNull()
+            ->and($restored->trashed())->toBeFalse()
+            ->and($restored->ranking)->toBe('C2');
+    });
+
     it('takes the new licence type from the federation', function (): void {
         Mail::fake();
         $secretary = User::factory()->create();

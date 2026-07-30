@@ -18,6 +18,10 @@
                 <x-admin.shared.filters-button :count="count($filterChips)" />
                 @canany(['setOrUpdateForceList', 'create'], \App\Domains\ClubAdmin\Users\Models\User::class)
                     <x-dropdown :label="__('More actions')" icon="o-ellipsis-vertical" right class="btn-ghost btn-sm">
+                        @can('users.import')
+                            <x-menu-item icon="o-arrow-up-tray" :title="__('Import the federation listing')"
+                                link="{{ route('admin.users.import') }}" />
+                        @endcan
                         @can('setOrUpdateForceList', \App\Domains\ClubAdmin\Users\Models\User::class)
                             <x-menu-item icon="o-arrow-path" :title="__('Recalculate force list')"
                                 wire:click="recalculateForceList" spinner="recalculateForceList" />
@@ -414,6 +418,13 @@
                 :label="__('Quick invite')"
                 :description="__('Send an invitation by email')"
                 @click="mobileActionsOpen = false; $wire.set('quickInviteDrawer', true)" />
+        @endcan
+        @can('users.import')
+            <x-admin.shared.mobile-action-item
+                icon="o-arrow-up-tray" color="base"
+                :label="__('Import the federation listing')"
+                :description="__('Seed the roster from the federation affiliate listing')"
+                @click="mobileActionsOpen = false; window.location.href = '{{ route('admin.users.import') }}'" />
         @endcan
         @can('setOrUpdateForceList', \App\Domains\ClubAdmin\Users\Models\User::class)
             <x-admin.shared.mobile-action-item

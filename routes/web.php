@@ -122,6 +122,11 @@ Route::prefix('admin/club-admin/users/')
         Route::livewire('{user}/edit', 'pages::club-admin.users.form')
             ->middleware('can:users.update')
             ->name('admin.users.edit');
+        // Seeding the roster from the federation listing is creating members in
+        // bulk, and belongs to whoever may create them one at a time.
+        Route::livewire('import', 'pages::club-admin.users.import')
+            ->middleware('can:users.import')
+            ->name('admin.users.import');
         Route::livewire('registrations', 'pages::club-admin.users.registrations')
             ->middleware('can:subscriptions.view')
             ->name('admin.users.registrations');

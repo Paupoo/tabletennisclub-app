@@ -257,6 +257,14 @@ class ImportFederationMembersAction
 
         $member->save();
 
+        // An archived member listed as affiliated again has come back. The review
+        // screen never proposes this on its own — an archived file is one of the
+        // two answers it hands over undecided — so reaching here means a human
+        // went looking for that file and pointed at it.
+        if ($member->trashed()) {
+            $member->restore();
+        }
+
         return $member;
     }
 }
